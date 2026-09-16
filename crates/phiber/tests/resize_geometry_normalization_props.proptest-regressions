@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 3e6e11519692edcd2c22f8aa08264314444a9fd5cfb763c22d84bd15821645ee # shrinks to valid = BResizeStyle { visible_seam: 0.0, hit_width: 0.0, gap: 0.0, inset: 0.0, snap_threshold: 0.0, min_extent: 0.0 }, conflicting = BResizeStyle { visible_seam: 2.9449666, hit_width: 0.0, gap: 0.0, inset: 225.28627, snap_threshold: 0.0, min_extent: 0.0 }

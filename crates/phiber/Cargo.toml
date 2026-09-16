@@ -1,0 +1,45 @@
+[package]
+name = "phiber"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+license = "GPL-3.0-or-later"
+authors = ["Phiace"]
+description = "Phiber - Blender-like GPUI application built on BUIKit"
+
+[lints]
+workspace = true
+
+[lib]
+name = "phiber"
+path = "src/lib.rs"
+
+[dependencies]
+gpui = { workspace = true }
+gpui_platform = { workspace = true }
+ui = { workspace = true }
+theme = { workspace = true }
+glam = "0.29"
+byteorder = "1.5"
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+bytemuck = { version = "1.18", features = ["derive"] }
+zstd = { workspace = true }
+flate2 = { workspace = true }
+
+[features]
+default = ["phx-import"]
+phx-import = []
+gltf-import = []
+usd-import = []
+usdz-import = []
+proptest = []
+
+[[bin]]
+name = "phiber"
+path = "src/main.rs"
+
+[dev-dependencies]
+proptest = { workspace = true }
+gpui = { workspace = true, features = ["test-support"] }

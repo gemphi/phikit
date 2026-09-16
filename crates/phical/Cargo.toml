@@ -1,0 +1,8 @@
+[package]
+name = "phi-cal"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "phi_cal"
+path = "src/lib.rs"

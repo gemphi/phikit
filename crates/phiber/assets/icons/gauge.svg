@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Semi-circular arc = the dial face. -->
+  <path d="M4 15 A8 8 0 0 1 20 15" />
+  <!-- Left tick, top tick, right tick -->
+  <line x1="5.2" y1="12.4" x2="6.4" y2="12.9" />
+  <line x1="12" y1="7" x2="12" y2="8.4" />
+  <line x1="18.8" y1="12.4" x2="17.6" y2="12.9" />
+  <!-- Needle sweeping toward the ~2 o'clock position (weight paint intensity). -->
+  <line x1="12" y1="15" x2="15.4" y2="10.4" />
+  <!-- Pivot -->
+  <circle cx="12" cy="15" r="1.1" fill="currentColor" stroke="none" />
+</svg>

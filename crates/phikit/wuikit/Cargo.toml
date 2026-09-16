@@ -1,0 +1,8 @@
+[package]
+name = "phi-kit-wuikit"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "phi_kit_wuikit"
+path = "src/lib.rs"
