@@ -1,8 +1,42 @@
 [package]
 name = "phiphx"
 version = "0.1.0"
-edition = "2021"
+edition.workspace = true
+publish.workspace = true
+license = "GPL-3.0-or-later"
+authors = ["Phiace"]
+description = "phiphx — Blender .blend reader (SDNA), scene model and asset import/export for Phiber"
+
+[lints]
+workspace = true
 
 [lib]
 name = "phiphx"
 path = "src/lib.rs"
+
+[dependencies]
+glam = "0.29"
+byteorder = "1.5"
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+bytemuck = { version = "1.18", features = ["derive"] }
+zstd = { workspace = true }
+flate2 = { workspace = true }
+# `spatial::*` gpui cards (feature `bui`, on for Phiber). Without it the crate
+# is pure data and builds/tests anywhere.
+gpui = { workspace = true, optional = true }
+gltf = { version = "1.4", default-features = false, features = ["utils"], optional = true }
+zip = { version = "2.2", default-features = false, features = ["deflate"], optional = true }
+
+[features]
+default = ["bui"]
+bui = ["dep:gpui"]
+gltf-import = ["dep:gltf"]
+usdz-import = ["dep:zip"]
+usdc-parser = []
+appkit = []
+proptest = []
+
+[dev-dependencies]
+proptest = { workspace = true }
