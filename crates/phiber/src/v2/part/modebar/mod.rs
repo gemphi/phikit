@@ -8,23 +8,68 @@
 //! mode dropdown. We replicate this by returning a `BView::Row` wrapping
 //! `[mode_popover, search_field, filter_popover]` when `host == Outliner`.
 
-pub mod item;
-pub mod list;
 pub mod set;
+pub mod workspace;
+pub mod shading;
 
-use super::modebar::set::{default_mode, mode_key, modes_for};
-use crate::v2::host::{BHostType, host_slug};
-use crate::v2::part::custom::outliner::{set::TOGGLES, tree as otree};
-use crate::v2::state::{
-    BState, k_menu,
-    val::{V_EMPTY, V_FALSE, V_TRUE},
-};
-use crate::v2::view::prim::{BAction, BControl, BPopoverSide};
-use crate::v2::view::{BView, BViewItem, BViewList};
-
-pub use item::BModebarItem;
-pub use list::BModebarList;
+use crate::v2::host::BHostType;
+use crate::v2::state::BKey as _;
+use crate::v2::state::BState;
+use crate::v2::state::MenuKey;
+use crate::v2::state::OutlinerKey;
+use crate::v2::state::val::V_EMPTY;
+use crate::v2::state::val::V_FALSE;
+use crate::v2::state::val::V_TRUE;
+use crate::v2::view::BView;
+use crate::v2::view::BViewItem;
+use crate::v2::view::BViewList;
+use crate::v2::view::prim::BAction;
+use crate::v2::view::prim::BControl;
+use crate::v2::view::prim::BPopoverSide;
+use self::set::default_mode;
+use self::set::mode_key;
+use self::set::modes_for;
 pub use set::BModeSpec;
+
+// `BModebarList` — reads `modes_for(host)` + active mode from `ctx.mode`.
+#[derive(Clone, Copy, Debug)]
+pub struct BModebarList {
+    pub host: BHostType,
+}
+
+impl BModebarList {
+    pub fn new(host: BHostType) -> Self {
+        Self { host }
+    }
+}
+
+impl BViewList for BModebarList {
+    fn items(&self, s: &BState) -> Vec<BView> {
+        let key = mode_key(self.host);
+        let active = s.get(&key).unwrap_or_else(|| default_mode(self.host));
+        modes_for(self.host)
+            .iter()
+            .map(|m| {
+                BView::MenuItem(
+                    BControl::new()
+                        .with_icon(if m.label == active { "check" } else { m.icon })
+                        .with_label(m.label)
+                        .with_action(BAction::Set(key.clone(), m.label.to_string())),
+                )
+            })
+            .collect()
+    }
+}
+
+/// The mode a host is currently in — the one place that resolves the key and
+/// its fallback, so a part that varies by mode (the asset shelf) reads the
+/// same answer the mode bar shows.
+pub fn active_mode(s: &BState, host: BHostType) -> &'static str {
+    s.get(&mode_key(host))
+        .and_then(|m| modes_for(host).iter().find(|spec| spec.label == m))
+        .map(|spec| spec.label)
+        .unwrap_or_else(|| default_mode(host))
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct BModebar {
@@ -45,45 +90,31 @@ fn active_icon(host: BHostType, active: &str) -> &'static str {
         .unwrap_or("object")
 }
 
-/// Build the Outliner filter popover body: sort-alpha toggle, separator,
-/// then one toggle per restriction column (OUTLINER_PT_filter).
-fn outliner_filter_body(s: &BState) -> Vec<BView> {
-    let sort_on = otree::sort_alpha(s);
-    let mut body = vec![
-        BView::button_action(
-            if sort_on { "check" } else { "" },
-            "Sort Alphabetically",
-            BAction::Set(
-                otree::k_sort_alpha(),
-                if sort_on { V_FALSE.to_string() } else { V_TRUE.to_string() },
-            ),
-        ),
-        BView::menu_sep(),
-    ];
-    for t in TOGGLES {
-        let col_key = otree::k_column(t.state_key);
-        let active = match s.get(&col_key) {
-            Some(V_TRUE) => true,
-            Some(V_FALSE) => false,
-            _ => t.default_on,
-        };
-        body.push(BView::button_action(
-            if active { t.icon } else { "" },
-            t.tooltip,
-            BAction::Set(
-                col_key,
-                if active { V_FALSE.to_string() } else { V_TRUE.to_string() },
-            ),
-        ));
-    }
-    body
+/// The outliner's filter popover (`OUTLINER_PT_filter`), for `part::filter` to place at the right
+/// end of the header.
+pub fn outliner_filter(s: &BState) -> BView {
+    let fkey = OutlinerKey::FilterOpen.path();
+    let open = s.get(&fkey) == Some(V_TRUE);
+    let toggle = BAction::Set(
+        fkey.clone(),
+        if open { V_FALSE.to_string() } else { V_TRUE.to_string() },
+    );
+    let close = BAction::Set(fkey, V_FALSE.to_string());
+    let anchor = BView::Button(BControl::new().with_icon("filter").with_action(toggle));
+    BView::popover(
+        anchor,
+        crate::v2::part::outliner::filter::popover::body(s),
+        open,
+        close,
+        BPopoverSide::Below,
+    )
 }
 
 impl BViewItem for BModebar {
     fn build(&self, s: &BState) -> BView {
         // Host-scoped like every other menubar popover, so opening the mode
         // dropdown in one editor does not open it in the rest.
-        let key = k_menu(host_slug(self.host), "mode");
+        let key = MenuKey::Top(self.host.slug(), "mode").path();
         let open = s.get(&key) == Some(V_TRUE);
         let toggle = BAction::Toggle(key.clone());
         let close = BAction::Set(key, V_EMPTY.to_string());
@@ -102,39 +133,15 @@ impl BViewItem for BModebar {
         let body = BModebarList::new(self.host).items(s);
         let mode_popover = BView::popover(anchor, body, open, close, BPopoverSide::Below);
 
-        // Outliner: append search field + filter popover inline in the header
-        // row, matching Blender's `OUTLINER_HT_header` layout (filter_text +
-        // OUTLINER_PT_filter icon).
-        if self.host == BHostType::Outliner {
-            let search_val = otree::search_text(s);
-            let search_clear = BAction::Set(otree::k_search(), String::new());
-            let search = BView::search_field("Search...", search_val, search_clear);
-
-            let fkey = otree::k_filter_open();
-            let fopen = s.get(&fkey) == Some(V_TRUE);
-            let ftoggle = BAction::Set(
-                fkey.clone(),
-                if fopen { V_FALSE.to_string() } else { V_TRUE.to_string() },
-            );
-            let fclose = BAction::Set(fkey, V_FALSE.to_string());
-            let filter_anchor = BView::button_action("filter", "", ftoggle);
-            let filter_popover = BView::popover(
-                filter_anchor,
-                outliner_filter_body(s),
-                fopen,
-                fclose,
-                BPopoverSide::Below,
-            );
-
-            // Header layout: [mode] [search] [filter] as a hugging row. The
-            // enclosing header Center pane centres this group; the mode
-            // dropdown, search field and filter popover keep their natural
-            // widths instead of stretching into full-width bars. Mirrors
-            // Blender's `OUTLINER_HT_header` (mode picker · filter text ·
-            // filter popover) without letting any control run off the pane.
-            BView::row(vec![mode_popover, search, filter_popover])
-        } else {
-            mode_popover
-        }
+        // The header's shape is owned by `region::complete_header`:
+        // the switcher and menus on the left, the host's search in the
+        // middle (`part::search`), its filters on the right
+        // (`part::filter`). The mode picker is the only thing the mode bar
+        // contributes — building a search here as well is what put two
+        // search fields in the outliner's header.
+        // The shading radio moved to the header's right end
+        // (`part::filter`), so the mode bar contributes only the mode picker
+        // — the same shape in every host.
+        mode_popover
     }
 }

@@ -5,35 +5,29 @@
 //! Three-letter accessors: `get`, `set`, `has`.
 
 pub mod action;
-pub mod area_resize;
-pub mod file_nav;
+pub mod edit;
 pub mod key;
+pub use key::{
+    ActivityKey, AppKey, AreaKey, BKey, ButsKey, CtxKey, FileKey, MenuKey, ModalKey, OutlinerKey,
+    ImageKey, SceneKey, UvKey, View3dKey, ZoneKey,
+};
+pub mod log;
 pub mod menu;
 pub mod path;
+pub mod rule;
 pub mod seed;
-pub mod space_switch;
 pub mod val;
-pub mod zone_size;
 
-pub use area_resize::{
-    K_DRAG_INDEX, K_DRAG_SPACE, K_DRAG_ZONE, ResizeError, apply_delta, apply_drag, area_fraction,
-    area_size_key, area_size_prefix, boundary_pair, clamp_to_min, normalize, reset_equal,
-    snap_to_equal, zone_visibility_key,
-};
 pub use key::*;
 pub use menu::{
-    apply_open, apply_toggle, hover_open_if_menubar_active, is_menubar_active,
-    is_menubar_active_in, k_menu, k_menu_path,
+    apply_open, apply_toggle, close_overlays, hover_open_if_menubar_active, is_menubar_active,
+    is_menubar_active_in,
 };
 pub use path::BPath;
 pub use seed::default_state;
-pub use space_switch::switch_space;
 pub use val::*;
-pub use zone_size::{
-    apply_zone_drag, is_resizable as is_zone_resizable, reset_zone_size, zone_size, zone_size_key,
-};
 
-use crate::v2::host::{BHostType, host_slug};
+use crate::v2::host::BHostType;
 use std::collections::HashMap;
 
 /// Flat KV store. Keys are encoded `BPath` strings; values are strings.
@@ -47,11 +41,11 @@ impl BState {
         Self::default()
     }
 
-    pub fn get(&self, path: &BPath) -> Option<&str> {
-        self.inner.get(&path.encode()).map(String::as_str)
+    pub fn get(&self, key: impl BKey) -> Option<&str> {
+        self.inner.get(&key.path().encode()).map(String::as_str)
     }
-    pub fn set(&mut self, path: &BPath, val: impl Into<String>) {
-        self.inner.insert(path.encode(), val.into());
+    pub fn set(&mut self, key: impl BKey, val: impl Into<String>) {
+        self.inner.insert(key.path().encode(), val.into());
     }
     pub fn set_encoded(&mut self, encoded: &str, val: impl Into<String>) {
         self.inner.insert(encoded.to_string(), val.into());
@@ -60,8 +54,12 @@ impl BState {
     /// back as absent (`get` returns `None`, `has` is false), which is how the
     /// scene loading/error flags represent their "off" state — never a stale
     /// value such as `"true"`. No-op when the key is not present.
-    pub fn remove(&mut self, path: &BPath) {
-        self.inner.remove(&path.encode());
+    pub fn remove(&mut self, key: impl BKey) {
+        self.inner.remove(&key.path().encode());
+    }
+    /// Remove an encoded key, as `remove` does a typed one.
+    pub fn remove_encoded(&mut self, encoded: &str) {
+        self.inner.remove(encoded);
     }
     pub fn get_encoded(&self, encoded: &str) -> Option<&str> {
         self.inner.get(encoded).map(String::as_str)
@@ -69,8 +67,8 @@ impl BState {
     pub fn iter_keys(&self) -> impl Iterator<Item = &String> {
         self.inner.keys()
     }
-    pub fn has(&self, path: &BPath, expected: &str) -> bool {
-        self.get(path) == Some(expected)
+    pub fn has(&self, key: impl BKey, expected: &str) -> bool {
+        self.get(key) == Some(expected)
     }
     pub fn host(&self, host: BHostType) -> BHostState<'_> {
         BHostState { state: self, host }
@@ -87,7 +85,7 @@ pub struct BHostState<'a> {
 
 impl<'a> BHostState<'a> {
     fn path(&self, tail: &'static str) -> BPath {
-        let mut segs: Vec<&'static str> = vec![host_slug(self.host)];
+        let mut segs: Vec<&'static str> = vec![self.host.slug()];
         segs.extend(tail.split('.'));
         BPath::owned(segs)
     }

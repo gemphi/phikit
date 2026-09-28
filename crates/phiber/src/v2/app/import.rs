@@ -9,9 +9,10 @@
 //! The gpui spawn/notify shell around this core lives in `app::handle`
 //! (task 7.x) — this file deliberately contains only pure functions.
 
-use crate::phiphx::services::scene::{SceneLoadError, SceneModel};
+use crate::phiphx::scene::{SceneLoadError, SceneModel};
 use crate::v2::scene::{
-    error_key, is_blend_path, load_progress_key, load_stage_key, loaded_path_key, loading_key,
+    error_key, is_blend_path, load_cancel_key, load_progress_key, load_stage_key,
+    loaded_path_key, loading_key,
 };
 use crate::v2::state::BState;
 
@@ -90,12 +91,19 @@ pub fn settle_import(state: &mut BState, outcome: ImportOutcome) -> Option<Scene
     state.remove(&loading_key());
     state.remove(&load_stage_key());
     state.remove(&load_progress_key());
+    state.remove(&load_cancel_key());
 
     match outcome {
         ImportOutcome::Loaded(model) => {
             // Success clears any prior error (Requirement 3.6) and records the
             // path now reflected by the Scene_Source (Requirement 1.7).
             state.remove(&error_key());
+            super::seed::seed_view_layer(state, &model);
+            super::seed::seed_render_props(state, &model);
+            super::seed::seed_output_props(state, &model);
+            crate::v2::part::playback::settings::seed(state, &model.playback);
+            super::seed::report_loaded(state, &model);
+            super::load_ui::restore_ui(state, &model);
             match &model.source_path {
                 Some(path) => state.set(&loaded_path_key(), path.clone()),
                 // No source path recorded — clear the reflected path rather
@@ -104,10 +112,17 @@ pub fn settle_import(state: &mut BState, outcome: ImportOutcome) -> Option<Scene
             }
             Some(model)
         }
+        ImportOutcome::Failed(SceneLoadError::Cancelled) => {
+            // A user cancel is not an error: retain the prior scene and show
+            // nothing (Blender's job cancel is silent).
+            None
+        }
         ImportOutcome::Failed(e) => {
             // Retain the prior scene: touch neither loaded_path nor the cached
             // model (Requirement 3.4). Only surface the categorized message.
             state.set(&error_key(), e.message());
+            let path = state.get(&crate::v2::scene::selected_key()).map(str::to_string);
+            super::seed::report_failed(state, path.as_deref(), &e.message());
             None
         }
         ImportOutcome::TimedOut => {
@@ -119,220 +134,8 @@ pub fn settle_import(state: &mut BState, outcome: ImportOutcome) -> Option<Scene
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn blend_differing_from_prev_imports() {
-        // A .blend selection that differs from the reflected path => import.
-        assert!(should_import(
-            Some("/old/scene.blend"),
-            Some("/new/model.blend")
-        ));
-    }
-
-    #[test]
-    fn blend_equal_to_prev_does_not_import() {
-        // Selecting the already-reflected .blend path => no new import (1.6).
-        assert!(!should_import(
-            Some("/dir/model.blend"),
-            Some("/dir/model.blend")
-        ));
-    }
-
-    #[test]
-    fn non_blend_selection_does_not_import() {
-        // Non-.blend selections never trigger an import (1.5).
-        assert!(!should_import(None, Some("notes.txt")));
-        assert!(!should_import(Some("/dir/model.blend"), Some("readme.md")));
-    }
-
-    #[test]
-    fn none_selected_does_not_import() {
-        // No selection at all => nothing to import.
-        assert!(!should_import(None, None));
-        assert!(!should_import(Some("/dir/model.blend"), None));
-    }
-
-    #[test]
-    fn case_insensitive_blend_suffix_imports() {
-        // The .blend suffix match is case-insensitive.
-        assert!(should_import(None, Some("MODEL.BLEND")));
-        assert!(should_import(Some("/a.blend"), Some("/b.Blend")));
-    }
-
-    #[test]
-    fn prev_none_with_blend_selected_imports() {
-        // First-ever load: no reflected path yet, a .blend is selected.
-        assert!(should_import(None, Some("/first/load.blend")));
-    }
-
-    #[test]
-    fn blend_equal_to_prev_is_case_insensitive() {
-        // Same path with differing case in the .blend suffix is still equal
-        // as a raw string comparison — differing bytes DO count as different
-        // (path identity is exact); only the suffix predicate is case-insensitive.
-        // A byte-identical path never re-imports.
-        assert!(!should_import(
-            Some("/dir/Model.blend"),
-            Some("/dir/Model.blend")
-        ));
-    }
-
-    // ---- settle_import ------------------------------------------------------
-
-    use crate::phiphx::services::scene::{SceneMesh, SceneNormals, SceneObject};
-
-    /// A minimal model carrying a `source_path`, for the success path.
-    fn model_at(path: &str) -> SceneModel {
-        SceneModel {
-            objects: vec![SceneObject {
-                name: "Cube".to_string(),
-                mesh: SceneMesh {
-                    vertices: vec![[0.0, 0.0, 0.0]],
-                    indices: vec![],
-                    normals: SceneNormals::PerVertex(vec![[0.0, 0.0, 1.0]]),
-                },
-                location: [0.0, 0.0, 0.0],
-                scale: [1.0, 1.0, 1.0],
-                materials: Vec::new(),
-                material_indices: Vec::new(),
-                uvs: Vec::new(),
-            }],
-            source_path: Some(path.to_string()),
-            ..Default::default()
-        }
-    }
-
-    /// Length in `char`s, matching the Load_Error_State bound semantics.
-    fn char_len(s: &str) -> usize {
-        s.chars().count()
-    }
-
-    #[test]
-    fn loaded_clears_loading_and_error_sets_loaded_path() {
-        let mut s = BState::new();
-        // Pre-existing loading + error from a prior in-flight import.
-        s.set(&loading_key(), "true");
-        s.set(&error_key(), "old failure");
-
-        let returned = settle_import(&mut s, ImportOutcome::Loaded(model_at("/dir/model.blend")));
-
-        // Loading absent, error absent, loaded_path set to the model's path.
-        assert_eq!(s.get(&loading_key()), None);
-        assert_eq!(s.get(&error_key()), None);
-        assert_eq!(s.get(&loaded_path_key()), Some("/dir/model.blend"));
-        // The model is returned so the caller can cache it.
-        let model = returned.expect("Loaded returns the model to cache");
-        assert_eq!(model.source_path.as_deref(), Some("/dir/model.blend"));
-    }
-
-    #[test]
-    fn loaded_without_source_path_clears_loaded_path() {
-        let mut s = BState::new();
-        s.set(&loaded_path_key(), "/prev/scene.blend");
-        s.set(&loading_key(), "true");
-
-        let model = SceneModel {
-            objects: vec![],
-            source_path: None,
-        ..Default::default()
-        };
-        let returned = settle_import(&mut s, ImportOutcome::Loaded(model));
-
-        assert_eq!(s.get(&loading_key()), None);
-        // No source path => the reflected path is cleared, not left stale.
-        assert_eq!(s.get(&loaded_path_key()), None);
-        assert!(returned.is_some());
-    }
-
-    #[test]
-    fn failed_clears_loading_sets_bounded_error_retains_loaded_path() {
-        let mut s = BState::new();
-        // A scene was already reflected before the failed import.
-        s.set(&loaded_path_key(), "/dir/prev.blend");
-        s.set(&loading_key(), "true");
-
-        let returned = settle_import(
-            &mut s,
-            ImportOutcome::Failed(SceneLoadError::Malformed("bad SDNA".to_string())),
-        );
-
-        // Loading cleared; error set to a 1..=256 char message.
-        assert_eq!(s.get(&loading_key()), None);
-        let msg = s.get(&error_key()).expect("failure sets an error message");
-        assert!(
-            (1..=256).contains(&char_len(msg)),
-            "error len {} out of bounds",
-            char_len(msg)
-        );
-        assert!(
-            msg.contains("malformed"),
-            "message names the category: {msg}"
-        );
-        // Prior reflected path is preserved (retain prior scene, Requirement 3.4).
-        assert_eq!(s.get(&loaded_path_key()), Some("/dir/prev.blend"));
-        // No model to cache on failure.
-        assert!(returned.is_none());
-    }
-
-    #[test]
-    fn timed_out_clears_loading_sets_bounded_error_retains_loaded_path() {
-        let mut s = BState::new();
-        s.set(&loaded_path_key(), "/dir/prev.blend");
-        s.set(&loading_key(), "true");
-
-        let returned = settle_import(&mut s, ImportOutcome::TimedOut);
-
-        assert_eq!(s.get(&loading_key()), None);
-        let msg = s.get(&error_key()).expect("timeout sets an error message");
-        assert!(
-            (1..=256).contains(&char_len(msg)),
-            "timeout msg len {} out of bounds",
-            char_len(msg)
-        );
-        // Prior reflected path is preserved on timeout too.
-        assert_eq!(s.get(&loaded_path_key()), Some("/dir/prev.blend"));
-        assert!(returned.is_none());
-    }
-
-    #[test]
-    fn success_after_failure_clears_the_error() {
-        let mut s = BState::new();
-        // First a failure leaves an error and retains no path.
-        settle_import(
-            &mut s,
-            ImportOutcome::Failed(SceneLoadError::Inaccessible("no file".to_string())),
-        );
-        assert!(s.get(&error_key()).is_some());
-
-        // A subsequent success clears the error and records the path.
-        settle_import(&mut s, ImportOutcome::Loaded(model_at("/dir/next.blend")));
-        assert_eq!(s.get(&error_key()), None);
-        assert_eq!(s.get(&loaded_path_key()), Some("/dir/next.blend"));
-        assert_eq!(s.get(&loading_key()), None);
-    }
-
-    #[test]
-    fn settle_clears_the_staged_progress_readout() {
-        // An in-flight import has seeded the stage label + progress fraction;
-        // settling (in every outcome) must clear both so the statusbar bar
-        // disappears.
-        for outcome in [
-            ImportOutcome::Loaded(model_at("/dir/done.blend")),
-            ImportOutcome::Failed(SceneLoadError::Malformed("x".to_string())),
-            ImportOutcome::TimedOut,
-        ] {
-            let mut s = BState::new();
-            s.set(&loading_key(), "true");
-            s.set(&load_stage_key(), "Reading file");
-            s.set(&load_progress_key(), "0.15");
-
-            settle_import(&mut s, outcome);
-
-            assert_eq!(s.get(&loading_key()), None);
-            assert_eq!(s.get(&load_stage_key()), None);
-            assert_eq!(s.get(&load_progress_key()), None);
-        }
-    }
-}
+#[path = "import_tests.rs"]
+mod tests;
+#[cfg(test)]
+#[path = "settle_tests.rs"]
+mod settle_tests;

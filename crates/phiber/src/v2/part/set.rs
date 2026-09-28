@@ -1,6 +1,7 @@
 //! Part set — one `BPartSpec` per `BPartType`, order matches the enum.
 
-use super::{BPartSpec, BPartType};
+use super::BPartSpec;
+use super::BPartType;
 
 pub static SET: &[BPartSpec] = &[
     BPartSpec {
@@ -72,8 +73,44 @@ pub static SET: &[BPartSpec] = &[
         label: "Scrubbing",
     },
     BPartSpec {
+        kind: BPartType::Playback,
+        label: "Playback",
+    },
+    BPartSpec {
+        kind: BPartType::FrameRange,
+        label: "Frame Range",
+    },
+    BPartSpec {
+        kind: BPartType::ImageBlock,
+        label: "Image",
+    },
+    BPartSpec {
+        kind: BPartType::ActionTemplate,
+        label: "Action",
+    },
+    BPartSpec {
+        kind: BPartType::UvSelect,
+        label: "UV Selection",
+    },
+    BPartSpec {
+        kind: BPartType::UvTransform,
+        label: "UV Transform",
+    },
+    BPartSpec {
+        kind: BPartType::ImageDisplay,
+        label: "Image Display",
+    },
+    BPartSpec {
         kind: BPartType::Activity,
         label: "Activity",
+    },
+    BPartSpec {
+        kind: BPartType::CaptionLead,
+        label: "Window Controls",
+    },
+    BPartSpec {
+        kind: BPartType::CaptionTrail,
+        label: "Window Controls",
     },
     BPartSpec {
         kind: BPartType::Custom,

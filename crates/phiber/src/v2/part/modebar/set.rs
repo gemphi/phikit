@@ -4,6 +4,7 @@
 //! Mesh object at the top of `space_view3d.py` — other object types use
 //! subsets of these (Curve: Object/Edit; Empty/Camera: Object only).
 
+use crate::v2::state::{BKey as _, CtxKey};
 use crate::v2::host::BHostType;
 use crate::v2::part::BPartType;
 use crate::v2::spec::{BSpec, BSpecKind};
@@ -53,7 +54,6 @@ static OUTLINER: &[BModeSpec] = &[
     m("trash", "Orphan Data"),
 ];
 static IMAGE: &[BModeSpec] = &[m("image", "View"), m("brush", "Paint"), m("mask", "Mask")];
-static UV: &[BModeSpec] = &[m("uv", "View"), m("brush", "Paint"), m("mask", "Mask")];
 static SEQ: &[BModeSpec] = &[
     m("seq", "Sequencer"),
     m("image", "Preview"),
@@ -80,7 +80,6 @@ pub fn modes_for(host: BHostType) -> &'static [BModeSpec] {
         BHostType::View3D => VIEW3D,
         BHostType::Outliner => OUTLINER,
         BHostType::Image => IMAGE,
-        BHostType::Uv => UV,
         BHostType::Seq => SEQ,
         BHostType::Node | BHostType::Shader | BHostType::Compositor | BHostType::GeoNode => NODE,
         BHostType::Action => ACTION,
@@ -90,18 +89,22 @@ pub fn modes_for(host: BHostType) -> &'static [BModeSpec] {
     }
 }
 
-use crate::v2::state::{BPath, key::K_MODE, val::V_MODE_OBJECT};
+use crate::v2::state::{BPath, OutlinerKey, val::V_MODE_OBJECT};
 
 /// Which state key a host's mode dropdown writes.
 ///
 /// The Outliner's dropdown is a *display mode* selector, not an object-mode
 /// selector. Pointing it at `ctx.mode` made picking "Scenes" in the Outliner
 /// also drop the 3D viewport out of Object Mode, since both hosts read the
-/// same key.
+/// same key — and so did every other editor's: the Dope Sheet in the Action
+/// Editor put the viewport back in Object Mode. The object's mode is the
+/// 3D viewport's (`ctx.mode`); every other editor's mode is its own space's
+/// (`<host>.mode`: `SpaceAction.mode`, `SpaceImage.mode`, …).
 pub fn mode_key(host: BHostType) -> BPath {
     match host {
-        BHostType::Outliner => BPath::owned(vec!["outliner", "display_mode"]),
-        _ => K_MODE,
+        BHostType::Outliner => OutlinerKey::DisplayMode.path(),
+        BHostType::View3D => CtxKey::Mode.path(),
+        _ => BPath::owned(vec![host.slug(), "mode"]),
     }
 }
 

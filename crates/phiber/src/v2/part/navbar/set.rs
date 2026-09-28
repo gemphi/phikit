@@ -89,6 +89,10 @@ static BUTS_TABS: &[BNavTabSpec] = &[
 pub fn tabs_for(host: BHostType) -> &'static [BNavTabSpec] {
     match host {
         BHostType::Buts => BUTS_TABS,
+        // Preferences has a nav bar for the same reason Properties does: a
+        // column of contexts, one of which is showing. Its tabs come from the
+        // settings categories so the two can never drift apart.
+        BHostType::Prefs => crate::v2::modal::setting::NAV_TABS,
         _ => &[],
     }
 }

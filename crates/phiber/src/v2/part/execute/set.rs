@@ -7,6 +7,7 @@ use crate::v2::spec::{BSpec, BSpecKind};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BExecuteAction {
+    pub icon: &'static str,
     pub label: &'static str,
     pub primary: bool,
 }
@@ -18,15 +19,19 @@ impl BSpec for BExecuteAction {
     fn label(&self) -> &'static str {
         self.label
     }
+    fn icon(&self) -> &'static str {
+        self.icon
+    }
 }
 
-const fn a(label: &'static str, primary: bool) -> BExecuteAction {
-    BExecuteAction { label, primary }
+const fn a(icon: &'static str, label: &'static str, primary: bool) -> BExecuteAction {
+    BExecuteAction { icon, label, primary }
 }
 
-static FILE: &[BExecuteAction] = &[a("Cancel", false), a("Open File", true)];
-static ASSET: &[BExecuteAction] = &[a("Cancel", false), a("Import", true)];
-static PREFS: &[BExecuteAction] = &[a("Save Preferences", true)];
+static FILE: &[BExecuteAction] =
+    &[a("x", "Cancel", false), a("folder_open", "Open File", true)];
+static ASSET: &[BExecuteAction] = &[a("x", "Cancel", false), a("import", "Import", true)];
+static PREFS: &[BExecuteAction] = &[a("file_tick", "Save Preferences", true)];
 
 pub fn actions_for(host: BHostType) -> &'static [BExecuteAction] {
     match host {

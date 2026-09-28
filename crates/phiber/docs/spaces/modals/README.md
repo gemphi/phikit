@@ -5,10 +5,15 @@
 > store/state/view pattern as spaces but render in a modal layer on top.
 
 ```
-Modal (BModalType)
-  ├─ Settings  - preferences editor (categories sidebar + content)
-  ├─ Help      - help links + version info
-  └─ Profile   - account info + session actions
+Modal (BModalType)                     src/v2/modal/<name>/
+  ├─ Settings    - preferences editor (categories sidebar + content)
+  ├─ Help        - help links + version info
+  ├─ Profile     - account info + session actions
+  ├─ Command     - menu search / command palette (F3)
+  ├─ Splash      - welcome window (WM_MT_splash)          → welcome.md
+  ├─ About       - build facts + links (WM_MT_splash_about)
+  ├─ FileBrowser - Open / Save As / Import / Export …     → file_browser.md
+  └─ Render      - render result window (Image host)
 ```
 
 > **Note:** Host switching is NOT a modal. The `Switcher` is a menu part
@@ -103,6 +108,8 @@ App view layer                 → wraps in b_modal(), renders with entity
 - [settings.md](settings.md) - Settings modal full doc (categories, rows, Zed settings_ui comparison)
 - [help.md](help.md) - Help modal full doc
 - [profile.md](profile.md) - Profile modal full doc
+- [welcome.md](welcome.md) - Welcome (splash) window — Blender `WM_MT_splash` parity
+- [file_browser.md](file_browser.md) - File Browser modal + File / Asset editors (shared implementation)
 
 ---
 
@@ -112,3 +119,6 @@ App view layer                 → wraps in b_modal(), renders with entity
 - `bpy.types.SpacePreferences` - Preferences is a space type in Blender
 - `bpy.ops.screen.userpref_show` - `Edit → Preferences...` (Ctrl-Comma)
 - Blender treats Preferences as a **space type** (`SpacePreferences`) - same pattern as our modals
+- `scripts/startup/bl_operators/wm.py:3431` - `WM_MT_splash`, `:3496` `WM_MT_splash_about`
+- `scripts/startup/bl_ui/space_filebrowser.py` - File / Asset browser panels and menus
+- `editors/render/render_view.cc` - `render_view_open` (render result window)

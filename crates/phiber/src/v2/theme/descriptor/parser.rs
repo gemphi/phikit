@@ -6,8 +6,8 @@
 //! public surface via `mod parser;` at the top of `descriptor.rs`.
 
 use super::{
-    BColor, BResolvedUiStyle, BShadowStyle, BStyleChoice, BStyleDescriptor, BStyleParseError,
-    BStyleParser, BStyleValue, BUiStyleDefaults, SHADOW_CHOICES,
+    BColor, BFontFamily, BResolvedUiStyle, BShadowStyle, BStyleChoice, BStyleDescriptor,
+    BStyleParseError, BStyleParser, BStyleValue, BUiStyleDefaults, FONT_CHOICES, SHADOW_CHOICES,
 };
 
 impl BStyleParser {
@@ -32,11 +32,12 @@ impl BStyleParser {
                 _ => Err(BStyleParseError::Malformed),
             },
             Self::ColorHsla => parse_hsla(raw).map(BStyleValue::Color),
-            Self::Shadow => match raw {
-                "none" => Ok(BStyleValue::Shadow(BShadowStyle::None)),
-                "extra_large" => Ok(BStyleValue::Shadow(BShadowStyle::ExtraLarge)),
-                _ => Err(BStyleParseError::Malformed),
-            },
+            Self::Shadow => BShadowStyle::from_slug(raw)
+                .map(BStyleValue::Shadow)
+                .ok_or(BStyleParseError::Malformed),
+            Self::Font => BFontFamily::from_slug(raw)
+                .map(BStyleValue::Font)
+                .ok_or(BStyleParseError::Malformed),
         }
     }
 }
@@ -81,14 +82,15 @@ impl BStyleDescriptor {
             BStyleValue::Number(value) => value.to_string(),
             BStyleValue::Bool(value) => value.to_string(),
             BStyleValue::Color((h, s, l, a)) => format!("{h}, {s}, {l}, {a}"),
-            BStyleValue::Shadow(BShadowStyle::None) => "none".to_string(),
-            BStyleValue::Shadow(BShadowStyle::ExtraLarge) => "extra_large".to_string(),
+            BStyleValue::Shadow(shadow) => shadow.slug().to_string(),
+            BStyleValue::Font(family) => family.slug().to_string(),
         };
         (self.parse_and_validate(&encoded).ok() == Some(value)).then_some(encoded)
     }
     pub fn choices(&self) -> &'static [BStyleChoice] {
         match self.parser {
             BStyleParser::Shadow => SHADOW_CHOICES,
+            BStyleParser::Font => &FONT_CHOICES,
             _ => &[],
         }
     }

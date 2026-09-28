@@ -1,19 +1,20 @@
 //! Runtime regressions for the View3D fill chain and Properties accordion.
 
+use phiber::v2::state::{CtxKey};
 use gpui::{Modifiers, TestAppContext, px, size};
 use phiber::v2::app::BPhiberApp;
-use phiber::v2::host::{BHostType, host_slug};
+use phiber::v2::host::BHostType;
 use phiber::v2::part::BPartType;
-use phiber::v2::part::panel::BPanelList;
+use phiber::v2::part::props::BPanelList;
 use phiber::v2::space::{BSpaceItem, BSpaceType};
-use phiber::v2::state::{BState, V_FALSE, action::apply_action, key::K_SPACE};
+use phiber::v2::state::{BState, V_FALSE, action::apply_action};
 use phiber::v2::view::{BAction, BView, BViewItem, BViewList};
 
 fn select_view3d(state: &mut BState, space: BSpaceType) {
-    state.set(&K_SPACE, space.slug());
+    state.set(CtxKey::Space, space.slug());
     // The welcome window is seeded open on a fresh state; dismiss it so the
     // workspace under it is what these assertions see.
-    state.set(&phiber::v2::state::key::K_MODAL, "");
+    state.set(phiber::v2::state::ModalKey::Open, "");
     // Area slots are keyed per space and per slot, so the editor chosen for
     // Layout's centre area cannot leak into Shading's (see `v2::area::current`).
     for area in space
@@ -24,21 +25,21 @@ fn select_view3d(state: &mut BState, space: BSpaceType) {
     {
         state.set(
             &phiber::v2::area::area_key(space, area),
-            host_slug(BHostType::View3D),
+            BHostType::View3D.slug(),
         );
     }
 }
 
 fn has_view3d_custom_canvas(view: &BView) -> bool {
     let BView::Space {
-        children: zones, ..
+        list: zones, ..
     } = view
     else {
         return false;
     };
     zones.iter().any(|zone| {
         let BView::Zone {
-            children: areas, ..
+            list: areas, ..
         } = zone
         else {
             return false;
@@ -53,39 +54,37 @@ fn matches_view3d_area(view: &BView) -> bool {
     };
     let BView::Host {
         kind: BHostType::View3D,
-        children: regions,
+        list: regions,
     } = child.as_ref()
     else {
         return false;
     };
     regions.iter().any(|region| {
         matches!(region,
-            BView::Region { children: panes, .. } if panes.iter().any(|pane| matches!(pane,
-                BView::Pane { children: parts, .. } if parts.iter().any(|part| matches!(part,
+            BView::Region { list: panes, .. } if panes.iter().any(|pane| matches!(pane,
+                BView::Pane { list: parts, .. } if parts.iter().any(|part| matches!(part,
                     BView::Part { kind: BPartType::Custom, body }
-                        if matches!(body.as_ref(), BView::Canvas { host: BHostType::View3D })
+                        if matches!(body.as_ref(), BView::Canvas { host: BHostType::View3D, .. })
                 ))
             ))
         )
     })
 }
+/// The heading plus the rows under it.
 fn panel_children(state: &BState) -> usize {
     let items = BPanelList::new(BHostType::Buts).items(state);
-    let BView::Panel { children, .. } = &items[0] else {
+    let BView::Card(card) = &items[0] else {
         panic!("first section must be a card")
     };
-    children.len()
+    1 + if card.is_open() { card.body.len() } else { 0 }
 }
 
 fn panel_header_action(state: &BState) -> BAction {
     let items = BPanelList::new(BHostType::Buts).items(state);
-    let BView::Panel { children, .. } = &items[0] else {
+    let BView::Card(card) = &items[0] else {
         panic!("first section must be a card")
     };
-    let BView::AccordionHeader { action, .. } = &children[0] else {
-        panic!("first card child must be its focused accordion header")
-    };
-    action.clone()
+    card.fold.as_ref().expect("a Properties panel folds").flip()
 }
 
 #[test]
@@ -201,7 +200,7 @@ async fn rendered_full_width_heading_toggles_in_every_buts_space(cx: &mut TestAp
         let Some(area) = area else { continue };
         app.update(cx, |app, cx| {
             app.state = BState::new();
-            app.state.set(&K_SPACE, space.slug());
+            app.state.set(CtxKey::Space, space.slug());
             app.state
                 .set(&phiber::v2::area::area_key(space, area), "buts");
             cx.notify();
@@ -213,7 +212,7 @@ async fn rendered_full_width_heading_toggles_in_every_buts_space(cx: &mut TestAp
             panic!("accordion heading action")
         };
         let header_id: &'static str = Box::leak(
-            format!("accordion-header-{}", path.encode().replace('.', "-")).into_boxed_str(),
+            format!("card-head-{}", path.encode().replace('.', "-")).into_boxed_str(),
         );
         let header_bounds = cx
             .debug_bounds(header_id)
@@ -227,7 +226,7 @@ async fn rendered_full_width_heading_toggles_in_every_buts_space(cx: &mut TestAp
         cx.run_until_parked();
         let n_after = app.read_with(cx, |app, _| panel_children(&app.state));
         println!(
-            "{} panel children after title click: {}",
+            "{} panel list after title click: {}",
             space.slug(),
             n_after
         );

@@ -24,12 +24,15 @@ pub struct BMetric {
 
     /// Fixed heights: Blender header row = 26 px (HEADERY), footer = 21 px.
     pub h_header: f32,
+    /// Gap above a menu cap or tab (`BDimensions::menu_top_gap`).
+    pub menu_top_gap: f32,
     pub h_footer: f32,
     pub h_row: f32,
     pub h_button: f32,
     pub h_scrubbing: f32,    // Region::Scrubbing scrub strip
     pub h_asset_shelf: f32,  // Region::AssetShelf drawer
     pub h_bottom_strip: f32, // Zone::Bottom (Timeline + Statusbar)
+    pub h_banner: f32,       // the Welcome banner strip
 
     /// Fixed widths (Region and Area).
     pub w_activity: f32, // Phiber Activity Bar (44 px in V1).
@@ -90,12 +93,14 @@ pub static METRICS: BMetric = BMetric {
     pad_lg: DEFAULT_SPACING.pad_lg,
 
     h_header: DEFAULT_DIMENSIONS.header_height,
+    menu_top_gap: DEFAULT_DIMENSIONS.menu_top_gap,
     h_footer: DEFAULT_DIMENSIONS.footer_height,
     h_row: DEFAULT_DIMENSIONS.row_height,
     h_button: DEFAULT_DIMENSIONS.button_height,
     h_scrubbing: DEFAULT_DIMENSIONS.scrubbing_height,
     h_asset_shelf: DEFAULT_DIMENSIONS.asset_shelf_height,
     h_bottom_strip: DEFAULT_DIMENSIONS.bottom_strip_height,
+    h_banner: DEFAULT_DIMENSIONS.banner_height,
 
     w_activity: DEFAULT_DIMENSIONS.activity_width,
     w_toolbar: DEFAULT_DIMENSIONS.toolbar_width,
@@ -119,5 +124,5 @@ pub static METRICS: BMetric = BMetric {
     min_area_extent: DEFAULT_RESIZE.min_extent,
     resize_handle_hit_width: DEFAULT_RESIZE.hit_width,
     resize_snap_threshold: DEFAULT_RESIZE.snap_threshold,
-    resize_seam_thickness: DEFAULT_RESIZE.visible_seam,
+    resize_seam_thickness: DEFAULT_RESIZE.rest_thickness(),
 };

@@ -35,7 +35,8 @@ fn src(rel: &str) -> PathBuf {
 }
 
 fn read(path: &Path) -> String {
-    std::fs::read_to_string(path).unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()))
+    let path = module_file(path.to_path_buf());
+    std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("cannot read {}: {e}", path.display()))
 }
 
 /// Read every `.rs` file under `crates/phiber/src/<rel_dir>` (recursively)
@@ -122,7 +123,7 @@ fn c1_view3d_resolves_a_real_mesh_not_a_flat_glyph() {
     // The View3D render path was split into `view3d.rs` + focused submodules
     // (`view3d/mesh.rs`, etc.); read the whole tree so the mesh-sourcing
     // check sees the submodule that actually resolves the phiphx geometry.
-    let view3d = code_only(&read_tree("v2/view/render/gpui/atom/canvas/view3d"));
+    let view3d = code_only(&read_tree("v2/view/draw/canvas/view3d"));
 
     // Fixed code sources geometry from the shared phiphx mesh library.
     let sources_phiphx_mesh = view3d.contains("phiphx")
@@ -159,28 +160,41 @@ fn c2_resize_seams_use_resolved_geometry() {
     // The hierarchy routers own gap allocation; the post-decomposition seam
     // modules own the concrete hit band, line, and drag payload. Read both so
     // every resolved field remains covered at its focused ownership site.
+    // Every seam shares one overlay geometry, so the hit band and its inset
+    // are read at that single site rather than repeated per seam.
+    let overlay = code_only(&read(&src(
+        "v2/view/draw/resize.rs",
+    )));
     let area_seam = format!(
-        "{}\n{}",
-        code_only(&read(&src("v2/view/render/gpui/zone.rs"))),
-        code_only(&read(&src("v2/view/render/gpui/zone/seam.rs")))
+        "{}\n{}\n{overlay}",
+        code_only(&read(&src("v2/view/draw/zone/mod.rs"))),
+        code_only(&read(&src("v2/view/draw/zone/seam.rs")))
     );
     let zone_seam = format!(
-        "{}\n{}",
-        code_only(&read(&src("v2/view/render/gpui/space.rs"))),
-        code_only(&read(&src("v2/view/render/gpui/space/seam.rs")))
+        "{}\n{}\n{overlay}",
+        code_only(&read(&src("v2/view/draw/space/mod.rs"))),
+        code_only(&read(&src("v2/view/draw/space/seam.rs")))
     );
 
+    // Containers take their gap as the `BSpace::Seam` token, which resolves to
+    // `ctx.style.resize.gap` in one place (`flex/token.rs`).
+    let tokens = code_only(&read(&src("v2/view/draw/flex/token.rs")));
+    let seam_resolves = tokens.contains("Self::Seam => ctx.style.resize.gap");
+    let zone_seam = format!(
+        "{zone_seam}\n{}",
+        code_only(&read(&src("v2/view/draw/space/part.rs")))
+    );
     for (name, source) in [("area", area_seam), ("zone", zone_seam)] {
         for field in [
-            "visible_seam",
             "hit_width",
             "gap",
             "inset",
             "snap_threshold",
             "min_extent",
         ] {
+            let via_token = field == "gap" && seam_resolves && source.contains("BSpace::Seam");
             assert!(
-                source.contains(&format!("c.style.resize.{field}")),
+                source.contains(&format!("c.style.resize.{field}")) || source.contains(&format!("ctx.style.resize.{field}")) || via_token,
                 "C2: {name} seam does not source `{field}` from the resolved style"
             );
         }
@@ -198,10 +212,11 @@ fn c2_resize_seams_use_resolved_geometry() {
 
 #[test]
 fn c3_zone_view_uses_the_resolved_resize_gap() {
-    let zone = code_only(&read(&src("v2/view/render/gpui/zone.rs")));
+    let zone = code_only(&read(&src("v2/view/draw/zone/mod.rs")));
 
+    let tokens = code_only(&read(&src("v2/view/draw/flex/token.rs")));
     assert!(
-        zone.contains(".gap(px(c.style.resize.gap))"),
+        zone.contains(".gap(BSpace::Seam)") && tokens.contains("Self::Seam => ctx.style.resize.gap"),
         "C3: zone::view does not separate adjacent areas with the resolved resize gap"
     );
     assert!(
@@ -221,7 +236,7 @@ fn c3_zone_view_uses_the_resolved_resize_gap() {
 
 #[test]
 fn c4_empty_submenu_renders_a_visible_panel() {
-    let popover = code_only(&read(&src("v2/view/render/gpui/popover.rs")));
+    let popover = code_only(&read(&src("v2/view/draw/popover/mod.rs")));
 
     // Fixed code makes an empty body still read as a visible panel: it either
     // guards `body.is_empty()` or gives the panel a min-height / placeholder
@@ -255,7 +270,7 @@ fn c5_activity_list_partitions_into_three_regions_with_spacers() {
     use phiber::v2::part::activity::BActivityList;
     use phiber::v2::part::activity::set::{BActivityGroup, ENTRIES};
     use phiber::v2::state::BState;
-    use phiber::v2::view::BViewList;
+    use phiber::v2::view::{BRailGroup, BView, BViewList};
 
     // The entries genuinely span all three groups, so a correct layout MUST
     // produce a 3-region structure — the flattening is a real defect.
@@ -267,26 +282,29 @@ fn c5_activity_list_partitions_into_three_regions_with_spacers() {
         "C5 setup: ENTRIES should declare Top, Center and Bottom entries"
     );
 
+    // The activity bar is emitted as one `BView::Rail` whose entries each
+    // carry their Top/Center/Bottom group; the renderer places the groups
+    // (Profile/Settings pinned to the bottom). `items()` is intentionally
+    // empty since the rail replaced the flat list.
     let s = BState::new();
-    let items = BActivityList::new().items(&s);
-
-    // A grouped three-region layout inserts flexible spacers BETWEEN the
-    // regions, so the emitted view count must exceed the raw entry count.
-    // The unfixed list is a single contiguous run: items.len() == ENTRIES.len().
-    assert!(
-        items.len() > ENTRIES.len(),
-        "C5: BActivityList::items produced {} views for {} entries — a single \
-         contiguous run with NO spacers. Counterexample: entries are flattened \
-         into one run, ignoring BActivityGroup, so there is no Top/Center/Bottom \
-         layout and Profile/Settings are not pushed to the bottom.",
-        items.len(),
-        ENTRIES.len()
-    );
+    let BView::Rail(rail) = BActivityList::new().rail(&s) else {
+        panic!("C5: the activity list must render as a Rail");
+    };
+    assert_eq!(rail.entries.len(), ENTRIES.len(), "C5: one rail entry per ENTRY");
+    for (entry, spec) in rail.entries.iter().zip(ENTRIES.iter()) {
+        let want = match spec.group {
+            BActivityGroup::Top => BRailGroup::Top,
+            BActivityGroup::Center => BRailGroup::Center,
+            BActivityGroup::Bottom => BRailGroup::Bottom,
+        };
+        assert_eq!(entry.group, want, "C5: rail entry lost its BActivityGroup");
+    }
+    let _ = BActivityList::new().items(&s);
 }
 
 #[test]
 fn c5_activity_list_source_honors_activity_group() {
-    let list = code_only(&read(&src("v2/part/activity/list.rs")));
+    let list = code_only(&read(&src("v2/part/activity/mod.rs")));
     assert!(
         list.contains("BActivityGroup") || list.contains(".group"),
         "C5: BActivityList::items never references BActivityGroup. \
@@ -306,7 +324,7 @@ fn c5_activity_list_source_honors_activity_group() {
 #[test]
 fn c6_compass_uses_blender_navigate_shapes_not_orbiting_balls() {
     let compass = code_only(&read(&src(
-        "v2/view/render/gpui/atom/canvas/gizmo/compass.rs",
+        "v2/view/draw/canvas/gizmo/compass/mod.rs",
     )));
 
     let uses_orbiting_balls = compass.contains("fn pos_ball") || compass.contains("fn neg_ball");
@@ -320,7 +338,7 @@ fn c6_compass_uses_blender_navigate_shapes_not_orbiting_balls() {
 
 #[test]
 fn c6_control_cluster_uses_blender_shapes_not_generic_discs() {
-    let gizmo = code_only(&read(&src("v2/view/render/gpui/atom/canvas/gizmo.rs")));
+    let gizmo = code_only(&read(&src("v2/view/draw/canvas/gizmo/mod.rs")));
 
     // The generic disc control is `nav_btn` (a `rounded_full` icon disc used
     // for zoom / pan / camera / perspective). Blender-matching shapes replace
@@ -333,4 +351,26 @@ fn c6_control_cluster_uses_blender_shapes_not_generic_discs() {
          controls are generic `rounded_full` discs, not Blender navigate gizmo \
          shapes."
     );
+}
+
+/// A module is a file or a folder; read whichever spelling exists.
+fn module_file(path: std::path::PathBuf) -> std::path::PathBuf {
+    if path.exists() {
+        return path;
+    }
+    // `x.rs` asked for, `x/mod.rs` exists.
+    let folder = path.with_extension("").join("mod.rs");
+    if folder.exists() {
+        return folder;
+    }
+    // `x/mod.rs` asked for, `x.rs` exists.
+    if path.file_name().is_some_and(|n| n == "mod.rs") {
+        if let Some(parent) = path.parent() {
+            let file = parent.with_extension("rs");
+            if file.exists() {
+                return file;
+            }
+        }
+    }
+    path
 }

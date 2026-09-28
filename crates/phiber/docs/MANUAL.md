@@ -259,13 +259,16 @@ Modals open on top of the active space by setting `ctx.modal`.
 | Help         | `v2/modal/help/`                    | `ctx.modal = "help"`     | Help menu items                    |
 | Profile      | `v2/modal/profile/`                 | `ctx.modal = "profile"`  | Phiber-native                      |
 | Command      | `v2/modal/command/`                 | `ctx.modal = "command"`  | F3 Menu Search / Operator Search   |
-| Splash       | `v2/modal/`                         | `ctx.modal = "splash"`   | Splash screen at startup           |
-| About        | `v2/modal/`                         | `ctx.modal = "about"`    | Blender menu > About Blender       |
-| FileBrowser  | `v2/modal/file_browser/`            | `ctx.modal = "file_browser"` | File > Open / Save As / Import / Export |
+| Splash       | `v2/modal/splash/`                  | `ctx.modal = "splash"`   | `WM_MT_splash` (welcome window)    |
+| About        | `v2/modal/about/`                   | `ctx.modal = "about"`    | Phiber menu > About Phiber (`WM_MT_splash_about`) |
+| FileBrowser  | `v2/modal/file_browser/`            | `ctx.modal = "file_browser"` or `ctx.file.purpose = <job>` | File > Open / Save As / Import / Export |
+| Render       | `v2/modal/render/`                  | `ctx.modal = "render"`   | Render > Render Image (F12) window |
 
-FileBrowser reuses the sidebar / column / filter / navigation sets from
-`v2/part/custom/file/set.rs` — same widget, two entry points (host area or
-modal overlay).
+FileBrowser and the File / Asset editors are **one implementation**:
+`v2/part/custom/file/{header,path_bar,sidebar,asset_sidebar,execute,table}.rs`;
+`v2/modal/file_browser/*` only re-exports them. Details:
+[spaces/modals/file_browser.md](./spaces/modals/file_browser.md),
+[spaces/modals/welcome.md](./spaces/modals/welcome.md), [modals.md](./modals.md).
 
 Overlay wiring: `v2/space/list.rs` reads `ctx.modal` and emits the modal
 as a sibling `BView` alongside the active space.
@@ -363,27 +366,32 @@ Phiber will need an equivalent under `crates/phiber/assets/icons/`.
 
 Honest gap analysis:
 
-- [ ] **Renderer**: `v2/view/render/{space,zone,area,host,region,pane,part}.rs`
-      files that map `BView::<kind>` to GPUI elements. Empty today.
-- [ ] **Icon atlas**: a resolver for the icon strings in the sets — SVG
-      files or a packed atlas keyed by the names in `sidebar/set.rs`,
-      `toolbar/set.rs`, `menubar/set.rs`, etc.
-- [ ] **Real widget bodies**: `part/custom/<host>/item.rs` currently emits
-      `BView::label("3D Viewport")` placeholders. Real content needs the
-      scene bridge and drawing code.
-- [ ] **Wire `pub mod v2;` into `crates/phiber/src/lib.rs`** and run
-      `cargo check` to catch any linkage gaps.
-- [ ] **Bootstrap**: `crates/phiber/src/main.rs` opens a GPUI window and
-      renders `BSpaceList::new().items(&state)` on the root view.
+- [x] **Renderer**: `v2/view/render/gpui/{space,zone,area,host,region,pane,part}.rs`
+      plus `prim/`, `atom/`, `modal/`, `surface/` map every `BView` kind to GPUI.
+- [x] **Icon atlas**: `view/render/gpui/atom.rs::icon_path` resolves set icon
+      names to `assets/icons/<name>.svg` (406 SVGs). New sets must use names
+      that exist there — the 2026-09-16 pass fixed 12 dangling ones.
+- [x] **Real widget bodies**: `part/custom/<host>/` renders real content for
+      File / Asset, Outliner, 3D Viewport (CPU mesh painter), Properties,
+      Timeline, Spreadsheet, Text, Node, Image; `time/item.rs` still has
+      placeholder rows.
+- [x] **`pub mod v2;`** is wired in `src/lib.rs`; `cargo check -p phiber --tests` is clean.
+- [x] **Bootstrap**: `main.rs → app::run()` opens the window with
+      `v2::app::BPhiberApp` as the root view.
 
-Once those five are done, `cargo run -p phiber` on Windows will open a
-Layout workspace showing all wired parts.
+`cargo run -p phiber` opens the Layout workspace with the welcome window.
+What remains for Blender parity is tracked in
+[blend-read-parity.md](./blend-read-parity.md) (file reading, outliner,
+viewport, shaders) — status section §0.
 
 ---
 
 ## 17. Cross-references
 
 - [Composition Hierarchy — the ≤60 line rule](./composition-hierarchy.md)
+- [.blend reading & Blender parity — gaps, status, next steps](./blend-read-parity.md)
+- [Modals](./modals.md) · [Welcome window](./spaces/modals/welcome.md) · [File Browser](./spaces/modals/file_browser.md)
+- `.blend` reader crate: `crates/phiphx` ([importer/blend/README.md](../../phiphx/src/importer/blend/README.md))
 - [Layout Space Mock](./spaces/layout/mock.md)
 - Blender manual root: [`docs/blender-manual/manual/index.rst`](./blender-manual/manual/index.rst)
 - Blender source root: `phiace/REFS/blender/blender/source/blender/`

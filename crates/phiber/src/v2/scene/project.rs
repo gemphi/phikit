@@ -52,9 +52,8 @@ pub fn project3(x: f32, up: f32, z: f32, yaw_deg: f32, zoom: f32) -> (f32, f32, 
     (screen_x * zoom, screen_y * zoom, rz)
 }
 
-/// Full 3D projection that honours yaw, pitch, pan, and zoom. When `pitch`
-/// and `pan` are zero this is exactly equivalent to [`project3`], so
-/// existing call sites can migrate incrementally.
+/// Full 3D projection through the viewport camera (`camera.rs`): a real
+/// orbit view (yaw, pitch, pivot), orthographic or perspective.
 ///
 /// Pitch tilts the view about the horizontal axis: +pitch pushes the ground
 /// plane down on screen (looking down onto it), which matches Blender's
@@ -70,24 +69,7 @@ pub fn project3_full(
     pan: (f32, f32),
     zoom: f32,
 ) -> (f32, f32, f32) {
-    let yaw = yaw_deg.to_radians();
-    let (sy, cy) = (yaw.sin(), yaw.cos());
-    // Yaw first: rotate the ground plane about the vertical axis.
-    let rx = x * cy - z * sy;
-    let rz_yaw = x * sy + z * cy;
-
-    // Pitch: rotate the (up, rz_yaw) plane. +pitch tips the top of the view
-    // toward the camera (looking down), so the depth axis lifts on screen.
-    let pitch = pitch_deg.to_radians();
-    let (sp, cp) = (pitch.sin(), pitch.cos());
-    let up_p = up * cp - rz_yaw * sp;
-    let rz = up * sp + rz_yaw * cp;
-
-    // Ground-plane screen offset with the pitched depth compression.
-    let screen_x = rx * 0.42;
-    let screen_y = rz * 0.28 - 0.04 - up_p * 0.42;
-
-    ((screen_x * zoom) + pan.0, (screen_y * zoom) + pan.1, rz)
+    super::camera::view_project(x, up, z, yaw_deg, pitch_deg, pan, zoom)
 }
 
 /// Below this, a mesh's largest axis extent is treated as degenerate (a

@@ -2,10 +2,10 @@
 //! Validates: Requirements 9.3, 9.4, 9.5.
 
 use phiber::v2::{
-    part::panel::prefs::{BPreferenceControls, BPreferenceEditor, BPreferenceRow, SECTIONS},
+    part::props::pref::{BPreferenceControls, BPreferenceEditor, BPreferenceRow, SECTIONS},
     state::{BState, action::apply_action},
     theme::{
-        BPaletteName, BShadowStyle, BStyleParser, BStyleValue, UI_STYLE_DESCRIPTORS,
+        BFontFamily, BPaletteName, BShadowStyle, BStyleParser, BStyleValue, UI_STYLE_DESCRIPTORS,
         resolve_ui_style, ui_style_defaults,
     },
     view::BAction,
@@ -41,6 +41,7 @@ fn generated_value(
         } else {
             BShadowStyle::None
         }),
+        BStyleParser::Font => BStyleValue::Font(if extra_large_shadow { BFontFamily::Menlo } else { BFontFamily::System }),
     }
 }
 
@@ -64,34 +65,11 @@ fn display_matches(controls: BPreferenceControls, row: BPreferenceRow, value: BS
     }
 }
 
-fn prepare_state(
-    row: BPreferenceRow,
-    value: BStyleValue,
-    state: &mut BState,
-    defaults: &phiber::v2::theme::BUiStyleDefaults,
-) {
+fn prepare_state(row: BPreferenceRow, value: BStyleValue, state: &mut BState) {
     if let BStyleValue::Bool(flag) = value {
         state.set(row.key(), (!flag).to_string());
     }
 
-    // A generated hit width below the default seam is valid on its own but is
-    // normalized as a conflicting pair. Keep the companion seam compatible so
-    // this property observes the exact value committed by the Preferences UI.
-    if row.target() == "resize.hit_width" {
-        let BStyleValue::Number(hit_width) = value else {
-            unreachable!("resize.hit_width must be numeric")
-        };
-        let seam = UI_STYLE_DESCRIPTORS
-            .iter()
-            .find(|descriptor| descriptor.target == "resize.visible_seam")
-            .expect("visible seam descriptor must exist");
-        let seam_value = BStyleValue::Number(defaults.resize.visible_seam.min(hit_width));
-        state.set(
-            seam.key,
-            seam.format_value(seam_value)
-                .expect("compatible seam must be canonical"),
-        );
-    }
 }
 
 proptest! {
@@ -132,7 +110,7 @@ proptest! {
                 .format_value(value)
                 .expect("generated value must pass descriptor validation");
             let mut state = BState::new();
-            prepare_state(row, value, &mut state, defaults);
+            prepare_state(row, value, &mut state);
 
             let controls = BPreferenceControls::for_row(row, &state, defaults);
             let edit = match controls.editor {

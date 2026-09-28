@@ -1,6 +1,6 @@
 //! End-to-end loading tests for real `.blend` example meshes.
 //!
-//! Drives `crate::phiphx::services::scene::load_blend_scene` — the exact entry
+//! Drives `crate::phiphx::Phx::open` — the exact entry
 //! point the Viewport/Outliner pipeline uses — over two fixture sets that ship
 //! in the workspace:
 //!
@@ -17,7 +17,8 @@
 
 use std::path::{Path, PathBuf};
 
-use phiber::phiphx::services::scene::{SceneModel, SceneNormals, load_blend_scene};
+use phiber::phiphx::Phx;
+use phiber::phiphx::scene::{SceneModel, SceneNormals};
 
 /// Root of Blender's upstream test files inside REFS (relative to the phiber
 /// crate manifest dir). Optional — tests skip when it is absent.
@@ -78,7 +79,7 @@ fn assert_scene_invariants(model: &SceneModel, label: &str) {
 /// — the loader itself must never panic (Requirement 2.4).
 fn load_and_report(path: &Path) -> Option<(usize, usize)> {
     let label = path.file_name().unwrap().to_string_lossy().to_string();
-    match load_blend_scene(path) {
+    match Phx::open(path) {
         Ok(model) => {
             assert_scene_invariants(&model, &label);
             let objs = model.objects.len();
@@ -159,7 +160,7 @@ fn simple_scene_fixture_yields_real_geometry() {
         eprintln!("skip: {} not present", path.display());
         return;
     }
-    let model = load_blend_scene(&path).expect("usd_simple_scene.blend must load");
+    let model = Phx::open(&path).expect("usd_simple_scene.blend must load");
     assert_scene_invariants(&model, "usd_simple_scene.blend");
     let verts: usize = model.objects.iter().map(|o| o.mesh.vertices.len()).sum();
     let tris: usize = model.objects.iter().map(|o| o.mesh.indices.len() / 3).sum();
@@ -221,7 +222,7 @@ fn cw_fashion_example_meshes_load() {
             continue;
         }
         attempted += 1;
-        // load_blend_scene wraps the native parse in catch_unwind and maps a
+        // Phx::open wraps the native parse in catch_unwind and maps a
         // panic to Err(Malformed), so a problematic file surfaces as an error
         // rather than aborting the test process (Requirement 2.4).
         if load_and_report(path).is_some() {

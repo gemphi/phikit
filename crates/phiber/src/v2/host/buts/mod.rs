@@ -1,50 +1,19 @@
-//! Properties (Buts) host — region declarations only. Widget content lives in
-//! `part::custom::buts`. Blender ref: `editors/space_buttons/space_buttons.cc`.
+//! Controls/Inspector host (Blender's Properties editor). Structure only: what the host *is*, and where its
+//! content lives. The regions, panes and parts are in `set.rs`, and the
+//! widgets they name are in `part::`.
 
-use crate::v2::pane::{BPaneSpec, BPaneType};
-use crate::v2::part::BPartType;
-use crate::v2::region::{BRegionSpec, BRegionType};
+pub mod set;
 
-static HEADER_PANES: &[BPaneSpec] = &[
-    BPaneSpec {
-        kind: BPaneType::Left,
-        parts: &[BPartType::Menubar],
-    },
-    BPaneSpec {
-        kind: BPaneType::Center,
-        parts: &[BPartType::Modebar],
-    },
-    BPaneSpec {
-        kind: BPaneType::Right,
-        parts: &[BPartType::Switcher],
-    },
-];
-// The context tabs live in their own NavBar *region* (not a pane inside the
-// Center region) so they pick up `strip_bg` — the darker vertical rail — and
-// the region walker's Column axis for a proper icon stack. Blender draws the
-// Properties `RGN_TYPE_NAV_BAR` as a distinct left rail exactly this way.
-static NAVBAR_PANES: &[BPaneSpec] = &[
-    BPaneSpec {
-        kind: BPaneType::Center,
-        parts: &[BPartType::NavBar],
-    }, // 15 context tabs
-];
-static CENTER_PANES: &[BPaneSpec] = &[BPaneSpec {
-    kind: BPaneType::Center,
-    parts: &[BPartType::Panel],
-}];
+use crate::v2::host::{BHostSpec, BHostType};
 
-pub static REGIONS: &[BRegionSpec] = &[
-    BRegionSpec {
-        kind: BRegionType::Header,
-        panes: HEADER_PANES,
-    },
-    BRegionSpec {
-        kind: BRegionType::NavBar,
-        panes: NAVBAR_PANES,
-    },
-    BRegionSpec {
-        kind: BRegionType::Center,
-        panes: CENTER_PANES,
-    },
-];
+pub use set::REGIONS;
+
+/// Key used for this host inside a `BPath`.
+pub const SLUG: &str = "buts";
+
+pub static SPEC: BHostSpec = BHostSpec {
+    kind: BHostType::Buts,
+    label: "Controls/Inspector",
+    icon: "properties",
+    regions: set::REGIONS,
+};

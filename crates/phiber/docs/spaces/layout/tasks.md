@@ -1,5 +1,16 @@
 # Layout Space - Implementation Tasks
 
+> **Status (2026-09-16): historical plan.** This checklist targeted the
+> pre-v2 `buikit` + `store/` / `state/` layout. `crates/buikit` has been
+> deleted and the work was re-done in `crates/phiber/src/v2`, where the
+> outcomes these phases aimed for exist: `BSpaceType`, `BZoneType`,
+> `BHostType` (28 hosts), `BRegionType` (Header / Center / Footer plus
+> Blender's Tools, UI, ToolProps, AssetShelf, Channels, HUD, NavBar,
+> Execute, Scrubbing…), `BPaneType`, `BPartType`, host-scoped menus, the
+> Switcher part and the modal layer (8 modals). Items below are left
+> unticked because they name files that no longer exist — do not use this
+> list to plan new work; use `MANUAL.md` and `blend-read-parity.md` §0.
+
 > **Blender references:**
 > - `space_api/spacetypes.c` - `ED_spacetypes_init()` registration flow
 > - `BKE_screen.h` - `SpaceType`, `ARegionType` struct definitions

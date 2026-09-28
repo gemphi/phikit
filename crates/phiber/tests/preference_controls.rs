@@ -2,7 +2,7 @@
 //! Validates: Requirements 9.1-9.5, 10.1-10.3.
 
 use phiber::v2::{
-    part::panel::prefs::{BPreferenceControls, BPreferenceEditor, BPreferenceRow, SECTIONS},
+    part::props::pref::{BPreferenceControls, BPreferenceEditor, BPreferenceRow, SECTIONS},
     state::{BState, action::apply_action},
     theme::{BPaletteName, BStyleParseError, ui_style_defaults},
     view::{BAction, BView},
@@ -26,7 +26,7 @@ fn set_value(action: BAction, expected_row: BPreferenceRow) -> String {
 
 #[test]
 fn number_field_accepts_display_units_and_exposes_b_step_controls() {
-    let defaults = ui_style_defaults(BPaletteName::BlenderDark);
+    let defaults = ui_style_defaults(BPaletteName::Graphite);
     let row = row("radii.xs");
     let mut state = BState::new();
     state.set(row.key(), "23");
@@ -40,27 +40,27 @@ fn number_field_accepts_display_units_and_exposes_b_step_controls() {
     assert_eq!(set_value(field.decrease_action(), row), "22");
     assert_eq!(set_value(field.increase_action(), row), "24");
 
-    let BView::Row { children } = controls.view() else {
+    let BView::Row { list } = controls.view() else {
         panic!("B controls must compose as a BView row")
     };
-    assert!(matches!(&children[0], BView::Field { text } if text == "23 px"));
+    assert!(matches!(&list[0], BView::Field { text } if text == "23 px"));
     assert!(
-        matches!(&children[1], BView::Button(ctl)
+        matches!(&list[1], BView::Button(ctl)
             if matches!(&ctl.action, Some(BAction::Set(key, value)) if key == row.key() && value == "22"))
     );
     assert!(
-        matches!(&children[2], BView::Button(ctl)
+        matches!(&list[2], BView::Button(ctl)
             if matches!(&ctl.action, Some(BAction::Set(key, value)) if key == row.key() && value == "24"))
     );
     assert!(
-        matches!(&children[3], BView::Button(ctl)
+        matches!(&list[3], BView::Button(ctl)
             if matches!(&ctl.action, Some(BAction::Reset(key)) if key == row.key()))
     );
 }
 
 #[test]
 fn fractional_and_color_fields_step_within_descriptor_bounds() {
-    let defaults = ui_style_defaults(BPaletteName::BlenderDark);
+    let defaults = ui_style_defaults(BPaletteName::Graphite);
     let mut state = BState::new();
 
     let fractional = row("effects.gradient_lift");
@@ -87,7 +87,7 @@ fn fractional_and_color_fields_step_within_descriptor_bounds() {
 
 #[test]
 fn selector_toggle_and_reset_use_the_canonical_action_reducer() {
-    let defaults = ui_style_defaults(BPaletteName::BlenderDark);
+    let defaults = ui_style_defaults(BPaletteName::Graphite);
     let mut state = BState::new();
 
     let shadow = row("effects.surface_shadow");
@@ -125,7 +125,7 @@ fn selector_toggle_and_reset_use_the_canonical_action_reducer() {
 
 #[test]
 fn malformed_override_displays_effective_default_but_remains_resettable() {
-    let defaults = ui_style_defaults(BPaletteName::AppleDark);
+    let defaults = ui_style_defaults(BPaletteName::Sphere);
     let row = row("radii.xs");
     let mut state = BState::new();
     state.set(row.key(), "not-a-number");

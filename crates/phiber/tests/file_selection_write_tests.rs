@@ -11,7 +11,7 @@
 use phiber::{
     v2::app::import::should_import,
     v2::scene::selected_key,
-    v2::state::{BState, BPath},
+    v2::state::{BState},
     v2::state::action::apply_action,
     v2::view::prim::BAction,
 };

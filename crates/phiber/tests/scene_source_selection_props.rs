@@ -8,7 +8,7 @@
 //! `m.objects.len()` items all as `BObject3D::Loaded` in the same name order.
 
 use phiber::{
-    phiphx::services::scene::{SceneMesh, SceneModel, SceneNormals, SceneObject},
+    phiphx::scene::{SceneMesh, SceneModel, SceneNormals, SceneObject},
     v2::scene::{BObject3D, OBJECTS, current_scene},
     v2::state::BState,
 };
@@ -22,12 +22,14 @@ fn scene_obj(name: impl Into<String>) -> SceneObject {
             vertices: vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
             indices: vec![0, 1, 2],
             normals: SceneNormals::PerFace(vec![[0.0, 0.0, 1.0]]),
-        },
+            corners: Default::default(),
+        }.into(),
         location: [0.0, 0.0, 0.0],
         scale: [1.0, 1.0, 1.0],
+        matrix_world: phiber::phiphx::scene::IDENTITY_M4,
         materials: Vec::new(),
-        material_indices: Vec::new(),
-        uvs: Vec::new(),
+        material_indices: Default::default(),
+        uvs: Default::default(),
     }
 }
 

@@ -1,20 +1,24 @@
 //! Layout gutters — the horizontal rhythm every band in the app shares.
 //!
-//! Two constants govern it (see `render::gpui::prim`):
-//!   • `surface_gutter` = `pad_md` — panel edge → the controls it contains.
-//!   • `text_gutter`    = `pad_md + pad_sm` — panel edge → *text*, since a
-//!     heading's title is a Button carrying its own `pad_sm` while a property
-//!     row's label is a bare Label carrying none.
+//! Three constants govern it (see `draw::prim::columns::style`):
+//!   • `surface_gutter` = `pad_md` — panel edge → the text in its strips.
+//!   • `row_inset`      = `pad_sm` — a row's own edge → its text.
+//!   • `content_inset`  = `surface_gutter - row_inset` — a card's edge → the
+//!     rows it holds, so the two add back up to `surface_gutter`.
 //!
-//! These tests pin the two things a reader actually notices: an accordion
-//! heading's title and the row labels under it start in the same column, and
-//! the row values end under the heading's chevron.
+//! These tests pin the two things a reader actually notices, laid out as
+//! Blender lays out a panel (`panel_draw_aligned_widgets`): the row labels
+//! start in the column of the heading's fold triangle (the heading's first
+//! glyph, at the left), and the row values end under its grip (its last
+//! glyph, at the right).
 
+use phiber::v2::state::{BKey as _, CtxKey};
+use phiber::v2::state::ButsKey;
 use gpui::{Modifiers, TestAppContext, px, size};
 use phiber::v2::app::BPhiberApp;
 use phiber::v2::host::BHostType;
 use phiber::v2::space::BSpaceType;
-use phiber::v2::state::{BPath, BState, key::K_SPACE};
+use phiber::v2::state::{BState};
 use phiber::v2::theme::{BPaletteName, METRICS, resolve_ui_style, ui_style_defaults};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -64,46 +68,45 @@ async fn layout(cx: &mut TestAppContext) -> &mut gpui::VisualTestContext {
     cx.simulate_resize(size(px(1280.0), px(800.0)));
     app.update(cx, |app, cx| {
         app.state = BState::new();
-        app.state.set(&K_SPACE, BSpaceType::Layout.slug());
+        app.state.set(CtxKey::Space, BSpaceType::Layout.slug());
         cx.notify();
     });
     cx.run_until_parked();
     cx
 }
 
+/// The heading's first and last glyph: the fold triangle and the grip.
 fn header_ids() -> (&'static str, &'static str) {
     let key = "ctx-buts-active_tool-active_tool-expanded";
     (
-        Box::leak(format!("accordion-title-{key}").into_boxed_str()),
-        Box::leak(format!("accordion-disclosure-{key}").into_boxed_str()),
+        Box::leak(format!("card-fold-{key}").into_boxed_str()),
+        Box::leak(format!("card-grip-{key}").into_boxed_str()),
     )
 }
 
 #[gpui::test]
-async fn heading_title_and_row_labels_share_a_column(cx: &mut TestAppContext) {
+async fn heading_triangle_and_row_labels_share_a_column(cx: &mut TestAppContext) {
     let cx = layout(cx).await;
-    let (title_id, _) = header_ids();
-    let title = bounds(cx, title_id);
-    let row = bounds(cx, "section-Tool");
+    let (fold_id, _) = header_ids();
+    let fold = bounds(cx, fold_id);
+    let label = bounds(cx, "section-Tool-label");
 
     assert_eq!(
-        title.x - row.x,
-        METRICS.pad_md,
-        "heading title and property labels must start in the same column"
+        label.x, fold.x,
+        "the heading's fold triangle and the property labels start in the same column"
     );
 }
 
 #[gpui::test]
-async fn row_values_end_under_the_heading_chevron(cx: &mut TestAppContext) {
+async fn row_values_end_under_the_heading_grip(cx: &mut TestAppContext) {
     let cx = layout(cx).await;
-    let (_, chevron_id) = header_ids();
-    let chevron = bounds(cx, chevron_id);
-    let row = bounds(cx, "section-Tool");
+    let (_, grip_id) = header_ids();
+    let grip = bounds(cx, grip_id);
+    let value = bounds(cx, "section-Tool-value");
 
     assert_eq!(
-        row.right - chevron.right,
-        METRICS.pad_md,
-        "a property row's value must end where the heading's chevron does"
+        value.right, grip.right,
+        "a property row's value must end where the heading's grip does"
     );
 }
 
@@ -113,7 +116,7 @@ async fn properties_rail_tab_state_changes_only_paint(cx: &mut TestAppContext) {
     cx.simulate_resize(size(px(1280.0), px(800.0)));
     app.update(cx, |app, cx| {
         app.state = BState::new();
-        app.state.set(&K_SPACE, BSpaceType::Layout.slug());
+        app.state.set(CtxKey::Space, BSpaceType::Layout.slug());
         cx.notify();
     });
     cx.run_until_parked();
@@ -140,7 +143,7 @@ async fn properties_rail_tab_state_changes_only_paint(cx: &mut TestAppContext) {
 
     app.update(cx, |app, cx| {
         app.state
-            .set(&BPath::owned(vec!["buts", "navbar", "tab"]), "Render");
+            .set(&ButsKey::NavbarTab.path(), "Render");
         cx.notify();
     });
     cx.run_until_parked();
@@ -213,7 +216,7 @@ async fn resize_seam_is_centered_on_the_boundary(cx: &mut TestAppContext) {
     cx.simulate_resize(size(px(1280.0), px(800.0)));
     app.update(cx, |app, cx| {
         app.state = BState::new();
-        app.state.set(&K_SPACE, BSpaceType::Shading.slug());
+        app.state.set(CtxKey::Space, BSpaceType::Shading.slug());
         cx.notify();
     });
     cx.run_until_parked();
@@ -233,8 +236,8 @@ async fn resize_seam_is_centered_on_the_boundary(cx: &mut TestAppContext) {
     let gap_hi = f32::from(below.origin.y);
     let boundary_center = (gap_lo + gap_hi) / 2.0;
     let seam_center = f32::from(band.origin.y) + resize.hit_width / 2.0;
-    let seam_lo = seam_center - resize.visible_seam / 2.0;
-    let seam_hi = seam_center + resize.visible_seam / 2.0;
+    let seam_lo = seam_center - resize.rest_thickness() / 2.0;
+    let seam_hi = seam_center + resize.rest_thickness() / 2.0;
 
     assert_eq!(
         gap_hi - gap_lo,
@@ -250,7 +253,7 @@ async fn resize_seam_is_centered_on_the_boundary(cx: &mut TestAppContext) {
     );
     assert_eq!(
         seam_hi - seam_lo,
-        resize.visible_seam,
+        resize.rest_thickness(),
         "the seam uses resolved thickness"
     );
     // The seam center is centered on a whole pixel (boundary - 2 is still integer).
@@ -258,5 +261,46 @@ async fn resize_seam_is_centered_on_the_boundary(cx: &mut TestAppContext) {
         seam_center.fract(),
         0.0,
         "the default seam is centered on a whole pixel"
+    );
+}
+
+#[gpui::test]
+async fn card_rows_start_under_their_heading_in_every_host(cx: &mut TestAppContext) {
+    let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
+    cx.simulate_resize(size(px(1280.0), px(800.0)));
+    app.update(cx, |app, cx| {
+        app.state = BState::new();
+        app.state.set(CtxKey::Space, BSpaceType::Layout.slug());
+        app.state.set(
+            phiber::v2::state::ModalKey::Open,
+            phiber::v2::modal::BModalType::FileBrowser.slug(),
+        );
+        cx.notify();
+    });
+    cx.run_until_parked();
+
+    // The file browser's bookmark panels are Cards whose rows are plain
+    // Buttons, so this is the case that used to sit flush against the card
+    // edge while its heading was inset.
+    let key = "ctx-file-sidebar-System-expanded";
+    let header = bounds(cx, Box::leak(format!("card-head-{key}").into_boxed_str()));
+    let fold = bounds(cx, Box::leak(format!("card-fold-{key}").into_boxed_str()));
+    let row = bounds(cx, Box::leak(format!("card-row-{key}-0").into_boxed_str()));
+
+    assert_eq!(
+        fold.x - header.x,
+        METRICS.pad_md,
+        "a heading's fold triangle sits one surface gutter in from the card edge"
+    );
+    assert_eq!(
+        row.x - header.x,
+        METRICS.pad_md - METRICS.pad_sm,
+        "card rows sit one content inset in, so their own pad_sm lands them \
+         in the triangle's column"
+    );
+    assert_eq!(
+        header.right - row.right,
+        METRICS.pad_md - METRICS.pad_sm,
+        "the content gutter is symmetric"
     );
 }

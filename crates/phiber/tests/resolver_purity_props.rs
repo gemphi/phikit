@@ -45,6 +45,10 @@ fn valid_raw(parser: BStyleParser, a: u16, b: u16, c: u16, d: u16) -> String {
             0 => "none".to_owned(),
             _ => "extra_large".to_owned(),
         },
+        BStyleParser::Font => match a % 2 {
+            0 => "system".to_owned(),
+            _ => "menlo".to_owned(),
+        },
     }
 }
 fn generated_defaults(palette_index: usize, samples: &[ValueSample]) -> BUiStyleDefaults {
@@ -58,10 +62,6 @@ fn generated_defaults(palette_index: usize, samples: &[ValueSample]) -> BUiStyle
             .expect("generated descriptor value must be valid");
         assert!(descriptor.apply_value(&mut generated, value));
     }
-    generated.resize.hit_width = generated
-        .resize
-        .hit_width
-        .max(generated.resize.visible_seam);
 
     BUiStyleDefaults {
         colors: generated.colors,

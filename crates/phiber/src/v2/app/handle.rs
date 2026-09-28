@@ -1,111 +1,160 @@
 //! GPUI action dispatch. State transitions are pure and shared with tests;
 //! this layer is responsible only for notifying GPUI after a transition.
 
-use std::path::Path;
-use std::time::Duration;
-
 use super::BPhiberApp;
-use super::import::{ImportOutcome, settle_import, should_import};
-use crate::phiphx::services::scene::load_blend_scene;
-use crate::v2::scene::{
-    LoadStage, load_progress_key, load_stage_key, loaded_path_key, loading_key, selected_key,
-};
+use super::import::should_import;
+use crate::v2::scene::{loaded_path_key, selected_key};
 use crate::v2::space::BSpaceType;
-use crate::v2::state::{
-    action::apply_action,
-    area_resize::{apply_delta, apply_drag_with_min_extent, normalize},
-    zone_size::apply_zone_drag_with_min_extent,
-};
+use crate::v2::area::size::{apply_delta, apply_drag_with_min_extent, normalize};
+use crate::v2::state::{BKey as _, action::apply_action};
+use crate::v2::zone::size::apply_zone_drag_with_min_extent;
 use crate::v2::view::prim::BAction;
 use crate::v2::zone::BZoneType;
-use gpui::{AppContext, Context, FutureExt};
-
-/// How long an in-flight `.blend` import may run before the watchdog fires and
-/// the import is settled as a timeout (Requirement 8.4). Thirty seconds per the
-/// design (§Components section 4).
-const IMPORT_WATCHDOG: Duration = Duration::from_secs(30);
+use gpui::Context;
 
 impl BPhiberApp {
+    /// One key press: to the field that holds the caret, else to the keymap
+    /// (`app/keymap`) — the window's own operators with the window in hand.
+    /// Returns true when the window should re-render.
+    pub fn handle_key(
+        &mut self,
+        key: &str,
+        typed: Option<&str>,
+        stroke: Option<(super::keymap::BKeystroke, &mut gpui::Window)>,
+        cx: &mut Context<Self>,
+    ) -> bool {
+        use crate::v2::state::edit::{BEdit, editing};
+        let Some(target) = editing(&self.state) else {
+            let Some((stroke, window)) = stroke else { return false };
+            let Some((action, name)) = super::keymap::action_for(&stroke, &self.state) else { return false };
+            crate::v2::state::log::push(name);
+            self.handle_action_in(&action, window, cx);
+            return true;
+        };
+        let outcome = crate::v2::state::edit::key(&mut self.state, key, typed);
+        if outcome == BEdit::Ignored {
+            return false;
+        }
+        // Return commits: run the value back through the normal action path so
+        // everything that watches the key still fires (a typed folder path
+        // navigates, a picked file imports).
+        if outcome == BEdit::Confirmed {
+            if let Some(path) = crate::v2::state::edit::field_path(&target) {
+                let value = self.state.get_encoded(&target).unwrap_or("").to_string();
+                self.handle_action(&BAction::Set(path, value), cx);
+            }
+        }
+        cx.notify();
+        true
+    }
+
+    /// An action from the window itself: the window's own operators (quit,
+    /// fullscreen) are taken here, everything else goes the usual way.
+    pub fn handle_action_in(&mut self, action: &BAction, window: &mut gpui::Window, cx: &mut Context<Self>) {
+        // Unsaved changes: quit, new and open wait for the dialog's answer,
+        // and the answer itself is taken here, with the window in hand.
+        if self.asks_to_save_first(action) || self.answers_file_close(action, window, cx) {
+            cx.notify();
+            return;
+        }
+        if self.handle_window_op(action, window) {
+            crate::v2::state::menu::close_overlays(&mut self.state);
+            cx.notify();
+            return;
+        }
+        self.handle_action(action, cx);
+    }
+
     pub fn handle_action(&mut self, action: &BAction, cx: &mut Context<Self>) {
-        // 1. Apply the pure state transition (unchanged behavior).
+        // 0. `ctx.link = <url>` is Blender's `wm.url_open`: hand the URL to
+        //    the system browser, then let the action run its course so the
+        //    menu closes and the status bar says what was opened; the key
+        //    itself is not kept.
+        if let BAction::Set(path, url) = action {
+            if *path == crate::v2::state::AppKey::Link.path() && !url.is_empty() {
+                cx.open_url(url);
+                let before = self.state.clone();
+                apply_action(&mut self.state, action);
+                let _ = crate::v2::state::log::record(action, &before, &self.state);
+                self.state.remove(crate::v2::state::AppKey::Link);
+                cx.notify();
+                return;
+            }
+        }
+        // 0a. Unsaved changes: quit, new and open wait for the dialog.
+        if self.asks_to_save_first(action) {
+            cx.notify();
+            return;
+        }
+        // 0b. The app's own operators (`app/op.rs`) — undo, new, revert,
+        //     render — run instead of being stored.
+        if self.handle_app_op(action, cx) {
+            cx.notify();
+            return;
+        }
+        // What the file browser was opened for, read before the commit's
+        // rule can clear it; `.blend` opening is the only commit the old
+        // path took, exports and imports are finished below.
+        let commit = match action {
+            BAction::Set(path, file) if *path == selected_key() && !file.is_empty() => Some((file.clone(), super::op::purpose_of(&self.state))),
+            _ => None,
+        };
+
+        // 1. Apply the pure state transition (unchanged behavior), and log
+        //    what it changed for the status bar's action log. The document
+        //    before it is an undo step when the action changed it.
+        let before = self.state.clone();
+        let document = super::undo::snapshot(&self.state);
         apply_action(&mut self.state, action);
+        let name = crate::v2::state::log::record(action, &before, &self.state).unwrap_or_else(|| "Edit".to_string());
+        let holding = crate::v2::scene::grab::BMarkerGrab::active(&self.state) || crate::v2::scene::xform::BTransformModal::active(&self.state);
+        if self.history.record_held(document, &super::undo::snapshot(&self.state), &name, holding) {
+            super::op::close::tag_modified(&mut self.state);
+        }
 
         // 2. Import spawn/settle shell around the pure core. If the just-applied
         //    action moved `file.selected` to a `.blend` path differing from the
         //    path the Scene_Source currently reflects (`scene.loaded_path`), we
-        //    kick off exactly one import off the UI thread.
-        let selected = self.state.get(&selected_key());
-        let prev = self.state.get(&loaded_path_key());
-        if should_import(prev, selected) {
-            // Own the selected path before we borrow `self` mutably / move into
-            // the async closure. `should_import` guarantees `selected` is Some.
-            let path = selected
-                .expect("should_import implies a selection")
-                .to_string();
-
-            // Loading-in-progress flag shows immediately (Requirement 1.3, 8.1),
-            // plus the first staged progress readout (Blender WM_progress). The
-            // opaque background parse can't call back mid-flight, so the UI
-            // thread seeds the "Reading file" stage here and the settle path
-            // advances to Done; the statusbar bar animates between them.
-            self.state.set(&loading_key(), "true");
-            self.state
-                .set(&load_stage_key(), LoadStage::Reading.label());
-            self.state
-                .set(&load_progress_key(), LoadStage::Reading.progress().to_string());
-
-            // Spawn the import. `cx.spawn` hands us a weak handle to this entity
-            // plus an `AsyncApp` that can be held across await points. The parse
-            // itself (blocking file IO + SDNA walk) runs on the background
-            // executor so the UI thread never blocks (Requirement 8.3).
-            cx.spawn(async move |this, cx| {
-                let load_path = path.clone();
-                let load =
-                    cx.background_spawn(async move { load_blend_scene(Path::new(&load_path)) });
-
-                // Arm the 30-second import watchdog (Requirement 8.4). `with_timeout`
-                // races the load against an `executor.timer(30s)` internally and
-                // resolves to whichever settles first: `Ok(load_result)` if the
-                // import wins, or `Err(Timeout)` if the watchdog fires. Whichever
-                // loses is simply dropped, so there is exactly one settle — no
-                // guard against a late clobber is needed.
-                let outcome = match load
-                    .with_timeout(IMPORT_WATCHDOG, cx.background_executor())
-                    .await
-                {
-                    // Watchdog fired before the import settled -> timeout error
-                    // and clear loading (Requirement 8.4, 8.5).
-                    Err(_timeout) => ImportOutcome::TimedOut,
-                    // Import settled first: map its Result into the outcome.
-                    Ok(Ok(model)) => ImportOutcome::Loaded(model),
-                    Ok(Err(err)) => ImportOutcome::Failed(err),
-                };
-
-                // Back on the UI thread: settle the scalar scene keys, cache the
-                // model, then notify so the Viewport/Outliner re-render from the
-                // new Scene_Source.
-                this.update(cx, |this, cx| {
-                    if let Some(model) = settle_import(&mut this.state, outcome) {
-                        // Cache keyed by the reflected loaded_path (settle sets
-                        // it from the model's source_path when present).
-                        let key = this
-                            .state
-                            .get(&loaded_path_key())
-                            .map(str::to_string)
-                            .or_else(|| model.source_path.clone())
-                            .unwrap_or(path);
-                        this.scene_cache = Some((key, model));
-                    }
-                    cx.notify();
-                })
-                .ok();
-            })
-            .detach();
+        //    kick off exactly one import off the UI thread — for an Open, not
+        //    for a Save As, Link or Export that happened to name a `.blend`.
+        match commit {
+            Some((file, crate::v2::part::file::purpose::BFilePurpose::Open)) => {
+                if should_import(self.state.get(&loaded_path_key()), Some(&file)) {
+                    self.start_import(file, cx);
+                }
+            }
+            Some((file, purpose)) => self.handle_file_commit(&file, purpose),
+            None => {}
         }
 
-        // 3. Always notify after the synchronous part so the loading flag (and
+        // 3. Playback starts its ticker when Play turns on.
+        self.ensure_playback(cx);
+
+        // 4. Opening the render window is Blender's F12: it starts the render
+        //    as well as showing the place the result will appear.
+        self.ensure_render();
+
+        // 5. Always notify after the synchronous part so the loading flag (and
         //    any other state change) shows on this render pass (as before).
         cx.notify();
+    }
+
+    /// Start a final render when the render window has just been opened
+    /// (`Render ▸ Render Image`, F12) and one is not already under way.
+    ///
+    /// Blender renders on opening that window rather than making the user ask
+    /// twice, and leaves the result there until the next F12 — so a window
+    /// that is already showing a finished render is not re-rendered.
+    fn ensure_render(&mut self) {
+        use crate::v2::scene::render_job;
+        let open = self.state.get(crate::v2::state::ModalKey::Open) == Some(crate::v2::state::val::V_MODAL_RENDER);
+        if !open || render_job::rendering() {
+            return;
+        }
+        if render_job::shot().0.is_some_and(|s| s.done) {
+            return;
+        }
+        self.render_now();
     }
 
     /// Apply an incremental area-resize delta (legacy seam kept for the

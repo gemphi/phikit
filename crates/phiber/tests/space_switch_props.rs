@@ -9,7 +9,8 @@
 //!   - Every non-menu, non-space key is unchanged from the input.
 
 use phiber::v2::space::BSpaceType;
-use phiber::v2::state::{BPath, BState, K_SPACE, V_FALSE, switch_space};
+use phiber::v2::space::switch_space;
+use phiber::v2::state::{BPath, BState, CtxKey, MenuKey, V_FALSE};
 use proptest::prelude::*;
 
 fn arb_space() -> impl Strategy<Value = BSpaceType> {
@@ -30,7 +31,7 @@ proptest! {
             state.set(k, format!("v{v}"));
         }
         // Pre-open a top-level menu so we can observe it closing.
-        state.set(&BPath::owned(vec!["menu", "File"]), "true");
+        state.set(MenuKey::Top("topbar", "File"), "true");
 
         // Snapshot every non-menu key before the switch.
         let before: Vec<(String, String)> = state
@@ -42,7 +43,7 @@ proptest! {
         switch_space(&mut state, target);
 
         // Space slug matches.
-        prop_assert_eq!(state.get(&K_SPACE), Some(target.slug()));
+        prop_assert_eq!(state.get(CtxKey::Space), Some(target.slug()));
 
         // Every menu key is V_FALSE.
         for k in state.iter_keys() {

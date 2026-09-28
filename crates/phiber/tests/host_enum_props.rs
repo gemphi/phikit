@@ -7,19 +7,19 @@
 //! returns `Some(h)`. Every host that appears in `SWITCHABLE` also lives
 //! in `ALL`.
 
-use phiber::v2::host::{BHostType, host_slug};
+use phiber::v2::host::BHostType;
 use proptest::prelude::*;
 
 proptest! {
     #[test]
     fn round_trip_slug_from_slug(idx in 0usize..BHostType::ALL.len()) {
         let h = BHostType::ALL[idx];
-        prop_assert_eq!(BHostType::from_slug(host_slug(h)), Some(h));
+        prop_assert_eq!(BHostType::from_slug(h.slug()), Some(h));
     }
 
     #[test]
     fn unknown_slug_is_none(garbage in "[a-z0-9]{1,20}") {
-        if BHostType::ALL.iter().any(|h| host_slug(*h) == garbage) {
+        if BHostType::ALL.iter().any(|h| h.slug() == garbage) {
             return Ok(());
         }
         prop_assert_eq!(BHostType::from_slug(&garbage), None);

@@ -5,38 +5,50 @@ use super::*;
 use crate::v2::theme::palette::{BPaletteName, palette_for};
 
 #[test]
-fn preserved_radius_scales_are_owned_by_ui_defaults() {
-    assert_eq!(
-        APPLE_UI_STYLE_DEFAULTS.radii,
-        BRadiusScale {
-            xs: 4.0,
-            sm: 7.0,
-            md: 10.0,
-            lg: 14.0,
-            xl: 18.0,
+fn every_theme_owns_its_radius_scale_effects_and_seam() {
+    let themes = [
+        (BPaletteName::Sphere, SOFT_RADII, SPHERE_EFFECTS, 4.0),
+        (BPaletteName::Graphite, TIGHT_RADII, GRAPHITE_EFFECTS, 4.0),
+        (BPaletteName::Tokyo, MEDIUM_RADII, TOKYO_EFFECTS, 6.0),
+        (BPaletteName::Onyx, MEDIUM_RADII, ONYX_EFFECTS, 4.0),
+        (BPaletteName::Grey, ROUND_RADII, GREY_EFFECTS, 6.0),
+        (BPaletteName::Apple, MEDIUM_RADII, APPLE_EFFECTS, 4.0),
+        (BPaletteName::Swift, SOFT_RADII, SWIFT_EFFECTS, 4.0),
+        (BPaletteName::Barbie, PILL_RADII, BARBIE_EFFECTS, 8.0),
+        (BPaletteName::Fenty, ROUND_RADII, FENTY_EFFECTS, 6.0),
+        (BPaletteName::Cyberpunk, SQUARE_RADII, CYBERPUNK_EFFECTS, 2.0),
+        (BPaletteName::Chanel, TIGHT_RADII, CHANEL_EFFECTS, 4.0),
+    ];
+    assert_eq!(themes.len(), BPaletteName::ALL.len());
+    for (name, radii, effects, gap) in themes {
+        let defaults = ui_style_defaults(name);
+        assert_eq!(defaults.radii, radii, "{name:?}");
+        assert_eq!(defaults.effects, effects, "{name:?}");
+        assert_eq!(defaults.resize.gap, gap, "{name:?}");
+        assert_eq!(defaults.resize.inset, -(defaults.resize.hit_width + gap) / 2.0, "{name:?}: the hit band stays centred on the seam");
+        assert_eq!(defaults.colors.ladder, palette_for(name).ladder, "{name:?}");
+        // The light mode changes colours and nothing else: the same scale,
+        // effects and gap, on the ladder read the other way up.
+        let light = ui_style_defaults_in(name, BThemeMode::Light);
+        assert_eq!((light.radii, light.effects, light.resize.gap), (radii, effects, gap), "{name:?}");
+        assert!(light.colors.ladder.light && !defaults.colors.ladder.light, "{name:?}");
+        assert_eq!(light.colors.ladder, super::super::palette::palette_in(name, BThemeMode::Light).ladder, "{name:?}");
+        // Sphere's scale is the one the interface was drawn on.
+        if name == BPaletteName::DEFAULT {
+            assert_eq!(radii, BRadiusScale::rungs(4.0, 7.0, 10.0, 14.0, 18.0));
         }
-    );
-    assert_eq!(
-        BLENDER_UI_STYLE_DEFAULTS.radii,
-        BRadiusScale {
-            xs: 1.0,
-            sm: 2.0,
-            md: 4.0,
-            lg: 6.0,
-            xl: 8.0,
-        }
-    );
+    }
 }
 
 #[test]
 fn resize_defaults_preserve_usability() {
-    let resize = APPLE_UI_STYLE_DEFAULTS.resize;
-    // visible_seam is 2 px — one step stronger than the hairline border so
-    // the resize boundary reads as a deliberate affordance; the 14 px hit
-    // band stays much wider so the seam is easy to grab.
-    assert_eq!((resize.visible_seam, resize.hit_width), (2.0, 14.0));
+    let resize = SPHERE_UI_STYLE_DEFAULTS.resize;
+    // The seam is 3 px thinner than the 4 px gap at rest and 2 px thicker
+    // than it under the pointer; the 14 px hit band stays much wider so the
+    // seam is easy to grab.
+    assert_eq!((resize.rest_thickness(), resize.hover_thickness(), resize.hit_width), (1.0, 6.0, 14.0));
     // The hit band must be wider than the visible line.
-    assert!(resize.hit_width >= resize.visible_seam);
+    assert!(resize.hit_width >= resize.hover_thickness());
 }
 
 #[test]
@@ -59,10 +71,16 @@ fn resolved_style_copies_every_default_domain() {
 #[test]
 fn semantic_role_defaults_reference_radius_tokens() {
     assert_eq!(DEFAULT_ROLES.workspace, BRadiusToken::None);
-    assert_eq!(DEFAULT_ROLES.button, BRadiusToken::Sm);
-    assert_eq!(DEFAULT_ROLES.field, BRadiusToken::Sm);
-    assert_eq!(DEFAULT_ROLES.menu_item, BRadiusToken::Sm);
-    assert_eq!(DEFAULT_ROLES.tab, BRadiusToken::Md);
+    // Every cap-shaped control on a strip carries one radius, so a header
+    // reads as one row of parts rather than a mix of shapes.
+    for (what, token) in [
+        ("button", DEFAULT_ROLES.button),
+        ("field", DEFAULT_ROLES.field),
+        ("menu item", DEFAULT_ROLES.menu_item),
+        ("tab", DEFAULT_ROLES.tab),
+    ] {
+        assert_eq!(token, BRadiusToken::Sm, "{what}");
+    }
     assert_eq!(DEFAULT_ROLES.popover, BRadiusToken::Md);
     assert_eq!(DEFAULT_ROLES.region, BRadiusToken::Md);
     assert_eq!(DEFAULT_ROLES.card, BRadiusToken::Lg);

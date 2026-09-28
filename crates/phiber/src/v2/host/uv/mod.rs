@@ -1,54 +1,19 @@
-//! UV Editor host — reuses Blender's `space_image` implementation in UV mode.
-//! Same regions as Image: WINDOW, UI, TOOLS, TOOL_HEADER, HEADER, ASSET_SHELF+HEADER.
+//! UV Editor host. Structure only: what the host *is*, and where its
+//! content lives. The regions, panes and parts are in `set.rs`, and the
+//! widgets they name are in `part::`.
 
-use crate::v2::pane::{BPaneSpec, BPaneType};
-use crate::v2::part::BPartType;
-use crate::v2::region::{BRegionSpec, BRegionType};
+pub mod set;
 
-static TOOL_HEADER_PANES: &[BPaneSpec] = &[BPaneSpec {
-    kind: BPaneType::Center,
-    parts: &[BPartType::Modebar],
-}];
-static HEADER_PANES: &[BPaneSpec] = &[
-    BPaneSpec {
-        kind: BPaneType::Left,
-        parts: &[BPartType::Menubar],
-    },
-    BPaneSpec {
-        kind: BPaneType::Center,
-        parts: &[BPartType::Modebar],
-    },
-    BPaneSpec {
-        kind: BPaneType::Right,
-        parts: &[BPartType::Switcher],
-    },
-];
-static CENTER_PANES: &[BPaneSpec] = &[
-    BPaneSpec {
-        kind: BPaneType::Left,
-        parts: &[BPartType::Toolbar],
-    },
-    BPaneSpec {
-        kind: BPaneType::Center,
-        parts: &[BPartType::Custom],
-    },
-    BPaneSpec {
-        kind: BPaneType::Right,
-        parts: &[BPartType::Sidebar],
-    },
-];
+use crate::v2::host::{BHostSpec, BHostType};
 
-pub static REGIONS: &[BRegionSpec] = &[
-    BRegionSpec {
-        kind: BRegionType::ToolHeader,
-        panes: TOOL_HEADER_PANES,
-    },
-    BRegionSpec {
-        kind: BRegionType::Header,
-        panes: HEADER_PANES,
-    },
-    BRegionSpec {
-        kind: BRegionType::Center,
-        panes: CENTER_PANES,
-    },
-];
+pub use set::REGIONS;
+
+/// Key used for this host inside a `BPath`.
+pub const SLUG: &str = "uv";
+
+pub static SPEC: BHostSpec = BHostSpec {
+    kind: BHostType::Uv,
+    label: "UV Editor",
+    icon: "uv",
+    regions: set::REGIONS,
+};

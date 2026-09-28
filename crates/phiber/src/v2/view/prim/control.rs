@@ -23,6 +23,13 @@ pub struct BControl {
     pub action: Option<BAction>,
     /// Fired on pointer-enter — menus use it for hover-switching.
     pub hover: Option<BAction>,
+    /// The app's own mark: drawn larger and in the accent, because a brand is
+    /// not one more icon in the row.
+    pub brand: bool,
+    /// How many icon-button slots the control spans in its row — Blender's
+    /// `scale_x` on the pause button that stands in for both play buttons.
+    /// `0` and `1` are one slot.
+    pub span: u8,
 }
 
 impl BControl {
@@ -41,8 +48,16 @@ impl BControl {
         self.shortcut = Some(shortcut.into());
         self
     }
+    pub fn as_brand(mut self) -> Self {
+        self.brand = true;
+        self
+    }
     pub fn with_tooltip(mut self, tooltip: impl Into<String>) -> Self {
         self.tooltip = Some(tooltip.into());
+        self
+    }
+    pub fn with_span(mut self, span: u8) -> Self {
+        self.span = span;
         self
     }
     pub fn with_active(mut self, active: bool) -> Self {

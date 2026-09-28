@@ -28,7 +28,7 @@ impl Violation {
 }
 
 fn gpui_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/v2/view/render/gpui")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/v2/view/draw")
 }
 
 fn fixture(name: &str) -> String {
@@ -185,13 +185,17 @@ fn method_with_numeric_argument(source: &str, method: &str) -> Vec<usize> {
 }
 
 fn relative_mechanics_allowed(path: &str) -> bool {
+    // `flex/apply.rs` and its split-out tail `flex/place.rs` are where a
+    // `BFlex` becomes GPUI style — the flex-basis and full-length mechanics
+    // that used to be written out in `zone.rs`.
     matches!(
         path,
-        "zone.rs"
-            | "atom/canvas/image.rs"
-            | "atom/canvas/node.rs"
-            | "atom/canvas/view3d.rs"
-            | "atom/canvas/view3d/hit.rs"
+        "flex/apply.rs"
+            | "flex/place.rs"
+            | "canvas/image.rs"
+            | "canvas/node.rs"
+            | "canvas/view3d/mod.rs"
+            | "canvas/view3d/hit.rs"
     )
 }
 
@@ -231,7 +235,7 @@ fn style_violations(path: &str, source: &str) -> Vec<Violation> {
             });
         }
     }
-    for byte in code.match_indices("metrics::").map(|(byte, _)| byte) {
+    for byte in code.match_indices("metric::").map(|(byte, _)| byte) {
         violations.push(Violation {
             path: path.into(),
             line: line_at(source, byte),

@@ -7,7 +7,7 @@
 //! `mod table;` declaration are visible inside this child module.
 
 use super::{
-    BPreferenceControl, BPreferenceMetadata, BShadowStyle, BStyleDescriptor, BStyleParser,
+    BPreferenceControl, BPreferenceMetadata, BStyleDescriptor, BStyleParser,
     BStyleValue,
 };
 use crate::v2::state::key::ui_style as key;
@@ -23,6 +23,7 @@ pub static UI_STYLE_DESCRIPTORS: &[BStyleDescriptor] = &[
     color!(COLOR_BG_HEADER, bg_header, "Header Background"),
     color!(COLOR_BG_PANEL, bg_panel, "Panel Background"),
     color!(COLOR_BG_VIEWPORT, bg_viewport, "Viewport Background"),
+    color!(COLOR_BG_CONTROL, bg_control, "Control Background"),
     color!(COLOR_BG_HOVER, bg_hover, "Hover Background"),
     color!(COLOR_BG_ACTIVE, bg_active, "Active Background"),
     color!(COLOR_BG_MODAL_DIM, bg_modal_dim, "Modal Dim"),
@@ -47,6 +48,7 @@ pub static UI_STYLE_DESCRIPTORS: &[BStyleDescriptor] = &[
     number!(RADIUS_MD, radii.md, "Radii", "Medium", 0.0, 64.0, Some("px")),
     number!(RADIUS_LG, radii.lg, "Radii", "Large", 0.0, 64.0, Some("px")),
     number!(RADIUS_XL, radii.xl, "Radii", "Extra Large", 0.0, 64.0, Some("px")),
+    font!(TYPOGRAPHY_FAMILY, typography.family, "Typography", "Family"),
     number!(TYPOGRAPHY_BODY, typography.body, "Typography", "Body", 6.0, 72.0, Some("px")),
     number!(TYPOGRAPHY_HEADER, typography.header, "Typography", "Header", 6.0, 72.0, Some("px")),
     number!(TYPOGRAPHY_CAPTION, typography.caption, "Typography", "Caption", 6.0, 72.0, Some("px")),
@@ -65,6 +67,8 @@ pub static UI_STYLE_DESCRIPTORS: &[BStyleDescriptor] = &[
     number!(DIMENSION_SCRUBBING_HEIGHT, dimensions.scrubbing_height, "Dimensions", "Scrubbing Height", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_ASSET_SHELF_HEIGHT, dimensions.asset_shelf_height, "Dimensions", "Asset Shelf Height", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_BOTTOM_STRIP_HEIGHT, dimensions.bottom_strip_height, "Dimensions", "Bottom Strip Height", 0.0, 4096.0, Some("px")),
+    number!(DIMENSION_STATUS_LOG_HEIGHT, dimensions.status_log_height, "Dimensions", "Status Log Height", 0.0, 4096.0, Some("px")),
+    number!(DIMENSION_BANNER_HEIGHT, dimensions.banner_height, "Dimensions", "Banner Height", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_ACTIVITY_WIDTH, dimensions.activity_width, "Dimensions", "Activity Width", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_TOOLBAR_WIDTH, dimensions.toolbar_width, "Dimensions", "Toolbar Width", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_SIDEBAR_WIDTH, dimensions.sidebar_width, "Dimensions", "Sidebar Width", 0.0, 4096.0, Some("px")),
@@ -79,6 +83,9 @@ pub static UI_STYLE_DESCRIPTORS: &[BStyleDescriptor] = &[
     number!(DIMENSION_FILE_SIZE_COLUMN_WIDTH, dimensions.file_size_column_width, "Dimensions", "File Size Column Width", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_INDENT_UNIT, dimensions.indent_unit, "Dimensions", "Indent Unit", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_RESTRICTION_COLUMN_WIDTH, dimensions.restriction_column_width, "Dimensions", "Restriction Column Width", 0.0, 4096.0, Some("px")),
+    number!(DIMENSION_ICON_SIZE, dimensions.icon_size, "Dimensions", "Icon Size", 0.0, 4096.0, Some("px")),
+    number!(DIMENSION_ICON_SIZE_SM, dimensions.icon_size_sm, "Dimensions", "Icon Size Small", 0.0, 4096.0, Some("px")),
+    number!(DIMENSION_BRAND_SIZE, dimensions.brand_size, "Dimensions", "Brand Mark Size", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_GIZMO_BUTTON_SIZE, dimensions.gizmo_button_size, "Dimensions", "Gizmo Button Size", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_GIZMO_ICON_SIZE, dimensions.gizmo_icon_size, "Dimensions", "Gizmo Icon Size", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_OBJECT_ICON_SIZE, dimensions.object_icon_size, "Dimensions", "Object Icon Size", 0.0, 4096.0, Some("px")),
@@ -86,7 +93,8 @@ pub static UI_STYLE_DESCRIPTORS: &[BStyleDescriptor] = &[
     number!(STROKE_HAIRLINE, strokes.hairline, "Strokes", "Hairline", 0.0, 16.0, Some("px")),
     number!(STROKE_BORDER, strokes.border, "Strokes", "Border", 0.0, 16.0, Some("px")),
     number!(STROKE_GRID, strokes.grid, "Strokes", "Grid", 0.0, 16.0, Some("px")),
-    number!(RESIZE_VISIBLE_SEAM, resize.visible_seam, "Resize", "Visible Seam", 0.0, 128.0, Some("px")),
+    number!(RESIZE_SEAM_REST_UNDER, resize.seam_rest_under, "Resize", "Seam Under Gap at Rest", 0.0, 128.0, Some("px")),
+    number!(RESIZE_SEAM_HOVER_OVER, resize.seam_hover_over, "Resize", "Seam Over Gap on Hover", 0.0, 128.0, Some("px")),
     number!(RESIZE_HIT_WIDTH, resize.hit_width, "Resize", "Hit Width", 0.0, 256.0, Some("px")),
     number!(RESIZE_GAP, resize.gap, "Resize", "Gap", 0.0, 128.0, Some("px")),
     number!(RESIZE_INSET, resize.inset, "Resize", "Inset", -256.0, 256.0, Some("px")),
@@ -107,7 +115,9 @@ pub static UI_STYLE_DESCRIPTORS: &[BStyleDescriptor] = &[
     number!(EFFECT_TAB_TOP_LIFT, effects.tab_top_lift, "Effects", "Tab Top Lift", -1.0, 1.0, None),
     number!(EFFECT_VIEWPORT_LIGHTNESS_DELTA, effects.viewport_lightness_delta, "Effects", "Viewport Lightness Delta", -1.0, 1.0, None),
     number!(EFFECT_VIEWPORT_GRID_ALPHA, effects.viewport_grid_alpha, "Effects", "Viewport Grid Alpha", 0.0, 1.0, None),
+    number!(EFFECT_MOTION_MS, effects.motion_ms, "Effects", "Motion Duration", 0.0, 2000.0, Some("ms")),
     number!(EFFECT_AXIS_ALPHA, effects.axis_alpha, "Effects", "Axis Alpha", 0.0, 1.0, None),
+    number!(EFFECT_GRIP_ALPHA, effects.grip_alpha, "Effects", "Grip Alpha", 0.0, 1.0, None),
     number!(EFFECT_NODE_GRID_LIFT, effects.node_grid_lift, "Effects", "Node Grid Lift", -1.0, 1.0, None),
     number!(EFFECT_NODE_GRID_ALPHA, effects.node_grid_alpha, "Effects", "Node Grid Alpha", 0.0, 1.0, None),
     number!(EFFECT_IMAGE_LIGHT_LIFT, effects.image_light_lift, "Effects", "Image Light Lift", -1.0, 1.0, None),

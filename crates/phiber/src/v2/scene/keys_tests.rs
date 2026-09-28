@@ -1,7 +1,7 @@
 //! Focused tests for the import-progress staging vocabulary. Split out of
 //! `keys.rs` so that file stays under the 200-line cap.
 
-use super::keys::{LoadStage, load_progress_key, load_stage_key, view_load_progress, view_load_stage};
+use super::key::{LoadStage, load_progress_key, load_stage_key, view_load_progress, view_load_stage};
 use crate::v2::state::BState;
 
 #[test]

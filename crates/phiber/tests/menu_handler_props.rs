@@ -10,10 +10,10 @@
 //! - Property 7 (idempotent open): calling `apply_open(k)` twice with no
 //!   intervening writes produces the same state as one call.
 
-use phiber::v2::state::{BPath, BState, V_TRUE, apply_open, apply_toggle, k_menu, k_menu_path};
+use phiber::v2::state::{BKey as _, BPath, BState, V_TRUE, apply_open, apply_toggle, MenuKey};
 use proptest::prelude::*;
 
-const TOPS: &[&str] = &["Blender", "File", "Edit", "Render", "Window", "Help"];
+const TOPS: &[&str] = &["Phiber", "File", "Edit", "Render", "Window", "Help"];
 /// Host slug every property here scopes its keys to.
 const H: &str = "topbar";
 const SUBS: &[&str] = &["Import", "Export", "Recover", "Defaults", "New"];
@@ -32,14 +32,14 @@ proptest! {
     fn top_close_last_open_wins(actions in prop::collection::vec(arb_top(), 0..12)) {
         let mut state = BState::new();
         for top in &actions {
-            let key = k_menu(H, top);
+            let key = MenuKey::Top(H, top).path();
             apply_toggle(&mut state, &key);
         }
 
         let open_tops: Vec<_> = TOPS
             .iter()
             .copied()
-            .filter(|t| state.get(&k_menu(H, t)) == Some(V_TRUE))
+            .filter(|t| state.get(&MenuKey::Top(H, t).path()) == Some(V_TRUE))
             .collect();
         prop_assert!(open_tops.len() <= 1, "expected ≤1 open top, got {:?}", open_tops);
     }
@@ -52,14 +52,14 @@ proptest! {
         prop_assume!(a != b);
         let mut state = BState::new();
         // Open the parent first, then a nested child, then a sibling.
-        apply_toggle(&mut state, &k_menu(H, top));
-        apply_open(&mut state, &k_menu_path(H, &[top, a]));
-        apply_open(&mut state, &k_menu_path(H, &[top, b]));
+        apply_toggle(&mut state, &MenuKey::Top(H, top).path());
+        apply_open(&mut state, &MenuKey::Nested(H, &[top, a]).path());
+        apply_open(&mut state, &MenuKey::Nested(H, &[top, b]).path());
 
         // Parent stays open.
-        prop_assert_eq!(state.get(&k_menu(H, top)), Some(V_TRUE));
+        prop_assert_eq!(state.get(&MenuKey::Top(H, top).path()), Some(V_TRUE));
         // Last-opened sibling wins; the earlier sibling closes.
-        prop_assert_eq!(state.get(&k_menu_path(H, &[top, b])), Some(V_TRUE));
+        prop_assert_eq!(state.get(&MenuKey::Nested(H, &[top, b]).path()), Some(V_TRUE));
     }
 }
 
@@ -68,14 +68,14 @@ proptest! {
 proptest! {
     #[test]
     fn open_is_idempotent(top in arb_top(), sub in arb_sub()) {
-        let key = k_menu_path(H, &[top, sub]);
+        let key = MenuKey::Nested(H, &[top, sub]).path();
 
         let mut once = BState::new();
-        apply_toggle(&mut once, &k_menu(H, top));
+        apply_toggle(&mut once, &MenuKey::Top(H, top).path());
         apply_open(&mut once, &key);
 
         let mut twice = BState::new();
-        apply_toggle(&mut twice, &k_menu(H, top));
+        apply_toggle(&mut twice, &MenuKey::Top(H, top).path());
         apply_open(&mut twice, &key);
         apply_open(&mut twice, &key);
 
@@ -100,7 +100,7 @@ fn menubar_active_helper_starts_false() {
 #[test]
 fn opening_top_makes_menubar_active() {
     let mut state = BState::new();
-    apply_toggle(&mut state, &k_menu(H, "File"));
+    apply_toggle(&mut state, &MenuKey::Top(H, "File").path());
     assert!(phiber::v2::state::is_menubar_active(&state));
 }
 
@@ -111,11 +111,11 @@ fn opening_top_makes_menubar_active() {
 #[test]
 fn same_label_in_two_hosts_opens_independently() {
     let mut state = BState::new();
-    apply_toggle(&mut state, &k_menu("view3d", "View"));
+    apply_toggle(&mut state, &MenuKey::Top("view3d", "View").path());
 
-    assert_eq!(state.get(&k_menu("view3d", "View")), Some(V_TRUE));
-    assert_ne!(state.get(&k_menu("outliner", "View")), Some(V_TRUE));
-    assert_ne!(state.get(&k_menu("buts", "View")), Some(V_TRUE));
+    assert_eq!(state.get(&MenuKey::Top("view3d", "View").path()), Some(V_TRUE));
+    assert_ne!(state.get(&MenuKey::Top("outliner", "View").path()), Some(V_TRUE));
+    assert_ne!(state.get(&MenuKey::Top("buts", "View").path()), Some(V_TRUE));
 }
 
 /// Only one top-level menu is deployed app-wide: opening a menu in a second
@@ -123,11 +123,11 @@ fn same_label_in_two_hosts_opens_independently() {
 #[test]
 fn opening_a_menu_in_another_host_closes_the_first() {
     let mut state = BState::new();
-    apply_toggle(&mut state, &k_menu("view3d", "View"));
-    apply_toggle(&mut state, &k_menu("outliner", "View"));
+    apply_toggle(&mut state, &MenuKey::Top("view3d", "View").path());
+    apply_toggle(&mut state, &MenuKey::Top("outliner", "View").path());
 
-    assert_ne!(state.get(&k_menu("view3d", "View")), Some(V_TRUE));
-    assert_eq!(state.get(&k_menu("outliner", "View")), Some(V_TRUE));
+    assert_ne!(state.get(&MenuKey::Top("view3d", "View").path()), Some(V_TRUE));
+    assert_eq!(state.get(&MenuKey::Top("outliner", "View").path()), Some(V_TRUE));
 }
 
 /// Hover-switching is armed per host, so an open menu in one editor header
@@ -135,7 +135,7 @@ fn opening_a_menu_in_another_host_closes_the_first() {
 #[test]
 fn menubar_active_is_scoped_per_host() {
     let mut state = BState::new();
-    apply_toggle(&mut state, &k_menu("view3d", "View"));
+    apply_toggle(&mut state, &MenuKey::Top("view3d", "View").path());
 
     assert!(phiber::v2::state::is_menubar_active_in(&state, "view3d"));
     assert!(!phiber::v2::state::is_menubar_active_in(&state, "outliner"));

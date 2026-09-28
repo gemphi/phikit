@@ -20,15 +20,15 @@ fn count(view: &BView) -> (usize, usize, usize, usize, usize, usize) {
     // (space, zone, area, host, region, pane)
     fn go(v: &BView, c: &mut (usize, usize, usize, usize, usize, usize)) {
         match v {
-            BView::Space { children, .. } => {
+            BView::Space { list, .. } => {
                 c.0 += 1;
-                for ch in children {
+                for ch in list {
                     go(ch, c);
                 }
             }
-            BView::Zone { children, .. } => {
+            BView::Zone { list, .. } => {
                 c.1 += 1;
-                for ch in children {
+                for ch in list {
                     go(ch, c);
                 }
             }
@@ -36,21 +36,21 @@ fn count(view: &BView) -> (usize, usize, usize, usize, usize, usize) {
                 c.2 += 1;
                 go(child, c);
             }
-            BView::Host { children, .. } => {
+            BView::Host { list, .. } => {
                 c.3 += 1;
-                for ch in children {
+                for ch in list {
                     go(ch, c);
                 }
             }
-            BView::Region { children, .. } => {
+            BView::Region { list, .. } => {
                 c.4 += 1;
-                for ch in children {
+                for ch in list {
                     go(ch, c);
                 }
             }
-            BView::Pane { children, .. } => {
+            BView::Pane { list, .. } => {
                 c.5 += 1;
-                for ch in children {
+                for ch in list {
                     go(ch, c);
                 }
             }

@@ -15,12 +15,8 @@ impl BView {
     pub fn field(text: impl Into<String>) -> Self {
         Self::Field { text: text.into() }
     }
-    /// Interactive search / text-entry field.
-    ///
-    /// Displays `value` when non-empty, `placeholder` otherwise (dimmed).
-    /// `on_change` is fired on click to clear, giving immediate feedback; it
-    /// carries the target `BPath` so the tree re-filters on the next render.
-    /// Must be `BAction::Set(path, _)`.
+    /// Text field the user can type into; `editing` draws the caret.
+    /// `on_change` must be `BAction::Set(path, _)` naming the key to type into.
     pub fn search_field(
         placeholder: impl Into<String>,
         value: impl Into<String>,
@@ -29,6 +25,22 @@ impl BView {
         Self::SearchField {
             placeholder: placeholder.into(),
             value: value.into(),
+            editing: false,
+            on_change,
+        }
+    }
+
+    /// The same field, told whether it currently holds the caret.
+    pub fn text_field(
+        placeholder: impl Into<String>,
+        value: impl Into<String>,
+        editing: bool,
+        on_change: BAction,
+    ) -> Self {
+        Self::SearchField {
+            placeholder: placeholder.into(),
+            value: value.into(),
+            editing,
             on_change,
         }
     }

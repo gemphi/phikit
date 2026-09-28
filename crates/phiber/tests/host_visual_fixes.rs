@@ -7,12 +7,14 @@
 //! Feature: phiber-resolved-ui-style-settings
 //! Validates: Requirements 6.1-6.6, 14.1-14.7
 
+use phiber::v2::state::{CtxKey};
 use gpui::{TestAppContext, px, size};
 use phiber::v2::app::BPhiberApp;
 use phiber::v2::host::BHostType;
 use phiber::v2::space::BSpaceType;
-use phiber::v2::state::{BPath, BState, key::K_SPACE};
-use phiber::v2::view::{BAction, BPanelRole, BView, BViewItem};
+use phiber::v2::state::{BPath, BState};
+use phiber::v2::view::prim::{BCardKind, BColumn};
+use phiber::v2::view::{BAction, BView, BViewItem};
 use proptest::prelude::*;
 
 // ── Gate 1: characterization smoke-tests ──────────────────────────────────
@@ -42,190 +44,173 @@ fn asset_host_custom_item_is_not_canvas() {
 }
 
 #[test]
-fn file_host_first_child_is_toolbar() {
-    let item =
-        phiber::v2::part::custom::BCustomItem::new(BHostType::File).build(&BState::default());
-    // The file host item is a Row([sidebar, content_column]).
-    // The content column's first child is the navigation Toolbar panel.
-    let BView::Row { children } = item else {
-        panic!("file host custom item must be a Row (sidebar | content)");
-    };
-    // Second child is the content column (nav_row + table).
-    let Some(BView::Column { children: col_children }) = children.get(1) else {
-        panic!("file host Row's second child must be the content Column");
-    };
-    assert!(
-        matches!(
-            col_children.first(),
-            Some(BView::Panel {
-                role: BPanelRole::Toolbar,
-                ..
-            })
-        ),
-        "file host content Column's first child must be the navigation Toolbar panel"
+fn file_host_declares_blenders_regions_in_order() {
+    use phiber::v2::region::BRegionType;
+    // Blender `space_file`: header, ui (path strip), tools (source list),
+    // window, execute — declared once, for the editor and the dialog alike.
+    let kinds: Vec<BRegionType> = phiber::v2::host::file::REGIONS.iter().map(|r| r.kind).collect();
+    assert_eq!(
+        kinds,
+        [
+            BRegionType::Header,
+            BRegionType::ToolHeader,
+            BRegionType::Tools,
+            BRegionType::Center,
+            BRegionType::Execute
+        ]
     );
+    let parts_of = |kind: BRegionType| -> Vec<phiber::v2::part::BPartType> {
+        phiber::v2::host::file::REGIONS
+            .iter()
+            .find(|r| r.kind == kind)
+            .map(|r| r.panes.iter().flat_map(|p| p.parts.iter().copied()).collect())
+            .unwrap_or_default()
+    };
+    use phiber::v2::part::BPartType;
+    // The path strip is the columns under it: the folder moves and the refresh
+    // over the source list, the fields over the file list, the filters at the end.
+    assert_eq!(parts_of(BRegionType::ToolHeader), [BPartType::FileNav, BPartType::FileRefresh, BPartType::PathBar, BPartType::TypeFilter]);
+    assert_eq!(parts_of(BRegionType::Tools), [BPartType::SourceList]);
+    assert_eq!(parts_of(BRegionType::Execute), [BPartType::Execute]);
+    assert!(parts_of(BRegionType::Center).contains(&BPartType::Custom));
 }
 
 #[test]
-fn file_host_second_child_is_not_empty() {
-    let item =
-        phiber::v2::part::custom::BCustomItem::new(BHostType::File).build(&BState::default());
-    // The file host item is a Row([sidebar, content_column]).
-    let BView::Row { children } = item else {
-        panic!("file host custom item must be a Row (sidebar | content)");
+fn file_host_window_is_the_table_and_its_source_list_holds_the_bookmark_panels() {
+    let s = BState::default();
+    let table = phiber::v2::part::custom::BCustomItem::new(BHostType::File).build(&s);
+    assert!(
+        matches!(&table, BView::Card(c) if c.kind == BCardKind::Column(BColumn::Body)),
+        "the window region is the file table"
+    );
+    let list = phiber::v2::part::file::sidebar::source_list(BHostType::File, &s);
+    let BView::Card(column) = list else {
+        panic!("the source list is a Sidebar column");
     };
-    assert!(
-        matches!(children.get(1), Some(child) if !matches!(child, BView::Empty)),
-        "file host Row's second child (content column) must not be empty"
-    );
-}
-
-/// Builds the Timeline item directly so structure tests exercise `BTimeItem`,
-/// independently of host dispatch.
-fn build_time_item() -> BView {
-    phiber::v2::part::custom::time::BTimeItem::new().build(&BState::default())
-}
-
-fn time_column_children(item: &BView) -> &[BView] {
-    let BView::Column { children } = item else {
-        panic!("Timeline item must be a Column, got {item:?}");
-    };
-    children
-}
-
-fn timeline_ruler_children(item: &BView) -> &[BView] {
-    let timeline_children = time_column_children(item);
-    let Some(BView::Panel {
-        role: BPanelRole::Toolbar,
-        children: toolbar_children,
-    }) = timeline_children.first()
-    else {
-        panic!("Timeline Column's first child must be a Toolbar panel");
-    };
-    let Some(BView::Row { children }) = toolbar_children.first() else {
-        panic!("Timeline Toolbar's first child must be the ruler Row");
-    };
-    children
+    assert_eq!(column.kind, BCardKind::Column(BColumn::Sidebar));
+    let panels = &column.body;
+    // Volumes / System / Bookmarks / Recent, each a folding panel
+    // (`FILEBROWSER_PT_bookmarks_*`), then the Open operator's options.
+    assert_eq!(panels.len(), 5, "four Blender bookmark panels + Open options");
+    assert!(panels[..4].iter().all(|p| matches!(p, BView::Card(card) if card.fold.is_some())));
 }
 
 #[test]
-fn time_item_is_column() {
-    let item = build_time_item();
-
-    assert!(
-        matches!(item, BView::Column { .. }),
-        "BTimeItem must build a Column"
-    );
-}
-
-#[test]
-fn time_custom_item_is_not_canvas() {
-    let item = phiber::v2::part::custom::BCustomItem::new(BHostType::Time)
-        .build(&BState::default());
-
-    assert!(
-        !matches!(item, BView::Canvas { .. }),
-        "Time custom item must not be a Canvas fallback"
-    );
-}
-
-#[test]
-fn time_item_first_child_is_toolbar() {
-    let item = build_time_item();
-    let children = time_column_children(&item);
-
-    assert!(
-        matches!(
-            children.first(),
-            Some(BView::Panel {
-                role: BPanelRole::Toolbar,
-                ..
-            })
-        ),
-        "Timeline Column's first child must be the ruler Toolbar panel"
-    );
-}
-
-#[test]
-fn time_item_has_transport_buttons() {
-    let item = build_time_item();
-    let button_count = timeline_ruler_children(&item)
-        .iter()
-        .filter(|child| matches!(child, BView::Button(_)))
-        .count();
-
-    assert!(
-        button_count >= 5,
-        "Timeline ruler must contain at least five transport buttons, found {button_count}"
-    );
-}
-
-#[test]
-fn time_item_play_pause_is_toggle() {
-    let item = build_time_item();
-    let has_playing_toggle = timeline_ruler_children(&item).iter().any(|child| {
-        matches!(
-            child,
-            BView::Button(ctl)
-                if matches!(&ctl.action, Some(BAction::Toggle(path)) if path.encode() == "ctx.time.playing")
-        )
+fn modal_file_browser_raises_the_file_host() {
+    let s = BState::default();
+    let modal = phiber::v2::modal::BModalItem::new(phiber::v2::modal::BModalType::FileBrowser).build(&s);
+    let kind = phiber::v2::modal::BModalType::FileBrowser;
+    let area = kind.spec().areas[0];
+    let host = phiber::v2::area::with_scope(kind, || {
+        phiber::v2::area::with_area(area, || phiber::v2::host::BHostItem::new(BHostType::File).build(&s))
     });
+    let BView::Modal { body, .. } = modal else { panic!("modal") };
+    let BView::Zone { list, .. } = *body else { panic!("the dialog's body is a zone") };
+    let [BView::Area { child, .. }] = list.as_slice() else { panic!("one area") };
+    assert_eq!(format!("{child:?}"), format!("{host:?}"), "the dialog raises the File host, not a copy of it");
+}
 
-    assert!(
-        has_playing_toggle,
-        "Timeline ruler must contain a Toggle action targeting ctx.time.playing"
+/// The Timeline's window is Blender's: the Dope Sheet canvas in Timeline
+/// mode (`action_main_region_draw`), scrubbed with the left button — not a
+/// toolbar-and-labels stand-in. The transport lives in the header, where
+/// `playback_controls` puts it.
+#[test]
+fn time_item_is_the_timeline_canvas() {
+    let item = phiber::v2::part::time::BTimeItem::new().build(&BState::default());
+    assert!(matches!(item, BView::Canvas { host: BHostType::Time, .. }), "the window is the Time canvas, got {item:?}");
+    let custom = phiber::v2::part::custom::BCustomItem::new(BHostType::Time).build(&BState::default());
+    assert_eq!(format!("{custom:?}"), format!("{item:?}"), "the custom part hands the host the same canvas");
+}
+
+/// Every button of the header's transport group, in the state it is built
+/// in — the three settings popovers (Auto Keyframing after record, Time
+/// Jump after the jump pair, Playhead after the magnet) are their chevrons,
+/// not transport buttons.
+fn transport_buttons(state: &BState) -> Vec<phiber::v2::view::prim::BControl> {
+    use phiber::v2::part::playback::BPlayback;
+    let BView::Row { list } = BPlayback::new(BHostType::Time).build(state) else { panic!("the transport is a row") };
+    let popovers = list.iter().filter(|child| matches!(child, BView::Popover { .. })).count();
+    assert_eq!(popovers, 3, "the Auto Keyframing, Time Jump and Playhead popovers");
+    list.into_iter()
+        .filter_map(|child| match child {
+            BView::Button(ctl) => Some(ctl),
+            BView::Popover { .. } => None,
+            other => panic!("the transport holds buttons and its three popovers only, got {other:?}"),
+        })
+        .collect()
+}
+
+/// `playback_controls`: record, |◀, ◆◀, ◀, ▶, ▶◆, ▶|, the time jump pair,
+/// then the playhead magnet.
+#[test]
+fn the_header_transport_is_blenders_playback_controls() {
+    let icon_list: Vec<String> = transport_buttons(&BState::default()).into_iter().filter_map(|c| c.icon).collect();
+    assert_eq!(
+        icon_list,
+        ["record", "skip_start", "keyframe_prev", "play_back", "play", "keyframe_next", "skip_end", "chevron_left", "chevron_right", "magnet"]
     );
 }
 
 #[test]
-fn time_item_second_child_is_body() {
-    let item = build_time_item();
-    let children = time_column_children(&item);
-
-    assert!(
-        matches!(
-            children.get(1),
-            Some(BView::Panel {
-                role: BPanelRole::Body,
-                children,
-            }) if !children.is_empty()
-        ),
-        "Timeline Column's second child must be a non-empty Body panel"
+fn play_sets_the_global_playing_flag_and_one_wide_pause_stands_in_for_both_play_buttons() {
+    let mut state = BState::default();
+    let play = transport_buttons(&state).into_iter().find(|c| c.icon.as_deref() == Some("play")).expect("a play button");
+    let Some(BAction::Set(path, value)) = play.action else { panic!("play writes the playing flag, got {:?}", play.action) };
+    assert_eq!((path.encode().as_str(), value.as_str()), ("ctx.playing", "true"));
+    phiber::v2::state::action::apply_action(&mut state, &BAction::Set(path, value));
+    let icon_list: Vec<String> = transport_buttons(&state).into_iter().filter_map(|c| c.icon).collect();
+    assert_eq!(
+        icon_list,
+        ["record", "skip_start", "keyframe_prev", "pause", "keyframe_next", "skip_end", "chevron_left", "chevron_right", "magnet"],
+        "`playback_controls` while playing: one pause where the two play buttons were"
     );
+    let pause = transport_buttons(&state).into_iter().find(|c| c.icon.as_deref() == Some("pause")).unwrap();
+    assert!(pause.active && pause.span == 2, "lit, and two slots wide (`scale_x = 2`)");
+    // Reverse runs the same ticker the other way.
+    phiber::v2::state::action::apply_action(&mut state, &pause.action.unwrap());
+    let reverse = transport_buttons(&state).into_iter().find(|c| c.icon.as_deref() == Some("play_back")).unwrap();
+    phiber::v2::state::action::apply_action(&mut state, &reverse.action.unwrap());
+    assert_eq!(state.get(CtxKey::Playing), Some("reverse"));
+    assert_eq!(phiber::v2::part::playback::set::BTransportButton::tick_step(&state), Some("-1"));
+}
+
+/// The header's right group: the current frame, the preview-range toggle,
+/// Start and End — `frame_current`, `use_preview_range`, `frame_start`,
+/// `frame_end` in `playback_controls`.
+fn frame_fields(state: &BState) -> Vec<BView> {
+    use phiber::v2::part::framerange::BFrameRange;
+    let BView::Row { list } = BFrameRange::new(BHostType::Time).build(state) else { panic!("the range group is a row") };
+    list
 }
 
 #[test]
-fn time_item_default_frame_label() {
-    let item = build_time_item();
-    let has_default_frame = timeline_ruler_children(&item)
+fn the_header_shows_frame_start_and_end_as_numbers() {
+    let list = frame_fields(&BState::default());
+    let key_list: Vec<String> = list
         .iter()
-        .any(|child| matches!(child, BView::Label { text } if text == "1"));
-
-    assert!(
-        has_default_frame,
-        "Timeline ruler must show default frame Label 1 when state is absent"
-    );
+        .filter_map(|v| match v {
+            BView::Ctrl(ctrl) => Some(ctrl.key.encode()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(key_list, ["ctx.frame", "ctx.frame_start", "ctx.frame_end"]);
+    assert!(list.iter().any(|v| matches!(v, BView::Button(ctl) if ctl.icon.as_deref() == Some("preview"))), "the preview-range toggle sits between them");
 }
 
 proptest! {
-    // Feature: phiber-host-visual-fixes, Property 1: Frame label reflects state
-    /// Property 1: Frame label reflects state
+    // Feature: phiber-host-visual-fixes, Property 1: Frame field reflects state
+    /// Property 1: the header's frame field shows the current frame.
     ///
     /// **Validates: Requirements R3.5**
     #[test]
-    fn frame_label_reflects_state(frame_str in "[1-9][0-9]{0,5}") {
+    fn frame_field_reflects_state(frame_str in "[1-9][0-9]{0,5}") {
         let mut state = BState::default();
-        state.set_encoded("ctx.time.frame", frame_str.clone());
-        let item = phiber::v2::part::custom::time::BTimeItem::new().build(&state);
-
-        let has_frame_label = timeline_ruler_children(&item)
-            .iter()
-            .any(|child| matches!(child, BView::Label { text } if text == &frame_str));
-
-        prop_assert!(
-            has_frame_label,
-            "expected ruler row to contain Label {{ text: {frame_str:?} }}"
-        );
+        state.set_encoded("ctx.frame", frame_str.clone());
+        let shown = frame_fields(&state).into_iter().find_map(|v| match v {
+            BView::Ctrl(ctrl) if ctrl.key.encode() == "ctx.frame" => Some(ctrl.value.display()),
+            _ => None,
+        });
+        prop_assert_eq!(shown, Some(frame_str));
     }
 }
 
@@ -283,7 +268,7 @@ async fn tree_row_renders_disclosure(cx: &mut TestAppContext) {
     cx.simulate_resize(size(px(1280.0), px(800.0)));
     app.update(cx, |app, cx| {
         app.state = BState::new();
-        app.state.set(&K_SPACE, BSpaceType::Layout.slug());
+        app.state.set(CtxKey::Space, BSpaceType::Layout.slug());
         cx.notify();
     });
     cx.run_until_parked();

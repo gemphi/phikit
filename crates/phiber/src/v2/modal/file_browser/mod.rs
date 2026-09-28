@@ -1,44 +1,35 @@
 //! File Browser modal — the Open / Save As / Import / Export overlay.
 //! Content is shared with the `file` host: sidebar categories, columns,
-//! filters, and nav actions all live in `part::custom::file`.
+//! filters, and nav actions all live in `part::file`.
 //!
-//! Region layout mirrors Blender's `space_file` (`space_file.cc:61`):
-//!   ┌─ header   (View / Select menus) ──────────────────────────┐
-//!   ├─ ui       (nav / path / search / display / filter) ───────┤
-//!   ├─ tools    (bookmarks sidebar) │ window (file list) ───────┤
-//!   └─ execute  (filename / Cancel / Open) ────────────────────-┘
+//! The dialog raises the `File` host (`host::file::REGIONS`) in a card, so
+//! its header, path strip, source list, file list and execute bar are the
+//! regions the editor has in a workspace — one declaration, one layout.
 
-pub mod execute;
-pub mod files;
-pub mod header;
-pub mod path_bar;
-pub mod sidebar;
-
-pub use crate::v2::part::custom::file::set::{
-    BFileCategory, BFileColumn, BFileDisplayType, BFileEntry, CATEGORIES, COLUMNS, DISPLAY_MODES,
-    FILTERS, NAV, SYSTEM,
-};
+use crate::v2::host::BHostItem;
+use crate::v2::host::BHostType;
 use crate::v2::state::BState;
-use crate::v2::view::prim::BPanelRole;
-use crate::v2::view::{BView, BViewItem};
+use crate::v2::view::BView;
+use crate::v2::view::BViewItem;
+pub use crate::v2::part::file::set::BFileCategory;
+pub use crate::v2::part::file::set::BFileColumn;
+pub use crate::v2::part::file::set::BFileDisplayType;
+pub use crate::v2::part::file::set::BFileEntry;
+pub use crate::v2::part::file::set::CATEGORIES;
+pub use crate::v2::part::file::set::COLUMNS;
+pub use crate::v2::part::file::set::DISPLAY_MODES;
+pub use crate::v2::part::file::set::FILTERS;
+pub use crate::v2::part::file::set::NAV;
+pub use crate::v2::part::file::set::SYSTEM;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct BFileBrowserModal;
 
 impl BViewItem for BFileBrowserModal {
+    /// The dialog is the File host raised in a card: the same regions, in
+    /// the same order, laid out by the same walkers as the editor in a
+    /// workspace. Nothing here is built a second time.
     fn build(&self, s: &BState) -> BView {
-        BView::column(vec![
-            header::view(s),
-            path_bar::view(s),
-            // The middle band (bookmarks sidebar | file list) is wrapped in a
-            // `Body` panel so it takes `flex_1 min_h_0` inside the modal card:
-            // this gives the sidebar and file list a bounded height to scroll
-            // within instead of clipping or overflowing the card.
-            BView::panel(
-                BPanelRole::Body,
-                vec![BView::row(vec![sidebar::view(s), files::view(s)])],
-            ),
-            execute::view(s),
-        ])
+        BHostItem::new(BHostType::File).build(s)
     }
 }

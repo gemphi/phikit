@@ -4,7 +4,7 @@
 use phiber::v2::{
     state::BState,
     theme::{
-        BPaletteName, BShadowStyle, BStyleParser, BStyleValue, UI_STYLE_DESCRIPTORS,
+        BFontFamily, BPaletteName, BShadowStyle, BStyleParser, BStyleValue, UI_STYLE_DESCRIPTORS,
         resolve_ui_style, ui_style_defaults,
     },
 };
@@ -22,20 +22,12 @@ fn encode(value: BStyleValue) -> String {
         BStyleValue::Number(value) => value.to_string(),
         BStyleValue::Bool(value) => value.to_string(),
         BStyleValue::Color((h, s, l, a)) => format!("{h},{s},{l},{a}"),
-        BStyleValue::Shadow(BShadowStyle::None) => "none".to_string(),
-        BStyleValue::Shadow(BShadowStyle::ExtraLarge) => "extra_large".to_string(),
+        BStyleValue::Shadow(shadow) => shadow.slug().to_string(),
+        BStyleValue::Font(family) => family.slug().to_string(),
     }
 }
 
 fn number_strategy(index: usize, min: f32, max: f32) -> BoxedStrategy<ValidOverride> {
-    let descriptor = &UI_STYLE_DESCRIPTORS[index];
-    let defaults = ui_style_defaults(BPaletteName::AppleDark);
-    let (min, max) = match descriptor.target {
-        // Conflicting resize pairs belong to Property 9, not override fidelity.
-        "resize.visible_seam" => (min, max.min(defaults.resize.hit_width)),
-        "resize.hit_width" => (min.max(defaults.resize.visible_seam), max),
-        _ => (min, max),
-    };
     prop_oneof![Just(min), Just(max), min..=max]
         .prop_map(move |number| {
             let value = BStyleValue::Number(number);
@@ -74,9 +66,21 @@ fn arb_valid_override() -> impl Strategy<Value = ValidOverride> {
                     .boxed()
             }
             BStyleParser::Shadow => {
-                prop_oneof![Just(BShadowStyle::None), Just(BShadowStyle::ExtraLarge),]
+                proptest::sample::select(BShadowStyle::ALL.to_vec())
                     .prop_map(move |shadow| {
                         let value = BStyleValue::Shadow(shadow);
+                        ValidOverride {
+                            descriptor_index: index,
+                            value,
+                            encoded: encode(value),
+                        }
+                    })
+                    .boxed()
+            }
+            BStyleParser::Font => {
+                proptest::sample::select(BFontFamily::ALL.to_vec())
+                    .prop_map(move |family| {
+                        let value = BStyleValue::Font(family);
                         ValidOverride {
                             descriptor_index: index,
                             value,

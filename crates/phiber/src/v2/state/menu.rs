@@ -29,17 +29,21 @@
 //! Requirements 52.1–52.3 (Properties 5, 6, 7).
 
 use super::{
-    BPath, BState,
-    key::P_MENU,
+    BPath, BState, MenuKey,
     val::{V_FALSE, V_TRUE},
 };
 
 /// Toggle a menu key. Top-level toggles top-close every peer first.
 pub fn apply_toggle(state: &mut BState, key: &BPath) {
-    if is_top_level(key) {
+    if MenuKey::is_top_level(key) {
         close_all_top_level_except(state, &key.encode());
+        close_panels(state);
         let currently_open = state.get(key) == Some(V_TRUE);
-        state.set(key, if currently_open { V_FALSE } else { V_TRUE });
+        if currently_open {
+            close(state, key);
+        } else {
+            state.set(key, V_TRUE);
+        }
         return;
     }
     apply_open(state, key);
@@ -67,14 +71,14 @@ pub fn hover_open_if_menubar_active(state: &mut BState, target: &BPath) {
 pub fn is_menubar_active(state: &BState) -> bool {
     state
         .iter_keys()
-        .any(|k| is_top_level_encoded(k) && state.get_encoded(k) == Some(V_TRUE))
+        .any(|k| MenuKey::is_top_level_encoded(k) && state.get_encoded(k) == Some(V_TRUE))
 }
 
 /// True iff at least one top-level menu is open *within this host*. Hover
 /// switching is per-host: moving the pointer across one header's labels must
 /// not reach into another host's menubar.
 pub fn is_menubar_active_in(state: &BState, host: &str) -> bool {
-    let prefix = format!("ctx.{}.{}.", P_MENU, host);
+    let prefix = MenuKey::host_prefix(host);
     state.iter_keys().any(|k| {
         k.strip_prefix(&prefix)
             .is_some_and(|rest| !rest.contains('.'))
@@ -82,29 +86,54 @@ pub fn is_menubar_active_in(state: &BState, host: &str) -> bool {
     })
 }
 
-/// `ctx.menu.<host>.<label>` — exactly one dot after the `ctx.menu.` prefix.
-fn is_top_level_encoded(k: &str) -> bool {
-    k.strip_prefix("ctx.menu.")
-        .is_some_and(|rest| rest.matches('.').count() == 1)
+/// Close every deployed overlay — the menubar popovers AND the per-area
+/// editor-type switcher popovers. Without the second prefix, choosing an
+/// editor type left its own popover on screen.
+pub fn close_overlays(state: &mut BState) {
+    let menus = MenuKey::prefix();
+    let switchers = super::AreaKey::switcher_prefix();
+    let keys: Vec<String> = state
+        .iter_keys()
+        .filter(|k| k.starts_with(&menus) || k.starts_with(&switchers))
+        .cloned()
+        .collect();
+    for key in keys {
+        state.set_encoded(&key, V_FALSE);
+    }
 }
 
-/// Build `ctx.menu.<host>.<top>` from a host slug and a top-level label.
-pub fn k_menu(host: &'static str, top: &'static str) -> BPath {
-    BPath::owned(vec![P_MENU, host, top])
+/// Close every header panel popover (`MenuKey::Panel`): a menu opening
+/// takes them down, as Blender's popovers go when a menu opens.
+pub fn close_panels(state: &mut BState) {
+    let mark = MenuKey::panel_mark();
+    let keys: Vec<String> = state.iter_keys().filter(|k| k.contains(mark) && state.get_encoded(k) == Some(V_TRUE)).cloned().collect();
+    for key in keys {
+        state.set_encoded(&key, V_FALSE);
+    }
 }
 
-/// Build `ctx.menu.<host>.<seg1>.<seg2>...` from a host slug and a segment
-/// slice (the top label followed by any submenu labels).
-pub fn k_menu_path(host: &'static str, labels: &[&'static str]) -> BPath {
-    let mut segs: Vec<&'static str> = Vec::with_capacity(labels.len() + 2);
-    segs.push(P_MENU);
-    segs.push(host);
-    segs.extend(labels);
-    BPath::owned(segs)
+/// Close `key` and everything opened underneath it. A menu that closes while
+/// a submenu of its is open must take that submenu with it — otherwise the
+/// submenu's key stays `V_TRUE` and the popover reappears, stacked over the
+/// next menu the user opens.
+pub fn close(state: &mut BState, key: &BPath) {
+    close_encoded(state, &key.encode());
 }
 
-fn is_top_level(key: &BPath) -> bool {
-    key.segs.len() == 3 && key.segs[0] == P_MENU
+fn close_encoded(state: &mut BState, encoded: &str) {
+    let descendants = format!("{encoded}.");
+    let victims: Vec<String> = state
+        .iter_keys()
+        .filter(|k| {
+            (k.as_str() == encoded || k.starts_with(&descendants))
+                && state.get_encoded(k) == Some(V_TRUE)
+        })
+        .cloned()
+        .collect();
+    for k in victims {
+        state.set_encoded(&k, V_FALSE);
+    }
+    state.set_encoded(encoded, V_FALSE);
 }
 
 /// Close every open top-level menu in every host except `keep` (an encoded
@@ -113,12 +142,12 @@ fn close_all_top_level_except(state: &mut BState, keep: &str) {
     let victims: Vec<String> = state
         .iter_keys()
         .filter(|k| {
-            is_top_level_encoded(k) && k.as_str() != keep && state.get_encoded(k) == Some(V_TRUE)
+            MenuKey::is_top_level_encoded(k) && k.as_str() != keep && state.get_encoded(k) == Some(V_TRUE)
         })
         .cloned()
         .collect();
     for k in victims {
-        state.set_encoded(&k, V_FALSE);
+        close_encoded(state, &k);
     }
 }
 
@@ -140,6 +169,6 @@ fn close_all_siblings(state: &mut BState, key: &BPath) {
         .cloned()
         .collect();
     for k in victims {
-        state.set_encoded(&k, V_FALSE);
+        close_encoded(state, &k);
     }
 }

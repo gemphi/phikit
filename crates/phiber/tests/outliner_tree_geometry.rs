@@ -7,11 +7,12 @@
 //! indicator drawn as a `border_l` displaced the selected row's content by
 //! 2px and knocked exactly that row off the grid.
 
+use phiber::v2::state::{BKey as _, CtxKey};
 use gpui::{TestAppContext, px, size};
 use phiber::v2::app::BPhiberApp;
-use phiber::v2::host::{BHostType, host_slug};
+use phiber::v2::host::BHostType;
 use phiber::v2::space::BSpaceType;
-use phiber::v2::state::{BState, V_TRUE, k_menu, key::K_SPACE};
+use phiber::v2::state::{BState, V_TRUE, MenuKey};
 use phiber::v2::theme::METRICS;
 
 fn arrow_x(cx: &mut gpui::VisualTestContext, id: &'static str) -> f32 {
@@ -27,7 +28,7 @@ async fn each_depth_steps_by_exactly_one_grid_column(cx: &mut TestAppContext) {
     cx.simulate_resize(size(px(1280.0), px(800.0)));
     app.update(cx, |app, cx| {
         app.state = BState::new();
-        app.state.set(&K_SPACE, BSpaceType::Layout.slug());
+        app.state.set(CtxKey::Space, BSpaceType::Layout.slug());
         cx.notify();
     });
     cx.run_until_parked();
@@ -58,7 +59,7 @@ async fn every_arrow_column_is_one_unit_wide(cx: &mut TestAppContext) {
     cx.simulate_resize(size(px(1280.0), px(800.0)));
     app.update(cx, |app, cx| {
         app.state = BState::new();
-        app.state.set(&K_SPACE, BSpaceType::Layout.slug());
+        app.state.set(CtxKey::Space, BSpaceType::Layout.slug());
         cx.notify();
     });
     cx.run_until_parked();
@@ -89,28 +90,34 @@ async fn menubar_anchor_fills_the_header_down_to_its_border(cx: &mut TestAppCont
     cx.simulate_resize(size(px(1280.0), px(800.0)));
     app.update(cx, |app, cx| {
         app.state = BState::new();
-        app.state.set(&K_SPACE, BSpaceType::Layout.slug());
+        app.state.set(CtxKey::Space, BSpaceType::Layout.slug());
         app.state
-            .set(&k_menu(host_slug(BHostType::Topbar), "File"), V_TRUE);
+            .set(&MenuKey::Top(BHostType::Topbar.slug(), "File").path(), V_TRUE);
         cx.notify();
     });
     cx.run_until_parked();
 
     let id: &'static str = Box::leak(
-        phiber::v2::view::render::gpui::atom::button::element_id(
+        phiber::v2::view::draw::button::element_id(
             "",
             Some("File"),
-            &phiber::v2::view::prim::BAction::Toggle(k_menu(host_slug(BHostType::Topbar), "File")),
+            &phiber::v2::view::prim::BAction::Toggle(MenuKey::Top(BHostType::Topbar.slug(), "File").path()),
         )
         .into_boxed_str(),
     );
     let b = cx
         .debug_bounds(id)
         .expect("open File anchor was not painted");
-    assert_eq!(
-        f32::from(b.size.height),
-        METRICS.h_header - METRICS.stroke,
-        "the anchor fills the header minus its bottom rule, so the accent \
-         underline and the header border are the same line"
-    );
+    let strip = cx
+        .debug_bounds("region-Header-Topbar")
+        .expect("the menubar strip was not painted");
+    // A menu anchor is a button: the button height, centred on the strip's
+    // line — the centre of the cap band, the strip less the menu gap above
+    // it — like the editor switcher and the icon toggles beside it, as the
+    // approved mock-ups draw them (Blender's pulldowns are `UI_UNIT_Y`
+    // buttons too). It no longer hangs from the strip's bottom edge.
+    assert_eq!(f32::from(b.size.height), METRICS.h_button, "a menu anchor is the button height");
+    let line = f32::from(strip.origin.y) + METRICS.menu_top_gap + (METRICS.h_header - METRICS.menu_top_gap) / 2.0;
+    let mid = f32::from(b.origin.y) + f32::from(b.size.height) / 2.0;
+    assert!((mid - line).abs() < 0.51, "the anchor sits on the strip's line: {mid} vs {line}");
 }

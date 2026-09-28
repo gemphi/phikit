@@ -2,45 +2,72 @@
 //! Every write uses a `pub const BPath` key + a `pub const &str` value —
 //! zero raw strings.
 
-use super::{BState, key::*, val::*};
+use crate::v2::state::{AppKey, CtxKey, ModalKey};
+use super::{BState, val::*};
 use crate::v2::space::BSpaceType;
+use crate::v2::zone::BZoneType;
 
 pub fn default_state() -> BState {
     let mut s = BState::new();
-    s.set(&K_SPACE, BSpaceType::Layout.slug());
-    s.set(&K_SCENE, V_SCENE_DEFAULT);
-    s.set(&K_VIEW_LAYER, V_VIEW_LAYER_DEFAULT);
-    s.set(&K_OBJECT, V_OBJECT_DEFAULT);
-    s.set(&K_MODE, V_MODE_OBJECT);
-    s.set(&K_TOOL, V_TOOL_SELECT_BOX);
-    s.set(&K_FRAME, V_FRAME_START);
-    s.set(&K_PLAYING, V_FALSE);
-    s.set(&K_THEME, V_THEME_APPLE_DARK);
+    s.set(CtxKey::Space, BSpaceType::Layout.slug());
+    s.set(CtxKey::Scene, V_SCENE_DEFAULT);
+    s.set(CtxKey::ViewLayer, V_VIEW_LAYER_DEFAULT);
+    s.set(CtxKey::Object, V_OBJECT_DEFAULT);
+    s.set(CtxKey::Mode, V_MODE_OBJECT);
+    s.set(CtxKey::Tool, V_TOOL_SELECT_BOX);
+    s.set(CtxKey::Frame, V_FRAME_START);
+    s.set(CtxKey::Playing, V_FALSE);
+    s.set(AppKey::Theme, V_THEME_SPHERE);
     // Boot into the welcome window (Blender's splash). Any click dismisses
     // it; `Blender ▸ Splash Screen` brings it back.
-    s.set(&K_MODAL, V_MODAL_SPLASH);
-    s.set(&K_ZONE_LEFT, V_TRUE);
-    s.set(&K_ZONE_RIGHT, V_TRUE);
-    s.set(&K_ZONE_BOTTOM, V_TRUE);
+    s.set(ModalKey::Open, V_MODAL_SPLASH);
+    for zone in crate::v2::zone::visibility::TOGGLEABLE {
+        s.set(super::ZoneKey::Shown(zone), V_TRUE);
+    }
     // Properties context — Blender's default active tab is "Active Tool".
-    s.set(
-        &crate::v2::state::BPath::owned(vec!["buts", "navbar", "tab"]),
-        "Active Tool",
-    );
+    s.set(crate::v2::state::ButsKey::NavbarTab, "Active Tool");
 
     // Blender Shading defaults: upper editors retain useful working room,
     // while Properties gets the taller share of the right column. These are
     // ordinary BState area fractions consumed by the generic zone renderer.
     for (zone, fractions) in [
-        ("left", [0.58_f32, 0.42_f32]),
-        ("center", [0.55_f32, 0.45_f32]),
-        ("right", [0.22_f32, 0.78_f32]),
+        (BZoneType::Left, [0.58_f32, 0.42_f32]),
+        (BZoneType::Center, [0.55_f32, 0.45_f32]),
+        (BZoneType::Right, [0.22_f32, 0.78_f32]),
     ] {
         for (index, fraction) in fractions.into_iter().enumerate() {
-            s.set_encoded(
-                &format!("ctx.area_size.Shading.{zone}.{index}"),
-                fraction.to_string(),
-            );
+            s.set(super::AreaKey::Size(BSpaceType::Shading, zone, index), fraction.to_string());
+        }
+    }
+    // Zone sizes read from Blender's `startup.blend` (1920 × 1080, see
+    // `tests/truth/workspaces.txt`), scaled to the 1600-px window the layout
+    // golden records: the Animation workspace's Dope Sheet takes 433 of
+    // 1054 px and its camera viewport 559 of 1920; the Compositing Dope
+    // Sheet 189 px; the Geometry Nodes node editor and Timeline 551 px
+    // together, with the Spreadsheet 654 wide; the Scripting column 558 wide;
+    // the UV and Texture Paint image editors 786 wide.
+    for (space, zone, size) in [
+        (BSpaceType::Animation, BZoneType::Bottom, V_ANIMATION_BOTTOM_HEIGHT),
+        (BSpaceType::Animation, BZoneType::Left, V_CAMERA_VIEW_WIDTH),
+        (BSpaceType::Compositing, BZoneType::Bottom, V_COMPOSITING_BOTTOM_HEIGHT),
+        (BSpaceType::GeometryNodes, BZoneType::Bottom, V_GEOMETRY_NODES_BOTTOM_HEIGHT),
+        (BSpaceType::GeometryNodes, BZoneType::Left, V_SPREADSHEET_WIDTH),
+        (BSpaceType::Scripting, BZoneType::Left, V_SCRIPTING_LEFT_WIDTH),
+        (BSpaceType::UvEditing, BZoneType::Left, V_IMAGE_COLUMN_WIDTH),
+        (BSpaceType::TexturePaint, BZoneType::Left, V_IMAGE_COLUMN_WIDTH),
+    ] {
+        s.set(super::ZoneKey::Size(space, zone), size);
+    }
+    // Shares inside a zone, from the same file: the Geometry Nodes node
+    // editor over its Timeline (477 : 74, the Timeline kept tall enough for its
+    // strip and a row), and Scripting's viewport, console
+    // and Info log (393 : 463 : 169).
+    for (space, zone, fractions) in [
+        (BSpaceType::GeometryNodes, BZoneType::Bottom, &[0.8_f32, 0.2_f32][..]),
+        (BSpaceType::Scripting, BZoneType::Left, &[0.38_f32, 0.45_f32, 0.17_f32][..]),
+    ] {
+        for (index, fraction) in fractions.iter().enumerate() {
+            s.set(super::AreaKey::Size(space, zone, index), fraction.to_string());
         }
     }
 

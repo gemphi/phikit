@@ -91,14 +91,14 @@ use phiber::v2::theme::{BPaletteName, resolve_ui_style, ui_style_defaults};
 /// larger than the visible seam — the interactive band is wider than the
 /// painted line.
 #[test]
-fn hit_width_exceeds_visible_seam_across_all_palettes() {
+fn hit_width_exceeds_the_hovered_seam_across_all_palettes() {
     for &palette in BPaletteName::ALL {
         let style = resolve_ui_style(ui_style_defaults(palette), &BState::new());
         assert!(
-            style.resize.hit_width > style.resize.visible_seam,
-            "palette {palette:?}: hit_width ({}) must exceed visible_seam ({})",
+            style.resize.hit_width > style.resize.hover_thickness(),
+            "palette {palette:?}: hit_width ({}) must exceed the hovered seam ({})",
             style.resize.hit_width,
-            style.resize.visible_seam,
+            style.resize.hover_thickness(),
         );
     }
 }
@@ -119,8 +119,8 @@ fn min_extent_fits_two_areas_in_minimum_viewport() {
     }
 }
 
-/// Pan state is orthogonal to resize state — applying a pan delta must not
-/// touch any area-resize keys, and vice versa.
+// Pan state is orthogonal to resize state — applying a pan delta must not
+// touch any area-resize keys, and vice versa.
 proptest! {
     #[test]
     fn pan_does_not_contaminate_resize_state(

@@ -38,94 +38,71 @@ struct Owner {
 
 const DISPATCHERS: &[&str] = &[
     "mod.rs",
-    "prim/mod.rs",
-    "prim/panel/mod.rs",
+    "prim.rs",
     "modal/mod.rs",
-    "atom/canvas/mod.rs",
+    "canvas/mod.rs",
 ];
 
 // Family modules remain singular while each visual responsibility has one
 // focused B-prefixed owner with an inherent render method.
 const OWNERS: &[Owner] = &[
     Owner {
-        module: "prim/row.rs",
+        module: "row.rs",
         name: "BRow",
     },
     Owner {
-        module: "prim/column.rs",
+        module: "column.rs",
         name: "BColumn",
     },
     Owner {
-        module: "prim/list.rs",
+        module: "list.rs",
         name: "BList",
     },
     Owner {
-        module: "prim/table.rs",
+        module: "table.rs",
         name: "BTableCellView",
     },
     Owner {
-        module: "prim/table.rs",
+        module: "table.rs",
         name: "BTableRow",
     },
     Owner {
-        module: "prim/table.rs",
+        module: "table.rs",
         name: "BTableHeader",
     },
     Owner {
-        module: "prim/tree.rs",
+        module: "tree/mod.rs",
         name: "BTreeIndent",
     },
     Owner {
-        module: "prim/tree.rs",
-        name: "BTreeGuide",
-    },
-    Owner {
-        module: "prim/tree.rs",
+        // The disclosure triangle moved to its own file when the row learnt
+        // to select on click and outgrew the focused-line cap.
+        module: "tree/disclosure.rs",
         name: "BTreeDisclosure",
     },
     Owner {
-        module: "prim/tree.rs",
+        module: "tree/mod.rs",
         name: "BTreeRow",
     },
     Owner {
-        module: "prim/panel/section.rs",
-        name: "BSection",
+        module: "split.rs",
+        name: "BSplit",
     },
     Owner {
-        module: "prim/panel/heading.rs",
-        name: "BCardHeader",
+        module: "card.rs",
+        name: "BCardView",
     },
     Owner {
-        module: "prim/panel/card.rs",
-        name: "BCard",
+        module: "bar.rs",
+        name: "BBar",
     },
     Owner {
-        module: "prim/panel/header.rs",
-        name: "BHeader",
-    },
-    Owner {
-        module: "prim/panel/toolbar.rs",
-        name: "BToolbar",
-    },
-    Owner {
-        module: "prim/panel/sidebar.rs",
+        module: "sidebar.rs",
         name: "BSidebar",
     },
     Owner {
-        module: "prim/panel/footer.rs",
-        name: "BFooter",
-    },
-    Owner {
-        module: "prim/panel/body.rs",
+        module: "body.rs",
         name: "BBody",
-    },
-    Owner {
-        module: "prim/panel/viewport.rs",
-        name: "BViewport",
-    },
-    Owner {
-        module: "prim/panel/modal.rs",
-        name: "BModal",
     },
     Owner {
         module: "modal/fullscreen.rs",
@@ -140,25 +117,25 @@ const OWNERS: &[Owner] = &[
         name: "BWelcome",
     },
     Owner {
-        module: "atom/canvas/fallback.rs",
+        module: "canvas/fallback.rs",
         name: "BFallback",
     },
     Owner {
-        module: "atom/canvas/image.rs",
+        module: "canvas/image/mod.rs",
         name: "BImage",
     },
     Owner {
-        module: "atom/canvas/node.rs",
+        module: "canvas/node.rs",
         name: "BNode",
     },
     Owner {
-        module: "atom/canvas/view3d.rs",
+        module: "canvas/view3d/mod.rs",
         name: "BView3d",
     },
 ];
 
 fn gpui_root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/v2/view/render/gpui")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/v2/view/draw")
 }
 
 fn fixture(name: &str) -> String {
@@ -263,7 +240,12 @@ fn substantive_lines(source: &str) -> Vec<usize> {
     code_only(source)
         .lines()
         .enumerate()
-        .filter_map(|(index, line)| (!line.trim().is_empty()).then_some(index + 1))
+        // A `mod x;` line declares a file, it does no work: the caps count logic.
+        .filter_map(|(index, line)| {
+            let line = line.trim();
+            let declares = (line.starts_with("mod ") || line.starts_with("pub mod ")) && line.ends_with(';');
+            (!line.is_empty() && !declares).then_some(index + 1)
+        })
         .collect()
 }
 
@@ -678,7 +660,7 @@ fn line_cap_fixture_reports_first_excess_substantive_line() {
 //   • `DEFAULT_DIMENSIONS.` / `DEFAULT_STROKES.` / `DEFAULT_SPACING.`
 //     / `DEFAULT_RESIZE.` / `DEFAULT_TYPOGRAPHY.` / `DEFAULT_EFFECTS.`
 //     — raw default-table access bypassing the resolved-style object
-//   • `BlenderDark` / `TokyoNight` — palette variant names hard-coded in
+//   • `Graphite` / `Tokyo` — palette variant names hard-coded in
 //     renderer bodies rather than read from `BRenderCtx.style`
 //
 // **GPUI-mechanics allowlist (explicitly permitted):**
@@ -714,7 +696,6 @@ fn renderer_has_no_hardcoded_style_literals() {
     // Allowlisted files whose content is excluded from the check:
     //   • render_contract.rs — trait definition; references these only in docs
     const ALLOWLISTED: &[&str] = &[
-        "prim/render_contract.rs",
         // tree.rs::render_default is an approved GPUI-mechanics exception:
         // the constant it uses is the LOCAL inline constant DEFAULT_INDENT_UNIT,
         // not an import of the DEFAULT_DIMENSIONS struct.

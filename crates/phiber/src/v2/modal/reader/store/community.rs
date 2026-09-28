@@ -1,0 +1,47 @@
+//! The manual's community page and blender.org's community list —
+//! `manual/getting_started/about/community.rst`, `blender.org/community`.
+
+use super::super::set::{BReaderBlock::*, BReaderDoc};
+
+pub static DOC: BReaderDoc = BReaderDoc {
+    slug: "community",
+    icon: "community",
+    title: "User Communities",
+    source: "Blender Manual — About ▸ The Blender Community; blender.org — Community",
+    blocks: &[
+        Para("Being freely available from the start, even while it was closed source, considerably helped Blender's adoption by the community. A large, stable, and active community of users has gathered around Blender since 1998. The community showed its support for Blender in 2002 when they helped raise €100,000 in seven weeks to enable Blender to go Open Source under the GNU GPL V2 License."),
+        Heading("Independent Sites"),
+        Para("There are several independent websites such as forums, blogs, news, and tutorial sites dedicated to Blender."),
+        Para("One of the largest community forums is Blender Artists, where Blender users gather to show off their creations, get feedback, ask and offer help and, in general, discuss Blender."),
+        Heading("Getting Support"),
+        Para("Blender's community is one of its greatest features, so apart from this user manual, there are many different ways to get support from other users, such as chat.blender.org, Stack Exchange, and Reddit."),
+        Para("For studios and organizations there is Enterprise support, and for studios looking to add Blender to their pipeline, Blender Studio contains documentation and training material around this topic. If you think you have found an issue with Blender, please report a bug."),
+        Heading("Development"),
+        Para("Being open source, Blender welcomes development from volunteers. Communication between developers is done mostly through three platforms:"),
+        Item("The projects.blender.org system"),
+        Item("Developer Forum"),
+        Item("Online Chat"),
+        Para("If you are interested in helping develop Blender, see the Get Involved page."),
+        Heading("Chat"),
+        Para("For real-time discussion, there is chat.blender.org, which uses Blender ID for authentication. You can join these channels:"),
+        Term("#general", "For general chat with the community."),
+        Term("#blender-coders", "For developers to discuss Blender development."),
+        Term("#python", "For support for developers using the Python API."),
+        Term("#docs", "For discussion related to Blender's documentation."),
+        Term("#translations", "For discussion related to translating Blender and its documentation."),
+        Heading("Blender, everywhere"),
+        Para("Anywhere you are, there's a community for you. Find independent Blender groups all around the globe."),
+        Term("Blender Stack Exchange", "Question and answer site for people who use Blender to create 3D graphics, animations, or games."),
+        Term("Blender Artists", "One of the most active independent user sites."),
+        Term("reddit", "/r/blender is a very active subreddit devoted to Blender, with news, critics, and a monthly contest."),
+        Term("Right Click Select", "Suggest ideas for Blender."),
+        Term("BlenderNation", "An overview of everything Blender: development updates, new tutorials, artwork and community information."),
+        Term("Blend Swap", "Community of passionate Blender artists who share their work under Creative Commons licenses."),
+        Term("CG Cookie Community", "Learn Blender, online tutorials, ask questions and get feedback from peers."),
+        Para("Groups also meet in Arabic, Chinese, Dutch, French, German, Greek, Italian, Japanese, Korean, Indonesian, Malay, Russian, Spanish, Turkish and Vietnamese — from Blenderlounge and the Blender User Group de Paris to Blender Italia, Blender.jp, Blender Hoy and BlenderVN."),
+        Heading("Other Useful Links"),
+        Item("Blender FAQ (Can I use Blender commercially? What is GPL/GNU? …)"),
+        Item("Demo and benchmark files"),
+        Item("Developer's Ask Us Anything!"),
+    ],
+};

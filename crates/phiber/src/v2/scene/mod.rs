@@ -4,31 +4,70 @@
 //!
 //! View orientation, zoom, pitch, pan, and every scene-related state key
 //! live in `keys.rs`. Projection + viewport-fit math lives in `project.rs`.
-//! Tests are split across three focused files so all files stay under the
-//! 200-line cap.
 
-use crate::phiphx::services::scene::{SceneMaterial, SceneMesh, SceneModel};
+use crate::phiphx::scene::{SceneMaterial, SceneMesh, SceneModel};
 use crate::v2::state::BState;
 
 // ── Child modules ───────────────────────────────────────────────────────
 
+pub mod skin;
+pub use skin::RaySkin;
+
 pub mod source;
 pub use source::{
-    clear_loaded_scene, scene_actions, scene_cameras, scene_lights, scene_render, scene_source,
-    scene_timeline, scene_world, set_loaded_scene, with_loaded,
+    clear_loaded_scene, clear_scene_objects, scene_actions, scene_cameras, scene_lights,
+    object_builds, scene_objects, scene_render, scene_source, scene_timeline, scene_world, set_loaded_scene,
+    set_loaded_shared, with_loaded,
 };
 
-pub mod keys;
+pub mod key;
 #[cfg(test)]
 mod keys_tests;
-pub use keys::{
-    LoadStage, ZOOM_MAX, ZOOM_MIN, error_key, is_blend_path, is_perspective, load_progress_key,
+pub use key::{
+    LoadStage, ZOOM_MAX, ZOOM_MIN, error_key, is_blend_path, is_perspective, load_cancel_key, load_progress_key,
     load_stage_key, loaded_path_key, loading_key, pan_x_key, pan_y_key, perspective_key,
-    pitch_key, pitch_step, selected_key, view_load_progress, view_load_stage, view_pan,
+    pitch_key, pitch_step, pivot_key, lens_key, selected_key, view_load_progress, view_load_stage, view_pan,
     view_pitch, view_yaw, view_zoom, yaw_key, zoom_key, zoom_step,
 };
 
 pub mod project;
+pub mod render_job;
+pub mod render_status;
+pub use render_job::{BRenderPlan, active_camera, camera_of, plan as render_plan, render_size};
+pub mod output_set;
+pub use output_set::{output_set, pass_set, pass_state};
+pub mod render_save;
+pub use render_save::{BSaveKind, kind_of as save_kind, save as save_render, save_to as save_render_to, written_pass};
+pub mod render_set;
+pub use render_set::{BRenderSet, render_set};
+pub mod action;
+pub mod camera;
+pub mod camera_view;
+pub mod color;
+pub mod keyframe;
+pub use keyframe::BShownKeys;
+pub mod edit;
+pub mod export;
+pub mod extra;
+pub mod import;
+pub mod marker;
+pub mod grab;
+pub mod motion;
+pub mod save;
+pub mod template;
+pub mod boxsel;
+pub mod circlesel;
+pub mod lasso;
+pub mod pick;
+pub mod select;
+pub mod view_op;
+pub mod shading;
+pub mod viewpoint;
+pub mod view_slot;
+pub mod links;
+pub mod transform;
+pub mod xform;
+pub use shading::{BShading, shading_key, view_shading};
 pub use project::{
     FIT_EPSILON, MESH_SCALE, fit_vertex, fit_vertices, mesh_bounds, project, project3,
     project3_full, project_zoom,
@@ -113,48 +152,23 @@ pub enum BObject3D {
     /// per-vertex UVs, plus the Blender object's world-space transform.
     Loaded {
         name: String,
-        mesh: SceneMesh,
+        mesh: std::sync::Arc<SceneMesh>,
         location: [f32; 3],
         scale: [f32; 3],
+        /// World matrix (Blender layout, translation in `[3]`); the viewport
+        /// transforms raw vertices by this so rotation and parenting show.
+        matrix_world: [[f32; 4]; 4],
         /// Material slots (base colour + PBR + optional texture path). Empty
         /// when the source object declared no material.
         materials: Vec<SceneMaterial>,
         /// Per-triangle material-slot index (`len == indices.len() / 3` when
         /// populated), else empty for single-material objects.
-        material_indices: Vec<u16>,
+        material_indices: std::sync::Arc<Vec<u16>>,
         /// Per-vertex UVs (`len == vertices.len()` when populated), else empty.
-        uvs: Vec<[f32; 2]>,
+        uvs: std::sync::Arc<Vec<[f32; 2]>>,
     },
 }
 
-impl BObject3D {
-    /// The base colour for triangle `tri` of a loaded object, resolved from
-    /// its material slots (per-face index → slot 0 → `None`). Primitives and
-    /// material-less loaded objects return `None` so the renderer uses its
-    /// neutral loaded colour.
-    pub fn triangle_base_color(&self, tri: usize) -> Option<[f32; 4]> {
-        let BObject3D::Loaded {
-            materials,
-            material_indices,
-            ..
-        } = self
-        else {
-            return None;
-        };
-        if materials.is_empty() {
-            return None;
-        }
-        let slot = material_indices
-            .get(tri)
-            .copied()
-            .map(usize::from)
-            .unwrap_or(0);
-        materials
-            .get(slot)
-            .or_else(|| materials.first())
-            .map(|m| m.base_color)
-    }
-}
 
 /// Aggregate counts summarising the current Scene_Source: object count,
 /// total vertex count and total triangle count. Used by the viewport
@@ -184,8 +198,8 @@ pub fn scene_metrics(objects: &[BObject3D]) -> (usize, usize, usize) {
 /// Returns the Default_Scene (one [`BObject3D::Primitive`] per entry in the
 /// static [`OBJECTS`] table) when no blend model is loaded, otherwise one
 /// [`BObject3D::Loaded`] per object in `loaded`, in the same order.
-pub fn current_scene(_s: &BState, loaded: Option<&SceneModel>) -> Vec<BObject3D> {
-    match loaded {
+pub fn current_scene(s: &BState, loaded: Option<&SceneModel>) -> Vec<BObject3D> {
+    let objects = match loaded {
         None => OBJECTS
             .iter()
             .map(|o| BObject3D::Primitive {
@@ -195,18 +209,31 @@ pub fn current_scene(_s: &BState, loaded: Option<&SceneModel>) -> Vec<BObject3D>
                 y: o.y,
             })
             .collect(),
-        Some(model) => model
-            .objects
-            .iter()
-            .map(|o| BObject3D::Loaded {
-                name: o.name.clone(),
-                mesh: o.mesh.clone(),
-                location: o.location,
-                scale: o.scale,
-                materials: o.materials.clone(),
-                material_indices: o.material_indices.clone(),
-                uvs: o.uvs.clone(),
-            })
-            .collect(),
+        Some(model) => {
+            // Where every object stands at the shown frame, while the scene moves.
+            let posed = motion::posed(model, motion::shown_frame(s));
+            model
+                .objects
+                .iter()
+                .enumerate()
+                .map(|(i, o)| BObject3D::Loaded {
+                    name: o.name.clone(),
+                    mesh: o.mesh.clone(),
+                    location: o.location,
+                    scale: o.scale,
+                    matrix_world: posed.as_ref().and_then(|p| p.object(i)).unwrap_or(o.matrix_world),
+                    materials: o.materials.clone(),
+                    material_indices: o.material_indices.clone(),
+                    uvs: o.uvs.clone(),
+                })
+                .collect()
+        }
+    };
+    // What was added, deleted and duplicated since the file was read, then
+    // where the Transform panel put them.
+    let mut objects = edit::BSceneEdit::now(s).apply(objects);
+    if let Some(model) = loaded {
+        transform::BTransforms::now(s).apply(s, model, &mut objects);
     }
+    objects
 }

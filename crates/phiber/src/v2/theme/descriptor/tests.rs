@@ -2,10 +2,10 @@
 //! under the 200-line cap. Enabled only under `#[cfg(test)]`.
 
 use super::{
-    BResolvedUiStyle, BShadowStyle, BStyleDescriptor, BStyleParseError, BStyleParser, BStyleValue,
-    UI_STYLE_DESCRIPTORS,
+    BFontFamily, BResolvedUiStyle, BShadowStyle, BStyleDescriptor, BStyleParseError, BStyleParser,
+    BStyleValue, UI_STYLE_DESCRIPTORS,
 };
-use crate::v2::theme::style::APPLE_UI_STYLE_DEFAULTS;
+use crate::v2::theme::style::SPHERE_UI_STYLE_DEFAULTS;
 use std::collections::HashSet;
 
 fn alternate(descriptor: &BStyleDescriptor, current: BStyleValue) -> BStyleValue {
@@ -17,19 +17,27 @@ fn alternate(descriptor: &BStyleDescriptor, current: BStyleValue) -> BStyleValue
         (BStyleParser::ColorHsla, BStyleValue::Color((h, s, l, a))) => {
             BStyleValue::Color((if h < 360.0 { h + 0.5 } else { 0.0 }, s, l, a))
         }
-        (BStyleParser::Shadow, BStyleValue::Shadow(BShadowStyle::None)) => {
-            BStyleValue::Shadow(BShadowStyle::ExtraLarge)
-        }
-        (BStyleParser::Shadow, BStyleValue::Shadow(BShadowStyle::ExtraLarge)) => {
-            BStyleValue::Shadow(BShadowStyle::None)
-        }
+        (BStyleParser::Shadow, BStyleValue::Shadow(shadow)) => BStyleValue::Shadow(match shadow {
+            BShadowStyle::None => BShadowStyle::ExtraLarge,
+            BShadowStyle::Small | BShadowStyle::Medium | BShadowStyle::Large | BShadowStyle::ExtraLarge => BShadowStyle::None,
+        }),
+        (BStyleParser::Font, BStyleValue::Font(family)) => BStyleValue::Font(match family {
+            BFontFamily::System => BFontFamily::JetBrainsMono,
+            BFontFamily::HelveticaNeue
+            | BFontFamily::SegoeUi
+            | BFontFamily::Inter
+            | BFontFamily::Menlo
+            | BFontFamily::Consolas
+            | BFontFamily::CascadiaCode
+            | BFontFamily::JetBrainsMono => BFontFamily::System,
+        }),
         _ => panic!("descriptor parser and target type disagree"),
     }
 }
 
 #[test]
 fn catalog_declares_every_style_field_with_unique_key_and_target() {
-    assert_eq!(UI_STYLE_DESCRIPTORS.len(), 99);
+    assert_eq!(UI_STYLE_DESCRIPTORS.len(), 109);
     let mut keys = HashSet::new();
     let mut targets = HashSet::new();
     for descriptor in UI_STYLE_DESCRIPTORS {
@@ -59,11 +67,11 @@ fn catalog_declares_every_style_field_with_unique_key_and_target() {
 
 #[test]
 fn every_descriptor_reads_its_default_and_owns_only_its_target() {
-    let baseline = BResolvedUiStyle::from(&APPLE_UI_STYLE_DEFAULTS);
+    let baseline = BResolvedUiStyle::from(&SPHERE_UI_STYLE_DEFAULTS);
     for descriptor in UI_STYLE_DESCRIPTORS {
         assert_eq!(
             descriptor.value(&baseline),
-            descriptor.default_value(&APPLE_UI_STYLE_DEFAULTS)
+            descriptor.default_value(&SPHERE_UI_STYLE_DEFAULTS)
         );
         let replacement = alternate(descriptor, descriptor.value(&baseline));
         let mut changed = baseline;
@@ -107,7 +115,7 @@ fn parsers_reject_malformed_non_finite_and_out_of_bounds_values() {
         Err(BStyleParseError::Malformed)
     );
     assert_eq!(
-        BStyleParser::Shadow.parse("large"),
+        BStyleParser::Shadow.parse("huge"),
         Err(BStyleParseError::Malformed)
     );
 }

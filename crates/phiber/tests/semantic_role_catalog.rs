@@ -76,7 +76,7 @@ fn catalog_defines_every_required_role() {
 
 #[test]
 fn catalog_maps_every_role_to_its_declared_treatment() {
-    let roles = ui_style_defaults(BPaletteName::AppleDark).roles;
+    let roles = ui_style_defaults(BPaletteName::Sphere).roles;
     let expected = [
         (BStyleRole::Workspace, BRadiusToken::None),
         (BStyleRole::Zone, BRadiusToken::Lg),
@@ -88,7 +88,7 @@ fn catalog_maps_every_role_to_its_declared_treatment() {
         (BStyleRole::Button, BRadiusToken::Sm),
         (BStyleRole::Field, BRadiusToken::Sm),
         (BStyleRole::MenuItem, BRadiusToken::Sm),
-        (BStyleRole::Tab, BRadiusToken::Md),
+        (BStyleRole::Tab, BRadiusToken::Sm),
         (BStyleRole::Popover, BRadiusToken::Md),
         (BStyleRole::Modal, BRadiusToken::Xl),
     ];
@@ -120,7 +120,7 @@ fn tokens_resolve_against_the_supplied_scale() {
 
 #[test]
 fn defaults_preserve_distinct_semantic_treatments() {
-    let style = BResolvedUiStyle::from(ui_style_defaults(BPaletteName::AppleDark));
+    let style = BResolvedUiStyle::from(ui_style_defaults(BPaletteName::Sphere));
     assert_eq!(style.radius_for(BStyleRole::Button), style.radii.sm);
     assert_eq!(style.radius_for(BStyleRole::Panel), style.radii.md);
     assert_eq!(style.radius_for(BStyleRole::Area), style.radii.lg);
@@ -130,13 +130,16 @@ fn defaults_preserve_distinct_semantic_treatments() {
 
 #[test]
 fn changed_scale_resolves_affected_roles_without_catalog_changes() {
-    let mut style = BResolvedUiStyle::from(ui_style_defaults(BPaletteName::AppleDark));
-    let unchanged_tab = style.radius_for(BStyleRole::Tab);
+    let mut style = BResolvedUiStyle::from(ui_style_defaults(BPaletteName::Sphere));
+    // Panel sits on `md`, so it is the control for an `sm` change.
+    let unchanged_panel = style.radius_for(BStyleRole::Panel);
     style.radii.sm = 23.0;
+    // Chrome controls share one radius: buttons, fields, menu items and tabs.
     assert_eq!(style.radius_for(BStyleRole::Button), 23.0);
     assert_eq!(style.radius_for(BStyleRole::Field), 23.0);
     assert_eq!(style.radius_for(BStyleRole::MenuItem), 23.0);
-    assert_eq!(style.radius_for(BStyleRole::Tab), unchanged_tab);
+    assert_eq!(style.radius_for(BStyleRole::Tab), 23.0);
+    assert_eq!(style.radius_for(BStyleRole::Panel), unchanged_panel);
 }
 
 proptest! {
@@ -148,7 +151,7 @@ proptest! {
     /// **Validates: Requirements 4.2, 4.6, 4.7, 13.4**
     #[test]
     fn semantic_role_resolution_is_total_and_scale_sensitive(scale in arb_radius_scale()) {
-        let mut style = BResolvedUiStyle::from(ui_style_defaults(BPaletteName::AppleDark));
+        let mut style = BResolvedUiStyle::from(ui_style_defaults(BPaletteName::Sphere));
         style.radii = scale;
 
         for role in BStyleRole::ALL {

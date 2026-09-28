@@ -7,7 +7,7 @@ use phiber::v2::{
     host::BHostType,
     state::BState,
     theme::{BPaletteName, resolve_ui_style, ui_style_defaults},
-    view::render::gpui::{BActionHandler, BRenderCtx, BResizeHandler, ctx::BCorners},
+    view::draw::{BActionHandler, BRenderCtx, BResizeHandler, ctx::BCorners},
 };
 use proptest::prelude::*;
 use std::rc::Rc;

@@ -1,0 +1,46 @@
+//! What's New — the current release's notes, Blender 5.2 LTS —
+//! `blender.org/download/releases/5-2`.
+
+use super::super::set::{BReaderBlock::*, BReaderDoc};
+
+pub static DOC: BReaderDoc = BReaderDoc {
+    slug: "whats_new",
+    icon: "release",
+    title: "What's New in Blender 5.2 LTS",
+    source: "blender.org — Blender 5.2 LTS release notes",
+    blocks: &[
+        Note("Released July 14th, 2026. The LTS in Blender 5.2 LTS stands for long-term support: fixes continue for two years, until July 2028."),
+        Para("The Long Roar Ahead — node-powered physics, online asset libraries, and fierce new features throughout."),
+        Heading("Geometry Nodes"),
+        Term("Physics: Solved", "A node-based procedural physics approach using the new XPBD Solver node. Built-in assets provide use-case-specific systems while advanced users can customize simulations further by editing constraints or building from scratch."),
+        Term("Cloth and Hair Dynamics", "A node-based cloth modifier rapidly applies cloth-like behaviour to any mesh with built-in controls for pinning, tearing, stretch and bendiness; hair physics works the same way, attached to a surface object."),
+        Term("Effectors", "Colliders turn closed meshes into collision objects, Forces provide gravity and custom forces, and Custom Effectors inject fully custom behaviour via Closure nodes. A tag-based filter says which geometries each effector affects."),
+        Term("Music to your Nodes", "The new Sample Sound Frequencies node and a Sound socket enable audio-reactive animations. Audio files load directly into node trees and sync with the Video Sequencer."),
+        Term("Bevel and be well", "A fresh Mesh Bevel node delivers procedural control over edge and vertex bevelling."),
+        Term("Bundle Up", "Bundles now attach to geometry, carrying arbitrary data across modifier and object boundaries."),
+        Term("Lists", "A new core data type stores sequences of arbitrary length, with nodes to build, measure, index, filter and sort them."),
+        Term("Strings and Attributes", "String fields, Trim, Reverse, Set Case and Split String; Rename, Transfer and Get Attribute Names; attributes now stored as 4D float vectors."),
+        Heading("Cycles"),
+        Term("Texture Cache", "Significantly reduces memory usage and start-up time on image-heavy scenes by auto-generating smaller, optimized .tx files and loading only the tiles and resolutions needed."),
+        Term("Thin Wall", "A new mode in the Principled BSDF renders physically accurate thin materials like paper, leaves and window sheets."),
+        Term("Colour spaces", "Organized into menus, with new input spaces for Apple, ARRI, Blackmagic Design, Canon and Sony cameras, Adobe RGB, common gamma values, and wide gamut texture support."),
+        Heading("EEVEE"),
+        Para("A major EEVEE release, addressing long-standing usability issues from the EEVEE Next transition: a 2× speed-up in instance-heavy scenes, less banding, the 8-attribute material limit removed, camera visibility for lights, larger shadow pools, anisotropic filtering, and an overhauled Screen Space Raytracing with a new Backface option that reduces light leaking."),
+        Heading("Assets, online"),
+        Para("Dozens of new parametric materials, compositing effects, HDR world backgrounds and Geometry Nodes setups joined the Essentials library, hosted online so Blender's download stays the same size. Host your own online asset libraries, with smart indexing for browsing thousands of assets and single-click refreshes."),
+        Heading("Compositor"),
+        Para("Six new socket types — Matrix, Rotation, String, Object, Font and Integer Vector — and 35 new nodes. New compositing assets give instant filmic, watercolor and oil-painting looks. Gizmos support auto keying, and the Image Editor now supports gizmos too."),
+        Heading("Grease Pencil"),
+        Para("A new Delaunay fill algorithm creates exact geometry from boundary strokes with automatic gap detection. Dots and Squares line materials gain Placement settings and generate at render time. Nineteen new brushes by Blender Studio artists join the online Essentials."),
+        Heading("Animation"),
+        Para("Playback Loop modes: Infinite, Stop at End Frame, Stop at Start Frame, Restore Frame and Bounce. Graph Editor feedback and batch deletion for F-Curve modifiers, Allow Preroll, pose-library rotation-mode correction, In-Between tools in Object mode, and a Head/Tail slider for bone parenting."),
+        Heading("Modeling and Sculpt"),
+        Para("To Circle, Space Edge Loops Evenly and Flatten from the Loop Tools add-on are native operators, rewritten in C++. Sculpt mode adds an Add Primitive tool, a Scene Project brush, and a voxel remesher that interpolates attributes instead of taking the nearest value."),
+        Heading("Video Sequencer"),
+        Para("A Compositor effect strip runs node trees directly on the timeline; strip modifiers can be saved as assets and run on the GPU. Text strips gain style presets — Subtitle, Main Title, Corner Title — and line spacing. Scopes support HDR and wide gamut."),
+        Heading("User Interface"),
+        Para("A Swap Dimensions operator flips render dimensions; the Outliner can scroll to the active object and shows individual shape keys; a compact sidebar mode turns tabs into squares. New multi-line text and link widgets, colour widgets that take pasted hex values, arrow-key navigation in tree views and the asset shelf, and a reorganized Theme Editor."),
+        Heading("Virtual Reality, I/O and more"),
+        Para("Location Scouting in VR. Alembic imports visibility and animated camera data; OpenUSD gains colour-space handling; glTF adds point clouds, meshopt compression and iridescence. Autosave keeps unsaved image edits, and the Python API gains bpy.data.all_ids, an expanded image-buffer API and styled link and text-box layout items."),
+    ],
+};

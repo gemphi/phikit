@@ -11,7 +11,8 @@
 //!   with a min-clamp floor of `min_area_extent / zone_extent`.
 
 use phiber::v2::space::BSpaceType;
-use phiber::v2::state::{BState, apply_delta, area_size_key, clamp_to_min, normalize};
+use phiber::v2::area::{apply_delta, area_size_key, clamp_to_min, normalize};
+use phiber::v2::state::BState;
 use phiber::v2::zone::BZoneType;
 use proptest::prelude::*;
 
@@ -54,8 +55,8 @@ fn arb_boundary() -> impl Strategy<Value = (BSpaceType, BZoneType, usize)> {
     })
 }
 
-/// Property 22 — Round-trip. Small deltas where neither neighbor hits
-/// the min-clamp floor.
+// Property 22 — Round-trip. Small deltas where neither neighbor hits
+// the min-clamp floor.
 proptest! {
     #[test]
     fn round_trip_small_delta(
@@ -91,9 +92,9 @@ proptest! {
     }
 }
 
-/// Property 23 — Sum-normalization. After any apply_delta, the pair
-/// `(f_i, f_{i+1})` still sums to 2/N (they started at 1/N each and the
-/// pinch preserves sum modulo the min-clamp).
+// Property 23 — Sum-normalization. After any apply_delta, the pair
+// `(f_i, f_{i+1})` still sums to 2/N (they started at 1/N each and the
+// pinch preserves sum modulo the min-clamp).
 proptest! {
     #[test]
     fn pair_sum_preserved(
@@ -137,9 +138,9 @@ proptest! {
     }
 }
 
-/// Property 24 — Min-clamp monotonicity. For any two negative deltas
-/// `d1 <= d2 <= 0`, `f_i` after applying `d2` is `>=` `f_i` after
-/// applying `d1`.
+// Property 24 — Min-clamp monotonicity. For any two negative deltas
+// `d1 <= d2 <= 0`, `f_i` after applying `d2` is `>=` `f_i` after
+// applying `d1`.
 proptest! {
     #[test]
     fn shrink_monotonic(
@@ -198,39 +199,52 @@ fn clamp_splits_evenly_when_sum_below_2min() {
 // hit-band width is controlled exclusively by `style.resize.hit_width` and
 // the min-extent floor is `style.resize.min_extent` (= 60 px by default).
 
-use phiber::v2::state::area_resize::apply_drag_with_min_extent;
+use phiber::v2::area::size::apply_drag_with_min_extent;
 use phiber::v2::theme::{BPaletteName, resolve_ui_style, ui_style_defaults};
 
 /// The seam overlay source must use `div().absolute()` — confirming the
 /// overlay takes zero layout space in the flex tree.
 #[test]
 fn seam_overlay_uses_absolute_positioning_not_layout_space() {
-    let seam_src = std::fs::read_to_string(
-        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("src/v2/view/render/gpui/zone/seam.rs"),
-    )
-    .expect("seam.rs must exist");
+    let read = |relative: &str| {
+        std::fs::read_to_string(
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(relative),
+        )
+        .unwrap_or_else(|error| panic!("{relative}: {error}"))
+    };
+    let seam_src = read("src/v2/view/draw/zone/seam.rs");
+    // One geometry serves both seams: an area boundary and a panel edge.
+    let overlay_src = read("src/v2/view/draw/resize.rs");
 
     // The overlay `div` must be `.absolute()` so it does not occupy flex space.
     assert!(
-        seam_src.contains(".absolute()"),
-        "BSeam overlay must use .absolute() to stay zero-footprint in layout"
+        overlay_src.contains(".absolute()"),
+        "the shared seam overlay must use .absolute() to stay zero-footprint"
     );
     // The interactive hit band is sized by hit_width, not by layout flex.
     assert!(
-        seam_src.contains("c.style.resize.hit_width"),
-        "hit band width must come from c.style.resize.hit_width"
+        overlay_src.contains("ctx.style.resize.hit_width"),
+        "hit band width must come from ctx.style.resize.hit_width"
     );
-    // The visible seam line is sized by visible_seam, not by hit_width.
-    assert!(
-        seam_src.contains("c.style.resize.visible_seam"),
-        "visible seam line must use c.style.resize.visible_seam"
-    );
-    // occlude() must be on the handle — prevents mouse events leaking through.
-    assert!(
-        seam_src.contains(".occlude()"),
-        "seam handle must call .occlude() to absorb pointer events"
-    );
+    // Both seams go through it rather than positioning themselves.
+    for (name, src) in [("zone", &seam_src), ("panel", &overlay_src)] {
+        assert!(
+            src.contains("overlay(vertical, true, ctx)") || src.contains("overlay(true, false, ctx)"),
+            "the {name} seam must use the shared overlay geometry"
+        );
+    }
+    // The seam line is the one shared `BSeamLine`, sized off the gap, not by hit_width.
+    for (name, src) in [("zone", &seam_src), ("panel", &overlay_src)] {
+        assert!(
+            src.contains("BSeamLine {") || src.contains("impl BSeamLine"),
+            "the {name} seam must draw the shared seam line"
+        );
+        // occlude() must be on the handle — prevents mouse events leaking through.
+        assert!(
+            src.contains(".occlude()"),
+            "the {name} seam handle must call .occlude() to absorb pointer events"
+        );
+    }
 }
 
 /// apply_drag_with_min_extent never lets either fraction drop below
@@ -285,8 +299,8 @@ fn min_extent_floor_is_palette_invariant() {
     }
 }
 
-/// After apply_drag_with_min_extent the pair sum is conserved (= 1.0 for a
-/// two-area zone) — no area fraction leaks into or out of the neighbour.
+// After apply_drag_with_min_extent the pair sum is conserved (= 1.0 for a
+// two-area zone) — no area fraction leaks into or out of the neighbour.
 proptest! {
     #[test]
     fn drag_with_min_extent_pair_sum_conserved(

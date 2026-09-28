@@ -1,63 +1,89 @@
-//! Characterization coverage for task 6.1 semantic style derivations.
-//! Validates: Requirements 1.1, 1.4, 1.6, 3.4, 8.2, 8.3, 12.1-12.5.
+//! The semantic derivations stay on the ladder: every surface, host pane,
+//! strip, tab and hover a theme hands out is one of its eighteen shades, a
+//! gradient runs one step up to the slot's own shade, a lift moves whole
+//! steps, and a colour off the ladder (the accent) keeps a lightness nudge.
 
 use phiber::v2::{
     host::BHostType,
-    theme::{BPaletteName, BResolvedUiStyle, BShadowStyle, BSurfaceTone, ui_style_defaults},
+    theme::{BGradientAxis, BPaletteName, BResolvedUiStyle, BShadowStyle, BSurfaceTone, SWEEP_STOP, ui_style_defaults},
 };
 
 fn style(name: BPaletteName) -> BResolvedUiStyle {
     BResolvedUiStyle::from(ui_style_defaults(name))
 }
 
-fn close(actual: f32, expected: f32) {
-    assert!((actual - expected).abs() < 1.0e-5, "{actual} != {expected}");
+fn on_ladder(style: &BResolvedUiStyle, color: (f32, f32, f32, f32)) -> u8 {
+    style.colors.ladder.step_of(color).unwrap_or_else(|| panic!("{color:?} is not a shade of {:?}", style.colors.ladder))
 }
 
 #[test]
-fn semantic_surface_ladder_preserves_existing_palette_based_treatments() {
+fn every_surface_tone_is_a_shade_and_a_gradient_is_one_step_up() {
     for name in BPaletteName::ALL.iter().copied() {
         let style = style(name);
-        let panel = style.colors.bg_panel;
+        let panel = on_ladder(&style, style.colors.bg_panel);
         let header = style.surface(BSurfaceTone::Header);
-        let footer = style.surface(BSurfaceTone::Footer);
-        let sidebar = style.surface(BSurfaceTone::Sidebar);
-        let card = style.surface(BSurfaceTone::Card);
-        let section = style.surface(BSurfaceTone::Section);
-
         assert_eq!(header.bottom, style.colors.bg_header);
-        close(footer.bottom.2, panel.2 + style.effects.footer_lift * 100.0);
-        close(
-            sidebar.bottom.2,
-            panel.2 + style.effects.sidebar_lift * 100.0,
-        );
-        close(card.bottom.2, panel.2 + style.effects.card_lift * 100.0);
-        close(
-            section.bottom.2,
-            panel.2 + style.effects.section_lift * 100.0,
-        );
-        close(
-            section.top.2 - section.bottom.2,
-            style.effects.gradient_lift * 100.0,
-        );
+        assert_eq!(style.surface(BSurfaceTone::Footer).bottom, style.colors.bg_header, "footers share the header shade");
+        assert_eq!(style.surface(BSurfaceTone::Sidebar).bottom, style.colors.bg_panel);
+        assert_eq!(style.surface(BSurfaceTone::Body).bottom, style.colors.bg_panel);
+        assert_eq!(on_ladder(&style, style.surface(BSurfaceTone::Card).bottom), panel + 1, "a card is one step over the panel");
+        assert_eq!(on_ladder(&style, style.surface(BSurfaceTone::Section).bottom), panel + 1, "a section shares it, as Blender's sub-panel shares the panel's grey");
+        // Inward is lighter in a dark theme and darker in a light one; the
+        // steps are the same either way.
+        let inward = |from: f32, to: f32| if style.colors.ladder.light { to < from } else { to > from };
+        assert!(inward(style.colors.bg_header.2, style.colors.bg_panel.2), "{name:?}: a body is a step inward from its header");
+        assert!(inward(style.surface(BSurfaceTone::Card).bottom.2, style.colors.bg_control.2), "{name:?}: a control is a step inward from the card it sits on");
+        for tone in [BSurfaceTone::Header, BSurfaceTone::Footer, BSurfaceTone::Sidebar, BSurfaceTone::Body, BSurfaceTone::Modal, BSurfaceTone::Card, BSurfaceTone::Section] {
+            let gradient = style.surface(tone);
+            let bottom = on_ladder(&style, gradient.bottom);
+            if gradient.enabled {
+                assert_eq!(on_ladder(&style, gradient.top), bottom + 1, "{name:?} {tone:?}: a sweep is one step up");
+            } else {
+                assert_eq!(gradient.top, gradient.bottom);
+            }
+        }
+        let viewport = style.surface(BSurfaceTone::Viewport);
+        assert!(!viewport.enabled && viewport.top == style.colors.bg_viewport, "the canvas tone is flat and the viewport token");
+        // Every sweep runs left to right and is back on its base by half way,
+        // so the lit edge reads against a border and the surface keeps its
+        // colour; the canvas sweeps the same way when the theme sweeps at all.
+        for tone in [BSurfaceTone::Header, BSurfaceTone::Body, BSurfaceTone::Card] {
+            let sweep = style.surface(tone);
+            if sweep.enabled {
+                assert_eq!((sweep.axis, sweep.stop), (BGradientAxis::Trailing, SWEEP_STOP), "{name:?} {tone:?}");
+            } else {
+                assert_eq!(sweep.stop, 1.0);
+            }
+        }
+        let canvas = style.viewport_gradient();
+        assert_eq!(canvas.enabled, style.effects.gradients, "{name:?}: the canvas sweeps when the theme does");
+        assert_eq!(canvas.bottom, style.viewport_surface());
+        if canvas.enabled {
+            assert_eq!(on_ladder(&style, canvas.top), on_ladder(&style, canvas.bottom) + 1, "{name:?}: a step lighter at the left edge");
+            assert!(style.viewport_sweep_lift() > 0.0 && style.viewport_sweep_lift() < 0.1, "{name:?}: the tracer lifts its sky by that step: {}", style.viewport_sweep_lift());
+        } else {
+            assert_eq!(style.viewport_sweep_lift(), 0.0);
+        }
+        // A heading is a step over what it heads, in every theme — swept
+        // like every surface where gradients are on, flat where not — so a
+        // panel's heading lifts off its card and a sub-panel's off its well.
+        let heading = style.heading_surface(BSurfaceTone::Card);
+        assert_eq!(on_ladder(&style, heading.bottom), panel + 2, "{name:?}: a heading is a step over the card");
+        assert_eq!(heading.enabled, style.effects.gradients, "{name:?}: swept when the theme sweeps");
+        assert_eq!(heading, style.sheen(heading.bottom), "{name:?}: the heading is its shade's sweep");
+        // A sub-panel is a branch of its panel's tree: recessed a step toward
+        // the region per level, its heading a step over its own well.
+        assert_eq!(on_ladder(&style, style.surface(BSurfaceTone::Nested(1)).bottom), panel + 1, "{name:?}: a sub-panel's well is its panel's shade — no darker strip");
+        assert_eq!(on_ladder(&style, style.surface(BSurfaceTone::Nested(2)).bottom), panel + 1, "{name:?}: at every depth");
+        assert_eq!(on_ladder(&style, style.heading_surface(BSurfaceTone::Nested(1)).bottom), panel + 2, "{name:?}: its heading a step over it, as a panel's");
     }
 }
 
 #[test]
 fn disabling_gradients_flattens_every_semantic_gradient_without_changing_base_color() {
-    let mut style = style(BPaletteName::AppleDark);
+    let mut style = style(BPaletteName::Sphere);
     style.effects.gradients = false;
-
-    for tone in [
-        BSurfaceTone::Header,
-        BSurfaceTone::Footer,
-        BSurfaceTone::Sidebar,
-        BSurfaceTone::Body,
-        BSurfaceTone::Viewport,
-        BSurfaceTone::Modal,
-        BSurfaceTone::Card,
-        BSurfaceTone::Section,
-    ] {
+    for tone in [BSurfaceTone::Header, BSurfaceTone::Footer, BSurfaceTone::Sidebar, BSurfaceTone::Body, BSurfaceTone::Viewport, BSurfaceTone::Modal, BSurfaceTone::Card, BSurfaceTone::Section] {
         let gradient = style.surface(tone);
         assert!(!gradient.enabled);
         assert_eq!(gradient.top, gradient.bottom);
@@ -68,41 +94,40 @@ fn disabling_gradients_flattens_every_semantic_gradient_without_changing_base_co
 }
 
 #[test]
-fn host_and_canvas_derivations_use_resolved_effects_and_colors() {
-    let mut style = style(BPaletteName::TokyoNight);
-    style.effects.viewport_lightness_delta = 0.08;
-    style.effects.node_grid_lift = 0.15;
-    style.effects.node_grid_alpha = 0.22;
-
-    assert_eq!(style.host_lightness(BHostType::View3D), 24.0);
-    assert_eq!(style.host_lightness(BHostType::Buts), 19.0);
-    assert_eq!(style.host_lightness(BHostType::Shader), 10.0);
-    assert_eq!(style.host_lightness(BHostType::Topbar), 9.0);
+fn every_host_shares_the_panel_shade_and_the_chrome_its_own() {
+    let style = style(BPaletteName::Tokyo);
+    for host in [BHostType::View3D, BHostType::Buts, BHostType::Shader, BHostType::Outliner, BHostType::Time, BHostType::Image, BHostType::Text] {
+        assert_eq!(style.host_background(host), style.colors.bg_panel, "{host:?} is the panel shade like every editor");
+        assert_eq!(style.strip_gradient(host).bottom, style.colors.bg_header, "{host:?}'s strip is the header shade");
+        assert_eq!(style.host_item_hover(host), style.colors.bg_hover);
+        assert_eq!(style.host_item_active_gradient(host).bottom, style.colors.bg_active);
+        assert_eq!(style.host_header_surface(host).bottom, style.colors.bg_header);
+    }
+    assert_eq!(style.host_background(BHostType::Topbar), style.colors.bg_top);
+    assert_eq!(style.host_background(BHostType::Statusbar), style.colors.bg_bottom);
+    assert_eq!(style.host_background(BHostType::Activity), style.colors.bg_panel, "the activity bar is an area like any other: no darker shade");
+    assert_eq!(style.host_body_surface(BHostType::Activity), style.host_body_surface(BHostType::View3D));
+    assert_eq!(style.host_header_surface(BHostType::Topbar).bottom, style.colors.bg_top, "the top bar is its own chrome");
+    let tab = style.tab_active_gradient(BHostType::Buts);
+    assert_eq!(tab.bottom, style.colors.bg_panel, "the active Properties tab lands on the panel");
+    assert_eq!(on_ladder(&style, tab.top), on_ladder(&style, style.colors.bg_panel) + 1, "sweeping in from one step over it");
+    assert_eq!(style.rail_tab_active(BHostType::Activity).bottom, style.colors.bg_active);
     let viewport = style.viewport_gradient();
-    let surface = style.viewport_surface();
-    assert!(!viewport.enabled);
-    assert_eq!(viewport.top, surface);
-    assert_eq!(viewport.bottom, surface);
-    close(
-        surface.2 - style.colors.bg_viewport.2,
-        style.effects.viewport_lightness_delta * 100.0,
-    );
-    assert_eq!(surface.3, 1.0);
+    assert!(viewport.bottom == style.viewport_surface() && viewport.bottom.3 == 1.0);
     let node_grid = style.node_grid_stroke();
-    close(node_grid.color.2 - style.colors.bg_viewport.2, 15.0);
-    close(node_grid.color.3, 0.22);
+    assert_eq!(on_ladder(&style, (node_grid.color.0, node_grid.color.1, node_grid.color.2, 1.0)), on_ladder(&style, style.colors.bg_viewport) + 1, "the node grid is light: the step inward of the canvas");
+    assert_eq!(node_grid.color.3, style.effects.node_grid_alpha);
 }
 
 #[test]
 fn structural_strokes_sidebar_width_and_shadow_are_resolved_accessors() {
-    let mut style = style(BPaletteName::BlenderDark);
+    let mut style = style(BPaletteName::Graphite);
     style.strokes.border = 2.0;
     style.strokes.hairline = 0.5;
     style.strokes.grid = 1.5;
     style.dimensions.sidebar_width = 180.0;
     style.dimensions.sidebar_min_width = 160.0;
     style.effects.surface_shadow = BShadowStyle::None;
-
     assert_eq!(style.border_stroke().width, 2.0);
     assert_eq!(style.border_stroke().color, style.colors.border);
     assert_eq!(style.separator_stroke().width, 0.5);
@@ -113,14 +138,18 @@ fn structural_strokes_sidebar_width_and_shadow_are_resolved_accessors() {
 }
 
 #[test]
-fn shade_and_checker_derivations_clamp_to_valid_lightness() {
-    let mut style = style(BPaletteName::AppleDark);
-    style.colors.bg_viewport = (210.0, 20.0, 98.0, 1.0);
-    style.effects.image_light_lift = 0.09;
-    style.effects.image_dark_lift = -1.50;
-
+fn steps_stay_on_the_ladder_and_off_ladder_colours_nudge() {
+    let style = style(BPaletteName::Sphere);
+    let canvas = on_ladder(&style, style.colors.bg_viewport);
     let checker = style.image_checker_colors();
-    assert_eq!(checker.light, (210.0, 20.0, 100.0, 1.0));
-    assert_eq!(checker.dark, (210.0, 20.0, 0.0, 1.0));
-    assert_eq!(style.selected_hover((0.0, 0.0, 99.0, 0.5)).2, 100.0);
+    assert_eq!(on_ladder(&style, checker.light), canvas);
+    assert_eq!(on_ladder(&style, checker.dark), canvas - 1);
+    assert_eq!(on_ladder(&style, style.selected_hover(style.colors.row_selected)), on_ladder(&style, style.colors.row_selected) + 1);
+    assert_eq!(on_ladder(&style, style.shade(style.colors.bg_panel, 0.06)), on_ladder(&style, style.colors.bg_panel) + 2, "a 0.06 lift is two steps");
+    assert_eq!(style.shade(style.colors.bg_panel, 0.01), style.colors.bg_panel, "a lift under half a step is none");
+    assert_eq!(on_ladder(&style, style.step(style.colors.text, 5)), 18, "steps clamp at the top");
+    let accent = style.colors.accent;
+    let nudged = style.step(accent, 1);
+    assert_eq!((nudged.0, nudged.1), (accent.0, accent.1), "the accent keeps its hue and saturation");
+    assert!((nudged.2 - accent.2 - 3.0).abs() < 1e-4, "and moves a step's worth of lightness");
 }

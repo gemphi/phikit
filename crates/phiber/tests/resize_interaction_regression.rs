@@ -12,11 +12,13 @@
 //! the cursor (the `on_drag_move` lived on the handle child and computed a
 //! bad delta), so `handle_resize` was never invoked with a nonzero delta.
 
+use phiber::v2::state::{CtxKey};
 use gpui::{Modifiers, MouseButton, Point, TestAppContext, px, size};
 use phiber::v2::app::BPhiberApp;
-use phiber::v2::host::{BHostType, host_slug};
+use phiber::v2::host::BHostType;
 use phiber::v2::space::{BSpaceItem, BSpaceType};
-use phiber::v2::state::{BState, area_size_key, key::K_SPACE};
+use phiber::v2::area::area_size_key;
+use phiber::v2::state::BState;
 use phiber::v2::view::BViewItem;
 use phiber::v2::zone::BZoneType;
 
@@ -28,9 +30,9 @@ fn pt(x: f32, y: f32) -> Point<gpui::Pixels> {
 /// Select a space and force every View3D-capable area to its View3D host so
 /// the layout renders the same content the user sees.
 fn select_space(state: &mut BState, space: BSpaceType) {
-    state.set(&K_SPACE, space.slug());
+    state.set(CtxKey::Space, space.slug());
     // Dismiss the seeded welcome window so the workspace is what is measured.
-    state.set(&phiber::v2::state::key::K_MODAL, "");
+    state.set(phiber::v2::state::ModalKey::Open, "");
     for area in space
         .spec()
         .areas
@@ -39,7 +41,7 @@ fn select_space(state: &mut BState, space: BSpaceType) {
     {
         state.set(
             &phiber::v2::area::area_key(space, area),
-            host_slug(BHostType::View3D),
+            BHostType::View3D.slug(),
         );
     }
 }
@@ -267,10 +269,10 @@ async fn seam_tracks_cursor_one_to_one_in_pixels(cx: &mut TestAppContext) {
 /// pixel width (`ctx.zone_size.<space>.right`). Before this feature, zone
 /// boundaries had no grab handle at all ("resizing missing on the zones").
 ///
-/// Validates: state::zone_size + gpui::space seam handles + root ZoneDrag dispatch.
+/// Validates: zone::size + gpui::space seam handles + root ZoneDrag dispatch.
 #[gpui::test]
 async fn zone_seam_drag_resizes_right_column(cx: &mut TestAppContext) {
-    use phiber::v2::state::zone_size_key;
+    use phiber::v2::zone::zone_size_key;
 
     let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
     cx.simulate_resize(size(px(1280.0), px(800.0)));
@@ -329,7 +331,7 @@ async fn zone_seam_drag_resizes_right_column(cx: &mut TestAppContext) {
 /// pixel height (`ctx.zone_size.<space>.bottom`).
 #[gpui::test]
 async fn zone_seam_drag_resizes_bottom_strip(cx: &mut TestAppContext) {
-    use phiber::v2::state::zone_size_key;
+    use phiber::v2::zone::zone_size_key;
 
     let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
     cx.simulate_resize(size(px(1280.0), px(800.0)));

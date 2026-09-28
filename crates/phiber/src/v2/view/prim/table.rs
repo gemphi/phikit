@@ -69,17 +69,17 @@ impl BView {
     /// A table body row: cells that share the header's column geometry, a
     /// background shade, and an optional `action` that makes the WHOLE row
     /// clickable (Blender rows select on click anywhere).
-    pub fn table_row(cells: Vec<BTableCell>, shade: BRowShade, action: Option<BAction>) -> Self {
+    pub fn table_row(cell_list: Vec<BTableCell>, shade: BRowShade, action: Option<BAction>) -> Self {
         Self::TableRow {
-            cells,
+            cell_list,
             shade,
             action,
         }
     }
     /// The table header row — same column widths as the body rows so columns
     /// align. Header cells carry the sort actions.
-    pub fn table_header(cells: Vec<BTableCell>) -> Self {
-        Self::TableHeader { cells }
+    pub fn table_header(cell_list: Vec<BTableCell>) -> Self {
+        Self::TableHeader { cell_list }
     }
     pub fn sort_header(
         label: impl Into<String>,

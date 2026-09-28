@@ -8,7 +8,9 @@ use crate::v2::spec::{BSpec, BSpecKind};
 pub struct BHelpEntry {
     pub icon: &'static str,
     pub label: &'static str,
-    pub url: &'static str,
+    /// `doc:<slug>` for a document the reader shows, a URL for a link that
+    /// leaves the app, `operator:` for an action.
+    pub target: &'static str,
 }
 
 impl BSpec for BHelpEntry {
@@ -24,37 +26,20 @@ impl BSpec for BHelpEntry {
 }
 
 const fn h(icon: &'static str, label: &'static str, url: &'static str) -> BHelpEntry {
-    BHelpEntry { icon, label, url }
+    BHelpEntry { icon, label, target: url }
 }
 
+/// Blender's Help menu, read in the app: every entry opens its page in the
+/// reader (`modal::reader::store`), which carries the manual's text.
 pub static WEB_LINKS: &[BHelpEntry] = &[
-    h("manual", "Manual", "https://docs.blender.org/manual/"),
-    h(
-        "tutorials",
-        "Tutorials",
-        "https://www.blender.org/support/tutorials/",
-    ),
-    h("support", "Support", "https://www.blender.org/support/"),
-    h(
-        "community",
-        "User Communities",
-        "https://www.blender.org/community/",
-    ),
-    h(
-        "involve",
-        "Get Involved",
-        "https://www.blender.org/get-involved/",
-    ),
-    h(
-        "release",
-        "Release Notes",
-        "https://www.blender.org/download/releases/",
-    ),
-    h(
-        "bug",
-        "Report a Bug",
-        "https://projects.blender.org/blender/blender/issues",
-    ),
+    h("manual", "Manual", "doc:manual"),
+    h("tutorials", "Tutorials", "doc:tutorials"),
+    h("support", "Support", "doc:support"),
+    h("community", "User Communities", "doc:community"),
+    h("involve", "Get Involved", "doc:get_involved"),
+    h("release", "What's New", "doc:whats_new"),
+    h("release", "Release Notes", "doc:release_notes"),
+    h("bug", "Report a Bug", "doc:report_bug"),
 ];
 
 pub static ACTIONS: &[BHelpEntry] = &[h("info", "Save System Info", "operator:wm.sysinfo")];

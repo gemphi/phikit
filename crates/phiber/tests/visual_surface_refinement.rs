@@ -10,9 +10,9 @@ use phiber::v2::{
 use std::{fs, path::PathBuf};
 
 fn renderer(relative: &str) -> String {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("src/v2/view/render/gpui")
-        .join(relative);
+    let path = module_file(PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("src/v2/view/draw")
+        .join(relative));
     fs::read_to_string(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()))
 }
 
@@ -20,81 +20,89 @@ fn renderer(relative: &str) -> String {
 fn resize_gutters_share_the_neutral_workspace_surface() {
     for palette in BPaletteName::ALL.iter().copied() {
         let style = resolve_ui_style(ui_style_defaults(palette), &BState::new());
-        assert_eq!(style.workspace_background(), style.colors.bg_panel);
+        // The workspace shows the app shade between the area cards, so a
+        // seam reads as the window showing through.
+        assert_eq!(style.workspace_background(), style.colors.bg_app);
         assert_eq!(
             style.resize_gutter_background(),
             style.workspace_background()
         );
     }
 
-    let space = renderer("space.rs");
-    let area = renderer("area.rs");
-    assert!(space.contains("c.style.resize_gutter_background()"));
-    assert!(area.contains("c.style.workspace_background()"));
-    assert!(!space.contains(".bg(to_hsla(c.style.colors.bg_app))"));
+    // The space paints the gutter and an area card its host's body, as
+    // `BFill` tokens; each token resolves from the resolved style in one place.
+    // The window shade shows only between the cards: an area card on the
+    // window shade was the dark Outliner and the dark activity rail.
+    let space = renderer("space/mod.rs") + &renderer("space/part.rs");
+    let area = renderer("area/mod.rs");
+    let tokens = renderer("flex/fill.rs");
+    assert!(space.contains(".fill(BFill::Gutter)"));
+    assert!(tokens.contains("Self::Gutter => to_hsla(ctx.style.resize_gutter_background()).into()"));
+    assert!(area.contains(".fill(BFill::HostBody)"));
+    assert!(!area.contains("BFill::Workspace") && !tokens.contains("Workspace,"), "no surface but the seams takes the window shade");
+    assert!(tokens.contains("Self::HostBody => to_hsla(ctx.style.host_background(ctx.host)).into()"));
+    assert!(!space.contains("bg_app"));
 }
 
 #[test]
-fn resize_hit_bands_stay_wide_while_resting_lines_are_fully_transparent() {
+fn resize_hit_bands_stay_wide_while_the_seam_sits_inside_the_gap_at_rest() {
     for palette in BPaletteName::ALL.iter().copied() {
         let style = resolve_ui_style(ui_style_defaults(palette), &BState::new());
-        let resting = style.resize_seam_resting_color();
-        assert_eq!(style.resize.visible_seam, 2.0);
+        // The seam is the gap less 3 px at rest and the gap plus 2 px under
+        // the pointer — one rule for the zone, area and panel seams.
+        assert_eq!(style.resize.rest_thickness(), (style.resize.gap - 3.0).max(1.0));
+        assert_eq!(style.resize.hover_thickness(), style.resize.gap + 2.0);
         assert_eq!(style.resize.hit_width, 14.0);
-        assert!(style.resize.visible_seam > style.strokes.border);
-        assert!(style.resize.hit_width >= style.resize.visible_seam);
-        assert_eq!(
-            (resting.0, resting.1, resting.2),
-            (
-                style.colors.border.0,
-                style.colors.border.1,
-                style.colors.border.2
-            )
-        );
-        assert_eq!(resting.3, 0.0, "resting resize line must be invisible");
+        assert!(style.resize.hit_width >= style.resize.hover_thickness());
+        assert_eq!(style.resize_seam_resting_color(), style.colors.border, "the resting seam is the theme's border shade");
         assert_eq!(style.resize_seam_active_color(), style.colors.accent);
     }
 
     // Decomposition moved the concrete seam builders out of the workspace
     // and zone composition routers. Audit the focused owners so this remains
     // a post-move regression rather than accidentally checking stale wrappers.
+    // The hit band and its inset are one shared geometry now, so a seam
+    // module is audited together with the overlay it delegates to.
+    let overlay = renderer("resize.rs");
+    assert!(
+        overlay.contains("ctx.style.resize.hit_width"),
+        "the shared seam overlay lost the resolved hit width"
+    );
+    assert!(
+        overlay.contains("div().absolute()"),
+        "the shared seam overlay is no longer zero-footprint"
+    );
     for (name, relative) in [
         ("zone boundary", "space/seam.rs"),
         ("area boundary", "zone/seam.rs"),
+        ("panel edge", "resize.rs"),
     ] {
         let source = renderer(relative);
         assert!(
-            source.contains("c.style.resize.hit_width"),
-            "{name} lost resolved hit width"
-        );
-        assert!(
-            source.contains("c.style.resize.visible_seam"),
-            "{name} lost resolved seam"
-        );
-        assert!(
-            source.contains("resize_seam_resting_color()"),
-            "{name} lost transparent resting line"
-        );
-        assert!(
-            source.contains("resize_seam_active_color()"),
-            "{name} lost semantic accent feedback"
-        );
-        assert!(
-            source.contains("div().absolute()"),
-            "{name} hit band is no longer zero-footprint"
+            source.contains("BSeamLine {") || source.contains("impl BSeamLine"),
+            "{name} does not draw the one seam line"
         );
         assert!(source.contains(".on_drag("), "{name} lost drag initiation");
         assert!(
             source.contains("CursorStyle::Resize"),
             "{name} lost resize cursors"
         );
-        assert!(source.contains("group_hover"), "{name} lost hover feedback");
+        assert!(source.contains("group: group.clone()"), "{name} lost hover feedback: the handle joins the seam line's hover group");
+        if relative == "resize.rs" {
+            // A panel edge clamps to its own width range instead of the
+            // area-boundary snap model, so it carries no snap threshold.
+            assert!(
+                source.contains("min: ctx.style.dimensions.sidebar_min_width"),
+                "{name} drag payload lost its resolved minimum width"
+            );
+            continue;
+        }
         assert!(
-            source.contains("snap_threshold: c.style.resize.snap_threshold"),
+            source.contains("snap_threshold: ctx.style.resize.snap_threshold"),
             "{name} drag payload lost the resolved snap threshold"
         );
         assert!(
-            source.contains("min_extent: c.style.resize.min_extent"),
+            source.contains("min_extent: ctx.style.resize.min_extent"),
             "{name} drag payload lost the resolved minimum extent"
         );
     }
@@ -104,87 +112,44 @@ fn resize_hit_bands_stay_wide_while_resting_lines_are_fully_transparent() {
 fn topbar_chrome_and_main_tabs_use_the_requested_rest_hover_active_mapping() {
     for palette in BPaletteName::ALL.iter().copied() {
         let style = resolve_ui_style(ui_style_defaults(palette), &BState::new());
-        let neutral = style.workspace_background();
+        // The top bar is the chrome shade, opaque, flat; its items hover and
+        // activate on the same two shades every host uses.
         let resting = style.resting_host_background(BHostType::Topbar);
         let header = style.host_header_surface(BHostType::Topbar);
         let hover = style.host_item_hover(BHostType::Topbar);
         let active = style.host_item_active_gradient(BHostType::Topbar);
-
-        assert_eq!(
-            (resting.0, resting.1, resting.2),
-            (neutral.0, neutral.1, neutral.2)
-        );
-        assert_eq!(resting.3, 0.0);
+        assert_eq!(resting, style.colors.bg_top);
+        assert_eq!(resting.3, 1.0);
         assert!(!header.enabled);
-        assert_eq!(header.bottom.3, 0.0);
-        assert_eq!((hover.0, hover.1), (neutral.0, neutral.1));
-        assert!(hover.2 > neutral.2);
-        assert_eq!(hover.3, 1.0);
-        assert_eq!(active.bottom, hover);
-        assert!(active.top.2 > neutral.2);
-        assert_eq!(style.tab_hover(BHostType::Topbar), hover);
-        assert_eq!(style.tab_active_gradient(BHostType::Topbar), active);
-
-        assert_eq!(style.resting_host_background(BHostType::View3D).3, 1.0);
-        assert_eq!(style.host_header_surface(BHostType::View3D).bottom.3, 1.0);
+        assert_eq!(header.bottom, style.colors.bg_top);
+        assert_eq!(hover, style.colors.bg_hover);
+        // Inward is lighter in a dark theme and darker in a light one.
+        let inward = |from: f32, to: f32| if style.colors.ladder.light { to < from } else { to > from };
+        assert!(inward(resting.2, hover.2), "{palette:?}");
+        assert_eq!(active.bottom, style.colors.bg_active);
+        assert!(inward(hover.2, active.bottom.2), "{palette:?}");
     }
-
-    let host = renderer("host.rs");
-    let region = renderer("region.rs");
-    let tab = renderer("atom/tab.rs");
-    let anchor = renderer("atom/anchor.rs");
-    let item = renderer("atom/menu.rs");
-    assert!(
-        !host.contains(".bg("),
-        "host wrapper must remain transparent"
-    );
-    assert!(
-        !host.contains(".gap("),
-        "host bands must remain directly adjacent"
-    );
-    assert!(region.contains("host_header_surface(c.host)"));
-    assert!(region.contains("_ => gpui::transparent_black().into()"));
-    assert!(tab.contains("let topbar_main_tab = c.host == BHostType::Topbar && !icon_only;"));
-    assert!(tab.contains("} else if topbar_main_tab {"));
-    assert!(tab.contains(".bg(hover_fill)"));
-    assert!(tab.contains("s.bg(active_fill.clone())"));
-    assert!(tab.contains("if !properties_rail_tab && !active && !topbar_main_tab {"));
-    assert!(tab.contains("tab_active_gradient(c.host)"));
-    assert!(tab.contains("tab_hover(c.host)"));
-    // Fill-only selection is now uniform across every host: neither the tab
-    // nor the menu anchor paints an accent border on the active state, so the
-    // old `if c.host != BHostType::Topbar` accent-border branches are gone.
-    // The active cap and the surface beneath it form one continuous fill.
-    assert!(
-        !tab.contains("border_b(px(c.style.strokes.border * 2.0))"),
-        "tab must not paint an accent underline on active state"
-    );
-    assert!(
-        !anchor.contains("border_b(px(c.style.strokes.border * 2.0))"),
-        "menu anchor must not paint an accent underline on active state"
-    );
-    assert!(anchor.contains("host_item_active_gradient(c.host)"));
-    assert!(anchor.contains("host_item_hover(c.host)"));
-    assert!(item.contains("host_item_hover(c.host)"));
 }
 
 #[test]
 fn topbar_zone_controls_use_resolved_rounded_stable_geometry() {
-    let toggles = renderer("atom/toggle.rs");
-    assert!(toggles.contains("c.style.dimensions.button_height"));
-    assert!(toggles.contains("radius_for(BStyleRole::Button)"));
-    assert!(toggles.contains(".w(px(size))"));
-    assert!(toggles.contains(".h(px(size))"));
-    assert!(toggles.contains(".rounded(radius)"));
+    // The button is square at the button module, rounded as every button is,
+    // and its group is pushed to the strip's end — all of it stated as
+    // `BZoneTogglePart` rather than measured at the call site.
+    let toggles = renderer("toggle.rs");
+    assert!(toggles.contains("let size = BLen::Dim(BDim::ButtonHeight);"));
+    assert!(toggles.contains(".width(size)") && toggles.contains(".height(size)"));
+    assert!(toggles.contains("BRadius::Role(BStyleRole::Button)"));
+    assert!(toggles.contains("BJustify::End"));
     assert!(toggles.contains("topbar-zone-toggle-group"));
-    assert!(toggles.contains(".justify_end()"));
     assert!(toggles.contains("topbar-zone-toggle-"));
     assert!(toggles.contains(".debug_selector("));
 
-    let hover = toggles.split(".hover(").nth(1).expect("zone toggle hover");
-    let hover = hover.split(".child(").next().expect("hover end");
-    assert!(!hover.contains(".w("));
-    assert!(!hover.contains(".h("));
+    // Hover paints and never measures. That used to need checking by reading
+    // the hover closure for a stray `.w(` / `.h(`; a hover is a `BFill` now,
+    // so there is no geometry it could set.
+    assert!(toggles.contains(".hovered(BFill::ItemHover)"));
+    assert!(!toggles.contains(".hover("), "a hover is a fill token, not a closure that could resize");
 }
 
 #[test]
@@ -219,24 +184,42 @@ fn properties_rail_tab_uses_one_inset_paint_layer_for_active_and_hover() {
         assert!(overlap <= style.spacing.gap_sm, "{palette:?}");
     }
 
-    let tab = renderer("atom/tab.rs");
-    assert!(tab.contains("c.host == BHostType::Buts && icon_only"));
+    // Which cap this is, is one named question (`tab/shape.rs`), and the
+    // Properties tab is the one that paints on its own layer.
+    let shape = renderer("tab/shape.rs");
+    assert!(shape.contains("(false, _) if host == BHostType::Buts => Self::PropertiesTab"));
+    assert!(shape.contains("matches!(self, Self::PropertiesTab)"), "only the Properties tab paints separately");
+
+    let tab = renderer("tab/mod.rs");
     let properties = tab
-        .split("let content: AnyElement = if properties_rail_tab {")
+        .split("fn properties_layers(")
         .nth(1)
-        .expect("Properties rail paint layer")
-        .split("} else {\n        row.into_any_element()")
-        .next()
-        .expect("end of Properties paint layer");
+        .expect("Properties rail paint layer");
     for geometry in [
-        ".absolute()",
-        ".top_0()",
-        ".bottom_0()",
-        ".left(px(c.style.properties_tab_background_inset()))",
-        ".right(px(-c.style.properties_tab_overlap()))",
-        ".rounded_l(r)",
+        "ctx.style.properties_tab_background_inset()",
+        "ctx.style.properties_tab_overlap()",
+        "side.round(paint, r)",
     ] {
         assert!(properties.contains(geometry), "paint layer lost {geometry}");
+    }
+    // The layer spans the cap top to bottom; its left and right come from
+    // `BCapSide::paint`.
+    assert!(tab.contains("BFlex::row().place(BPlace::Overlay)"), "the paint layer covers its cap");
+
+    // The per-side arms live in the cap module, so a right-hand rail mirrors
+    // the left-hand shape instead of repeating it.
+    let cap = renderer("tab/cap.rs");
+    for arm in [
+        "BCapSide::Below => element.rounded_t(r)",
+        "BCapSide::Right => element.rounded_l(r)",
+        "BCapSide::Left => element.rounded_r(r)",
+        "BCapSide::Below => element.self_end()",
+        "BCapSide::Right => element.ml(px(gap))",
+        "BCapSide::Left => element.mr(px(gap))",
+        "BCapSide::Right => element.left(px(inset)).right(px(-overlap))",
+        "BCapSide::Left => element.right(px(inset)).left(px(-overlap))",
+    ] {
+        assert!(cap.contains(arm), "cap geometry lost {arm}");
     }
     let state_only = properties
         .split("paint = if active {")
@@ -251,9 +234,13 @@ fn properties_rail_tab_uses_one_inset_paint_layer_for_active_and_hover() {
         );
     }
     assert!(!properties.contains("colors.accent"));
-    assert!(properties.contains(".child(paint)\n            .child(row)"));
-    assert!(!tab.contains(".left(px(c.style.properties_tab_overlap()))"));
-    assert!(tab.contains("if !properties_rail_tab && !active && !topbar_main_tab"));
+    // The paint goes under the row, so state paints without moving the icon.
+    assert!(properties.contains(".child(paint)\n        .child(row)"));
+    assert!(!tab.contains(".left(px(ctx.style.properties_tab_overlap()))"));
+    // A Properties tab's rest and hover live on its paint layer, so the cap
+    // itself takes no `chrome::paint` fill — that is what keeps the two from
+    // painting over each other.
+    assert!(tab.contains("if !shape.paints_separately() && !active"));
 }
 
 #[test]
@@ -263,7 +250,8 @@ fn view3d_uses_a_lighter_opaque_flat_semantic_surface_across_palettes() {
         let base = style.colors.bg_viewport;
         let viewport = style.viewport_surface();
         let semantic = style.surface(BSurfaceTone::Viewport);
-        let lift = viewport.2 - style.colors.bg_app.2;
+        // Inward of the window shade: lighter in a dark theme, darker in a light one.
+        let lift = if style.colors.ladder.light { style.colors.bg_app.2 - viewport.2 } else { viewport.2 - style.colors.bg_app.2 };
 
         assert_eq!((viewport.0, viewport.1), (base.0, base.1), "{palette:?}");
         assert_eq!(viewport.3, 1.0, "{palette:?}");
@@ -276,22 +264,93 @@ fn view3d_uses_a_lighter_opaque_flat_semantic_surface_across_palettes() {
                 < 1.0e-5,
             "{palette:?}"
         );
-        assert!((18.0..=55.0).contains(&lift), "{palette:?}: lift={lift}");
+        // The canvas sits clearly above the app chrome, but it is the
+        // palette's own viewport tone — no lift on top. Brightening it washed
+        // the floor grid and the axes out; the grid's alpha carries that
+        // separation instead (`viewport_grid_alpha`).
+        assert!((12.0..=55.0).contains(&lift), "{palette:?}: lift={lift}");
         assert!(
             (style.colors.text.2 - viewport.2).abs() >= 25.0,
             "{palette:?} viewport/text contrast became unreadable"
         );
         let grid = style.viewport_grid_stroke();
-        assert!((grid.color.2 - viewport.2).abs() >= 4.0, "{palette:?}");
-        assert!((0.0..=0.3).contains(&grid.color.3), "{palette:?}");
+        // Two steps of the ladder: a tenth of the seed's lightness each, so a
+        // near-black theme (Onyx, seed L 16.5) separates its grid by ~3.3.
+        assert!((grid.color.2 - viewport.2).abs() >= 3.0, "{palette:?}: {}", (grid.color.2 - viewport.2).abs());
+        assert_eq!(grid.color, style.anim().grid_line, "{palette:?}: the floor draws the UV editor's grid line");
     }
 
-    let view3d = renderer("atom/canvas/view3d.rs");
-    assert!(view3d.contains("c.style.viewport_surface()"));
-    assert!(view3d.contains(".bg(vp)"));
+    let view3d = renderer("canvas/view3d/mod.rs");
+    assert!(view3d.contains("ctx.style.viewport_surface()"), "the tracer's sky is the canvas shade");
+    assert!(view3d.contains("ctx.style.viewport_gradient()"), "under the tracer, the canvas sweep");
     assert!(view3d.contains("viewport_grid_stroke()"));
     assert!(view3d.contains("axis_stroke("));
     assert!(!view3d.contains("linear_gradient("));
     assert!(!view3d.contains("linear_color_stop("));
     assert!(!view3d.contains("Horizon band"));
+}
+
+#[test]
+fn every_menu_row_reserves_its_icon_slot_so_labels_share_one_left_edge() {
+    // Blender reserves icon space on every row of a menu, so a row without an
+    // icon does not pull its label left of its neighbours'. Ours used to add
+    // the icon only when it had one, which put one menu's labels on two
+    // different left edges.
+    let item = renderer("menu.rs");
+    let slot = item.find("let icon = BMenuPart::IconSlot.flex(ctx).div(ctx);").expect("the slot is built unconditionally");
+    let branch = item.find("if ic.is_empty() {").expect("the icon is optional, the slot is not");
+    assert!(slot < branch, "the slot must exist before the icon decision, not inside it");
+    assert!(item.contains(".text_left()"), "labels read from the slot's edge");
+    assert!(
+        !item.contains("if !ic.is_empty() {\n        row = row.child(\n            svg()"),
+        "the icon must not be the thing that decides whether the slot exists"
+    );
+}
+
+#[test]
+fn the_activity_bar_takes_the_toolbars_treatment() {
+    // The activity bar and the toolbar are both columns of free buttons, and
+    // both take their rest / hover / active fill from the one control mapping
+    // (`chrome::paint`): the accent at an opacity. The activity bar is docked,
+    // so it rests on nothing — no block behind every icon — while the
+    // floating toolbar rests on the faintest step to stay legible over the
+    // canvas. The rail renderer hands the activity kind to the free-button
+    // cap rather than the activity part inventing a treatment.
+    let rail = renderer("rail.rs");
+    assert!(rail.contains("if kind == BRailKind::Activity {"));
+    assert!(rail.contains("return tab::rail_button(&ctl, ctx);"));
+    let tab = renderer("tab/mod.rs");
+    assert!(tab.contains("pub fn rail_button(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {"));
+    assert!(tab.contains("cap_view(ctl, BCapSide::Free, ctx)"));
+    let semantic = std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/v2/theme/semantic/set.rs"),
+    )
+    .expect("semantic style");
+    // Floating chrome is a button: the control shade at rest, the accent
+    // when active; docked chrome still paints nothing at rest.
+    assert!(semantic.contains("BControlState::Rest => self.colors.bg_control,"));
+    assert!(semantic.contains("BControlState::Active => self.colors.accent,"));
+    assert!(semantic.contains("BControlState::Rest => return None"));
+}
+
+/// A module is a file or a folder; read whichever spelling exists.
+fn module_file(path: std::path::PathBuf) -> std::path::PathBuf {
+    if path.exists() {
+        return path;
+    }
+    // `x.rs` asked for, `x/mod.rs` exists.
+    let folder = path.with_extension("").join("mod.rs");
+    if folder.exists() {
+        return folder;
+    }
+    // `x/mod.rs` asked for, `x.rs` exists.
+    if path.file_name().is_some_and(|n| n == "mod.rs") {
+        if let Some(parent) = path.parent() {
+            let file = parent.with_extension("rs");
+            if file.exists() {
+                return file;
+            }
+        }
+    }
+    path
 }

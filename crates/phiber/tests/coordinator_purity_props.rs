@@ -22,14 +22,13 @@ fn is_primitive(v: &BView) -> bool {
         v,
         BView::Row { .. }
             | BView::Column { .. }
-            | BView::Panel { .. }
             | BView::Label { .. }
             | BView::VLabel { .. }
             | BView::Field { .. }
             | BView::Icon { .. }
             | BView::Button(_)
             | BView::SortHeader { .. }
-            | BView::AccordionHeader { .. }
+            | BView::Card(_)
             | BView::MenuItem(_)
             | BView::MenuSep
             | BView::Tab(_)
@@ -44,12 +43,12 @@ fn find_primitive_above_part<'a>(v: &'a BView, inside_part: bool) -> Option<&'a 
         return Some(v);
     }
     match v {
-        BView::Space { children, .. }
-        | BView::Zone { children, .. }
-        | BView::Host { children, .. }
-        | BView::Region { children, .. }
-        | BView::Pane { children, .. } => {
-            for c in children {
+        BView::Space { list, .. }
+        | BView::Zone { list, .. }
+        | BView::Host { list, .. }
+        | BView::Region { list, .. }
+        | BView::Pane { list, .. } => {
+            for c in list {
                 if let Some(f) = find_primitive_above_part(c, false) {
                     return Some(f);
                 }
@@ -59,14 +58,15 @@ fn find_primitive_above_part<'a>(v: &'a BView, inside_part: bool) -> Option<&'a 
         BView::Area { child, .. } => find_primitive_above_part(child, false),
         BView::Part { body, .. } => find_primitive_above_part(body, true),
         // Primitives inside a Part body are fine — walk their children if any.
-        BView::Row { children } | BView::Column { children } | BView::Panel { children, .. } => {
-            for c in children {
+        BView::Row { list } | BView::Column { list } => {
+            for c in list {
                 if let Some(f) = find_primitive_above_part(c, inside_part) {
                     return Some(f);
                 }
             }
             None
         }
+        BView::Card(card) if matches!(card.kind, phiber::v2::view::prim::BCardKind::Column(_)) => card.body.iter().find_map(|c| find_primitive_above_part(c, inside_part)),
         BView::Popover { anchor, body, .. } => find_primitive_above_part(anchor, inside_part)
             .or_else(|| {
                 body.iter()

@@ -1,10 +1,14 @@
 //! Topbar zone-visibility controls for zones declared by the active space.
 
 use crate::v2::host::BHostType;
-use crate::v2::space::{BSpaceList, BSpaceType};
+use crate::v2::space::BSpaceList;
+use crate::v2::space::BSpaceType;
 use crate::v2::state::BState;
-use crate::v2::view::{BView, BViewItem, BZoneToggle};
-use crate::v2::zone::{BZoneType, visibility};
+use crate::v2::view::BView;
+use crate::v2::view::BViewItem;
+use crate::v2::view::BZoneToggle;
+use crate::v2::zone::BZoneType;
+use crate::v2::zone::visibility;
 
 #[derive(Clone, Copy, Debug)]
 pub struct BZonebar {

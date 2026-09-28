@@ -65,6 +65,9 @@ pub struct BRailView {
     pub side: BRailSide,
     pub expanded: bool,
     pub entries: Vec<BRailEntry>,
+    /// The region beside the strip while it is open — the sidebar's panels
+    /// (`part/sidebar/panel.rs`); `None` for a strip alone.
+    pub panels: Option<Vec<crate::v2::view::BView>>,
 }
 
 impl BRailEntry {

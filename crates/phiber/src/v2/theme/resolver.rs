@@ -64,7 +64,7 @@ mod tests {
 
     #[test]
     fn valid_overrides_are_applied_through_canonical_descriptors() {
-        let defaults = ui_style_defaults(BPaletteName::AppleDark);
+        let defaults = ui_style_defaults(BPaletteName::Sphere);
         let mut state = BState::new();
         state.set(&key::RADIUS_MD, "12.5");
         state.set(&key::COLOR_ACCENT, "210, 50, 40, 0.75");
@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn invalid_numeric_overrides_fall_back_per_field() {
-        let defaults = ui_style_defaults(BPaletteName::BlenderDark);
+        let defaults = ui_style_defaults(BPaletteName::Graphite);
         let mut state = BState::new();
         state.set(&key::RADIUS_XS, "not-a-number");
         state.set(&key::TYPOGRAPHY_BODY, "NaN");
@@ -119,10 +119,10 @@ mod tests {
 
     #[test]
     fn conflicting_resize_overrides_are_normalized_without_mutating_inputs() {
-        let defaults = *ui_style_defaults(BPaletteName::TokyoNight);
+        let defaults = *ui_style_defaults(BPaletteName::Tokyo);
         let defaults_before = defaults;
         let mut state = BState::new();
-        state.set(&key::RESIZE_VISIBLE_SEAM, "64");
+        state.set(&key::RESIZE_SEAM_HOVER_OVER, "52");
         state.set(&key::RESIZE_HIT_WIDTH, "2");
         state.set(&key::RESIZE_GAP, "12");
         state.set(&key::RESIZE_INSET, "-42");
@@ -130,8 +130,8 @@ mod tests {
 
         let resolved = resolve_ui_style(&defaults, &state);
 
-        assert_eq!(resolved.resize.visible_seam, 64.0);
-        assert_eq!(resolved.resize.hit_width, 64.0);
+        assert_eq!(resolved.resize.hover_thickness(), 64.0);
+        assert_eq!(resolved.resize.hit_width, 2.0, "no field bends another: the line is clamped where it is drawn");
         assert_eq!(resolved.resize.gap, 12.0);
         assert_eq!(resolved.resize.inset, -42.0);
         assert_eq!(defaults, defaults_before);

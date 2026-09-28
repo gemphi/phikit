@@ -45,6 +45,13 @@ pub static SET: &[BZoneSpec] = &[
         tooltip: "",
         toggleable: false,
     },
+    BZoneSpec {
+        kind: BZoneType::Rail,
+        label: "Rail",
+        icon: "",
+        tooltip: "",
+        toggleable: false,
+    },
 ];
 
 /// One-word zone slug (used as a path segment).
@@ -56,5 +63,6 @@ pub fn slug(z: BZoneType) -> &'static str {
         BZoneType::Right => "right",
         BZoneType::Bottom => "bottom",
         BZoneType::Full => "full",
+        BZoneType::Rail => "rail",
     }
 }

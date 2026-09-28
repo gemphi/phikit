@@ -1,19 +1,31 @@
 ﻿# Phiber — Modal UI Reference
 
 > **Location**: `crates/phiber/docs/modals.md`
-> All widths from `store/modals/def.rs`. All tab/item data from `store/modals/*/def.rs`.
+> **v2 (current):** specs live in `src/v2/modal/set.rs`, one content module per
+> modal under `src/v2/modal/<name>/`. Sections 1–3 below describe the legacy
+> `store/modals/*` data those v2 modules were ported from; sections 7–10 cover
+> the modals added in v2. Last updated 2026-09-16.
 
 ---
 
-## Overview — Three Modals
+## Overview — Eight Modals (v2)
 
-```
-BModalType { Settings, Help, Profile }
-               640px     480px  400px
-```
+| `BModalType` | Title | Size (w×h) | Content module | Blender counterpart |
+|---|---|---|---|---|
+| `Settings` | Preferences | 960×640 | `modal/settings` | `SpacePreferences` (Edit ▸ Preferences) |
+| `Help` | Help | 900×640 | `modal/help` | Help menu / manual |
+| `Profile` | Profile | 480×520 | `modal/profile` | — (Phiber account) |
+| `Command` | Command Palette | 640×420 | `modal/command` | Menu Search (F3) |
+| `Splash` | Welcome to Phiber | 880×560 (full-screen card) | `modal/splash` | `WM_MT_splash` |
+| `About` | About Phiber | 640×480 (full-screen card) | `modal/about` | `WM_MT_splash_about` |
+| `FileBrowser` | Phiber File View | 1024×640 | `modal/file_browser` → `part/custom/file` | `SpaceFile` in a temp window |
+| `Render` | Phiber Render | 1100×720 | `modal/render` (Image host) | "Blender Render" window |
 
 Modals sit above the full app layout as GPUI overlay panels, centered on screen.
-Each modal is a BView::Panel("modal", title, children) rendered by PanelView.
+`ctx.modal = <slug>` opens one; any committed `Set` inside it (or the backdrop /
+title-bar close) dismisses it. `BModalItem` wraps each body in `BView::Modal`;
+`Splash` and `About` render through `view/render/gpui/modal/fullscreen.rs`,
+the rest through the card renderer (`modal/card.rs`).
 
 ---
 
@@ -315,14 +327,40 @@ BView::IconButton(icon)           -> close [x] button, [Edit] button
 
 ## 5. MODAL TRIGGER POINTS
 
+Menu items declare their target in `part/menubar/set.rs` — `op_modal` (opens a
+modal), `op_file` (opens the File Browser **with a purpose**: open, save_as,
+import, export, link, append) and `op_url` (system browser via `ctx.link`,
+Blender's `wm.url_open`). `leaf_action` routes them; no per-label tables.
+
 ```
+Welcome (Splash)
+  <- shown once at startup (state seed writes ctx.modal = "splash")
+  <- Topbar "Phiber" menu -> "Splash Screen"
+
+About
+  <- Topbar "Phiber" menu -> "About Phiber"
+
+File Browser
+  <- File -> Open... / Save As... / Save Copy... / Link... / Append...
+  <- File -> Import > * / Export > * / Export All Collections
+  <- Render -> Render Audio... ; Window -> Save Screenshot...
+  <- Welcome -> Open... / More...
+  (setting ctx.file.purpose raises the modal when none is open)
+
+Render
+  <- Render -> Render Image (F12) / Render Animation (Ctrl F12)
+  <- Render -> View Render (F11) / View Animation (Ctrl F11)
+
+Command Palette
+  <- Edit -> Menu Search... (F3)
+
 Settings Modal
   <- Topbar "Edit" menu -> "Preferences"
   <- Profile dropdown -> "Preferences"
   <- Shortcut: Ctrl+,
 
 Help Modal
-  <- Topbar "Help" menu -> any item
+  <- Topbar "Help" menu -> "Manual" (other Help items open URLs)
   <- Shortcut: F1
 
 Profile/Account Modal
@@ -348,3 +386,35 @@ App Root Panel ("app")
 GPUI implementation:
 - Backdrop: `div().absolute().inset_0().bg(hsla(0,0,0,0.5))`
 - Modal: `div().absolute().mx_auto().mt(px(80.)).w(px(modal_width)).rounded(px(8.)).shadow_lg()`
+
+---
+
+## 7. WELCOME WINDOW (BModalType::Splash)
+
+See [spaces/modals/welcome.md](spaces/modals/welcome.md). Layout is Blender's
+`WM_MT_splash`: banner (Phiber + version) → split (New File | Recent Files ×5
++ More…, or Getting Started links when there are no recents) → split (Open…,
+Recover Last Session | What's New, Support Phiber). Every block is one rounded
+`BPanelRole::Card`.
+
+## 8. FILE BROWSER (BModalType::FileBrowser)
+
+See [spaces/modals/file_browser.md](spaces/modals/file_browser.md). The modal
+and the `File` / `Asset` editors share one implementation
+(`part/custom/file/{header,path_bar,sidebar,execute}.rs`).
+
+## 9. ABOUT (BModalType::About)
+
+`modal/about` — Blender's `WM_MT_splash_about`: a facts card (Version, Date,
+Hash, Branch, Windowing Environment — build values come from
+`PHIBER_BUILD_DATE` / `PHIBER_BUILD_HASH` / `PHIBER_BUILD_BRANCH` when set),
+the Phiber icon card, and a footer of links (Release Notes, Credits, License,
+Phiber Website, Donate) from `modal/about/set.rs`.
+
+## 10. RENDER WINDOW (BModalType::Render)
+
+`modal/render` — Blender opens F12 renders in a separate window that hosts an
+Image Editor showing `Render Result` (`render_view_open`,
+`render_display_type == 'WINDOW'`). Phiber builds `BHostItem(Image)` inside a
+window-sized modal card (no inner padding, like the File Browser). Actual
+rendering into it is not implemented yet.

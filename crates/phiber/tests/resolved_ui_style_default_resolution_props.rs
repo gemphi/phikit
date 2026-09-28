@@ -46,7 +46,7 @@ fn arb_valid_defaults() -> impl Strategy<Value = BUiStyleDefaults> {
                 spacing_scale,
                 dimension_scale,
                 (hairline, border, grid),
-                (visible_seam, hit_extra, gap, inset, snap_threshold, min_extent),
+                (seam_over, hit_extra, gap, inset, snap_threshold, min_extent),
                 effect_scale,
                 gradients,
                 shadow,
@@ -83,6 +83,8 @@ fn arb_valid_defaults() -> impl Strategy<Value = BUiStyleDefaults> {
                 defaults.dimensions.scrubbing_height *= dimension_scale;
                 defaults.dimensions.asset_shelf_height *= dimension_scale;
                 defaults.dimensions.bottom_strip_height *= dimension_scale;
+                defaults.dimensions.status_log_height *= dimension_scale;
+                defaults.dimensions.banner_height *= dimension_scale;
                 defaults.dimensions.activity_width *= dimension_scale;
                 defaults.dimensions.toolbar_width *= dimension_scale;
                 defaults.dimensions.sidebar_width *= dimension_scale;
@@ -105,9 +107,9 @@ fn arb_valid_defaults() -> impl Strategy<Value = BUiStyleDefaults> {
                 defaults.strokes.hairline = hairline;
                 defaults.strokes.border = border;
                 defaults.strokes.grid = grid;
-                defaults.resize.visible_seam = visible_seam;
-                defaults.resize.hit_width = visible_seam + hit_extra;
+                defaults.resize.seam_hover_over = seam_over;
                 defaults.resize.gap = gap;
+                defaults.resize.hit_width = defaults.resize.hover_thickness() + hit_extra;
                 defaults.resize.inset = inset;
                 defaults.resize.snap_threshold = snap_threshold;
                 defaults.resize.min_extent = min_extent;

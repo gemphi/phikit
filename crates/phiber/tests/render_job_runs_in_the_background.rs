@@ -1,0 +1,83 @@
+//! F12 renders on a worker, reports progress, and can be stopped.
+//!
+//! A full-resolution render takes minutes, so the Rendering space must not
+//! wait for it: the job publishes a sample count as it goes and the finished
+//! image at the end, and `cancel` stops it after the sample in flight.
+//!
+//! The job is process-wide (one render at a time, as in Blender), so these
+//! run in sequence inside one test rather than as separate ones racing for it.
+
+use phiber::phiphx::scene::SceneCamera;
+use phiber::v2::scene::{BObject3D, BRenderPlan, camera_of, render_job};
+
+fn plan(samples: u32) -> BRenderPlan {
+    let cam = SceneCamera {
+        name: "Camera".into(),
+        location: [0.0, -4.0, 0.0],
+        matrix_world: [[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, -1.0, 0.0, 0.0], [0.0, -4.0, 0.0, 1.0]],
+        kind: "PERSP".into(),
+        focal_length_mm: 50.0,
+        sensor_width: 36.0,
+        ortho_scale: 6.0,
+        clip_start: 0.1,
+        clip_end: 100.0,
+        display_size: 1.0,
+        dof: Default::default(),
+    };
+    BRenderPlan { camera: camera_of(&cam, 32, 32), w: 32, h: 32, samples, denoise: false }
+}
+
+fn a_cube() -> Vec<BObject3D> {
+    vec![BObject3D::Primitive { name: "Cube".into(), shape: phiber::v2::scene::BShape::Cube, x: 0.0, y: 0.0 }]
+}
+
+/// Wait for a condition, or give up — a render on a software GPU is slow but
+/// not unbounded.
+fn until(mut ready: impl FnMut() -> bool) -> bool {
+    for _ in 0..600 {
+        if ready() {
+            return true;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+    false
+}
+
+#[test]
+fn a_render_reports_progress_then_an_image_and_can_be_cancelled() {
+    if phiray::Ray::gpu().is_none() {
+        return;
+    }
+
+    // A render publishes its target before the first sample, so the
+    // Rendering space can show "0 of N" rather than nothing.
+    render_job::start(a_cube(), plan(24), gpui::hsla(0.0, 0.0, 0.8, 1.0));
+    let (first, _) = render_job::shot();
+    let first = first.expect("a shot is published as the job starts");
+    assert_eq!((first.w, first.h, first.target), (32, 32, 24));
+    assert!(!first.done);
+    assert_eq!(first.fraction(), 0.0);
+
+    // Asking again while it runs does not start a second render.
+    render_job::start(a_cube(), plan(999), gpui::hsla(0.0, 0.0, 0.8, 1.0));
+    assert_eq!(render_job::shot().0.expect("still the first").target, 24, "a second F12 restarted the render");
+
+    assert!(until(|| !render_job::rendering()), "the render never finished");
+    let (done, seq) = render_job::shot();
+    let done = done.expect("a finished shot");
+    assert!(done.done);
+    assert!(done.has_image(), "the job finished without an image");
+    assert_eq!(done.bgra.len(), 32 * 32 * 4);
+    assert_eq!(done.fraction(), 1.0);
+    assert_eq!(done.taken, 24, "the render stopped short of its target");
+    assert!(seq > 1, "progress was never published, only the result");
+
+    // Cancelling stops a render early: it reaches nothing like its target.
+    render_job::start(a_cube(), plan(4000), gpui::hsla(0.0, 0.0, 0.8, 1.0));
+    assert!(until(render_job::rendering));
+    std::thread::sleep(std::time::Duration::from_millis(200));
+    render_job::cancel();
+    assert!(until(|| !render_job::rendering()), "cancel did not stop the render");
+    let stopped = render_job::shot().0.expect("a shot");
+    assert!(stopped.taken < 4000, "cancel was ignored: {} samples taken", stopped.taken);
+}

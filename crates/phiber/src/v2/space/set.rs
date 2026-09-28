@@ -1,5 +1,13 @@
-//! Space set — one `BSpaceSpec` per `BSpaceType`. Content lives in
-//! `space::<name>` sibling modules.
+//! How a `BSpaceType` finds its own spec.
+//!
+//! This file is the *index*, not the content. Each workspace owns a folder:
+//! `space/<name>/mod.rs` says what the workspace is and
+//! `space/<name>/set.rs` holds its areas and the hosts they offer.
+//!
+//! The lookup is an exhaustive `match`, not a table indexed by the enum's
+//! discriminant — so adding a `BSpaceType` variant stops the build until its
+//! workspace exists, and a workspace can be left out of the tab strip
+//! (`BSpaceType::ALL`) without misindexing every later one.
 
 use super::{BSpaceSpec, BSpaceType};
 use super::{
@@ -7,71 +15,21 @@ use super::{
     shading, texture_paint, uv_editing,
 };
 
-pub static SET: &[BSpaceSpec] = &[
-    BSpaceSpec {
-        kind: BSpaceType::Layout,
-        label: layout::LABEL,
-        icon: layout::ICON,
-        areas: layout::AREAS,
-    },
-    BSpaceSpec {
-        kind: BSpaceType::Modeling,
-        label: modeling::LABEL,
-        icon: modeling::ICON,
-        areas: modeling::AREAS,
-    },
-    BSpaceSpec {
-        kind: BSpaceType::Sculpting,
-        label: sculpting::LABEL,
-        icon: sculpting::ICON,
-        areas: sculpting::AREAS,
-    },
-    BSpaceSpec {
-        kind: BSpaceType::UvEditing,
-        label: uv_editing::LABEL,
-        icon: uv_editing::ICON,
-        areas: uv_editing::AREAS,
-    },
-    BSpaceSpec {
-        kind: BSpaceType::TexturePaint,
-        label: texture_paint::LABEL,
-        icon: texture_paint::ICON,
-        areas: texture_paint::AREAS,
-    },
-    BSpaceSpec {
-        kind: BSpaceType::Shading,
-        label: shading::LABEL,
-        icon: shading::ICON,
-        areas: shading::AREAS,
-    },
-    BSpaceSpec {
-        kind: BSpaceType::Animation,
-        label: animation::LABEL,
-        icon: animation::ICON,
-        areas: animation::AREAS,
-    },
-    BSpaceSpec {
-        kind: BSpaceType::Rendering,
-        label: rendering::LABEL,
-        icon: rendering::ICON,
-        areas: rendering::AREAS,
-    },
-    BSpaceSpec {
-        kind: BSpaceType::Compositing,
-        label: compositing::LABEL,
-        icon: compositing::ICON,
-        areas: compositing::AREAS,
-    },
-    BSpaceSpec {
-        kind: BSpaceType::GeometryNodes,
-        label: geometry_nodes::LABEL,
-        icon: geometry_nodes::ICON,
-        areas: geometry_nodes::AREAS,
-    },
-    BSpaceSpec {
-        kind: BSpaceType::Scripting,
-        label: scripting::LABEL,
-        icon: scripting::ICON,
-        areas: scripting::AREAS,
-    },
-];
+impl BSpaceType {
+    /// This workspace's spec — its label, icon and areas.
+    pub fn spec(self) -> &'static BSpaceSpec {
+        match self {
+            BSpaceType::Layout => &layout::SPEC,
+            BSpaceType::Modeling => &modeling::SPEC,
+            BSpaceType::Sculpting => &sculpting::SPEC,
+            BSpaceType::UvEditing => &uv_editing::SPEC,
+            BSpaceType::TexturePaint => &texture_paint::SPEC,
+            BSpaceType::Shading => &shading::SPEC,
+            BSpaceType::Animation => &animation::SPEC,
+            BSpaceType::Rendering => &rendering::SPEC,
+            BSpaceType::Compositing => &compositing::SPEC,
+            BSpaceType::GeometryNodes => &geometry_nodes::SPEC,
+            BSpaceType::Scripting => &scripting::SPEC,
+        }
+    }
+}

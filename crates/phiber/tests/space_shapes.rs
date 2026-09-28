@@ -15,7 +15,7 @@ use phiber::v2::{
     theme::{BPaletteName, resolve_ui_style, ui_style_defaults},
     view::{
         BView, BViewItem,
-        render::gpui::space::{BSpaceCompositionShape, composition_shape},
+        draw::space::{BSpaceCompositionShape, composition_shape},
     },
     zone::{BZoneType, visibility},
 };
@@ -23,9 +23,9 @@ use proptest::prelude::*;
 use std::{fs, path::PathBuf};
 
 fn renderer(relative: &str) -> String {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("src/v2/view/render/gpui")
-        .join(relative);
+    let path = module_file(PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("src/v2/view/draw")
+        .join(relative));
     fs::read_to_string(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()))
 }
 
@@ -40,9 +40,10 @@ fn default_host(space: BSpaceType, zone: BZoneType) -> Option<BHostType> {
 #[test]
 fn layout_areas() {
     // Requirement 2: Top, Center, Right×2, Bottom×2 — plus the Phiber-native
-    // Activity rail as a Left zone host (global navigation).
+    // Activity rail, in the Rail zone every space carries (global navigation).
     assert_eq!(count(BSpaceType::Layout, BZoneType::Top), 1);
-    assert_eq!(count(BSpaceType::Layout, BZoneType::Left), 1);
+    assert_eq!(count(BSpaceType::Layout, BZoneType::Rail), 1);
+    assert_eq!(count(BSpaceType::Layout, BZoneType::Left), 0);
     assert_eq!(count(BSpaceType::Layout, BZoneType::Center), 1);
     assert_eq!(count(BSpaceType::Layout, BZoneType::Right), 2);
     assert_eq!(count(BSpaceType::Layout, BZoneType::Bottom), 2);
@@ -51,9 +52,16 @@ fn layout_areas() {
         Some(BHostType::Topbar)
     );
     assert_eq!(
-        default_host(BSpaceType::Layout, BZoneType::Left),
+        default_host(BSpaceType::Layout, BZoneType::Rail),
         Some(BHostType::Activity)
     );
+    for space in BSpaceType::ALL {
+        assert_eq!(
+            default_host(*space, BZoneType::Rail),
+            Some(BHostType::Activity),
+            "{space:?} carries the activity rail"
+        );
+    }
     assert_eq!(
         default_host(BSpaceType::Layout, BZoneType::Center),
         Some(BHostType::View3D)
@@ -74,10 +82,10 @@ fn modeling_areas() {
 
 #[test]
 fn sculpting_areas() {
-    // Requirement 4: four zones.
+    // `startup.blend`: viewport, Outliner over Properties, status bar.
     assert_eq!(count(BSpaceType::Sculpting, BZoneType::Top), 1);
     assert_eq!(count(BSpaceType::Sculpting, BZoneType::Center), 1);
-    assert_eq!(count(BSpaceType::Sculpting, BZoneType::Right), 1);
+    assert_eq!(count(BSpaceType::Sculpting, BZoneType::Right), 2);
     assert_eq!(count(BSpaceType::Sculpting, BZoneType::Bottom), 1);
 }
 
@@ -115,31 +123,39 @@ fn shading_uses_three_stacked_middle_columns() {
         hosts(BZoneType::Right),
         vec![BHostType::Outliner, BHostType::Buts]
     );
-    assert!(hosts(BZoneType::Bottom).is_empty());
+    assert_eq!(hosts(BZoneType::Bottom), vec![BHostType::Statusbar], "the window's status bar");
 }
 
 #[test]
-fn rendering_areas() {
-    // The reference impl declares Rendering with Top, Center, Right (Image),
-    // Bottom (Statusbar). The requirements spec sketches an Info strip as a
-    // second Bottom slot; the reference-imported layout consolidates that
-    // into a Right slot instead. Test what the code actually declares.
+fn rendering_is_the_image_editor_with_properties_and_a_timeline() {
+    // Blender's Rendering workspace (`startup.blend`, read by
+    // `truth/blender_workspaces.py`): the Image Editor on Render Result,
+    // a Properties editor down the right, a Timeline strip, no Outliner.
     assert_eq!(count(BSpaceType::Rendering, BZoneType::Top), 1);
     assert_eq!(count(BSpaceType::Rendering, BZoneType::Center), 1);
-    assert!(count(BSpaceType::Rendering, BZoneType::Right) >= 1);
-    assert!(count(BSpaceType::Rendering, BZoneType::Bottom) >= 1);
+    assert_eq!(count(BSpaceType::Rendering, BZoneType::Right), 1);
+    assert_eq!(count(BSpaceType::Rendering, BZoneType::Left), 0);
+    assert_eq!(
+        default_host(BSpaceType::Rendering, BZoneType::Center),
+        Some(BHostType::Image)
+    );
+    assert_eq!(default_host(BSpaceType::Rendering, BZoneType::Right), Some(BHostType::Buts));
+    assert_eq!(default_host(BSpaceType::Rendering, BZoneType::Bottom), Some(BHostType::Time));
 }
 
 #[test]
 fn compositing_areas() {
-    // Requirement 10: three zones.
+    // `startup.blend`: node editor, Outliner over Properties, a Dope Sheet
+    // strip, status bar.
     assert_eq!(count(BSpaceType::Compositing, BZoneType::Top), 1);
     assert_eq!(count(BSpaceType::Compositing, BZoneType::Center), 1);
-    assert_eq!(count(BSpaceType::Compositing, BZoneType::Bottom), 1);
+    assert_eq!(count(BSpaceType::Compositing, BZoneType::Right), 2);
+    assert_eq!(count(BSpaceType::Compositing, BZoneType::Bottom), 2);
     assert_eq!(
         default_host(BSpaceType::Compositing, BZoneType::Center),
         Some(BHostType::Compositor)
     );
+    assert_eq!(default_host(BSpaceType::Compositing, BZoneType::Bottom), Some(BHostType::Action));
 }
 
 #[test]
@@ -153,15 +169,15 @@ fn geometry_nodes_areas() {
 
 #[test]
 fn scripting_areas() {
-    // Requirement 12 sketches Scripting as one slot per zone; the reference
-    // impl stacks two areas in Right (Outliner + Properties) and two in
-    // Bottom (Console/Info + Statusbar), matching Blender's actual
-    // `Scripting` workspace in startup.blend.
+    // Blender's `Scripting` workspace in startup.blend: a left column of
+    // viewport, Python console and Info log; the Text editor in the centre;
+    // Outliner and Properties on the right.
     assert_eq!(count(BSpaceType::Scripting, BZoneType::Top), 1);
-    assert_eq!(count(BSpaceType::Scripting, BZoneType::Left), 1);
+    assert_eq!(count(BSpaceType::Scripting, BZoneType::Left), 3);
     assert_eq!(count(BSpaceType::Scripting, BZoneType::Center), 1);
-    assert!(count(BSpaceType::Scripting, BZoneType::Right) >= 1);
-    assert!(count(BSpaceType::Scripting, BZoneType::Bottom) >= 1);
+    assert_eq!(default_host(BSpaceType::Scripting, BZoneType::Center), Some(BHostType::Text));
+    assert_eq!(count(BSpaceType::Scripting, BZoneType::Right), 2);
+    assert_eq!(count(BSpaceType::Scripting, BZoneType::Bottom), 1);
 }
 
 /// Post-decomposition shape regression: the hierarchy routers still own the
@@ -172,11 +188,11 @@ fn scripting_areas() {
 /// Validates: Requirements 11.2, 11.3, 13.8
 #[test]
 fn focused_renderers_preserve_space_shape_viewport_fill_and_bounds() {
-    let space = renderer("space.rs");
-    let zone = renderer("zone.rs");
-    let host = renderer("host.rs");
-    let region = renderer("region.rs");
-    let viewport = renderer("atom/canvas/view3d.rs");
+    let space = renderer("space/mod.rs");
+    let zone = renderer("zone/mod.rs");
+    let host = renderer("host/mod.rs");
+    let region = renderer("region/mod.rs");
+    let viewport = renderer("canvas/view3d/mod.rs");
 
     for band in [
         "top: Vec<&'a BView>",
@@ -185,25 +201,32 @@ fn focused_renderers_preserve_space_shape_viewport_fill_and_bounds() {
     ] {
         assert!(space.contains(band), "workspace partition lost `{band}`");
     }
-    assert!(space.contains("= composition(children);"));
-    assert!(space.contains(".flex_col()"));
-    assert!(space.contains(".size_full()"));
-    assert!(space.contains(".flex_row()"));
-    assert!(space.contains(".flex_1()"));
-    assert!(space.contains(".min_h_0()"));
-    assert!(space.contains(".min_w_0()"));
+    assert!(space.contains("= composition(list);"));
+    // The space's containers are `BSpacePart` decisions: a full-window column
+    // root, a row middle band, and a centre column that fills and may shrink
+    // — a column, because the bottom band (Timeline, Dope Sheet) hangs under
+    // the centre editor while the side zones run to the status bar.
+    let space_parts = renderer("space/part.rs");
+    assert!(space_parts.contains("Self::Root => BFlex::column()"));
+    assert!(space_parts.contains(".full()"));
+    assert!(space_parts.contains("Self::Middle => BFlex::row()"));
+    assert!(space_parts.contains("BFlex::column().fills().height(BLen::Full).min_height(BLen::Zero).unclamped()"));
+    let band = renderer("space/band.rs");
+    assert!(band.contains("fn split_bottom(") && band.contains("is_fixed_bar()"), "the status bar leaves the band");
 
-    assert!(zone.contains("BAxis::Row => div().flex().flex_row()"));
-    assert!(zone.contains("BAxis::Column => div().flex().flex_col()"));
-    assert!(zone.contains(".gap(px(c.style.resize.gap))"));
-    assert!(zone.contains(".min_w_0()"));
-    assert!(zone.contains(".min_h_0()"));
+    // A zone lays out along its own axis, gapped by the resize seam, and its
+    // area slots may shrink on both axes.
+    // The zone lays out along its own kind's axis — now a variant binding
+    // (`BZonePart::Frame { kind, .. }`) rather than a struct field.
+    assert!(zone.contains("BFlex::along(kind.axis())"));
+    assert!(zone.contains(".gap(BSpace::Seam)"));
+    assert!(zone.contains("BFlex::column().unclamped().shares(share)"));
 
-    assert!(host.contains(".flex_1()"));
-    assert!(host.contains(".min_h_0()"));
-    assert!(host.contains(".size_full()"));
-    assert!(host.contains(".flex_1().min_h_0().w_full()"));
-    assert!(region.contains("el.flex_1().min_h_0().h_full().w_full()"));
+    // A host fills its slot at full size; its middle band fills and runs the
+    // full width.
+    assert!(host.contains(".fills()\n                .min_height(BLen::Zero)\n                .full()"));
+    assert!(host.contains("BFlex::row().fills().min_height(BLen::Zero).width(BLen::Full)"));
+    assert!(region.contains("let flex = flex.fills().min_height(BLen::Zero).full();"));
     assert!(viewport.contains(".flex_1()"));
     assert!(viewport.contains(".min_h_0()"));
     assert!(viewport.contains(".size_full()"));
@@ -226,11 +249,11 @@ fn generated_shape(
     state: &BState,
     include_full: bool,
 ) -> BSpaceCompositionShape {
-    let BView::Space { mut children, .. } = BSpaceItem::new(space).build(state) else {
+    let BView::Space { mut list, .. } = BSpaceItem::new(space).build(state) else {
         unreachable!("a space item always builds a space view")
     };
     if include_full
-        && !children.iter().any(|view| {
+        && !list.iter().any(|view| {
             matches!(
                 view,
                 BView::Zone {
@@ -240,12 +263,12 @@ fn generated_shape(
             )
         })
     {
-        children.push(BView::Zone {
+        list.push(BView::Zone {
             kind: BZoneType::Full,
-            children: Vec::new(),
+            list: Vec::new(),
         });
     }
-    composition_shape(&children)
+    composition_shape(&list)
 }
 
 fn expected_shape(
@@ -259,7 +282,8 @@ fn expected_shape(
         bottom: vec![],
         extras: 0,
     };
-    for &zone in BZoneType::ALL {
+    // Zones in layout order (`IN_ORDER`): the rail leads the middle band.
+    for &zone in BZoneType::IN_ORDER {
         let shown = visibility::TOGGLEABLE
             .iter()
             .position(|candidate| *candidate == zone)
@@ -282,7 +306,7 @@ fn expected_shape(
 fn full_zone_uses_the_middle_composition_band() {
     let shape = composition_shape(&[BView::Zone {
         kind: BZoneType::Full,
-        children: Vec::new(),
+        list: Vec::new(),
     }]);
     assert_eq!(shape.middle, vec![BZoneType::Full]);
     assert!(shape.top.is_empty() && shape.bottom.is_empty() && shape.extras == 0);
@@ -335,22 +359,26 @@ proptest! {
 fn zone_flex_containers_prevent_overlay_inflation() {
     let zone_src = std::fs::read_to_string(
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("src/v2/view/render/gpui/zone.rs"),
+            .join("src/v2/view/draw/zone/mod.rs"),
     )
     .expect("zone.rs must exist");
 
+    // `unclamped()` is min-width and min-height zero.
     assert!(
-        zone_src.contains(".min_w_0()"),
-        "zone.rs must set min_w_0 so absolute overlays do not inflate horizontal flex"
+        zone_src.contains("BFlex::column().unclamped()"),
+        "zone.rs area slots must be unclamped so absolute overlays do not inflate the flex"
     );
+    // The gap between areas is the resize-seam token, which resolves from the
+    // resolved style — not a hardcoded value.
+    assert!(zone_src.contains(".gap(BSpace::Seam)"), "zone gap must be the seam token");
+    let tokens = std::fs::read_to_string(
+        std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("src/v2/view/draw/flex/token.rs"),
+    )
+    .expect("flex tokens");
     assert!(
-        zone_src.contains(".min_h_0()"),
-        "zone.rs must set min_h_0 so absolute overlays do not inflate vertical flex"
-    );
-    // The gap between areas comes from the resolved style, not a hardcoded literal.
-    assert!(
-        zone_src.contains("c.style.resize.gap"),
-        "zone gap must be sourced from c.style.resize.gap, not a hardcoded value"
+        tokens.contains("Self::Seam => ctx.style.resize.gap"),
+        "the seam token must resolve from ctx.style.resize.gap"
     );
 }
 
@@ -373,4 +401,26 @@ fn composition_shape_extras_zero_for_well_known_spaces() {
             shape.extras
         );
     }
+}
+
+/// A module is a file or a folder; read whichever spelling exists.
+fn module_file(path: std::path::PathBuf) -> std::path::PathBuf {
+    if path.exists() {
+        return path;
+    }
+    // `x.rs` asked for, `x/mod.rs` exists.
+    let folder = path.with_extension("").join("mod.rs");
+    if folder.exists() {
+        return folder;
+    }
+    // `x/mod.rs` asked for, `x.rs` exists.
+    if path.file_name().is_some_and(|n| n == "mod.rs") {
+        if let Some(parent) = path.parent() {
+            let file = parent.with_extension("rs");
+            if file.exists() {
+                return file;
+            }
+        }
+    }
+    path
 }

@@ -40,7 +40,7 @@ const FORBIDDEN_PRIMITIVES: &[&str] = &[
     "BView::Label",
     "BView::Button",
     "BView::SortHeader",
-    "BView::AccordionHeader",
+    "BView::Card",
     "BView::Popover",
     "BView::Field",
     "BView::VLabel",

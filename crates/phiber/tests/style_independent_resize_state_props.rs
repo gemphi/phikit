@@ -3,13 +3,13 @@
 
 use phiber::v2::state::key::ui_style as style_key;
 use phiber::v2::{
-    space::BSpaceType,
-    state::{
-        BState, area_fraction,
-        area_resize::apply_drag_with_min_extent,
-        area_size_key, boundary_pair, normalize,
-        zone_size::{apply_zone_drag_with_min_extent, zone_size_key},
+    area::{
+        area_fraction, area_size_key, boundary_pair, normalize,
+        size::apply_drag_with_min_extent,
     },
+    space::BSpaceType,
+    state::BState,
+    zone::size::{apply_zone_drag_with_min_extent, zone_size_key},
     theme::{BPaletteName, BResolvedUiStyle, resolve_ui_style, ui_style_defaults},
     zone::BZoneType,
 };
@@ -17,7 +17,7 @@ use proptest::prelude::*;
 
 #[derive(Clone, Copy, Debug)]
 struct ResizePresentation {
-    visible_seam: f32,
+    seam_hover_over: f32,
     hit_width: f32,
     gap: f32,
     inset: f32,
@@ -25,9 +25,9 @@ struct ResizePresentation {
 
 fn arb_distinct_palettes() -> impl Strategy<Value = (BPaletteName, BPaletteName)> {
     prop_oneof![
-        Just((BPaletteName::AppleDark, BPaletteName::BlenderDark)),
-        Just((BPaletteName::AppleDark, BPaletteName::TokyoNight)),
-        Just((BPaletteName::BlenderDark, BPaletteName::TokyoNight)),
+        Just((BPaletteName::Sphere, BPaletteName::Graphite)),
+        Just((BPaletteName::Sphere, BPaletteName::Tokyo)),
+        Just((BPaletteName::Graphite, BPaletteName::Tokyo)),
     ]
 }
 
@@ -46,14 +46,14 @@ fn arb_presentation_pair() -> impl Strategy<Value = (ResizePresentation, ResizeP
                 let seam_b = seam + seam_delta;
                 (
                     ResizePresentation {
-                        visible_seam: seam,
-                        hit_width: seam + extra,
+                        seam_hover_over: seam,
+                        hit_width: gap_a + seam + extra,
                         gap: gap_a,
                         inset: inset_a,
                     },
                     ResizePresentation {
-                        visible_seam: seam_b,
-                        hit_width: seam_b + extra,
+                        seam_hover_over: seam_b,
+                        hit_width: gap_b + seam_b + extra,
                         gap: gap_b,
                         inset: inset_b,
                     },
@@ -69,7 +69,7 @@ fn resolved_style(
 ) -> BResolvedUiStyle {
     let mut state = BState::new();
     for (key, value) in [
-        (&style_key::RESIZE_VISIBLE_SEAM, presentation.visible_seam),
+        (&style_key::RESIZE_SEAM_HOVER_OVER, presentation.seam_hover_over),
         (&style_key::RESIZE_HIT_WIDTH, presentation.hit_width),
         (&style_key::RESIZE_GAP, presentation.gap),
         (&style_key::RESIZE_INSET, presentation.inset),
@@ -163,7 +163,7 @@ proptest! {
         let style_b = resolved_style(palette_b, presentation_b, min_extent);
 
         prop_assert_ne!(style_a.colors, style_b.colors);
-        prop_assert_ne!(style_a.resize.visible_seam, style_b.resize.visible_seam);
+        prop_assert_ne!(style_a.resize.seam_hover_over, style_b.resize.seam_hover_over);
         prop_assert_eq!(style_a.resize.min_extent, style_b.resize.min_extent);
 
         let initial_area = initial_area_state(area_space, area_zone, &weights);

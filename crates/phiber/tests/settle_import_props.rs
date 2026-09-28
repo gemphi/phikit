@@ -10,7 +10,7 @@
 //! - TimedOut: sets 1..=256 char error, retains loaded_path, returns None.
 
 use phiber::{
-    phiphx::services::scene::{
+    phiphx::scene::{
         SceneLoadError, SceneMesh, SceneModel, SceneNormals, SceneObject,
     },
     v2::app::import::{ImportOutcome, settle_import},
@@ -30,12 +30,14 @@ fn scene_obj(name: &str) -> SceneObject {
             vertices: vec![[0.0, 0.0, 0.0]],
             indices: vec![],
             normals: SceneNormals::PerVertex(vec![[0.0, 0.0, 1.0]]),
-        },
+            corners: Default::default(),
+        }.into(),
         location: [0.0, 0.0, 0.0],
         scale: [1.0, 1.0, 1.0],
+        matrix_world: phiber::phiphx::scene::IDENTITY_M4,
         materials: Vec::new(),
-        material_indices: Vec::new(),
-        uvs: Vec::new(),
+        material_indices: Default::default(),
+        uvs: Default::default(),
     }
 }
 

@@ -1,17 +1,19 @@
-//! Activity host — Phiber-native global navigation rail. Region declarations
-//! only; the icon-strip content lives in `part::custom::activity` via the
-//! `Custom` part. A single Center region fills the host's full height.
+//! Activity host. Structure only: what the host *is*, and where its
+//! content lives. The regions, panes and parts are in `set.rs`, and the
+//! widgets they name are in `part::`.
 
-use crate::v2::pane::{BPaneSpec, BPaneType};
-use crate::v2::part::BPartType;
-use crate::v2::region::{BRegionSpec, BRegionType};
+pub mod set;
 
-static CENTER_PANES: &[BPaneSpec] = &[BPaneSpec {
-    kind: BPaneType::Center,
-    parts: &[BPartType::Custom],
-}];
+use crate::v2::host::{BHostSpec, BHostType};
 
-pub static REGIONS: &[BRegionSpec] = &[BRegionSpec {
-    kind: BRegionType::Center,
-    panes: CENTER_PANES,
-}];
+pub use set::REGIONS;
+
+/// Key used for this host inside a `BPath`.
+pub const SLUG: &str = "activity";
+
+pub static SPEC: BHostSpec = BHostSpec {
+    kind: BHostType::Activity,
+    label: "Activity",
+    icon: "activity",
+    regions: set::REGIONS,
+};

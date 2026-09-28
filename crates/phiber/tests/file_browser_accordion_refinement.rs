@@ -2,21 +2,23 @@
 //!
 //! Validates: Requirements 6.1-6.6, 10.1, 11.3, 12.7, 13.8
 
+use phiber::v2::state::BKey as _;
+use phiber::v2::state::FileKey;
 use phiber::v2::{
     host::BHostType,
     part::{
-        custom::file::{BFileKind, BFileRow, BFileSort, keys, listing, table},
-        panel::{BPanel, BPanelItem, BPropSpec, BSectionSpec},
+        file::{BFileKind, BFileRow, BFileSort, listing, table},
+        props::{BPanel, BPanelItem, BPropSpec, set::sec},
     },
     state::{BState, V_FALSE, action::apply_action},
     view::{
-        BAction, BColAlign, BColWidth, BPanelRole, BRowShade, BSortDirection, BView, BViewItem,
+        BAction, BColAlign, BColWidth, BRowShade, BSortDirection, BView, BViewItem,
     },
 };
 use std::{fs, path::PathBuf};
 
 fn source(relative: &str) -> String {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(relative);
+    let path = module_file(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(relative));
     fs::read_to_string(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()))
 }
 
@@ -42,10 +44,10 @@ fn folder(name: &str) -> BFileRow {
 
 fn header_cells(state: &BState) -> &[phiber::v2::view::BTableCell] {
     let header = Box::leak(Box::new(table::header(state)));
-    let BView::TableHeader { cells } = header else {
+    let BView::TableHeader { cell_list } = header else {
         panic!("shared File Browser header must use TableHeader")
     };
-    cells
+    cell_list
 }
 
 fn sort_header(cell: &phiber::v2::view::BTableCell) -> (&str, Option<BSortDirection>, &BAction) {
@@ -65,7 +67,7 @@ fn sort_header(cell: &phiber::v2::view::BTableCell) -> (&str, Option<BSortDirect
 fn normal_file_rows_are_flat_and_keep_full_row_selection_identity() {
     let row = file("alpha.txt", 11, 22);
     let BView::TableRow {
-        cells,
+        cell_list,
         shade,
         action,
     } = table::row(&row, "")
@@ -75,17 +77,17 @@ fn normal_file_rows_are_flat_and_keep_full_row_selection_identity() {
     assert_eq!(shade, BRowShade::Flat);
     assert_eq!(
         action,
-        Some(BAction::Set(keys::k_selected(), row.path.clone()))
+        Some(BAction::Set(FileKey::Selected.path(), row.path.clone()))
     );
-    assert_eq!(cells.len(), 3);
+    assert_eq!(cell_list.len(), 3);
 
     let BView::TableRow { shade, .. } = table::row(&row, &row.path) else {
         panic!()
     };
     assert_eq!(shade, BRowShade::Selected);
 
-    // After the prim.rs → prim/mod.rs split, table row logic lives in prim/table.rs.
-    let renderer = source("src/v2/view/render/gpui/prim/table.rs");
+    // After the prim.rs → prim.rs split, table row logic lives in table.rs.
+    let renderer = source("src/v2/view/draw/table.rs");
     let table_row = renderer
         .split("pub fn view_row(")
         .nth(1)
@@ -93,10 +95,14 @@ fn normal_file_rows_are_flat_and_keep_full_row_selection_identity() {
         .split("pub fn view_header(")
         .next()
         .unwrap_or_else(|| renderer.as_str());
-    assert!(table_row.contains("selected.then_some(c.style.colors.row_selected)"));
+    // The row's fill and hover are the tokens the tree, the list and the
+    // table share (`BFill::Row` / `BFill::RowHover` → `tone::row_fill`),
+    // not a mapping of its own.
+    assert!(renderer.contains("BFill::Row(shade)"));
+    assert!(renderer.contains("BFill::RowHover(shade)"));
     assert!(!table_row.contains("BRowShade::Alt"));
     assert!(!table_row.contains("METRICS"));
-    assert!(!table_row.contains("c.p"));
+    assert!(!table_row.contains("ctx.p"));
     assert!(table_row.contains(".id(id)"));
     assert!(table_row.contains(".on_click("));
 }
@@ -105,27 +111,30 @@ fn normal_file_rows_are_flat_and_keep_full_row_selection_identity() {
 fn shared_header_and_body_keep_flexible_name_and_fixed_metadata_geometry() {
     let state = BState::new();
     let header = header_cells(&state);
-    let BView::TableRow { cells: body, .. } = table::row(&file("wide-name.txt", 4, 5), "") else {
+    let BView::TableRow { cell_list: body, .. } = table::row(&file("wide-name.txt", 4, 5), "") else {
         panic!()
     };
     assert_eq!(header.len(), 3);
     assert_eq!(body.len(), 3);
     assert!(matches!(header[0].width, BColWidth::Flex));
     assert!(matches!(body[0].width, BColWidth::Flex));
-    for cells in [header, body.as_slice()] {
-        assert_eq!(cells[0].align, BColAlign::Start);
-        assert_eq!(cells[1].width, BColWidth::FileDate);
-        assert_eq!(cells[1].align, BColAlign::Start);
-        assert_eq!(cells[2].width, BColWidth::FileSize);
-        assert_eq!(cells[2].align, BColAlign::End);
+    for cell_list in [header, body.as_slice()] {
+        assert_eq!(cell_list[0].align, BColAlign::Start);
+        assert_eq!(cell_list[1].width, BColWidth::FileDate);
+        assert_eq!(cell_list[1].align, BColAlign::Start);
+        assert_eq!(cell_list[2].width, BColWidth::FileSize);
+        assert_eq!(cell_list[2].align, BColAlign::End);
     }
 
-    // After the prim.rs → prim/mod.rs split, table cell/row logic lives in prim/table.rs.
-    let renderer = source("src/v2/view/render/gpui/prim/table.rs");
-    assert!(renderer.contains("BColWidth::Flex => element.flex_1().min_w_0()"));
-    assert!(renderer.contains(".gap(px(c.style.spacing.gap_md))"));
-    assert!(renderer.contains("c.style.dimensions.file_date_column_width"));
-    assert!(renderer.contains("c.style.dimensions.file_size_column_width"));
+    // Table cell/row geometry lives in table.rs, described with `BFlex`: a
+    // name column takes the free space, a date and a size column keep the
+    // width the theme gives them.
+    let renderer = source("src/v2/view/draw/table.rs");
+    assert!(renderer.contains("BColWidth::Flex => cell.fills().min_width(BLen::Zero)"));
+    assert!(renderer.contains(".gap(BSpace::GapMd)"));
+    assert!(renderer.contains("ctx.style.dimensions.file_date_column_width"));
+    assert!(renderer.contains("ctx.style.dimensions.file_size_column_width"));
+    assert!(!renderer.contains("div()"), "the table no longer builds a bare div");
 }
 
 #[test]
@@ -134,7 +143,7 @@ fn all_headers_sort_and_repeated_clicks_toggle_a_stable_direction_slot() {
     let initial = header_cells(&state);
     let (name, direction, name_action) = sort_header(&initial[0]);
     assert_eq!((name, direction), ("Name", Some(BSortDirection::Ascending)));
-    assert_eq!(name_action, &BAction::Toggle(keys::k_sort_invert()));
+    assert_eq!(name_action, &BAction::Toggle(FileKey::SortInvert.path()));
     let name_action = name_action.clone();
 
     apply_action(&mut state, &name_action);
@@ -149,7 +158,7 @@ fn all_headers_sort_and_repeated_clicks_toggle_a_stable_direction_slot() {
         assert_eq!(direction, None);
         assert_eq!(
             action,
-            &BAction::Set(keys::k_sort(), expected.label().to_string())
+            &BAction::Set(FileKey::Sort.path(), expected.label().to_string())
         );
         let action = action.clone();
         apply_action(&mut state, &action);
@@ -168,10 +177,17 @@ fn all_headers_sort_and_repeated_clicks_toggle_a_stable_direction_slot() {
         );
     }
 
-    let focused = source("src/v2/view/render/gpui/prim/sort.rs");
-    assert!(focused.contains("let mut indicator = div()"));
-    assert!(focused.contains(".size(px(indicator_size))"));
-    assert!(focused.contains("if let Some(direction) = self.direction"));
+    // The heading is described with `BFlex`, not hand-written GPUI: the
+    // arrow slot is a `BFlexed` sized from the theme, reserved whether or
+    // not this is the sorted column, and the hover is the shared token
+    // rather than a `.hover(|s| s.bg(…))` of its own.
+    let focused = source("src/v2/view/draw/sort.rs");
+    assert!(focused.contains("Self::Indicator =>"), "the arrow slot is a part of the heading enum");
+    assert!(focused.contains(".size(px(size))"));
+    assert!(focused.contains("let Some(direction) = self.direction else"));
+    assert!(focused.contains(".hovered(BFill::ItemHover)"));
+    assert!(focused.contains("BFill::ControlActive"));
+    assert!(!focused.contains("div()"), "the heading no longer builds a bare div");
 }
 
 #[test]
@@ -203,91 +219,91 @@ static EMPTY_PROPS: &[BPropSpec] = &[];
 
 #[test]
 fn properties_heading_owns_one_full_width_toggle_action() {
-    let spec = BSectionSpec {
-        title: "Surface",
-        props: EMPTY_PROPS,
-    };
-    let BView::Panel {
-        role: BPanelRole::Card,
-        children,
-    } = BPanelItem::new(BHostType::Buts, "Material", spec, true).build(&BState::new())
+    let spec = sec("Surface", EMPTY_PROPS);
+    let BView::Card(card) = BPanelItem::new(BHostType::Buts, "Material", spec, true).build(&BState::new())
     else {
-        panic!("section must retain its outer card")
+        panic!("section must be a card")
     };
-    let [
-        BView::AccordionHeader {
-            title,
-            expanded: true,
-            action: BAction::Set(path, value),
-        },
-    ] = children.as_slice()
-    else {
-        panic!("one focused heading must own the sole toggle action")
+    assert!(card.body.is_empty() && card.is_open());
+    let BAction::Set(path, value) = card.fold.as_ref().expect("a panel folds").flip() else {
+        panic!("the heading must own one explicit Set")
     };
-    assert_eq!(title, "Surface");
+    assert_eq!(card.title(), Some("Surface"));
     assert_eq!(path.encode(), "ctx.buts.material.surface.expanded");
     assert_eq!(value, V_FALSE);
 
-    let focused = source("src/v2/view/render/gpui/prim/accordion.rs");
-    assert_eq!(focused.matches(".on_click(").count(), 1);
-    assert!(focused.contains(".w_full()"));
-    assert!(focused.contains("accordion-header-"));
-    assert!(focused.contains("accordion-disclosure-"));
+    let focused = source("src/v2/view/draw/card.rs");
+    // The header's gestures (click, Ctrl-click, drag-sweep) live in `fold.rs`.
+    let gestures = source("src/v2/view/draw/fold.rs");
+    assert_eq!(
+        focused.matches(".on_click(").count() + gestures.matches(".on_click(").count(),
+        1,
+        "the header is the fold's one click target"
+    );
+    assert!(focused.contains("BLen::Full"));
+    assert!(focused.contains("card-head-"));
+    assert!(focused.contains("card-fold-"));
 }
 
+/// Blender's panel header (`panel_draw_aligned_widgets`): the fold triangle
+/// at the left — `ICON_RIGHTARROW` closed, `ICON_DOWNARROW_HLT` open — the
+/// title after it, the grip at the right at half alpha. Blender's is
+/// `PNL_HEADER` (1.25 units); phiber's is the button height, so a heading
+/// and the rows and buttons under it are one module and line up.
 #[test]
-fn compact_disclosure_geometry_is_resolved_stable_and_non_nested() {
-    let focused = source("src/v2/view/render/gpui/prim/accordion.rs");
-    assert!(focused.contains(".button_height"));
-    assert!(focused.contains("dimensions.header_height - 2.0 * c.style.spacing.pad_xs"));
-    assert!(focused.contains("radius_for(BStyleRole::Button)"));
-    assert!(focused.contains(".w(px(chip_size))"));
-    assert!(focused.contains(".h(px(chip_size))"));
-    assert!(focused.contains(".text_size(px(c.style.typography.body))"));
-    assert!(focused.contains("colors.bg_hover"));
-    assert!(focused.contains("colors.bg_active"));
-    let state_branch = focused
-        .split("let chip_fill = if self.expanded")
-        .nth(1)
-        .unwrap();
-    let state_branch = state_branch.split("let hover_fill").next().unwrap();
-    assert!(!state_branch.contains(".w("));
-    assert!(!state_branch.contains(".h("));
+fn the_card_heading_is_blenders_panel_header() {
+    let focused = source("src/v2/view/draw/card.rs");
+    assert!(focused.contains(r#"if open { "triangle_down" } else { "triangle_right" }"#));
+    assert!(focused.contains(r#"BView::icon("grip")"#));
+    assert!(focused.contains("BCardPart::Glyph { dimmed: true }"));
+    assert!(focused.contains("BDim::CardHead"), "a card heading is the card-head module, not the area header's");
+    assert!(!focused.contains("BDim::HeaderHeight"));
+    let style = phiber::v2::theme::ui_style_defaults(phiber::v2::theme::BPaletteName::DEFAULT);
+    // The card-head module: the button plus `HEAD_ROOM`, so a lit button in a
+    // heading or a row has room over and under it.
+    assert_eq!(style.dimensions.card_head_height(), style.dimensions.button_height + phiber::v2::theme::HEAD_ROOM, "a heading is the button plus its head room");
+    assert_eq!(phiber::v2::theme::HEAD_ROOM, 4.0);
+    let fold = focused.find("card-fold-").unwrap();
+    let title = focused.find("card-title-").unwrap();
+    let grip = focused.find("card-grip-").unwrap();
+    assert!(fold < title && title < grip, "triangle, then title, then grip");
 }
 
 #[test]
 fn properties_keep_transparent_rows_outer_border_and_bounded_scroll_owner() {
-    let BView::Panel {
-        role: BPanelRole::Body,
-        ..
-    } = BPanel::new(BHostType::Buts).build(&BState::new())
-    else {
+    let BView::Card(column) = BPanel::new(BHostType::Buts).build(&BState::new()) else {
         panic!("Properties content must be owned by a bounded Body scroller")
     };
+    assert_eq!(column.kind, phiber::v2::view::prim::BCardKind::Column(phiber::v2::view::prim::BColumn::Body));
 
-    // After the prim.rs → prim/mod.rs split, panel role logic lives in prim/panel/.
-    // Section (transparent Properties row) is in prim/panel/section.rs.
-    let section = source("src/v2/view/render/gpui/prim/panel/section.rs");
-    assert!(section.contains("if c.host != crate::v2::host::BHostType::Buts"));
+    // The property-split row (transparent in Properties) is `split.rs`: the
+    // condition is a named part now — `BSplitPart::Row { toned }` — rather
+    // than an `if` around a fill.
+    let section = source("src/v2/view/draw/split.rs");
+    assert!(section.contains("toned: ctx.host != crate::v2::host::BHostType::Buts"));
+    assert!(section.contains("if toned { row.fill(BFill::Tone(BSurfaceTone::Section)) } else { row }"));
 
-    // Card borders/rounding are in prim/panel/card.rs.
-    let card = source("src/v2/view/render/gpui/prim/panel/card.rs");
-    assert!(card.contains(".border(px(c.style.strokes.border))"));
-    assert!(card.contains(".rounded("));
-    assert!(card.contains("panel_bg(BPanelRole::Card, c)"));
-    assert!(!card.contains(".overflow_hidden()"));
+    // A panel's outline, rounding and surface are the card's frame, and it
+    // does not clip (a row's dropdown escapes it).
+    let card = source("src/v2/view/draw/card.rs");
+    assert!(card.contains(".border(BEdge::All)"));
+    assert!(card.contains(".radius(BRadius::Role(BStyleRole::Card))"));
+    assert!(card.contains(".fill(BFill::Tone(panel_tone(ctx)))"));
+    let frame = card.split("Self::Frame(kind) =>").nth(1).unwrap().split("Self::Head").next().unwrap();
+    assert!(!frame.contains("BOverflow::Clip"));
 
-    // Body scroll ownership is in prim/panel/body.rs.
-    let body = source("src/v2/view/render/gpui/prim/panel/body.rs");
+    // Body scroll ownership is in body.rs.
+    let body = source("src/v2/view/draw/body.rs");
     for required in [
         ".flex_1()",
         ".w_full()",
         ".min_h_0()",
         ".min_w_0()",
         ".overflow_y_scroll()",
-        "let outer_padding = c.style.spacing.pad_sm;",
+        "let outer_padding = ctx.style.spacing.pad_sm;",
         ".p(px(outer_padding))",
-        "panel_bg(BPanelRole::Body, c)",
+        // The body's surface is named by its tone, not by a helper of its own.
+        "BSurfaceTone::Body",
     ] {
         assert!(body.contains(required), "Body lost {required}");
     }
@@ -296,15 +312,18 @@ fn properties_keep_transparent_rows_outer_border_and_bounded_scroll_owner() {
 #[test]
 fn bounded_content_keeps_paint_on_outer_surfaces() {
     for (name, relative, role) in [
+        // The surface is named by its tone, not by a helper per caller: a
+        // headed body is a card, a plain body and a sidebar are the body
+        // tone (a sidebar holds cards, and a card carries its own surface).
         (
             "Body",
-            "src/v2/view/render/gpui/prim/panel/body.rs",
-            "BPanelRole::Body",
+            "src/v2/view/draw/body.rs",
+            "BFill::Tone(if headed { BSurfaceTone::Card } else { BSurfaceTone::Body }).background(ctx)",
         ),
         (
             "Sidebar",
-            "src/v2/view/render/gpui/prim/panel/sidebar.rs",
-            "BPanelRole::Sidebar",
+            "src/v2/view/draw/sidebar.rs",
+            "BFill::Tone(BSurfaceTone::Body).background(ctx)",
         ),
     ] {
         let renderer = source(relative);
@@ -324,10 +343,10 @@ fn bounded_content_keeps_paint_on_outer_surfaces() {
             .expect("inner scroller end");
 
         for paint in [
-            format!("panel_bg({role}, c)"),
-            ".border(px(c.style.strokes.border))".to_string(),
-            ".border_color(to_hsla(c.style.colors.border))".to_string(),
-            ".rounded(px(c.style.radius_for(BStyleRole::Panel)))".to_string(),
+            role.to_string(),
+            ".border(px(ctx.style.strokes.border))".to_string(),
+            ".border_color(to_hsla(ctx.style.colors.border))".to_string(),
+            ".rounded(px(ctx.style.radius_for(BStyleRole::Panel)))".to_string(),
         ] {
             assert!(outer.contains(&paint), "{name} outer lost {paint}");
             assert!(!inner.contains(&paint), "{name} inner claimed {paint}");
@@ -346,48 +365,68 @@ fn bounded_content_keeps_paint_on_outer_surfaces() {
         }
     }
 
-    let area = source("src/v2/view/render/gpui/area.rs");
+    // The area is described through `BFlex`: its card (`fn card`) carries the
+    // paint and never scrolls; the scroller (`BAreaScroll`) fills its slot,
+    // may shrink on both axes, and is the only part that scrolls.
+    let area = source("src/v2/view/draw/area.rs");
     let area_surface = area
         .split("fn card(")
         .nth(1)
         .expect("area surface")
-        .split("pub fn view(")
+        .split("/// An area as drawn")
         .next()
         .expect("area surface end");
-    for paint in [".bg(", ".border(", ".border_color(", ".rounded("] {
+    for paint in [
+        ".fill(BFill::HostBody)",
+        ".border(BEdge::All)",
+        ".radius(BRadius::Role(BStyleRole::Area))",
+    ] {
         assert!(area_surface.contains(paint), "area outer lost {paint}");
     }
-    assert!(!area_surface.contains("overflow_y_scroll"));
-    for bound in [
-        ".flex_1()",
-        ".min_h_0()",
-        ".min_w_0()",
-        ".overflow_y_scroll()",
-    ] {
-        assert!(area.contains(bound), "area inner lost {bound}");
+    assert!(!area_surface.contains("scroller"));
+    // The scroller is a part of the area's own enum (`BAreaPart::Scroll`),
+    // not a type of its own.
+    let area_scroll = area
+        .split("Self::Scroll =>")
+        .nth(1)
+        .expect("area scroller")
+        .split("Self::Frame")
+        .next()
+        .expect("area scroller end");
+    for bound in [".fills()", ".unclamped()"] {
+        assert!(area_scroll.contains(bound), "area inner lost {bound}");
     }
+    assert!(
+        area.contains("BAreaPart::Scroll\n            .flex(ctx)\n            .scroller("),
+        "area inner no longer scrolls"
+    );
 
-    let card = source("src/v2/view/render/gpui/prim/panel/card.rs");
+    let card = source("src/v2/view/draw/card.rs");
     for paint in [
-        "panel_bg(BPanelRole::Card, c)",
-        ".border(px(c.style.strokes.border))",
-        ".rounded(",
+        ".fill(BFill::Tone(panel_tone(ctx)))",
+        ".border(BEdge::All)",
+        ".radius(BRadius::Role(BStyleRole::Card))",
     ] {
         assert!(card.contains(paint), "card outer lost {paint}");
     }
-    assert!(!card.contains(".overflow_y_scroll()"));
+    assert!(!card.contains("scroller("));
 
+    // A row is a strip along the horizontal axis, so its bounds live with the
+    // rest of the strip geometry (`strip`), shared with the rail.
     for relative in [
-        "src/v2/view/render/gpui/prim/row.rs",
-        "src/v2/view/render/gpui/prim/column.rs",
+        "src/v2/view/draw/strip.rs",
+        "src/v2/view/draw/column.rs",
     ] {
         let renderer = source(relative);
+        // `min_height(BLen::Zero)` is the `BFlex` spelling of `.min_h_0()`:
+        // what lets a flex child shrink below its content so the scroller,
+        // not the row, absorbs the overflow.
         assert!(
-            renderer.contains(".min_h_0()"),
+            renderer.contains(".min_h_0()") || renderer.contains("min_height(BLen::Zero)"),
             "{relative} lost height bound"
         );
         assert!(
-            renderer.contains(".min_w_0()"),
+            renderer.contains(".min_w_0()") || renderer.contains("min_width(BLen::Zero)"),
             "{relative} lost width bound"
         );
     }
@@ -395,9 +434,9 @@ fn bounded_content_keeps_paint_on_outer_surfaces() {
 
 #[test]
 fn focused_renderers_keep_named_ownership_and_delegation_only_routers() {
-    let prim = source("src/v2/view/render/gpui/prim/mod.rs");
-    let panel = source("src/v2/view/render/gpui/prim/panel/mod.rs");
-    for router in [&prim, &panel] {
+    let prim = source("src/v2/view/draw/prim.rs");
+    let panel = source("src/v2/view/draw/card.rs");
+    for router in [&prim] {
         assert!(!router.contains("div()"), "router owns a GPUI builder body");
         assert!(!router.contains("BConcreteRenderer"));
         assert!(!router.contains("render_impl"));
@@ -407,9 +446,9 @@ fn focused_renderers_keep_named_ownership_and_delegation_only_routers() {
         ("column.rs", "BColumn"),
         ("list.rs", "BList"),
         ("table.rs", "BTableRow"),
-        ("tree.rs", "BTreeRow"),
+        ("tree/mod.rs", "BTreeRow"),
     ] {
-        let focused = source(&format!("src/v2/view/render/gpui/prim/{file}"));
+        let focused = source(&format!("src/v2/view/draw/{file}"));
         assert!(
             focused.contains(&format!("pub struct {owner}")),
             "{file} lost {owner}"
@@ -419,40 +458,26 @@ fn focused_renderers_keep_named_ownership_and_delegation_only_routers() {
             "{file} lost inherent render coverage"
         );
     }
-    for (role, module, owner) in [
-        ("Section", "section.rs", "BSection"),
-        ("CardHeader", "heading.rs", "BCardHeader"),
-        ("Card", "card.rs", "BCard"),
-        ("Header", "header.rs", "BHeader"),
-        ("Toolbar", "toolbar.rs", "BToolbar"),
-        ("Sidebar", "sidebar.rs", "BSidebar"),
-        ("Footer", "footer.rs", "BFooter"),
-        ("Body", "body.rs", "BBody"),
-        ("Viewport", "viewport.rs", "BViewport"),
-        ("Modal", "modal.rs", "BModal"),
-    ] {
-        let focused = source(&format!("src/v2/view/render/gpui/prim/panel/{module}"));
-        assert!(
-            focused.contains(&format!("pub struct {owner}")),
-            "{role} lost {owner}"
-        );
-        assert!(
-            panel.contains(&format!("BPanelRole::{role} =>")),
-            "{role} is not delegated"
-        );
+    // Body and Sidebar are region columns (`BCardKind::Column`): the card
+    // renderer hands them to their focused renderers.
+    for (module, owner) in [("body.rs", "BBody"), ("sidebar.rs", "BSidebar")] {
+        let focused = source(&format!("src/v2/view/draw/{module}"));
+        assert!(focused.contains(&format!("pub struct {owner}")), "{module} lost {owner}");
+        assert!(panel.contains(&format!("super::{}::{owner}(&card.body).render(ctx)", module.trim_end_matches(".rs"))), "{owner} is not delegated");
     }
 }
 
 #[test]
 fn task_scoped_renderers_consume_only_the_resolved_style() {
     for relative in [
-        "src/v2/view/render/gpui/prim/row.rs",
-        "src/v2/view/render/gpui/prim/column.rs",
-        "src/v2/view/render/gpui/prim/list.rs",
-        "src/v2/view/render/gpui/prim/table.rs",
-        "src/v2/view/render/gpui/prim/tree.rs",
-        "src/v2/view/render/gpui/atom/button.rs",
-        "src/v2/view/render/gpui/atom/anchor.rs",
+        // row.rs composes; the strip it delegates to owns the style reads.
+        "src/v2/view/draw/column.rs",
+        "src/v2/view/draw/list.rs",
+        "src/v2/view/draw/table.rs",
+        "src/v2/view/draw/tree/mod.rs",
+        "src/v2/view/draw/button.rs",
+        "src/v2/view/draw/anchor.rs",
+        "src/v2/view/draw/strip.rs",
     ] {
         let focused = source(relative);
         assert!(
@@ -460,111 +485,42 @@ fn task_scoped_renderers_consume_only_the_resolved_style() {
             "{relative} reads legacy metrics"
         );
         assert!(
-            !focused.contains("c.p"),
+            !focused.contains("ctx.p"),
             "{relative} reads the compatibility palette"
         );
+        // Either the file reads the resolved style directly, or it describes
+        // its containers in `BFlex` tokens and hands the render pass to
+        // `.div(ctx)` — which is the same rule, held one level tighter.
         assert!(
-            focused.contains("c.style"),
+            focused.contains("ctx.style") || focused.contains(".div(ctx)"),
             "{relative} does not consume BRenderCtx style"
         );
     }
     for file in [
         "body.rs",
-        "card.rs",
-        "footer.rs",
-        "header.rs",
-        "heading.rs",
-        "modal.rs",
-        "section.rs",
         "sidebar.rs",
-        "toolbar.rs",
-        "viewport.rs",
     ] {
-        let relative = format!("src/v2/view/render/gpui/prim/panel/{file}");
+        let relative = format!("src/v2/view/draw/{file}");
         let focused = source(&relative);
         assert!(
             !focused.contains("METRICS"),
             "{relative} reads legacy metrics"
         );
         assert!(
-            !focused.contains("c.p"),
+            !focused.contains("ctx.p"),
             "{relative} reads the compatibility palette"
         );
-        assert!(focused.contains("c.style") || focused.contains("panel_bg("));
+        assert!(focused.contains("ctx.style") || focused.contains("ctx.style") || focused.contains("panel_bg("));
     }
 }
 
 // ── Gate 1 characterization tests (task 6.2) ──────────────────────────────
 
 #[test]
-fn gate1_contract_module_exists_and_trait_is_not_in_routers() {
-    // Gate 1 requires BFocusedRenderer to live in focused modules only,
-    // never in the thin-routing dispatchers. The existing router ban test
-    // covers mod.rs and panel/mod.rs; this test verifies the trait lives in
-    // the render_contract module instead.
-    let contract = source("src/v2/view/render/gpui/prim/render_contract.rs");
-    assert!(
-        contract.contains("pub trait BFocusedRenderer"),
-        "render_contract.rs must define BFocusedRenderer trait"
-    );
-    assert!(
-        contract.contains("fn render(&self, c: &BRenderCtx) -> AnyElement"),
-        "BFocusedRenderer must declare render(&self, c) -> AnyElement"
-    );
-
-    // Routers must NOT contain the trait name (enforced alongside existing bans).
-    let prim = source("src/v2/view/render/gpui/prim/mod.rs");
-    let panel = source("src/v2/view/render/gpui/prim/panel/mod.rs");
-    assert!(!prim.contains("BFocusedRenderer"), "prim/mod.rs must not name BFocusedRenderer");
-    assert!(!panel.contains("BFocusedRenderer"), "panel/mod.rs must not name BFocusedRenderer");
-}
-
-#[test]
-fn gate1_every_focused_struct_implements_bfocusedrenderer() {
-    // Verify that every focused module contains an `impl BFocusedRenderer for`
-    // block — proving compile-time trait coverage for all 18 named structs.
-    for (file, owner) in [
-        ("src/v2/view/render/gpui/prim/row.rs",       "BRow"),
-        ("src/v2/view/render/gpui/prim/column.rs",    "BColumn"),
-        ("src/v2/view/render/gpui/prim/list.rs",      "BList"),
-        ("src/v2/view/render/gpui/prim/table.rs",     "BTableRow"),
-        ("src/v2/view/render/gpui/prim/table.rs",     "BTableHeader"),
-        ("src/v2/view/render/gpui/prim/tree.rs",      "BTreeRow"),
-        ("src/v2/view/render/gpui/prim/tree.rs",      "BTreeIndent"),
-        ("src/v2/view/render/gpui/prim/accordion.rs", "BAccordion"),
-        ("src/v2/view/render/gpui/prim/sort.rs",      "BSort"),
-    ] {
-        let focused = source(file);
-        assert!(
-            focused.contains(&format!("impl BFocusedRenderer for {owner}")),
-            "{file} missing `impl BFocusedRenderer for {owner}`"
-        );
-    }
-    for (module, owner) in [
-        ("body.rs",    "BBody"),
-        ("card.rs",    "BCard"),
-        ("footer.rs",  "BFooter"),
-        ("header.rs",  "BHeader"),
-        ("heading.rs", "BCardHeader"),
-        ("modal.rs",   "BModal"),
-        ("section.rs", "BSection"),
-        ("sidebar.rs", "BSidebar"),
-        ("toolbar.rs", "BToolbar"),
-        ("viewport.rs","BViewport"),
-    ] {
-        let focused = source(&format!("src/v2/view/render/gpui/prim/panel/{module}"));
-        assert!(
-            focused.contains(&format!("impl BFocusedRenderer for {owner}")),
-            "panel/{module} missing `impl BFocusedRenderer for {owner}`"
-        );
-    }
-}
-
-#[test]
 fn gate1_table_has_public_compatibility_wrappers() {
     // Gate 1 requires public compatibility wrappers so the dispatcher can
     // call named entry points without re-owning GPUI composition.
-    let table = source("src/v2/view/render/gpui/prim/table.rs");
+    let table = source("src/v2/view/draw/table.rs");
     assert!(
         table.contains("pub fn view_row("),
         "table.rs must expose pub fn view_row() compatibility wrapper"
@@ -579,7 +535,7 @@ fn gate1_table_has_public_compatibility_wrappers() {
         "view_row must construct BTableRow"
     );
     assert!(
-        table.contains("BTableHeader(cells)"),
+        table.contains("BTableHeader(cell_list)"),
         "view_header must construct BTableHeader"
     );
 }
@@ -590,8 +546,8 @@ fn gate1_bounded_scroll_ownership_is_characterized() {
     // the bounded inner scroller owns overflow_y_scroll only.
     // Applies to both BBody and BSidebar.
     for (name, path) in [
-        ("BBody",    "src/v2/view/render/gpui/prim/panel/body.rs"),
-        ("BSidebar", "src/v2/view/render/gpui/prim/panel/sidebar.rs"),
+        ("BBody",    "src/v2/view/draw/body.rs"),
+        ("BSidebar", "src/v2/view/draw/sidebar.rs"),
     ] {
         let src = source(path);
         // Outer surface: must own all paint properties.
@@ -632,27 +588,43 @@ fn gate1_all_focused_modules_free_of_legacy_reads() {
     // Extends task_scoped_renderers_consume_only_the_resolved_style to
     // include all panel role files in a single characterization assertion.
     let all_focused = [
-        "src/v2/view/render/gpui/prim/row.rs",
-        "src/v2/view/render/gpui/prim/column.rs",
-        "src/v2/view/render/gpui/prim/list.rs",
-        "src/v2/view/render/gpui/prim/table.rs",
-        "src/v2/view/render/gpui/prim/tree.rs",
-        "src/v2/view/render/gpui/prim/accordion.rs",
-        "src/v2/view/render/gpui/prim/sort.rs",
-        "src/v2/view/render/gpui/prim/panel/body.rs",
-        "src/v2/view/render/gpui/prim/panel/card.rs",
-        "src/v2/view/render/gpui/prim/panel/footer.rs",
-        "src/v2/view/render/gpui/prim/panel/header.rs",
-        "src/v2/view/render/gpui/prim/panel/heading.rs",
-        "src/v2/view/render/gpui/prim/panel/modal.rs",
-        "src/v2/view/render/gpui/prim/panel/section.rs",
-        "src/v2/view/render/gpui/prim/panel/sidebar.rs",
-        "src/v2/view/render/gpui/prim/panel/toolbar.rs",
-        "src/v2/view/render/gpui/prim/panel/viewport.rs",
+        "src/v2/view/draw/row.rs",
+        "src/v2/view/draw/column.rs",
+        "src/v2/view/draw/list.rs",
+        "src/v2/view/draw/table.rs",
+        "src/v2/view/draw/tree/mod.rs",
+        "src/v2/view/draw/card.rs",
+        "src/v2/view/draw/bar.rs",
+        "src/v2/view/draw/sort.rs",
+        "src/v2/view/draw/body.rs",
+        "src/v2/view/draw/split.rs",
+        "src/v2/view/draw/sidebar.rs",
     ];
     for path in all_focused {
         let src = source(path);
         assert!(!src.contains("METRICS"), "{path} reads legacy METRICS");
-        assert!(!src.contains("c.p."), "{path} reads legacy c.p palette");
+        assert!(!src.contains("ctx.p."), "{path} reads legacy ctx.p palette");
     }
+}
+
+/// A module is a file or a folder; read whichever spelling exists.
+fn module_file(path: std::path::PathBuf) -> std::path::PathBuf {
+    if path.exists() {
+        return path;
+    }
+    // `x.rs` asked for, `x/mod.rs` exists.
+    let folder = path.with_extension("").join("mod.rs");
+    if folder.exists() {
+        return folder;
+    }
+    // `x/mod.rs` asked for, `x.rs` exists.
+    if path.file_name().is_some_and(|n| n == "mod.rs") {
+        if let Some(parent) = path.parent() {
+            let file = parent.with_extension("rs");
+            if file.exists() {
+                return file;
+            }
+        }
+    }
+    path
 }

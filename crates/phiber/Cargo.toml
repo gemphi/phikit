@@ -15,9 +15,13 @@ name = "phiber"
 path = "src/lib.rs"
 
 [dependencies]
+phiphx = { path = "../phiphx" }
+phiray = { path = "../phiray" }
+exr = "1.74"
+image = { workspace = true }
+smallvec = { workspace = true }
 gpui = { workspace = true }
 gpui_platform = { workspace = true }
-ui = { workspace = true }
 theme = { workspace = true }
 glam = "0.29"
 byteorder = "1.5"
@@ -27,14 +31,15 @@ thiserror = { workspace = true }
 bytemuck = { version = "1.18", features = ["derive"] }
 zstd = { workspace = true }
 flate2 = { workspace = true }
+base64 = { workspace = true }
 
 [features]
 default = ["phx-import"]
 phx-import = []
-gltf-import = []
+gltf-import = ["phiphx/gltf-import"]
 usd-import = []
-usdz-import = []
-proptest = []
+usdz-import = ["phiphx/usdz-import"]
+proptest = ["phiphx/proptest"]
 
 [[bin]]
 name = "phiber"
@@ -42,4 +47,8 @@ path = "src/main.rs"
 
 [dev-dependencies]
 proptest = { workspace = true }
+# The save tests read their own output back, so they need the codecs too.
+exr = "1.74"
+image = { workspace = true }
+phiphx = { path = "../phiphx" }
 gpui = { workspace = true, features = ["test-support"] }

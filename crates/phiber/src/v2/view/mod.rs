@@ -3,7 +3,11 @@
 //! inside the `body` of a `Part` node.
 
 pub mod prim;
-pub mod render;
+pub mod scroll;
+pub mod size;
+pub mod draw;
+pub mod layout;
+pub mod text;
 
 use crate::v2::area::BAreaType;
 use crate::v2::host::BHostType;
@@ -14,8 +18,8 @@ use crate::v2::space::BSpaceType;
 use crate::v2::state::BState;
 use crate::v2::zone::BZoneType;
 pub use prim::{
-    BAction, BColAlign, BColWidth, BControl, BPanelRole, BPopoverSide, BRailEntry, BRailGroup,
-    BRailKind, BRailSide, BRailView, BRowShade, BSortDirection, BTableCell, BZoneToggle,
+    BAction, BCard, BCardKind, BColAlign, BColWidth, BControl, BPopoverSide, BRailEntry, BRailGroup,
+    BRailKind, BRailSide, BRailView, BRowShade, BSortDirection, BTableCell, BThumb, BZoneToggle,
 };
 
 #[derive(Clone, Debug)]
@@ -23,11 +27,11 @@ pub enum BView {
     // ── Store-level containers ──
     Space {
         kind: BSpaceType,
-        children: Vec<BView>,
+        list: Vec<BView>,
     },
     Zone {
         kind: BZoneType,
-        children: Vec<BView>,
+        list: Vec<BView>,
     },
     Area {
         kind: BAreaType,
@@ -35,15 +39,15 @@ pub enum BView {
     },
     Host {
         kind: BHostType,
-        children: Vec<BView>,
+        list: Vec<BView>,
     },
     Region {
         kind: BRegionType,
-        children: Vec<BView>,
+        list: Vec<BView>,
     },
     Pane {
         kind: BPaneType,
-        children: Vec<BView>,
+        list: Vec<BView>,
     },
     Part {
         kind: BPartType,
@@ -56,11 +60,11 @@ pub enum BView {
 
     // ── Primitives: legal ONLY inside Part.body ──
     Row {
-        children: Vec<BView>,
+        list: Vec<BView>,
     },
     /// List row with a background shade (flat / alternating / selected).
     ListRow {
-        children: Vec<BView>,
+        list: Vec<BView>,
         shade: prim::BRowShade,
     },
     /// A table body row whose cells share the header's column geometry, so
@@ -68,14 +72,14 @@ pub enum BView {
     /// `draw_details_columns`). `action`, when set, makes the whole row
     /// clickable (select a file / navigate into a directory).
     TableRow {
-        cells: Vec<prim::BTableCell>,
+        cell_list: Vec<prim::BTableCell>,
         shade: prim::BRowShade,
         action: Option<BAction>,
     },
     /// The table header row — uses the SAME cell widths as `TableRow` bodies
     /// so columns align. Header cells are clickable to sort.
     TableHeader {
-        cells: Vec<prim::BTableCell>,
+        cell_list: Vec<prim::BTableCell>,
     },
     /// A table-column heading with a stable reserved direction-indicator slot.
     SortHeader {
@@ -84,13 +88,9 @@ pub enum BView {
         align: prim::BColAlign,
         action: BAction,
     },
-    /// A Properties accordion heading. The entire row owns one toggle action;
-    /// its disclosure chip is visual only, avoiding nested duplicate dispatch.
-    AccordionHeader {
-        title: String,
-        expanded: bool,
-        action: BAction,
-    },
+    /// A panel — Blender's `Panel`: heading strip, body, optional foot,
+    /// and its traits (fold, kind). See `card`.
+    Card(Box<prim::BCard>),
     /// Tree row — a `ListRow` that also owns Blender's outliner row geometry:
     /// `depth * METRICS.indent_unit` of left indent, a reserved disclosure
     /// slot (present but blank on leaves, so names stay column-aligned), then
@@ -102,29 +102,41 @@ pub enum BView {
         expanded: Option<bool>,
         /// Fired when the disclosure triangle is clicked.
         toggle: Option<BAction>,
+        /// Between the disclosure and the icon: a collection row's exclude
+        /// checkbox (`outliner_draw_tree_element`'s `TSE_LAYER_COLLECTION`
+        /// checkbox). Empty on every other row.
+        lead: Vec<BView>,
         /// Data-type icon, drawn in its own grid column immediately after
         /// the disclosure column — which is what puts a child row's arrow
         /// directly beneath its parent's icon.
         icon: String,
         /// Main cells (the name), which flex and clip.
-        children: Vec<BView>,
+        list: Vec<BView>,
         /// Right-aligned cluster (the restriction toggles), which never
         /// shrinks and is pushed hard against the row's right edge.
         trail: Vec<BView>,
         shade: prim::BRowShade,
+        /// What the row carries when dragged and what a drop on it fires.
+        drag: Option<prim::BTreeDrag>,
     },
     /// Fixed-width blank of `level * METRICS.indent_unit`.
     Indent {
         level: u16,
     },
     Column {
-        children: Vec<BView>,
+        list: Vec<BView>,
     },
-    Panel {
-        role: BPanelRole,
-        children: Vec<BView>,
+    /// A property row split into a label column and a value column —
+    /// Blender's `uiLayout.use_property_split` row (`ui_item_prop_split`).
+    Split {
+        list: Vec<BView>,
     },
     Label {
+        text: String,
+    },
+    /// Wrapping text for reading, by role.
+    Prose {
+        role: prim::BProse,
         text: String,
     },
     /// Rotated-90° effect — column of characters.
@@ -135,20 +147,19 @@ pub enum BView {
     Field {
         text: String,
     },
-    /// Interactive search / text-entry field.
+    /// Text field the user can type into.
     ///
-    /// Displays `value` when non-empty, `placeholder` otherwise (dimmed).
-    /// `on_change` is fired on click to clear, giving immediate feedback; it
-    /// carries the target `BPath` so the tree re-filters on the next render.
-    ///
-    /// Full IME text entry requires an `EntityInputHandler` entity (future
-    /// work). For now the field shows the current state value and lets the
-    /// user clear it. Blender ref: `UI_BTYPE_TEXT` / `uiItemStringO`.
+    /// Shows `value`, or a dimmed `placeholder` when it is empty. Clicking it
+    /// puts the caret there (`state::edit`); the window's key handler then
+    /// writes every keystroke into the field's own key, so the tree re-filters
+    /// or re-navigates on the next render. Blender ref: `UI_BTYPE_TEXT`.
     SearchField {
         placeholder: String,
         value: String,
-        /// Fired on click-to-clear (with an empty String value), and in
-        /// future on every IME keystroke. Must be `BAction::Set(path, _)`.
+        /// True while this field holds the caret: it draws the caret and the
+        /// focused border.
+        editing: bool,
+        /// Names the state key being edited. Must be `BAction::Set(path, _)`.
         on_change: BAction,
     },
     Icon {
@@ -159,6 +170,8 @@ pub enum BView {
     /// menubar anchor and a tab are render-side, not data-side — so they are
     /// the same record with different `with_*` props, not four structs each
     /// with their own constructor-per-prop-combination family.
+    /// A widget that edits one state value (`prim::ctrl`).
+    Ctrl(Box<prim::BCtrl>),
     Button(prim::BControl),
     /// Menu popover row — no bg by default, hover-only highlight.
     MenuItem(prim::BControl),
@@ -195,9 +208,22 @@ pub enum BView {
         close: BAction,
         side: prim::BPopoverSide,
     },
+    /// Preview tile (File Browser thumbnails display).
+    Thumbnail(Box<prim::BThumb>),
+    /// Platform window controls in the self-drawn title bar
+    /// (`leading`: macOS traffic-light space; else min / max / close).
+    WindowControls { leading: bool },
+    /// Wrapping left-to-right layout of tiles.
+    Grid {
+        list: Vec<BView>,
+    },
     /// Host-specific canvas (viewport / tree / node graph / text buffer).
+    /// `camera` is the 3D viewport's camera view: whether it looks through
+    /// the scene camera now (`RegionView3D.persp == RV3D_CAMOB`, with its
+    /// frame and passepartout) and the key that says so for this area.
     Canvas {
         host: BHostType,
+        camera: crate::v2::scene::camera_view::BCameraSlot,
     },
     /// Determinate progress bar with a leading status label. `fraction` is
     /// clamped to `0.0..=1.0` by the renderer. Used by the statusbar to show
@@ -205,6 +231,26 @@ pub enum BView {
     ProgressBar {
         fraction: f32,
         label: String,
+    },
+    /// The action log (`state::log`): its newest line when folded, every
+    /// line in a scroller when `open`, with the control that folds it.
+    Log {
+        open: bool,
+        toggle: prim::BControl,
+    },
+    /// A person's picture, round, `size` px across: the image at `path`
+    /// when there is one, else the user glyph in a ring (`draw/avatar.rs`).
+    Avatar {
+        path: String,
+        size: f32,
+    },
+    /// An icon with a count beside it — the Outliner's icon row for a
+    /// collapsed item (`outliner_draw_iconrow`): what is folded under it,
+    /// one glyph per kind, the number when there is more than one
+    /// (`draw/badge.rs`).
+    Badge {
+        icon: String,
+        count: usize,
     },
     Empty,
 }

@@ -22,21 +22,9 @@ impl BSpec for BChannelSpec {
     }
 }
 
-static TIME_PLACEHOLDER: &[BChannelSpec] = &[
-    BChannelSpec {
-        label: "Cube.location",
-    },
-    BChannelSpec {
-        label: "Cube.rotation",
-    },
-    BChannelSpec {
-        label: "Camera.location",
-    },
-];
-
-pub fn channels_for(host: BHostType) -> &'static [BChannelSpec] {
-    match host {
-        BHostType::Time | BHostType::Action | BHostType::Nla | BHostType::Ipo => TIME_PLACEHOLDER,
-        _ => &[],
-    }
+/// Every animation editor draws its channels in its own canvas
+/// (`canvas/time/row`), from the file's actions and NLA; no host lists a
+/// stand-in any more.
+pub fn channels_for(_host: BHostType) -> &'static [BChannelSpec] {
+    &[]
 }

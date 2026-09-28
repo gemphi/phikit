@@ -27,11 +27,12 @@
 //! imports; the kit-boundary and structural guards (clause 3.8) are separate
 //! test binaries confirmed green by the checkpoint.
 
+use phiber::v2::state::{BKey as _, ActivityKey, CtxKey};
 use phiber::v2::scene::{
     BShape, OBJECTS, ZOOM_MAX, ZOOM_MIN, view_yaw, view_zoom, yaw_key, zoom_key, zoom_step,
 };
 use phiber::v2::state::{
-    BState, V_TRUE, apply_open, apply_toggle, k_menu, k_menu_path, key::K_OBJECT,
+    BState, V_TRUE, apply_open, apply_toggle, MenuKey,
 };
 use phiber::v2::view::prim::BAction;
 use proptest::prelude::*;
@@ -146,45 +147,49 @@ fn compass_axis_click_payloads_are_fixed_angles() {
 }
 
 // ===========================================================================
-// Clause 3.1 — selection loop: selecting an object writes K_OBJECT, and both
+// Clause 3.1 — selection loop: selecting an object writes CtxKey::Object.path(), and both
 // the viewport active-object read and the Outliner read the single `scene`
 // OBJECTS table (no duplicated object list).
 // ===========================================================================
 
-/// The outliner emits, for each object, a `Set(K_OBJECT, <name>)` button and
+/// The outliner emits, for each object, a `Set(CtxKey::Object.path(), <name>)` button and
 /// marks the active object with a check. We freeze that the emitted rows are
-/// driven by the single OBJECTS table and by `K_OBJECT`.
+/// driven by the single OBJECTS table and by `CtxKey::Object.path()`.
 #[test]
 fn selection_loop_reads_single_scene_table_and_writes_k_object() {
-    use phiber::v2::part::custom::outliner::BOutlinerItem;
+    use phiber::v2::part::outliner::BOutlinerItem;
     use phiber::v2::view::{BView, BViewItem};
 
     // Fully-expanded outliner so object rows are present.
     let state = BState::new();
     let tree = BOutlinerItem::new().build(&state);
-    let BView::Column { children } = tree else {
+    let BView::Column { list } = tree else {
         panic!("outliner root is a Column")
     };
 
-    // Collect every Set(K_OBJECT, ..) action the outliner emits.
+    // Collect every Set(CtxKey::Object.path(), ..) action the outliner emits.
     fn collect_object_sets(v: &BView, out: &mut Vec<String>) {
         match v {
             BView::Button(ctl) => {
                 if let Some(BAction::Set(path, val)) = &ctl.action {
-                    if *path == K_OBJECT {
+                    if *path == CtxKey::Object.path() {
                         out.push(val.clone());
                     }
                 }
             }
-            BView::Column { children } | BView::Row { children } => {
-                for c in children {
+            BView::Column { list } | BView::Row { list } => {
+                for c in list {
                     collect_object_sets(c, out);
                 }
             }
-            BView::Panel { children, .. }
-            | BView::ListRow { children, .. }
-            | BView::TreeRow { children, .. } => {
-                for c in children {
+            BView::Card(card) if matches!(card.kind, phiber::v2::view::prim::BCardKind::Column(_)) => {
+                for c in &card.body {
+                    collect_object_sets(c, out);
+                }
+            }
+            BView::ListRow { list, .. }
+            | BView::TreeRow { list, .. } => {
+                for c in list {
                     collect_object_sets(c, out);
                 }
             }
@@ -193,11 +198,11 @@ fn selection_loop_reads_single_scene_table_and_writes_k_object() {
     }
 
     let mut sets = Vec::new();
-    for row in &children {
+    for row in &list {
         collect_object_sets(row, &mut sets);
     }
 
-    // Every scene object (and ONLY scene objects) is selectable via K_OBJECT —
+    // Every scene object (and ONLY scene objects) is selectable via CtxKey::Object.path() —
     // the outliner is driven by the single OBJECTS table. Rows are sorted
     // alphabetically (Blender sorts by default; `SO_SKIP_SORT_ALPHA` is the
     // inverted opt-out), so compare against the sorted names.
@@ -209,13 +214,13 @@ fn selection_loop_reads_single_scene_table_and_writes_k_object() {
     );
 
     // The active-object read defaults to the first object's convention ("Cube").
-    let active = state.get(&K_OBJECT).unwrap_or("Cube");
+    let active = state.get(CtxKey::Object).unwrap_or("Cube");
     assert_eq!(active, "Cube");
 
-    // Writing K_OBJECT changes the active object the outliner marks.
+    // Writing CtxKey::Object.path() changes the active object the outliner marks.
     let mut sel = BState::new();
-    sel.set(&K_OBJECT, "Gem");
-    assert_eq!(sel.get(&K_OBJECT), Some("Gem"));
+    sel.set(CtxKey::Object, "Gem");
+    assert_eq!(sel.get(CtxKey::Object), Some("Gem"));
 }
 
 /// The scene table is the single source of truth: three objects, one per
@@ -239,8 +244,8 @@ fn scene_table_is_the_single_object_source() {
 /// Mirror of `zone::view`'s handle-count logic: the number of resize handles a
 /// zone emits equals `n - 1` when `n > 1`, else `0`, where `n` is the count of
 /// non-empty area children.
-fn handle_count_for(children: &[phiber::v2::view::BView]) -> usize {
-    let n = children.iter().filter(|ch| !ch.is_empty()).count();
+fn handle_count_for(list: &[phiber::v2::view::BView]) -> usize {
+    let n = list.iter().filter(|ch| !ch.is_empty()).count();
     if n > 1 { n - 1 } else { 0 }
 }
 
@@ -265,11 +270,11 @@ proptest! {
     #[test]
     fn handle_count_tracks_nonempty_areas(reals in 0usize..8, empties in 0usize..5) {
         use phiber::v2::view::BView;
-        let mut children: Vec<BView> = Vec::new();
-        for _ in 0..reals { children.push(BView::label("x")); }
-        for _ in 0..empties { children.push(BView::empty()); }
+        let mut list: Vec<BView> = Vec::new();
+        for _ in 0..reals { list.push(BView::label("x")); }
+        for _ in 0..empties { list.push(BView::empty()); }
 
-        let handles = handle_count_for(&children);
+        let handles = handle_count_for(&list);
         if reals < 2 {
             prop_assert_eq!(handles, 0, "no handle allowed with < 2 real areas");
         } else {
@@ -289,34 +294,34 @@ proptest! {
 fn non_empty_menu_toggle_logic_unchanged() {
     // Opening a top-level menu makes the menubar active and marks it open.
     let mut state = BState::new();
-    apply_toggle(&mut state, &k_menu("topbar", "File"));
-    assert_eq!(state.get(&k_menu("topbar", "File")), Some(V_TRUE));
+    apply_toggle(&mut state, &MenuKey::Top("topbar", "File").path());
+    assert_eq!(state.get(&MenuKey::Top("topbar", "File").path()), Some(V_TRUE));
     assert!(phiber::v2::state::is_menubar_active(&state));
 
     // Top-close: toggling a peer closes the first (at most one open top).
-    apply_toggle(&mut state, &k_menu("topbar", "Edit"));
+    apply_toggle(&mut state, &MenuKey::Top("topbar", "Edit").path());
     let open_tops: Vec<_> = ["File", "Edit", "Render"]
         .iter()
-        .filter(|t| state.get(&k_menu("topbar", t)) == Some(V_TRUE))
+        .filter(|t| state.get(&MenuKey::Top("topbar", t).path()) == Some(V_TRUE))
         .collect();
     assert_eq!(open_tops.len(), 1, "at most one top-level menu stays open");
-    assert_eq!(state.get(&k_menu("topbar", "Edit")), Some(V_TRUE));
+    assert_eq!(state.get(&MenuKey::Top("topbar", "Edit").path()), Some(V_TRUE));
 
     // Sibling-close under a parent: opening a nested child then a sibling
     // leaves the parent open and only the last sibling open.
-    apply_open(&mut state, &k_menu_path("topbar", &["Edit", "Import"]));
-    apply_open(&mut state, &k_menu_path("topbar", &["Edit", "Export"]));
+    apply_open(&mut state, &MenuKey::Nested("topbar", &["Edit", "Import"]).path());
+    apply_open(&mut state, &MenuKey::Nested("topbar", &["Edit", "Export"]).path());
     assert_eq!(
-        state.get(&k_menu("topbar", "Edit")),
+        state.get(&MenuKey::Top("topbar", "Edit").path()),
         Some(V_TRUE),
         "parent stays open"
     );
     assert_eq!(
-        state.get(&k_menu_path("topbar", &["Edit", "Export"])),
+        state.get(&MenuKey::Nested("topbar", &["Edit", "Export"]).path()),
         Some(V_TRUE)
     );
     assert_ne!(
-        state.get(&k_menu_path("topbar", &["Edit", "Import"])),
+        state.get(&MenuKey::Nested("topbar", &["Edit", "Import"]).path()),
         Some(V_TRUE)
     );
 }
@@ -327,19 +332,19 @@ fn hover_open_only_when_menubar_active() {
 
     // Menubar closed: hover is a no-op.
     let mut closed = BState::new();
-    hover_open_if_menubar_active(&mut closed, &k_menu("topbar", "Render"));
+    hover_open_if_menubar_active(&mut closed, &MenuKey::Top("topbar", "Render").path());
     assert_ne!(
-        closed.get(&k_menu("topbar", "Render")),
+        closed.get(&MenuKey::Top("topbar", "Render").path()),
         Some(V_TRUE),
         "hover must not open a menu while the menubar is inactive"
     );
 
     // Menubar active (File open): hover switches to the hovered top.
     let mut active = BState::new();
-    apply_toggle(&mut active, &k_menu("topbar", "File"));
-    hover_open_if_menubar_active(&mut active, &k_menu("topbar", "Render"));
+    apply_toggle(&mut active, &MenuKey::Top("topbar", "File").path());
+    hover_open_if_menubar_active(&mut active, &MenuKey::Top("topbar", "Render").path());
     assert_eq!(
-        active.get(&k_menu("topbar", "Render")),
+        active.get(&MenuKey::Top("topbar", "Render").path()),
         Some(V_TRUE),
         "hover must switch menus while the menubar is active"
     );
@@ -353,45 +358,40 @@ fn hover_open_only_when_menubar_active() {
 
 #[test]
 fn activity_active_mark_reads_from_activity_tab() {
-    use phiber::v2::part::activity::BActivityItem;
+    use phiber::v2::part::activity::BActivityList;
     use phiber::v2::part::activity::set::ENTRIES;
-    use phiber::v2::state::key::K_ACTIVITY_TAB;
-    use phiber::v2::view::{BView, BViewItem};
+        use phiber::v2::view::BView;
 
     // No active tab → nothing is marked active.
     let none = BState::new();
-    for e in ENTRIES {
-        let item = BActivityItem::new(*e, none.get(&K_ACTIVITY_TAB) == Some(e.label));
-        assert!(
-            !item.active,
-            "no entry active when ctx.activity.tab is unset"
-        );
-        // Every entry is a buikit widget (B-prefixed BView), not a puikit
-        // widget. Activity entries render as icon Tabs so they can carry the
-        // active-mark (a Button has no active state); a Button is also
-        // acceptable for entries that only dispatch an action.
-        assert!(matches!(
-            item.build(&none),
-            BView::Tab { .. } | BView::Button { .. }
-        ));
-    }
+    let BView::Rail(rail) = BActivityList::new().rail(&none) else {
+        panic!("activity bar must emit one Rail")
+    };
+    assert!(
+        rail.entries.iter().all(|e| !e.control.active),
+        "no entry active when ctx.activity.tab is unset"
+    );
 
     // Set the active tab to a known entry → exactly that entry is marked.
     let target = ENTRIES[0].label;
     let mut state = BState::new();
-    state.set(&K_ACTIVITY_TAB, target);
-    let active_count = ENTRIES
+    state.set(ActivityKey::Tab, target);
+    let BView::Rail(marked) = BActivityList::new().rail(&state) else {
+        panic!("activity bar must emit one Rail")
+    };
+    let active: Vec<_> = marked
+        .entries
         .iter()
-        .filter(|e| state.get(&K_ACTIVITY_TAB) == Some(e.label))
-        .count();
+        .filter(|e| e.control.active)
+        .collect();
     assert_eq!(
-        active_count, 1,
+        active.len(),
+        1,
         "exactly one entry is marked active for a set tab"
     );
-
-    let marked = BActivityItem::new(ENTRIES[0], state.get(&K_ACTIVITY_TAB) == Some(target));
-    assert!(
-        marked.active,
+    assert_eq!(
+        active[0].control.label.as_deref(),
+        Some(target),
         "the entry matching ctx.activity.tab is active"
     );
 }

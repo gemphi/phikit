@@ -1,8 +1,0 @@
-# Seeds for failure cases proptest has generated in the past. It is
-# automatically read and these particular cases re-run before any
-# novel cases are generated.
-#
-# It is recommended to check this file in to source control so that
-# everyone who runs the test benefits from these saved cases.
-cc ed60265a4d0f13c3c9c3666b7c351c950f15284f470d1c1b689186b66856e936 # shrinks to (palette_a, palette_b) = (AppleDark, BlenderDark), (presentation_a, presentation_b) = (ResizePresentation { visible_seam: 0.0, hit_width: 0.0, gap: 0.0, inset: 0.0 }, ResizePresentation { visible_seam: 1.0, hit_width: 1.0, gap: 0.0, inset: 0.0 }), (area_space, area_zone, area_index, weights) = (Rendering, Bottom, 0, [1]), zone_space = Layout, zone = Left, area_delta = 0.0, zone_delta = 0.0, zone_sign = -1.0, extent = 128.0, zone_anchor = 1.0, min_extent = 0.0
-cc 74099fefe784e1c02561fa579e1e9e07c83d099dba53d8d9d756a8a7f64c1fbf # shrinks to (palette_a, palette_b) = (AppleDark, BlenderDark), (presentation_a, presentation_b) = (ResizePresentation { visible_seam: 0.0, hit_width: 0.0, gap: 0.0, inset: 0.0 }, ResizePresentation { visible_seam: 1.0, hit_width: 1.0, gap: 0.0, inset: 0.0 }), (area_space, area_zone, area_index, weights) = (Layout, Right, 0, [1, 1]), zone_space = Layout, zone = Left, area_delta = -2811.9478, zone_delta = 0.0, zone_sign = -1.0, extent = 2574.6785, zone_anchor = 1.0, min_extent = 0.0

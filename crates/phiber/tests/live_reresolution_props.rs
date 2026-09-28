@@ -6,7 +6,7 @@
 use phiber::v2::{
     state::BState,
     theme::{
-        BPaletteName, BRadiusToken, BShadowStyle, BStyleParser, BStyleRole, BStyleValue,
+        BFontFamily, BPaletteName, BRadiusToken, BShadowStyle, BStyleParser, BStyleRole, BStyleValue,
         UI_STYLE_DESCRIPTORS, resolve_ui_style, ui_style_defaults,
     },
 };
@@ -37,13 +37,6 @@ fn pair(index: usize, first: BStyleValue, second: BStyleValue) -> LiveOverridePa
 }
 
 fn number_pair_strategy(index: usize, min: f32, max: f32) -> BoxedStrategy<LiveOverridePair> {
-    let defaults = ui_style_defaults(BPaletteName::AppleDark);
-    let (min, max) = match UI_STYLE_DESCRIPTORS[index].target {
-        // Keep both independently resolved values exact after resize normalization.
-        "resize.visible_seam" => (min, max.min(defaults.resize.hit_width)),
-        "resize.hit_width" => (min.max(defaults.resize.visible_seam), max),
-        _ => (min, max),
-    };
     (min..=max, min..=max)
         .prop_filter("live values must be distinct", |(first, second)| {
             first != second
@@ -91,6 +84,16 @@ fn arb_live_override_pair() -> impl Strategy<Value = LiveOverridePair> {
                         BStyleValue::Shadow(first),
                         BStyleValue::Shadow(second),
                     )
+                })
+                .boxed(),
+            BStyleParser::Font => any::<bool>()
+                .prop_map(move |first_is_system| {
+                    let (first, second) = if first_is_system {
+                        (BFontFamily::System, BFontFamily::Menlo)
+                    } else {
+                        (BFontFamily::Menlo, BFontFamily::System)
+                    };
+                    pair(index, BStyleValue::Font(first), BStyleValue::Font(second))
                 })
                 .boxed(),
         }

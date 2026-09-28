@@ -3,7 +3,7 @@
 //! Feature: phiber-resolved-ui-style-settings, Property 8
 //! **Validates: Requirements 5.2, 5.3, 5.4, 5.5, 13.5**
 
-use phiber::v2::view::render::gpui::surface::{
+use phiber::v2::view::draw::surface::{
     BCellPosition, BChildCornerSupport, BCorners, BRowPosition, BSurfaceOpacity,
     child_surface_plan, compatible_inner_radius,
 };
@@ -210,7 +210,7 @@ proptest! {
             );
             prop_assert!(
                 cell_claims[corner] <= 1,
-                "corner {} was claimed by multiple cells",
+                "corner {} was claimed by multiple cell_list",
                 corner,
             );
             let final_owner_count = u8::from(parent_residual[corner])
