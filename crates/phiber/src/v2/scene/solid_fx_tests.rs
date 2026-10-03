@@ -10,9 +10,12 @@ fn the_factory_outline_is_on_and_a_files_cavity_is_read_back() {
     assert_eq!(f, BSolidFx::FACTORY);
     assert_eq!(f.fx_words(1.0), [1.0, 0.0, 0.0, 1.0], "the outline alone; no curvature while Cavity is off");
     assert_eq!(f.outline_words(), [0.0, 0.0, 0.0, 1.0]);
-    let file = SceneSolidFx { outline: false, outline_color: [1.0, 0.5, 0.0], cavity: true, cavity_type: "BOTH", cavity_valley_factor: 1.0, cavity_ridge_factor: 1.0, curvature_ridge_factor: 2.0, curvature_valley_factor: 0.5, shadow: true, shadow_intensity: 0.8 };
+    let file = SceneSolidFx { outline: false, outline_color: [1.0, 0.5, 0.0], cavity: true, cavity_type: "BOTH", cavity_valley_factor: 1.0, cavity_ridge_factor: 1.0, curvature_ridge_factor: 2.0, curvature_valley_factor: 0.5, shadow: true, shadow_intensity: 0.8, backface_culling: true, specular: false };
     BSolidFx::seed(&mut s, &file);
     let f = BSolidFx::now(&s);
+    assert!(f.backface_culling && !f.specular, "the file's culling and no specular");
+    assert_eq!(f.shade_words([2, 4, 0, 0]), [2, 4, 1, 1]);
+    assert_eq!(BSolidFx::FACTORY.shade_words([0, 0, 0, 0]), [0, 0, 0, 0], "the factory draws as a zeroed camera");
     assert!(!f.outline && f.cavity && f.curvature());
     assert_eq!(f.cavity_type, "BOTH");
     let w = f.fx_words(2.0);
@@ -46,7 +49,7 @@ fn the_shadow_words_turn_the_panels_direction_as_workbench_does() {
     assert_eq!(f.shadow_words()[3], 0.0, "off: no intensity");
     let w = f.shadow_fade_words();
     assert!((w[0] - 0.1).abs() < 1e-6 && (w[1] - (1.0 - 0.0001 * 0.9)).abs() < 1e-6, "{w:?}");
-    BSolidFx::seed(&mut s, &SceneSolidFx { shadow: true, shadow_intensity: 0.8, ..SceneSolidFx { outline: true, outline_color: [0.0; 3], cavity: false, cavity_type: "SCREEN", cavity_valley_factor: 1.0, cavity_ridge_factor: 1.0, curvature_ridge_factor: 1.0, curvature_valley_factor: 1.0, shadow: false, shadow_intensity: 0.5 } });
+    BSolidFx::seed(&mut s, &SceneSolidFx { shadow: true, shadow_intensity: 0.8, ..SceneSolidFx { outline: true, outline_color: [0.0; 3], cavity: false, cavity_type: "SCREEN", cavity_valley_factor: 1.0, cavity_ridge_factor: 1.0, curvature_ridge_factor: 1.0, curvature_valley_factor: 1.0, shadow: false, shadow_intensity: 0.5, backface_culling: false, specular: true } });
     BSolidFx::seed_shadow(&mut s, &crate::phiphx::scene::SceneShadow { light_direction: [0.0, 1.0, 0.0], shift: 0.3, focus: 0.5 });
     let f = BSolidFx::now(&s);
     // The panel's +y is the world's −z: light travelling straight down.

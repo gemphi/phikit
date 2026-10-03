@@ -5,7 +5,7 @@ machine — all seven are the other agent's work in progress: a region's host
 corners, its overlay-family key test, the Preferences palette override and
 its rows' actions, the layout golden it recorded, the activity bar's
 treatment and the Outliner's guide lines; see batch 100). phiphx 191
-passing, 6 known asset-dependent; phiray 76 passing. Batches 17–123 are
+passing, 6 known asset-dependent; phiray 77 passing. Batches 17–124 are
 extracted on the machine; every item below is covered by a test. The
 Animation and Rendering workspaces have a full audit of their own in
 `animation-rendering-status.md`.
@@ -793,6 +793,41 @@ Blender's own choices.
   and Graph headers, which Blender leaves out of the Timeline.
 - Truth: `tests/marker_box_and_transport_popovers.rs`, `scene/grab.rs`,
   `part/playback/settings.rs`.
+
+## Batch 124 — Backface Culling and Specular Lighting
+
+- **Backface Culling** (`V3D_SHADING_BACKFACE_CULLING`, Workbench's
+  `DRW_STATE_CULL_BACK`): a face wound away from the viewer is not drawn.
+  In `solid.wgsl` the primary hit — rasterized or traced — is tested by
+  its geometric normal against the ray and, when turned away, the ray goes
+  on past it (as X-ray steps through layers) to what is behind, up to 32
+  faces; the sky where nothing is. Solid's opaque pass only.
+- **Specular Lighting** (`V3D_SHADING_SPECULAR_HIGHLIGHT`,
+  `WorldData.use_specular`): off, `get_world_lighting` lights the base
+  colour diffusely with no highlight and no metallic split — now
+  `workbench.wgsl`'s branch. Studio and MatCap; Flat has no lighting to
+  take it from.
+- **Camera words**: the two spare words of `Camera.shade` — `[…, cull,
+  no_specular]`, each the flag inverted where Blender's default sets it,
+  so a zeroed camera draws as before (`BSolidFx::shade_words` over
+  `BSolidShade`'s light and colour words).
+- **From the file**: `View3DShading.flag` bits 10 and 4 (phiphx
+  `SceneSolidFx.backface_culling`, `.specular`; off / on in the startup
+  file), seeded on open.
+- **The popover**: Options leads with Backface Culling as Blender's does
+  and ends with Specular Lighting when the lighting is Studio or MatCap
+  (`VIEW3D_PT_shading_options`); Wireframe has neither.
+- Tests: phiray `tests/shade.rs` (the walls seen from behind draw their
+  backs, culled show the sky, nothing culled from the front; specular off
+  changes the lit wall and adds no light); phiphx `view_solid_fx.rs`;
+  phiber `solid_fx_tests.rs` (a file's flags and the words, the factory
+  as a zeroed camera), `filter/shading.rs` (Options 13 rows, 12 under
+  Flat).
+- **Suites:** see the head of this file.
+- **Not yet:** `OB_DRAW_NO_SHADOW_CAST`; `Scene.display.shading` for a
+  Workbench F12; Depth of Field; matcaps and the studio-light picker
+  (and its `has_specular_highlight_pass` gating); Attribute and Texture
+  colour.
 
 ## Batch 123 — Shadow: Workbench's one directional light, cast by the kernel
 

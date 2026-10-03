@@ -254,8 +254,9 @@ Random / Single) and Background (Theme / World / Viewport) in the popover
 and the kernel (`rendering.md` §27). **Batch 122:** Cavity ▸ World — the
 screen-space ambient occlusion, EEVEE's blue noise and the Hammersley
 disk (§28). **Batch 123:** Shadow — the directional light's shadow ray
-with `get_shadow`'s terminator (§29). **Next:** matcaps, Attribute and
-Texture colour, Depth of Field,
+with `get_shadow`'s terminator (§29). **Batch 124:** Backface Culling and
+Specular Lighting (§30). **Next:** matcaps, Attribute and Texture colour,
+Depth of Field,
 `Scene.display` from the file (`viewport_aa`, `light`, `color_type`);
 then Material Preview on EEVEE's model and the shader nodes (Rendering 6).
 
@@ -285,7 +286,8 @@ then Material Preview on EEVEE's model and the shader nodes (Rendering 6).
    TAA~~ — batch 118; ~~the object outline and curvature~~ — batch 119.
    ~~The Shading popover (Options, Cavity)~~ — batch 120; ~~Lighting,
    Color, Background~~ — batch 121; ~~Cavity ▸ World (SSAO)~~ — batch 122;
-   ~~Shadow~~ — batch 123. Still: SMAA on the first frames, matcaps,
+   ~~Shadow~~ — batch 123; ~~Backface Culling, Specular Lighting~~ —
+   batch 124. Still: SMAA on the first frames, matcaps,
    Attribute / Texture colour, Depth of Field and `Scene.display.shading`
    for F12; then Material Preview on EEVEE's model. Medium each.
 1. ~~The panel's resolution reaches F12 and is saved~~ — batch 97.

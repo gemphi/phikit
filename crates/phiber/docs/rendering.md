@@ -1574,3 +1574,15 @@ composite; X-ray takes none.
 
 Not ported: `OB_DRAW_NO_SHADOW_CAST` (an object's Viewport Display ▸ Shadow
 off), and `Scene.display.shading` for a Workbench F12.
+
+## 30. Backface Culling and Specular Lighting (batch 124, 2026-10-03)
+
+Two of `View3DShading.flag`'s switches. `V3D_SHADING_BACKFACE_CULLING`
+sets `DRW_STATE_CULL_BACK` on Workbench's mesh passes, so a face wound away
+from the viewer is never rasterized; the tracer tests the primary hit's
+geometric normal against the ray and traces on past a turned face, the
+sky where nothing is behind. `V3D_SHADING_SPECULAR_HIGHLIGHT` is
+`WorldData.use_specular`: clear, `get_world_lighting` takes the base colour
+as the whole diffuse colour and no specular at all — `workbench.wgsl`
+branches the same way. Both ride in `Camera.shade`'s spare words, inverted
+where Blender's default has the flag set.

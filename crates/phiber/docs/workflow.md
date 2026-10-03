@@ -252,7 +252,8 @@ colour, X-Ray and its alpha, Cavity with its type, ridge / valley factors
 and — World / Both — the SSAO settings (Samples, Distance, Attenuation,
 batch 122), drawn by the kernel as Blender's `cavity_compute`; Shadow with
 its intensity and settings (Direction, Offset, Focus, batch 123), one
-shadow ray per pixel with `get_shadow`'s terminator. **Not done:** SMAA on
+shadow ray per pixel with `get_shadow`'s terminator; Backface Culling and
+Specular Lighting (batch 124). **Not done:** SMAA on
 the first frames of Solid; MatCap, Attribute and Texture colour (they
 draw as Studio / Material and the popover says so); Workbench's depth of
 field; an object's Shadow switch (`OB_DRAW_NO_SHADOW_CAST`); Material

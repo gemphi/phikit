@@ -45,16 +45,19 @@ pub struct BSolidFx {
     pub light_direction: [f32; 3],
     pub shadow_shift: f32,
     pub shadow_focus: f32,
+    /// `show_backface_culling`, `show_specular_highlight`.
+    pub backface_culling: bool,
+    pub specular: bool,
 }
 
 /// The RNA names, which are the keys' tails (`view3d.shade.<rna>`); the
 /// direction is three keys, one an axis.
-pub const RNA: [&str; 18] = ["show_object_outline", "object_outline_color", "show_cavity", "cavity_type", "cavity_valley_factor", "cavity_ridge_factor", "curvature_ridge_factor", "curvature_valley_factor", "matcap_ssao_samples", "matcap_ssao_distance", "matcap_ssao_attenuation", "show_shadows", "shadow_intensity", "light_direction_x", "light_direction_y", "light_direction_z", "shadow_shift", "shadow_focus"];
+pub const RNA: [&str; 20] = ["show_object_outline", "object_outline_color", "show_cavity", "cavity_type", "cavity_valley_factor", "cavity_ridge_factor", "curvature_ridge_factor", "curvature_valley_factor", "matcap_ssao_samples", "matcap_ssao_distance", "matcap_ssao_attenuation", "show_shadows", "shadow_intensity", "light_direction_x", "light_direction_y", "light_direction_z", "shadow_shift", "shadow_focus", "show_backface_culling", "show_specular_highlight"];
 
 impl BSolidFx {
     /// The startup file's: the outline on and black, Cavity off, its type
     /// Screen (curvature), every factor 1.
-    pub const FACTORY: Self = Self { outline: true, outline_color: [0.0; 3], cavity: false, cavity_type: "SCREEN", cavity_valley_factor: 1.0, cavity_ridge_factor: 1.0, curvature_ridge_factor: 1.0, curvature_valley_factor: 1.0, ssao_samples: 16, ssao_distance: 0.2, ssao_attenuation: 1.0, shadow: false, shadow_intensity: 0.5, light_direction: [0.577_350_3; 3], shadow_shift: 0.1, shadow_focus: 0.0 };
+    pub const FACTORY: Self = Self { outline: true, outline_color: [0.0; 3], cavity: false, cavity_type: "SCREEN", cavity_valley_factor: 1.0, cavity_ridge_factor: 1.0, curvature_ridge_factor: 1.0, curvature_valley_factor: 1.0, ssao_samples: 16, ssao_distance: 0.2, ssao_attenuation: 1.0, shadow: false, shadow_intensity: 0.5, light_direction: [0.577_350_3; 3], shadow_shift: 0.1, shadow_focus: 0.0, backface_culling: false, specular: true };
 
     pub fn now(s: &BState) -> Self {
         let f = Self::FACTORY;
@@ -91,6 +94,8 @@ impl BSolidFx {
             light_direction: [any(RNA[13], f.light_direction[0]), any(RNA[14], f.light_direction[1]), any(RNA[15], f.light_direction[2])],
             shadow_shift: unit(RNA[16], f.shadow_shift),
             shadow_focus: unit(RNA[17], f.shadow_focus),
+            backface_culling: on(RNA[18], f.backface_culling),
+            specular: on(RNA[19], f.specular),
         }
     }
 
@@ -106,6 +111,15 @@ impl BSolidFx {
         }
         s.set(View3dKey::Shade(RNA[11]), on(fx.shadow));
         s.set(View3dKey::Shade(RNA[12]), fx.shadow_intensity.to_string());
+        s.set(View3dKey::Shade(RNA[18]), on(fx.backface_culling));
+        s.set(View3dKey::Shade(RNA[19]), on(fx.specular));
+    }
+
+    /// `phiray::Camera::shade`'s last two words over `BSolidShade`'s first
+    /// two: backface culling on, specular lighting off (the kernel's words
+    /// are 0 at Blender's defaults).
+    pub fn shade_words(&self, shade: [u32; 4]) -> [u32; 4] {
+        [shade[0], shade[1], u32::from(self.backface_culling), u32::from(!self.specular)]
     }
 
     /// A file's `Scene.display` shadow settings, into the state (`app::load_ui`).

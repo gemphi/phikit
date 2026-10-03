@@ -82,10 +82,13 @@ fn color(s: &BState, shading: BShading) -> Vec<BView> {
 fn options(s: &BState, shading: BShading) -> Vec<BView> {
     let f = BSolidFx::FACTORY;
     let x = BXray::FACTORY;
-    let mut rows = vec![
-        BView::check_row(s, "Options", View3dKey::Shade(RNA[0]).path(), f.outline, "Outline"),
-        BView::prop_row("", BCtrl::read(BCtrlKind::Color, View3dKey::Shade(RNA[1]).path(), BValue::Color([0.0, 0.0, 0.0, 1.0]), s).with_tooltip("Object Outline Color")),
-    ];
+    let mut rows = Vec::new();
+    // Solid leads with Backface Culling (`show_backface_culling`).
+    if shading == BShading::Solid {
+        rows.push(BView::check_row(s, "Options", View3dKey::Shade(RNA[18]).path(), f.backface_culling, "Backface Culling"));
+    }
+    rows.push(BView::check_row(s, if rows.is_empty() { "Options" } else { "" }, View3dKey::Shade(RNA[0]).path(), f.outline, "Outline"));
+    rows.push(BView::prop_row("", BCtrl::read(BCtrlKind::Color, View3dKey::Shade(RNA[1]).path(), BValue::Color([0.0, 0.0, 0.0, 1.0]), s).with_tooltip("Object Outline Color")));
     let (on, alpha, default_on, default_alpha) = if shading == BShading::Wireframe {
         (View3dKey::XrayWireframe, View3dKey::XrayAlphaWireframe, x.wireframe, x.alpha_wireframe)
     } else {
@@ -104,6 +107,10 @@ fn options(s: &BState, shading: BShading) -> Vec<BView> {
         }
         rows.push(BView::prop_row("", BCtrl::read(BCtrlKind::Slider { min: 0.0, max: 1.0 }, View3dKey::Shade(RNA[16]).path(), BValue::Float(f.shadow_shift), s).with_label("Offset")));
         rows.push(BView::prop_row("", BCtrl::read(BCtrlKind::Slider { min: 0.0, max: 1.0 }, View3dKey::Shade(RNA[17]).path(), BValue::Float(f.shadow_focus), s).with_label("Focus")));
+        // Specular Lighting (`show_specular_highlight`): Studio and MatCap only.
+        if BSolidShade::now(s).light != "FLAT" {
+            rows.push(BView::check_row(s, "", View3dKey::Shade(RNA[19]).path(), f.specular, "Specular Lighting"));
+        }
     }
     rows
 }
@@ -166,19 +173,23 @@ mod tests {
     fn the_rows_follow_the_shading_in_use_as_blenders_polls_do() {
         let mut s = BState::new();
         // Solid: Lighting (1), Color (2: the type and Background), Options
-        // (4, then Shadow, its intensity and five settings: 11) and Cavity —
-        // its type Screen, so one pair.
-        assert_eq!(shading_body(&s).len(), 1 + 2 + 11 + 2 + 2);
+        // (Backface Culling, Outline and its colour, X-Ray and its alpha,
+        // Shadow, its intensity and five settings, Specular Lighting: 13)
+        // and Cavity — its type Screen, so one pair.
+        assert_eq!(shading_body(&s).len(), 1 + 2 + 13 + 2 + 2);
         s.set(View3dKey::Shade("cavity_type"), "BOTH");
-        assert_eq!(shading_body(&s).len(), 1 + 2 + 11 + 2 + 7, "Both: World Space factors and SSAO settings, Screen Space factors");
+        assert_eq!(shading_body(&s).len(), 1 + 2 + 13 + 2 + 7, "Both: World Space factors and SSAO settings, Screen Space factors");
         s.set(View3dKey::Shade("cavity_type"), "WORLD");
-        assert_eq!(shading_body(&s).len(), 1 + 2 + 11 + 2 + 5, "World: its factors and the three SSAO settings");
+        assert_eq!(shading_body(&s).len(), 1 + 2 + 13 + 2 + 5, "World: its factors and the three SSAO settings");
         s.set(View3dKey::Shade("cavity_type"), "BOTH");
         s.set(View3dKey::Shade("color_type"), "SINGLE");
         s.set(View3dKey::Shade("background_type"), "VIEWPORT");
-        assert_eq!(shading_body(&s).len(), 1 + 4 + 11 + 2 + 7, "Single and Viewport each add a swatch");
+        assert_eq!(shading_body(&s).len(), 1 + 4 + 13 + 2 + 7, "Single and Viewport each add a swatch");
         s.set(View3dKey::Shade("light"), "MATCAP");
-        assert_eq!(shading_body(&s).len(), 2 + 4 + 11 + 2 + 7, "MatCap says it draws as Studio");
+        assert_eq!(shading_body(&s).len(), 2 + 4 + 13 + 2 + 7, "MatCap says it draws as Studio");
+        s.set(View3dKey::Shade("light"), "FLAT");
+        assert_eq!(shading_body(&s).len(), 1 + 4 + 12 + 2 + 7, "Flat: no Specular Lighting row");
+        s.set(View3dKey::Shade("light"), "STUDIO");
         s.set(&shading_key(), "wireframe");
         assert_eq!(shading_body(&s).len(), 2 + 4, "Wireframe: Background and Options, no Lighting, Color, Shadow or Cavity");
         s.set(&shading_key(), "material");
