@@ -12,12 +12,11 @@ use crate::v2::view::draw::canvas::view3d::rendered::{BRayLook, lit};
 use glam::Mat4;
 use phiray::Camera;
 
-/// The pixels F12 renders: `resolution_[x,y]` scaled by `resolution_percent`,
-/// never zero.
+/// The pixels the file asks F12 for: `resolution_[x,y]` scaled by
+/// `resolution_percent`, never zero. A render takes the Output panel's
+/// (`BResolution`), which starts as these.
 pub fn render_size(model: &SceneModel) -> (u32, u32) {
-    let pct = f64::from(model.render.resolution_percent.max(1)) / 100.0;
-    let side = |n: i32| ((f64::from(n.max(1)) * pct).round() as u32).max(1);
-    (side(model.render.resolution_x), side(model.render.resolution_y))
+    super::render_set::BResolution::default().pixels(model)
 }
 
 /// The camera a final render looks through: `Scene.camera` by name, or the
@@ -148,7 +147,7 @@ pub fn plan(model: &SceneModel, set: BRenderSet, look: &BRayLook) -> Option<BRen
 /// The same plan through the active camera where it stands at `frame`
 /// (Blender renders `cfra`; a still scene stands the same at every frame).
 pub fn plan_at(model: &SceneModel, set: BRenderSet, look: &BRayLook, frame: Option<f32>) -> Option<BRenderPlan> {
-    let (w, h) = render_size(model);
+    let (w, h) = set.resolution.pixels(model);
     let cam = super::motion::active_camera_at(model, frame)?;
     let cam = &cam;
     let mut camera = camera_of(cam, w, h);
@@ -156,6 +155,8 @@ pub fn plan_at(model: &SceneModel, set: BRenderSet, look: &BRayLook, frame: Opti
         camera.focus = focus;
     }
     lit(&mut camera, look);
+    // Film ▸ Transparent is a final render's: the viewport keeps its sky.
+    camera.film = [u32::from(set.film_transparent), 0, 0, 0];
     Some(BRenderPlan { camera, w, h, samples: set.samples.max(1), denoise: set.denoise })
 }
 
@@ -206,15 +207,24 @@ impl BRenderShot {
 }
 
 #[derive(Default)]
-pub(super) struct BJob {
-    pub(super) shot: Mutex<Option<BRenderShot>>,
-    pub(super) running: AtomicBool,
+pub(crate) struct BJob {
+    pub(crate) shot: Mutex<Option<BRenderShot>>,
+    pub(crate) running: AtomicBool,
     cancel: AtomicBool,
     /// Bumped whenever the shot changes, so a painter can tell a new frame
     /// from the one it already drew.
-    pub(super) seq: AtomicU32,
+    pub(crate) seq: AtomicU32,
     /// When the render in flight (or the last one) began, for the info bar.
     pub(super) started: Mutex<Option<std::time::Instant>>,
+    /// How long the last finished render took — Blender's
+    /// `RenderStats.lastframetime`, which `pipeline.cc:1510` sets ONCE as
+    /// `BLI_time_now_seconds() - starttime` when the frame ends, and
+    /// `make_renderinfo_string` then prints unchanged.
+    ///
+    /// Without it the info bar read `started.elapsed()` for ever, so the
+    /// header said `Finished` while the clock kept running — 36 minutes on a
+    /// render that took seconds, because nothing had rendered since.
+    pub(super) took: Mutex<Option<std::time::Duration>>,
 }
 
 pub(super) fn job() -> &'static Arc<BJob> {
@@ -239,6 +249,22 @@ pub fn cancel() {
     job().cancel.store(true, Ordering::Relaxed);
 }
 
+/// Whether the last render was stopped by [`cancel`] (an animation render
+/// ends there rather than going on to the next frame).
+pub fn cancelled() -> bool {
+    job().cancel.load(Ordering::Relaxed)
+}
+
+/// Drop the last render: a new document has no Render Result
+/// (`BPhiberApp::render_on_entry` renders the next one opened).
+pub fn forget() {
+    let j = job();
+    if let Ok(mut slot) = j.shot.lock() {
+        *slot = None;
+    }
+    j.seq.fetch_add(1, Ordering::Relaxed);
+}
+
 /// Start a final render of `objects` on a worker thread. Does nothing while
 /// one is already running — Blender behaves the same way, F12 during a render
 /// does not start a second.
@@ -255,6 +281,10 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan, plain: gpui::Hsla) {
     if let Ok(mut started) = j.started.lock() {
         *started = Some(std::time::Instant::now());
     }
+    // A new frame has no time yet: the bar counts up again until it finishes.
+    if let Ok(mut took) = j.took.lock() {
+        *took = None;
+    }
     let publish = {
         let j = j.clone();
         move |shot: BRenderShot| {
@@ -262,12 +292,17 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan, plain: gpui::Hsla) {
                 *slot = Some(shot);
             }
             j.seq.fetch_add(1, Ordering::Relaxed);
+            crate::v2::view::draw::canvas::view3d::rendered::landed();
         }
     };
     publish(BRenderShot { w: plan.w, h: plan.h, target: plan.samples, ..Default::default() });
     std::thread::spawn(move || {
         use crate::v2::view::draw::canvas::view3d::rendered::still_stepwise;
         let publish = publish;
+        // A GPU validation error inside the tracer unwinds this thread; the
+        // job must not stay "running" for ever (`BRunning`).
+        let _running = super::render_fit::BRunning(j.clone());
+        let began = std::time::Instant::now();
         let out = still_stepwise(
             &objects,
             crate::v2::scene::BShading::Rendered,
@@ -307,10 +342,30 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan, plain: gpui::Hsla) {
             },
         );
         if out.is_none() {
-            // No adapter, or a scene the GPU declined: say so rather than
-            // leaving the Rendering space waiting for ever.
+            // No adapter, or a scene the GPU declined: the shot is finished
+            // without an image rather than leaving the Rendering space
+            // waiting for ever.
             publish(BRenderShot { w: plan.w, h: plan.h, target: plan.samples, done: true, ..Default::default() });
         }
-        j.running.store(false, Ordering::Relaxed);
+        let taken = j.shot.lock().ok().and_then(|s| s.as_ref().map(|s| s.taken)).unwrap_or(0);
+        let secs = began.elapsed().as_secs_f64();
+        // `lastframetime`, stored once, for the info bar to print from here on.
+        // Cancelled counts too: Blender keeps the time the frame took either way.
+        if let Ok(mut took) = j.took.lock() {
+            *took = Some(began.elapsed());
+        }
+        if j.cancel.load(Ordering::Relaxed) {
+            // The image as far as it got is the Render Result (Blender keeps
+            // the tiles a cancelled render finished).
+            crate::v2::state::log::push(format!("Render cancelled after {taken} samples"));
+            crate::v2::app::journal::BJournal::note(format!("Render cancelled after {taken} samples, {secs:.1}s"));
+        } else {
+            // The journal's line, from this thread: how long F12 took.
+            crate::v2::app::journal::BJournal::note(format!(
+                "Render finished: {}×{}, {taken} samples in {secs:.1}s{}",
+                plan.w, plan.h,
+                if out.is_none() { " — no image (no adapter, or a scene the GPU declined)" } else { "" }
+            ));
+        }
     });
 }

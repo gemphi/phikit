@@ -81,7 +81,7 @@ impl BRule for BView3dOpRule {
         let visible: Vec<&BObject3D> = objects.iter().filter(|o| !hidden.hides(state, o.name())).collect();
         let turn = |state: &mut BState, key: View3dKey, by: f32, wrap: bool| {
             let now = if wrap { super::view_yaw(state) } else { super::view_pitch(state) };
-            let next = if wrap { (now + by).rem_euclid(360.0) } else { (now + by).clamp(-90.0, 90.0) };
+            let next = if wrap { (now + by).rem_euclid(360.0) } else { super::orbit::BTurntable::wrap(now + by) };
             state.set(&super::view_slot::BViewSlot::key(key), next.to_string());
         };
         let zoom = |state: &mut BState, factor: f32| {
@@ -101,6 +101,19 @@ impl BRule for BView3dOpRule {
             "orbit_down" => { turn(state, View3dKey::Pitch, -ORBIT_STEP, false); Some("Orbited down") }
             "zoom_in" => { zoom(state, ZOOM_STEP); Some("Zoomed in") }
             "zoom_out" => { zoom(state, 1.0 / ZOOM_STEP); Some("Zoomed out") }
+            // `view3d.toggle_xray` (Alt Z): the switch of the shading in use
+            // flips even where X-ray cannot show, as Blender's does.
+            "toggle_xray" => {
+                let shading = super::view_shading(state);
+                let on = super::BXray::now(state).on(shading);
+                state.set(super::BXray::key(shading), if on { V_FALSE } else { V_TRUE });
+                let editing = crate::v2::part::modebar::active_mode(state, crate::v2::host::BHostType::View3D) == "Edit Mode";
+                Some(match (editing || super::BXray::available(shading), on) {
+                    (false, _) => "X-Ray not available in current mode",
+                    (true, true) => "X-Ray off",
+                    (true, false) => "X-Ray on",
+                })
+            }
             "persportho" => {
                 let persp = super::is_perspective(state);
                 state.set(&super::perspective_key(), if persp { V_FALSE } else { V_TRUE });

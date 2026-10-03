@@ -8,17 +8,18 @@
 //! Shading workspace shows six such hosts at once) share one key, so opening
 //! View in one header deploys every other header's View popover too.
 //!
-//! - [`apply_toggle`] at depth 3 (`ctx.menu.<host>.<X>`) implements
-//!   *top-close*: every other top-level menu — in ANY host — is set to
-//!   [`V_FALSE`] first, then
-//!   the target is flipped. Callers pass a top-level menu key when the
-//!   user clicks a menubar label. Requirement 43.1, 43.5.
+//! - [`apply_toggle`] is what a CLICK arrives as, at any depth, and it flips:
+//!   an open key closes (with everything open under it), a shut one opens. At
+//!   depth 3 (`ctx.menu.<host>.<X>`) it adds *top-close* — every other
+//!   top-level menu, in ANY host, is set to [`V_FALSE`] first. Requirement
+//!   43.1, 43.5.
 //!
-//! - [`apply_open`] at depth ≥ 2 implements *sibling-close*: every sibling
-//!   under `key`'s parent prefix is closed, then `key` is set to
-//!   [`V_TRUE`]. Idempotent — if `key` is already [`V_TRUE`] the state is
-//!   left untouched (Requirement 43.3). Callers pass a nested menu key
-//!   when the user hovers into a submenu. Requirement 43.4.
+//! - [`apply_open`] is what a HOVER arrives as, at depth ≥ 2, and it only
+//!   opens: every sibling under `key`'s parent prefix is closed, then `key`
+//!   is set to [`V_TRUE`]. Idempotent — if `key` is already [`V_TRUE`] the
+//!   state is left untouched (Requirement 43.3), which is what keeps a
+//!   submenu up while the pointer crosses the row that opened it.
+//!   Requirement 43.4.
 //!
 //! - [`hover_open_if_menubar_active`] wraps [`apply_toggle`] but only
 //!   dispatches when at least one top-level `ctx.menu.*` key is currently
@@ -34,16 +35,26 @@ use super::{
 };
 
 /// Toggle a menu key. Top-level toggles top-close every peer first.
+///
+/// A toggle closes what is open at EVERY depth. This used to fall through to
+/// [`apply_open`] for a nested key, and `apply_open` returns early when the
+/// key is already `V_TRUE` — so clicking the row that had opened a submenu
+/// did nothing, while clicking the menubar label above it closed its menu.
+/// One of the two was wrong, and it was the nested one: a click is a toggle
+/// wherever it lands. Hover still arrives as [`apply_open`], so hovering an
+/// open submenu leaves it open.
 pub fn apply_toggle(state: &mut BState, key: &BPath) {
-    if MenuKey::is_top_level(key) {
+    let top = MenuKey::is_top_level(key);
+    if top {
         close_all_top_level_except(state, &key.encode());
         close_panels(state);
-        let currently_open = state.get(key) == Some(V_TRUE);
-        if currently_open {
-            close(state, key);
-        } else {
-            state.set(key, V_TRUE);
-        }
+    }
+    if state.get(key) == Some(V_TRUE) {
+        close(state, key);
+        return;
+    }
+    if top {
+        state.set(key, V_TRUE);
         return;
     }
     apply_open(state, key);
@@ -92,9 +103,15 @@ pub fn is_menubar_active_in(state: &BState, host: &str) -> bool {
 pub fn close_overlays(state: &mut BState) {
     let menus = MenuKey::prefix();
     let switchers = super::AreaKey::switcher_prefix();
+    // And every enum picker. A dropdown stayed open after its own value was
+    // chosen: the item wrote the value and nothing closed the list, so you
+    // picked GPU Compute and the menu sat there over the panel. Blender's
+    // closes the moment you choose, and so does every menu here already —
+    // the picker was the one overlay this sweep did not name.
+    let pickers = super::ButsKey::dropdown_prefix();
     let keys: Vec<String> = state
         .iter_keys()
-        .filter(|k| k.starts_with(&menus) || k.starts_with(&switchers))
+        .filter(|k| k.starts_with(&menus) || k.starts_with(&switchers) || k.starts_with(&pickers))
         .cloned()
         .collect();
     for key in keys {

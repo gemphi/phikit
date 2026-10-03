@@ -1,7 +1,8 @@
 //! Viewport orbit interaction surface.
 
 use super::super::super::ctx::BRenderCtx;
-use crate::v2::scene::{view_yaw, yaw_key};
+use crate::v2::scene::orbit::BTurntable;
+use crate::v2::scene::{pitch_key, view_pitch, view_yaw, yaw_key};
 use crate::v2::view::prim::BAction;
 use gpui::prelude::*;
 use gpui::{Context, Div, IntoElement, Pixels, Point, Render, Window, div};
@@ -10,8 +11,8 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Clone, Copy)]
 struct OrbitDrag {
-    start_yaw: f32,
-    start_x: f32,
+    turntable: BTurntable,
+    start: (f32, f32),
 }
 
 struct BGhost;
@@ -46,26 +47,33 @@ impl BOrbit {
         if crate::v2::scene::circlesel::BCircle::armed(ctx.state) {
             return super::circlesel::surface(ctx, hit);
         }
-        // Leaving the camera view, the drag starts from the camera's yaw —
-        // the first action `leave` sets — not the orbit's old one.
-        let start_yaw = match self.leave.as_deref() {
-            Some([BAction::Set(_, yaw), ..]) => yaw.parse().unwrap_or_else(|_| view_yaw(ctx.state)),
-            _ => view_yaw(ctx.state),
+        // Leaving the camera view, the drag starts from the camera's yaw and
+        // pitch — the first two actions `leave` sets — not the orbit's old ones.
+        let (yaw, pitch) = match self.leave.as_deref() {
+            Some([BAction::Set(_, yaw), BAction::Set(_, pitch), ..]) => {
+                (yaw.parse().unwrap_or_else(|_| view_yaw(ctx.state)), pitch.parse().unwrap_or_else(|_| view_pitch(ctx.state)))
+            }
+            _ => (view_yaw(ctx.state), view_pitch(ctx.state)),
         };
-        let drag = Arc::new(Mutex::new(OrbitDrag { start_yaw, start_x: 0.0 }));
+        let drag = Arc::new(Mutex::new(OrbitDrag { turntable: BTurntable::start(yaw, pitch), start: (0.0, 0.0) }));
         let handler = ctx.handler.clone();
         let start_handler = ctx.handler.clone();
         let leave = self.leave.clone();
-        // This viewport's own yaw (`scene::view_slot`), taken while it draws.
-        let yaw = yaw_key();
-        let layer = super::hit::layer("view3d-orbit", gpui::CursorStyle::OpenHand);
+        // This viewport's own yaw and pitch (`scene::view_slot`), taken while
+        // it draws.
+        let (yaw, pitch) = (yaw_key(), pitch_key());
+        // gpui hands the drag's start as an offset into the surface — the
+        // canvas — so the pointer is measured from the canvas too.
+        let canvas = hit.bounds.clone();
+        let layer = super::hit::layer("view3d-orbit", gpui::CursorStyle::OpenHand, ctx);
         super::lasso::wire(layer, ctx.state, ctx.handler.clone(), hit.clone())
+            .on_mouse_down(gpui::MouseButton::Right, hit.clone().on_cursor(ctx))
             .on_click(hit.on_click(ctx))
             .on_drag(
                 drag.clone(),
                 move |state, position: Point<Pixels>, window, cx| {
                     if let Ok(mut state) = state.lock() {
-                        state.start_x = f32::from(position.x);
+                        state.start = (f32::from(position.x), f32::from(position.y));
                     }
                     for action in leave.iter().flatten() {
                         (Rc::clone(&start_handler))(action, window, cx);
@@ -75,14 +83,13 @@ impl BOrbit {
             )
             .on_drag_move::<Arc<Mutex<OrbitDrag>>>(move |event, window, app| {
                 let state = event.drag(app);
-                let (base, start_x) = {
-                    let state = state.lock().unwrap();
-                    (state.start_yaw, state.start_x)
-                };
-                // 0.5 degrees per pixel is input mapping, not visual styling.
-                let delta = (f32::from(window.mouse_position().x) - start_x) * 0.5;
-                let next = (base + delta).rem_euclid(360.0);
-                (Rc::clone(&handler))(&BAction::Set(yaw.clone(), next.to_string()), window, app);
+                let OrbitDrag { turntable, start } = *state.lock().unwrap();
+                // Across turns about Z, up and down tips the view (`BTurntable`).
+                let origin = canvas.get().map(|b| b.origin).unwrap_or_default();
+                let at = window.mouse_position() - origin;
+                let (next_yaw, next_pitch) = turntable.at(f32::from(at.x) - start.0, f32::from(at.y) - start.1);
+                (Rc::clone(&handler))(&BAction::Set(yaw.clone(), next_yaw.to_string()), window, app);
+                (Rc::clone(&handler))(&BAction::Set(pitch.clone(), next_pitch.to_string()), window, app);
             })
     }
 }

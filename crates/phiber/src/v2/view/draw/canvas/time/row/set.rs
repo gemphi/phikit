@@ -17,9 +17,10 @@ const CURVE_OFFSET: f32 = 0.7 * super::super::WIDGET_UNIT;
 const NAME_PAD: f32 = 3.0;
 
 /// The backdrops, then the diamonds, of every Dope Sheet row, in the
-/// window `at` (`x_of` maps a frame to a pixel across it). The NLA's rows
+/// window `at` (`x_of` maps a frame to a pixel across it); a picked column
+/// (`picked(row, frame)`) in `TH_KEYTYPE_KEYFRAME_SELECT`. The NLA's rows
 /// are `strip/set.rs`.
-pub fn paint_rows(rows: &[BTimeRow], colors: &BAnimColors, at: Bounds<Pixels>, x_of: &dyn Fn(f32) -> f32, window: &mut Window) {
+pub fn paint_rows(rows: &[BTimeRow], colors: &BAnimColors, at: Bounds<Pixels>, x_of: &dyn Fn(f32) -> f32, picked: &dyn Fn(usize, f32) -> bool, window: &mut Window) {
     let width = f32::from(at.size.width);
     for (index, row) in rows.iter().enumerate() {
         let (top, center) = (BTimeRow::top(index, ROW_HEIGHT), BTimeRow::center(index, ROW_HEIGHT));
@@ -32,9 +33,34 @@ pub fn paint_rows(rows: &[BTimeRow], colors: &BAnimColors, at: Bounds<Pixels>, x
         if let Some(back) = back {
             window.paint_quad(fill(rect(0.0, top, width, top + ROW_HEIGHT, at), hsla(back)));
         }
-        for &frame in &row.keys {
-            diamond(x_of(frame).round() + 0.5, center, ICON_SIZE, colors.key, colors, at, window);
-        }
+        // The row's keys in three strokes — every border, the plain
+        // fills, the picked fills — not two paths a key: a rig's rows hold
+        // hundreds of keys, and each path is tessellated (Blender batches
+        // its diamonds in one instanced draw, `draw_keyframe_shape`).
+        let shown: Vec<(f32, bool)> = row.keys.iter().map(|&f| (x_of(f).round() + 0.5, picked(index, f))).filter(|(x, _)| *x > -ICON_SIZE && *x < width + ICON_SIZE).collect();
+        let half = ICON_SIZE / 2.0;
+        diamonds(shown.iter().map(|(x, _)| *x), center, half, colors.key_border, at, window);
+        diamonds(shown.iter().filter(|(_, p)| !p).map(|(x, _)| *x), center, half - 1.0, colors.key, at, window);
+        diamonds(shown.iter().filter(|(_, p)| *p).map(|(x, _)| *x), center, half - 1.0, colors.key_select, at, window);
+    }
+}
+
+/// One path of diamonds `r` half-wide at each `x` on the line `y`, in one
+/// colour.
+fn diamonds(xs: impl Iterator<Item = f32>, y: f32, r: f32, color: crate::v2::theme::BColor, at: Bounds<Pixels>, window: &mut Window) {
+    let mut path = PathBuilder::fill();
+    let mut any = false;
+    for x in xs {
+        let corner = |dx: f32, dy: f32| point(at.origin.x + px(x + dx), at.origin.y + px(y + dy));
+        path.move_to(corner(0.0, -r));
+        path.line_to(corner(r, 0.0));
+        path.line_to(corner(0.0, r));
+        path.line_to(corner(-r, 0.0));
+        path.close();
+        any = true;
+    }
+    if let (true, Ok(path)) = (any, path.build()) {
+        window.paint_path(path, hsla(color));
     }
 }
 
@@ -59,7 +85,9 @@ pub fn diamond(x: f32, y: f32, size: f32, inner: crate::v2::theme::BColor, color
 
 /// The channel region: its background, each row's backdrop where Blender
 /// gives it one (`acf_generic_root_backdrop` for an object, the action
-/// line's own colour, a track's), and each row's name on its line.
+/// line's own colour, a track's), and each row's name on its line — a
+/// selected track's in the selection's colour, as its strips are
+/// (`TH_TEXT_HI` in Blender).
 pub fn paint_channels(rows: &[BTimeRow], row_height: f32, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
     let height = f32::from(at.size.height);
     window.paint_quad(fill(rect(0.0, 0.0, CHANNEL_WIDTH, height, at), hsla(colors.channel_back)));
@@ -82,7 +110,11 @@ pub fn paint_channels(rows: &[BTimeRow], row_height: f32, colors: &BAnimColors, 
             let swatch = gpui::Rgba { r: color[0], g: color[1], b: color[2], a: 1.0 };
             window.paint_quad(fill(rect(CURVE_OFFSET, top, CURVE_OFFSET + ICON_WIDTH, top + row_height, at), swatch));
         }
-        let line = shape(row.name(), colors.channel_text, window);
+        let ink = match &row.kind {
+            BRowKind::Track(track) if track.flag & crate::phiphx::blend::TRACK_SELECTED != 0 => colors.strip_select,
+            _ => colors.channel_text,
+        };
+        let line = shape(row.name(), ink, window);
         let x = match row.kind {
             BRowKind::Summary { .. } | BRowKind::Object(_) if row_height > ROW_HEIGHT => indent,
             BRowKind::Summary { .. } => indent,

@@ -7,7 +7,7 @@
 use crate::v2::state::{CtxKey};
 use super::super::color::to_hsla;
 use super::super::ctx::BRenderCtx;
-use crate::v2::scene::{scene_metrics, scene_objects};
+use crate::v2::scene::stats_line;
 use gpui::prelude::*;
 use gpui::{AnyElement, SharedString, div, px};
 
@@ -44,16 +44,11 @@ impl BOverlay {
         let object = ctx.state.get(CtxKey::Object).unwrap_or("Cube");
         let scene = ctx.state.get(CtxKey::Scene).unwrap_or("Scene");
         let frame = ctx.state.get(CtxKey::Frame).unwrap_or("1");
-        // Blender's `info_stats` counts what the view layer shows, not what
-        // the file holds: a character with three hidden hair variants reads
-        // 1.4M faces in Blender, and read 9M here.
-        let hidden = crate::v2::part::outliner::key::BHidden::now(ctx.state);
-        let visible: Vec<_> = scene_objects(ctx.state)
-            .iter()
-            .filter(|o| !hidden.hides(ctx.state, super::view3d::object_name(o)))
-            .cloned()
-            .collect();
-        let (obj_count, vert, faces) = scene_metrics(&visible);
+        // The status bar shows the same counts (`scene::stats_line`), so
+        // the two read-outs cannot disagree about how big the scene is.
+        let stats = stats_line(ctx.state);
+        // Text Info and Statistics, as the Overlays popover has them.
+        let shown = crate::v2::scene::BOverlays::now(ctx.state);
         let not_drawn = NOT_DRAWN.with(|n| n.get()).map(|(why, tris)| match why {
             super::view3d::rendered::BRayDeclined::NoGpu => format!(
                 "No GPU adapter — {:.1}M triangles is more than the CPU painter will draw",
@@ -73,14 +68,13 @@ impl BOverlay {
             .text_color(to_hsla(ctx.style.colors.text))
             .text_size(px(ctx.style.typography.caption))
             .when_some(readout, |element, line| element.child(div().id("view3d-transform-readout").debug_selector(|| "view3d-transform-readout".to_string()).child(SharedString::from(line))))
-            .child(SharedString::from(self.view_name))
-            .child(SharedString::from(format!(
-                "({scene}) Collection | {object}"
-            )))
-            .child(SharedString::from(format!("Frame {frame}")))
-            .child(SharedString::from(format!(
-                "Objects: {obj_count} | Verts: {vert} | Faces: {faces}"
-            )))
+            .when(shown.text, |element| {
+                element
+                    .child(SharedString::from(self.view_name))
+                    .child(SharedString::from(format!("({scene}) Collection | {object}")))
+                    .child(SharedString::from(format!("Frame {frame}")))
+            })
+            .when(shown.stats, |element| element.child(SharedString::from(stats)))
             .when_some(not_drawn, |element, why| {
                 element.child(
                     div()

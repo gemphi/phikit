@@ -6,12 +6,14 @@
 //! they are built from the same three rows rather than each drawing its own.
 //!
 //! On Windows the OS handles the caption's clicks through `WindowControlArea`
-//! (non-client hit test, including snap layouts); other platforms get the
-//! same actions from `on_click`.
+//! (non-client hit test, including snap layouts; the close reaches
+//! `BPhiberApp::may_close`); other platforms get the same actions from
+//! `on_click` — the close as File ▸ Quit, so it asks about unsaved changes.
 
 use super::color::to_hsla;
 use super::ctx::BRenderCtx;
 use super::atom::icon_path;
+use crate::v2::state::BKey as _;
 use crate::v2::theme::BStyleRole;
 use gpui::prelude::*;
 use gpui::{AnyElement, Div, SharedString, Stateful, Window, WindowControlArea, div, px, svg};
@@ -107,12 +109,17 @@ pub fn view(leading: bool, ctx: &BRenderCtx) -> AnyElement {
         .flex_shrink_0()
         .gap(px(ctx.style.spacing.gap_xs));
     for b in WINDOW_CONTROLS {
-        let act = b.act;
+        let (act, closes, handler) = (b.act, b.closes(), ctx.handler.clone());
         row = row.child(
             control(format!("caption-{}", b.slug), b.icon(false), b.closes(), ctx)
                 .window_control_area(b.area)
-                .on_click(move |_, window, _| {
-                    if cfg!(not(target_os = "windows")) {
+                .on_click(move |_, window, app| {
+                    if cfg!(target_os = "windows") {
+                        return;
+                    }
+                    if closes {
+                        (handler)(&crate::v2::view::prim::BAction::Set(crate::v2::state::OpKey::Quit.path(), String::new()), window, app);
+                    } else {
                         act(window);
                     }
                 }),

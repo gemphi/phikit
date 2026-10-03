@@ -3,7 +3,7 @@
 //! layout regions are transparent so their pane or specialized content owns
 //! the visible surface.
 
-use super::flex::{BAlign, BDim, BFill, BFlex, BFlexed, BJustify, BLen, BPlace, BRadius, BSpace};
+use super::flex::{BAlign, BDim, BEdge, BFill, BFlex, BFlexed, BJustify, BLen, BPlace, BRadius, BSpace};
 use super::ctx::BRenderCtx;
 use super::surface::{BChildCornerSupport, BSurfaceOpacity, child_surface_plan, compatible_inner_radius};
 use super::walk;
@@ -45,13 +45,26 @@ fn region_fill(kind: BRegionType) -> BFill {
         // browser's execute bar: a strip of field and buttons, one surface
         // with the header strips over it.
         BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute => BFill::HostHeader,
-        // Every vertical strip — the Properties navbar, Preferences'
-        // category list, the channel list — and every content region paints
-        // nothing: the area's body under it is its surface, and a rail's
-        // tabs carry the only fills (hover, active). No darker shade of
-        // their own.
+        // Every vertical strip — the Properties navbar, the tool rail, the
+        // editor side rail — takes the strip shade, the same one the
+        // horizontal strips under a header take. Painting nothing left the
+        // strip and the panel beside it one flat field, so the active tab
+        // had no edge to be cut out of and the strip read as part of the
+        // content. The tab's own fill is the panel's surface, which is what
+        // makes it a hole in the strip onto the region it selects.
+        BRegionType::NavBar | BRegionType::Tools => BFill::HostRail,
+        // A content region paints nothing: the area's body under it is its
+        // surface.
         _ => BFill::Clear,
     }
+}
+
+/// True when a region is a content header, and so closes with a rule along
+/// its bottom edge. The global bars are not: the top bar draws its one line
+/// on the area itself (`area`), which is the window's own edge rather than a
+/// boundary inside an editor, and the status bar heads nothing.
+fn ruled_header(kind: BRegionType, host: BHostType) -> bool {
+    matches!(kind, BRegionType::Header | BRegionType::ToolHeader) && !host.pins_header_cells()
 }
 
 /// True when a region's content is a vertical rail. Rails are laid out the
@@ -109,16 +122,42 @@ impl BFlexed for BRegionFrame {
             // The rail's pinned cluster (or the activity bar's foot group)
             // sits a cap gap off the region's bottom edge, the 2px every
             // cap keeps off its strip's edge (`menu_top_gap`).
-            flex.pad_top(BSpace::RailLead)
-                .pad_bottom(BSpace::MenuTopGap)
-                .gap(BSpace::None)
+            //
+            // The gap here is the one BETWEEN panes, and it stays: a rail's
+            // caps run flush inside their own pane — the cap owns that, as
+            // `tab::cap` says — but a pane boundary is a pane boundary. The
+            // activity bar's secondary column is the Center pane beside the
+            // rail's Left one, and zeroing this ran it into its parent when
+            // every other host's panes keep the gutter. A region with only a
+            // rail in it has no second pane, so this changes nothing there.
+            // The same lead top and bottom, so a rail's first and last caps
+            // sit off its strip's ends by the same amount.
+            //
+            // No horizontal padding: a rail tab spans the strip and meets the
+            // pane beside it, which is how the active Properties tab merges
+            // into the panel it selects (`layout_gutters`, and the
+            // pane-facing bleed in `tab::properties_layers`). Insetting it
+            // breaks that join.
+            let flex = flex.pad_top(BSpace::RailLead).pad_bottom(BSpace::RailLead);
+            // A NavBar or Tools region is only a rail, and runs to its area's
+            // edges. A *Center* region that leads with a rail carries content
+            // beside it — the activity bar's secondary column — and that
+            // content wants the gutter every other content region keeps, so
+            // its last row does not butt against the area's border.
+            if kind == BRegionType::Center { flex.pad_right(BSpace::PadSm) } else { flex }
         } else if kind == BRegionType::ToolHeader && ctx.host.tools_hold_panels() {
             // The file browser's path strip is the columns under it, read
             // across: each pane pads itself as the region under it does
             // (`pane`), so the strip itself pads nothing and leaves no gap.
             flex.gap(BSpace::None)
         } else if matches!(kind, BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute) {
-            flex.pad_x(BSpace::PadMd)
+            let flex = flex.pad_x(BSpace::PadMd);
+            // A content header closes against what it heads with the same
+            // line an accordion draws around itself — one edge of
+            // `BEdge::All`, the same stroke and colour — so a header strip
+            // and a card heading read as the same kind of boundary. A footer
+            // keeps none: the area's own border closes it below.
+            if ruled_header(kind, ctx.host) { flex.border(BEdge::Bottom) } else { flex }
         } else if kind == BRegionType::Tools && ctx.host.tools_hold_panels() {
             // A column of panels, inset from the area as every content
             // region is — but sharing its inner edge with the region beside
@@ -188,9 +227,20 @@ impl BFlexed for BRegionFrame {
                 .height(BLen::Full)
                 .min_height(BLen::Zero);
         }
+        // A header's rule is drawn on its bottom edge, and a border comes out
+        // of the box — so the strip is a rule taller than the module and the
+        // band above the line is still exactly `header_height`. Without this
+        // every cap, field and read-out in every header rides a pixel high
+        // (`chrome_geometry`).
+        let ruled = ruled_header(kind, ctx.host);
+        let ruled_height = ctx.style.dimensions.header_height + ctx.style.strokes.border;
         let flex = match (fixed, axis) {
             // A wrapping header is at least one line tall and grows a line
             // per wrap.
+            (Some(_), BAxis::Row) if ruled && wraps => {
+                flex.min_height(BLen::Measured(ruled_height)).width(BLen::Full).keeps_size()
+            }
+            (Some(_), BAxis::Row) if ruled => flex.height(BLen::Measured(ruled_height)).width(BLen::Full),
             (Some(dim), BAxis::Row) if wraps => flex.min_height(BLen::Dim(dim)).width(BLen::Full).keeps_size(),
             (Some(dim), BAxis::Row) => flex.height(BLen::Dim(dim)).width(BLen::Full),
             (Some(dim), BAxis::Column)

@@ -226,11 +226,15 @@ fn seam_overlay_uses_absolute_positioning_not_layout_space() {
         overlay_src.contains("ctx.style.resize.hit_width"),
         "hit band width must come from ctx.style.resize.hit_width"
     );
-    // Both seams go through it rather than positioning themselves.
+    // Both seams go through it rather than positioning themselves. What is
+    // pinned is that each one *calls* `overlay`, not how it spells the
+    // arguments: the panel seam passes `edge.leading` where it once passed a
+    // literal `false`, which is the same routing through the same geometry.
+    // Pinning the spelling reported that generalisation as a regression.
     for (name, src) in [("zone", &seam_src), ("panel", &overlay_src)] {
         assert!(
-            src.contains("overlay(vertical, true, ctx)") || src.contains("overlay(true, false, ctx)"),
-            "the {name} seam must use the shared overlay geometry"
+            src.contains("overlay(") && !src.contains(".left(px(") && !src.contains(".top(px("),
+            "the {name} seam must use the shared overlay geometry, not place itself"
         );
     }
     // The seam line is the one shared `BSeamLine`, sized off the gap, not by hit_width.

@@ -30,10 +30,12 @@ pub struct BActionTemplate {
     pub host: BHostType,
 }
 
-/// What the selector shows: the object, every action, and the one in use
-/// with its slot.
+/// What the selector shows: every action, and the one in use with its slot.
+///
+/// Not the object: `now` needs its name to ask which action it has, but
+/// nothing reads it afterwards, and a field kept for the look of the struct
+/// is a field that goes stale.
 struct BActionView {
-    object: String,
     names: Vec<String>,
     current: Option<(SceneAction, String)>,
 }
@@ -45,7 +47,7 @@ impl BActionView {
             let model = model?;
             let edits = BSceneActions::now(s);
             let current = edits.of(&object, model).and_then(|(name, slot)| edits.action(&name, model).map(|a| (a, slot)));
-            Some(Self { object, names: edits.names(model), current })
+            Some(Self { names: edits.names(model), current })
         })
     }
 }

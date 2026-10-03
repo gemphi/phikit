@@ -3,11 +3,11 @@
 
 use super::color::to_hsla;
 use super::ctx::BRenderCtx;
+use super::flex::BFill;
 use super::walk;
 use super::resize::{BPanelEdge, handle, k_sidebar_width};
 use super::scroller::{scroll_id, scroller};
-use super::tone::sidebar_bg;
-use crate::v2::theme::BStyleRole;
+use crate::v2::theme::{BStyleRole, BSurfaceTone};
 use crate::v2::view::BView;
 use gpui::prelude::*;
 use gpui::{AnyElement, div, px};
@@ -57,7 +57,7 @@ impl BSidebar<'_> {
         } else {
             outer
                 .w(px(width))
-                .bg(sidebar_bg(ctx))
+                .bg(BFill::Tone(BSurfaceTone::Body).background(ctx))
                 .border(px(ctx.style.strokes.border))
                 .border_color(to_hsla(ctx.style.colors.border))
                 .rounded(px(ctx.style.radius_for(BStyleRole::Panel)))

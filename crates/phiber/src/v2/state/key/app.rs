@@ -9,6 +9,10 @@ use crate::v2::state::BPath;
 pub enum AppKey {
     /// The window's width, for narrow-layout decisions.
     WindowWidth,
+    /// The window's height, for the things that may not grow past it — a menu
+    /// popover is as tall as its rows need or as the window allows, whichever
+    /// is less (`view::draw::popover`).
+    WindowHeight,
     /// The theme's slug.
     Theme,
     /// The theme's mode: `dark` or `light` (`BThemeMode`).
@@ -38,12 +42,16 @@ pub enum AppKey {
     CollabPeer(&'static str),
     /// One channel of the session: `ctx.collab.channel.<n>` — `name\towner`.
     CollabChannel(&'static str),
+    /// The render device picked in Preferences ▸ System: a GPU's name, or
+    /// empty for Auto (`part::pref::device`).
+    Gpu,
 }
 
 impl BKey for AppKey {
     fn path(&self) -> BPath {
         match self {
             Self::WindowWidth => BPath::owned(vec!["window", "width"]),
+            Self::WindowHeight => BPath::owned(vec!["window", "height"]),
             Self::Theme => BPath::owned(vec!["theme"]),
             Self::ThemeMode => BPath::owned(vec!["theme_mode"]),
             Self::UseGradients => BPath::owned(vec!["use_gradients"]),
@@ -59,6 +67,7 @@ impl BKey for AppKey {
             Self::CollabServer => BPath::owned(vec!["collab", "server"]),
             Self::CollabPeer(n) => BPath::owned(vec!["collab", "peer", n]),
             Self::CollabChannel(n) => BPath::owned(vec!["collab", "channel", n]),
+            Self::Gpu => BPath::owned(vec!["gpu"]),
         }
     }
 }

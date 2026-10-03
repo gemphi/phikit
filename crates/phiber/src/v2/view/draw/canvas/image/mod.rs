@@ -139,11 +139,11 @@ impl BImage {
         let shown = if self.0 { crate::v2::part::image::uv::BUvShown::now(ctx.state) } else { Default::default() };
         let checker = ctx.style.image_checker_colors();
         let text = ctx.style.colors.text;
+        let dim = ctx.style.colors.bg_modal_dim;
         let uv = self.0;
         let bounds: Rc<Cell<Option<Bounds<Pixels>>>> = Rc::new(Cell::new(None));
         let seen = Rc::clone(&bounds);
         let painted = view.clone();
-        let live = view.status.is_some_and(|status| !status.done);
         let scene = (ctx.state.get(crate::v2::state::CtxKey::Scene).unwrap_or("Scene").to_string(), ctx.state.get(crate::v2::state::CtxKey::ViewLayer).unwrap_or("ViewLayer").to_string());
         let frame = ctx.state.get(crate::v2::state::CtxKey::Frame).unwrap_or("1").to_string();
         let painter = canvas(|_, _, _| (), move |b, (), window, cx| {
@@ -153,10 +153,7 @@ impl BImage {
                 uv::BUvPaint { shown: &shown, colors: uv_colors, square: painted.uv_square(b) }.paint(window);
             } else {
                 set::paint_image(&painted, checker, b, window);
-                set::paint_info(&painted, &scene, &frame, text, b, window, cx);
-            }
-            if live {
-                window.request_animation_frame();
+                set::paint_info(&painted, &scene, &frame, text, dim, b, window, cx);
             }
         });
         let window = BFlex::column().place(BPlace::Overlay).fill(BFill::Swatch(BAnimColors::rgba(colors.back)));

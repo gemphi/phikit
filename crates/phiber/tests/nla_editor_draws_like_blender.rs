@@ -18,7 +18,7 @@ const SKIP: f32 = 2.0;
 const SCRUB: f32 = 23.0;
 
 fn strip(name: &str, start: f32, end: f32, repeat: f32, flag: u32) -> BNlaStrip {
-    BNlaStrip { name: name.into(), start, end, actstart: 1.0, actend: 49.0, repeat, scale: 1.0, flag, kind: 0, extend: EXTEND_HOLD, action: Some("Walk".into()) }
+    BNlaStrip { name: name.into(), start, end, actstart: 1.0, actend: 49.0, repeat, scale: 1.0, flag, kind: 0, extend: EXTEND_HOLD, action: Some("Walk".into()), ..Default::default() }
 }
 
 /// The quads of the last frame as `(x, y, w, h, has_border)` in logical pixels.
@@ -47,9 +47,10 @@ async fn the_nla_editor_stacks_the_action_line_and_the_tracks_with_their_strips(
         extend: EXTEND_HOLD,
         flag: 0,
         tracks: vec![
-            BNlaTrack { name: "Base Layer".into(), flag: 0, strips: vec![strip("Walk", 1.0, 97.0, 2.0, 0)] },
-            BNlaTrack { name: "Overlay".into(), flag: 0, strips: vec![strip("Walk Again", 120.0, 168.0, 1.0, STRIP_SELECT | STRIP_MUTED)] },
+            BNlaTrack { name: "Base Layer".into(), flag: 0, strips: vec![strip("Walk", 1.0, 97.0, 2.0, 0)], address: 0 },
+            BNlaTrack { name: "Overlay".into(), flag: 0, strips: vec![strip("Walk Again", 120.0, 168.0, 1.0, STRIP_SELECT | STRIP_MUTED)], address: 0 },
         ],
+        ..Default::default()
     };
     let idle = SceneAction { name: "Idle".into(), frame_start: 10.0, frame_end: 30.0, fcurve_count: 1, keys: vec![10.0, 30.0], users: vec!["Cube".into()], curves: Vec::new(), ..Default::default() };
     let mut model = SceneModel { actions: vec![idle], nla: vec![nla], ..Default::default() };

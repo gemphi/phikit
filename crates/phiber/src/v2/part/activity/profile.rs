@@ -47,8 +47,14 @@ fn row(icon: &str, label: impl Into<String>, action: Option<BAction>) -> BView {
     BView::MenuItem(control)
 }
 
-/// The whole panel: identity, then the four sections.
-pub fn panel(s: &BState) -> BView {
+/// The panel's contents: identity, then the four sections.
+///
+/// The CONTAINER is not here. Every other secondary activity column is a
+/// `BCard::panel(entry.label).icon(entry.icon)` built in `group_strip`, and this
+/// one returned a bare column instead — so the Profile column was the only one
+/// in the strip without the card's border and heading. One place builds the
+/// container now; this returns what goes in it.
+pub fn body(s: &BState) -> Vec<BView> {
     let name = read(s, "display_name").unwrap_or("Not signed in").to_string();
     let handle = read(s, "handle").map(|h| format!("@{h}")).unwrap_or_else(|| "Sign in to sync your work".to_string());
     let identity = BView::row(vec![
@@ -93,21 +99,20 @@ pub fn panel(s: &BState) -> BView {
         .collect();
     let followers = if following.is_empty() { vec![row("info", "No followers yet", None)] } else { following };
 
-    BView::column(vec![
+    vec![
         identity,
         section(SECTIONS[0], s, profile),
         section(SECTIONS[1], s, settings),
         section(SECTIONS[2], s, channels),
         section(SECTIONS[3], s, followers),
-    ])
+    ]
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn cards(view: &BView) -> Vec<(String, bool)> {
-        let BView::Column { list } = view else { panic!("the panel is a column") };
+    fn cards(list: &[BView]) -> Vec<(String, bool)> {
         list.iter()
             .filter_map(|v| match v {
                 BView::Card(card) => Some((card.title().unwrap_or("").to_string(), card.is_open())),
@@ -124,7 +129,7 @@ mod tests {
         state.set(AppKey::CollabChannel("0"), "renders\tann");
         state.set(AppKey::CollabChannel("1"), "review\tbob");
         state.set(AppKey::CollabPeer("0"), "bob\tfollows you");
-        let view = panel(&state);
+        let view = body(&state);
         let BView::Column { list } = &view else { panic!() };
         let BView::Row { list: identity } = &list[0] else { panic!("identity first") };
         assert!(matches!(&identity[0], BView::Avatar { path, size } if path == "/pictures/me.png" && *size == AVATAR));
@@ -135,10 +140,10 @@ mod tests {
         // Fold the first, open the third: the keys decide.
         state.set(&fold_key("Profile"), V_FALSE);
         state.set(&fold_key("Channels"), "true");
-        let opened = cards(&panel(&state));
+        let opened = cards(&body(&state));
         assert!(!opened[0].1 && opened[2].1);
         state.set(&fold_key("Followers"), "true");
-        let text = crate::v2::view::layout::BRenderer::render(&crate::v2::view::text::BAsciiRenderer, &panel(&state), &state);
+        let text = crate::v2::view::layout::BRenderer::render(&crate::v2::view::text::BAsciiRenderer, &BView::column(body(&state)), &state);
         assert!(text.contains("renders") && !text.contains("review"), "only the channels they own: {text}");
         assert!(text.contains("bob"), "the follower: {text}");
     }
@@ -149,7 +154,7 @@ mod tests {
         for section in SECTIONS {
             state.set(&fold_key(section), "true");
         }
-        let text = crate::v2::view::layout::BRenderer::render(&crate::v2::view::text::BAsciiRenderer, &panel(&state), &state);
+        let text = crate::v2::view::layout::BRenderer::render(&crate::v2::view::text::BAsciiRenderer, &BView::column(body(&state)), &state);
         assert!(text.contains("Not signed in") && text.contains("No channels yet") && text.contains("No followers yet"), "{text}");
     }
 }

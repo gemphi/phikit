@@ -58,16 +58,12 @@ fn hash_color(h: &mut DefaultHasher, c: gpui::Hsla) {
     }
 }
 
-/// Everything a built mesh depends on, as one number.
-///
-/// The scene is fingerprinted by identity, not by content: mesh data is
-/// behind an `Arc`, so its pointer says whether this is the same mesh, and
-/// the world matrix says whether it is in the same place. Neither walks the
-/// vertices, which is the whole point — the fingerprint must be cheap enough
-/// that computing it beats the work it is avoiding.
+/// Everything a built mesh depends on, as one number: the camera, the
+/// palette, the selection and the list's identity (`BSceneId`, kept with
+/// the list, so a frame showing the same objects hashes none of them).
 #[allow(clippy::too_many_arguments)]
 fn fingerprint(
-    scene: &[BObject3D],
+    scene: &Rc<Vec<BObject3D>>,
     yaw: f32,
     pitch: f32,
     pan: (f32, f32),
@@ -92,36 +88,7 @@ fn fingerprint(
     }
     selected.list.hash(&mut h);
     active.hash(&mut h);
-    scene.len().hash(&mut h);
-    for object in scene {
-        match object {
-            BObject3D::Primitive { shape, x, y, .. } => {
-                std::mem::discriminant(shape).hash(&mut h);
-                hash_f32(&mut h, *x);
-                hash_f32(&mut h, *y);
-            }
-            BObject3D::Loaded {
-                name,
-                mesh,
-                matrix_world,
-                materials,
-                material_indices,
-                uvs,
-                ..
-            } => {
-                name.hash(&mut h);
-                (std::sync::Arc::as_ptr(mesh) as usize).hash(&mut h);
-                (std::sync::Arc::as_ptr(material_indices) as usize).hash(&mut h);
-                (std::sync::Arc::as_ptr(uvs) as usize).hash(&mut h);
-                materials.len().hash(&mut h);
-                for column in matrix_world {
-                    for v in column {
-                        hash_f32(&mut h, *v);
-                    }
-                }
-            }
-        }
-    }
+    super::identity::BSceneId::of(scene).hash(&mut h);
     h.finish()
 }
 
@@ -132,7 +99,7 @@ fn fingerprint(
 /// so a pick shows in the viewport, whichever painter is at work.
 pub(super) fn meshes(
     cpu_draws: bool,
-    scene: &[BObject3D],
+    scene: &Rc<Vec<BObject3D>>,
     camera: (f32, f32, (f32, f32), f32),
     palette: BMeshPalette,
     selected: &BSelection,
@@ -143,7 +110,7 @@ pub(super) fn meshes(
     // The active object's outline is a step lighter than the others'
     // (Blender's `TH_ACTIVE` over `TH_SELECT`).
     let lit = |mut mesh: BMesh, object: &BObject3D| {
-        if super::object::name(object) == active {
+        if crate::v2::scene::object_name(object) == active {
             mesh.outline_color = palette.accent_active;
         }
         mesh
@@ -152,7 +119,7 @@ pub(super) fn meshes(
         return get_or_build(key, || {
             scene
                 .iter()
-                .filter(|object| selected.contains(super::object::name(object)))
+                .filter(|object| selected.contains(crate::v2::scene::object_name(object)))
                 .map(|object| lit(BMesh::outline_only(object, yaw, pitch, pan, zoom, palette), object))
                 .collect()
         });
@@ -161,7 +128,7 @@ pub(super) fn meshes(
         scene
             .iter()
             .map(|object| {
-                let is_selected = selected.contains(super::object::name(object));
+                let is_selected = selected.contains(crate::v2::scene::object_name(object));
                 lit(BMesh::build(object, yaw, pitch, pan, zoom, palette, is_selected), object)
             })
             .collect()

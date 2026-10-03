@@ -15,6 +15,7 @@
 
 mod apply;
 mod element;
+mod fill;
 mod ink;
 mod paint;
 mod place;
@@ -26,9 +27,11 @@ mod token;
 
 pub(super) use paint::shadowed;
 pub use element::BFlex;
+pub use fill::BFill;
+pub use place::BOverflow;
 pub use token::{
     BSelf,
-    BAlign, BBasis, BDim, BEdge, BFill, BInk, BJustify, BLen, BOverflow, BPlace, BRadius, BSide,
+    BAlign, BBasis, BDim, BEdge, BInk, BJustify, BLen, BPlace, BRadius, BSide,
     BSpace, BType,
 };
 

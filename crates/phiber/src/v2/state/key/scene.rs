@@ -43,9 +43,18 @@ pub enum SceneKey {
     /// Actions' Manual Frame Range and Cyclic: `action=start,end,cyclic|…`
     /// (no range: `-,-,cyclic`).
     ActionRanges,
+    /// Keys inserted (I), in order:
+    /// `action#slot#frame=path:index:value;…|…` (`scene::action::keys`).
+    Keyed,
+    /// Each NLA stack Push Down, Stash and the NLA editor edited, whole,
+    /// as JSON (`scene::action::nla`).
+    Nla,
     /// Objects the Transform panel moved, turned or scaled:
     /// `name=lx,ly,lz,rx,ry,rz,sx,sy,sz|…` (rotation in degrees, XYZ).
     Transformed,
+    /// The 3D cursor when the session moved it: `x,y,z,w,qx,qy,qz` — its
+    /// place and its turn (`scene::cursor`).
+    Cursor,
     /// `"true"` while the document has changed since it was read or
     /// written — Blender's `!wm->file_saved` (`WM_file_tag_modified`).
     Unsaved,
@@ -72,7 +81,10 @@ impl BKey for SceneKey {
             Self::Assigned => "assigned",
             Self::MadeActions => "made_actions",
             Self::ActionRanges => "action_ranges",
+            Self::Keyed => "keyed",
+            Self::Nla => "nla",
             Self::Transformed => "transformed",
+            Self::Cursor => "cursor",
         };
         BPath::owned(vec!["scene", tail])
     }

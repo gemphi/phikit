@@ -6,6 +6,7 @@ use crate::v2::host::BHostType;
 use crate::v2::scene::load_cancel_key;
 use crate::v2::scene::view_load_progress;
 use crate::v2::scene::view_load_stage;
+use crate::v2::state::BKey as _;
 use crate::v2::state::BPath;
 use crate::v2::state::BState;
 use crate::v2::state::val::V_TRUE;
@@ -42,11 +43,39 @@ impl BStatusbarItem {
     }
 }
 
+impl BStatusbarItem {
+    /// What a segment reads when nothing has written its key.
+    ///
+    /// NOT its own name. `unwrap_or(self.spec.label)` is why the foot of the
+    /// window read "Scene 1 Stats Memory Version": three segments with no
+    /// value announcing themselves. Blender's status bar shows the counts or
+    /// shows nothing — it never prints the word "Memory" with no figure
+    /// after it.
+    fn fallback(&self, s: &BState) -> Option<String> {
+        match self.spec.kind {
+            // What the view layer shows, counted — the same line the
+            // viewport's read-out draws (`scene::stats_line`), so the two
+            // cannot disagree about how big the scene is.
+            BStatusSegment::Stats => Some(crate::v2::scene::stats_line(s)),
+            // The build, as Blender ends its status bar with its version.
+            BStatusSegment::Version => Some(format!("v{}", env!("CARGO_PKG_VERSION"))),
+            // Nothing has measured it, so there is nothing to say.
+            BStatusSegment::Memory => None,
+            BStatusSegment::Scene | BStatusSegment::Frame => None,
+        }
+    }
+}
+
 impl BViewItem for BStatusbarItem {
     fn build(&self, s: &BState) -> BView {
         let path = BPath::owned(vec![Self::state_key(self.spec.kind)]);
-        let val = s.get(&path).unwrap_or(self.spec.label);
-        BView::label(val)
+        match s.get(&path) {
+            Some(value) if !value.is_empty() => BView::label(value),
+            _ => match self.fallback(s) {
+                Some(value) => BView::label(value),
+                None => BView::empty(),
+            },
+        }
     }
 }
 
@@ -81,6 +110,20 @@ impl BViewList for BStatusbarList {
                     .with_icon("x")
                     .with_tooltip("Cancel")
                     .with_action(BAction::Set(load_cancel_key(), V_TRUE.to_string())),
+            ));
+            out.push(BView::spacer());
+        }
+        // A render under way is a job too (`render_view_cancel`): its
+        // progress, and the same X — Esc in the render window is the other.
+        if crate::v2::scene::render_job::rendering()
+            && let Some(shot) = crate::v2::scene::render_job::shot().0
+        {
+            out.push(BView::progress_bar(shot.fraction(), "Rendering"));
+            out.push(BView::Button(
+                BControl::new()
+                    .with_icon("x")
+                    .with_tooltip("Cancel the render (Esc)")
+                    .with_action(BAction::Set(crate::v2::state::OpKey::Render.path(), "cancel".to_string())),
             ));
             out.push(BView::spacer());
         }

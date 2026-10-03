@@ -30,17 +30,25 @@ impl BPickExtra {
     pub fn list(s: &BState, model: &SceneModel) -> Vec<Self> {
         let edit = BSceneEdit::now(s);
         let (hidden, unselectable) = (BHidden::now(s), BHidden::for_select(s));
+        let overlays = crate::v2::scene::BOverlays::now(s);
         let mut out: Vec<Self> = Vec::new();
-        for line in scene_extras_now(s, model) {
-            let Some(file) = line.file_name(model) else { continue };
+        // An object's lines come together: ask once per object whether it
+        // is drawn and selectable.
+        for run in scene_extras_now(s, model).chunk_by(|a, b| a.kind == b.kind && a.name_index == b.name_index) {
+            // What the overlays hide cannot be clicked (Extras, Bones), and a
+            // relationship line never can.
+            if !run[0].kind.picked(overlays) {
+                continue;
+            }
+            let Some(file) = run[0].file_name(model) else { continue };
             let name = edit.renamed.iter().find(|(_, old)| old == file).map_or(file, |(new, _)| new.as_str());
             if edit.deleted.iter().any(|d| d == file) || hidden.hides(s, name) || unselectable.hides(s, name) {
                 continue;
             }
-            let segment = (Vec3::from(line.a), Vec3::from(line.b));
+            let lines = run.iter().map(|line| (Vec3::from(line.a), Vec3::from(line.b)));
             match out.last_mut().filter(|last| last.name == name) {
-                Some(last) => last.lines.push(segment),
-                None => out.push(Self { name: name.to_string(), lines: vec![segment], origin: Vec3::from(line.origin) }),
+                Some(last) => last.lines.extend(lines),
+                None => out.push(Self { name: name.to_string(), lines: lines.collect(), origin: Vec3::from(run[0].origin) }),
             }
         }
         out

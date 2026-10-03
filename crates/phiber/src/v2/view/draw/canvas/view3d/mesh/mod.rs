@@ -1,5 +1,6 @@
 //! Projection and shading of scene meshes.
 
+pub mod extreme;
 mod hull;
 mod triangle;
 pub(super) mod kernel;
@@ -36,7 +37,8 @@ impl BMesh {
             BObject3D::Loaded { mesh, matrix_world, .. } => {
                 let m = glam::Mat4::from_cols_array_2d(matrix_world);
                 let ms = crate::v2::scene::MESH_SCALE;
-                mesh.vertices
+                // Its extreme points, not every vertex (`extreme.rs`).
+                self::extreme::of(mesh)
                     .iter()
                     .map(|vertex| {
                         let w = m.transform_point3(glam::Vec3::from(*vertex));
@@ -216,4 +218,3 @@ impl BMesh {
     }
 }
 
-pub(super) use super::object::name;

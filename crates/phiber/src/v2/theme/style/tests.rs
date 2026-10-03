@@ -10,9 +10,14 @@ fn every_theme_owns_its_radius_scale_effects_and_seam() {
         (BPaletteName::Sphere, SOFT_RADII, SPHERE_EFFECTS, 4.0),
         (BPaletteName::Graphite, TIGHT_RADII, GRAPHITE_EFFECTS, 4.0),
         (BPaletteName::Tokyo, MEDIUM_RADII, TOKYO_EFFECTS, 6.0),
+        (BPaletteName::Moss, ROUND_RADII, MOSS_EFFECTS, 8.0),
+        (BPaletteName::Ember, SQUARE_RADII, EMBER_EFFECTS, 2.0),
+        (BPaletteName::Plum, PILL_RADII, PLUM_EFFECTS, 10.0),
         (BPaletteName::Onyx, MEDIUM_RADII, ONYX_EFFECTS, 4.0),
         (BPaletteName::Grey, ROUND_RADII, GREY_EFFECTS, 6.0),
+        (BPaletteName::Silver, MEDIUM_RADII, SILVER_EFFECTS, 6.0),
         (BPaletteName::Apple, MEDIUM_RADII, APPLE_EFFECTS, 4.0),
+        (BPaletteName::AppleDark, MEDIUM_RADII, APPLE_DARK_EFFECTS, 4.0),
         (BPaletteName::Swift, SOFT_RADII, SWIFT_EFFECTS, 4.0),
         (BPaletteName::Barbie, PILL_RADII, BARBIE_EFFECTS, 8.0),
         (BPaletteName::Fenty, ROUND_RADII, FENTY_EFFECTS, 6.0),
@@ -20,6 +25,7 @@ fn every_theme_owns_its_radius_scale_effects_and_seam() {
         (BPaletteName::Chanel, TIGHT_RADII, CHANEL_EFFECTS, 4.0),
     ];
     assert_eq!(themes.len(), BPaletteName::ALL.len());
+    assert!(BPaletteName::ALL.len() <= BPaletteName::MAX, "at most sixteen themes");
     for (name, radii, effects, gap) in themes {
         let defaults = ui_style_defaults(name);
         assert_eq!(defaults.radii, radii, "{name:?}");

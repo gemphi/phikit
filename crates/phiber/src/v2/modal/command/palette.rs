@@ -26,7 +26,7 @@ fn walk(trail: &mut Vec<&'static str>, items: &'static [BMenuItem], out: &mut Ve
                 walk(trail, subs, out);
                 trail.pop();
             }
-            BMenuKind::Recent | BMenuKind::History => {}
+            BMenuKind::Recent | BMenuKind::History | BMenuKind::Live(_) => {}
             BMenuKind::Op | BMenuKind::Toggle(..) | BMenuKind::Act(_) | BMenuKind::Fire(..) => {
                 // The same action the menu fires; an operator closes the
                 // palette as it runs (`BPaletteDismissRule`).

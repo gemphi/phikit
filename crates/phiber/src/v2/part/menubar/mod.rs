@@ -104,6 +104,7 @@ impl BViewList for BMenubarList {
     fn items(&self, s: &BState) -> Vec<BView> {
         BMenuSpec::list_for(self.host)
             .iter()
+            .filter(|m| m.shows(s))
             .map(|m| BMenubarItem::new(self.host, *m).build(s))
             .collect()
     }

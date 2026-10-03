@@ -3,7 +3,7 @@
 
 use crate::v2::theme::BStyleRole;
 use super::super::ctx::BRenderCtx;
-use super::super::flex::{BFill, BFlex, BFlexed, BLen, BRadius, BSpace};
+use super::super::flex::{BFill, BFlex, BFlexed, BLen, BOverflow, BRadius, BSpace};
 
 /// The pieces the space is built from.
 pub(super) enum BSpacePart {
@@ -29,6 +29,10 @@ impl BFlexed for BSpacePart {
                 .fill(BFill::Gutter)
                 .ink()
                 .radius(BRadius::Role(BStyleRole::Workspace))
+                // The window shade is rounded, so what sits on it stops at
+                // the same corner: an area painting square over it is what
+                // made the radius decorative.
+                .overflow(BOverflow::Auto)
                 .gap(BSpace::Seam),
             Self::Middle => BFlex::row().fills().min_height(BLen::Zero).width(BLen::Full),
             Self::Strip { lead } => {

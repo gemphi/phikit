@@ -69,6 +69,8 @@ pub struct BDimensions {
     pub menu_top_gap: f32,
     pub sidebar_width: f32,
     pub sidebar_min_width: f32,
+    /// A number control's floor: below it the value clips. One for all, so a column lines up.
+    pub number_min_width: f32,
     pub panel_width: f32,
     pub navbar_width: f32,
     pub channels_width: f32,
@@ -110,8 +112,9 @@ pub const DEFAULT_DIMENSIONS: BDimensions = BDimensions {
     // A footer is a strip like the header (`ED_area_footersize` is
     // `ED_area_headersize`): the Dope Sheet's carries the transport.
     footer_height: MODULE,
-    row_height: 26.0,
-    button_height: 26.0,
+    // A row is a control plus its room: one answer (`a_row_is_one_height`).
+    row_height: BUTTON_HEIGHT + HEAD_ROOM,
+    button_height: BUTTON_HEIGHT,
     scrubbing_height: 24.0,
     asset_shelf_height: 120.0,
     // The Timeline's header and its window (the scrub strip, the summary
@@ -134,6 +137,7 @@ pub const DEFAULT_DIMENSIONS: BDimensions = BDimensions {
     menu_top_gap: 2.0,
     sidebar_width: MODULE,
     sidebar_min_width: 160.0,
+    number_min_width: 120.0,
     panel_width: 240.0,
     navbar_width: MODULE,
     channels_width: 200.0,
@@ -158,18 +162,17 @@ pub const DEFAULT_DIMENSIONS: BDimensions = BDimensions {
     object_glyph_size: 24.0,
 };
 
-/// What a card's heading, a card's row and a rail's entry add over the
-/// button in them: room, so a lit button never touches the rows either
-/// side of it. Blender's `PNL_HEADER` is 1.25 units over a 1-unit button.
+/// A control's own height, and what a row adds over the control in it: room,
+/// so a lit button never touches the rows either side of it. Blender's
+/// `PNL_HEADER` is 1.25 units over a 1-unit button. A row is the two together
+/// (`row_height`); a control standing on its own is the first alone.
+pub const BUTTON_HEIGHT: f32 = 26.0;
 pub const HEAD_ROOM: f32 = 4.0;
 
 impl BDimensions {
-    /// A card's heading strip — and a card's row, and a rail's entry: one
-    /// module, the button height plus `HEAD_ROOM`, so a heading, the rows
-    /// under it and the rail beside them line up, and the button in a row
-    /// sits centred with room over and under it.
+    /// Every row: [`Self::row_height`], the sum this used to compute itself.
     pub const fn card_head_height(&self) -> f32 {
-        self.button_height + HEAD_ROOM
+        self.row_height
     }
 }
 

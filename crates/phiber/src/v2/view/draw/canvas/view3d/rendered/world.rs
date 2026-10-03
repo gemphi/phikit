@@ -28,6 +28,12 @@ fn linear(c: Hsla) -> [f32; 4] {
 /// built.
 pub const ENV_SLOT: u32 = 0;
 pub const ENV_CDF_SLOT: u32 = 1;
+/// Material Preview's environment lighting (`phiray::trace::ibl`), after
+/// them: the irradiance coefficients, then the prefiltered copies. Only a
+/// Material scene adds them (`scene::build`); `Camera::preview` names them
+/// only then.
+pub const ENV_IRRADIANCE_SLOT: u32 = 2;
+pub const ENV_PREFILTERED_SLOT: u32 = 3;
 
 /// The loaded world's environment image and the Mapping node's Z rotation,
 /// when the file has one and Blender would be lighting with it.
@@ -44,6 +50,8 @@ pub struct BRayLook {
     /// (0 when the theme has none), fading to the sky by mid-width.
     pub sky: Hsla,
     pub grid: Hsla,
+    /// The floor and axes left out (`Camera::grid_hide`).
+    pub grid_hide: u32,
     /// Loaded world colour (linear), if a file is open.
     pub world: Option<[f32; 3]>,
     /// The world's environment image is in the atlas at [`ENV_SLOT`]; the
@@ -63,13 +71,19 @@ pub struct BRayLook {
     pub studio: bool,
 }
 
-/// The loaded file's colour management as `Camera::view` words — the view
-/// transform, exposure and gamma Blender applies to every viewport mode.
-pub fn view_words() -> [f32; 4] {
-    crate::v2::scene::source::with_loaded(|m| {
-        m.map(|m| phiray::View::from_blender(&m.render.view_transform).words(m.render.exposure, m.render.gamma))
-    })
-    .unwrap_or_else(|| phiray::View::Standard.words(0.0, 1.0))
+impl BRayLook {
+    /// `Camera::grid_hide` for the switches: bits 1, 2 and 4 leave out the
+    /// floor, the X axis and the Y axis; bit 8 adds the Z axis.
+    pub fn grid_hide(shown: crate::v2::scene::BOverlays) -> u32 {
+        [(!shown.floor, 1), (!shown.axis_x, 2), (!shown.axis_y, 4), (shown.axis_z, 8)].iter().filter(|(on, _)| *on).map(|(_, bit)| bit).sum()
+    }
+}
+
+/// Color Management as `Camera::view` words — the view transform, exposure
+/// and gamma Blender applies to every viewport mode: the panel's, over the
+/// loaded file's (`render_set::BColorManagement`).
+pub fn view_words(s: &crate::v2::state::BState) -> [f32; 4] {
+    crate::v2::scene::source::with_loaded(|m| crate::v2::scene::render_set::BColorManagement::now(s, m).words())
 }
 
 /// One Blender light in phiray terms.
@@ -119,9 +133,28 @@ pub fn lit(cam: &mut Camera, look: &BRayLook) {
     cam.envmap = look.environment.map_or(0, |_| ENV_SLOT + 1);
     cam.env_rot = look.environment.unwrap_or(0.0);
     cam.env_cdf = look.environment.map_or(0, |_| ENV_CDF_SLOT + 1);
-    cam.env_hidden = u32::from(look.studio && look.environment.is_some());
+    cam.env_hidden = 0;
+    cam.preview = [0; 4];
+    if look.studio && look.environment.is_some() {
+        studio_lighting(cam);
+    }
     cam.bounces = look.set.diffuse_bounces;
     cam.count = usable.len() as u32;
     cam.lights = lights;
     cam.view = look.view;
+}
+
+/// Material Preview's lighting words: Blender's studio HDRI at the slots
+/// `scene::build` puts it in — the image to reflect, its sampling table,
+/// its irradiance and prefiltered copies (`ENV_*_SLOT`) — and hidden, so
+/// the background stays the viewport grey. A camera without them lights
+/// the diffuse from nothing and reflects the raw image: every surface a
+/// dark mirror. `lit` sets them for the viewport and the render job;
+/// `still` for a camera built by hand (the examples).
+pub fn studio_lighting(cam: &mut Camera) {
+    cam.envmap = ENV_SLOT + 1;
+    cam.env_cdf = ENV_CDF_SLOT + 1;
+    cam.env_rot = 0.0;
+    cam.env_hidden = 1;
+    cam.preview = [ENV_IRRADIANCE_SLOT + 1, ENV_PREFILTERED_SLOT + 1, phiray::trace::ibl::LEVELS, 0];
 }

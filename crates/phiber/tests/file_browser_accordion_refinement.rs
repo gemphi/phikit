@@ -288,7 +288,12 @@ fn properties_keep_transparent_rows_outer_border_and_bounded_scroll_owner() {
     let card = source("src/v2/view/draw/card.rs");
     assert!(card.contains(".border(BEdge::All)"));
     assert!(card.contains(".radius(BRadius::Role(BStyleRole::Card))"));
-    assert!(card.contains(".fill(BFill::Tone(panel_tone(ctx)))"));
+    // The frame still fills from the panel tone — through `panel_fill`, which
+    // chooses how that tone is painted: swept for a card lying on a region,
+    // flat where the panel IS its region and there is nothing under it to be
+    // raised from (`the_activity_strip_is_card_content`).
+    assert!(card.contains(".fill(panel_fill(ctx))"));
+    assert!(card.contains("BFill::Tone(BSurfaceTone::Card)") && card.contains("fn panel_fill("));
     let frame = card.split("Self::Frame(kind) =>").nth(1).unwrap().split("Self::Head").next().unwrap();
     assert!(!frame.contains("BOverflow::Clip"));
 
@@ -403,7 +408,8 @@ fn bounded_content_keeps_paint_on_outer_surfaces() {
 
     let card = source("src/v2/view/draw/card.rs");
     for paint in [
-        ".fill(BFill::Tone(panel_tone(ctx)))",
+        // Through `panel_fill`, which picks swept or flat from the panel tone.
+        ".fill(panel_fill(ctx))",
         ".border(BEdge::All)",
         ".radius(BRadius::Role(BStyleRole::Card))",
     ] {

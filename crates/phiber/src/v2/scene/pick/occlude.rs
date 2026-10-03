@@ -25,13 +25,28 @@ const BUDGET: usize = 40_000_000;
 /// The finest grid, per side.
 const MAX_SIDE: usize = 32;
 
-/// One object in world space, with its box.
+/// One object with its world box: a small one moved into world space, a
+/// large one through its tree in its own space (`tree.rs`).
 struct BWorldObject<'a> {
     name: &'a str,
-    world: Vec<Vec3>,
-    indices: Cow<'a, [u32]>,
+    body: BBody<'a>,
     lo: Vec3,
     hi: Vec3,
+}
+
+enum BBody<'a> {
+    Whole { world: Vec<Vec3>, indices: Cow<'a, [u32]> },
+    Tree { tree: std::sync::Arc<super::tree::BPickTree>, matrix: [[f32; 4]; 4] },
+}
+
+impl BBody<'_> {
+    /// How many triangles a ray costs: the tree's a few dozen tests.
+    fn cost(&self) -> usize {
+        match self {
+            Self::Whole { indices, .. } => indices.len() / 3,
+            Self::Tree { .. } => super::tree::WHOLE,
+        }
+    }
 }
 
 /// The scene, moved into world space once for many rays.
@@ -54,30 +69,40 @@ impl<'a> BPickScene<'a> {
                         let (ox, oy) = (x / MESH_SCALE, y / MESH_SCALE);
                         (v.iter().map(|v| Vec3::new(ox + v.0, oy + v.2, v.1)).collect(), Cow::Owned(idx))
                     }
+                    BObject3D::Loaded { mesh, matrix_world, .. } if mesh.indices.len() / 3 >= super::tree::WHOLE => {
+                        let tree = super::tree::BPickTree::of(mesh);
+                        let (lo, hi) = tree.world_bounds(matrix_world);
+                        return BWorldObject { name: object.name(), body: BBody::Tree { tree, matrix: *matrix_world }, lo, hi };
+                    }
                     BObject3D::Loaded { mesh, matrix_world, .. } => {
                         let m = Mat4::from_cols_array_2d(matrix_world);
                         (mesh.vertices.iter().map(|v| m.transform_point3(Vec3::from(*v))).collect(), Cow::Borrowed(&mesh.indices[..]))
                     }
                 };
                 let (lo, hi) = bounds(&world);
-                BWorldObject { name: object.name(), world, indices, lo, hi }
+                BWorldObject { name: object.name(), body: BBody::Whole { world, indices }, lo, hi }
             })
             .collect();
         Self { objects }
     }
 
     fn triangles(&self) -> usize {
-        self.objects.iter().map(|o| o.indices.len() / 3).sum()
+        self.objects.iter().map(|o| o.body.cost()).sum()
     }
 
     /// The nearest object along `ray`.
     pub fn nearest(&self, ray: BPickRay) -> Option<&'a str> {
         let mut best: Option<(&'a str, f32)> = None;
         for o in &self.objects {
-            if o.world.is_empty() || !hits_bounds(o.lo, o.hi, ray) {
+            if !hits_bounds(o.lo, o.hi, ray) {
                 continue;
             }
-            if let Some(d) = nearest_triangle(&o.world, &o.indices, ray)
+            let hit = match &o.body {
+                BBody::Whole { world, .. } if world.is_empty() => None,
+                BBody::Whole { world, indices } => nearest_triangle(world, indices, ray),
+                BBody::Tree { tree, matrix } => tree.nearest(matrix, ray),
+            };
+            if let Some(d) = hit
                 && best.is_none_or(|(_, b)| d < b)
             {
                 best = Some((o.name, d));
@@ -143,8 +168,9 @@ mod tests {
         // Front's arrow toggle set: it is out of the pass, and Back shows through.
         let through = BPickScene::new(&scene, |n| n != "Front").visible(&view, all, overlapped.into_iter().filter(|n| n != "Front").collect());
         assert_eq!(through, ["Back", "Beside"]);
-        // Wireframe is X-ray: there the box keeps everything it overlaps.
-        use crate::v2::scene::BShading;
-        assert!(BShading::Wireframe.sees_through() && !BShading::Solid.sees_through());
+        // Wireframe is X-ray in a new file: there the box keeps everything
+        // it overlaps; Solid is not until Alt Z.
+        use crate::v2::scene::{BShading, BXray};
+        assert!(BXray::FACTORY.active(BShading::Wireframe) && !BXray::FACTORY.active(BShading::Solid));
     }
 }

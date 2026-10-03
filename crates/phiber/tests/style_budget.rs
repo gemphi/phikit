@@ -19,6 +19,12 @@
 //! the token-driven `.border(px(strokes.border))` cost a point. No code
 //! regressed in that pass; the ruler got more accurate. Widening the ruler
 //! again is the only reason a budget may rise, and it needs saying here.
+//!
+//! `popover/leave.rs` earned an entry when the popover's dismissal backdrop
+//! moved into it from `popover/mod.rs` — the file that already owned the
+//! pointer-strayed-away test now owns the layer that asks it. That is the
+//! same calls in a different file, not new ones: `popover/mod.rs` fell from
+//! 42 to 39 in the same pass.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -172,6 +178,11 @@ fn the_migrated_levels_describe_their_containers_with_bflex() {
     for file in [
         "space/mod.rs", "zone/mod.rs", "area/mod.rs", "host/mod.rs", "region/mod.rs", "pane/mod.rs", "modal/mod.rs",
         "modal/card.rs", "modal/fullscreen.rs", "modal/welcome.rs",
+        // The popover joined them: it was 39 raw calls, a hand-built panel
+        // that drifted from the cards beside it every time either moved. It
+        // is a `BPopoverPart` now, so a menu, a filter popover and an
+        // accordion are three settings of one thing.
+        "popover/mod.rs",
     ] {
         assert_eq!(now.get(file).copied().unwrap_or(0), 0, "{file} writes raw GPUI style");
     }

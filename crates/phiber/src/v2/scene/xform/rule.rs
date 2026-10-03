@@ -3,7 +3,7 @@
 //! to a plane, digits type a value, Return keeps it, Escape puts it back —
 //! and `ctx.op.transform`, which starts one, switches its mode, and ends it.
 
-use super::{BConstraint, BTransformModal, BTransformMode};
+use super::{BTransformModal, BTransformMode};
 use crate::v2::scene::pick::BPickView;
 use crate::v2::scene::transform::BTransforms;
 use crate::v2::state::{BKey as _, BPath, BState, CtxKey, OpKey, SceneKey, View3dKey, log, rule::BRule};
@@ -74,7 +74,11 @@ impl BRule for BTransformOpRule {
             }
             ("confirm", Some(modal)) => {
                 s.remove(View3dKey::Transform);
-                log::push(format!("{} {} object(s)", modal.mode.label(), modal.list.len()));
+                // The record button keys what the transform changed.
+                let names: Vec<String> = modal.list.iter().map(|e| e.name.clone()).collect();
+                let keyed = crate::v2::scene::action::autokey::BAutoKey::transformed(s, modal.mode, &names);
+                let auto = if keyed.is_empty() { String::new() } else { format!(", auto keyed at frame {}", crate::v2::scene::motion::shown_frame(s).unwrap_or(0.0)) };
+                log::push(format!("{} {} object(s){auto}", modal.mode.label(), modal.list.len()));
             }
             ("cancel", Some(modal)) => {
                 s.set(SceneKey::Transformed, modal.before);
@@ -104,7 +108,9 @@ impl BRule for BTransformOpRule {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // `BConstraint` is the test's, not the rule's: the rule stopped naming
+    // it, so `use super::*` stopped bringing it in.
+    use crate::v2::scene::xform::BConstraint;
 
     #[test]
     fn a_constraint_is_pressed_once_and_freed_by_the_same_key() {

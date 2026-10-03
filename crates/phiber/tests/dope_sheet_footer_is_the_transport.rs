@@ -30,7 +30,15 @@ async fn the_animation_workspaces_dope_sheet_carries_the_transport_in_its_footer
 
     let header = cx.debug_bounds("region-Header-Action").expect("the Dope Sheet header");
     let footer = cx.debug_bounds("region-Footer-Action").expect("the Dope Sheet footer");
-    assert_eq!(footer.size.height, header.size.height, "a footer is a strip like the header");
+    // A footer is the header's band: same strip, same controls on the same
+    // line. The header is that band plus the rule it closes against the
+    // content with — a footer heads nothing, so it carries none.
+    let rule = phiber::v2::theme::style::metric::DEFAULT_STROKES.border;
+    assert_eq!(
+        f32::from(header.size.height) - rule,
+        f32::from(footer.size.height),
+        "a footer is the header's band, without the header's rule"
+    );
     assert_eq!(f32::from(footer.size.height), METRICS.h_header);
     assert!(footer.origin.y > header.origin.y, "the footer is under the window");
 

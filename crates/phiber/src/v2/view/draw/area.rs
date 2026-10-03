@@ -9,7 +9,7 @@ use crate::v2::host::BHostType;
 use crate::v2::theme::BStyleRole;
 use crate::v2::view::BView;
 use crate::v2::view::layout::BAreaLayout;
-use super::flex::{BEdge, BFill, BFlex, BFlexed, BLen, BRadius};
+use super::flex::{BEdge, BFill, BFlex, BFlexed, BLen, BRadius, BOverflow};
 use super::ctx::BRenderCtx;
 use super::surface::BCorners;
 use super::walk;
@@ -31,12 +31,22 @@ fn card(kind: BAreaType, flex: BFlex, ctx: &BRenderCtx) -> BFlex {
     let flex = flex.fill(BFill::HostBody);
     if kind == BAreaType::Top {
         // The top strip is the window's title bar: it meets the window's top
-        // edge flush, with no border and no rounded corners up there, and
-        // rounds only where it meets the workspace below.
+        // edge flush, with no rounded corners up there, and rounds only where
+        // it meets the workspace below. Its one border is the line along that
+        // bottom edge — the same stroke every other header closes with — not
+        // a box, which would draw a seam up the window's own sides.
         let r = ctx.style.radius_for(BStyleRole::Area);
-        return flex.radius(BRadius::Corners { tl: false, tr: false, bl: true, br: true, radius: r });
+        return flex
+            .border(BEdge::Bottom)
+            .radius(BRadius::Corners { tl: false, tr: false, bl: true, br: true, radius: r })
+            .overflow(BOverflow::Auto);
     }
-    flex.border(BEdge::All).radius(BRadius::Role(BStyleRole::Area))
+    // The area's fill is the window shade behind its host. It rounds, so it
+    // has to clip: without this the host's own strips paint square over the
+    // corner and the radius is decorative — the timeline's background
+    // bleeding past its card is this. A popover escapes anyway, painting in
+    // the window-root overlay layer rather than in the area.
+    flex.border(BEdge::All).radius(BRadius::Role(BStyleRole::Area)).overflow(BOverflow::Auto)
 }
 
 /// The parts of an area — one enum for the level, as every other level
@@ -121,5 +131,9 @@ pub fn view(kind: BAreaType, child: &BView, outer: &BRenderCtx) -> AnyElement {
             .child(walk(child, &child_context));
         return element.child(scroller).into_any_element();
     }
-    element.child(walk(child, &child_context)).into_any_element()
+    // A 3D Viewport draws its own view (`scene::view_slot`): every view key
+    // read while its host draws is this area's, and the pointer over its
+    // canvas makes it the one the view keys and menus act on.
+    let slot = crate::v2::scene::view_slot::BViewSlot::new(crate::v2::space::BSpaceList::active(ctx.state).slug(), kind.label());
+    element.child(slot.with(|| walk(child, &child_context))).into_any_element()
 }

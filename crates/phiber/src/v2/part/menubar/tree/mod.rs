@@ -60,6 +60,27 @@ pub fn item_path(labels: &[&'static str], label: &str) -> String {
     path
 }
 
+impl BMenuItem {
+    /// A submenu listed live — the recent files, the undo steps, a `Live`
+    /// list — as a popover to the right of its row, opened on hover.
+    fn live_sub(&self, host: &'static str, labels: &[&'static str], s: &BState, body: Vec<BView>) -> BView {
+        let mut sub_labels: Vec<&'static str> = labels.to_vec();
+        sub_labels.push(self.label);
+        let key = MenuKey::Nested(host, &sub_labels).path();
+        let open = s.get(&key) == Some(V_TRUE);
+        let anchor = BView::MenuItem(
+            BControl::new()
+                .with_label(self.label)
+                .with_shortcut(self.shortcut)
+                .with_submenu(true)
+                .with_active(open)
+                .with_action(BAction::Toggle(key.clone()))
+                .with_hover(BAction::Open(key.clone())),
+        );
+        BView::popover(anchor, body, open, BAction::Set(key, V_EMPTY.to_string()), BPopoverSide::Right)
+    }
+}
+
 /// `labels` is the chain of menu labels above `it`, from the menubar down.
 pub fn item_view(host: &'static str, labels: &[&'static str], it: &BMenuItem, s: &BState) -> BView {
     match it.kind {
@@ -75,25 +96,22 @@ pub fn item_view(host: &'static str, labels: &[&'static str], it: &BMenuItem, s:
             let anchor = BView::MenuItem(
                 BControl::new()
                     .with_label(it.label)
-                    .with_shortcut("▶")
+                    .with_shortcut(it.shortcut)
+                    .with_submenu(true)
+                    // The row that opened this submenu reads as open, the way
+                    // a menubar label does while its menu is down. Without it
+                    // the row you had just clicked was drawn exactly like the
+                    // idle rows around it, so nothing on screen said which of
+                    // them the panel beside it belonged to.
+                    .with_active(open)
                     .with_action(toggle)
                     .with_hover(opener),
             );
             let body = subs.iter().map(|c| item_view(host, &sub_labels, c, s)).collect();
             BView::popover(anchor, body, open, close, BPopoverSide::Right)
         }
+        BMenuKind::Live(list) => it.live_sub(host, labels, s, list(s)),
         BMenuKind::Recent => {
-            let mut sub_labels: Vec<&'static str> = labels.to_vec();
-            sub_labels.push(it.label);
-            let key = MenuKey::Nested(host, &sub_labels).path();
-            let open = s.get(&key) == Some(V_TRUE);
-            let anchor = BView::MenuItem(
-                BControl::new()
-                    .with_label(it.label)
-                    .with_shortcut("▶")
-                    .with_action(BAction::Toggle(key.clone()))
-                    .with_hover(BAction::Open(key.clone())),
-            );
             let paths = crate::v2::modal::splash::recent::recent_paths(s);
             let body: Vec<BView> = if paths.is_empty() {
                 vec![BView::MenuItem(BControl::new().with_label("No Recent Files"))]
@@ -110,16 +128,9 @@ pub fn item_view(host: &'static str, labels: &[&'static str], it: &BMenuItem, s:
                     })
                     .collect()
             };
-            BView::popover(anchor, body, open, BAction::Set(key, V_EMPTY.to_string()), BPopoverSide::Right)
+            it.live_sub(host, labels, s, body)
         }
         BMenuKind::History => {
-            let mut sub_labels: Vec<&'static str> = labels.to_vec();
-            sub_labels.push(it.label);
-            let key = MenuKey::Nested(host, &sub_labels).path();
-            let open = s.get(&key) == Some(V_TRUE);
-            let anchor = BView::MenuItem(
-                BControl::new().with_label(it.label).with_shortcut("▶").with_action(BAction::Toggle(key.clone())).with_hover(BAction::Open(key.clone())),
-            );
             let listing = crate::v2::app::undo::listing();
             let body: Vec<BView> = listing
                 .names
@@ -134,15 +145,23 @@ pub fn item_view(host: &'static str, labels: &[&'static str], it: &BMenuItem, s:
                     )
                 })
                 .collect();
-            BView::popover(anchor, body, open, BAction::Set(key, V_EMPTY.to_string()), BPopoverSide::Right)
+            it.live_sub(host, labels, s, body)
         }
-        BMenuKind::Toggle(key, on_by_default) => BView::MenuItem(
-            BControl::new()
-                .with_icon(if if on_by_default { s.get(&key()) != Some(V_FALSE) } else { s.get(&key()) == Some(V_TRUE) } { "check" } else { "" })
-                .with_label(it.label)
-                .with_shortcut(it.shortcut)
-                .with_action(leaf_action(host, labels, it)),
-        ),
+        // A checked entry takes the active fill as well as the check, which is
+        // what a ticked row in a picker or the file browser's filter has
+        // always done. The glyph alone made the menubar's checkables the one
+        // family where "on" was a 12px mark and nothing else.
+        BMenuKind::Toggle(key, on_by_default) => {
+            let on = if on_by_default { s.get(&key()) != Some(V_FALSE) } else { s.get(&key()) == Some(V_TRUE) };
+            BView::MenuItem(
+                BControl::new()
+                    .with_icon(if on { "check" } else { "" })
+                    .with_label(it.label)
+                    .with_shortcut(it.shortcut)
+                    .with_active(on)
+                    .with_action(leaf_action(host, labels, it)),
+            )
+        }
         _ => BView::MenuItem(
             BControl::new()
                 .with_label(it.label)

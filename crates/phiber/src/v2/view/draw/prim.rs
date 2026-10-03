@@ -64,11 +64,6 @@ pub fn sort_header(
     .render(ctx)
 }
 
-/// Default-compatible fixed-width indent entry point.
-pub fn indent(level: u16) -> AnyElement {
-    super::tree::BTreeIndent(level).render_default()
-}
-
 /// Render-pass-aware indent used by the BView dispatcher.
 pub(super) fn indent_resolved(level: u16, ctx: &BRenderCtx) -> AnyElement {
     super::tree::BTreeIndent(level).render(ctx)

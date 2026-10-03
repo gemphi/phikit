@@ -21,9 +21,11 @@ pub enum ImageKey {
     /// `sima->flag & SI_USE_ALPHA / SI_SHOW_ALPHA / SI_SHOW_R…`: the
     /// display channels — `Color and Alpha`, `Color`, `Alpha`, `Red`, `Green`, `Blue`.
     Channels,
-    /// `sima->flag & SI_NO_DRAW_TEXPAINT`-style toggles: gizmo and overlay.
+    /// `IMAGE_PT_gizmo_display`, still a plain toggle. The overlay one beside
+    /// it was a key nothing read; the overlays are `overlay.image.*` now
+    /// (`part::filter::overlay`), shared with the UV editor as Blender shares
+    /// `SpaceImageEditor.overlay` between the two.
     Gizmo,
-    Overlay,
 }
 
 impl BKey for ImageKey {
@@ -37,7 +39,6 @@ impl BKey for ImageKey {
             Self::Pass => "pass",
             Self::Channels => "channels",
             Self::Gizmo => "gizmo",
-            Self::Overlay => "overlay",
         };
         BPath::owned(vec!["image", tail])
     }

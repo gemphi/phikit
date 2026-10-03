@@ -5,7 +5,10 @@ pub mod set;
 
 use super::{BPalette, BPaletteName, BThemeMode};
 
-/// A theme's palette in its dark mode.
+/// A theme's palette in its DARK mode — named this before there were two,
+/// and not the mode in force, which [`BThemeMode::DEFAULT`] decides and is
+/// Light. Drawing for the window the user is looking at wants `palette_in`
+/// with the mode from `theme_in_force`.
 pub fn palette_for(name: BPaletteName) -> &'static BPalette {
     palette_in(name, BThemeMode::Dark)
 }
@@ -19,12 +22,22 @@ pub fn palette_in(name: BPaletteName, mode: BThemeMode) -> &'static BPalette {
         (BPaletteName::Graphite, BThemeMode::Light) => &set::GRAPHITE_LIGHT,
         (BPaletteName::Tokyo, BThemeMode::Dark) => &set::TOKYO,
         (BPaletteName::Tokyo, BThemeMode::Light) => &set::TOKYO_LIGHT,
+        (BPaletteName::Moss, BThemeMode::Dark) => &set::MOSS,
+        (BPaletteName::Moss, BThemeMode::Light) => &set::MOSS_LIGHT,
+        (BPaletteName::Ember, BThemeMode::Dark) => &set::EMBER,
+        (BPaletteName::Ember, BThemeMode::Light) => &set::EMBER_LIGHT,
+        (BPaletteName::Plum, BThemeMode::Dark) => &set::PLUM,
+        (BPaletteName::Plum, BThemeMode::Light) => &set::PLUM_LIGHT,
         (BPaletteName::Onyx, BThemeMode::Dark) => &set::ONYX,
         (BPaletteName::Onyx, BThemeMode::Light) => &set::ONYX_LIGHT,
         (BPaletteName::Grey, BThemeMode::Dark) => &set::GREY,
         (BPaletteName::Grey, BThemeMode::Light) => &set::GREY_LIGHT,
+        (BPaletteName::Silver, BThemeMode::Dark) => &set::SILVER,
+        (BPaletteName::Silver, BThemeMode::Light) => &set::SILVER_LIGHT,
         (BPaletteName::Apple, BThemeMode::Dark) => &set::APPLE,
         (BPaletteName::Apple, BThemeMode::Light) => &set::APPLE_LIGHT,
+        (BPaletteName::AppleDark, BThemeMode::Dark) => &set::APPLE_DARK,
+        (BPaletteName::AppleDark, BThemeMode::Light) => &set::APPLE_DARK_LIGHT,
         (BPaletteName::Swift, BThemeMode::Dark) => &set::SWIFT,
         (BPaletteName::Swift, BThemeMode::Light) => &set::SWIFT_LIGHT,
         (BPaletteName::Barbie, BThemeMode::Dark) => &set::BARBIE,

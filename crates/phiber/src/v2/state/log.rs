@@ -17,12 +17,14 @@ use super::{BState, val};
 use crate::v2::view::prim::BAction;
 use std::{cell::RefCell, rc::Rc};
 
-/// One line of the log.
+/// One line of the log, `at` when it was written: the session journal
+/// (`app::journal`) files every line with its time and the gap since the last.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BLogEntry {
     /// Monotonic, so a view can tell new lines from old.
     pub seq: u64,
     pub text: String,
+    pub at: std::time::Instant,
 }
 
 /// How many lines are kept. Older ones fall off the end.
@@ -39,13 +41,12 @@ pub fn push(text: impl Into<String>) {
         log.0 += 1;
         let seq = log.0;
         let entries = Rc::make_mut(&mut log.1);
-        entries.insert(0, BLogEntry { seq, text: text.into() });
+        entries.insert(0, BLogEntry { seq, text: text.into(), at: std::time::Instant::now() });
         entries.truncate(CAPACITY);
     });
 }
 
-/// Every line, newest first. Shared, so a frame that reads it several times
-/// pays once.
+/// Every line, newest first. Shared: a frame that reads it several times pays once.
 pub fn entries() -> Rc<Vec<BLogEntry>> {
     LOG.with(|cell| Rc::clone(&cell.borrow().1))
 }
@@ -62,8 +63,7 @@ pub fn clear() {
 
 /// Describe `action` by what it changed between `before` and `after`, and
 /// log it. Keys that change on every pointer movement — a menu opening under
-/// the cursor, a hover switch — say nothing; they are not actions the user
-/// took.
+/// the cursor, a hover switch — say nothing; they are not actions the user took.
 pub fn record(action: &BAction, before: &BState, after: &BState) -> Option<String> {
     let line = describe(action, before, after)?;
     push(line.clone());

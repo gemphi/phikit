@@ -113,7 +113,8 @@ fn main() {
         // (1011 px against Blender's 436).
         scale: (W as f32 / H as f32) / (height * 1.1), dist: 10.0,
         sun: sun.to_array(),
-        sky: [0.24, 0.24, 0.24, 1.0],
+        // The viewport grey, no theme sweep (`sky.a` is the sweep, not opacity).
+        sky: [0.24, 0.24, 0.24, 0.0],
         env: [ambient[0], ambient[1], ambient[2], 1.0],
         // Material Preview is lit by Blender's studio HDRI (`rendered/studio.rs`),
         // which `scene::build` puts in the atlas for that shading; the file's

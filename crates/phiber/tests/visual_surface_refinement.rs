@@ -40,7 +40,9 @@ fn resize_gutters_share_the_neutral_workspace_surface() {
     assert!(tokens.contains("Self::Gutter => to_hsla(ctx.style.resize_gutter_background()).into()"));
     assert!(area.contains(".fill(BFill::HostBody)"));
     assert!(!area.contains("BFill::Workspace") && !tokens.contains("Workspace,"), "no surface but the seams takes the window shade");
-    assert!(tokens.contains("Self::HostBody => to_hsla(ctx.style.host_background(ctx.host)).into()"));
+    // A host body is a swept surface now, not a flat colour — the token
+    // still resolves in this one place, which is what this pins.
+    assert!(tokens.contains("Self::HostBody => resolved_gradient(ctx.style.host_body_surface(ctx.host))"));
     assert!(!space.contains("bg_app"));
 }
 
@@ -54,7 +56,10 @@ fn resize_hit_bands_stay_wide_while_the_seam_sits_inside_the_gap_at_rest() {
         assert_eq!(style.resize.hover_thickness(), style.resize.gap + 2.0);
         assert_eq!(style.resize.hit_width, 14.0);
         assert!(style.resize.hit_width >= style.resize.hover_thickness());
-        assert_eq!(style.resize_seam_resting_color(), style.colors.border, "the resting seam is the theme's border shade");
+        // The resting shade is still the theme's border, but the seam no
+        // longer paints it: each area draws its own border either side of
+        // the gap, so the seam appears only under the pointer (`resize.rs`).
+        assert_eq!(style.resize_seam_resting_color(), style.colors.border);
         assert_eq!(style.resize_seam_active_color(), style.colors.accent);
     }
 
@@ -284,7 +289,8 @@ fn view3d_uses_a_lighter_opaque_flat_semantic_surface_across_palettes() {
     assert!(view3d.contains("ctx.style.viewport_surface()"), "the tracer's sky is the canvas shade");
     assert!(view3d.contains("ctx.style.viewport_gradient()"), "under the tracer, the canvas sweep");
     assert!(view3d.contains("viewport_grid_stroke()"));
-    assert!(view3d.contains("axis_stroke("));
+    // The floor's axes are drawn with the overlays (`view3d/guide`).
+    assert!(renderer("canvas/view3d/guide/mod.rs").contains("axis_stroke("));
     assert!(!view3d.contains("linear_gradient("));
     assert!(!view3d.contains("linear_color_stop("));
     assert!(!view3d.contains("Horizon band"));
@@ -311,11 +317,13 @@ fn every_menu_row_reserves_its_icon_slot_so_labels_share_one_left_edge() {
 fn the_activity_bar_takes_the_toolbars_treatment() {
     // The activity bar and the toolbar are both columns of free buttons, and
     // both take their rest / hover / active fill from the one control mapping
-    // (`chrome::paint`): the accent at an opacity. The activity bar is docked,
-    // so it rests on nothing — no block behind every icon — while the
-    // floating toolbar rests on the faintest step to stay legible over the
-    // canvas. The rail renderer hands the activity kind to the free-button
-    // cap rather than the activity part inventing a treatment.
+    // (`chrome::paint`). Both now rest on the control shade: a button looks
+    // like a button wherever it is, docked or floating, rather than being a
+    // tile on the canvas and a bare glyph in a rail. They still part under
+    // the pointer — floating takes the hover shade, docked washes the accent
+    // over its rail at an alpha. The rail renderer hands the activity kind to
+    // the free-button cap rather than the activity part inventing a
+    // treatment.
     let rail = renderer("rail.rs");
     assert!(rail.contains("if kind == BRailKind::Activity {"));
     assert!(rail.contains("return tab::rail_button(&ctl, ctx);"));
@@ -326,11 +334,11 @@ fn the_activity_bar_takes_the_toolbars_treatment() {
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/v2/theme/semantic/set.rs"),
     )
     .expect("semantic style");
-    // Floating chrome is a button: the control shade at rest, the accent
-    // when active; docked chrome still paints nothing at rest.
+    // Both rest on the control shade; only what happens under the pointer
+    // separates them.
     assert!(semantic.contains("BControlState::Rest => self.colors.bg_control,"));
     assert!(semantic.contains("BControlState::Active => self.colors.accent,"));
-    assert!(semantic.contains("BControlState::Rest => return None"));
+    assert!(semantic.contains("BControlState::Rest => return Some(self.colors.bg_control)"));
 }
 
 /// A module is a file or a folder; read whichever spelling exists.

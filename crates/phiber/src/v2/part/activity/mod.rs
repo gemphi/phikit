@@ -87,10 +87,15 @@ impl BActivityList {
         let Some(entry) = option::open_group(s) else {
             return BView::empty();
         };
-        if entry.options == BActivityOptions::Profile {
-            return self::profile::panel(s);
-        }
-        let rows: Vec<BView> = option::options_for(entry, s).into_iter().map(BView::MenuItem).collect();
+        // Profile's rows are built differently (identity, then folding sections)
+        // but its CONTAINER is the same card every other column gets — it used to
+        // return a bare column, which is why it was the one secondary column with
+        // no border.
+        let rows: Vec<BView> = if entry.options == BActivityOptions::Profile {
+            self::profile::body(s)
+        } else {
+            option::options_for(entry, s).into_iter().map(BView::MenuItem).collect()
+        };
         if rows.is_empty() {
             return BView::empty();
         }

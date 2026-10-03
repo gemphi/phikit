@@ -33,8 +33,18 @@ impl BSearch {
 pub fn search_key(host: BHostType) -> Option<BPath> {
     match host {
         BHostType::Outliner => Some(OutlinerKey::Search.path()),
+        // `SpaceProperties.search_filter` — Blender has searched the
+        // Properties editor from its header since 2.90.
+        BHostType::Buts => Some(crate::v2::state::ButsKey::Search.path()),
         BHostType::File | BHostType::Asset => {
             Some(FileKey::Search.path())
+        }
+        // `DopeSheet.filter_text` — the animation editors narrow their
+        // channels by name, which is how you find one in a rig. One key for
+        // the four of them, as Blender has one `DopeSheet` per space showing
+        // the same panel (`part::filter::dope`).
+        host if crate::v2::part::filter::filters_channels(host) => {
+            Some(crate::v2::state::DopeKey::Search.path())
         }
         _ => None,
     }

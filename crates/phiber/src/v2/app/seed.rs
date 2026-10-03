@@ -74,6 +74,12 @@ pub fn seed_render_props(state: &mut BState, model: &SceneModel) {
             (BPropKind::Int { .. }, v) => BValue::Int(i64::from(v.as_int().unwrap_or(0))).encode(),
             (BPropKind::Float { .. }, v) => BValue::Float(v.as_float().unwrap_or(0.0) as f32).encode(),
             (BPropKind::Enum(_) | BPropKind::Str, BIdValue::Str(v)) => v.clone(),
+            // An add-on's enumeration is stored as the item's number
+            // (`render_edit::BCyclesEnum`).
+            (BPropKind::Enum(_), BIdValue::Int(i)) => match crate::v2::scene::render_edit::BCyclesEnum::name(name, *i) {
+                Some(id) => id.to_string(),
+                None => continue,
+            },
             // A shape no control edits.
             _ => continue,
         };
@@ -99,6 +105,26 @@ pub fn seed_output_props(state: &mut BState, model: &SceneModel) {
         3 => "RGB",
         _ => "RGBA",
     };
+    // Color Management (`Scene.view_settings`), so the panel shows the
+    // file's and the views read the panel (`render_set::BColorManagement`).
+    let view = [
+        ("view_settings.view_transform", render.view_transform.clone()),
+        ("view_settings.exposure", BValue::Float(render.exposure).encode()),
+        ("view_settings.gamma", BValue::Float(render.gamma).encode()),
+        // Film ▸ Transparent (`Scene.r.alphamode`), on the Render tab.
+        ("render.film_transparent", BValue::Bool(render.film_transparent).encode()),
+    ];
+    // Output ▸ Encoding (`FFMpegCodecData`), the DNA values as RNA names.
+    let movie = &render.movie;
+    let name = |pairs: &[(i32, &str)], v: i32| pairs.iter().find(|(k, _)| *k == v).map_or(String::new(), |(_, n)| (*n).to_string());
+    let encoding = [
+        ("ffmpeg.format", name(&[(0, "MPEG1"), (1, "MPEG2"), (2, "MPEG4"), (3, "AVI"), (4, "QUICKTIME"), (5, "DV"), (8, "FLASH"), (9, "MKV"), (10, "OGG"), (12, "WEBM")], movie.container)),
+        ("ffmpeg.codec", name(&[(0, "NONE"), (27, "H264"), (173, "H265"), (226, "AV1"), (99, "DNXHD"), (24, "DV"), (33, "FFV1"), (21, "FLASH"), (25, "HUFFYUV"), (1, "MPEG1"), (2, "MPEG2"), (12, "MPEG4"), (61, "PNG"), (55, "QTRLE"), (30, "THEORA"), (167, "WEBM"), (147, "PRORES")], movie.codec)),
+        ("ffmpeg.constant_rate_factor", name(&[(-1, "NONE"), (0, "LOSSLESS"), (17, "PERC_LOSSLESS"), (20, "HIGH"), (23, "MEDIUM"), (26, "LOW"), (29, "VERYLOW"), (32, "LOWEST")], movie.crf)),
+        ("ffmpeg.ffmpeg_preset", name(&[(10, "GOOD"), (11, "BEST"), (12, "REALTIME")], movie.preset)),
+        ("ffmpeg.gop_size", BValue::Int(i64::from(movie.gop)).encode()),
+        ("ffmpeg.video_bitrate", BValue::Int(i64::from(movie.bitrate)).encode()),
+    ];
     let pair: [(&str, String); 7] = [
         ("resolution_x", BValue::Int(i64::from(render.resolution_x)).encode()),
         ("resolution_y", BValue::Int(i64::from(render.resolution_y)).encode()),
@@ -115,7 +141,7 @@ pub fn seed_output_props(state: &mut BState, model: &SceneModel) {
             state.set(ButsKey::Value(spec.key), on);
         }
     }
-    for (key, encoded) in pair {
+    for (key, encoded) in pair.into_iter().chain(view).chain(encoding) {
         // The panel's own spec supplies the `'static` key to store under, so
         // a value never lands where no control reads it.
         let Some(spec) = prop_named(key) else { continue };

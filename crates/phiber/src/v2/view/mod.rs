@@ -126,6 +126,10 @@ pub enum BView {
     Column {
         list: Vec<BView>,
     },
+    /// A view built once and shown again until what it was built from
+    /// changes — the Outliner's rows across an orbit (`part::outliner`).
+    /// Rendered as the view it holds; cloned by reference.
+    Shared(std::rc::Rc<BView>),
     /// A property row split into a label column and a value column —
     /// Blender's `uiLayout.use_property_split` row (`ui_item_prop_split`).
     Split {
@@ -265,6 +269,15 @@ pub trait BViewList {
 }
 
 impl BView {
+    /// The view as built: itself, or the one a `Shared` holds (a kept view
+    /// is shown as what it keeps).
+    pub fn shown(&self) -> &BView {
+        match self {
+            Self::Shared(view) => view.shown(),
+            other => other,
+        }
+    }
+
     pub fn empty() -> Self {
         Self::Empty
     }

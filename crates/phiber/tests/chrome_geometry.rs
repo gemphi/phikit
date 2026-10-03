@@ -42,10 +42,14 @@ async fn the_rails_are_as_wide_as_a_strip_is_tall(cx: &mut TestAppContext) {
     // toolbar over the canvas), so measure them there.
     let strip = bounds(cx, &["region-Header-Buts"], "the Properties header");
     let rail = bounds(cx, &["region-NavBar-Buts"], "the Properties rail");
+    // The header carries a rule along its bottom edge and is that much
+    // taller than its band; the rail is the band's width, so the chrome still
+    // reads as one grid.
+    let rule = phiber::v2::theme::style::metric::DEFAULT_STROKES.border;
     assert_eq!(
         f32::from(rail.size.width),
-        f32::from(strip.size.height),
-        "an icon rail is one strip-height wide, so the chrome reads as one grid"
+        f32::from(strip.size.height) - rule,
+        "an icon rail is one strip-band wide, so the chrome reads as one grid"
     );
     for (name, w) in [
         ("toolbar", METRICS.w_toolbar),
@@ -147,6 +151,50 @@ async fn a_menu_popover_frames_its_rows_with_one_gutter(cx: &mut TestAppContext)
 
     let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
     cx.simulate_resize(size(px(1280.0), px(800.0)));
+    let open = |app: &mut BPhiberApp, cx: &mut gpui::Context<BPhiberApp>, menu: &'static str| {
+        app.state = BState::new();
+        app.state.set(CtxKey::Space, BSpaceType::Layout.slug());
+        app.state.set(&MenuKey::Top(BHostType::Topbar.slug(), menu).path(), V_TRUE);
+        cx.notify();
+    };
+
+    // A menu that FITS, which is what the gutter rule is about. Render's rows
+    // all stand in the panel, so the panel's frame is measurable all the way
+    // round; in a menu that overflows, the bottom edge is a clip and there is
+    // no gutter there to compare (see below).
+    app.update(cx, |app, cx| open(app, cx, "Render"));
+    cx.run_until_parked();
+    let panel = bounds(cx, &["popover-panel"], "the open Render menu");
+    let first = bounds(cx, &["menu-Render Image"], "the menu's first row");
+    let last = bounds(cx, &["menu-Lock Interface"], "the menu's last row");
+    // A row's hover fill stops short of the panel edge on every side, the way
+    // a toolbar or sidebar button does — it never runs into the border radius.
+    let top = f32::from(first.origin.y - panel.origin.y);
+    let bottom = f32::from((panel.origin.y + panel.size.height) - (last.origin.y + last.size.height));
+    let left = f32::from(first.origin.x - panel.origin.x);
+    assert!(top > METRICS.stroke, "rows must be inset from the panel's top edge");
+    assert_eq!(top, bottom, "the gutter above and below the rows must match");
+    assert_eq!(top, left, "the gutter around the rows must be the same on every side");
+}
+
+#[gpui::test]
+async fn a_menu_too_tall_for_the_window_scrolls_instead_of_squashing_its_rows(cx: &mut TestAppContext) {
+    use phiber::v2::host::BHostType;
+    use phiber::v2::state::{MenuKey, V_TRUE};
+
+    // The File menu is the long one: around twenty rows, so at a row's height
+    // it wants roughly 780px and does not fit an 800px window. It used to
+    // "fit" — the popover's column shrank every row cap until the whole menu
+    // squeezed into 480px, which painted rows at 17px, two thirds of a row,
+    // and got worse the longer the menu was. That is what made menus look
+    // short next to the chrome around them.
+    //
+    // Now the rows keep a row's height (`BMenuPart::Cap`) and the panel is
+    // capped at a share of the window, so a menu that cannot fit scrolls.
+    let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
+    // Short enough that the File menu cannot fit however it is sized: at a
+    // row's height it wants around 650, and nine tenths of 560 is 504.
+    cx.simulate_resize(size(px(1280.0), px(560.0)));
     app.update(cx, |app, cx| {
         app.state = BState::new();
         app.state.set(CtxKey::Space, BSpaceType::Layout.slug());
@@ -155,20 +203,37 @@ async fn a_menu_popover_frames_its_rows_with_one_gutter(cx: &mut TestAppContext)
     });
     cx.run_until_parked();
 
+    let row_height = phiber::v2::theme::ui_style_defaults_in(
+        phiber::v2::theme::BPaletteName::DEFAULT,
+        phiber::v2::theme::BThemeMode::DEFAULT,
+    )
+    .dimensions
+    .row_height;
     let panel = bounds(cx, &["popover-panel"], "the open File menu");
-    // "New" opens Blender's File menu and "Quit" closes it, as they do ours.
     let first = bounds(cx, &["menu-New"], "the menu's first row");
-    let last = bounds(cx, &["menu-Quit"], "the menu's last row");
 
-    // A row's hover fill stops short of the panel edge on every side, the way
-    // a toolbar or sidebar button does — it never runs into the border radius.
-    let top = f32::from(first.origin.y - panel.origin.y);
-    let bottom =
-        f32::from((panel.origin.y + panel.size.height) - (last.origin.y + last.size.height));
-    let left = f32::from(first.origin.x - panel.origin.x);
-    assert!(top > METRICS.stroke, "rows must be inset from the panel's top edge");
-    assert_eq!(top, bottom, "the gutter above and below the rows must match");
-    assert_eq!(top, left, "the gutter around the rows must be the same on every side");
+    // Every row is a row, whatever the menu's length — the point of the fix.
+    let rows: Vec<(String, f32)> = cx
+        .all_debug_bounds()
+        .into_iter()
+        .filter(|(sel, _)| sel.starts_with("menu-"))
+        .map(|(sel, b)| (sel, f32::from(b.size.height)))
+        .collect();
+    assert!(rows.len() >= 10, "the File menu's rows are painted: {}", rows.len());
+    for (sel, h) in &rows {
+        assert!((h - row_height).abs() < 0.5, "{sel} is {h}, and a row is {row_height}");
+    }
+    // The panel is held to the window rather than to its own content, so the
+    // rows past the fold are clipped and reachable by scrolling.
+    let window = f32::from(cx.update(|window, _| window.viewport_size()).height);
+    let height = f32::from(panel.size.height);
+    assert!(height < window, "the panel stops inside the window: {height} of {window}");
+    assert!(height > window * 0.8, "and takes what the window allows: {height} of {window}");
+    let wanted = rows.len() as f32 * row_height;
+    assert!(wanted > height, "the menu wants more than it got ({wanted} > {height}), so it scrolls");
+    // And it is the WINDOW holding it back, not its own content: the same menu
+    // in a tall window shows every row.
+    assert!(f32::from(first.origin.y) >= f32::from(panel.origin.y), "and starts at the top of it");
 }
 
 #[gpui::test]

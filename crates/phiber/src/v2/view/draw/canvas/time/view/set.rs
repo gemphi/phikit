@@ -24,6 +24,16 @@ impl BTimeView {
             .then(|| (int_or(s, CtxKey::PreviewStart, start), int_or(s, CtxKey::PreviewEnd, end)));
         view.rows = BTimeRow::list(s, host, axis);
         view.row_height = BTimeRow::height(host);
+        view.nla = host == BHostType::Nla;
+        if host == BHostType::Action {
+            view.key_picks = crate::v2::scene::action::dope::BKeySelection::now(s);
+            view.key_grab = crate::v2::scene::action::dope::BKeyGrab::active(s);
+            view.key_box = s.get(CtxKey::KeyBox).and_then(|b| {
+                let v: Vec<f32> = b.split('#').next()?.split(',').filter_map(|v| v.parse().ok()).collect();
+                let [f0, f1, r0, r1] = v[..] else { return None };
+                Some((f0, f1, r0 as usize, r1 as usize))
+            });
+        }
         if matches!(host, BHostType::Action | BHostType::Ipo | BHostType::Nla | BHostType::Drivers) {
             view.channel_width = CHANNEL_WIDTH;
         }
@@ -50,6 +60,12 @@ impl BTimeView {
             }
             BHostType::Time | BHostType::Action | BHostType::Nla => {}
             _ => {}
+        }
+        // Zoomed, scrolled or framed since it opened: the range it keeps
+        // (`cur.rs`), as a region's `v2d.cur` outlives a redraw.
+        if let Some(cur) = super::cur::BTimeCur::stored(s, host) {
+            view.first = cur.first;
+            view.last = cur.last;
         }
         view
     }

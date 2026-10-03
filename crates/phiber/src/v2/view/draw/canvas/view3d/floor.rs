@@ -1,14 +1,16 @@
-//! Blender's floor grid and X / Y axis lines (`overlay_grid.cc`), drawn in 3D
+//! Blender's floor grid and X / Y / Z axis lines (`overlay_grid.cc`), drawn in 3D
 //! on the Z = 0 plane through the viewport camera instead of as flat 2D
 //! guides — the CPU painter's grid, matching the tracer's (`util.wgsl`).
 //! Two levels a decade apart are drawn at once: the finer fades out as its
 //! cells shrink on screen and the coarser takes over, so zooming subdivides
 //! and merges continuously instead of popping. Segments behind a perspective
-//! eye are dropped.
+//! eye are dropped. Each part shows as the Overlays popover asks: the floor,
+//! and each axis on its own (`show_floor`, `show_axis_x` / `_y` / `_z`); with
+//! an axis off, its line is an ordinary floor line.
 
 use super::extra::BProjectedLine;
 use crate::v2::scene::camera::{BViewSetup, SCREEN};
-use crate::v2::scene::{MESH_SCALE, project3_full};
+use crate::v2::scene::{BOverlays, MESH_SCALE, project3_full};
 use gpui::Hsla;
 
 #[derive(Clone, Copy)]
@@ -16,12 +18,13 @@ pub(super) struct BFloorPalette {
     pub grid: Hsla,
     pub axis_x: Hsla,
     pub axis_y: Hsla,
+    pub axis_z: Hsla,
 }
 
 /// Segments per grid line (keeps perspective lines straight enough to clip).
 const SEGMENTS: usize = 8;
 
-pub(super) fn lines(view: (f32, f32, (f32, f32), f32), setup: BViewSetup, pivot: [f32; 3], pal: BFloorPalette) -> Vec<BProjectedLine> {
+pub(super) fn lines(view: (f32, f32, (f32, f32), f32), setup: BViewSetup, pivot: [f32; 3], pal: BFloorPalette, shown: BOverlays) -> Vec<BProjectedLine> {
     let perspective = setup.perspective;
     let (yaw, pitch, pan, zoom) = view;
     let width = 1.0 / (SCREEN * zoom * MESH_SCALE); // Blender units across the canvas
@@ -36,18 +39,18 @@ pub(super) fn lines(view: (f32, f32, (f32, f32), f32), setup: BViewSetup, pivot:
     let half = (width * if perspective { 3.0 } else { 1.0 } / step).ceil().min(200.0) * step;
     let (cx, cy) = ((pivot[0] / step).round() * step, (pivot[1] / step).round() * step);
     let near = 0.05 / (SCREEN * zoom * setup.fov) * 1.001;
-    let at = |x: f32, y: f32| project3_full(x * MESH_SCALE, 0.0, y * MESH_SCALE, yaw, pitch, pan, zoom);
+    let at = |p: [f32; 3]| project3_full(p[0] * MESH_SCALE, p[2] * MESH_SCALE, p[1] * MESH_SCALE, yaw, pitch, pan, zoom);
     let mut out = Vec::new();
-    let mut push = |a: (f32, f32), b: (f32, f32), color: Hsla| {
+    let mut push = |a: [f32; 3], b: [f32; 3], color: Hsla| {
         for k in 0..SEGMENTS {
             let t0 = k as f32 / SEGMENTS as f32;
             let t1 = (k + 1) as f32 / SEGMENTS as f32;
-            let p = at(a.0 + (b.0 - a.0) * t0, a.1 + (b.1 - a.1) * t0);
-            let q = at(a.0 + (b.0 - a.0) * t1, a.1 + (b.1 - a.1) * t1);
+            let p = at(std::array::from_fn(|i| a[i] + (b[i] - a[i]) * t0));
+            let q = at(std::array::from_fn(|i| a[i] + (b[i] - a[i]) * t1));
             if perspective && (p.2 <= near || q.2 <= near) {
                 continue;
             }
-            out.push(BProjectedLine { a: (p.0, p.1), b: (q.0, q.1), color });
+            out.push(BProjectedLine { a: (p.0, p.1), b: (q.0, q.1), color, dash: false });
         }
     };
     let faint = gpui::Hsla { a: pal.grid.a * fine_alpha, ..pal.grid };
@@ -59,14 +62,21 @@ pub(super) fn lines(view: (f32, f32, (f32, f32), f32), setup: BViewSetup, pivot:
         // level carries the fading alpha.
         let on_coarse = ((o / coarse).round() * coarse - o).abs() < step * 1e-3;
         let color = if on_coarse { pal.grid } else { faint };
-        if gx.abs() > step * 1e-3 {
-            push((gx, cy - half), (gx, cy + half), color);
+        if shown.floor && (gx.abs() > step * 1e-3 || !shown.axis_y) {
+            push([gx, cy - half, 0.0], [gx, cy + half, 0.0], color);
         }
-        if gy.abs() > step * 1e-3 {
-            push((cx - half, gy), (cx + half, gy), color);
+        if shown.floor && (gy.abs() > step * 1e-3 || !shown.axis_x) {
+            push([cx - half, gy, 0.0], [cx + half, gy, 0.0], color);
         }
     }
-    push((cx - half, 0.0), (cx + half, 0.0), pal.axis_x);
-    push((0.0, cy - half), (0.0, cy + half), pal.axis_y);
+    if shown.axis_x {
+        push([cx - half, 0.0, 0.0], [cx + half, 0.0, 0.0], pal.axis_x);
+    }
+    if shown.axis_y {
+        push([0.0, cy - half, 0.0], [0.0, cy + half, 0.0], pal.axis_y);
+    }
+    if shown.axis_z {
+        push([0.0, 0.0, -half], [0.0, 0.0, half], pal.axis_z);
+    }
     out
 }

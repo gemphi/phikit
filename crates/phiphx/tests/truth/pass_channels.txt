@@ -1,0 +1,98 @@
+ViewLayer.Ambient Occlusion.B
+ViewLayer.Ambient Occlusion.G
+ViewLayer.Ambient Occlusion.R
+ViewLayer.Combined.A
+ViewLayer.Combined.B
+ViewLayer.Combined.G
+ViewLayer.Combined.R
+ViewLayer.CryptoAsset00.a
+ViewLayer.CryptoAsset00.b
+ViewLayer.CryptoAsset00.g
+ViewLayer.CryptoAsset00.r
+ViewLayer.CryptoAsset01.a
+ViewLayer.CryptoAsset01.b
+ViewLayer.CryptoAsset01.g
+ViewLayer.CryptoAsset01.r
+ViewLayer.CryptoAsset02.a
+ViewLayer.CryptoAsset02.b
+ViewLayer.CryptoAsset02.g
+ViewLayer.CryptoAsset02.r
+ViewLayer.CryptoMaterial00.a
+ViewLayer.CryptoMaterial00.b
+ViewLayer.CryptoMaterial00.g
+ViewLayer.CryptoMaterial00.r
+ViewLayer.CryptoMaterial01.a
+ViewLayer.CryptoMaterial01.b
+ViewLayer.CryptoMaterial01.g
+ViewLayer.CryptoMaterial01.r
+ViewLayer.CryptoMaterial02.a
+ViewLayer.CryptoMaterial02.b
+ViewLayer.CryptoMaterial02.g
+ViewLayer.CryptoMaterial02.r
+ViewLayer.CryptoMaterialcycles.V
+ViewLayer.CryptoObject00.a
+ViewLayer.CryptoObject00.b
+ViewLayer.CryptoObject00.g
+ViewLayer.CryptoObject00.r
+ViewLayer.CryptoObject01.a
+ViewLayer.CryptoObject01.b
+ViewLayer.CryptoObject01.g
+ViewLayer.CryptoObject01.r
+ViewLayer.CryptoObject02.a
+ViewLayer.CryptoObject02.b
+ViewLayer.CryptoObject02.g
+ViewLayer.CryptoObject02.r
+ViewLayer.Depth.Z
+ViewLayer.Diffuse Color.B
+ViewLayer.Diffuse Color.G
+ViewLayer.Diffuse Color.R
+ViewLayer.Diffuse Direct.B
+ViewLayer.Diffuse Direct.G
+ViewLayer.Diffuse Direct.R
+ViewLayer.Diffuse Indirect.B
+ViewLayer.Diffuse Indirect.G
+ViewLayer.Diffuse Indirect.R
+ViewLayer.Emission.B
+ViewLayer.Emission.G
+ViewLayer.Emission.R
+ViewLayer.Environment.B
+ViewLayer.Environment.G
+ViewLayer.Environment.R
+ViewLayer.Glossy Color.B
+ViewLayer.Glossy Color.G
+ViewLayer.Glossy Color.R
+ViewLayer.Glossy Direct.B
+ViewLayer.Glossy Direct.G
+ViewLayer.Glossy Direct.R
+ViewLayer.Glossy Indirect.B
+ViewLayer.Glossy Indirect.G
+ViewLayer.Glossy Indirect.R
+ViewLayer.Material Index.X
+ViewLayer.Mist.Z
+ViewLayer.Noisy Image.A
+ViewLayer.Noisy Image.B
+ViewLayer.Noisy Image.G
+ViewLayer.Noisy Image.R
+ViewLayer.Normal.X
+ViewLayer.Normal.Y
+ViewLayer.Normal.Z
+ViewLayer.Object Index.X
+ViewLayer.Position.X
+ViewLayer.Position.Y
+ViewLayer.Position.Z
+ViewLayer.Transmission Color.B
+ViewLayer.Transmission Color.G
+ViewLayer.Transmission Color.R
+ViewLayer.Transmission Direct.B
+ViewLayer.Transmission Direct.G
+ViewLayer.Transmission Direct.R
+ViewLayer.Transmission Indirect.B
+ViewLayer.Transmission Indirect.G
+ViewLayer.Transmission Indirect.R
+ViewLayer.UV.A
+ViewLayer.UV.U
+ViewLayer.UV.V
+ViewLayer.Vector.W
+ViewLayer.Vector.X
+ViewLayer.Vector.Y
+ViewLayer.Vector.Z

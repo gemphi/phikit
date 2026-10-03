@@ -79,3 +79,24 @@ fn a_search_lists_the_matches_flat() {
     let found: Vec<String> = rows(&s).into_iter().map(|(n, _, _)| n).collect();
     assert_eq!(found, ["Hand"]);
 }
+
+/// A pick (a click in the viewport) opens the rows above the object — its
+/// collection and its parents — so the Outliner can show its row
+/// (`outliner_show_active`), and counts the pick for the list to follow.
+#[test]
+fn a_pick_opens_the_rows_above_it() {
+    use phiber::v2::state::{CtxKey, action::apply_action};
+    use phiber::v2::view::prim::BAction;
+    load();
+    let mut s = BState::new();
+    let home = flatten(&s).into_iter().find(|r| r.kind == BRowKind::Collection).unwrap();
+    s.set(OutlinerKey::Expanded(home.id), "false");
+    assert!(!rows(&s).iter().any(|(n, _, _)| n == "Hand"));
+
+    apply_action(&mut s, &BAction::Set(CtxKey::Object.path(), "Hand".into()));
+    let listed: Vec<String> = rows(&s).into_iter().filter(|(_, _, data)| !data).map(|(n, _, _)| n).collect();
+    assert_eq!(listed, ["Camera", "Cube", "Arm", "Hand", "Light"], "the collection, Cube and Arm open");
+    assert_eq!(s.get(OutlinerKey::Reveal), Some("1"));
+    apply_action(&mut s, &BAction::Set(CtxKey::Object.path(), "Camera".into()));
+    assert_eq!(s.get(OutlinerKey::Reveal), Some("2"), "every pick counts");
+}

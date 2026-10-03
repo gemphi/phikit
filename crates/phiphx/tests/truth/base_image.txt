@@ -1,0 +1,464 @@
+NORMAL-MAP.blend|Bumpy|
+NORMAL-MAP.blend|Flat|
+TEXTURED-PACKED.blend|External|//tex/magenta.png
+TEXTURED-PACKED.blend|Packed|//tex/quad_src.png
+MATERIALS-BSDF.blend|Chrome|
+MATERIALS-BSDF.blend|Floor|
+MATERIALS-BSDF.blend|Ghost|
+MATERIALS-BSDF.blend|Glass|
+MATERIALS-BSDF.blend|Glow|
+THYMUS-BOLDROID-WAVE-003.blend|Dots Stroke|
+THYMUS-BOLDROID-WAVE-003.blend|mat_glass|
+THYMUS-BOLDROID-WAVE-003.blend|mat_leather|
+THYMUS-BOLDROID-WAVE-003.blend|mat_metal_paint|
+THYMUS-BOLDROID-WAVE-003.blend|mat_panel_Shallow Water_lining_02|
+THYMUS-BOLDROID-WAVE-003.blend|mat_panel_lining|
+THYMUS-BOLDROID-WAVE-003.blend|mat_rubber_lining|
+THYMUS-BOLDROID-WAVE-003.blend|mat_taillight_glass.007|
+FLORIS_BOLDRIOD_RIG.blend|Dots Stroke|
+FLORIS_BOLDRIOD_RIG.blend|Material|
+Mannequins-Female--Pose-05.blend| Leather.001|
+Mannequins-Female--Pose-05.blend| Tie L1O2|
+Mannequins-Female--Pose-05.blend|Arms patch L8O4|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Test egg shell 4.png
+Mannequins-Female--Pose-05.blend|Base L13O3|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Bold Camo 1.png
+Mannequins-Female--Pose-05.blend|Base pants L8O4|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Test egg shell 4.png
+Mannequins-Female--Pose-05.blend|Belt L5O2|
+Mannequins-Female--Pose-05.blend|Boot 01 Infinity.001|
+Mannequins-Female--Pose-05.blend|Boot 01 patches 1.001|
+Mannequins-Female--Pose-05.blend|Bow L10O2|
+Mannequins-Female--Pose-05.blend|Bow L10O2.002|
+Mannequins-Female--Pose-05.blend|Bowtie L2O2.001|
+Mannequins-Female--Pose-05.blend|Buckles L5O2|
+Mannequins-Female--Pose-05.blend|Button L1O1|
+Mannequins-Female--Pose-05.blend|Button L1O1.002|
+Mannequins-Female--Pose-05.blend|Button L1O3|
+Mannequins-Female--Pose-05.blend|Button L1O3.001|
+Mannequins-Female--Pose-05.blend|Button L1O4.001|
+Mannequins-Female--Pose-05.blend|Button L1O4.002|
+Mannequins-Female--Pose-05.blend|Button_01_Gold_Shader|
+Mannequins-Female--Pose-05.blend|Button_01_Gold_Shader.002|
+Mannequins-Female--Pose-05.blend|Button_03_Silver_Shader|
+Mannequins-Female--Pose-05.blend|Buttons L2O2.001|
+Mannequins-Female--Pose-05.blend|Centre-Piece|
+Mannequins-Female--Pose-05.blend|Clips L12O2|
+Mannequins-Female--Pose-05.blend|Collar L15O1.001|
+Mannequins-Female--Pose-05.blend|Collar Style 7|
+Mannequins-Female--Pose-05.blend|Crop Edge L15O2|
+Mannequins-Female--Pose-05.blend|Crop Top L15O2|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Safari 1.png
+Mannequins-Female--Pose-05.blend|Denim|
+Mannequins-Female--Pose-05.blend|Dots Stroke|
+Mannequins-Female--Pose-05.blend|Draw string L5O4|
+Mannequins-Female--Pose-05.blend|Dress Collar L16O2 T.001|
+Mannequins-Female--Pose-05.blend|Dress Edge L5O2|
+Mannequins-Female--Pose-05.blend|Dress L16O2 T.001|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Bold Camo 1.png
+Mannequins-Female--Pose-05.blend|Dress L5O2|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Psycadelic 1.png
+Mannequins-Female--Pose-05.blend|Dress Patch L16O2 T.001|
+Mannequins-Female--Pose-05.blend|Dungaree Base L11O3|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Pockets Look 11.png
+Mannequins-Female--Pose-05.blend|Dungaree Colour 2 L12O2\|
+Mannequins-Female--Pose-05.blend|Dungaree Edge 2 L12O2|
+Mannequins-Female--Pose-05.blend|Dungaree Edge L12O2|
+Mannequins-Female--Pose-05.blend|Dungaree L12O2|
+Mannequins-Female--Pose-05.blend|Dungaree Patch 1 L11O3|
+Mannequins-Female--Pose-05.blend|Dungaree Patch 2 L11O3|
+Mannequins-Female--Pose-05.blend|Dungaree Patch 3 L11O3.001|
+Mannequins-Female--Pose-05.blend|Dungaree Patch 4 L11O3|
+Mannequins-Female--Pose-05.blend|Edge 1|
+Mannequins-Female--Pose-05.blend|Edge 2|
+Mannequins-Female--Pose-05.blend|Edge 3|
+Mannequins-Female--Pose-05.blend|Edge 4|
+Mannequins-Female--Pose-05.blend|Edge L10O2|
+Mannequins-Female--Pose-05.blend|Fancy Pants 1 style 7|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Fancy Pockets patches.png
+Mannequins-Female--Pose-05.blend|GOLD01|
+Mannequins-Female--Pose-05.blend|GOLD01.001|
+Mannequins-Female--Pose-05.blend|Handle_Colour_01|
+Mannequins-Female--Pose-05.blend|Handle_Colour_01.001|
+Mannequins-Female--Pose-05.blend|Handle_Colour_01.002|
+Mannequins-Female--Pose-05.blend|Handle_Colour_01.003|
+Mannequins-Female--Pose-05.blend|Handle_Colour_01.004|
+Mannequins-Female--Pose-05.blend|Handle_Colour_02|
+Mannequins-Female--Pose-05.blend|Handle_Colour_02.001|
+Mannequins-Female--Pose-05.blend|Hood Cover L5O4|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Show 1.png
+Mannequins-Female--Pose-05.blend|Hood L3O4|
+Mannequins-Female--Pose-05.blend|Hoodie L3O4.001|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Bold Camo 2.png
+Mannequins-Female--Pose-05.blend|Hoodie L5O4|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Show 1.png
+Mannequins-Female--Pose-05.blend|Hoodie Pocket cover|
+Mannequins-Female--Pose-05.blend|Inner_Stitches.001|
+Mannequins-Female--Pose-05.blend|Inner_Stitches.002|
+Mannequins-Female--Pose-05.blend|Inside SHirt L1O1|
+Mannequins-Female--Pose-05.blend|Inside Shirt 1 L1O2|
+Mannequins-Female--Pose-05.blend|Inside Shirt L1O4.001|
+Mannequins-Female--Pose-05.blend|Inside Shirt L5O4|
+Mannequins-Female--Pose-05.blend|Inside Shrt L5O3|
+Mannequins-Female--Pose-05.blend|Inside shirt 2 L1O2|
+Mannequins-Female--Pose-05.blend|Inside shirt L2O1.001|
+Mannequins-Female--Pose-05.blend|Inside shirt L2O2.001|
+Mannequins-Female--Pose-05.blend|JAcket L15O1.001|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Bold Flowers 1.png
+Mannequins-Female--Pose-05.blend|Jacket Arms L1O1.001|
+Mannequins-Female--Pose-05.blend|Jacket Arms L2O2.001|
+Mannequins-Female--Pose-05.blend|Jacket Collar L1O1.001|
+Mannequins-Female--Pose-05.blend|Jacket Collar L2O2.001|
+Mannequins-Female--Pose-05.blend|Jacket Edge L10O2|
+Mannequins-Female--Pose-05.blend|Jacket Edge L6O4.001|
+Mannequins-Female--Pose-05.blend|Jacket Edging 1 L9O1.001|
+Mannequins-Female--Pose-05.blend|Jacket Edging 2 L9O1.001|
+Mannequins-Female--Pose-05.blend|Jacket Edging 3 L9O1.001|
+Mannequins-Female--Pose-05.blend|Jacket Edging 4 L9O1.001|
+Mannequins-Female--Pose-05.blend|Jacket L10O2|
+Mannequins-Female--Pose-05.blend|Jacket L10O2.002|
+Mannequins-Female--Pose-05.blend|Jacket L1O1.001|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Look 1 Jacket.png
+Mannequins-Female--Pose-05.blend|Jacket L2O2.001|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Psycadelic 1.png
+Mannequins-Female--Pose-05.blend|Jacket L6O4.001|//../../../../../Clothing-From-KG/Updated-Female-Mannequins-Outfits/Patterns/Jacket Yellow L6O4.png
+Mannequins-Female--Pose-05.blend|Jacket Pocket L13O1|
+Mannequins-Female--Pose-05.blend|Jacket base L13O1|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Show 1.png
+Mannequins-Female--Pose-05.blend|Jacket cuffs L15O1.001|
+Mannequins-Female--Pose-05.blend|Jacket edge L13O1|
+Mannequins-Female--Pose-05.blend|Jumpsuit Base L11O1|
+Mannequins-Female--Pose-05.blend|Jumpsuit Patch 2 L11O1|
+Mannequins-Female--Pose-05.blend|Jumpsuit Patch 3 L11O1|
+Mannequins-Female--Pose-05.blend|Jumpsuit arms L11O1|
+Mannequins-Female--Pose-05.blend|Jumpsuit patch 1 L11O1|
+Mannequins-Female--Pose-05.blend|Jumpsuit patches L11O1|
+Mannequins-Female--Pose-05.blend|Lace|D:/Work/Graphigem/PLATFORM-LEAD/New-Poses-Chatty-Whims/TEXTURES/Female-01-New outfit Textures/Bold-land-Flowers-03.png
+Mannequins-Female--Pose-05.blend|Logo.001|
+Mannequins-Female--Pose-05.blend|Logo.003|
+Mannequins-Female--Pose-05.blend|Logo.009|
+Mannequins-Female--Pose-05.blend|Main|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Bold Land 6.png
+Mannequins-Female--Pose-05.blend|Material|
+Mannequins-Female--Pose-05.blend|Material.001|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/01/Nose 01 Phantom Black.png
+Mannequins-Female--Pose-05.blend|Material.002|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/01/Sun 01 Phantom Black.png
+Mannequins-Female--Pose-05.blend|Material.003|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/01/Cylinder 01 Phantom Black.png
+Mannequins-Female--Pose-05.blend|Material.004|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/01/Patterns Phantom Black.png
+Mannequins-Female--Pose-05.blend|Material.005|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/02/Nose 02 Seasoned Base Color.png
+Mannequins-Female--Pose-05.blend|Material.006|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/02/Sun 02 Seasoned Base Color.png
+Mannequins-Female--Pose-05.blend|Material.007|Cylinder.002 Base Color
+Mannequins-Female--Pose-05.blend|Material.008|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/02/Pattern 02 Seasoned.png
+Mannequins-Female--Pose-05.blend|Material.009|
+Mannequins-Female--Pose-05.blend|Material.010|
+Mannequins-Female--Pose-05.blend|Material.011|
+Mannequins-Female--Pose-05.blend|Material.012|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Bold Flowers 1.png
+Mannequins-Female--Pose-05.blend|Material.013|
+Mannequins-Female--Pose-05.blend|Material.014|
+Mannequins-Female--Pose-05.blend|Material.015|
+Mannequins-Female--Pose-05.blend|Material.016|
+Mannequins-Female--Pose-05.blend|Material.017|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Bold safari 1.png
+Mannequins-Female--Pose-05.blend|Material.018|
+Mannequins-Female--Pose-05.blend|Material.019|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/07/Side 08 Pattern.png
+Mannequins-Female--Pose-05.blend|Material.020|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/08/Sun 08 Chestnut.png
+Mannequins-Female--Pose-05.blend|Material.021|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/08/Cylinder 08 Chestnut.png
+Mannequins-Female--Pose-05.blend|Material.046|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/04/Sun 04 Chestnut Base Color.png
+Mannequins-Female--Pose-05.blend|Material.047|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/04/Cylinder 04 Chestnut Base Color.png
+Mannequins-Female--Pose-05.blend|Material.048|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/04/Side 04 Pattern Chestnut Base Color.png
+Mannequins-Female--Pose-05.blend|Material.049|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/05/Sun 05 Lollipop Base Color.png
+Mannequins-Female--Pose-05.blend|Material.050|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/05/Sun 05 Lollipop Corners.png
+Mannequins-Female--Pose-05.blend|Material.051|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/05/Sun 05 Lollipop Mid.png
+Mannequins-Female--Pose-05.blend|Material.052|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/05/Cylinder 05 Lollipop Base Color.png
+Mannequins-Female--Pose-05.blend|Material.053|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/05/Side 05 Lollipop Base Color.png
+Mannequins-Female--Pose-05.blend|Material.054|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/06/Sun 06 Ocean Base Color.png
+Mannequins-Female--Pose-05.blend|Material.055|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/06/Sun Mid 06 Ocean Base Color.png
+Mannequins-Female--Pose-05.blend|Material.056|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/06/Pattern 06 Ocean.png
+Mannequins-Female--Pose-05.blend|Material.057|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/06/Cylinder 06 Ocean Base Color.png
+Mannequins-Female--Pose-05.blend|Material.058|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/06/Cylinder 06 Ocean Base Color.png
+Mannequins-Female--Pose-05.blend|Material.059|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/07/Sun 07 Avocado Lime.png
+Mannequins-Female--Pose-05.blend|Material.060|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/07/Cylinder 07 Avocado Lime.png
+Mannequins-Female--Pose-05.blend|Material.061|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/07/Side 07 Pattern Avocado Lime.png
+Mannequins-Female--Pose-05.blend|Material.230|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/09/Sun 09 Mocha.png
+Mannequins-Female--Pose-05.blend|Material.231|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/09/Cylinder 09 Mocha.png
+Mannequins-Female--Pose-05.blend|Material.232|Side 09 Pattern
+Mannequins-Female--Pose-05.blend|Material.233|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/09/Cylinder 09 Mocha.png
+Mannequins-Female--Pose-05.blend|Material.234|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/10/Sun 10 Mocha Grayscale.png
+Mannequins-Female--Pose-05.blend|Material.235|
+Mannequins-Female--Pose-05.blend|Material.236|//../../../../Chatty whims pose_project/sunglasses/10-20250613T075427Z-1-001/10/Reference/CW-PATTERNS-06.png
+Mannequins-Female--Pose-05.blend|Material.237|//../../../../Chatty whims pose_project/sunglasses/texture maps-20250620T143727Z-1-001/texture maps/11/sun.003 Base Color BW.png
+Mannequins-Female--Pose-05.blend|Material.238|
+Mannequins-Female--Pose-05.blend|Material.239|//../../../../Chatty whims pose_project/sunglasses/11-20250613T075431Z-1-001/11/Reference/CW-PATTERNS-06.png
+Mannequins-Female--Pose-05.blend|Material.240|
+Mannequins-Female--Pose-05.blend|Material.241|
+Mannequins-Female--Pose-05.blend|Material.242|
+Mannequins-Female--Pose-05.blend|Material.243|
+Mannequins-Female--Pose-05.blend|Material.244|D:/Work/Graphigem/PLATFORM-LEAD/New-Poses-Chatty-Whims/TEXTURES/Female-01-New outfit Textures/Bold-land-Flowers-03.png
+Mannequins-Female--Pose-05.blend|Material.245|
+Mannequins-Female--Pose-05.blend|Material.246|D:/Work/Graphigem/PLATFORM-LEAD/New-Poses-Chatty-Whims/TEXTURES/Female-01-New outfit Textures/Bold-land-Flowers-03.png
+Mannequins-Female--Pose-05.blend|Material.247|
+Mannequins-Female--Pose-05.blend|Material.248|D:/Work/Graphigem/PLATFORM-LEAD/New-Poses-Chatty-Whims/TEXTURES/Female-01-New outfit Textures/Bold-land-Flowers-03.png
+Mannequins-Female--Pose-05.blend|Material.249|
+Mannequins-Female--Pose-05.blend|Material.250|D:/Work/Graphigem/PLATFORM-LEAD/New-Poses-Chatty-Whims/TEXTURES/Female-01-New outfit Textures/Bold-land-Flowers-03.png
+Mannequins-Female--Pose-05.blend|Material.251|D:/Work/Graphigem/PLATFORM-LEAD/New-Poses-Chatty-Whims/TEXTURES/Female-01-New outfit Textures/Bold-land-Flowers-03.png
+Mannequins-Female--Pose-05.blend|Material.252|D:/Work/Graphigem/PLATFORM-LEAD/New-Poses-Chatty-Whims/TEXTURES/Female-01-New outfit Textures/Bold-land-Flowers-03.png
+Mannequins-Female--Pose-05.blend|Material.253|
+Mannequins-Female--Pose-05.blend|Material.254|
+Mannequins-Female--Pose-05.blend|Material.255|
+Mannequins-Female--Pose-05.blend|Material.256|D:/Work/Graphigem/PLATFORM-LEAD/New-Poses-Chatty-Whims/TEXTURES/Female-01-New outfit Textures/Bold-land-Flowers-03.png
+Mannequins-Female--Pose-05.blend|Material.257|
+Mannequins-Female--Pose-05.blend|Material.258|D:/Work/Graphigem/PLATFORM-LEAD/New-Poses-Chatty-Whims/TEXTURES/Female-01-New outfit Textures/Bold-land-Flowers-03.png
+Mannequins-Female--Pose-05.blend|Material.259|
+Mannequins-Female--Pose-05.blend|Material.260|D:/Work/Graphigem/PLATFORM-LEAD/New-Poses-Chatty-Whims/TEXTURES/Female-01-New outfit Textures/Bold-land-Flowers-03.png
+Mannequins-Female--Pose-05.blend|Material.261|
+Mannequins-Female--Pose-05.blend|Material.262|
+Mannequins-Female--Pose-05.blend|Material.263|//../../../../../New-Poses-Chatty-Whims/TEXTURES/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-05.png
+Mannequins-Female--Pose-05.blend|Material.264|
+Mannequins-Female--Pose-05.blend|Material.265|//../../../../../New-Poses-Chatty-Whims/TEXTURES/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-01.png
+Mannequins-Female--Pose-05.blend|Material.266|
+Mannequins-Female--Pose-05.blend|Material.267|
+Mannequins-Female--Pose-05.blend|Material.268|
+Mannequins-Female--Pose-05.blend|Material.269|
+Mannequins-Female--Pose-05.blend|Material.270|
+Mannequins-Female--Pose-05.blend|Material.271|
+Mannequins-Female--Pose-05.blend|Material.272|
+Mannequins-Female--Pose-05.blend|Material.273|
+Mannequins-Female--Pose-05.blend|Material.274|
+Mannequins-Female--Pose-05.blend|Material.275|
+Mannequins-Female--Pose-05.blend|Material.276|
+Mannequins-Female--Pose-05.blend|Material.277|
+Mannequins-Female--Pose-05.blend|Material.278|
+Mannequins-Female--Pose-05.blend|Material.279|
+Mannequins-Female--Pose-05.blend|Material.280|
+Mannequins-Female--Pose-05.blend|Material.281|
+Mannequins-Female--Pose-05.blend|Material.282|
+Mannequins-Female--Pose-05.blend|Material.283|
+Mannequins-Female--Pose-05.blend|Material.284|
+Mannequins-Female--Pose-05.blend|Material.285|
+Mannequins-Female--Pose-05.blend|Material.286|
+Mannequins-Female--Pose-05.blend|Material.287|
+Mannequins-Female--Pose-05.blend|Material.288|
+Mannequins-Female--Pose-05.blend|Material.289|
+Mannequins-Female--Pose-05.blend|Material.290|
+Mannequins-Female--Pose-05.blend|Material.291|
+Mannequins-Female--Pose-05.blend|Material.292|
+Mannequins-Female--Pose-05.blend|Material.293|
+Mannequins-Female--Pose-05.blend|Material.294|
+Mannequins-Female--Pose-05.blend|Material.295|
+Mannequins-Female--Pose-05.blend|Mid section|
+Mannequins-Female--Pose-05.blend|Mid_Decor|//../../../Textures-20251029T103724Z-1-001/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-03.png
+Mannequins-Female--Pose-05.blend|Mid_Decor.001|//../../../Textures-20251029T103724Z-1-001/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-05.png
+Mannequins-Female--Pose-05.blend|Mid_Decor.002|//../../../Textures-20251029T103724Z-1-001/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-02.png
+Mannequins-Female--Pose-05.blend|Mid_Decor.003|E:/Graphigem/mannequins/Textures-20251029T103724Z-1-001/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-05.png
+Mannequins-Female--Pose-05.blend|Mid_Decor.004|E:/Graphigem/mannequins/Textures-20251029T103724Z-1-001/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-03.png
+Mannequins-Female--Pose-05.blend|Neck Scarf L1O1|
+Mannequins-Female--Pose-05.blend|New Denim|
+Mannequins-Female--Pose-05.blend|Outer_Base_Decor|//../../../Textures-20251029T103724Z-1-001/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-03.png
+Mannequins-Female--Pose-05.blend|Outer_Decor|//../../../Textures-20251029T103724Z-1-001/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-03.png
+Mannequins-Female--Pose-05.blend|Outer_Decor.001|//../../../Textures-20251029T103724Z-1-001/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-05.png
+Mannequins-Female--Pose-05.blend|Outer_Decor.002|E:/Graphigem/mannequins/Textures-20251029T103724Z-1-001/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-03.png
+Mannequins-Female--Pose-05.blend|Outer_Decor.003|E:/Graphigem/mannequins/Textures-20251029T103724Z-1-001/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-05.png
+Mannequins-Female--Pose-05.blend|Outer_Decor.004|E:/Graphigem/mannequins/Textures-20251029T103724Z-1-001/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-03.png
+Mannequins-Female--Pose-05.blend|Outer_Decor.005|E:/Graphigem/mannequins/Textures-20251029T103724Z-1-001/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-03.png
+Mannequins-Female--Pose-05.blend|Outer_Stitches|
+Mannequins-Female--Pose-05.blend|Outer_Stitches.001|
+Mannequins-Female--Pose-05.blend|Outer_Stitches.002|
+Mannequins-Female--Pose-05.blend|Pants Base L13O1|//../../../../../Clothing-From-KG/Patterns/Pants L13O1 2.png
+Mannequins-Female--Pose-05.blend|Pants Base L2O1.001|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Safari 1.png
+Mannequins-Female--Pose-05.blend|Pants Base L5O1|//../../../../../Clothing-From-KG/Patterns/Pockets L5O1.png
+Mannequins-Female--Pose-05.blend|Pants Base L5O4|//../../../../../Clothing-From-KG/Patterns/Pants L5O4.png
+Mannequins-Female--Pose-05.blend|Pants Colour2 L9O4|
+Mannequins-Female--Pose-05.blend|Pants Edge 1 L1O3|
+Mannequins-Female--Pose-05.blend|Pants Edge 2 L13O1|
+Mannequins-Female--Pose-05.blend|Pants Edge 2 L13O3|
+Mannequins-Female--Pose-05.blend|Pants Edge 2 L15O1.001|
+Mannequins-Female--Pose-05.blend|Pants Edge 2 L1O3|
+Mannequins-Female--Pose-05.blend|Pants Edge L10O1|
+Mannequins-Female--Pose-05.blend|Pants Edge L15O1.001|
+Mannequins-Female--Pose-05.blend|Pants Edge L1O1|
+Mannequins-Female--Pose-05.blend|Pants Edge L2O1.001|
+Mannequins-Female--Pose-05.blend|Pants Edge L5O1|
+Mannequins-Female--Pose-05.blend|Pants Edge L8O4|
+Mannequins-Female--Pose-05.blend|Pants L13O3|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Bold Camo 1.png
+Mannequins-Female--Pose-05.blend|Pants L15O1.001|
+Mannequins-Female--Pose-05.blend|Pants L15O3|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Shop 1.png
+Mannequins-Female--Pose-05.blend|Pants L1O1|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/L1O1 Pants.png
+Mannequins-Female--Pose-05.blend|Pants L1O3|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/L1O3 Pockets.png
+Mannequins-Female--Pose-05.blend|Pants L1O4.001|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/look 1O4 Pockets.png
+Mannequins-Female--Pose-05.blend|Pants L3O4|//../../../../../Clothing-From-KG/Casey-Female-Mannequins-BaseModels 2.0/Pants Patch L3O4.png
+Mannequins-Female--Pose-05.blend|Pants L7O3|
+Mannequins-Female--Pose-05.blend|Pants Patch 1 L6O4.001|
+Mannequins-Female--Pose-05.blend|Pants Patch 2 L6O4.001|
+Mannequins-Female--Pose-05.blend|Pants Patch 3 L6O4.001|
+Mannequins-Female--Pose-05.blend|Pants Patch 4 L6O4.001|
+Mannequins-Female--Pose-05.blend|Pants Patch L13O1|
+Mannequins-Female--Pose-05.blend|Pants Patch L5O4|
+Mannequins-Female--Pose-05.blend|Pants edge 1 L13O3|
+Mannequins-Female--Pose-05.blend|Pants edge L13O1|
+Mannequins-Female--Pose-05.blend|Pants edge L5O4|
+Mannequins-Female--Pose-05.blend|Pants main L6O4.001|//../../../../../Clothing-From-KG/Updated-Female-Mannequins-Outfits/Patterns/Pants L6O4.png
+Mannequins-Female--Pose-05.blend|Pants patch L1O3|
+Mannequins-Female--Pose-05.blend|Pants-Base L9O4|
+Mannequins-Female--Pose-05.blend|Pants-Base.001|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Skirt P1 Look 10.png
+Mannequins-Female--Pose-05.blend|Pants-Base.003|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Pants Lines L9O1.png
+Mannequins-Female--Pose-05.blend|Pants-Belt-Straps.001|
+Mannequins-Female--Pose-05.blend|Pants-Belt-Straps.002|
+Mannequins-Female--Pose-05.blend|Pants-Buckles|
+Mannequins-Female--Pose-05.blend|Pants-Edging|
+Mannequins-Female--Pose-05.blend|Pants-Edging 1 L9O4|
+Mannequins-Female--Pose-05.blend|Pants-Edging 2 L9O4|
+Mannequins-Female--Pose-05.blend|Pants-Edging L15O3|
+Mannequins-Female--Pose-05.blend|Pants-Edging.002|
+Mannequins-Female--Pose-05.blend|Pants-Pockets.002|
+Mannequins-Female--Pose-05.blend|Pants-Pockets.003|
+Mannequins-Female--Pose-05.blend|Pants-Pockets.004|
+Mannequins-Female--Pose-05.blend|Patchs L3O4|
+Mannequins-Female--Pose-05.blend|Phantom_Sunset_Creme.001|
+Mannequins-Female--Pose-05.blend|Phantom_Sunset_Heel.001|
+Mannequins-Female--Pose-05.blend|Phantom_Sunset_Heel.002|
+Mannequins-Female--Pose-05.blend|Phantom_Sunset_Main_Body.001|
+Mannequins-Female--Pose-05.blend|Phantom_Sunset_Pattern.001|//../../../../../New-Poses-Chatty-Whims/TEXTURES/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-03.png
+Mannequins-Female--Pose-05.blend|SHirt edge L5O3|
+Mannequins-Female--Pose-05.blend|Sash L16O2 T.001|
+Mannequins-Female--Pose-05.blend|Scarf 2 L2O1.001|
+Mannequins-Female--Pose-05.blend|Scarf 3 L2O1.001|
+Mannequins-Female--Pose-05.blend|Shirt Arm L1O3|
+Mannequins-Female--Pose-05.blend|Shirt Arms L1O4.001|
+Mannequins-Female--Pose-05.blend|Shirt Base L5O3|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/loop 1.png
+Mannequins-Female--Pose-05.blend|Shirt Chest L1O3|
+Mannequins-Female--Pose-05.blend|Shirt Collar L8O4|
+Mannequins-Female--Pose-05.blend|Shirt Colour 2 L5O1|
+Mannequins-Female--Pose-05.blend|Shirt Edge 2 L8O4|
+Mannequins-Female--Pose-05.blend|Shirt Edge L10O2|
+Mannequins-Female--Pose-05.blend|Shirt Edge L10O2.002|
+Mannequins-Female--Pose-05.blend|Shirt Edge L11O2|
+Mannequins-Female--Pose-05.blend|Shirt Edge L8O4|
+Mannequins-Female--Pose-05.blend|Shirt L10O2|
+Mannequins-Female--Pose-05.blend|Shirt L10O2.002|
+Mannequins-Female--Pose-05.blend|Shirt L11O2|
+Mannequins-Female--Pose-05.blend|Shirt L15O3|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Shop 1.png
+Mannequins-Female--Pose-05.blend|Shirt L1O3|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Bold Land 1.png
+Mannequins-Female--Pose-05.blend|Shirt L5O1|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Cast 1.png
+Mannequins-Female--Pose-05.blend|Shirt L7O3|//../../../../../Clothing-From-KG/Casey-Female-Mannequins-BaseModels 2.0/Patches L7O3.png
+Mannequins-Female--Pose-05.blend|Shirt Wrist L1O3|
+Mannequins-Female--Pose-05.blend|Shirt base L8O4|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Test egg shell 4.png
+Mannequins-Female--Pose-05.blend|Shirt edge 2 L5O3|
+Mannequins-Female--Pose-05.blend|Shirt-Base.001|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/jacket Look 9.png
+Mannequins-Female--Pose-05.blend|Shirt-Draw-String-Clips.001|
+Mannequins-Female--Pose-05.blend|Shirt-Draw-Strings.001|
+Mannequins-Female--Pose-05.blend|Shirt-Turtle-Neck|
+Mannequins-Female--Pose-05.blend|Shirt-V-neck|
+Mannequins-Female--Pose-05.blend|Shirt-V-neck collar|
+Mannequins-Female--Pose-05.blend|ShirtCollar 2|
+Mannequins-Female--Pose-05.blend|Shirtcollar 1|
+Mannequins-Female--Pose-05.blend|Shoe_base.002|
+Mannequins-Female--Pose-05.blend|Shoe_base.004|
+Mannequins-Female--Pose-05.blend|Shorts Colour 1 L6O3.001|
+Mannequins-Female--Pose-05.blend|Shorts Colour 2 L6O3.001|
+Mannequins-Female--Pose-05.blend|Shorts Colour 3 L6O3.001|
+Mannequins-Female--Pose-05.blend|Shorts Edge L6O3.001|
+Mannequins-Female--Pose-05.blend|Shorts L5O3|
+Mannequins-Female--Pose-05.blend|Shoulders L7O3|
+Mannequins-Female--Pose-05.blend|Skin.001|
+Mannequins-Female--Pose-05.blend|Skirt Base L15O2|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Safari 1.png
+Mannequins-Female--Pose-05.blend|Skirt Edge 1 L2O2.001|
+Mannequins-Female--Pose-05.blend|Skirt Edge 2 L15O2|
+Mannequins-Female--Pose-05.blend|Skirt Edge 2 L2O2.001|
+Mannequins-Female--Pose-05.blend|Skirt L11O2|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Skirt 2 L11O2.png
+Mannequins-Female--Pose-05.blend|Skirt L1O2|
+Mannequins-Female--Pose-05.blend|Skirt L2O2.001|
+Mannequins-Female--Pose-05.blend|Skirt colour 2 L2O2.001|
+Mannequins-Female--Pose-05.blend|Skirt edge 1 L1O2|
+Mannequins-Female--Pose-05.blend|Skirt edge 2 L1O2|
+Mannequins-Female--Pose-05.blend|Skirt edge L11O2|
+Mannequins-Female--Pose-05.blend|Sleek|
+Mannequins-Female--Pose-05.blend|Sole 01.001|
+Mannequins-Female--Pose-05.blend|Straps L12O2|
+Mannequins-Female--Pose-05.blend|Straps L13O3|
+Mannequins-Female--Pose-05.blend|Style 7 pants add 1|
+Mannequins-Female--Pose-05.blend|Style 7 pants add 2|
+Mannequins-Female--Pose-05.blend|Style 7 pants add 3|
+Mannequins-Female--Pose-05.blend|Style 7 pants add 4|
+Mannequins-Female--Pose-05.blend|Suitcase_Base|
+Mannequins-Female--Pose-05.blend|Suitcase_Base.001|
+Mannequins-Female--Pose-05.blend|Suitcase_Base.002|
+Mannequins-Female--Pose-05.blend|Suitcase_Base.003|
+Mannequins-Female--Pose-05.blend|Suitcase_Base.004|
+Mannequins-Female--Pose-05.blend|Suitcase_lining|
+Mannequins-Female--Pose-05.blend|Suitcase_lining.001|
+Mannequins-Female--Pose-05.blend|Suitcase_lining.002|
+Mannequins-Female--Pose-05.blend|Suitcase_lining.003|
+Mannequins-Female--Pose-05.blend|Suitcase_lining.004|
+Mannequins-Female--Pose-05.blend|V Neckline L1O4.001|
+Mannequins-Female--Pose-05.blend|Vest Arm L2O1.001|
+Mannequins-Female--Pose-05.blend|Vest Colour 1 L6O3.001|
+Mannequins-Female--Pose-05.blend|Vest Colour 2 L6O3.001|
+Mannequins-Female--Pose-05.blend|Vest L1O2|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/L1O2 Vest outline.png
+Mannequins-Female--Pose-05.blend|Vest L1O4.001|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Look 1 Vest.png
+Mannequins-Female--Pose-05.blend|Vest L5O2|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Psycadelic 1.png
+Mannequins-Female--Pose-05.blend|Vest Main L6O3.001|//../../../../../Clothing-From-KG/Female_Mannequins-BaseModels With Clothes/Patterns/Vest Patch 1 L6O3.png
+Mannequins-Female--Pose-05.blend|Vest SHade 2 L5O2|
+Mannequins-Female--Pose-05.blend|Vest SHade 3 L5O2|
+Mannequins-Female--Pose-05.blend|Vest base L2O1.001|//../../../../Graphigem work stuff/textured rigs/06-ANNA-CADABRA-20250401T121547Z-001/FEMALE-PATTERNS-20250404T112644Z-001/FEMALE-PATTERNS/Safari 1.png
+Mannequins-Female--Pose-05.blend|Vest edge 2 L5O2|
+Mannequins-Female--Pose-05.blend|Vest edge L5O2|
+Mannequins-Female--Pose-05.blend|Wrist Hoodie L3O4|
+Mannequins-Female--Pose-05.blend|Wrist L6O4.001|
+Mannequins-Female--Pose-05.blend|Zip.001|
+Mannequins-Female--Pose-05.blend|Zip.002|
+Mannequins-Female--Pose-05.blend|Zip.003|
+Mannequins-Female--Pose-05.blend|Zip.004|
+Mannequins-Female--Pose-05.blend|Zip.006|
+Mannequins-Female--Pose-05.blend|Zip_Lining|
+Mannequins-Female--Pose-05.blend|Zip_Lining.001|
+Mannequins-Female--Pose-05.blend|Zip_Lining.002|
+Mannequins-Female--Pose-05.blend|Zip_Lining.003|
+Mannequins-Female--Pose-05.blend|Zip_Lining.004|
+Mannequins-Female--Pose-05.blend|Zippe|
+Mannequins-Female--Pose-05.blend|Zippe.001|
+Mannequins-Female--Pose-05.blend|Zippe.002|
+Mannequins-Female--Pose-05.blend|Zippe.003|
+Mannequins-Female--Pose-05.blend|Zippe.004|
+Mannequins-Female--Pose-05.blend|Zipper L6O4.001|
+Mannequins-Female--Pose-05.blend|Zipper texture L6O4|
+Mannequins-Female--Pose-05.blend|bottom pants|
+Mannequins-Female--Pose-05.blend|gold 2 L16O2 T.001|
+Mannequins-Female--Pose-05.blend|gold L16O2 T.001|
+Mannequins-Female--Pose-05.blend|heel 01 Base.001|//../../../../../New-Poses-Chatty-Whims/TEXTURES/Textures/Patterns-20250115T131159Z-001/PATTERNS/CW-PATTERNS-04.png
+Mannequins-Female--Pose-05.blend|leather 1 L16O2 T.001|
+Mannequins-Female--Pose-05.blend|leather 2 L16O2 T.001|
+Mannequins-Female--Pose-05.blend|scarf 1 L2O1.001|
+Mannequins-Female--Pose-05.blend|shirt Edge|
+Mannequins-Female--Pose-05.blend|shirt edge L5O4|
+Mannequins-Female--Pose-05.blend|shots Edge L5O3|
+Mannequins-Female--Pose-05.blend|skirt Edge L15O2|
+LAND-TYPE-15-01.blend|Bold Flower 03 Big leaf cover|
+LAND-TYPE-15-01.blend|Bold Flower 06 Big Leaf|
+LAND-TYPE-15-01.blend|Bold Flower 06 Big leaf lower part|
+LAND-TYPE-15-01.blend|Columns_Shader_01.001|
+LAND-TYPE-15-01.blend|Columns_Shader_01.003|
+LAND-TYPE-15-01.blend|Columns_Shader_01.004|
+LAND-TYPE-15-01.blend|Concrete_Shader.004|
+LAND-TYPE-15-01.blend|Concrete_Shader.005|C:/Users/ASUS GAMING/16_Bikini_Lace/Bold Patterns/Bold-Pattern-InfinityStripes-BlackF.png
+LAND-TYPE-15-01.blend|Concrete_Shader.007|C:/Users/ASUS GAMING/TEXTURES/HEXA-COMPLEX/Bold-Look.png
+LAND-TYPE-15-01.blend|Design_04_Seam_Cover_Concrete_Shader_01.003|
+LAND-TYPE-15-01.blend|Dots Stroke|
+LAND-TYPE-15-01.blend|F1_Roof_Split_01_Shader|
+LAND-TYPE-15-01.blend|F1_Roof_Wave_Decor_01_Shader|
+LAND-TYPE-15-01.blend|F1_Top_Windows_01_Shader|
+LAND-TYPE-15-01.blend|F1_Top_Windows_01_Shader.009|
+LAND-TYPE-15-01.blend|HB04_Glass_Shader|
+LAND-TYPE-15-01.blend|Material|
+LAND-TYPE-15-01.blend|Material.001|C:/work/GD-CONTRACT-WORK/BC-ASSETS/FLOWER-MODELS/TEXTURES/CW-PATTERNS-08.png
+LAND-TYPE-15-01.blend|Material.002|
+LAND-TYPE-15-01.blend|Material.003|
+LAND-TYPE-15-01.blend|Material.005|
+LAND-TYPE-15-01.blend|Material.006|
+LAND-TYPE-15-01.blend|Material.007|
+LAND-TYPE-15-01.blend|Material.008|
+LAND-TYPE-15-01.blend|Material.009|
+LAND-TYPE-15-01.blend|Material.017|
+LAND-TYPE-15-01.blend|Material.018|C:/work/GD-CONTRACT-WORK/BC-ASSETS/FLOWER-MODELS/TEXTURES/CW-PATTERNS-08.png
+LAND-TYPE-15-01.blend|Material.019|C:/work/GD-CONTRACT-WORK/BC-ASSETS/FLOWER-MODELS/TEXTURES/CW-PATTERNS-08.png
+LAND-TYPE-15-01.blend|Material.020|C:/Users/ASUS GAMING/TREES-BS/TEXTURED-TREES/Leaf centre colour.png
+LAND-TYPE-15-01.blend|Material.021|
+LAND-TYPE-15-01.blend|Material.036|
+LAND-TYPE-15-01.blend|Material.037|C:/work/GD-CONTRACT-WORK/BC-ASSETS/FLOWER-MODELS/TEXTURES/CW-PATTERNS-08.png
+LAND-TYPE-15-01.blend|Material.038|
+LAND-TYPE-15-01.blend|Material.043|
+LAND-TYPE-15-01.blend|Material.044|
+LAND-TYPE-15-01.blend|Material.045|C:/work/GD-CONTRACT-WORK/BC-ASSETS/FLOWER-MODELS/TEXTURES/CW-PATTERNS-07.png
+LAND-TYPE-15-01.blend|Material.099|
+LAND-TYPE-15-01.blend|Material.101|
+LAND-TYPE-15-01.blend|Material.102|C:/Users/ASUS GAMING/TEXTURES/HEXA-COMPLEX/Bold-Safari.png
+LAND-TYPE-15-01.blend|Material.103|
+LAND-TYPE-15-01.blend|Material.104|
+LAND-TYPE-15-01.blend|Material.105|
+LAND-TYPE-15-01.blend|Material.111|
+LAND-TYPE-15-01.blend|STONE|
+LAND-TYPE-15-01.blend|STONE.001|
+LAND-TYPE-15-01.blend|Statue_Bronze_Shader|C:/Users/ASUS GAMING/TEXTURES/HEXA-COMPLEX/Bold-Safari.png
+LAND-TYPE-15-01.blend|Terracota_Shader.001|
+LAND-TYPE-15-01.blend|Terracota_Shader.003|

@@ -6,11 +6,10 @@
 //! which the Outliner's rule turns into a move, a link, a parent or a
 //! nesting.
 
-use super::super::color::to_hsla;
 use super::super::ctx::BRenderCtx;
 use super::super::flex::{BAlign, BEdge, BFill, BFlex, BLen, BRadius, BSpace, BType};
 use crate::v2::theme::{BStyleRole, BSurfaceTone};
-use crate::v2::view::prim::{BAction, BTreeDrag};
+use crate::v2::view::prim::{BAction, BRowShade, BTreeDrag};
 use gpui::prelude::*;
 use gpui::{Context, Div, IntoElement, Render, SharedString, Stateful, StyleRefinement, Window, div, svg};
 use std::rc::Rc;
@@ -75,12 +74,18 @@ impl BRowDrag {
         let (target, here) = (drag.payload.clone(), drag.payload.clone());
         let key = drag.drop.clone();
         let handler = ctx.handler.clone();
-        let lit = to_hsla(ctx.style.colors.row_selected);
+        // A row dragged over lights as a selected row does (`BFill::Row`).
+        let lit = BFlex::cell().fill(BFill::Row(BRowShade::Selected)).styled(StyleRefinement::default(), ctx);
         let debug = format!("outliner-row-{payload}");
         let ghost = Rc::new(BGhost::of(&drag.label, icon, ctx));
         row.debug_selector(move || debug.clone())
             .on_drag(BRowDrag(payload), move |_, _, _, cx| cx.new(|_| (*ghost).clone()))
-            .drag_over::<BRowDrag>(move |style, dragged: &BRowDrag, _, _| if dragged.0 == target { style } else { style.bg(lit) })
+            .drag_over::<BRowDrag>(move |mut style, dragged: &BRowDrag, _, _| {
+                if dragged.0 != target {
+                    style.refine(&lit);
+                }
+                style
+            })
             .on_drop::<BRowDrag>(move |dragged: &BRowDrag, window, app| {
                 // A row let go on itself is no drop; Ctrl links rather than moves.
                 if dragged.0 != here {

@@ -4,8 +4,8 @@
 use phiber::v2::{
     part::props::pref::{BPreferenceControls, BPreferenceEditor, BPreferenceRow, SECTIONS},
     state::{BState, action::apply_action},
-    theme::{BPaletteName, BStyleParseError, ui_style_defaults},
-    view::{BAction, BView},
+    theme::{BPaletteName, BStyleParseError, BStyleParser, ui_style_defaults},
+    view::{BAction, BView, prim::BCtrlKind},
 };
 
 fn row(target: &str) -> BPreferenceRow {
@@ -40,20 +40,31 @@ fn number_field_accepts_display_units_and_exposes_b_step_controls() {
     assert_eq!(set_value(field.decrease_action(), row), "22");
     assert_eq!(set_value(field.increase_action(), row), "24");
 
-    let BView::Row { list } = controls.view() else {
+    // The view is the Properties control family now: a `BCtrl` of the kind the
+    // descriptor describes, and the reset beside it. It was a text field with a
+    // hand-built "Decrease" and "Increase" either side — three widgets
+    // reimplemented beside three that existed, and the copies were the ones
+    // without the stepper. The model above is untouched and still drives the
+    // round trip; only what gets painted changed.
+    let BView::Row { list } = controls.view(&state) else {
         panic!("B controls must compose as a BView row")
     };
-    assert!(matches!(&list[0], BView::Field { text } if text == "23 px"));
+    assert_eq!(list.len(), 2, "the editor and its reset, not a field and two buttons");
+    let BView::Ctrl(ctrl) = &list[0] else { panic!("the editor is a control") };
+    assert_eq!(ctrl.key, *row.key(), "on this preference's key");
+    assert!(
+        matches!(ctrl.kind, BCtrlKind::Number { .. }),
+        "a numeric descriptor draws the number control, which carries its own step either side: {:?}",
+        ctrl.kind
+    );
+    // And its bounds are the descriptor's, so it cannot step past what the
+    // descriptor would then reject.
+    let (BCtrlKind::Number { min, max, .. }, BStyleParser::Number { min: lo, max: hi }) = (ctrl.kind, row.parser()) else {
+        panic!("a number control on a number parser")
+    };
+    assert_eq!((min, max), (lo, hi), "the control is bounded by the descriptor");
     assert!(
         matches!(&list[1], BView::Button(ctl)
-            if matches!(&ctl.action, Some(BAction::Set(key, value)) if key == row.key() && value == "22"))
-    );
-    assert!(
-        matches!(&list[2], BView::Button(ctl)
-            if matches!(&ctl.action, Some(BAction::Set(key, value)) if key == row.key() && value == "24"))
-    );
-    assert!(
-        matches!(&list[3], BView::Button(ctl)
             if matches!(&ctl.action, Some(BAction::Reset(key)) if key == row.key()))
     );
 }

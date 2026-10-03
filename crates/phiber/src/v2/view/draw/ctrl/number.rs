@@ -27,12 +27,14 @@ enum BNumberPart {
 }
 
 impl BFlexed for BNumberPart {
-    fn flex(&self, _c: &BRenderCtx) -> BFlex {
+    fn flex(&self, ctx: &BRenderCtx) -> BFlex {
         match self {
             Self::Frame => BFlex::row().fills().min_width(BLen::Zero).align(BAlign::Center).place(BPlace::Anchor).hover_group(NUMBER_GROUP),
             Self::Body { labelled } => BFlex::row()
                 .fills()
-                .min_width(BLen::Zero)
+                // Not `Zero`: that is flexbox's permission to shrink below
+                // the content, and it is what clipped the value.
+                .min_width(BLen::Measured(ctx.style.dimensions.number_min_width))
                 .align(BAlign::Center)
                 .justify(if *labelled { BJustify::Between } else { BJustify::Center })
                 .gap(BSpace::GapSm)

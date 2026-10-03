@@ -1,0 +1,3 @@
+Armature.001Action	9	Character-Metarig	0	selected=9;rainbow=0;rgb=9;yrgb=0;custom=0;keysel=9;free=0;auto=0;vector=0;aligned=0;clamped=18;hsel=18
+BezierCircleAction	1			selected=1;rainbow=1;rgb=0;yrgb=0;custom=0;keysel=0;free=0;auto=0;vector=0;aligned=0;clamped=0;hsel=0
+rigAction	530	rig	0 10 20 25 30 35 40 50 55 60 65 70 75 80 85 90 100 103 110 120 130 132	selected=530;rainbow=2;rgb=360;yrgb=168;custom=0;keysel=155;free=0;auto=0;vector=0;aligned=0;clamped=1922;hsel=310

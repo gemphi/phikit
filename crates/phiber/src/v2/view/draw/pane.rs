@@ -102,151 +102,150 @@ fn control_floor(list: &[BView], ctx: &BRenderCtx) -> f32 {
     n as f32 * slot + (n.saturating_sub(1)) as f32 * gap
 }
 
-/// A floating side strip: the viewport's toolbar or sidebar.
-struct BPaneFloat {
-    side: BSide,
-    /// The strip's content width (`strip_width`).
-    strip: f32,
+/// The parts of a pane — one enum for the level, as every other level
+/// states its parts (`BAreaPart`, `BCardPart`, `BModalPart`, `BTablePart`).
+enum BPanePart {
+    /// A floating side strip: the viewport's toolbar or sidebar.
+    Float {
+        side: BSide,
+        /// The strip's content width (`strip_width`).
+        strip: f32,
+    },
+    /// A docked pane: a cell of its region's row.
+    Cell {
+        kind: BPaneType,
+        in_header: bool,
+        /// The header divides its width into three equal cells (the top bar).
+        pinned: bool,
+        /// The least width the right cell's controls fit in (`control_floor`).
+        floor: f32,
+        /// The pane holds a typed field (a directory, a search): it takes the
+        /// strip's slack so the field can stretch, instead of hugging.
+        fielded: bool,
+        /// The strip is laid out as the columns under it — the tool header of
+        /// a host whose tools region holds panels: its left pane is that region
+        /// (`tools_column_width`), and every pane pads itself as the region
+        /// under it does.
+        columns: bool,
+        /// The top bar wraps (`region`): the left cell takes the whole first
+        /// line, so the other two land on the second; every cell is one line
+        /// tall, so the wrapped bar is two.
+        wraps: bool,
+    },
+    /// The slot a content-region Center gives each child: the whole of it.
+    Stretch,
 }
 
-impl BFlexed for BPaneFloat {
-    fn flex(&self, _c: &BRenderCtx) -> BFlex {
-        // No rail behind the entries: each is a button on the canvas
-        // (`control_fill` floating), a gap apart, as the mock-ups draw the
-        // toolbar and the sidebar tabs.
-        BFlex::column()
-            // The strip's foot is its pinned cluster, a cap gap (2px) off
-            // the canvas's bottom edge, as a docked rail's is off its
-            // region's (`region`).
-            .place(BPlace::Float { side: self.side, inset: BSpace::PadSm, foot: BSpace::MenuTopGap })
-            .gap(BSpace::GapXs)
-            .width(BLen::Measured(self.strip))
-            .fill(BFill::Clear)
-    }
-}
-
-/// A docked pane: a cell of its region's row.
-struct BPaneCell {
-    kind: BPaneType,
-    in_header: bool,
-    /// The header divides its width into three equal cells (the top bar).
-    pinned: bool,
-    /// The least width the right cell's controls fit in (`control_floor`).
-    floor: f32,
-    /// The pane holds a typed field (a directory, a search): it takes the
-    /// strip's slack so the field can stretch, instead of hugging.
-    fielded: bool,
-    /// The strip is laid out as the columns under it — the tool header of
-    /// a host whose tools region holds panels: its left pane is that region
-    /// (`tools_column_width`), and every pane pads itself as the region
-    /// under it does.
-    columns: bool,
-    /// The top bar wraps (`region`): the left cell takes the whole first
-    /// line, so the other two land on the second; every cell is one line
-    /// tall, so the wrapped bar is two.
-    wraps: bool,
-}
-
-impl BFlexed for BPaneCell {
+impl BFlexed for BPanePart {
     fn flex(&self, ctx: &BRenderCtx) -> BFlex {
-        let (kind, in_header) = (self.kind, self.in_header);
-        let base = BFlex::row().gap(BSpace::GapXs);
-        // A strip centres its controls on one line — a cap, a button, a
-        // field, an icon, a read-out all share the same centre in every
-        // header, tool bar and footer. The line is the centre of the cap
-        // band: the strip less the `menu_top_gap` above it, which the pane
-        // pads off the top so a cap (menu, tab) fills the band and its
-        // bottom edge is the strip's, and a shorter control centres on the
-        // same line rather than on the strip's — the pixel that had fields
-        // riding a step below the menus beside them.
-        let base = if in_header {
-            base.align(BAlign::Center).height(BLen::Full).pad_top(BSpace::MenuTopGap)
-        } else {
-            base.align(BAlign::Center)
-        };
-        if self.pinned && self.wraps {
-            // Each cell one line tall; the left one the whole first line,
-            // which is what puts the tabs and the controls on the second.
-            let cell = base.height(BLen::Dim(BDim::HeaderHeight)).min_height(BLen::Zero);
-            return match (kind.is_center(), kind.is_right()) {
-                (true, _) => cell.equal_cell().yields().min_width(BLen::Zero).overflow(BOverflow::Clip).justify(BJustify::Center),
-                (_, true) => cell.keeps_size().min_width(BLen::Measured(self.floor)).justify(BJustify::End),
-                _ => cell.width(BLen::Full).keeps_size().justify(BJustify::Start),
+        match *self {
+            // No rail behind the entries: each is a button on the canvas
+            // (`control_fill` floating), a gap apart, as the mock-ups draw the
+            // toolbar and the sidebar tabs.
+            Self::Float { side, strip } => BFlex::column()
+                // The strip's foot is its pinned cluster, a cap gap (2px) off
+                // the canvas's bottom edge, as a docked rail's is off its
+                // region's (`region`).
+                .place(BPlace::Float { side, inset: BSpace::PadSm, foot: BSpace::MenuTopGap })
+                .gap(BSpace::GapXs)
+                .width(BLen::Measured(strip))
+                .fill(BFill::Clear),
+            Self::Cell { kind, in_header, pinned, floor, fielded, columns, wraps } => {
+            let base = BFlex::row().gap(BSpace::GapXs);
+            // A strip centres its controls on one line — a cap, a button, a
+            // field, an icon, a read-out all share the same centre in every
+            // header, tool bar and footer. The line is the centre of the cap
+            // band: the strip less the `menu_top_gap` above it, which the pane
+            // pads off the top so a cap (menu, tab) fills the band and its
+            // bottom edge is the strip's, and a shorter control centres on the
+            // same line rather than on the strip's — the pixel that had fields
+            // riding a step below the menus beside them.
+            let base = if in_header {
+                base.align(BAlign::Center).height(BLen::Full).pad_top(BSpace::MenuTopGap)
+            } else {
+                base.align(BAlign::Center)
             };
-        }
-        let center = kind.is_center();
-        if self.pinned {
-            // A pinned header divides its width into three equal cells, so its
-            // centre group sits on the window's centre line however wide the
-            // menus beside it are.
-            let cell = base.equal_cell().height(BLen::Full).min_height(BLen::Zero);
-            if center {
-                // Its width is purely its share of the free space, so a window
-                // with none leaves it nothing and it clips.
-                cell.yields()
-                    .min_width(BLen::Zero)
-                    .overflow(BOverflow::Clip)
-                    .justify(BJustify::Center)
+            if pinned && wraps {
+                // Each cell one line tall; the left one the whole first line,
+                // which is what puts the tabs and the controls on the second.
+                let cell = base.height(BLen::Dim(BDim::HeaderHeight)).min_height(BLen::Zero);
+                return match (kind.is_center(), kind.is_right()) {
+                    (true, _) => cell.equal_cell().yields().min_width(BLen::Zero).overflow(BOverflow::Clip).justify(BJustify::Center),
+                    (_, true) => cell.keeps_size().min_width(BLen::Measured(floor)).justify(BJustify::End),
+                    _ => cell.width(BLen::Full).keeps_size().justify(BJustify::Start),
+                };
+            }
+            let center = kind.is_center();
+            if pinned {
+                // A pinned header divides its width into three equal cells, so its
+                // centre group sits on the window's centre line however wide the
+                // menus beside it are.
+                let cell = base.equal_cell().height(BLen::Full).min_height(BLen::Zero);
+                if center {
+                    // Its width is purely its share of the free space, so a window
+                    // with none leaves it nothing and it clips.
+                    cell.yields()
+                        .min_width(BLen::Zero)
+                        .overflow(BOverflow::Clip)
+                        .justify(BJustify::Center)
+                } else if kind.is_right() {
+                    // The right cell gives nothing up: the zone toggles and window
+                    // controls must be reachable at any width.
+                    cell.keeps_size()
+                        .min_width(BLen::Measured(floor))
+                        .justify(BJustify::End)
+                } else {
+                    // Once the centre is down to nothing the menus clip, rather
+                    // than pushing the right-hand controls off the screen.
+                    cell.yields()
+                        .min_width(BLen::Zero)
+                        .overflow(BOverflow::Clip)
+                        .justify(BJustify::Start)
+                }
+            } else if center {
+                // Center takes the slot so Left/Right sit at the ends; in a header
+                // it centres its hugging content instead of stretching it — unless
+                // it holds a field, which takes the slack (the file browser's
+                // directory and search).
+                let cell = base.fills().height(BLen::Full).min_height(BLen::Zero);
+                // In a strip of columns the centre is the content region: it
+                // pads itself as that region does, so its field starts where
+                // the file list does.
+                let cell = if columns { cell.pad_left(BSpace::Seam) } else { cell };
+                if in_header && !fielded {
+                    // Never narrower than its controls: a header too narrow
+                    // for them scrolls (`header_scrolls`) rather than laying
+                    // them over the panes beside it — the Timeline's jump
+                    // buttons sat on its frame field.
+                    cell.justify(BJustify::Center)
+                } else {
+                    cell.min_width(BLen::Zero)
+                }
             } else if kind.is_right() {
-                // The right cell gives nothing up: the zone toggles and window
-                // controls must be reachable at any width.
-                cell.keeps_size()
-                    .min_width(BLen::Measured(self.floor))
-                    .justify(BJustify::End)
+                let cell = base.keeps_size().justify(BJustify::End);
+                if columns { cell.pad_x(BSpace::PadMd) } else { cell }
+            } else if columns {
+                // The left pane of a strip laid out as the columns under it (the
+                // file browser's path strip over its source list) is the tools
+                // region: as wide as it, padded as it is, its parts at either
+                // end — so the folder moves start where the list does, the
+                // refresh ends where it does, and the fields beside it start
+                // where the file list does.
+                base.keeps_size()
+                    .width(BLen::Measured(super::region::tools_column_width(ctx)))
+                    .pad_left(BSpace::PadMd)
+                    .justify(BJustify::Between)
+            } else if fielded {
+                // A left pane with a field in it (the file browser's path strip)
+                // is the strip's body: it grows, and the field grows with it.
+                base.fills().min_width(BLen::Zero)
             } else {
-                // Once the centre is down to nothing the menus clip, rather
-                // than pushing the right-hand controls off the screen.
-                cell.yields()
-                    .min_width(BLen::Zero)
-                    .overflow(BOverflow::Clip)
-                    .justify(BJustify::Start)
+                // Left pane: shrink-to-fit, never expand.
+                base.keeps_size()
             }
-        } else if center {
-            // Center takes the slot so Left/Right sit at the ends; in a header
-            // it centres its hugging content instead of stretching it — unless
-            // it holds a field, which takes the slack (the file browser's
-            // directory and search).
-            let cell = base.fills().height(BLen::Full).unclamped();
-            // In a strip of columns the centre is the content region: it
-            // pads itself as that region does, so its field starts where
-            // the file list does.
-            let cell = if self.columns { cell.pad_left(BSpace::Seam) } else { cell };
-            if in_header && !self.fielded {
-                cell.justify(BJustify::Center)
-            } else {
-                cell
             }
-        } else if kind.is_right() {
-            let cell = base.keeps_size().justify(BJustify::End);
-            if self.columns { cell.pad_x(BSpace::PadMd) } else { cell }
-        } else if self.columns {
-            // The left pane of a strip laid out as the columns under it (the
-            // file browser's path strip over its source list) is the tools
-            // region: as wide as it, padded as it is, its parts at either
-            // end — so the folder moves start where the list does, the
-            // refresh ends where it does, and the fields beside it start
-            // where the file list does.
-            base.keeps_size()
-                .width(BLen::Measured(super::region::tools_column_width(ctx)))
-                .pad_left(BSpace::PadMd)
-                .justify(BJustify::Between)
-        } else if self.fielded {
-            // A left pane with a field in it (the file browser's path strip)
-            // is the strip's body: it grows, and the field grows with it.
-            base.fills().min_width(BLen::Zero)
-        } else {
-            // Left pane: shrink-to-fit, never expand.
-            base.keeps_size()
+            Self::Stretch => BFlex::row().fills().unclamped().height(BLen::Full),
         }
-    }
-}
-
-/// The slot a content-region Center gives each child: the whole of it.
-struct BPaneStretch;
-
-impl BFlexed for BPaneStretch {
-    fn flex(&self, _c: &BRenderCtx) -> BFlex {
-        BFlex::row().fills().unclamped().height(BLen::Full)
     }
 }
 
@@ -256,7 +255,7 @@ pub fn view(kind: BPaneType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
         let is_right = kind == BPaneType::Right;
         let side = if is_right { BSide::Right } else { BSide::Left };
         let id = format!("pane-floating-{:?}-{:?}", kind, ctx.host);
-        let mut outer = BPaneFloat { side, strip: strip_width(is_right, ctx) + panels_width(is_right, ctx) }
+        let mut outer = BPanePart::Float { side, strip: strip_width(is_right, ctx) + panels_width(is_right, ctx) }
             .flex(ctx)
             .div(ctx)
             .id(gpui::SharedString::from(id.clone()))
@@ -291,7 +290,7 @@ pub fn view(kind: BPaneType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
     let fielded = in_header && list.iter().any(holds_field);
     let columns = ctx.region == Some(crate::v2::region::BRegionType::ToolHeader) && ctx.host.tools_hold_panels();
     let wraps = pinned && ctx.region == Some(crate::v2::region::BRegionType::Header) && crate::v2::part::filter::topbar_wraps(ctx.state);
-    let mut element = BPaneCell { kind, in_header, pinned, floor, fielded, columns, wraps }
+    let mut element = BPanePart::Cell { kind, in_header, pinned, floor, fielded, columns, wraps }
         .flex(ctx)
         .div(ctx)
         .id(gpui::SharedString::from(dbg.clone()))
@@ -302,7 +301,7 @@ pub fn view(kind: BPaneType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
     let stretch_child = center && !in_header;
     for ch in list {
         if stretch_child {
-            element = element.child(BPaneStretch.flex(ctx).div(ctx).child(walk(ch, ctx)));
+            element = element.child(BPanePart::Stretch.flex(ctx).div(ctx).child(walk(ch, ctx)));
         } else {
             element = element.child(walk(ch, ctx));
         }

@@ -18,6 +18,20 @@ pub enum View3dKey {
     PanY,
     /// `View3DShading::type` (Wireframe, Solid, Material, Rendered).
     Shading,
+    /// X-ray in Solid (`View3DShading.show_xray`, off by default) and its
+    /// alpha (`xray_alpha`, 0.5); X-ray in Wireframe (`show_xray_wireframe`,
+    /// on) and its alpha (`xray_alpha_wireframe`, 0) — `scene::shading::BXray`.
+    Xray,
+    XrayAlpha,
+    XrayWireframe,
+    XrayAlphaWireframe,
+    /// One of `View3DShading`'s Solid settings by its RNA name: the
+    /// effects (`show_object_outline`, `object_outline_color`,
+    /// `show_cavity`, `cavity_type`, the four factors —
+    /// `scene::solid_fx::BSolidFx`) and Lighting / Color / Background
+    /// (`light`, `color_type`, `single_color`, `background_type`,
+    /// `background_color` — `scene::solid_shade::BSolidShade`).
+    Shade(&'static str),
     /// A named viewpoint request (front, top, …), consumed by `follow`.
     View,
     /// The orbit pivot, three floats.
@@ -82,6 +96,11 @@ impl BKey for View3dKey {
             Self::PanX => return BPath::owned(vec!["view3d", "pan", "x"]),
             Self::PanY => return BPath::owned(vec!["view3d", "pan", "y"]),
             Self::Shading => "shading",
+            Self::Xray => "xray",
+            Self::XrayAlpha => "xray_alpha",
+            Self::XrayWireframe => "xray_wireframe",
+            Self::XrayAlphaWireframe => "xray_alpha_wireframe",
+            Self::Shade(rna) => return BPath::owned(vec!["view3d", "shade", rna]),
             Self::View => "view",
             Self::Pivot => "pivot",
             Self::Lens => "lens",

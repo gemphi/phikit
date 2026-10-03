@@ -38,7 +38,7 @@ pub const PRIORITY: &[BHostType] = &[
 fn walk(host: BHostType, trail: &mut Vec<&'static str>, items: &'static [BMenuItem], out: &mut Vec<BBinding>) {
     for item in items {
         match item.kind {
-            BMenuKind::Sep | BMenuKind::Recent | BMenuKind::History => {}
+            BMenuKind::Sep | BMenuKind::Recent | BMenuKind::History | BMenuKind::Live(_) => {}
             BMenuKind::Sub(subs) => {
                 trail.push(item.label);
                 walk(host, trail, subs, out);
@@ -67,10 +67,28 @@ fn fixed(out: &mut Vec<BBinding>, label: &str, name: &str, action: impl Fn(&BSta
 /// `over` — the editor under the pointer — first.
 pub fn bindings(over: Option<BHostType>) -> Vec<BBinding> {
     let mut out = Vec::new();
+    // Over the Dope Sheet's keys, G moves them and X and Delete delete them
+    // (the Dope Sheet keymap), not the Marker menu's G or the Channel
+    // menu's X, which belong to the marker band and the channel list.
+    if over == Some(BHostType::Action) {
+        let keys = |op: &'static str| move |_: &BState| BAction::Set(OpKey::Keys.path(), op.to_string());
+        fixed(&mut out, "G", "transform.transform (TIME_TRANSLATE)", keys("grab:start"));
+        fixed(&mut out, "X", "action.delete", keys("delete"));
+        fixed(&mut out, "Delete", "action.delete", keys("delete"));
+    }
     if let Some(host) = over.filter(|host| *host != BHostType::Topbar) {
         for menu in BMenuSpec::list_for(host) {
             walk(host, &mut vec![menu.label], menu.items, &mut out);
         }
+    }
+    // The 3D Viewport's own key outside its menus: Alt Z, `view3d.toggle_xray`.
+    if over == Some(BHostType::View3D) {
+        fixed(&mut out, "Alt Z", "view3d.toggle_xray", |_| BAction::Set(OpKey::View3d.path(), "toggle_xray".to_string()));
+    }
+    // The NLA editor's Shift A, `nla.actionclip_add`: the Add menu opens on
+    // Action ▸ and the actions (Blender opens a search over them).
+    if over == Some(BHostType::Nla) {
+        fixed(&mut out, "Shift A", "nla.actionclip_add", |_| BAction::Toggle(crate::v2::state::MenuKey::Top(crate::v2::host::nla::SLUG, "Add").path()));
     }
     // The keys Blender binds in `Screen` / `Frames` / `Window`, not in a menu.
     let step = |intent: &'static str| move |_: &BState| BAction::Set(CtxKey::FrameStep.path(), intent.to_string());
@@ -80,7 +98,16 @@ pub fn bindings(over: Option<BHostType>) -> Vec<BBinding> {
     });
     fixed(&mut out, "Shift Ctrl Space", "screen.animation_play (reverse)", |_| BAction::Set(CtxKey::Playing.path(), V_REVERSE.to_string()));
     fixed(&mut out, "Escape", "screen.animation_cancel / wm.window_close", |state| {
-        if crate::v2::scene::grab::BMarkerGrab::active(state) {
+        // A plain Esc anywhere stops a render under way, whatever else has
+        // the keyboard — Blender's `G.is_break`, set in `wm_event_do_handlers`
+        // for exactly this ("we can always cancel operations such as
+        // rendering ... no matter which operation is currently handling
+        // events"), which the render's `test_break` reads.
+        if crate::v2::scene::render_job::rendering() {
+            BAction::Set(OpKey::Render.path(), "cancel".to_string())
+        } else if crate::v2::scene::action::dope::BKeyGrab::active(state) {
+            BAction::Set(OpKey::Keys.path(), "grab:cancel".to_string())
+        } else if crate::v2::scene::grab::BMarkerGrab::active(state) {
             // A marker grab is put back (`ed_marker_move_cancel`).
             BAction::Set(OpKey::Marker.path(), "grab:cancel".to_string())
         } else if BTransportButton::playing(state) {

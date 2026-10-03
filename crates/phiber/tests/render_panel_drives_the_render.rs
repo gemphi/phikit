@@ -26,6 +26,10 @@ fn an_untouched_panel_reads_as_blenders_defaults() {
     assert_eq!(read.preview_samples, 1024);
     assert_eq!(read.diffuse_bounces, 4);
     assert!(read.denoise);
+    // Phiber's own default, not Cycles' (which ships it off): the viewport
+    // is shown denoised from its first sample.
+    assert!(read.preview_denoise);
+    assert_eq!(read.preview_denoise_from, 1);
 }
 
 #[test]
@@ -34,6 +38,8 @@ fn editing_a_row_changes_what_the_renderer_is_asked_for() {
     assert_eq!(render_set(&state_with("cycles.preview_samples", "16")).preview_samples, 16);
     assert_eq!(render_set(&state_with("cycles.diffuse_bounces", "7")).diffuse_bounces, 7);
     assert!(!render_set(&state_with("cycles.use_denoising", "false")).denoise);
+    assert!(!render_set(&state_with("cycles.use_preview_denoising", "false")).preview_denoise);
+    assert_eq!(render_set(&state_with("cycles.preview_denoising_start_sample", "8")).preview_denoise_from, 8);
 }
 
 #[test]

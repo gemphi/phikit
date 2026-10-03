@@ -7,14 +7,14 @@
 //! so they reach the column's foot and no row draws a line of its own.
 
 use super::atom;
-use super::color::to_hsla;
 use super::ctx::BRenderCtx;
+use super::flex::{BAlign, BDim, BFill, BFlex, BFlexed, BJustify, BLen, BOverflow, BPlace, BRadius, BSpace, BType};
 use super::walk;
 use crate::v2::theme::BStyleRole;
 use crate::v2::view::BView;
 use crate::v2::view::prim::{BAction, BRowShade};
 use gpui::prelude::*;
-use gpui::{AnyElement, div, px};
+use gpui::AnyElement;
 
 mod disclosure;
 use self::disclosure::BTreeDisclosure;
@@ -22,6 +22,95 @@ use self::disclosure::BTreeDisclosure;
 mod drag;
 mod guide;
 pub use self::guide::guides_backdrop;
+
+mod window;
+pub use self::window::BRowWindow;
+
+/// The parts of a tree row — one enum for the family, as every other level
+/// and family states its parts (`BCardPart`, `BMenuPart`, `BRailPart`).
+pub(super) enum BTreePart {
+    /// The run of indent units before the arrow slot: a row's depth, drawn.
+    Indent(u16),
+    /// The row itself. `shade` is what it paints at rest and `selected` is
+    /// whether the pointer may repaint it — a selected row keeps its fill.
+    Row { shade: BRowShade, selected: bool },
+    /// A one-unit slot in the row: the type icon's, and the disclosure
+    /// triangle's (`disclosure`). One shape, so the arrow column and the
+    /// icon column line up down the whole tree by construction rather than
+    /// by two places agreeing on a number.
+    IconSlot,
+    /// The name and whatever the row lists after it: takes the slack, clips.
+    Main,
+    /// The controls at the row's end (the restriction toggles).
+    Trail,
+}
+
+impl BFlexed for BTreePart {
+    fn flex(&self, ctx: &BRenderCtx) -> BFlex {
+        let unit = ctx.style.dimensions.indent_unit;
+        match *self {
+            Self::Indent(depth) => {
+                BFlex::cell().width(BLen::Measured(unit * f32::from(depth))).keeps_size()
+            }
+            // A tree row takes the same fills as every other selectable
+            // control in the app — the row shade when banded or selected,
+            // the shared item hover otherwise. Palette-only `row_alt` /
+            // `row_selected` entries let the outliner drift to shades no
+            // other region used.
+            //
+            // At rest it is its editor's body (`host_body_surface`), the
+            // surface the list sits on, so the Outliner's content and the
+            // region round it are one ground — lifted rows read as strips on
+            // a darker parent.
+            Self::Row { shade, selected } => {
+                let row = BFlex::row()
+                    .width(BLen::Full)
+                    .height(BLen::Dim(BDim::RowHeight))
+                    // A row keeps its height: when the host is short the list
+                    // scrolls (`column`) rather than squashing every row.
+                    .keeps_size()
+                    .align(BAlign::Center)
+                    .place(BPlace::Anchor)
+                    .radius(BRadius::Role(BStyleRole::MenuItem))
+                    .pad_right(BSpace::PadMd)
+                    .overflow(BOverflow::Clip)
+                    .ink()
+                    .type_size(BType::Body)
+                    // Asked of the shade, not listed here. The list said
+                    // `Selected | Active`, so `Alt` — the band — fell into the
+                    // catch-all and painted the body: the Outliner computed a
+                    // banded shade for every other row and the renderer threw
+                    // it away, which is why its rows had no background at all
+                    // but the selected one. The doc two lines up has said
+                    // "banded or selected" the whole time.
+                    //
+                    // `BRowShade::fill` already knows which shades have a
+                    // fill; a second list of them here could only drift from
+                    // it, and did.
+                    .fill(match shade.fill(ctx.style) {
+                        Some(_) => BFill::Row(shade),
+                        None => BFill::HostBody,
+                    });
+                if selected { row } else { row.hovered(BFill::RowHover(shade)) }
+            }
+            Self::IconSlot => BFlex::row()
+                .width(BLen::Measured(unit))
+                .height(BLen::Full)
+                .keeps_size()
+                .align(BAlign::Center)
+                .justify(BJustify::Center),
+            Self::Main => BFlex::row()
+                .fills()
+                .min_width(BLen::Zero)
+                .align(BAlign::Center)
+                .gap(BSpace::GapXs)
+                .overflow(BOverflow::Clip),
+            Self::Trail => {
+                BFlex::row().keeps_size().align(BAlign::Center).gap(BSpace::GapXs)
+            }
+        }
+    }
+}
 
 pub struct BTreeIndent(pub u16);
 
@@ -41,65 +130,14 @@ pub struct BTreeRow<'a> {
 
 impl BTreeIndent {
     pub fn render(&self, ctx: &BRenderCtx) -> AnyElement {
-        self.render_with_unit(ctx.style.dimensions.indent_unit)
-    }
-
-    /// Render with the design-system default indent unit for callers that do
-    /// not have a `BRenderCtx` (e.g. snapshot helpers). Uses the same value
-    /// as `DEFAULT_DIMENSIONS.indent_unit` without importing legacy defaults.
-    pub fn render_default(&self) -> AnyElement {
-        // 20.0 matches DEFAULT_DIMENSIONS.indent_unit; kept as a named
-        // constant here so grep finds it if the default ever changes.
-        const DEFAULT_INDENT_UNIT: f32 = 20.0;
-        self.render_with_unit(DEFAULT_INDENT_UNIT)
-    }
-
-    fn render_with_unit(&self, unit: f32) -> AnyElement {
-        div()
-            .flex_shrink_0()
-            .w(px(unit * self.0 as f32))
-            .into_any_element()
+        BTreePart::Indent(self.0).flex(ctx).div(ctx).into_any_element()
     }
 }
 
 impl BTreeRow<'_> {
     pub fn render(&self, ctx: &BRenderCtx) -> AnyElement {
-        // A tree row takes the same fills as every other selectable control
-        // in the app — the strip item fill when banded, the active gradient
-        // when selected. Palette-only `row_alt` / `row_selected` entries let
-        // the outliner drift to shades no other region used.
         let selected = matches!(self.shade, BRowShade::Selected | BRowShade::Active);
-        let unit = ctx.style.dimensions.indent_unit;
-        let mut element = div()
-            .flex()
-            .flex_row()
-            .items_center()
-            .w_full()
-            .relative()
-            .h(px(ctx.style.dimensions.row_height))
-            // A row keeps its height: when the host is short the list scrolls
-            // (`column`) rather than squashing every row to fit.
-            .flex_shrink_0()
-            .rounded(px(ctx.style.radius_for(BStyleRole::MenuItem)))
-            .pr(px(ctx.style.spacing.pad_md))
-            .overflow_hidden()
-            .text_color(to_hsla(ctx.style.colors.text))
-            .text_size(px(ctx.style.typography.body));
-        // At rest a row is its editor's body (`host_body_surface`), the
-        // surface the list sits on, so the Outliner's content and the region
-        // round it are one ground — lifted rows read as strips on a darker
-        // parent. Only the pointer and the selection mark a row: the
-        // selection its flat tone, the active row a step lighter.
-        element = match self.shade {
-            BRowShade::Selected => element.bg(to_hsla(ctx.style.colors.row_selected)),
-            BRowShade::Active => element.bg(to_hsla(ctx.style.colors.row_active)),
-            _ => element.bg(super::color::resolved_gradient(ctx.style.host_body_surface(ctx.host))),
-        };
-        if !selected {
-            let hover = to_hsla(ctx.style.host_item_hover(ctx.host));
-            element = element.hover(move |style| style.bg(hover));
-        }
-
+        let mut element = BTreePart::Row { shade: self.shade, selected }.flex(ctx).div(ctx);
         element = element.child(BTreeIndent(self.depth).render(ctx));
         element = element.child(
             BTreeDisclosure {
@@ -111,16 +149,8 @@ impl BTreeRow<'_> {
         for child in self.lead {
             element = element.child(walk(child, ctx));
         }
-        element = element.child(
-            div()
-                .flex_shrink_0()
-                .w(px(unit))
-                .h_full()
-                .flex()
-                .items_center()
-                .justify_center()
-                .child(atom::icon(self.icon, ctx)),
-        );
+        element = element
+            .child(BTreePart::IconSlot.flex(ctx).div(ctx).child(atom::icon(self.icon, ctx)));
 
         // The row is the control. Blender selects an outliner item by clicking
         // anywhere on its row and lights the whole row on hover; a labelled
@@ -133,26 +163,14 @@ impl BTreeRow<'_> {
             }
             _ => (None, self.list.to_vec()),
         };
-        let mut main = div()
-            .flex()
-            .flex_row()
-            .items_center()
-            .flex_1()
-            .min_w_0()
-            .gap(px(ctx.style.spacing.gap_xs))
-            .overflow_hidden();
+        let mut main = BTreePart::Main.flex(ctx).div(ctx);
         for child in &cell_list {
             main = main.child(walk(child, ctx));
         }
         element = element.child(main);
 
         if !self.trail.is_empty() {
-            let mut trail = div()
-                .flex()
-                .flex_row()
-                .items_center()
-                .flex_shrink_0()
-                .gap(px(ctx.style.spacing.gap_xs));
+            let mut trail = BTreePart::Trail.flex(ctx).div(ctx);
             for child in self.trail {
                 trail = trail.child(walk(child, ctx));
             }

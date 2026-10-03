@@ -41,12 +41,6 @@ pub enum BModalPart {
     TitleGroup,
     /// The window controls at the end of the title bar.
     TitleControls,
-    /// The Welcome form: its content column, centred in the modal.
-    WelcomeLayout,
-    WelcomeColumn { max_width: f32 },
-    /// A row of equal cards in the Welcome form, and one of its cells.
-    WelcomeRow,
-    WelcomeCell,
 }
 
 impl BFlexed for BModalPart {
@@ -92,23 +86,6 @@ impl BFlexed for BModalPart {
             // do: one `gap_xs` apart.
             Self::TitleGroup => BFlex::row().align(BAlign::Center).gap(BSpace::GapXs),
             Self::TitleControls => BFlex::row().align(BAlign::Center).gap(BSpace::GapXs),
-            Self::WelcomeLayout => BFlex::row()
-                .fills()
-                .full()
-                .min_height(BLen::Zero)
-                .align(BAlign::Center)
-                .justify(BJustify::Center)
-                .pad(BSpace::PadLg),
-            Self::WelcomeColumn { max_width } => BFlex::column()
-                .width(BLen::Full)
-                .max_width(BLen::Measured(max_width))
-                .gap(BSpace::GapLg),
-            Self::WelcomeRow => BFlex::row()
-                .align(BAlign::Stretch)
-                .width(BLen::Full)
-                .min_width(BLen::Zero)
-                .gap(BSpace::GapLg),
-            Self::WelcomeCell => BFlex::row().fills().min_width(BLen::Zero),
         }
     }
 }
@@ -119,6 +96,10 @@ fn card(fills: bool, tall: bool, height: f32) -> BFlex {
         .ink()
         .border(BEdge::All)
         .radius(BRadius::Role(BStyleRole::Modal))
+        // Its header and footer strips are square; the card is not, so it
+        // clips them to its corners. A popover opened inside paints in the
+        // window-root overlay and escapes anyway.
+        .overflow(BOverflow::Auto)
         .occludes()
         .elevated(BElevation::Modal);
     // Every dialog is half the window wide; an editor in a dialog takes the
@@ -150,7 +131,8 @@ fn title_bar(top_radius: Option<f32>) -> BFlex {
         .pad_x(BSpace::PadMd)
         .gap(BSpace::GapXs)
         .fill(BFill::Tone(BSurfaceTone::Header))
-        .border(BEdge::Bottom)
+        // No rule under it: the header's own shade is the edge. A border
+        // here drew a dark line across the top of every modal.
         .type_size(BType::Header);
     match top_radius {
         Some(r) => bar.radius(BRadius::Top(r)),

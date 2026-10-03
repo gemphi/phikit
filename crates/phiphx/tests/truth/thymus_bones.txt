@@ -1,0 +1,1038 @@
+1	rig	root	1	WGT-rig_root	0.782748 0.226789 0.000000 0.000000 -0.226789 0.782748 0.000000 0.000000 0.000000 0.000000 0.814941 0.000000 0.000000 0.000000 0.000000 1.000000
+1	rig	DEF-spine	0	-	-
+1	rig	DEF-spine.001	0	-	-
+1	rig	DEF-spine.002	0	-	-
+1	rig	DEF-spine.003	0	-	-
+1	rig	DEF-spine.004	0	-	-
+1	rig	DEF-spine.005	0	-	-
+1	rig	DEF-spine.006	0	-	-
+1	rig	VIS_upper_arm_ik_pole.L	0	-	-
+1	rig	VIS_upper_arm_ik_pole.R	0	-	-
+1	rig	VIS_thigh_ik_pole.L	0	-	-
+1	rig	VIS_thigh_ik_pole.R	0	-	-
+1	rig	MCH-torso.parent	0	-	-
+1	rig	torso	1	WGT-rig_torso	0.321324 0.093098 0.000000 0.000000 -0.093098 0.321324 0.000000 0.000000 0.000000 0.000000 0.334539 0.000000 -0.006857 0.023667 1.011250 1.000000
+1	rig	hips	1	WGT-rig_hips	0.133885 0.038791 0.000000 0.000000 0.016828 -0.058081 0.125592 0.000000 0.034951 -0.120631 -0.060470 0.000000 -0.018699 0.064538 0.922875 1.000000
+1	rig	chest	1	WGT-rig_chest	0.178513 0.051721 -0.000272 0.000000 -0.001046 0.004587 0.185796 0.000000 0.051711 -0.178454 0.004697 0.000000 -0.003521 0.012355 1.291721 1.000000
+1	rig	MCH-spine.001	0	-	-
+1	rig	spine_fk.001	1	WGT-rig_spine_fk.001	0.111514 0.032310 -0.000000 0.000000 -0.005353 0.018474 0.114496 0.000000 0.031863 -0.109973 0.019234 0.000000 -0.000368 0.001272 1.214122 1.000000
+1	rig	MCH-spine	0	-	-
+1	rig	spine_fk	1	WGT-rig_spine_fk	0.188422 0.054592 0.000000 0.000000 0.023683 -0.081740 0.176751 0.000000 0.049188 -0.169769 -0.085102 0.000000 0.004984 -0.017203 1.099626 1.000000
+1	rig	tweak_spine	0	-	-
+1	rig	ORG-spine	0	-	-
+1	rig	ORG-pelvis.L	0	-	-
+1	rig	DEF-pelvis.L	0	-	-
+1	rig	ORG-pelvis.R	0	-	-
+1	rig	DEF-pelvis.R	0	-	-
+1	rig	ORG-thigh.L	0	-	-
+1	rig	ORG-shin.L	0	-	-
+1	rig	ORG-foot.L	0	-	-
+1	rig	ORG-toe.L	0	-	-
+1	rig	ORG-heel.02.L	0	-	-
+1	rig	MCH-foot_tweak.L	0	-	-
+1	rig	foot_tweak.L	0	-	-
+1	rig	MCH-shin_tweak.L	0	-	-
+1	rig	shin_tweak.L	0	-	-
+1	rig	MCH-shin_tweak.L.001	0	-	-
+1	rig	shin_tweak.L.001	0	-	-
+1	rig	MCH-thigh_parent_widget.L	0	-	-
+1	rig	MCH-thigh_tweak.L.001	0	-	-
+1	rig	thigh_tweak.L.001	0	-	-
+1	rig	ORG-thigh.R	0	-	-
+1	rig	ORG-shin.R	0	-	-
+1	rig	ORG-foot.R	0	-	-
+1	rig	ORG-toe.R	0	-	-
+1	rig	ORG-heel.02.R	0	-	-
+1	rig	MCH-foot_tweak.R	0	-	-
+1	rig	foot_tweak.R	0	-	-
+1	rig	MCH-shin_tweak.R	0	-	-
+1	rig	shin_tweak.R	0	-	-
+1	rig	MCH-shin_tweak.R.001	0	-	-
+1	rig	shin_tweak.R.001	0	-	-
+1	rig	MCH-thigh_parent_widget.R	0	-	-
+1	rig	MCH-thigh_tweak.R.001	0	-	-
+1	rig	thigh_tweak.R.001	0	-	-
+1	rig	thigh_parent.L	1	WGT-rig_thigh_parent.L	0.103087 0.028835 -0.010633 0.000000 -0.007289 -0.013216 -0.106506 0.000000 -0.029856 0.102788 -0.010711 0.000000 0.141045 0.072002 0.995661 1.000000
+1	rig	MCH-thigh_parent.L	0	-	-
+1	rig	thigh_fk.L	1	WGT-rig_thigh_fk.L	0.412347 0.115339 -0.042533 0.000000 -0.029157 -0.052864 -0.426025 0.000000 -0.119424 0.411150 -0.042845 0.000000 0.141045 0.072002 0.995661 1.000000
+1	rig	shin_fk.L	1	WGT-rig_shin_fk.L	0.429768 0.123170 0.007287 0.000000 0.003258 0.015069 -0.446863 0.000000 -0.123343 0.429565 0.013586 0.000000 0.111888 0.019138 0.569636 1.000000
+1	rig	MCH-foot_fk.L	0	-	-
+1	rig	foot_fk.L	1	WGT-rig_foot_fk.L	0.166426 0.054842 0.002683 0.000000 0.043754 -0.127290 -0.112229 0.000000 -0.033172 0.107248 -0.134574 0.000000 0.115146 0.034207 0.122773 1.000000
+1	rig	MCH-toe_fk.L	0	-	-
+1	rig	toe_fk.L	1	WGT-rig_toe_fk.L	-0.055607 -0.016111 0.000000 0.000000 0.016093 -0.055542 -0.002782 0.000000 0.000774 -0.002672 0.057827 0.000000 0.158901 -0.093084 0.010545 1.000000
+1	rig	MCH-thigh_ik_swing.L	0	-	-
+1	rig	thigh_ik.L	1	WGT-rig_thigh_ik.L	0.412347 0.115339 -0.042533 0.000000 -0.029157 -0.052865 -0.426025 0.000000 -0.119424 0.411150 -0.042846 0.000000 0.141045 0.072002 0.995661 1.000000
+1	rig	MCH-shin_ik.L	0	-	-
+1	rig	MCH-thigh_tweak.L	0	-	-
+1	rig	thigh_tweak.L	0	-	-
+1	rig	DEF-thigh.L	0	-	-
+1	rig	DEF-thigh.L.001	0	-	-
+1	rig	DEF-shin.L	0	-	-
+1	rig	DEF-shin.L.001	0	-	-
+1	rig	DEF-foot.L	0	-	-
+1	rig	DEF-toe.L	0	-	-
+1	rig	thigh_parent.R	1	WGT-rig_thigh_parent.R	-0.102535 -0.030741 -0.010633 0.000000 0.013226 -0.007272 -0.106506 0.000000 -0.029718 0.102828 -0.010711 0.000000 -0.157690 -0.014552 0.995661 1.000000
+1	rig	MCH-thigh_parent.R	0	-	-
+1	rig	thigh_fk.R	1	WGT-rig_thigh_fk.R	-0.410138 -0.122963 -0.042533 0.000000 0.052902 -0.029089 -0.426025 0.000000 -0.118871 0.411310 -0.042845 0.000000 -0.157690 -0.014552 0.995661 1.000000
+1	rig	shin_fk.R	1	WGT-rig_shin_fk.R	-0.429047 -0.125657 0.007287 0.000000 -0.010809 0.010993 -0.446863 0.000000 -0.125403 0.428968 0.013586 0.000000 -0.104789 -0.043641 0.569636 1.000000
+1	rig	MCH-foot_fk.R	0	-	-
+1	rig	foot_fk.R	1	WGT-rig_foot_fk.R	-0.169967 -0.042623 0.002683 0.000000 0.031071 -0.130965 -0.112229 0.000000 -0.029300 0.108370 -0.134574 0.000000 -0.115598 -0.032648 0.122773 1.000000
+1	rig	MCH-toe_fk.R	0	-	-
+1	rig	toe_fk.R	1	WGT-rig_toe_fk.R	0.055607 0.016111 0.000000 0.000000 0.016093 -0.055542 -0.002782 0.000000 0.000774 -0.002672 0.057827 0.000000 -0.084527 -0.163613 0.010544 1.000000
+1	rig	MCH-thigh_ik_swing.R	0	-	-
+1	rig	thigh_ik.R	1	WGT-rig_thigh_ik.R	-0.410138 -0.122963 -0.042533 0.000000 0.052902 -0.029090 -0.426025 0.000000 -0.118871 0.411310 -0.042846 0.000000 -0.157690 -0.014552 0.995661 1.000000
+1	rig	MCH-shin_ik.R	0	-	-
+1	rig	MCH-thigh_tweak.R	0	-	-
+1	rig	thigh_tweak.R	0	-	-
+1	rig	DEF-thigh.R	0	-	-
+1	rig	DEF-thigh.R.001	0	-	-
+1	rig	DEF-shin.R	0	-	-
+1	rig	DEF-shin.R.001	0	-	-
+1	rig	DEF-foot.R	0	-	-
+1	rig	DEF-toe.R	0	-	-
+1	rig	tweak_spine.001	0	-	-
+1	rig	ORG-spine.001	0	-	-
+1	rig	MCH-WGT-hips	0	-	-
+1	rig	MCH-spine.002	0	-	-
+1	rig	spine_fk.002	1	WGT-rig_spine_fk.002	0.075351 0.021832 -0.000057 0.000000 -0.003152 0.011083 0.077599 0.000000 0.021603 -0.074532 0.011523 0.000000 -0.000368 0.001272 1.214122 1.000000
+1	rig	MCH-pivot	0	-	-
+1	rig	tweak_spine.002	0	-	-
+1	rig	ORG-spine.002	0	-	-
+1	rig	MCH-spine.003	0	-	-
+1	rig	spine_fk.003	1	WGT-rig_spine_fk.003	0.160252 0.046431 -0.000244 0.000000 -0.000939 0.004118 0.166790 0.000000 0.046422 -0.160199 0.004217 0.000000 -0.003521 0.012355 1.291721 1.000000
+1	rig	ORG-spine.004	0	-	-
+1	rig	ORG-spine.005	0	-	-
+1	rig	ORG-spine.006	0	-	-
+1	rig	MCH-ROT-neck	0	-	-
+1	rig	neck	1	WGT-rig_neck	0.112317 0.032542 -0.000086 0.000000 0.004834 -0.016380 0.115682 0.000000 0.032181 -0.111116 -0.017078 0.000000 -0.004459 0.016474 1.458511 1.000000
+1	rig	MCH-ROT-head	0	-	-
+1	rig	head	1	WGT-rig_head	0.199702 0.023695 -0.004716 0.000000 0.007312 -0.021848 0.199834 0.000000 0.023027 -0.198559 -0.022551 0.000000 0.000375 0.000093 1.574193 1.000000
+1	rig	tweak_spine.004	1	WGT-rig_tweak_spine.004	0.031907 0.009245 -0.000024 0.000000 0.002289 -0.007816 0.032206 0.000000 0.008957 -0.030935 -0.008144 0.000000 -0.004459 0.016473 1.458511 1.000000
+1	rig	MCH-STR-neck	0	-	-
+1	rig	MCH-spine.005	0	-	-
+1	rig	tweak_spine.005	1	WGT-rig_tweak_spine.005	0.025122 0.005105 -0.000387 0.000000 0.000454 -0.000290 0.025633 0.000000 0.005100 -0.025123 -0.000375 0.000000 0.000119 0.000842 1.522923 1.000000
+1	rig	tweak_spine.003	0	-	-
+1	rig	ORG-spine.003	0	-	-
+1	rig	ORG-shoulder.L	0	-	-
+1	rig	ORG-upper_arm.L	0	-	-
+1	rig	ORG-forearm.L	0	-	-
+1	rig	ORG-hand.L	0	-	-
+1	rig	MCH-hand_tweak.L	0	-	-
+1	rig	hand_tweak.L	0	-	-
+1	rig	MCH-forearm_tweak.L	0	-	-
+1	rig	forearm_tweak.L	0	-	-
+1	rig	MCH-forearm_tweak.L.001	0	-	-
+1	rig	forearm_tweak.L.001	0	-	-
+1	rig	MCH-upper_arm_parent_widget.L	0	-	-
+1	rig	MCH-upper_arm_tweak.L.001	0	-	-
+1	rig	upper_arm_tweak.L.001	0	-	-
+1	rig	DEF-shoulder.L	0	-	-
+1	rig	upper_arm_parent.L	1	WGT-rig_upper_arm_parent.L	-0.063439 -0.009773 -0.005726 0.000000 0.007723 -0.013490 -0.062540 0.000000 0.008286 -0.062252 0.014451 0.000000 0.159044 0.052359 1.377174 1.000000
+1	rig	MCH-upper_arm_parent.L	0	-	-
+1	rig	upper_arm_fk.L	1	WGT-rig_upper_arm_fk.L	-0.253756 -0.039093 -0.022906 0.000000 0.030894 -0.053959 -0.250158 0.000000 0.033144 -0.249009 0.057804 0.000000 0.159044 0.052359 1.377174 1.000000
+1	rig	forearm_fk.L	1	WGT-rig_forearm_fk.L	-0.249345 -0.039660 -0.054106 0.000000 0.065126 -0.093150 -0.231852 0.000000 0.016093 -0.237537 0.099954 0.000000 0.189938 -0.001600 1.127016 1.000000
+1	rig	MCH-hand_fk.L	0	-	-
+1	rig	hand_fk.L	1	WGT-rig_hand_fk.L	-0.094561 0.022224 0.007244 0.000000 -0.015121 -0.035135 -0.089583 0.000000 -0.017826 -0.088090 0.037558 0.000000 0.255063 -0.094750 0.895164 1.000000
+1	rig	MCH-upper_arm_ik_swing.L	0	-	-
+1	rig	upper_arm_ik.L	1	WGT-rig_upper_arm_ik.L	-0.216148 -0.052885 -0.124024 0.000000 0.096295 0.103470 -0.211943 0.000000 0.094371 -0.226706 -0.067800 0.000000 0.159044 0.052359 1.377174 1.000000
+1	rig	MCH-forearm_ik.L	0	-	-
+1	rig	MCH-upper_arm_tweak.L	0	-	-
+1	rig	upper_arm_tweak.L	0	-	-
+1	rig	DEF-upper_arm.L	0	-	-
+1	rig	DEF-upper_arm.L.001	0	-	-
+1	rig	DEF-forearm.L	0	-	-
+1	rig	DEF-forearm.L.001	0	-	-
+1	rig	DEF-hand.L	0	-	-
+1	rig	ORG-palm.01.L	0	-	-
+1	rig	ORG-f_index.01.L	0	-	-
+1	rig	ORG-f_index.02.L	0	-	-
+1	rig	ORG-f_index.03.L	0	-	-
+1	rig	ORG-thumb.01.L	0	-	-
+1	rig	ORG-thumb.02.L	0	-	-
+1	rig	ORG-thumb.03.L	0	-	-
+1	rig	DEF-f_index.01.L	0	-	-
+1	rig	DEF-f_index.02.L	0	-	-
+1	rig	DEF-f_index.03.L	0	-	-
+1	rig	f_index.01_master.L	1	WGT-rig_f_index.01_master.L	0.029724 0.139755 -0.064522 0.000000 -0.079954 -0.042137 -0.128101 0.000000 -0.131537 0.057194 0.063286 0.000000 0.237731 -0.151543 0.800172 1.000000
+1	rig	DEF-thumb.01.L	0	-	-
+1	rig	DEF-thumb.02.L	0	-	-
+1	rig	DEF-thumb.03.L	0	-	-
+1	rig	thumb.01_master.L	1	WGT-rig_thumb.01_master.L	0.051679 -0.145256 0.015796 0.000000 -0.140228 -0.054014 -0.037922 0.000000 0.041048 -0.001647 -0.149439 0.000000 0.260714 -0.137243 0.871895 1.000000
+1	rig	DEF-palm.01.L	0	-	-
+1	rig	MCH-f_index.01_drv.L	0	-	-
+1	rig	f_index.01.L	0	-	-
+1	rig	MCH-f_index.02_drv.L	0	-	-
+1	rig	f_index.02.L	0	-	-
+1	rig	MCH-f_index.03_drv.L	0	-	-
+1	rig	f_index.03.L	0	-	-
+1	rig	f_index.01.L.001	0	-	-
+1	rig	MCH-f_index.03.L	0	-	-
+1	rig	MCH-f_index.02.L	0	-	-
+1	rig	MCH-f_index.01.L	0	-	-
+1	rig	MCH-thumb.01_drv.L	0	-	-
+1	rig	thumb.01.L	0	-	-
+1	rig	MCH-thumb.02_drv.L	0	-	-
+1	rig	thumb.02.L	0	-	-
+1	rig	MCH-thumb.03_drv.L	0	-	-
+1	rig	thumb.03.L	0	-	-
+1	rig	thumb.01.L.001	0	-	-
+1	rig	MCH-thumb.03.L	0	-	-
+1	rig	MCH-thumb.02.L	0	-	-
+1	rig	MCH-thumb.01.L	0	-	-
+1	rig	ORG-palm.04.L	0	-	-
+1	rig	ORG-f_pinky.01.L	0	-	-
+1	rig	ORG-f_pinky.02.L	0	-	-
+1	rig	ORG-f_pinky.03.L	0	-	-
+1	rig	DEF-f_pinky.01.L	0	-	-
+1	rig	DEF-f_pinky.02.L	0	-	-
+1	rig	DEF-f_pinky.03.L	0	-	-
+1	rig	f_pinky.01_master.L	1	WGT-rig_f_pinky.01_master.L	-0.014626 0.119990 -0.066750 0.000000 -0.076488 -0.062868 -0.096252 0.000000 -0.114030 0.026779 0.073124 0.000000 0.234503 -0.121831 0.786771 1.000000
+1	rig	DEF-palm.04.L	0	-	-
+1	rig	MCH-f_pinky.01_drv.L	0	-	-
+1	rig	f_pinky.01.L	0	-	-
+1	rig	MCH-f_pinky.02_drv.L	0	-	-
+1	rig	f_pinky.02.L	0	-	-
+1	rig	MCH-f_pinky.03_drv.L	0	-	-
+1	rig	f_pinky.03.L	0	-	-
+1	rig	f_pinky.01.L.001	0	-	-
+1	rig	MCH-f_pinky.03.L	0	-	-
+1	rig	MCH-f_pinky.02.L	0	-	-
+1	rig	MCH-f_pinky.01.L	0	-	-
+1	rig	palm.L	1	WGT-rig_palm.L	-0.010318 0.039076 -0.023576 0.000000 -0.007923 -0.025338 -0.038528 0.000000 -0.044944 -0.004504 0.012205 0.000000 0.242426 -0.096493 0.825299 1.000000
+1	rig	ORG-shoulder.R	0	-	-
+1	rig	ORG-upper_arm.R	0	-	-
+1	rig	ORG-forearm.R	0	-	-
+1	rig	ORG-hand.R	0	-	-
+1	rig	MCH-hand_tweak.R	0	-	-
+1	rig	hand_tweak.R	0	-	-
+1	rig	MCH-forearm_tweak.R	0	-	-
+1	rig	forearm_tweak.R	0	-	-
+1	rig	MCH-forearm_tweak.R.001	0	-	-
+1	rig	forearm_tweak.R.001	0	-	-
+1	rig	MCH-upper_arm_parent_widget.R	0	-	-
+1	rig	MCH-upper_arm_tweak.R.001	0	-	-
+1	rig	upper_arm_tweak.R.001	0	-	-
+1	rig	DEF-shoulder.R	0	-	-
+1	rig	upper_arm_parent.R	1	WGT-rig_upper_arm_parent.R	0.059542 0.024113 -0.005117 0.000000 0.000777 -0.015207 -0.062617 0.000000 0.024638 -0.057794 0.014341 0.000000 -0.162050 -0.040673 1.377663 1.000000
+1	rig	MCH-upper_arm_parent.R	0	-	-
+1	rig	upper_arm_fk.R	1	WGT-rig_upper_arm_fk.R	0.238166 0.096451 -0.020470 0.000000 0.003107 -0.060829 -0.250470 0.000000 0.098551 -0.231175 0.057366 0.000000 -0.162050 -0.040673 1.377663 1.000000
+1	rig	forearm_fk.R	1	WGT-rig_forearm_fk.R	0.235005 0.096502 -0.046190 0.000000 -0.000814 -0.109862 -0.233673 0.000000 0.106984 -0.212817 0.099684 0.000000 -0.158943 -0.101502 1.127193 1.000000
+1	rig	MCH-hand_fk.R	0	-	-
+1	rig	hand_fk.R	1	WGT-rig_hand_fk.R	0.069418 0.067732 0.009038 0.000000 0.032743 -0.021663 -0.089145 0.000000 0.059977 -0.066567 0.038206 0.000000 -0.159757 -0.211365 0.893521 1.000000
+1	rig	MCH-upper_arm_ik_swing.R	0	-	-
+1	rig	upper_arm_ik.R	1	WGT-rig_upper_arm_ik.R	0.210990 0.070904 -0.124016 0.000000 -0.136531 0.035005 -0.212269 0.000000 0.042031 -0.242222 -0.066979 0.000000 -0.162050 -0.040673 1.377663 1.000000
+1	rig	MCH-forearm_ik.R	0	-	-
+1	rig	MCH-upper_arm_tweak.R	0	-	-
+1	rig	upper_arm_tweak.R	0	-	-
+1	rig	DEF-upper_arm.R	0	-	-
+1	rig	DEF-upper_arm.R.001	0	-	-
+1	rig	DEF-forearm.R	0	-	-
+1	rig	DEF-forearm.R.001	0	-	-
+1	rig	DEF-hand.R	0	-	-
+1	rig	ORG-palm.01.R	0	-	-
+1	rig	ORG-f_index.01.R	0	-	-
+1	rig	ORG-f_index.02.R	0	-	-
+1	rig	ORG-f_index.03.R	0	-	-
+1	rig	ORG-thumb.01.R	0	-	-
+1	rig	ORG-thumb.02.R	0	-	-
+1	rig	ORG-thumb.03.R	0	-	-
+1	rig	DEF-f_index.01.R	0	-	-
+1	rig	DEF-f_index.02.R	0	-	-
+1	rig	DEF-f_index.03.R	0	-	-
+1	rig	f_index.01_master.R	1	WGT-rig_f_index.01_master.R	-0.096298 0.104901 -0.065578 0.000000 0.092617 0.006036 -0.126348 0.000000 0.082018 0.116350 0.065680 0.000000 -0.113853 -0.250407 0.799086 1.000000
+1	rig	DEF-thumb.01.R	0	-	-
+1	rig	DEF-thumb.02.R	0	-	-
+1	rig	DEF-thumb.03.R	0	-	-
+1	rig	thumb.01_master.R	1	WGT-rig_thumb.01_master.R	0.030216 -0.151283 0.014826 0.000000 0.148686 0.026272 -0.034954 0.000000 -0.031606 -0.021039 -0.150260 0.000000 -0.142258 -0.250520 0.870291 1.000000
+1	rig	DEF-palm.01.R	0	-	-
+1	rig	MCH-f_index.01_drv.R	0	-	-
+1	rig	f_index.01.R	0	-	-
+1	rig	MCH-f_index.02_drv.R	0	-	-
+1	rig	f_index.02.R	0	-	-
+1	rig	MCH-f_index.03_drv.R	0	-	-
+1	rig	f_index.03.R	0	-	-
+1	rig	f_index.01.R.001	0	-	-
+1	rig	MCH-f_index.03.R	0	-	-
+1	rig	MCH-f_index.02.R	0	-	-
+1	rig	MCH-f_index.01.R	0	-	-
+1	rig	MCH-thumb.01_drv.R	0	-	-
+1	rig	thumb.01.R	0	-	-
+1	rig	MCH-thumb.02_drv.R	0	-	-
+1	rig	thumb.02.R	0	-	-
+1	rig	MCH-thumb.03_drv.R	0	-	-
+1	rig	thumb.03.R	0	-	-
+1	rig	thumb.01.R.001	0	-	-
+1	rig	MCH-thumb.03.R	0	-	-
+1	rig	MCH-thumb.02.R	0	-	-
+1	rig	MCH-thumb.01.R	0	-	-
+1	rig	ORG-palm.04.R	0	-	-
+1	rig	ORG-f_pinky.01.R	0	-	-
+1	rig	ORG-f_pinky.02.R	0	-	-
+1	rig	ORG-f_pinky.03.R	0	-	-
+1	rig	DEF-f_pinky.01.R	0	-	-
+1	rig	DEF-f_pinky.02.R	0	-	-
+1	rig	DEF-f_pinky.03.R	0	-	-
+1	rig	f_pinky.01_master.R	1	WGT-rig_f_pinky.01_master.R	-0.048074 0.110842 -0.066859 0.000000 0.099736 -0.013746 -0.094503 0.000000 0.082515 0.081193 0.075274 0.000000 -0.126153 -0.223186 0.785650 1.000000
+1	rig	DEF-palm.04.R	0	-	-
+1	rig	MCH-f_pinky.01_drv.R	0	-	-
+1	rig	f_pinky.01.R	0	-	-
+1	rig	MCH-f_pinky.02_drv.R	0	-	-
+1	rig	f_pinky.02.R	0	-	-
+1	rig	MCH-f_pinky.03_drv.R	0	-	-
+1	rig	f_pinky.03.R	0	-	-
+1	rig	f_pinky.01.R.001	0	-	-
+1	rig	MCH-f_pinky.03.R	0	-	-
+1	rig	MCH-f_pinky.02.R	0	-	-
+1	rig	MCH-f_pinky.01.R	0	-	-
+1	rig	palm.R	1	WGT-rig_palm.R	-0.010862 0.038973 -0.023502 0.000000 0.020571 -0.017348 -0.038276 0.000000 0.040596 0.019218 0.013107 0.000000 -0.146724 -0.205837 0.823926 1.000000
+1	rig	shoulder.L	1	WGT-rig_shoulder.L	0.067145 -0.118506 -0.001135 0.000000 0.117858 0.066908 -0.013643 0.000000 0.012427 0.005743 0.135522 0.000000 0.023915 -0.024416 1.412229 1.000000
+1	rig	shoulder.R	1	WGT-rig_shoulder.R	0.006604 -0.136047 -0.001042 0.000000 -0.135410 -0.006472 -0.013257 0.000000 -0.013191 -0.001679 0.135561 0.000000 -0.006710 -0.033289 1.412276 1.000000
+1	rig	MCH-WGT-chest	0	-	-
+1	rig	MCH-hand_ik.parent.L	0	-	-
+1	rig	hand_ik.L	1	WGT-rig_hand_ik.L	-0.095984 0.008020 -0.014521 0.000000 0.014945 0.004799 -0.096134 0.000000 -0.007200 -0.096958 -0.005959 0.000000 0.400974 0.135819 0.956802 1.000000
+1	rig	MCH-upper_arm_ik_target.L	0	-	-
+1	rig	MCH-upper_arm_ik_target.parent.L	0	-	-
+1	rig	upper_arm_ik_target.L	0	-	-
+1	rig	MCH-hand_ik.parent.R	0	-	-
+1	rig	hand_ik.R	1	WGT-rig_hand_ik.R	0.076830 0.058090 -0.014521 0.000000 -0.015195 -0.003934 -0.096134 0.000000 0.057917 -0.078091 -0.005959 0.000000 -0.411475 -0.099575 0.956802 1.000000
+1	rig	MCH-upper_arm_ik_target.R	0	-	-
+1	rig	MCH-upper_arm_ik_target.parent.R	0	-	-
+1	rig	upper_arm_ik_target.R	0	-	-
+1	rig	MCH-foot_ik.parent.L	0	-	-
+1	rig	foot_ik.L	1	WGT-rig_foot_ik.L	0.165732 0.056968 0.000000 0.000000 -0.056968 0.165732 0.000000 0.000000 0.000000 0.000000 0.175250 0.000000 0.115146 0.034206 0.122773 1.000000
+1	rig	foot_spin_ik.L	1	WGT-rig_foot_spin_ik.L	0.082866 0.028484 0.000000 0.000000 -0.028484 0.082866 0.000000 0.000000 0.000000 0.000000 0.087625 0.000000 0.158901 -0.093084 0.010545 1.000000
+1	rig	foot_heel_ik.L	1	WGT-rig_foot_heel_ik.L	0.082866 0.028484 0.000000 0.000000 -0.028484 0.082866 0.000000 0.000000 0.000000 0.000000 0.087625 0.000000 0.115146 0.034206 0.122773 1.000000
+1	rig	MCH-heel.02_rock2.L	0	-	-
+1	rig	MCH-heel.02_rock1.L	0	-	-
+1	rig	MCH-heel.02_roll2.L	0	-	-
+1	rig	MCH-heel.02_roll1.L	0	-	-
+1	rig	MCH-foot_roll.L	0	-	-
+1	rig	MCH-thigh_ik_target.L	0	-	-
+1	rig	MCH-toe_ik_parent.L	0	-	-
+1	rig	toe_ik.L	1	WGT-rig_toe_ik.L	-0.055607 -0.016111 0.000000 0.000000 0.016092 -0.055542 -0.002782 0.000000 0.000774 -0.002672 0.057827 0.000000 0.158901 -0.093084 0.010545 1.000000
+1	rig	MCH-thigh_ik_target.parent.L	0	-	-
+1	rig	thigh_ik_target.L	0	-	-
+1	rig	MCH-foot_ik.parent.R	0	-	-
+1	rig	foot_ik.R	1	WGT-rig_foot_ik.R	-0.170517 -0.040454 0.000000 0.000000 -0.040454 0.170517 0.000000 0.000000 0.000000 0.000000 0.175250 0.000000 -0.115598 -0.032648 0.122773 1.000000
+1	rig	foot_spin_ik.R	1	WGT-rig_foot_spin_ik.R	-0.085258 -0.020227 0.000000 0.000000 -0.020227 0.085258 0.000000 0.000000 0.000000 0.000000 0.087625 0.000000 -0.084527 -0.163613 0.010545 1.000000
+1	rig	foot_heel_ik.R	1	WGT-rig_foot_heel_ik.R	-0.085258 -0.020227 0.000000 0.000000 -0.020227 0.085258 0.000000 0.000000 0.000000 0.000000 0.087625 0.000000 -0.115598 -0.032648 0.122773 1.000000
+1	rig	MCH-heel.02_rock2.R	0	-	-
+1	rig	MCH-heel.02_rock1.R	0	-	-
+1	rig	MCH-heel.02_roll2.R	0	-	-
+1	rig	MCH-heel.02_roll1.R	0	-	-
+1	rig	MCH-foot_roll.R	0	-	-
+1	rig	MCH-thigh_ik_target.R	0	-	-
+1	rig	MCH-toe_ik_parent.R	0	-	-
+1	rig	toe_ik.R	1	WGT-rig_toe_ik.R	0.055607 0.016111 0.000001 0.000000 0.016092 -0.055543 -0.002782 0.000000 0.000774 -0.002672 0.057827 0.000000 -0.084527 -0.163613 0.010545 1.000000
+1	rig	MCH-thigh_ik_target.parent.R	0	-	-
+1	rig	thigh_ik_target.R	0	-	-
+30	rig	root	1	WGT-rig_root	0.782748 0.226789 0.000000 0.000000 -0.226789 0.782748 0.000000 0.000000 0.000000 0.000000 0.814941 0.000000 0.000000 0.000000 0.000000 1.000000
+30	rig	DEF-spine	0	-	-
+30	rig	DEF-spine.001	0	-	-
+30	rig	DEF-spine.002	0	-	-
+30	rig	DEF-spine.003	0	-	-
+30	rig	DEF-spine.004	0	-	-
+30	rig	DEF-spine.005	0	-	-
+30	rig	DEF-spine.006	0	-	-
+30	rig	VIS_upper_arm_ik_pole.L	0	-	-
+30	rig	VIS_upper_arm_ik_pole.R	0	-	-
+30	rig	VIS_thigh_ik_pole.L	0	-	-
+30	rig	VIS_thigh_ik_pole.R	0	-	-
+30	rig	MCH-torso.parent	0	-	-
+30	rig	torso	1	WGT-rig_torso	0.321324 0.093098 0.000000 0.000000 -0.093098 0.321324 0.000000 0.000000 0.000000 0.000000 0.334539 0.000000 -0.006857 0.023667 1.011250 1.000000
+30	rig	hips	1	WGT-rig_hips	0.133885 0.038791 0.000000 0.000000 0.016828 -0.058081 0.125592 0.000000 0.034951 -0.120631 -0.060470 0.000000 -0.018699 0.064538 0.922875 1.000000
+30	rig	chest	1	WGT-rig_chest	0.177595 0.051455 -0.018828 0.000000 0.016771 0.009750 0.184840 0.000000 0.052162 -0.178324 0.004673 0.000000 0.000205 0.013435 1.291621 1.000000
+30	rig	MCH-spine.001	0	-	-
+30	rig	spine_fk.001	1	WGT-rig_spine_fk.001	0.111514 0.032310 -0.000000 0.000000 -0.005353 0.018474 0.114496 0.000000 0.031863 -0.109973 0.019234 0.000000 -0.000368 0.001272 1.214122 1.000000
+30	rig	MCH-spine	0	-	-
+30	rig	spine_fk	1	WGT-rig_spine_fk	0.188422 0.054592 0.000000 0.000000 0.023683 -0.081740 0.176751 0.000000 0.049188 -0.169769 -0.085102 0.000000 0.004984 -0.017203 1.099626 1.000000
+30	rig	tweak_spine	0	-	-
+30	rig	ORG-spine	0	-	-
+30	rig	ORG-pelvis.L	0	-	-
+30	rig	DEF-pelvis.L	0	-	-
+30	rig	ORG-pelvis.R	0	-	-
+30	rig	DEF-pelvis.R	0	-	-
+30	rig	ORG-thigh.L	0	-	-
+30	rig	ORG-shin.L	0	-	-
+30	rig	ORG-foot.L	0	-	-
+30	rig	ORG-toe.L	0	-	-
+30	rig	ORG-heel.02.L	0	-	-
+30	rig	MCH-foot_tweak.L	0	-	-
+30	rig	foot_tweak.L	0	-	-
+30	rig	MCH-shin_tweak.L	0	-	-
+30	rig	shin_tweak.L	0	-	-
+30	rig	MCH-shin_tweak.L.001	0	-	-
+30	rig	shin_tweak.L.001	0	-	-
+30	rig	MCH-thigh_parent_widget.L	0	-	-
+30	rig	MCH-thigh_tweak.L.001	0	-	-
+30	rig	thigh_tweak.L.001	0	-	-
+30	rig	ORG-thigh.R	0	-	-
+30	rig	ORG-shin.R	0	-	-
+30	rig	ORG-foot.R	0	-	-
+30	rig	ORG-toe.R	0	-	-
+30	rig	ORG-heel.02.R	0	-	-
+30	rig	MCH-foot_tweak.R	0	-	-
+30	rig	foot_tweak.R	0	-	-
+30	rig	MCH-shin_tweak.R	0	-	-
+30	rig	shin_tweak.R	0	-	-
+30	rig	MCH-shin_tweak.R.001	0	-	-
+30	rig	shin_tweak.R.001	0	-	-
+30	rig	MCH-thigh_parent_widget.R	0	-	-
+30	rig	MCH-thigh_tweak.R.001	0	-	-
+30	rig	thigh_tweak.R.001	0	-	-
+30	rig	thigh_parent.L	1	WGT-rig_thigh_parent.L	0.103087 0.028835 -0.010633 0.000000 -0.007289 -0.013216 -0.106506 0.000000 -0.029856 0.102788 -0.010711 0.000000 0.141045 0.072002 0.995661 1.000000
+30	rig	MCH-thigh_parent.L	0	-	-
+30	rig	thigh_fk.L	1	WGT-rig_thigh_fk.L	0.412347 0.115339 -0.042533 0.000000 -0.029157 -0.052864 -0.426025 0.000000 -0.119424 0.411150 -0.042845 0.000000 0.141045 0.072002 0.995661 1.000000
+30	rig	shin_fk.L	1	WGT-rig_shin_fk.L	0.429768 0.123170 0.007287 0.000000 0.003258 0.015069 -0.446863 0.000000 -0.123343 0.429565 0.013586 0.000000 0.111888 0.019138 0.569636 1.000000
+30	rig	MCH-foot_fk.L	0	-	-
+30	rig	foot_fk.L	1	WGT-rig_foot_fk.L	0.166426 0.054842 0.002683 0.000000 0.043754 -0.127290 -0.112229 0.000000 -0.033172 0.107248 -0.134574 0.000000 0.115146 0.034207 0.122773 1.000000
+30	rig	MCH-toe_fk.L	0	-	-
+30	rig	toe_fk.L	1	WGT-rig_toe_fk.L	-0.055607 -0.016111 0.000000 0.000000 0.016093 -0.055542 -0.002782 0.000000 0.000774 -0.002672 0.057827 0.000000 0.158901 -0.093084 0.010545 1.000000
+30	rig	MCH-thigh_ik_swing.L	0	-	-
+30	rig	thigh_ik.L	1	WGT-rig_thigh_ik.L	0.412347 0.115339 -0.042533 0.000000 -0.029157 -0.052865 -0.426025 0.000000 -0.119424 0.411150 -0.042846 0.000000 0.141045 0.072002 0.995661 1.000000
+30	rig	MCH-shin_ik.L	0	-	-
+30	rig	MCH-thigh_tweak.L	0	-	-
+30	rig	thigh_tweak.L	0	-	-
+30	rig	DEF-thigh.L	0	-	-
+30	rig	DEF-thigh.L.001	0	-	-
+30	rig	DEF-shin.L	0	-	-
+30	rig	DEF-shin.L.001	0	-	-
+30	rig	DEF-foot.L	0	-	-
+30	rig	DEF-toe.L	0	-	-
+30	rig	thigh_parent.R	1	WGT-rig_thigh_parent.R	-0.102535 -0.030741 -0.010633 0.000000 0.013226 -0.007272 -0.106506 0.000000 -0.029718 0.102828 -0.010711 0.000000 -0.157690 -0.014552 0.995661 1.000000
+30	rig	MCH-thigh_parent.R	0	-	-
+30	rig	thigh_fk.R	1	WGT-rig_thigh_fk.R	-0.410138 -0.122963 -0.042533 0.000000 0.052902 -0.029089 -0.426025 0.000000 -0.118871 0.411310 -0.042845 0.000000 -0.157690 -0.014552 0.995661 1.000000
+30	rig	shin_fk.R	1	WGT-rig_shin_fk.R	-0.429047 -0.125657 0.007287 0.000000 -0.010809 0.010993 -0.446863 0.000000 -0.125403 0.428968 0.013586 0.000000 -0.104789 -0.043641 0.569636 1.000000
+30	rig	MCH-foot_fk.R	0	-	-
+30	rig	foot_fk.R	1	WGT-rig_foot_fk.R	-0.169967 -0.042623 0.002683 0.000000 0.031071 -0.130965 -0.112229 0.000000 -0.029300 0.108370 -0.134574 0.000000 -0.115598 -0.032648 0.122773 1.000000
+30	rig	MCH-toe_fk.R	0	-	-
+30	rig	toe_fk.R	1	WGT-rig_toe_fk.R	0.055607 0.016111 0.000000 0.000000 0.016093 -0.055542 -0.002782 0.000000 0.000774 -0.002672 0.057827 0.000000 -0.084527 -0.163613 0.010544 1.000000
+30	rig	MCH-thigh_ik_swing.R	0	-	-
+30	rig	thigh_ik.R	1	WGT-rig_thigh_ik.R	-0.410138 -0.122963 -0.042533 0.000000 0.052902 -0.029090 -0.426025 0.000000 -0.118871 0.411310 -0.042846 0.000000 -0.157690 -0.014552 0.995661 1.000000
+30	rig	MCH-shin_ik.R	0	-	-
+30	rig	MCH-thigh_tweak.R	0	-	-
+30	rig	thigh_tweak.R	0	-	-
+30	rig	DEF-thigh.R	0	-	-
+30	rig	DEF-thigh.R.001	0	-	-
+30	rig	DEF-shin.R	0	-	-
+30	rig	DEF-shin.R.001	0	-	-
+30	rig	DEF-foot.R	0	-	-
+30	rig	DEF-toe.R	0	-	-
+30	rig	tweak_spine.001	0	-	-
+30	rig	ORG-spine.001	0	-	-
+30	rig	MCH-WGT-hips	0	-	-
+30	rig	MCH-spine.002	0	-	-
+30	rig	spine_fk.002	1	WGT-rig_spine_fk.002	0.075254 0.021804 -0.003979 0.000000 0.000574 0.012163 0.077499 0.000000 0.022156 -0.074371 0.011508 0.000000 -0.000368 0.001272 1.214122 1.000000
+30	rig	MCH-pivot	0	-	-
+30	rig	tweak_spine.002	0	-	-
+30	rig	ORG-spine.002	0	-	-
+30	rig	MCH-spine.003	0	-	-
+30	rig	spine_fk.003	1	WGT-rig_spine_fk.003	0.159428 0.046192 -0.016902 0.000000 0.015056 0.008752 0.165932 0.000000 0.046826 -0.160082 0.004195 0.000000 0.000205 0.013435 1.291621 1.000000
+30	rig	ORG-spine.004	0	-	-
+30	rig	ORG-spine.005	0	-	-
+30	rig	ORG-spine.006	0	-	-
+30	rig	MCH-ROT-neck	0	-	-
+30	rig	neck	1	WGT-rig_neck	0.105122 0.035292 -0.037119 0.000000 0.040495 -0.005378 0.109569 0.000000 0.031361 -0.111354 -0.017057 0.000000 0.015261 0.022187 1.457553 1.000000
+30	rig	MCH-ROT-head	0	-	-
+30	rig	head	1	WGT-rig_head	0.159604 -0.018755 -0.120993 0.000000 0.119765 -0.017398 0.160681 0.000000 -0.025446 -0.199525 -0.002637 0.000000 0.055756 0.016809 1.567122 1.000000
+30	rig	tweak_spine.004	1	WGT-rig_tweak_spine.004	0.029863 0.010026 -0.010545 0.000000 0.012345 -0.004713 0.030479 0.000000 0.007702 -0.031318 -0.007963 0.000000 0.015261 0.022187 1.457553 1.000000
+30	rig	MCH-STR-neck	0	-	-
+30	rig	MCH-spine.005	0	-	-
+30	rig	tweak_spine.005	1	WGT-rig_tweak_spine.005	0.020224 0.002552 -0.015550 0.000000 0.015234 0.003301 0.020356 0.000000 0.004028 -0.025297 0.001087 0.000000 0.039950 0.012761 1.518510 1.000000
+30	rig	tweak_spine.003	0	-	-
+30	rig	ORG-spine.003	0	-	-
+30	rig	ORG-shoulder.L	0	-	-
+30	rig	ORG-upper_arm.L	0	-	-
+30	rig	ORG-forearm.L	0	-	-
+30	rig	ORG-hand.L	0	-	-
+30	rig	MCH-hand_tweak.L	0	-	-
+30	rig	hand_tweak.L	0	-	-
+30	rig	MCH-forearm_tweak.L	0	-	-
+30	rig	forearm_tweak.L	0	-	-
+30	rig	MCH-forearm_tweak.L.001	0	-	-
+30	rig	forearm_tweak.L.001	0	-	-
+30	rig	MCH-upper_arm_parent_widget.L	0	-	-
+30	rig	MCH-upper_arm_tweak.L.001	0	-	-
+30	rig	upper_arm_tweak.L.001	0	-	-
+30	rig	DEF-shoulder.L	0	-	-
+30	rig	upper_arm_parent.L	1	WGT-rig_upper_arm_parent.L	-0.034028 0.037528 -0.039832 0.000000 0.018784 -0.036046 -0.050007 0.000000 -0.051401 -0.038016 0.008095 0.000000 0.170162 0.055580 1.359945 1.000000
+30	rig	MCH-upper_arm_parent.L	0	-	-
+30	rig	upper_arm_fk.L	1	WGT-rig_upper_arm_fk.L	-0.136110 0.150111 -0.159329 0.000000 0.075135 -0.144183 -0.200028 0.000000 -0.205606 -0.152062 0.032379 0.000000 0.170162 0.055580 1.359945 1.000000
+30	rig	forearm_fk.L	1	WGT-rig_forearm_fk.L	0.120969 -0.228120 -0.001033 0.000000 0.012476 0.005448 0.257853 0.000000 -0.227781 -0.120851 0.013575 0.000000 0.245296 -0.088603 1.159917 1.000000
+30	rig	MCH-hand_fk.L	0	-	-
+30	rig	hand_fk.L	1	WGT-rig_hand_fk.L	0.030275 -0.091085 0.016589 0.000000 -0.034916 0.004932 0.090801 0.000000 -0.085747 -0.034168 -0.031117 0.000000 0.257772 -0.083155 1.417770 1.000000
+30	rig	MCH-upper_arm_ik_swing.L	0	-	-
+30	rig	upper_arm_ik.L	1	WGT-rig_upper_arm_ik.L	-0.214063 -0.053017 -0.124792 0.000000 0.085314 0.128597 -0.200977 0.000000 0.105383 -0.211800 -0.090787 0.000000 0.170162 0.055580 1.359944 1.000000
+30	rig	MCH-forearm_ik.L	0	-	-
+30	rig	MCH-upper_arm_tweak.L	0	-	-
+30	rig	upper_arm_tweak.L	0	-	-
+30	rig	DEF-upper_arm.L	0	-	-
+30	rig	DEF-upper_arm.L.001	0	-	-
+30	rig	DEF-forearm.L	0	-	-
+30	rig	DEF-forearm.L.001	0	-	-
+30	rig	DEF-hand.L	0	-	-
+30	rig	ORG-palm.01.L	0	-	-
+30	rig	ORG-f_index.01.L	0	-	-
+30	rig	ORG-f_index.02.L	0	-	-
+30	rig	ORG-f_index.03.L	0	-	-
+30	rig	ORG-thumb.01.L	0	-	-
+30	rig	ORG-thumb.02.L	0	-	-
+30	rig	ORG-thumb.03.L	0	-	-
+30	rig	DEF-f_index.01.L	0	-	-
+30	rig	DEF-f_index.02.L	0	-	-
+30	rig	DEF-f_index.03.L	0	-	-
+30	rig	f_index.01_master.L	1	WGT-rig_f_index.01_master.L	0.135849 0.056839 0.053781 0.000000 -0.036896 -0.048492 0.144448 0.000000 0.069005 -0.137826 -0.028643 0.000000 0.201394 -0.080850 1.514545 1.000000
+30	rig	DEF-thumb.01.L	0	-	-
+30	rig	DEF-thumb.02.L	0	-	-
+30	rig	DEF-thumb.03.L	0	-	-
+30	rig	thumb.01_master.L	1	WGT-rig_thumb.01_master.L	-0.133919 0.000215 -0.078007 0.000000 -0.042403 -0.130286 0.072437 0.000000 -0.065476 0.083935 0.112638 0.000000 0.214646 -0.075496 1.439229 1.000000
+30	rig	DEF-palm.01.L	0	-	-
+30	rig	MCH-f_index.01_drv.L	0	-	-
+30	rig	f_index.01.L	0	-	-
+30	rig	MCH-f_index.02_drv.L	0	-	-
+30	rig	f_index.02.L	0	-	-
+30	rig	MCH-f_index.03_drv.L	0	-	-
+30	rig	f_index.03.L	0	-	-
+30	rig	f_index.01.L.001	0	-	-
+30	rig	MCH-f_index.03.L	0	-	-
+30	rig	MCH-f_index.02.L	0	-	-
+30	rig	MCH-f_index.01.L	0	-	-
+30	rig	MCH-thumb.01_drv.L	0	-	-
+30	rig	thumb.01.L	0	-	-
+30	rig	MCH-thumb.02_drv.L	0	-	-
+30	rig	thumb.02.L	0	-	-
+30	rig	MCH-thumb.03_drv.L	0	-	-
+30	rig	thumb.03.L	0	-	-
+30	rig	thumb.01.L.001	0	-	-
+30	rig	MCH-thumb.03.L	0	-	-
+30	rig	MCH-thumb.02.L	0	-	-
+30	rig	MCH-thumb.01.L	0	-	-
+30	rig	ORG-palm.04.L	0	-	-
+30	rig	ORG-f_pinky.01.L	0	-	-
+30	rig	ORG-f_pinky.02.L	0	-	-
+30	rig	ORG-f_pinky.03.L	0	-	-
+30	rig	DEF-f_pinky.01.L	0	-	-
+30	rig	DEF-f_pinky.02.L	0	-	-
+30	rig	DEF-f_pinky.03.L	0	-	-
+30	rig	f_pinky.01_master.L	1	WGT-rig_f_pinky.01_master.L	0.119897 0.012950 0.067261 0.000000 -0.057419 -0.054930 0.112929 0.000000 0.037347 -0.126025 -0.042310 0.000000 0.231092 -0.078050 1.528075 1.000000
+30	rig	DEF-palm.04.L	0	-	-
+30	rig	MCH-f_pinky.01_drv.L	0	-	-
+30	rig	f_pinky.01.L	0	-	-
+30	rig	MCH-f_pinky.02_drv.L	0	-	-
+30	rig	f_pinky.02.L	0	-	-
+30	rig	MCH-f_pinky.03_drv.L	0	-	-
+30	rig	f_pinky.03.L	0	-	-
+30	rig	f_pinky.01.L.001	0	-	-
+30	rig	MCH-f_pinky.03.L	0	-	-
+30	rig	MCH-f_pinky.02.L	0	-	-
+30	rig	MCH-f_pinky.01.L	0	-	-
+30	rig	palm.L	1	WGT-rig_palm.L	0.039493 -0.000676 0.025081 0.000000 -0.025085 -0.000123 0.039496 0.000000 -0.000505 -0.046784 -0.000467 0.000000 0.256177 -0.077927 1.488579 1.000000
+30	rig	ORG-shoulder.R	0	-	-
+30	rig	ORG-upper_arm.R	0	-	-
+30	rig	ORG-forearm.R	0	-	-
+30	rig	ORG-hand.R	0	-	-
+30	rig	MCH-hand_tweak.R	0	-	-
+30	rig	hand_tweak.R	0	-	-
+30	rig	MCH-forearm_tweak.R	0	-	-
+30	rig	forearm_tweak.R	0	-	-
+30	rig	MCH-forearm_tweak.R.001	0	-	-
+30	rig	forearm_tweak.R.001	0	-	-
+30	rig	MCH-upper_arm_parent_widget.R	0	-	-
+30	rig	MCH-upper_arm_tweak.R.001	0	-	-
+30	rig	upper_arm_tweak.R.001	0	-	-
+30	rig	DEF-shoulder.R	0	-	-
+30	rig	upper_arm_parent.R	1	WGT-rig_upper_arm_parent.R	0.058744 0.023882 -0.011472 0.000000 -0.005212 -0.016942 -0.061957 0.000000 0.025977 -0.057406 0.013513 0.000000 -0.149280 -0.036973 1.393811 1.000000
+30	rig	MCH-upper_arm_parent.R	0	-	-
+30	rig	upper_arm_fk.R	1	WGT-rig_upper_arm_fk.R	0.234976 0.095527 -0.045889 0.000000 -0.020847 -0.067770 -0.247826 0.000000 0.103907 -0.229623 0.054051 0.000000 -0.149280 -0.036973 1.393811 1.000000
+30	rig	forearm_fk.R	1	WGT-rig_forearm_fk.R	0.229362 0.094867 -0.071178 0.000000 -0.023074 -0.116312 -0.229374 0.000000 0.116335 -0.210107 0.094839 0.000000 -0.170127 -0.104743 1.145985 1.000000
+30	rig	MCH-hand_fk.R	0	-	-
+30	rig	hand_fk.R	1	WGT-rig_hand_fk.R	0.069874 0.067865 0.000453 0.000000 0.024072 -0.024175 -0.091238 0.000000 0.063454 -0.065560 0.034113 0.000000 -0.193201 -0.221055 0.916611 1.000000
+30	rig	MCH-upper_arm_ik_swing.R	0	-	-
+30	rig	upper_arm_ik.R	1	WGT-rig_upper_arm_ik.R	0.213355 0.073310 -0.124750 0.000000 -0.128523 -0.006091 -0.223388 0.000000 0.066473 -0.247075 -0.031508 0.000000 -0.149280 -0.036973 1.393811 1.000000
+30	rig	MCH-forearm_ik.R	0	-	-
+30	rig	MCH-upper_arm_tweak.R	0	-	-
+30	rig	upper_arm_tweak.R	0	-	-
+30	rig	DEF-upper_arm.R	0	-	-
+30	rig	DEF-upper_arm.R.001	0	-	-
+30	rig	DEF-forearm.R	0	-	-
+30	rig	DEF-forearm.R.001	0	-	-
+30	rig	DEF-hand.R	0	-	-
+30	rig	ORG-palm.01.R	0	-	-
+30	rig	ORG-f_index.01.R	0	-	-
+30	rig	ORG-f_index.02.R	0	-	-
+30	rig	ORG-f_index.03.R	0	-	-
+30	rig	ORG-thumb.01.R	0	-	-
+30	rig	ORG-thumb.02.R	0	-	-
+30	rig	ORG-thumb.03.R	0	-	-
+30	rig	DEF-f_index.01.R	0	-	-
+30	rig	DEF-f_index.02.R	0	-	-
+30	rig	DEF-f_index.03.R	0	-	-
+30	rig	f_index.01_master.R	1	WGT-rig_f_index.01_master.R	-0.102283 0.103167 -0.058930 0.000000 0.080064 0.002399 -0.134767 0.000000 0.087783 0.118020 0.054253 0.000000 -0.156513 -0.262767 0.819331 1.000000
+30	rig	DEF-thumb.01.R	0	-	-
+30	rig	DEF-thumb.02.R	0	-	-
+30	rig	DEF-thumb.03.R	0	-	-
+30	rig	thumb.01_master.R	1	WGT-rig_thumb.01_master.R	0.031701 -0.150853 0.016058 0.000000 0.144613 0.025092 -0.049769 0.000000 -0.045843 -0.025164 -0.145893 0.000000 -0.177958 -0.260864 0.892907 1.000000
+30	rig	DEF-palm.01.R	0	-	-
+30	rig	MCH-f_index.01_drv.R	0	-	-
+30	rig	f_index.01.R	0	-	-
+30	rig	MCH-f_index.02_drv.R	0	-	-
+30	rig	f_index.02.R	0	-	-
+30	rig	MCH-f_index.03_drv.R	0	-	-
+30	rig	f_index.03.R	0	-	-
+30	rig	f_index.01.R.001	0	-	-
+30	rig	MCH-f_index.03.R	0	-	-
+30	rig	MCH-f_index.02.R	0	-	-
+30	rig	MCH-f_index.01.R	0	-	-
+30	rig	MCH-thumb.01_drv.R	0	-	-
+30	rig	thumb.01.R	0	-	-
+30	rig	MCH-thumb.02_drv.R	0	-	-
+30	rig	thumb.02.R	0	-	-
+30	rig	MCH-thumb.03_drv.R	0	-	-
+30	rig	thumb.03.R	0	-	-
+30	rig	thumb.01.R.001	0	-	-
+30	rig	MCH-thumb.03.R	0	-	-
+30	rig	MCH-thumb.02.R	0	-	-
+30	rig	MCH-thumb.01.R	0	-	-
+30	rig	ORG-palm.04.R	0	-	-
+30	rig	ORG-f_pinky.01.R	0	-	-
+30	rig	ORG-f_pinky.02.R	0	-	-
+30	rig	ORG-f_pinky.03.R	0	-	-
+30	rig	DEF-f_pinky.01.R	0	-	-
+30	rig	DEF-f_pinky.02.R	0	-	-
+30	rig	DEF-f_pinky.03.R	0	-	-
+30	rig	f_pinky.01_master.R	1	WGT-rig_f_pinky.01_master.R	-0.054413 0.109005 -0.064995 0.000000 0.090232 -0.016500 -0.103214 0.000000 0.089245 0.083143 0.064728 0.000000 -0.170082 -0.235913 0.806385 1.000000
+30	rig	DEF-palm.04.R	0	-	-
+30	rig	MCH-f_pinky.01_drv.R	0	-	-
+30	rig	f_pinky.01.R	0	-	-
+30	rig	MCH-f_pinky.02_drv.R	0	-	-
+30	rig	f_pinky.02.R	0	-	-
+30	rig	MCH-f_pinky.03_drv.R	0	-	-
+30	rig	f_pinky.03.R	0	-	-
+30	rig	f_pinky.01.R.001	0	-	-
+30	rig	MCH-f_pinky.03.R	0	-	-
+30	rig	MCH-f_pinky.02.R	0	-	-
+30	rig	MCH-f_pinky.01.R	0	-	-
+30	rig	palm.R	1	WGT-rig_palm.R	-0.013118 0.038319 -0.023426 0.000000 0.016828 -0.018433 -0.039576 0.000000 0.041641 0.019521 0.008614 0.000000 -0.186910 -0.217481 0.845961 1.000000
+30	rig	shoulder.L	1	WGT-rig_shoulder.L	0.066885 -0.118582 -0.004276 0.000000 0.115917 0.066346 -0.026737 0.000000 0.025359 0.009490 0.133493 0.000000 0.039120 -0.020010 1.409918 1.000000
+30	rig	shoulder.R	1	WGT-rig_shoulder.R	0.006656 -0.136032 0.002110 0.000000 -0.136048 -0.006657 -0.000024 0.000000 -0.000128 0.002106 0.136195 0.000000 0.008653 -0.028838 1.413148 1.000000
+30	rig	MCH-WGT-chest	0	-	-
+30	rig	MCH-hand_ik.parent.L	0	-	-
+30	rig	hand_ik.L	1	WGT-rig_hand_ik.L	-0.095984 0.008020 -0.014521 0.000000 0.014945 0.004799 -0.096134 0.000000 -0.007200 -0.096958 -0.005959 0.000000 0.400974 0.135819 0.956802 1.000000
+30	rig	MCH-upper_arm_ik_target.L	0	-	-
+30	rig	MCH-upper_arm_ik_target.parent.L	0	-	-
+30	rig	upper_arm_ik_target.L	0	-	-
+30	rig	MCH-hand_ik.parent.R	0	-	-
+30	rig	hand_ik.R	1	WGT-rig_hand_ik.R	0.076830 0.058090 -0.014521 0.000000 -0.015195 -0.003934 -0.096134 0.000000 0.057917 -0.078091 -0.005959 0.000000 -0.411475 -0.099575 0.956802 1.000000
+30	rig	MCH-upper_arm_ik_target.R	0	-	-
+30	rig	MCH-upper_arm_ik_target.parent.R	0	-	-
+30	rig	upper_arm_ik_target.R	0	-	-
+30	rig	MCH-foot_ik.parent.L	0	-	-
+30	rig	foot_ik.L	1	WGT-rig_foot_ik.L	0.165732 0.056968 0.000000 0.000000 -0.056968 0.165732 0.000000 0.000000 0.000000 0.000000 0.175250 0.000000 0.115146 0.034206 0.122773 1.000000
+30	rig	foot_spin_ik.L	1	WGT-rig_foot_spin_ik.L	0.082866 0.028484 0.000000 0.000000 -0.028484 0.082866 0.000000 0.000000 0.000000 0.000000 0.087625 0.000000 0.158901 -0.093084 0.010545 1.000000
+30	rig	foot_heel_ik.L	1	WGT-rig_foot_heel_ik.L	0.082866 0.028484 0.000000 0.000000 -0.028484 0.082866 0.000000 0.000000 0.000000 0.000000 0.087625 0.000000 0.115146 0.034206 0.122773 1.000000
+30	rig	MCH-heel.02_rock2.L	0	-	-
+30	rig	MCH-heel.02_rock1.L	0	-	-
+30	rig	MCH-heel.02_roll2.L	0	-	-
+30	rig	MCH-heel.02_roll1.L	0	-	-
+30	rig	MCH-foot_roll.L	0	-	-
+30	rig	MCH-thigh_ik_target.L	0	-	-
+30	rig	MCH-toe_ik_parent.L	0	-	-
+30	rig	toe_ik.L	1	WGT-rig_toe_ik.L	-0.055607 -0.016111 0.000000 0.000000 0.016092 -0.055542 -0.002782 0.000000 0.000774 -0.002672 0.057827 0.000000 0.158901 -0.093084 0.010545 1.000000
+30	rig	MCH-thigh_ik_target.parent.L	0	-	-
+30	rig	thigh_ik_target.L	0	-	-
+30	rig	MCH-foot_ik.parent.R	0	-	-
+30	rig	foot_ik.R	1	WGT-rig_foot_ik.R	-0.170517 -0.040454 0.000000 0.000000 -0.040454 0.170517 0.000000 0.000000 0.000000 0.000000 0.175250 0.000000 -0.115598 -0.032648 0.122773 1.000000
+30	rig	foot_spin_ik.R	1	WGT-rig_foot_spin_ik.R	-0.085258 -0.020227 0.000000 0.000000 -0.020227 0.085258 0.000000 0.000000 0.000000 0.000000 0.087625 0.000000 -0.084527 -0.163613 0.010545 1.000000
+30	rig	foot_heel_ik.R	1	WGT-rig_foot_heel_ik.R	-0.085258 -0.020227 0.000000 0.000000 -0.020227 0.085258 0.000000 0.000000 0.000000 0.000000 0.087625 0.000000 -0.115598 -0.032648 0.122773 1.000000
+30	rig	MCH-heel.02_rock2.R	0	-	-
+30	rig	MCH-heel.02_rock1.R	0	-	-
+30	rig	MCH-heel.02_roll2.R	0	-	-
+30	rig	MCH-heel.02_roll1.R	0	-	-
+30	rig	MCH-foot_roll.R	0	-	-
+30	rig	MCH-thigh_ik_target.R	0	-	-
+30	rig	MCH-toe_ik_parent.R	0	-	-
+30	rig	toe_ik.R	1	WGT-rig_toe_ik.R	0.055607 0.016111 0.000001 0.000000 0.016092 -0.055543 -0.002782 0.000000 0.000774 -0.002672 0.057827 0.000000 -0.084527 -0.163613 0.010545 1.000000
+30	rig	MCH-thigh_ik_target.parent.R	0	-	-
+30	rig	thigh_ik_target.R	0	-	-
+60	rig	root	1	WGT-rig_root	0.782748 0.226789 0.000000 0.000000 -0.226789 0.782748 0.000000 0.000000 0.000000 0.000000 0.814941 0.000000 0.000000 0.000000 0.000000 1.000000
+60	rig	DEF-spine	0	-	-
+60	rig	DEF-spine.001	0	-	-
+60	rig	DEF-spine.002	0	-	-
+60	rig	DEF-spine.003	0	-	-
+60	rig	DEF-spine.004	0	-	-
+60	rig	DEF-spine.005	0	-	-
+60	rig	DEF-spine.006	0	-	-
+60	rig	VIS_upper_arm_ik_pole.L	0	-	-
+60	rig	VIS_upper_arm_ik_pole.R	0	-	-
+60	rig	VIS_thigh_ik_pole.L	0	-	-
+60	rig	VIS_thigh_ik_pole.R	0	-	-
+60	rig	MCH-torso.parent	0	-	-
+60	rig	torso	1	WGT-rig_torso	0.321324 0.093098 0.000000 0.000000 -0.093098 0.321324 0.000000 0.000000 0.000000 0.000000 0.334539 0.000000 -0.006857 0.023667 1.011250 1.000000
+60	rig	hips	1	WGT-rig_hips	0.133885 0.038791 0.000000 0.000000 0.016828 -0.058081 0.125592 0.000000 0.034951 -0.120631 -0.060470 0.000000 -0.018699 0.064538 0.922875 1.000000
+60	rig	chest	1	WGT-rig_chest	0.178513 0.051721 -0.000000 0.000000 -0.001307 0.004512 0.185796 0.000000 0.051705 -0.178456 0.004697 0.000000 -0.003575 0.012339 1.291721 1.000000
+60	rig	MCH-spine.001	0	-	-
+60	rig	spine_fk.001	1	WGT-rig_spine_fk.001	0.111514 0.032310 -0.000000 0.000000 -0.005353 0.018474 0.114496 0.000000 0.031863 -0.109973 0.019234 0.000000 -0.000368 0.001272 1.214122 1.000000
+60	rig	MCH-spine	0	-	-
+60	rig	spine_fk	1	WGT-rig_spine_fk	0.188422 0.054592 0.000000 0.000000 0.023683 -0.081740 0.176751 0.000000 0.049188 -0.169769 -0.085102 0.000000 0.004984 -0.017203 1.099626 1.000000
+60	rig	tweak_spine	0	-	-
+60	rig	ORG-spine	0	-	-
+60	rig	ORG-pelvis.L	0	-	-
+60	rig	DEF-pelvis.L	0	-	-
+60	rig	ORG-pelvis.R	0	-	-
+60	rig	DEF-pelvis.R	0	-	-
+60	rig	ORG-thigh.L	0	-	-
+60	rig	ORG-shin.L	0	-	-
+60	rig	ORG-foot.L	0	-	-
+60	rig	ORG-toe.L	0	-	-
+60	rig	ORG-heel.02.L	0	-	-
+60	rig	MCH-foot_tweak.L	0	-	-
+60	rig	foot_tweak.L	0	-	-
+60	rig	MCH-shin_tweak.L	0	-	-
+60	rig	shin_tweak.L	0	-	-
+60	rig	MCH-shin_tweak.L.001	0	-	-
+60	rig	shin_tweak.L.001	0	-	-
+60	rig	MCH-thigh_parent_widget.L	0	-	-
+60	rig	MCH-thigh_tweak.L.001	0	-	-
+60	rig	thigh_tweak.L.001	0	-	-
+60	rig	ORG-thigh.R	0	-	-
+60	rig	ORG-shin.R	0	-	-
+60	rig	ORG-foot.R	0	-	-
+60	rig	ORG-toe.R	0	-	-
+60	rig	ORG-heel.02.R	0	-	-
+60	rig	MCH-foot_tweak.R	0	-	-
+60	rig	foot_tweak.R	0	-	-
+60	rig	MCH-shin_tweak.R	0	-	-
+60	rig	shin_tweak.R	0	-	-
+60	rig	MCH-shin_tweak.R.001	0	-	-
+60	rig	shin_tweak.R.001	0	-	-
+60	rig	MCH-thigh_parent_widget.R	0	-	-
+60	rig	MCH-thigh_tweak.R.001	0	-	-
+60	rig	thigh_tweak.R.001	0	-	-
+60	rig	thigh_parent.L	1	WGT-rig_thigh_parent.L	0.103087 0.028835 -0.010633 0.000000 -0.007289 -0.013216 -0.106506 0.000000 -0.029856 0.102788 -0.010711 0.000000 0.141045 0.072002 0.995661 1.000000
+60	rig	MCH-thigh_parent.L	0	-	-
+60	rig	thigh_fk.L	1	WGT-rig_thigh_fk.L	0.412347 0.115339 -0.042533 0.000000 -0.029157 -0.052864 -0.426025 0.000000 -0.119424 0.411150 -0.042845 0.000000 0.141045 0.072002 0.995661 1.000000
+60	rig	shin_fk.L	1	WGT-rig_shin_fk.L	0.429768 0.123170 0.007287 0.000000 0.003258 0.015069 -0.446863 0.000000 -0.123343 0.429565 0.013586 0.000000 0.111888 0.019138 0.569636 1.000000
+60	rig	MCH-foot_fk.L	0	-	-
+60	rig	foot_fk.L	1	WGT-rig_foot_fk.L	0.166426 0.054842 0.002683 0.000000 0.043754 -0.127290 -0.112229 0.000000 -0.033172 0.107248 -0.134574 0.000000 0.115146 0.034207 0.122773 1.000000
+60	rig	MCH-toe_fk.L	0	-	-
+60	rig	toe_fk.L	1	WGT-rig_toe_fk.L	-0.055607 -0.016111 0.000000 0.000000 0.016093 -0.055542 -0.002782 0.000000 0.000774 -0.002672 0.057827 0.000000 0.158901 -0.093084 0.010545 1.000000
+60	rig	MCH-thigh_ik_swing.L	0	-	-
+60	rig	thigh_ik.L	1	WGT-rig_thigh_ik.L	0.412347 0.115339 -0.042533 0.000000 -0.029157 -0.052865 -0.426025 0.000000 -0.119424 0.411150 -0.042846 0.000000 0.141045 0.072002 0.995661 1.000000
+60	rig	MCH-shin_ik.L	0	-	-
+60	rig	MCH-thigh_tweak.L	0	-	-
+60	rig	thigh_tweak.L	0	-	-
+60	rig	DEF-thigh.L	0	-	-
+60	rig	DEF-thigh.L.001	0	-	-
+60	rig	DEF-shin.L	0	-	-
+60	rig	DEF-shin.L.001	0	-	-
+60	rig	DEF-foot.L	0	-	-
+60	rig	DEF-toe.L	0	-	-
+60	rig	thigh_parent.R	1	WGT-rig_thigh_parent.R	-0.102535 -0.030741 -0.010633 0.000000 0.013226 -0.007272 -0.106506 0.000000 -0.029718 0.102828 -0.010711 0.000000 -0.157690 -0.014552 0.995661 1.000000
+60	rig	MCH-thigh_parent.R	0	-	-
+60	rig	thigh_fk.R	1	WGT-rig_thigh_fk.R	-0.410138 -0.122963 -0.042533 0.000000 0.052902 -0.029089 -0.426025 0.000000 -0.118871 0.411310 -0.042845 0.000000 -0.157690 -0.014552 0.995661 1.000000
+60	rig	shin_fk.R	1	WGT-rig_shin_fk.R	-0.429047 -0.125657 0.007287 0.000000 -0.010809 0.010993 -0.446863 0.000000 -0.125403 0.428968 0.013586 0.000000 -0.104789 -0.043641 0.569636 1.000000
+60	rig	MCH-foot_fk.R	0	-	-
+60	rig	foot_fk.R	1	WGT-rig_foot_fk.R	-0.169967 -0.042623 0.002683 0.000000 0.031071 -0.130965 -0.112229 0.000000 -0.029300 0.108370 -0.134574 0.000000 -0.115598 -0.032648 0.122773 1.000000
+60	rig	MCH-toe_fk.R	0	-	-
+60	rig	toe_fk.R	1	WGT-rig_toe_fk.R	0.055607 0.016111 0.000000 0.000000 0.016093 -0.055542 -0.002782 0.000000 0.000774 -0.002672 0.057827 0.000000 -0.084527 -0.163613 0.010544 1.000000
+60	rig	MCH-thigh_ik_swing.R	0	-	-
+60	rig	thigh_ik.R	1	WGT-rig_thigh_ik.R	-0.410138 -0.122963 -0.042533 0.000000 0.052902 -0.029090 -0.426025 0.000000 -0.118871 0.411310 -0.042846 0.000000 -0.157690 -0.014552 0.995661 1.000000
+60	rig	MCH-shin_ik.R	0	-	-
+60	rig	MCH-thigh_tweak.R	0	-	-
+60	rig	thigh_tweak.R	0	-	-
+60	rig	DEF-thigh.R	0	-	-
+60	rig	DEF-thigh.R.001	0	-	-
+60	rig	DEF-shin.R	0	-	-
+60	rig	DEF-shin.R.001	0	-	-
+60	rig	DEF-foot.R	0	-	-
+60	rig	DEF-toe.R	0	-	-
+60	rig	tweak_spine.001	0	-	-
+60	rig	ORG-spine.001	0	-	-
+60	rig	MCH-WGT-hips	0	-	-
+60	rig	MCH-spine.002	0	-	-
+60	rig	spine_fk.002	1	WGT-rig_spine_fk.002	0.075351 0.021832 -0.000000 0.000000 -0.003207 0.011068 0.077599 0.000000 0.021595 -0.074534 0.011523 0.000000 -0.000368 0.001272 1.214122 1.000000
+60	rig	MCH-pivot	0	-	-
+60	rig	tweak_spine.002	0	-	-
+60	rig	ORG-spine.002	0	-	-
+60	rig	MCH-spine.003	0	-	-
+60	rig	spine_fk.003	1	WGT-rig_spine_fk.003	0.160252 0.046431 -0.000000 0.000000 -0.001173 0.004050 0.166790 0.000000 0.046416 -0.160201 0.004217 0.000000 -0.003575 0.012339 1.291721 1.000000
+60	rig	ORG-spine.004	0	-	-
+60	rig	ORG-spine.005	0	-	-
+60	rig	ORG-spine.006	0	-	-
+60	rig	MCH-ROT-neck	0	-	-
+60	rig	neck	1	WGT-rig_neck	0.112317 0.032542 0.000000 0.000000 0.004753 -0.016404 0.115682 0.000000 0.032193 -0.111112 -0.017078 0.000000 -0.004749 0.016390 1.458511 1.000000
+60	rig	MCH-ROT-head	0	-	-
+60	rig	head	1	WGT-rig_head	0.194977 0.039990 -0.029143 0.000000 0.032575 -0.014551 0.197969 0.000000 0.037248 -0.196605 -0.020580 0.000000 0.000004 -0.000014 1.574193 1.000000
+60	rig	tweak_spine.004	1	WGT-rig_tweak_spine.004	0.031907 0.009245 0.000000 0.000000 0.002266 -0.007823 0.032206 0.000000 0.008963 -0.030934 -0.008144 0.000000 -0.004749 0.016390 1.458511 1.000000
+60	rig	MCH-STR-neck	0	-	-
+60	rig	MCH-spine.005	0	-	-
+60	rig	tweak_spine.005	1	WGT-rig_tweak_spine.005	0.024806 0.006197 -0.001896 0.000000 0.001911 0.000175 0.025566 0.000000 0.006193 -0.024878 -0.000293 0.000000 -0.000216 0.000745 1.522923 1.000000
+60	rig	tweak_spine.003	0	-	-
+60	rig	ORG-spine.003	0	-	-
+60	rig	ORG-shoulder.L	0	-	-
+60	rig	ORG-upper_arm.L	0	-	-
+60	rig	ORG-forearm.L	0	-	-
+60	rig	ORG-hand.L	0	-	-
+60	rig	MCH-hand_tweak.L	0	-	-
+60	rig	hand_tweak.L	0	-	-
+60	rig	MCH-forearm_tweak.L	0	-	-
+60	rig	forearm_tweak.L	0	-	-
+60	rig	MCH-forearm_tweak.L.001	0	-	-
+60	rig	forearm_tweak.L.001	0	-	-
+60	rig	MCH-upper_arm_parent_widget.L	0	-	-
+60	rig	MCH-upper_arm_tweak.L.001	0	-	-
+60	rig	upper_arm_tweak.L.001	0	-	-
+60	rig	DEF-shoulder.L	0	-	-
+60	rig	upper_arm_parent.L	1	WGT-rig_upper_arm_parent.L	-0.030042 0.038683 -0.041880 0.000000 0.023610 -0.034647 -0.048938 0.000000 -0.051893 -0.038158 0.001980 0.000000 0.158869 0.052308 1.377419 1.000000
+60	rig	MCH-upper_arm_parent.L	0	-	-
+60	rig	upper_arm_fk.L	1	WGT-rig_upper_arm_fk.L	-0.120167 0.154731 -0.167521 0.000000 0.094440 -0.138590 -0.195752 0.000000 -0.207572 -0.152631 0.007919 0.000000 0.158869 0.052308 1.377419 1.000000
+60	rig	forearm_fk.L	1	WGT-rig_forearm_fk.L	0.120809 -0.228167 0.004312 0.000000 -0.012681 -0.001840 0.257894 0.000000 -0.227855 -0.120872 -0.012066 0.000000 0.253308 -0.086282 1.181666 1.000000
+60	rig	MCH-hand_fk.L	0	-	-
+60	rig	hand_fk.L	1	WGT-rig_hand_fk.L	0.028642 -0.091558 0.016882 0.000000 0.063964 0.032186 0.066037 0.000000 -0.067649 -0.008332 0.069587 0.000000 0.240628 -0.088122 1.439560 1.000000
+60	rig	MCH-upper_arm_ik_swing.L	0	-	-
+60	rig	upper_arm_ik.L	1	WGT-rig_upper_arm_ik.L	-0.216181 -0.052878 -0.124020 0.000000 0.096482 0.103022 -0.212106 0.000000 0.094171 -0.226940 -0.067391 0.000000 0.158869 0.052308 1.377419 1.000000
+60	rig	MCH-forearm_ik.L	0	-	-
+60	rig	MCH-upper_arm_tweak.L	0	-	-
+60	rig	upper_arm_tweak.L	0	-	-
+60	rig	DEF-upper_arm.L	0	-	-
+60	rig	DEF-upper_arm.L.001	0	-	-
+60	rig	DEF-forearm.L	0	-	-
+60	rig	DEF-forearm.L.001	0	-	-
+60	rig	DEF-hand.L	0	-	-
+60	rig	ORG-palm.01.L	0	-	-
+60	rig	ORG-f_index.01.L	0	-	-
+60	rig	ORG-f_index.02.L	0	-	-
+60	rig	ORG-f_index.03.L	0	-	-
+60	rig	ORG-thumb.01.L	0	-	-
+60	rig	ORG-thumb.02.L	0	-	-
+60	rig	ORG-thumb.03.L	0	-	-
+60	rig	DEF-f_index.01.L	0	-	-
+60	rig	DEF-f_index.02.L	0	-	-
+60	rig	DEF-f_index.03.L	0	-	-
+60	rig	f_index.01_master.L	1	WGT-rig_f_index.01_master.L	0.111145 0.016492 -0.109329 0.000000 0.063927 -0.004171 0.064359 0.000000 0.006667 -0.155738 -0.016715 0.000000 0.299838 -0.050125 1.526736 1.000000
+60	rig	DEF-thumb.01.L	0	-	-
+60	rig	DEF-thumb.02.L	0	-	-
+60	rig	DEF-thumb.03.L	0	-	-
+60	rig	thumb.01_master.L	1	WGT-rig_thumb.01_master.L	-0.131552 0.031428 0.075669 0.000000 0.043973 -0.093690 0.115361 0.000000 0.069137 0.119390 0.070609 0.000000 0.239458 -0.062812 1.481238 1.000000
+60	rig	DEF-palm.01.L	0	-	-
+60	rig	MCH-f_index.01_drv.L	0	-	-
+60	rig	f_index.01.L	0	-	-
+60	rig	MCH-f_index.02_drv.L	0	-	-
+60	rig	f_index.02.L	0	-	-
+60	rig	MCH-f_index.03_drv.L	0	-	-
+60	rig	f_index.03.L	0	-	-
+60	rig	f_index.01.L.001	0	-	-
+60	rig	MCH-f_index.03.L	0	-	-
+60	rig	MCH-f_index.02.L	0	-	-
+60	rig	MCH-f_index.01.L	0	-	-
+60	rig	MCH-thumb.01_drv.L	0	-	-
+60	rig	thumb.01.L	0	-	-
+60	rig	MCH-thumb.02_drv.L	0	-	-
+60	rig	thumb.02.L	0	-	-
+60	rig	MCH-thumb.03_drv.L	0	-	-
+60	rig	thumb.03.L	0	-	-
+60	rig	thumb.01.L.001	0	-	-
+60	rig	MCH-thumb.03.L	0	-	-
+60	rig	MCH-thumb.02.L	0	-	-
+60	rig	MCH-thumb.01.L	0	-	-
+60	rig	ORG-palm.04.L	0	-	-
+60	rig	ORG-f_pinky.01.L	0	-	-
+60	rig	ORG-f_pinky.02.L	0	-	-
+60	rig	ORG-f_pinky.03.L	0	-	-
+60	rig	DEF-f_pinky.01.L	0	-	-
+60	rig	DEF-f_pinky.02.L	0	-	-
+60	rig	DEF-f_pinky.03.L	0	-	-
+60	rig	f_pinky.01_master.L	1	WGT-rig_f_pinky.01_master.L	0.112728 -0.018598 -0.077547 0.000000 0.035166 -0.056527 0.064677 0.000000 -0.060187 -0.107932 -0.061607 0.000000 0.325684 -0.055119 1.507245 1.000000
+60	rig	DEF-palm.04.L	0	-	-
+60	rig	MCH-f_pinky.01_drv.L	0	-	-
+60	rig	f_pinky.01.L	0	-	-
+60	rig	MCH-f_pinky.02_drv.L	0	-	-
+60	rig	f_pinky.02.L	0	-	-
+60	rig	MCH-f_pinky.03_drv.L	0	-	-
+60	rig	f_pinky.03.L	0	-	-
+60	rig	f_pinky.01.L.001	0	-	-
+60	rig	MCH-f_pinky.03.L	0	-	-
+60	rig	MCH-f_pinky.02.L	0	-	-
+60	rig	MCH-f_pinky.01.L	0	-	-
+60	rig	palm.L	1	WGT-rig_palm.L	0.040630 -0.009472 -0.021183 0.000000 0.023192 0.015218 0.037679 0.000000 -0.000738 -0.043219 0.017910 0.000000 0.302492 -0.070338 1.469566 1.000000
+60	rig	ORG-shoulder.R	0	-	-
+60	rig	ORG-upper_arm.R	0	-	-
+60	rig	ORG-forearm.R	0	-	-
+60	rig	ORG-hand.R	0	-	-
+60	rig	MCH-hand_tweak.R	0	-	-
+60	rig	hand_tweak.R	0	-	-
+60	rig	MCH-forearm_tweak.R	0	-	-
+60	rig	forearm_tweak.R	0	-	-
+60	rig	MCH-forearm_tweak.R.001	0	-	-
+60	rig	forearm_tweak.R.001	0	-	-
+60	rig	MCH-upper_arm_parent_widget.R	0	-	-
+60	rig	MCH-upper_arm_tweak.R.001	0	-	-
+60	rig	upper_arm_tweak.R.001	0	-	-
+60	rig	DEF-shoulder.R	0	-	-
+60	rig	upper_arm_parent.R	1	WGT-rig_upper_arm_parent.R	0.059549 0.024115 -0.005024 0.000000 0.000865 -0.015182 -0.062623 0.000000 0.024617 -0.057800 0.014353 0.000000 -0.162225 -0.040724 1.377419 1.000000
+60	rig	MCH-upper_arm_parent.R	0	-	-
+60	rig	upper_arm_fk.R	1	WGT-rig_upper_arm_fk.R	0.238195 0.096460 -0.020095 0.000000 0.003459 -0.060727 -0.250490 0.000000 0.098470 -0.231199 0.057410 0.000000 -0.162225 -0.040724 1.377419 1.000000
+60	rig	forearm_fk.R	1	WGT-rig_forearm_fk.R	0.235069 0.096521 -0.045820 0.000000 -0.000486 -0.109767 -0.233718 0.000000 0.106843 -0.212857 0.099748 0.000000 -0.158766 -0.101451 1.126928 1.000000
+60	rig	MCH-hand_fk.R	0	-	-
+60	rig	hand_fk.R	1	WGT-rig_hand_fk.R	0.069405 0.067729 0.009163 0.000000 0.032869 -0.021626 -0.089107 0.000000 0.059923 -0.066583 0.038263 0.000000 -0.159251 -0.211218 0.893210 1.000000
+60	rig	MCH-upper_arm_ik_swing.R	0	-	-
+60	rig	upper_arm_ik.R	1	WGT-rig_upper_arm_ik.R	0.210965 0.070881 -0.124020 0.000000 -0.136613 0.035486 -0.212106 0.000000 0.041735 -0.242132 -0.067391 0.000000 -0.162225 -0.040724 1.377419 1.000000
+60	rig	MCH-forearm_ik.R	0	-	-
+60	rig	MCH-upper_arm_tweak.R	0	-	-
+60	rig	upper_arm_tweak.R	0	-	-
+60	rig	DEF-upper_arm.R	0	-	-
+60	rig	DEF-upper_arm.R.001	0	-	-
+60	rig	DEF-forearm.R	0	-	-
+60	rig	DEF-forearm.R.001	0	-	-
+60	rig	DEF-hand.R	0	-	-
+60	rig	ORG-palm.01.R	0	-	-
+60	rig	ORG-f_index.01.R	0	-	-
+60	rig	ORG-f_index.02.R	0	-	-
+60	rig	ORG-f_index.03.R	0	-	-
+60	rig	ORG-thumb.01.R	0	-	-
+60	rig	ORG-thumb.02.R	0	-	-
+60	rig	ORG-thumb.03.R	0	-	-
+60	rig	DEF-f_index.01.R	0	-	-
+60	rig	DEF-f_index.02.R	0	-	-
+60	rig	DEF-f_index.03.R	0	-	-
+60	rig	f_index.01_master.R	1	WGT-rig_f_index.01_master.R	-0.096206 0.104928 -0.065670 0.000000 0.092794 0.006087 -0.126215 0.000000 0.081925 0.116323 0.065842 0.000000 -0.113214 -0.250222 0.798825 1.000000
+60	rig	DEF-thumb.01.R	0	-	-
+60	rig	DEF-thumb.02.R	0	-	-
+60	rig	DEF-thumb.03.R	0	-	-
+60	rig	thumb.01_master.R	1	WGT-rig_thumb.01_master.R	0.030195 -0.151290 0.014807 0.000000 0.148735 0.026286 -0.034734 0.000000 -0.031395 -0.020977 -0.150312 0.000000 -0.141719 -0.250364 0.869989 1.000000
+60	rig	DEF-palm.01.R	0	-	-
+60	rig	MCH-f_index.01_drv.R	0	-	-
+60	rig	f_index.01.R	0	-	-
+60	rig	MCH-f_index.02_drv.R	0	-	-
+60	rig	f_index.02.R	0	-	-
+60	rig	MCH-f_index.03_drv.R	0	-	-
+60	rig	f_index.03.R	0	-	-
+60	rig	f_index.01.R.001	0	-	-
+60	rig	MCH-f_index.03.R	0	-	-
+60	rig	MCH-f_index.02.R	0	-	-
+60	rig	MCH-f_index.01.R	0	-	-
+60	rig	MCH-thumb.01_drv.R	0	-	-
+60	rig	thumb.01.R	0	-	-
+60	rig	MCH-thumb.02_drv.R	0	-	-
+60	rig	thumb.02.R	0	-	-
+60	rig	MCH-thumb.03_drv.R	0	-	-
+60	rig	thumb.03.R	0	-	-
+60	rig	thumb.01.R.001	0	-	-
+60	rig	MCH-thumb.03.R	0	-	-
+60	rig	MCH-thumb.02.R	0	-	-
+60	rig	MCH-thumb.01.R	0	-	-
+60	rig	ORG-palm.04.R	0	-	-
+60	rig	ORG-f_pinky.01.R	0	-	-
+60	rig	ORG-f_pinky.02.R	0	-	-
+60	rig	ORG-f_pinky.03.R	0	-	-
+60	rig	DEF-f_pinky.01.R	0	-	-
+60	rig	DEF-f_pinky.02.R	0	-	-
+60	rig	DEF-f_pinky.03.R	0	-	-
+60	rig	f_pinky.01_master.R	1	WGT-rig_f_pinky.01_master.R	-0.047980 0.110869 -0.066882 0.000000 0.099869 -0.013708 -0.094368 0.000000 0.082409 0.081162 0.075423 0.000000 -0.125495 -0.222995 0.785382 1.000000
+60	rig	DEF-palm.04.R	0	-	-
+60	rig	MCH-f_pinky.01_drv.R	0	-	-
+60	rig	f_pinky.01.R	0	-	-
+60	rig	MCH-f_pinky.02_drv.R	0	-	-
+60	rig	f_pinky.02.R	0	-	-
+60	rig	MCH-f_pinky.03_drv.R	0	-	-
+60	rig	f_pinky.03.R	0	-	-
+60	rig	f_pinky.01.R.001	0	-	-
+60	rig	MCH-f_pinky.03.R	0	-	-
+60	rig	MCH-f_pinky.02.R	0	-	-
+60	rig	MCH-f_pinky.01.R	0	-	-
+60	rig	palm.R	1	WGT-rig_palm.R	-0.010829 0.038983 -0.023501 0.000000 0.020625 -0.017333 -0.038254 0.000000 0.040578 0.019213 0.013172 0.000000 -0.146120 -0.205662 0.823637 1.000000
+60	rig	shoulder.L	1	WGT-rig_shoulder.L	0.067146 -0.118506 -0.001089 0.000000 0.117877 0.066914 -0.013450 0.000000 0.012237 0.005688 0.135541 0.000000 0.023691 -0.024481 1.412253 1.000000
+60	rig	shoulder.R	1	WGT-rig_shoulder.R	0.006606 -0.136046 -0.001089 0.000000 -0.135391 -0.006467 -0.013450 0.000000 -0.013382 -0.001734 0.135541 0.000000 -0.006934 -0.033354 1.412253 1.000000
+60	rig	MCH-WGT-chest	0	-	-
+60	rig	MCH-hand_ik.parent.L	0	-	-
+60	rig	hand_ik.L	1	WGT-rig_hand_ik.L	-0.095984 0.008020 -0.014521 0.000000 0.014945 0.004799 -0.096134 0.000000 -0.007200 -0.096958 -0.005959 0.000000 0.400974 0.135819 0.956802 1.000000
+60	rig	MCH-upper_arm_ik_target.L	0	-	-
+60	rig	MCH-upper_arm_ik_target.parent.L	0	-	-
+60	rig	upper_arm_ik_target.L	0	-	-
+60	rig	MCH-hand_ik.parent.R	0	-	-
+60	rig	hand_ik.R	1	WGT-rig_hand_ik.R	0.076830 0.058090 -0.014521 0.000000 -0.015195 -0.003934 -0.096134 0.000000 0.057917 -0.078091 -0.005959 0.000000 -0.411475 -0.099575 0.956802 1.000000
+60	rig	MCH-upper_arm_ik_target.R	0	-	-
+60	rig	MCH-upper_arm_ik_target.parent.R	0	-	-
+60	rig	upper_arm_ik_target.R	0	-	-
+60	rig	MCH-foot_ik.parent.L	0	-	-
+60	rig	foot_ik.L	1	WGT-rig_foot_ik.L	0.165732 0.056968 0.000000 0.000000 -0.056968 0.165732 0.000000 0.000000 0.000000 0.000000 0.175250 0.000000 0.115146 0.034206 0.122773 1.000000
+60	rig	foot_spin_ik.L	1	WGT-rig_foot_spin_ik.L	0.082866 0.028484 0.000000 0.000000 -0.028484 0.082866 0.000000 0.000000 0.000000 0.000000 0.087625 0.000000 0.158901 -0.093084 0.010545 1.000000
+60	rig	foot_heel_ik.L	1	WGT-rig_foot_heel_ik.L	0.082866 0.028484 0.000000 0.000000 -0.028484 0.082866 0.000000 0.000000 0.000000 0.000000 0.087625 0.000000 0.115146 0.034206 0.122773 1.000000
+60	rig	MCH-heel.02_rock2.L	0	-	-
+60	rig	MCH-heel.02_rock1.L	0	-	-
+60	rig	MCH-heel.02_roll2.L	0	-	-
+60	rig	MCH-heel.02_roll1.L	0	-	-
+60	rig	MCH-foot_roll.L	0	-	-
+60	rig	MCH-thigh_ik_target.L	0	-	-
+60	rig	MCH-toe_ik_parent.L	0	-	-
+60	rig	toe_ik.L	1	WGT-rig_toe_ik.L	-0.055607 -0.016111 0.000000 0.000000 0.016092 -0.055542 -0.002782 0.000000 0.000774 -0.002672 0.057827 0.000000 0.158901 -0.093084 0.010545 1.000000
+60	rig	MCH-thigh_ik_target.parent.L	0	-	-
+60	rig	thigh_ik_target.L	0	-	-
+60	rig	MCH-foot_ik.parent.R	0	-	-
+60	rig	foot_ik.R	1	WGT-rig_foot_ik.R	-0.170517 -0.040454 0.000000 0.000000 -0.040454 0.170517 0.000000 0.000000 0.000000 0.000000 0.175250 0.000000 -0.115598 -0.032648 0.122773 1.000000
+60	rig	foot_spin_ik.R	1	WGT-rig_foot_spin_ik.R	-0.085258 -0.020227 0.000000 0.000000 -0.020227 0.085258 0.000000 0.000000 0.000000 0.000000 0.087625 0.000000 -0.084527 -0.163613 0.010545 1.000000
+60	rig	foot_heel_ik.R	1	WGT-rig_foot_heel_ik.R	-0.085258 -0.020227 0.000000 0.000000 -0.020227 0.085258 0.000000 0.000000 0.000000 0.000000 0.087625 0.000000 -0.115598 -0.032648 0.122773 1.000000
+60	rig	MCH-heel.02_rock2.R	0	-	-
+60	rig	MCH-heel.02_rock1.R	0	-	-
+60	rig	MCH-heel.02_roll2.R	0	-	-
+60	rig	MCH-heel.02_roll1.R	0	-	-
+60	rig	MCH-foot_roll.R	0	-	-
+60	rig	MCH-thigh_ik_target.R	0	-	-
+60	rig	MCH-toe_ik_parent.R	0	-	-
+60	rig	toe_ik.R	1	WGT-rig_toe_ik.R	0.055607 0.016111 0.000001 0.000000 0.016092 -0.055543 -0.002782 0.000000 0.000774 -0.002672 0.057827 0.000000 -0.084527 -0.163613 0.010545 1.000000
+60	rig	MCH-thigh_ik_target.parent.R	0	-	-
+60	rig	thigh_ik_target.R	0	-	-
+SHAPE	WGT-rig_root	48	0.00000
+SHAPE	WGT-rig_torso	12	0.00000
+SHAPE	WGT-rig_hips	32	57.19266
+SHAPE	WGT-rig_chest	32	21.70327
+SHAPE	WGT-rig_spine_fk.001	32	-32.00000
+SHAPE	WGT-rig_spine_fk	32	-32.00000
+SHAPE	WGT-rig_thigh_parent.L	48	0.00001
+SHAPE	WGT-rig_thigh_fk.L	12	13.40352
+SHAPE	WGT-rig_shin_fk.L	12	13.22099
+SHAPE	WGT-rig_foot_fk.L	32	0.00000
+SHAPE	WGT-rig_toe_fk.L	32	32.00000
+SHAPE	WGT-rig_thigh_ik.L	14	15.20000
+SHAPE	WGT-rig_thigh_parent.R	48	0.00001
+SHAPE	WGT-rig_thigh_fk.R	12	13.40352
+SHAPE	WGT-rig_shin_fk.R	12	13.22099
+SHAPE	WGT-rig_foot_fk.R	32	0.00000
+SHAPE	WGT-rig_toe_fk.R	32	32.00000
+SHAPE	WGT-rig_thigh_ik.R	14	15.20000
+SHAPE	WGT-rig_spine_fk.002	32	32.00000
+SHAPE	WGT-rig_spine_fk.003	32	32.00000
+SHAPE	WGT-rig_neck	32	18.41436
+SHAPE	WGT-rig_head	12	10.84461
+SHAPE	WGT-rig_tweak_spine.004	48	0.00001
+SHAPE	WGT-rig_tweak_spine.005	48	0.00001
+SHAPE	WGT-rig_upper_arm_parent.L	48	0.00001
+SHAPE	WGT-rig_upper_arm_fk.L	12	12.40367
+SHAPE	WGT-rig_forearm_fk.L	12	13.15116
+SHAPE	WGT-rig_hand_fk.L	32	0.00000
+SHAPE	WGT-rig_upper_arm_ik.L	14	15.20000
+SHAPE	WGT-rig_f_index.01_master.L	6	11.40000
+SHAPE	WGT-rig_thumb.01_master.L	6	11.40000
+SHAPE	WGT-rig_f_pinky.01_master.L	6	11.40000
+SHAPE	WGT-rig_palm.L	16	18.06423
+SHAPE	WGT-rig_upper_arm_parent.R	48	0.00001
+SHAPE	WGT-rig_upper_arm_fk.R	12	12.40367
+SHAPE	WGT-rig_forearm_fk.R	12	13.15116
+SHAPE	WGT-rig_hand_fk.R	32	0.00000
+SHAPE	WGT-rig_upper_arm_ik.R	14	15.20000
+SHAPE	WGT-rig_f_index.01_master.R	6	11.40000
+SHAPE	WGT-rig_thumb.01_master.R	6	11.40000
+SHAPE	WGT-rig_f_pinky.01_master.R	6	11.40000
+SHAPE	WGT-rig_palm.R	16	18.06423
+SHAPE	WGT-rig_shoulder.L	33	43.92197
+SHAPE	WGT-rig_shoulder.R	33	43.92197
+SHAPE	WGT-rig_hand_ik.L	8	5.34188
+SHAPE	WGT-rig_hand_ik.R	8	5.34188
+SHAPE	WGT-rig_foot_ik.L	8	-18.36643
+SHAPE	WGT-rig_foot_spin_ik.L	52	82.45304
+SHAPE	WGT-rig_foot_heel_ik.L	52	123.49362
+SHAPE	WGT-rig_toe_ik.L	32	32.00000
+SHAPE	WGT-rig_foot_ik.R	8	-18.36643
+SHAPE	WGT-rig_foot_spin_ik.R	52	82.45304
+SHAPE	WGT-rig_foot_heel_ik.R	52	123.49362
+SHAPE	WGT-rig_toe_ik.R	32	32.00000

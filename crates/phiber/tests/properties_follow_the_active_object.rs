@@ -25,6 +25,7 @@ fn object(name: &str, location: [f32; 3], scale: [f32; 3], color: [f32; 4], roug
             name: format!("{name} material"),
             base_color: color,
             viewport_color: color,
+            viewport_pbr: [roughness, 0.25],
             roughness,
             metallic: 0.25,
             base_color_texture: None,
@@ -36,6 +37,7 @@ fn object(name: &str, location: [f32; 3], scale: [f32; 3], color: [f32; 4], roug
         }],
         material_indices: Default::default(),
         uvs: Default::default(),
+        color: [1.0; 4],
     }
 }
 

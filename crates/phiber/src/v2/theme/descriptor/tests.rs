@@ -37,7 +37,7 @@ fn alternate(descriptor: &BStyleDescriptor, current: BStyleValue) -> BStyleValue
 
 #[test]
 fn catalog_declares_every_style_field_with_unique_key_and_target() {
-    assert_eq!(UI_STYLE_DESCRIPTORS.len(), 109);
+    assert_eq!(UI_STYLE_DESCRIPTORS.len(), 110);
     let mut keys = HashSet::new();
     let mut targets = HashSet::new();
     for descriptor in UI_STYLE_DESCRIPTORS {

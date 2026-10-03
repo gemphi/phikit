@@ -42,6 +42,23 @@ pub fn apply_view(state: &mut BState, v: &SceneView) {
     if BShading::from_slug(v.shading).is_some() {
         state.set(&shading_key(), v.shading.to_string());
     }
+    // X-ray as the view had it (`View3DShading.flag`, its two alphas).
+    if let Some(x) = v.xray {
+        let on = |b: bool| if b { crate::v2::state::val::V_TRUE } else { crate::v2::state::val::V_FALSE };
+        state.set(View3dKey::Xray, on(x.solid));
+        state.set(View3dKey::XrayAlpha, x.alpha.to_string());
+        state.set(View3dKey::XrayWireframe, on(x.wireframe));
+        state.set(View3dKey::XrayAlphaWireframe, x.alpha_wireframe.to_string());
+    }
+    // Workbench's outline and Cavity as the view had them (`View3DShading`).
+    if let Some(fx) = &v.solid_fx {
+        crate::v2::scene::BSolidFx::seed(state, fx);
+    }
+    if let Some(sh) = &v.solid_shade {
+        crate::v2::scene::BSolidShade::seed(state, sh);
+    }
+    // The Overlays and Gizmos popovers as the view had them (`View3D.overlay`).
+    crate::v2::scene::BOverlays::seed(state, &v.overlay.list);
     // The sidebar as the file left it (`SpaceView3D.show_region_ui`).
     let shown = crate::v2::part::sidebar::show::BSidebarShown::view3d_key();
     state.set(&shown, if v.sidebar { crate::v2::state::val::V_TRUE } else { crate::v2::state::val::V_FALSE });
@@ -57,6 +74,10 @@ pub fn restore_ui(state: &mut BState, model: &SceneModel) {
     if let Some(v) = &model.ui.view {
         apply_view(state, v);
     }
+    // Cavity ▸ World's and Shadow's settings are the scene's
+    // (`Scene.display`), not the view's.
+    crate::v2::scene::BSolidFx::seed_ssao(state, &model.render.ssao);
+    crate::v2::scene::BSolidFx::seed_shadow(state, &model.render.shadow);
 }
 
 #[cfg(test)]
@@ -71,7 +92,7 @@ mod tests {
 
     #[test]
     fn restores_workspace_and_view() {
-        let v = SceneView { yaw_deg: 90.0, pitch_deg: 45.0, perspective: false, camera_view: false, camzoom: 0.0, pivot: [1.0, 2.0, 3.0], width: 10.0, fov: 1.44, shading: "material", sidebar: true };
+        let v = SceneView { yaw_deg: 90.0, pitch_deg: 45.0, perspective: false, camera_view: false, camzoom: 0.0, pivot: [1.0, 2.0, 3.0], width: 10.0, fov: 1.44, shading: "material", sidebar: true, xray: None, solid_fx: None, solid_shade: None, overlay: Default::default() };
         let mut s = BState::default();
         restore_ui(&mut s, &model("UV Editing", Some(v)));
         assert_eq!(s.get(CtxKey::Space), Some("UvEditing"));
@@ -85,6 +106,24 @@ mod tests {
         // opens as the file left it.
         assert!((crate::v2::scene::camera::view_lens(&s) - 50.0).abs() < 1e-2);
         assert!(crate::v2::part::sidebar::show::BSidebarShown(crate::v2::host::BHostType::View3D).on(&s));
+    }
+
+    #[test]
+    fn a_file_opens_with_its_view_s_overlays() {
+        // `truth/blender_overlays.py` set each switch away from its default.
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../phiphx/tests/fixtures/overlays.blend");
+        let scene = crate::phiphx::blend::BlendFile::parse_bytes(&std::fs::read(&path).unwrap()).unwrap().extract_scene().unwrap();
+        let model = SceneModel::from_blend_owned(scene, &path.to_string_lossy());
+        let mut s = BState::default();
+        apply_view(&mut s, model.ui.view.as_ref().expect("the Layout view"));
+        let o = crate::v2::scene::BOverlays::now(&s);
+        assert!(!o.floor && o.axis_z && !o.text && o.stats && !o.bones && !o.outline && o.origins_all && !o.navigate, "{o:?}");
+        assert!(o.cursor && o.extras && o.relations && o.origins && o.axis_x);
+        // Workbench's Solid effects come with the view too (`View3DShading`):
+        // this file keeps the startup's — the outline on, Cavity off.
+        let fx = crate::v2::scene::BSolidFx::now(&s);
+        assert!(fx.outline && !fx.cavity && fx.cavity_type == "SCREEN", "{fx:?}");
+        assert_eq!(s.get(crate::v2::state::View3dKey::Shade("show_object_outline")).as_deref(), Some("true"), "seeded, not the factory default");
     }
 
     #[test]

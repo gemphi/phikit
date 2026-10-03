@@ -1,13 +1,14 @@
-//! The eleven palettes, each in two modes. Every one is `BPalette::on` —
+//! The sixteen palettes, each in two modes. Every one is `BPalette::on` —
 //! the same eighteen slots on its own ladder — with the accent that means
 //! "selected" in it; the light mode is the ladder the other way up on the
 //! theme's light seed (`shade::*_LIGHT`), with the same accent unless the
 //! theme has a light one of its own.
 //!
 //! Accents are (hue, saturation, lightness). Sources: Sphere's `#478AD1`
-//! and Blender's orange; Tokyo Night's `#7AA2F7`; the concept car's magenta
-//! for Onyx; Boldland's orange for Grey and Tesla's UI blue for its light
-//! mode; Apple's system blue (`#0A84FF` dark, `#007AFF` light); the `phi`
+//! and Blender's orange; Tokyo Night's `#7AA2F7`; straw, teal and emerald
+//! for Moss, Ember and Plum; the concept car's magenta for Onyx; Boldland's
+//! orange for Grey and Tesla's UI blue for its light mode and for Silver;
+//! Apple's system blue (`#0A84FF` dark, `#007AFF` light); the `phi`
 //! appkit's variants (`appkit/src/theme/variants/*.rs`) for Swift, Barbie,
 //! Fenty, Cyberpunk and Chanel.
 
@@ -29,6 +30,20 @@ const TOKYO_ACCENTS: BAccents = BAccents { accent: (220.8, 88.7, 72.4, 1.0), onl
 pub static TOKYO: BPalette = BPalette::on(BPaletteName::Tokyo, shade::TOKYO, TOKYO_ACCENTS);
 pub static TOKYO_LIGHT: BPalette = BPalette::on(BPaletteName::Tokyo, shade::TOKYO_LIGHT, TOKYO_ACCENTS);
 
+/// Moss: a moss ladder with a straw accent, `#D9A441`.
+pub static MOSS: BPalette = BPalette::accented(BPaletteName::Moss, shade::MOSS, (39.1, 66.7, 55.3));
+pub static MOSS_LIGHT: BPalette = BPalette::accented(BPaletteName::Moss, shade::MOSS_LIGHT, (39.1, 66.7, 55.3));
+
+/// Ember: a rust ladder with a teal accent, `#4FB3A9`.
+pub static EMBER: BPalette = BPalette::accented(BPaletteName::Ember, shade::EMBER, (174.0, 39.7, 50.6));
+pub static EMBER_LIGHT: BPalette = BPalette::accented(BPaletteName::Ember, shade::EMBER_LIGHT, (174.0, 39.7, 50.6));
+
+/// Plum: a plum ladder with an emerald accent, `#1F8A5B` — the rose it
+/// had, `#D97BA6`, was too light to read under the light text an active
+/// button carries (2.0 : 1); emerald holds 3.1 : 1 both ways.
+pub static PLUM: BPalette = BPalette::accented(BPaletteName::Plum, shade::PLUM, (153.6, 63.3, 33.1));
+pub static PLUM_LIGHT: BPalette = BPalette::accented(BPaletteName::Plum, shade::PLUM_LIGHT, (153.6, 63.3, 33.1));
+
 /// Black: a near-black ladder with the concept car's magenta, `#D6247A`.
 pub static ONYX: BPalette = BPalette::accented(BPaletteName::Onyx, shade::ONYX, (331.0, 71.2, 49.0));
 pub static ONYX_LIGHT: BPalette = BPalette::accented(BPaletteName::Onyx, shade::ONYX_LIGHT, (331.0, 71.2, 49.0));
@@ -38,10 +53,20 @@ pub static ONYX_LIGHT: BPalette = BPalette::accented(BPaletteName::Onyx, shade::
 pub static GREY: BPalette = BPalette::accented(BPaletteName::Grey, shade::GREY, (32.4, 80.4, 53.9));
 pub static GREY_LIGHT: BPalette = BPalette::accented(BPaletteName::Grey, shade::GREY_LIGHT, (223.8, 73.1, 56.3));
 
+/// Silver: the silver ladder with Tesla's UI blue, `#3E6AE1`, in both
+/// modes; its dark mode is the silver lowered to a gunmetal.
+pub static SILVER: BPalette = BPalette::accented(BPaletteName::Silver, shade::SILVER, (223.8, 73.1, 56.3));
+pub static SILVER_LIGHT: BPalette = BPalette::accented(BPaletteName::Silver, shade::SILVER_LIGHT, (223.8, 73.1, 56.3));
+
 /// Apple: macOS's dark window grey with its dark-mode blue, `#0A84FF`; its
 /// light mode the light window grey with the system blue, `#007AFF`.
 pub static APPLE: BPalette = BPalette::accented(BPaletteName::Apple, shade::APPLE, (210.1, 100.0, 52.0));
 pub static APPLE_LIGHT: BPalette = BPalette::accented(BPaletteName::Apple, shade::APPLE_LIGHT, (211.3, 100.0, 50.0));
+
+/// Apple Dark: the dark window grey and the dark-mode blue on both sides —
+/// its light mode is that grey lifted, and keeps `#0A84FF`.
+pub static APPLE_DARK: BPalette = BPalette::accented(BPaletteName::AppleDark, shade::APPLE_DARK, (210.1, 100.0, 52.0));
+pub static APPLE_DARK_LIGHT: BPalette = BPalette::accented(BPaletteName::AppleDark, shade::APPLE_DARK_LIGHT, (210.1, 100.0, 52.0));
 
 /// Swift: a warm dark ladder with Swift's orange, `#FF5933`.
 pub static SWIFT: BPalette = BPalette::accented(BPaletteName::Swift, shade::SWIFT, (11.2, 100.0, 60.0));

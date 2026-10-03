@@ -3,10 +3,8 @@
 //! carries a literal.
 
 pub use super::ink::BInk;
-use super::super::color::{resolved_gradient, to_hsla};
 use super::super::ctx::BRenderCtx;
-use crate::v2::theme::{BStyleRole, BSurfaceTone};
-use gpui::Background;
+use crate::v2::theme::BStyleRole;
 
 /// A spacing token: a gap, a padding or a margin, resolved from the theme.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -170,57 +168,6 @@ pub enum BSelf {
     Stretch,
 }
 
-/// What a container paints behind its children.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum BFill {
-    /// Explicitly nothing.
-    Clear,
-    /// The gutter showing between zones.
-    Gutter,
-    /// The current host's body — the panel shade for an editor and the
-    /// activity bar, the chrome shade for the top and status bars
-    /// (`host_background`).
-    HostBody,
-    /// A semantic surface tone (modal, header, …).
-    Tone(BSurfaceTone),
-    /// A heading over a tone's surface, a step over it (`heading_surface`).
-    Heading(BSurfaceTone),
-    /// The current host's header surface.
-    HostHeader,
-    /// The current host's strip gradient.
-    HostStrip,
-    /// Chrome floating over a canvas: the panel colour, translucent enough
-    /// for the canvas to show through (Blender's floating panels).
-    Floating,
-    /// The dim laid over the workspace behind a modal.
-    ModalDim,
-    /// A value's own colour — a colour control's swatch. RGBA, 0..1.
-    Swatch([f32; 4]),
-    /// An ink, as a fill — the filled part of a drawn glyph.
-    Ink(BInk),
-}
-
-impl BFill {
-    pub(super) fn background(self, ctx: &BRenderCtx) -> Background {
-        match self {
-            Self::Clear => gpui::transparent_black().into(),
-            Self::Gutter => to_hsla(ctx.style.resize_gutter_background()).into(),
-            Self::HostBody => resolved_gradient(ctx.style.host_body_surface(ctx.host)),
-            Self::Tone(tone) => resolved_gradient(ctx.style.surface(tone)),
-            Self::Heading(tone) => resolved_gradient(ctx.style.heading_surface(tone)),
-            Self::HostHeader => resolved_gradient(ctx.style.host_header_surface(ctx.host)),
-            Self::HostStrip => resolved_gradient(ctx.style.strip_gradient(ctx.host)),
-            Self::ModalDim => to_hsla(ctx.style.colors.bg_modal_dim).into(),
-            Self::Swatch([r, g, b, a]) => gpui::Rgba { r, g, b, a }.into(),
-            Self::Ink(ink) => ink.color(ctx).into(),
-            Self::Floating => {
-                let base = to_hsla(ctx.style.colors.bg_panel);
-                gpui::hsla(base.h, base.s, base.l, ctx.style.effects.floating_alpha).into()
-            }
-        }
-    }
-}
-
 /// Which edges a border runs along.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum BEdge {
@@ -274,13 +221,6 @@ pub enum BSide {
     Right,
 }
 
-/// What happens to content that does not fit. Scrolling is not an overflow
-/// mode here: a scroller keeps state, so it is built by [`BFlex::scroller`].
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum BOverflow {
-    Visible,
-    Clip,
-}
 
 /// Text defaults for everything inside.
 #[derive(Clone, Copy, Debug, PartialEq)]

@@ -4,6 +4,7 @@
 use super::super::super::item::set::*;
 use super::super::super::item::BMenuItem;
 use super::set::{AREA, BAnimMenu, CHANNEL_SETTING, EASING, EXTRAPOLATION, HANDLE_TYPE, INTERPOLATION, MOVE};
+use crate::v2::state::OpKey;
 
 /// `GRAPH_MT_view` in F-Curves mode.
 pub static VIEW: &[BMenuItem] = &[
@@ -13,8 +14,8 @@ pub static VIEW: &[BMenuItem] = &[
     op("Playback Controls", ""),
     SEP,
     op("Frame Selected", "Numpad ."),
-    op("Frame All", "Home"),
-    op("Frame Scene Range", ""),
+    fire("Frame All", "Home", OpKey::TimeView, "ipo:all"),
+    fire("Frame Scene Range", "", OpKey::TimeView, "ipo:scene"),
     op("Go to Current Frame", "Numpad 0"),
     SEP,
     op("Realtime Updates", ""),
@@ -187,7 +188,7 @@ pub static MIRROR: &[BMenuItem] = &[
     op("By Times Over First Selected Marker", ""),
 ];
 pub static INSERT: &[BMenuItem] = &[
-    op("All Channels", ""),
+    fire("All Channels", "", OpKey::Keyframe, "channels"),
     op("Only Selected Channels", ""),
     op("Only Active F-Curve", ""),
     op("Active Channels at Cursor", ""),

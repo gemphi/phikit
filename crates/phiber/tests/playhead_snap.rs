@@ -6,7 +6,7 @@
 use gpui::{Modifiers, MouseButton, Point, TestAppContext, px, size};
 use phiber::v2::app::BPhiberApp;
 use phiber::v2::part::playback::{settings, snap};
-use phiber::v2::state::{BKey as _, CtxKey, ModalKey, val::BValue};
+use phiber::v2::state::{CtxKey, ModalKey, val::BValue};
 use phiber::v2::view::BAction;
 
 fn pt(x: f32, y: f32) -> Point<gpui::Pixels> {

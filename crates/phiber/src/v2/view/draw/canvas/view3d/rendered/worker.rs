@@ -1,51 +1,44 @@
-//! The render thread: owns the GPU and the tracer so the UI never waits.
+//! The render thread: holds the process's GPU (`Gpu::shared`, opened at
+//! start-up) and owns the tracer, so the UI never waits. Of what is queued
+//! it takes only the newest scene and view — a drag or a playing animation
+//! queues one per step. A scene of the same shape (objects moved, a frame
+//! played) moves the tracer (`place.rs`: objects placed by new matrices,
+//! or the vertices in place with the trees refitted); once a posed scene
+//! has been still for [`SETTLE`], the trees are built fresh
+//! (`Tracer::retree`), the image keeping its samples.
 //! The UI posts the latest scene and view; the thread keeps refining the
 //! newest view and publishes each finished sample as a BGRA frame.
 
 use super::super::mesh::BMeshPalette;
-use super::scene;
+use super::coarse::BCoarse;
+use super::pace::{BSlicer, BTally};
+use super::posted::BPosted;
+use super::build::built;
+pub(super) use super::job::{BRayFrame, BRayJob, BRayShot};
+use super::place;
 use crate::v2::scene::BObject3D;
-use phiray::{Camera, Gpu, Mode, Tracer};
-use std::sync::mpsc::{Receiver, Sender, channel};
+use phiray::{Gpu, Mode, Tracer};
+use std::sync::mpsc::{Receiver, RecvTimeoutError, Sender, channel};
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
+
+/// How long a posed scene stays still before its tree is built fresh.
+pub(super) const SETTLE: Duration = Duration::from_millis(400);
 
 /// Whether the all-zero-frame warning has been printed this run.
 static BLANK_SAID: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
-pub(super) enum BRayJob {
-    Scene(u64, Vec<BObject3D>, BMeshPalette),
-    View(u64, BRayShot),
-}
-
-/// One frame to trace: the camera and size, which kernel draws it, and what
-/// the Render panel asked for.
-#[derive(Clone, Copy, Debug)]
-pub(super) struct BRayShot {
-    pub cam: Camera,
-    pub w: u32,
-    pub h: u32,
-    pub mode: Mode,
-    /// How far to refine (Blender's Max Samples).
-    pub samples: u32,
-    /// Filter the frame once it has settled.
-    pub denoise: bool,
-}
-
-/// A published image (BGRA8, row 0 at the top).
-pub(super) struct BRayFrame {
-    pub seq: u64,
-    pub view: u64,
-    pub w: u32,
-    pub h: u32,
-    pub bgra: Vec<u8>,
-    pub done: bool,
-}
-
 pub(super) struct BRayWorker {
     tx: Sender<BRayJob>,
     latest: Arc<Mutex<Option<BRayFrame>>>,
+    /// The newest view and scene keys posted, read by the thread between
+    /// the slices of a sample: a newer one waiting ends the sample early.
+    posted: Arc<BPosted>,
     /// Scene keys the GPU could not take (too large): the painter falls back.
     refused: Arc<Mutex<Vec<u64>>>,
+    /// The shared device it draws on (`Gpu::generation`): when Preferences
+    /// ▸ System ▸ Render Devices opens another, a new worker takes over.
+    pub generation: u64,
 }
 
 impl BRayWorker {
@@ -55,21 +48,28 @@ impl BRayWorker {
         let (ready_tx, ready_rx) = channel();
         let latest = Arc::new(Mutex::new(None));
         let refused = Arc::new(Mutex::new(Vec::new()));
-        let (out, no) = (latest.clone(), refused.clone());
+        let posted = Arc::new(BPosted::default());
+        let (out, no, seen) = (latest.clone(), refused.clone(), posted.clone());
         std::thread::Builder::new()
             .name("phiray".into())
             .spawn(move || {
-                let gpu = Gpu::new();
+                let gpu = Gpu::shared();
                 let _ = ready_tx.send(gpu.is_some());
                 if let Some(gpu) = gpu {
-                    run(gpu, rx, out, no);
+                    run(gpu, rx, out, no, seen);
                 }
             })
             .ok()?;
-        ready_rx.recv().ok()?.then_some(Self { tx, latest, refused })
+        let generation = Gpu::generation();
+        ready_rx.recv().ok()?.then_some(Self { tx, latest, refused, posted, generation })
     }
 
     pub fn send(&self, job: BRayJob) {
+        use std::sync::atomic::Ordering::Relaxed;
+        match &job {
+            BRayJob::View(key, _) => self.posted.view.store(*key, Relaxed),
+            BRayJob::Scene(key, ..) => self.posted.scene.store(*key, Relaxed),
+        }
         let _ = self.tx.send(job);
     }
 
@@ -85,58 +85,127 @@ impl BRayWorker {
     }
 }
 
-fn run(gpu: Gpu, rx: Receiver<BRayJob>, out: Arc<Mutex<Option<BRayFrame>>>, refused: Arc<Mutex<Vec<u64>>>) {
+fn run(gpu: Gpu, rx: Receiver<BRayJob>, out: Arc<Mutex<Option<BRayFrame>>>, refused: Arc<Mutex<Vec<u64>>>, posted: Arc<BPosted>) {
     let mut tracer: Option<Tracer> = None;
     let mut view: Option<(u64, BRayShot)> = None;
     let mut done = true;
     let mut seq = 0u64;
+    let mut shape = 0u64;
+    let mut scene_key = 0u64;
+    let mut coarse = BCoarse::start(Mode::Solid);
+    let mut slicer = BSlicer::new();
+    let mut tally = BTally::new();
+    let mut warmed = false;
+    // The scene the tracer holds (its key, objects and palette), and when
+    // it was last posed with its trees refitted rather than built.
+    let mut held: Option<(u64, Vec<BObject3D>, BMeshPalette)> = None;
+    let mut posed: Option<Instant> = None;
     loop {
-        // Idle → block; refining → only drain what is already queued.
+        // Idle → block (until the posed scene settles); refining → only
+        // drain what is already queued.
         let first = if done || tracer.is_none() || view.is_none() {
-            match rx.recv() {
+            let wait = posed.map(|at| SETTLE.saturating_sub(at.elapsed()));
+            match wait.map_or_else(|| rx.recv().map_err(|_| RecvTimeoutError::Disconnected), |wait| rx.recv_timeout(wait)) {
                 Ok(job) => Some(job),
-                Err(_) => return,
+                Err(RecvTimeoutError::Timeout) => None,
+                Err(RecvTimeoutError::Disconnected) => return,
             }
         } else {
             None
         };
+        let (mut next_scene, mut next_view) = (None, None);
         for job in first.into_iter().chain(rx.try_iter()) {
             match job {
-                BRayJob::Scene(key, objects, palette) => {
-                    tracer = Tracer::from_scene(&gpu, scene::build(&objects, &palette));
-                    if tracer.is_none()
-                        && let Ok(mut r) = refused.lock()
-                    {
-                        r.push(key);
-                    }
-                    done = false;
-                }
-                BRayJob::View(key, shot) => {
-                    view = Some((key, shot));
-                    done = false;
-                }
+                BRayJob::Scene(key, of, objects, palette) => next_scene = Some((key, of, objects, palette)),
+                BRayJob::View(key, shot) => next_view = Some((key, shot)),
             }
         }
+        if let Some((key, of, objects, palette)) = next_scene {
+            let last = held.as_ref().filter(|_| of == shape).map(|(_, o, _)| o.as_slice());
+            match tracer.as_mut().filter(|_| of == shape).and_then(|t| place::update(&gpu, t, last, &objects, &palette)) {
+                Some(place::BKept::Placed) => {}
+                Some(place::BKept::Posed) => posed = Some(Instant::now()),
+                None => {
+                    tracer = built(&gpu, key, &objects, &palette, &refused);
+                    posed = None;
+                }
+            }
+            held = Some((key, objects, palette));
+            shape = of;
+            scene_key = key;
+            done = false;
+        }
+        if let Some(next) = next_view {
+            // Another view: its first samples at a fraction of the size, as
+            // Cycles starts a navigated viewport small and doubles it
+            // (`start_resolution`), so the first image lands at once.
+            if view.is_none_or(|(key, _)| key != next.0) {
+                coarse = BCoarse::start_for(next.1.mode, slicer.predicted_ms(next.1.mode, next.1.w, next.1.h));
+            }
+            view = Some(next);
+            done = false;
+        }
+        // Still for SETTLE since the last pose: a fresh tree, the image and
+        // its samples kept (`Tracer::retree`); built again only when the
+        // device cannot hold the new tree.
+        if posed.take_if(|at| at.elapsed() >= SETTLE).is_some()
+            && let Some((key, objects, palette)) = held.as_ref()
+        {
+            let at = Instant::now();
+            if tracer.as_mut().is_some_and(|t| t.retree(&gpu)) {
+                crate::v2::app::journal::BJournal::note(format!("Tracer: trees rebuilt over the pose in {:.0}ms", at.elapsed().as_secs_f64() * 1000.0));
+            } else {
+                tracer = built(&gpu, *key, objects, palette, &refused);
+                done = false;
+            }
+        }
+        // Refined already, and nothing new: the same image, not read again.
+        if done {
+            continue;
+        }
         let (Some(t), Some((key, shot))) = (tracer.as_mut(), view) else { continue };
-        let BRayShot { cam, w, h, mode, samples, denoise } = shot;
+        let BRayShot { cam, w: full_w, h: full_h, mode, samples, denoise_from } = shot;
+        let (w, h) = coarse.pixels(full_w, full_h);
         t.set_samples(samples);
         // Workbench and the tracer are different kernels over the same scene;
         // switching re-records the pass, which is why the mode rides with the
         // view rather than the scene.
         t.set_mode(mode);
-        let (sample, finished) = t.sample(&gpu, cam, w, h);
+        // In slices when a sample is long, so a view posted meanwhile is
+        // taken at the next slice instead of after the whole frame.
+        let at = Instant::now();
+        let slices = slicer.slices(mode, w, h, coarse);
+        let Some((sample, finished)) = t.sample_in(&gpu, cam, w, h, slices, || !posted.newer_than(key, scene_key)) else {
+            tally.abandoned += 1;
+            continue;
+        };
+        let traced = at.elapsed();
+        slicer.took(mode, w, h, coarse, traced);
+        // A coarse image is never the end: the next is twice its size.
+        let finished = finished && coarse.full();
         done = finished;
+        let skip = coarse.full() && !(finished || sample < 4 || sample % 4 == 3);
+        // While views keep arriving — a drag — the next sample stays this
+        // small, as Cycles keeps a navigated viewport at its start size; the
+        // view grows once the hand rests.
+        if !posted.newer_than(key, scene_key) {
+            coarse.next();
+        }
         // Read back early samples, then every 4th (readback is the slow part).
-        if !(finished || sample < 4 || sample % 4 == 3) {
+        if skip {
+            tally.sample(traced, Duration::ZERO, coarse.full(), full_w, full_h, mode);
             continue;
         }
-        // Denoising reads the guides the tracer wrote and replaces the shown
-        // image, so it runs once the frame has settled — another sample would
-        // overwrite it.
-        if finished && denoise {
-            t.denoise(&gpu);
+        // Viewport Denoising: every frame shown from the start sample on is
+        // filtered, the sums left as they are so the next sample lands on
+        // the truth (`denoise_shown`). A deterministic mode has no noise and
+        // the tracer skips it.
+        if denoise_from.is_some_and(|from| sample + 1 >= from.max(1)) {
+            t.denoise_shown(&gpu);
         }
+        let read_at = Instant::now();
         let mut px = t.pixels(&gpu);
+        tally.sample(traced, read_at.elapsed(), (w, h) == (full_w, full_h), full_w, full_h, mode);
         // A frame the kernel never wrote comes back all zero — no sky in it,
         // where every real frame carries the theme's sky. It is published
         // empty: the painter keeps the theme canvas and says so once, rather
@@ -151,6 +220,19 @@ fn run(gpu: Gpu, rx: Receiver<BRayJob>, out: Arc<Mutex<Option<BRayFrame>>>, refu
         seq += 1;
         if let Ok(mut slot) = out.lock() {
             *slot = Some(BRayFrame { seq, view: key, w, h, bgra: px, done });
+        }
+        super::wake::FRESH.store(true, std::sync::atomic::Ordering::Release);
+        // The first image is up: the other kernels compile meanwhile, on a
+        // thread of their own, so a change of shading does not wait for its
+        // kernel (`Tracer::warm`).
+        if !warmed {
+            warmed = true;
+            let gpu = gpu.clone();
+            let _ = std::thread::Builder::new().name("phiray.warm".into()).spawn(move || {
+                let at = Instant::now();
+                let each: Vec<String> = Tracer::warm(&gpu).into_iter().map(|(name, ms)| format!("{name} {ms:.0}")).collect();
+                crate::v2::app::journal::BJournal::note(format!("Tracer: kernels compiled in {:.0}ms ({})", at.elapsed().as_secs_f64() * 1000.0, each.join(", ")));
+            });
         }
     }
 }

@@ -41,10 +41,14 @@ fn top(b: gpui::Bounds<px_t>) -> f32 {
 fn bottom(b: gpui::Bounds<px_t>) -> f32 {
     f32::from(b.origin.y) + f32::from(b.size.height)
 }
+/// The rule a content header closes with, drawn below its band.
+const RULE: f32 = phiber::v2::theme::style::metric::DEFAULT_STROKES.border;
+
 /// A strip's one centre line: the centre of its cap band — the strip less
-/// the menu gap above it. Every control in a strip sits on it.
+/// the rule under it and the menu gap above it. Every control sits on it.
 fn line(strip: gpui::Bounds<px_t>) -> f32 {
-    f32::from(strip.origin.y) + METRICS.menu_top_gap + (f32::from(strip.size.height) - METRICS.menu_top_gap) / 2.0
+    let band = f32::from(strip.size.height) - RULE;
+    f32::from(strip.origin.y) + METRICS.menu_top_gap + (band - METRICS.menu_top_gap) / 2.0
 }
 
 fn mid(b: gpui::Bounds<px_t>) -> f32 {
@@ -57,9 +61,17 @@ async fn the_strips_are_one_height_and_the_content_sits_a_gutter_below(cx: &mut 
     let header = bounds(cx, "region-Header-File");
     let path = bounds(cx, "region-ToolHeader-File");
     let execute = bounds(cx, "region-Execute-File");
-    for (name, strip) in [("header", header), ("path strip", path), ("execute bar", execute)] {
-        assert_eq!(f32::from(strip.size.height), METRICS.h_header, "the {name} is a header's height");
+    // The header and the path strip are content headers: each is its band
+    // plus the rule it closes with. The execute bar heads nothing — it is a
+    // strip at the dialog's foot — so it is the band alone.
+    for (name, strip) in [("header", header), ("path strip", path)] {
+        assert_eq!(
+            f32::from(strip.size.height),
+            METRICS.h_header + RULE,
+            "the {name} is a header's band plus its rule"
+        );
     }
+    assert_eq!(f32::from(execute.size.height), METRICS.h_header, "the execute bar is a header's height");
     assert_eq!(top(path), bottom(header), "the path strip sits directly under the header");
 
     let files = bounds(cx, "panel-body-surface");

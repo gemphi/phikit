@@ -1,19 +1,22 @@
 //! Armature deform on the GPU: phiphx batches every rigged mesh of a file into
-//! [`SkinJob`]s, [`RaySkin`] runs them in one phiray pass. Declines (→ phiphx
-//! CPU path) when there is no adapter or the batch is too small to pay off.
+//! [`SkinJob`]s, [`RaySkin`] runs them in one phiray pass, on the process's
+//! one device (`Gpu::shared`, which the viewport's tracer uses too).
+//! Declines (→ phiphx CPU path) when there is no adapter or the batch is too
+//! small to pay off.
 
 use crate::phiphx::phx::{Phx, SKIN_MIN, SkinJob, Skinner};
 use phiray::kernels::{Pair, Skin, SkinParams};
 use phiray::{Gpu, GpuArray, Pass};
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 
 /// Below this many vertices the CPU is faster than an upload + readback.
 const GPU_MIN_VERTS: usize = 20_000;
 
 #[derive(Default)]
 pub struct RaySkin {
-    gpu: OnceLock<Option<Gpu>>,
-    pass: Mutex<Pass>,
+    /// The recorded pass, and the device generation it was recorded on
+    /// (`Gpu::generation`): a new device starts a new pass.
+    pass: Mutex<(u64, Pass)>,
     /// Force the GPU even for small batches (tests).
     pub always: bool,
 }
@@ -48,7 +51,8 @@ impl Batch {
 
 impl RaySkin {
     /// Make every `Phx::open` in this process skin through phiray, and open
-    /// the device now rather than during the first import.
+    /// the shared device now rather than during the first import — or the
+    /// first viewport frame, which waits for it.
     ///
     /// `Gpu::new` requests an adapter and a device, which takes seconds. Doing
     /// it lazily inside `run` put that cost — and any driver stall — on the
@@ -72,20 +76,9 @@ impl RaySkin {
         Self { always: true, ..Default::default() }
     }
 
-    /// Whether a GPU adapter is available.
+    /// Whether a GPU adapter is available (opening the shared device).
     pub fn ready(&self) -> bool {
-        self.gpu().is_some()
-    }
-
-    fn gpu(&self) -> Option<&Gpu> {
-        self.gpu.get_or_init(Gpu::new).as_ref()
-    }
-
-    /// The device only if it is already open. `run` uses this rather than
-    /// [`RaySkin::gpu`]: opening a device on the file-reading thread is what
-    /// made import look like a hang (see [`RaySkin::install`]).
-    fn opened(&self) -> Option<&Gpu> {
-        self.gpu.get()?.as_ref()
+        Gpu::shared().is_some()
     }
 }
 
@@ -95,8 +88,15 @@ impl Skinner for RaySkin {
         if (n < GPU_MIN_VERTS && !self.always) || n == 0 {
             return false;
         }
-        let Some(gpu) = self.opened() else { return false };
-        let Ok(mut pass) = self.pass.lock() else { return false };
+        // Only a device already open: opening one on the file-reading thread
+        // is what made import look like a hang (see [`RaySkin::install`]).
+        let Some(gpu) = Gpu::opened() else { return false };
+        let Ok(mut slot) = self.pass.lock() else { return false };
+        if slot.0 != Gpu::generation() {
+            *slot = (Gpu::generation(), Pass::default());
+        }
+        let (_, pass) = &mut *slot;
+        let gpu = &gpu;
         let b = Batch::of(jobs);
         let rest = GpuArray::from(gpu, &b.rest);
         let offsets = GpuArray::from(gpu, &b.offsets);

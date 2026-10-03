@@ -8,6 +8,10 @@ use super::flex::{BAlign, BDim, BFill, BFlex, BFlexed, BJustify, BLen, BSpace};
 use super::walk;
 use crate::v2::theme::BSurfaceTone;
 use crate::v2::view::BView;
+
+/// Blender's `use_property_split`: the value column takes 60% of the row and
+/// the label the other 40% (`UI_ITEM_PROP_SEP_DIVIDE`).
+const VALUE_SHARE: f32 = 0.6;
 use gpui::prelude::*;
 use gpui::AnyElement;
 
@@ -39,7 +43,7 @@ impl BSplit<'_> {
             // wide as its own longest option.
             let inner = if n == last && last > 0 { ctx.filling() } else { ctx.clone() };
             element = element.child(
-                BSplitPart::Column
+                BSplitPart::Column { value: n == last && last > 0 }
                     .flex(ctx)
                     .div(ctx)
                     .id(gpui::SharedString::from(slot.clone()))
@@ -60,13 +64,25 @@ enum BSplitPart {
     Row { toned: bool },
     /// One column of the row. The first and last are the two a reader lines
     /// up: the label under the heading title, the value under its chevron.
-    Column,
+    Column { value: bool },
 }
 
 impl BFlexed for BSplitPart {
     fn flex(&self, _ctx: &BRenderCtx) -> BFlex {
         let toned = match *self {
-            Self::Column => return BFlex::row().fills().min_width(BLen::Zero),
+            // Blender's own split, not equal halves: `use_property_split`
+            // gives the label 40% of the row and the value 60%
+            // (`UI_ITEM_PROP_SEP_DIVIDE`). Two `fills()` columns made it
+            // 50/50, which spent 110px on the word "Sync" and left the value
+            // column too narrow for its own control — in the Playback popover
+            // that clipped "Limit to Frame Range" to "Limit to Frame R", and
+            // five rows beside it. A heading is one or two words; what stands
+            // opposite it is a tick and a sentence.
+            Self::Column { value } => {
+                return BFlex::row()
+                    .width(BLen::Share(if value { VALUE_SHARE } else { 1.0 - VALUE_SHARE }))
+                    .min_width(BLen::Zero);
+            }
             Self::Row { toned } => toned,
         };
         let row = BFlex::row()

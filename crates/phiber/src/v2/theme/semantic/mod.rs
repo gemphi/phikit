@@ -10,6 +10,7 @@
 //! ladder (the accent, an axis) keeps the old lightness nudge, since it has
 //! no ladder to move along.
 
+pub mod rail;
 pub mod set;
 pub mod stroke;
 
@@ -150,12 +151,21 @@ impl BResolvedUiStyle {
     /// its own canvas shade, always flat.
     pub fn surface(&self, tone: BSurfaceTone) -> BGradientColors {
         let base = match tone {
-            BSurfaceTone::Header | BSurfaceTone::Footer => self.colors.bg_header,
             BSurfaceTone::Sidebar | BSurfaceTone::Body | BSurfaceTone::Modal => self.colors.bg_panel,
             BSurfaceTone::Viewport => return Self::flat(self.viewport_surface()),
+            // A header, a footer and a card are one shade.
+            //
             // A sub-panel shares its panel's shade at any depth (Blender's
-            // panel and sub-panel are both `#3D3D3D`): no darker strips.
-            BSurfaceTone::Card | BSurfaceTone::Section | BSurfaceTone::Nested(_) => self.step(self.colors.bg_panel, 1),
+            // panel and sub-panel are both `#3D3D3D`): no darker strips. A
+            // header sits on that same step, so an editor's header and the
+            // accordions under it read as one surface, and so does a modal's
+            // title bar against its cards — one rule for every host and every
+            // modal rather than a header shade of its own.
+            BSurfaceTone::Header
+            | BSurfaceTone::Footer
+            | BSurfaceTone::Card
+            | BSurfaceTone::Section
+            | BSurfaceTone::Nested(_) => self.step(self.colors.bg_panel, 1),
         };
         self.sheen(base)
     }

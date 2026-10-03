@@ -73,6 +73,7 @@ pub static UI_STYLE_DESCRIPTORS: &[BStyleDescriptor] = &[
     number!(DIMENSION_TOOLBAR_WIDTH, dimensions.toolbar_width, "Dimensions", "Toolbar Width", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_SIDEBAR_WIDTH, dimensions.sidebar_width, "Dimensions", "Sidebar Width", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_SIDEBAR_MIN_WIDTH, dimensions.sidebar_min_width, "Dimensions", "Sidebar Minimum Width", 0.0, 4096.0, Some("px")),
+    number!(DIMENSION_NUMBER_MIN_WIDTH, dimensions.number_min_width, "Dimensions", "Number Field Minimum Width", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_PANEL_WIDTH, dimensions.panel_width, "Dimensions", "Panel Width", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_NAVBAR_WIDTH, dimensions.navbar_width, "Dimensions", "Navigation Width", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_CHANNELS_WIDTH, dimensions.channels_width, "Dimensions", "Channels Width", 0.0, 4096.0, Some("px")),

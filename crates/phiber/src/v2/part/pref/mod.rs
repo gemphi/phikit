@@ -1,6 +1,7 @@
 //! Preferences body — settings panels for the active section.
 //! Blender ref: `space_userpref/space_userpref.cc` WINDOW region.
 
+pub mod device;
 pub mod rule;
 
 use crate::v2::state::BKey as _;
@@ -45,6 +46,9 @@ impl BViewItem for BPrefsItem {
         // colour below it, so it belongs above the values it governs.
         if category.kind == BSettingsCategory::Appearance {
             cards.push(palette_card(state));
+        }
+        if category.kind == BSettingsCategory::System {
+            cards.push(device::BRenderDevices::view(state));
         }
         let sections: Vec<BView> = SECTIONS
             .iter()
@@ -140,7 +144,7 @@ fn section_view(
     let rows = section.rows().map(|row| {
         BView::split(vec![
                 BView::label(row.metadata().label),
-                BPreferenceControls::for_row(row, state, defaults).view(),
+                BPreferenceControls::for_row(row, state, defaults).view(state),
             ],)
     });
     BCard::panel(section.title()).fold(key, true).body(rows.collect()).into()

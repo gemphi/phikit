@@ -29,7 +29,7 @@ fn load() -> SceneModel {
 
 /// The middle of a kind's gizmo lines — where the extra stands.
 fn centre(s: &BState, model: &SceneModel, kind: BExtraKind) -> Vec3 {
-    let lines: Vec<_> = scene_extras_now(s, model).into_iter().filter(|l| l.kind == kind).collect();
+    let lines: Vec<_> = scene_extras_now(s, model).iter().filter(|l| l.kind == kind).copied().collect();
     let sum: Vec3 = lines.iter().map(|l| Vec3::from(l.a) + Vec3::from(l.b)).sum();
     sum / (2 * lines.len().max(1)) as f32
 }

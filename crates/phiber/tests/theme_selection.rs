@@ -1,4 +1,4 @@
-//! Eleven themes in Preferences, each a seed ladder with its own radius
+//! Sixteen themes in Preferences — the most it offers — each a seed ladder with its own radius
 //! scale, sweeps, shadow and seam gap, in a dark and a light mode. Choosing
 //! one in the Theme section is what the window draws with, the Dark / Light
 //! switch in its heading turns every theme's ladder the other way up, every
@@ -19,13 +19,18 @@ use phiber::v2::{
 };
 
 /// What each theme was approved with: scale, shadow, sweeps, seam gap.
-const THEMES: [(BPaletteName, BRadiusScale, BShadowStyle, bool, f32); 11] = [
+const THEMES: [(BPaletteName, BRadiusScale, BShadowStyle, bool, f32); 16] = [
     (BPaletteName::Sphere, SOFT_RADII, BShadowStyle::ExtraLarge, true, 4.0),
     (BPaletteName::Graphite, TIGHT_RADII, BShadowStyle::None, false, 4.0),
     (BPaletteName::Tokyo, MEDIUM_RADII, BShadowStyle::Medium, true, 6.0),
+    (BPaletteName::Moss, ROUND_RADII, BShadowStyle::Large, true, 8.0),
+    (BPaletteName::Ember, SQUARE_RADII, BShadowStyle::Small, false, 2.0),
+    (BPaletteName::Plum, PILL_RADII, BShadowStyle::ExtraLarge, true, 10.0),
     (BPaletteName::Onyx, MEDIUM_RADII, BShadowStyle::Large, true, 4.0),
     (BPaletteName::Grey, ROUND_RADII, BShadowStyle::Medium, true, 6.0),
+    (BPaletteName::Silver, MEDIUM_RADII, BShadowStyle::Small, false, 6.0),
     (BPaletteName::Apple, MEDIUM_RADII, BShadowStyle::Medium, false, 4.0),
+    (BPaletteName::AppleDark, MEDIUM_RADII, BShadowStyle::Medium, false, 4.0),
     (BPaletteName::Swift, SOFT_RADII, BShadowStyle::Large, true, 4.0),
     (BPaletteName::Barbie, PILL_RADII, BShadowStyle::ExtraLarge, true, 8.0),
     (BPaletteName::Fenty, ROUND_RADII, BShadowStyle::Large, true, 6.0),
@@ -37,6 +42,18 @@ const THEMES: [(BPaletteName, BRadiusScale, BShadowStyle, bool, f32); 11] = [
 /// `backend.rs` does.
 fn drawn_with(state: &BState) -> BResolvedUiStyle {
     resolve_ui_style(ui_style_defaults_for(state), state)
+}
+
+/// A theme's defaults in the mode the window is actually in.
+///
+/// `ui_style_defaults(name)` is pinned to Dark, which was the same thing while
+/// Dark was the default. It is not any more (`BThemeMode::DEFAULT` is Light),
+/// and a test that compares what the window DREW against a dark-pinned table
+/// is comparing two different themes. These sites want the mode in force, the
+/// same one `drawn_with` resolves through.
+fn defaults_in_force(name: BPaletteName, state: &BState) -> &'static phiber::v2::theme::BUiStyleDefaults {
+    let (_, mode) = phiber::v2::theme::theme_in_force(state);
+    ui_style_defaults_in(name, mode)
 }
 
 fn showing_themes() -> BState {
@@ -96,12 +113,16 @@ fn nudge(row: BPreferenceRow, state: &BState) -> BAction {
 }
 
 #[test]
-fn preferences_offer_eleven_themes_in_an_accordion_and_choosing_one_is_what_the_window_draws_with() {
+fn preferences_offer_sixteen_themes_in_an_accordion_and_choosing_one_is_what_the_window_draws_with() {
     let mut state = showing_themes();
     let first = picker(&state);
     assert!(first.open, "the section is open before anyone touches it");
     let labels: Vec<String> = first.rows.iter().map(|(label, _, _)| label.clone()).collect();
-    assert_eq!(labels, ["Sphere", "Graphite", "Tokyo", "Onyx", "Grey", "Apple", "Swift", "Barbie", "Fenty", "Cyberpunk", "Chanel"]);
+    assert_eq!(
+        labels,
+        ["Sphere", "Graphite", "Tokyo", "Moss", "Ember", "Plum", "Onyx", "Grey", "Silver", "Apple", "Apple Dark", "Swift", "Barbie", "Fenty", "Cyberpunk", "Chanel"]
+    );
+    assert!(labels.len() <= BPaletteName::MAX, "sixteen at most");
     for (name, radii, shadow, gradients, gap) in THEMES {
         let (_, _, choose) = picker(&state).rows.into_iter().find(|(label, _, _)| label == name.label()).unwrap();
         apply_action(&mut state, &choose);
@@ -109,7 +130,7 @@ fn preferences_offer_eleven_themes_in_an_accordion_and_choosing_one_is_what_the_
         let lit: Vec<String> = after.rows.into_iter().filter(|(_, active, _)| *active).map(|(label, _, _)| label).collect();
         assert_eq!(lit, [name.label()], "the chosen theme alone reads as active");
         let style = drawn_with(&state);
-        assert_eq!(style.colors.ladder, ui_style_defaults(name).colors.ladder, "{name:?}: the window takes the theme's ladder");
+        assert_eq!(style.colors.ladder, defaults_in_force(name, &state).colors.ladder, "{name:?}: the window takes the theme's ladder");
         assert_eq!(style.radii, radii, "{name:?}");
         assert_eq!(style.surface_shadow(), shadow, "{name:?}");
         assert_eq!(style.effects.gradients, gradients, "{name:?}");
@@ -129,9 +150,17 @@ fn the_dark_light_switch_in_the_theme_heading_turns_every_theme_the_other_way_up
     let switch = picker(&state).switch;
     let labels: Vec<&str> = switch.iter().map(|(label, _, _)| label.as_str()).collect();
     assert_eq!(labels, ["Dark", "Light"]);
-    assert!(switch[0].1 && !switch[1].1, "dark is the mode in force until chosen otherwise");
+    // Light until chosen otherwise (`BThemeMode::DEFAULT`). Sphere's dark
+    // ladder reads its canvas shade as the seed itself, `#3B4657`, so
+    // defaulting to dark opened every fresh window on a near-black viewport.
+    assert!(switch[1].1 && !switch[0].1, "light is the mode in force until chosen otherwise");
+    // The round trip below starts from dark, so it asks for dark rather than
+    // leaning on the default being it.
+    state.set(AppKey::ThemeMode, "dark");
+    assert!(picker(&state).switch[0].1, "dark, now that it is asked for");
     for (name, ..) in THEMES {
         state.set(AppKey::Theme, name.slug());
+        state.set(AppKey::ThemeMode, "dark");
         let dark = drawn_with(&state);
         let to_light = picker(&state).switch[1].2.clone();
         apply_action(&mut state, &to_light);
@@ -239,14 +268,14 @@ fn picking_a_theme_or_its_mode_puts_every_value_of_that_theme_in_force() {
         apply_action(&mut state, &action);
     }
     let onyx = drawn_with(&state);
-    assert_ne!(onyx.colors.bg_header, ui_style_defaults(BPaletteName::Onyx).colors.bg_header, "the nudge took");
+    assert_ne!(onyx.colors.bg_header, defaults_in_force(BPaletteName::Onyx, &state).colors.bg_header, "the nudge took");
     assert!(state.get(&key::COLOR_BG_HEADER).is_some() && state.get(&key::COLOR_BG_VIEWPORT).is_some());
 
     // Use Barbie: its own header and canvas, nothing of Onyx.
     let use_barbie = picker(&state).rows.iter().find(|(label, ..)| label == "Barbie").unwrap().2.clone();
     apply_action(&mut state, &use_barbie);
     let barbie = drawn_with(&state);
-    let own = ui_style_defaults(BPaletteName::Barbie);
+    let own = defaults_in_force(BPaletteName::Barbie, &state);
     assert_eq!((barbie.colors.bg_header, barbie.colors.bg_viewport), (own.colors.bg_header, own.colors.bg_viewport));
     assert!(state.iter_keys().all(|k| !k.starts_with("ctx.ui_style.")), "no override survives a theme pick");
 

@@ -22,7 +22,7 @@
   15 field.rs
    2 menu.rs
    3 modal/title.rs
-  42 popover/mod.rs
+   7 popover/leave.rs
    1 popover/place.rs
   11 rail.rs
   21 resize.rs
@@ -36,7 +36,7 @@
   10 tab/mod.rs
    2 tab/stack.rs
   35 thumb.rs
-   9 tree/disclosure.rs
+   6 tree/disclosure.rs
   12 tree/guide.rs
    5 vlabel.rs
    4 zone/seam.rs

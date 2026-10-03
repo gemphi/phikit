@@ -36,7 +36,7 @@ fn main() {
     };
     let cam = Camera {
         right: [1.0, 0.0, 0.0], up: [0.0, 0.0, 1.0], back: [0.0, -1.0, 0.0], pivot: [0.0, -1.0, 0.0],
-        dist: 1.0, units: 1.0, persp: 0, scale: 0.2, aspect: 1.0, sky: [0.24, 0.24, 0.24, 1.0],
+        dist: 1.0, units: 1.0, persp: 0, scale: 0.2, aspect: 1.0, sky: [0.24, 0.24, 0.24, 0.0],
         env: [1.0, 1.0, 1.0, 1.0], envmap: 1, env_cdf: 2, env_hidden: 1, count: 0, sun: [0.0, -0.7, 0.7],
         bounces: 4, ..Default::default()
     };

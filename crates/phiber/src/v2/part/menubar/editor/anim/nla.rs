@@ -1,8 +1,27 @@
-//! The NLA editor's menu entries (`bl_ui/space_nla.py`).
+//! The NLA editor's menu entries (`bl_ui/space_nla.py`). Selecting,
+//! deleting and muting strips, adding and deleting tracks and Add ▸ Action
+//! act (`ctx.op.nla`, `scene::action::nla_editor`).
 
 use super::super::super::item::set::*;
 use super::super::super::item::BMenuItem;
 use super::set::{AREA, BAnimMenu, MOVE};
+use crate::v2::scene::action::BSceneActions;
+use crate::v2::state::{BKey as _, BState, OpKey};
+use crate::v2::view::BView;
+use crate::v2::view::prim::{BAction, BControl};
+
+impl BAnimMenu {
+    /// Add ▸ Action (`nla.actionclip_add`'s search): every action, each
+    /// adding a strip of it at the current frame.
+    pub fn nla_actions(s: &BState) -> Vec<BView> {
+        let names = crate::v2::scene::source::with_loaded(|m| m.map(|m| BSceneActions::now(s).names(m)).unwrap_or_default());
+        if names.is_empty() {
+            return vec![BView::MenuItem(BControl::new().with_label("No Actions"))];
+        }
+        let entry = |name: String| BControl::new().with_icon("action").with_action(BAction::Set(OpKey::Nla.path(), format!("add_action:{name}"))).with_label(name);
+        names.into_iter().map(|name| BView::MenuItem(entry(name))).collect()
+    }
+}
 
 /// `NLA_MT_view`.
 pub static VIEW: &[BMenuItem] = &[
@@ -12,8 +31,8 @@ pub static VIEW: &[BMenuItem] = &[
     op("Playback Controls", ""),
     SEP,
     op("Frame Selected", "Numpad ."),
-    op("Frame All", "Home"),
-    op("Frame Scene Range", ""),
+    fire("Frame All", "Home", OpKey::TimeView, "nla:all"),
+    fire("Frame Scene Range", "", OpKey::TimeView, "nla:scene"),
     op("Go to Current Frame", "Numpad 0"),
     SEP,
     op("Realtime Updates", ""),
@@ -32,9 +51,9 @@ pub static VIEW: &[BMenuItem] = &[
 ];
 /// `NLA_MT_select`.
 pub static SELECT: &[BMenuItem] = &[
-    op("All", "A"),
-    op("None", "Alt A"),
-    op("Invert", "Ctrl I"),
+    fire("All", "A", OpKey::Nla, "select:all"),
+    fire("None", "Alt A", OpKey::Nla, "select:none"),
+    fire("Invert", "Ctrl I", OpKey::Nla, "select:invert"),
     SEP,
     op("Box Select", "B"),
     op("Box Select (Axis Range)", "Alt B"),
@@ -44,7 +63,7 @@ pub static SELECT: &[BMenuItem] = &[
 ];
 /// `NLA_MT_add`.
 pub static ADD: &[BMenuItem] = &[
-    op("Action", "Shift A"),
+    live("Action", BAnimMenu::nla_actions),
     op("Transition", "Shift T"),
     op("Sound", "Shift K"),
     SEP,
@@ -52,9 +71,9 @@ pub static ADD: &[BMenuItem] = &[
 ];
 /// `NLA_MT_tracks`.
 pub static TRACKS: &[BMenuItem] = &[
-    op("Add", ""),
-    op("Add Above Selected", ""),
-    op("Delete", ""),
+    fire("Add", "", OpKey::Nla, "tracks_add"),
+    fire("Add Above Selected", "", OpKey::Nla, "tracks_add_above"),
+    fire("Delete", "", OpKey::Nla, "tracks_delete"),
     SEP,
     sub("Move", MOVE),
     SEP,
@@ -77,12 +96,12 @@ pub static STRIPS: &[BMenuItem] = &[
     SEP,
     op("Duplicate", "Alt D"),
     op("Linked Duplicate", "Shift D"),
-    op("Delete", "X"),
+    fire("Delete", "X", OpKey::Nla, "delete"),
     SEP,
     op("Make Meta", "Ctrl G"),
     op("Remove Meta", "Ctrl Alt G"),
     SEP,
-    op("Toggle Muting", "H"),
+    fire("Toggle Muting", "H", OpKey::Nla, "mute"),
     SEP,
     op("Bake Action", ""),
     SEP,

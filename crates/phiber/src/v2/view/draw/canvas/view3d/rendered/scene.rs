@@ -6,10 +6,10 @@ use crate::v2::scene::camera::{BViewSetup, SCREEN};
 use crate::v2::scene::{BObject3D, MESH_SCALE};
 use crate::phiphx::scene::SceneNormals;
 use crate::phiphx::spatial::SpatialObject3D;
-use glam::{Mat3, Mat4, Vec3};
+use glam::Vec3;
 use gpui::Hsla;
 use super::world::{BRayLook, environment, lit};
-use phiray::{Camera, NO_TEX, Scene, Tri};
+use phiray::{Camera, Instance, NO_TEX, Scene, Tri};
 
 fn rgba(c: Hsla) -> [f32; 4] {
     let c = c.to_rgb();
@@ -22,19 +22,42 @@ fn linear(c: Hsla) -> [f32; 4] {
     [r.powf(2.2), g.powf(2.2), b.powf(2.2), a]
 }
 
-/// World-space (Blender, Z-up) compact scene: triangles with normals, colours and textures.
 /// Longest texture side uploaded to the viewport, as Blender's Preferences →
 /// Viewport → Textures → Limit Size. Material Preview reads the image at this
 /// size; the final render is not the viewport's concern.
 pub const TEXTURE_LIMIT: u32 = 2048;
 
-
-
+/// The compact scene (Blender's Z-up world): each object an instance placed
+/// by its matrix, its triangles in its own space with normals, colours and
+/// textures.
 pub fn build(scene: &[BObject3D], palette: &BMeshPalette) -> Scene {
+    build_with(scene, palette, true)
+}
+
+/// A new pose of the scene for `Tracer::repose`: the same vertices and
+/// faces, placed where the objects are now, and no image at all — the
+/// tracer keeps the ones it has.
+pub fn build_pose(scene: &[BObject3D], palette: &BMeshPalette) -> Scene {
+    build_with(scene, palette, false)
+}
+
+/// Each object's placement, in `build`'s order: what moving objects whole
+/// hands the tracer (`Tracer::reinstance`).
+pub fn worlds(scene: &[BObject3D]) -> Vec<[[f32; 4]; 4]> {
+    scene
+        .iter()
+        .map(|o| match o {
+            BObject3D::Primitive { x, y, .. } => Instance::translation([x / MESH_SCALE, y / MESH_SCALE, 0.0]),
+            BObject3D::Loaded { matrix_world, .. } => *matrix_world,
+        })
+        .collect()
+}
+
+fn build_with(scene: &[BObject3D], palette: &BMeshPalette, images: bool) -> Scene {
     let mut out = Scene::default();
     // Workbench modes never read the world, so no image goes up. Material
     // Preview takes Blender's studio light; Rendered takes the file's world.
-    if !palette.shading.uses_viewport_color() {
+    if images && !palette.shading.uses_viewport_color() {
         let env = if palette.shading == crate::v2::scene::BShading::Material {
             super::studio::environment()
         } else {
@@ -43,30 +66,40 @@ pub fn build(scene: &[BObject3D], palette: &BMeshPalette) -> Scene {
         if let Some(env) = env {
             out.atlas.add_hdr(env.width, env.height, &env.rgb);
             out.atlas.add_env_cdf(env.width, env.height, &env.rgb);
+            // Material Preview lights from the environment in one pass:
+            // its irradiance and prefiltered copies go up with it
+            // (`ENV_IRRADIANCE_SLOT`, `ENV_PREFILTERED_SLOT`).
+            if palette.shading == crate::v2::scene::BShading::Material {
+                let lighting = out.atlas.add_env_lighting(env.width, env.height, &env.rgb);
+                debug_assert_eq!((lighting.irradiance, lighting.prefiltered), (super::ENV_IRRADIANCE_SLOT, super::ENV_PREFILTERED_SLOT));
+            }
         }
     }
     let mut ids: std::collections::HashMap<*const Vec<u8>, u32> = std::collections::HashMap::new();
     let mut verts = BRayVerts::default();
-    for o in scene {
+    for (o, world) in scene.iter().zip(worlds(scene)) {
+        // The object's own colour and its name's hash: Solid's Color ▸
+        // Object and ▸ Random (`workbench::Material(Object &, random)`).
+        let (name, color) = match o {
+            BObject3D::Primitive { name, .. } => (name.as_str(), [1.0; 3]),
+            BObject3D::Loaded { name, color, .. } => (name.as_str(), [color[0], color[1], color[2]]),
+        };
+        out.instance_of(world, color, phiray::trace::hash::object_hash(name));
         match o {
-            BObject3D::Primitive { shape, x, y, .. } => {
+            BObject3D::Primitive { shape, .. } => {
                 let (v, idx, n) = SpatialObject3D::buffers(shape.mesh_type());
                 let base = match shape {
                     crate::v2::scene::BShape::Cube => palette.cube,
                     crate::v2::scene::BShape::Sphere => palette.sphere,
                     crate::v2::scene::BShape::Gem => palette.gem,
                 };
-                let (ox, oy) = (x / MESH_SCALE, y / MESH_SCALE);
-                let p = |i: u32| v.get(i as usize).map(|v| [ox + v.0, oy + v.2, v.1]).unwrap_or_default();
+                let p = |i: u32| v.get(i as usize).map(|v| [v.0, v.2, v.1]).unwrap_or_default();
                 let nn = |i: u32| n.get(i as usize).map(|n| [n.0, n.2, n.1]).unwrap_or_default();
                 for t in idx.chunks_exact(3) {
                     out.add(&Tri::new([p(t[0]), p(t[1]), p(t[2])], [nn(t[0]), nn(t[1]), nn(t[2])], linear(base)).with_pbr(0.45, 0.0));
                 }
             }
-            BObject3D::Loaded { mesh, matrix_world, uvs, .. } => {
-                let m = Mat4::from_cols_array_2d(matrix_world);
-                let nm = Mat3::from_mat4(m).inverse().transpose();
-                let world_n = |v: [f32; 3]| (nm * Vec3::from(v)).normalize_or_zero().to_array();
+            BObject3D::Loaded { mesh, uvs, .. } => {
                 let n_of = |c: usize, v: usize| -> (u32, [f32; 3]) {
                     // Corner normals (split / smooth) interpolate; zero = flat.
                     // Per-face normals are flat shading: a zero normal tells the tracer to use the face normal.
@@ -85,11 +118,7 @@ pub fn build(scene: &[BObject3D], palette: &BMeshPalette) -> Scene {
                     }
                     let vid = [0, 1, 2].map(|k| {
                         let (nid, n) = n_of(face * 3 + k, i[k]);
-                        verts.id(t[k], nid, || {
-                            let p = m.transform_point3(Vec3::from(mesh.vertices[i[k]])).to_array();
-                            let n = if n == [0.0; 3] { n } else { world_n(n) };
-                            out.vertex(p, n, uvs.get(i[k]).copied().unwrap_or_default())
-                        })
+                        verts.id(t[k], nid, || out.vertex(mesh.vertices[i[k]], n, uvs.get(i[k]).copied().unwrap_or_default()))
                     });
                     let color = o.triangle_color(face, palette.shading).unwrap_or_else(|| linear(palette.loaded));
                     // PHIBER_OVERRIDE=1 is Blender's View Layer → Material
@@ -97,7 +126,14 @@ pub fn build(scene: &[BObject3D], palette: &BMeshPalette) -> Scene {
                     // so a comparison measures the *light* and nothing else.
                     let slot = if std::env::var_os("PHIBER_OVERRIDE").is_some() { None } else { o.triangle_slot(face) };
                     let color = if slot.is_none() && std::env::var_os("PHIBER_OVERRIDE").is_some() { [0.8, 0.8, 0.8, 1.0] } else { color };
-                    let (rough, metal) = slot.map_or((0.5, 0.0), |m| (m.roughness, m.metallic));
+                    // Solid and Wireframe (Workbench) shade with the material's
+                    // viewport roughness and metallic, the rest with its BSDF's.
+                    let (rough, metal) = match (slot, palette.shading.uses_viewport_color()) {
+                        (Some(m), true) => (m.viewport_pbr[0], m.viewport_pbr[1]),
+                        (Some(m), false) => (m.roughness, m.metallic),
+                        (None, true) => (0.4, 0.0),
+                        (None, false) => (0.5, 0.0),
+                    };
                     let mut tri = Tri::new([[0.0; 3]; 3], [[0.0; 3]; 3], color).with_pbr(rough, metal);
                     if let Some(b) = slot.map(|m| m.bsdf) {
                         tri.color[3] = b.alpha;
@@ -114,7 +150,7 @@ pub fn build(scene: &[BObject3D], palette: &BMeshPalette) -> Scene {
                     // normal and roughness maps for a mode that never samples
                     // them is what pushed the atlas past one binding and made
                     // the GPU decline the whole scene.
-                    let has_uv = i.iter().all(|&k| k < uvs.len()) && !palette.shading.uses_viewport_color();
+                    let has_uv = images && i.iter().all(|&k| k < uvs.len()) && !palette.shading.uses_viewport_color();
                     let mut add = |t: &crate::phiphx::scene::SceneTexture| {
                         *ids.entry(std::sync::Arc::as_ptr(&t.rgba))
                             .or_insert_with(|| out.atlas.add_bounded(t.width, t.height, &t.rgba, TEXTURE_LIMIT))
@@ -151,9 +187,6 @@ pub fn build(scene: &[BObject3D], palette: &BMeshPalette) -> Scene {
     out
 }
 
-
-
-
 /// The viewport's orbit camera (see `scene/camera.rs`) in phiray terms.
 pub fn camera(yaw: f32, pitch: f32, pan: (f32, f32), zoom: f32, setup: BViewSetup, aspect: f32, look: &BRayLook) -> Camera {
     let (sy, cy) = yaw.to_radians().sin_cos();
@@ -177,7 +210,9 @@ pub fn camera(yaw: f32, pitch: f32, pan: (f32, f32), zoom: f32, setup: BViewSetu
         sun: sun.to_array(),
         dist: 1.0 / (scale * setup.fov),
         pan: [pan.0, pan.1],
-        grid: 1.0,
+        // Nothing to draw once the floor and its three axes are all off.
+        grid: if look.grid_hide & 0b1111 == 0b0111 { 0.0 } else { 1.0 },
+        grid_hide: look.grid_hide,
         grid_color: rgba(look.grid),
         ..Default::default()
     };

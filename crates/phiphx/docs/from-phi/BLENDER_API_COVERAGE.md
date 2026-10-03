@@ -1,5 +1,14 @@
 # Blender DNA API Coverage & Apple Framework Mapping
 
+> **Historical (from `gemphi/phi`).** Status columns below are the old `phi`
+> reader's. The current reader (`crates/phiphx/src/importer/blend`) covers
+> much more — as of 2026-09-16: world matrix (computed; 4.x+ has no `obmat`),
+> `data` → Mesh, `mat` / `totcol` material slots, per-face `material_index`,
+> 4.x/5.x attribute meshes (`position`, `.corner_vert`, UVs, normals),
+> `Base.flag` selection / hidden, `LayerCollection` flags, `Scene.r` frame
+> range / resolution / engine, World colour. Live status:
+> `crates/phiber/docs/blend-read-parity.md`.
+
 This document tracks all Blender features detectable via DNA parsing and their mapping to Apple ecosystem frameworks.
 
 ## Blender DNA Structures to Detect

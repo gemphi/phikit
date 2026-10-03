@@ -1,5 +1,6 @@
 //! The 3D Viewport's menus — `VIEW3D_MT_view`, `VIEW3D_MT_select_object`,
-//! `VIEW3D_MT_add` / `VIEW3D_MT_mesh_add`, `VIEW3D_MT_object` — and the
+//! `VIEW3D_MT_add` / `VIEW3D_MT_mesh_add`, `VIEW3D_MT_object` (with
+//! `VIEW3D_MT_object_animation`) — and the
 //! View and Select menus the node editors share. Every entry fires an
 //! operator (`scene/view_op.rs`, `scene/select.rs`, `scene/edit.rs`) or
 //! reports itself.
@@ -30,6 +31,11 @@ static VIEW3D_NAVIGATION: &[BMenuItem] = &[
     fire("Zoom In", "Numpad +", OpKey::View3d, "zoom_in"),
     fire("Zoom Out", "Numpad -", OpKey::View3d, "zoom_out"),
 ];
+/// `VIEW3D_MT_view_align`: Shift C puts the cursor back at the origin and
+/// frames everything (`view3d.view_all(center=True)`, `scene::cursor`).
+static VIEW3D_ALIGN: &[BMenuItem] = &[
+    fire("Center Cursor and Frame All", "Shift C", OpKey::Cursor, "center_frame_all"),
+];
 pub static VIEW3D_VIEW: &[BMenuItem] = &[
     op("Toolbar", "T"),
     // `space_data.show_region_ui`: the sidebar region beside the tab strip.
@@ -41,6 +47,7 @@ pub static VIEW3D_VIEW: &[BMenuItem] = &[
     SEP,
     sub("Viewpoint", VIEW3D_VIEWPOINT),
     sub("Navigation", VIEW3D_NAVIGATION),
+    sub("Align View", VIEW3D_ALIGN),
     SEP,
     op("Toggle Maximize Area", "Ctrl Space"),
 ];
@@ -88,10 +95,36 @@ static OBJECT_TRANSFORM: &[BMenuItem] = &[
     fire("Rotate", "R", OpKey::Transform, "rotate"),
     fire("Scale", "S", OpKey::Transform, "resize"),
 ];
+/// `VIEW3D_MT_snap`: the cursor to the selection and back (`scene::cursor`).
+static OBJECT_SNAP: &[BMenuItem] = &[
+    op("Selection to Grid", ""),
+    fire("Selection to Cursor", "", OpKey::Cursor, "selection_to_cursor"),
+    op("Selection to Active", ""),
+    SEP,
+    fire("Cursor to Selected", "", OpKey::Cursor, "selected"),
+    fire("Cursor to World Origin", "", OpKey::Cursor, "origin"),
+    op("Cursor to Grid", ""),
+    fire("Cursor to Active", "", OpKey::Cursor, "active"),
+];
+/// `VIEW3D_MT_object_animation`: I keys the selected objects
+/// (`scene/action/keying.rs`).
+static OBJECT_ANIMATION: &[BMenuItem] = &[
+    fire("Insert Keyframe", "I", OpKey::Keyframe, "insert"),
+    op("Insert Keyframe with Keying Set", "K"),
+    fire("Delete Keyframes...", "Alt I", OpKey::Keyframe, "delete"),
+    fire("Clear Keyframes...", "", OpKey::Keyframe, "clear"),
+    op("Change Keying Set...", "Shift K"),
+    SEP,
+    op("Bake Action...", ""),
+    op("Bake Object Transform to Grease Pencil...", ""),
+];
 pub static OBJECT_ITEMS: &[BMenuItem] = &[
     sub("Transform", OBJECT_TRANSFORM),
+    sub("Snap", OBJECT_SNAP),
     SEP,
     op("Shade Auto Smooth", ""),
+    SEP,
+    sub("Animation", OBJECT_ANIMATION),
     SEP,
     fire("Duplicate Objects", "Shift D", OpKey::SceneEdit, "duplicate"),
     fire("Delete", "X", OpKey::SceneEdit, "delete"),

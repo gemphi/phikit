@@ -1,6 +1,7 @@
 //! Focused renderer for `BView::Column` — flex-col filling its slot.
 
 use super::ctx::BRenderCtx;
+use super::flex::{BFlex, BLen};
 use super::walk;
 use crate::v2::view::BView;
 use gpui::prelude::*;
@@ -46,12 +47,26 @@ impl BColumn<'_> {
             .min_w_0()
             .overflow_y_scroll()
             .gap(px(gap));
-        if let Some(depth) = deepest {
-            element = element.relative().child(super::tree::guides_backdrop(depth, ctx));
-        }
-        for child in self.0 {
+        let Some(depth) = deepest else {
+            for child in self.0 {
+                element = element.child(walk(child, ctx));
+            }
+            return element.into_any_element();
+        };
+        // A tree lays out only the rows in view (`tree::BRowWindow`).
+        let key = gpui::SharedString::from(format!("tree-{:?}-{}", ctx.area, ctx.host.slug()));
+        let window = super::tree::BRowWindow::new(key, self.0, ctx);
+        let hovered = std::rc::Rc::clone(&window.hovered);
+        element = element
+            .track_scroll(&window.handle)
+            .on_hover(move |over, _, _| hovered.set(*over))
+            .relative()
+            .child(super::tree::guides_backdrop(depth, window.rows_height(), ctx));
+        let spacer = |height: f32| BFlex::cell().width(BLen::Full).height(BLen::Measured(height)).keeps_size().div(ctx).into_any_element();
+        element = element.children(window.above().map(spacer));
+        for child in &self.0[window.first..window.last] {
             element = element.child(walk(child, ctx));
         }
-        element.into_any_element()
+        element.children(window.below().map(spacer)).into_any_element()
     }
 }

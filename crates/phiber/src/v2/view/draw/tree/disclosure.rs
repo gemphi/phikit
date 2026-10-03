@@ -2,11 +2,13 @@
 //! wide, blank for a leaf so names stay column-aligned (Blender reserves the
 //! slot too), and the click that opens or closes the row.
 
+use super::BTreePart;
 use super::super::color::to_hsla;
 use super::super::ctx::BRenderCtx;
+use super::super::flex::BFlexed;
 use crate::v2::view::prim::BAction;
 use gpui::prelude::*;
-use gpui::{AnyElement, div, px, svg};
+use gpui::{AnyElement, px, svg};
 
 pub(super) struct BTreeDisclosure<'a> {
     pub(super) expanded: Option<bool>,
@@ -15,14 +17,8 @@ pub(super) struct BTreeDisclosure<'a> {
 
 impl BTreeDisclosure<'_> {
     pub(super) fn render(&self, ctx: &BRenderCtx) -> AnyElement {
-        let unit = ctx.style.dimensions.indent_unit;
-        let cell = div()
-            .flex_shrink_0()
-            .w(px(unit))
-            .h_full()
-            .flex()
-            .items_center()
-            .justify_center();
+        // The same slot the type icon takes, so the two columns line up.
+        let cell = BTreePart::IconSlot.flex(ctx).div(ctx);
         // Every row carries its arrow: a leaf's is dimmed and does nothing,
         // so the arrow column reads down the whole tree.
         let Some(open) = self.expanded else {

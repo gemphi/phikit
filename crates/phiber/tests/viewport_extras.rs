@@ -6,7 +6,7 @@ use phiber::phiphx::Phx;
 use phiber::v2::host::BHostType;
 use phiber::v2::scene::extra::{BExtraKind, scene_extras};
 use phiber::v2::scene::{BShading, shading_key, view_shading};
-use phiber::v2::state::BState;
+use phiber::v2::state::{BKey as _, BState};
 use phiber::v2::state::action::apply_action;
 use phiber::v2::view::{BAction, BView, BViewItem};
 use std::path::PathBuf;
@@ -65,7 +65,9 @@ fn view3d_header_has_the_four_shading_modes() {
         &phiber::v2::part::filter::BFilter::new(BHostType::View3D).build(&s),
         &mut actions,
     );
-    assert_eq!(actions.len(), 4);
+    // X-ray leads them (`view3d.toggle_xray`), then the four modes.
+    assert!(matches!(actions.first(), Some(BAction::Set(k, v)) if k == &phiber::v2::state::OpKey::View3d.path() && v == "toggle_xray"), "{actions:?}");
+    assert_eq!(actions.iter().filter(|a| matches!(a, BAction::Set(k, _) if k == &shading_key())).count(), 4);
     let wire = actions
         .iter()
         .find(|a| matches!(a, BAction::Set(k, v) if k == &shading_key() && v == "wireframe"))

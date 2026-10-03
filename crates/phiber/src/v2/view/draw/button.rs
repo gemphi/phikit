@@ -40,6 +40,8 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     } else {
         BStyleRole::Button
     }));
+    // A control not in force is dimmed, its icon and text alike (`muted`).
+    let ink = to_hsla(if ctl.muted { ctx.style.colors.text_dim } else { ctx.style.colors.text });
     let mut row = div()
         .flex()
         .flex_row()
@@ -55,7 +57,7 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
         }))
         .h(px(ctx.style.dimensions.button_height))
         .rounded(radius)
-        .text_color(to_hsla(ctx.style.colors.text))
+        .text_color(ink)
         .text_size(px(ctx.style.typography.body));
     // A labelled button outside a strip is a row of whatever holds it — a
     // bookmark in the source list, a link on the welcome card, an option in
@@ -75,7 +77,7 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
                 .path(icon_path(icon))
                 .size(px(ctx.style.dimensions.icon_size))
                 .flex_shrink_0()
-                .text_color(to_hsla(ctx.style.colors.text)),
+                .text_color(ink),
         );
     }
     if let Some(text) = label {
@@ -92,12 +94,16 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     // (the "squarish on hover" bug).
     // A control spanning several slots is as wide as those icon buttons and
     // the gaps between them, so the row keeps its places (`BControl::span`).
+    // A control filling its slot fills it as a whole: the hover shape runs
+    // the column's width, so every checkbox in a popover's value column is
+    // one width, not a pill cut to its own label. The row inside already
+    // filled; this wrapper hugged, so the column's width never reached it.
     let slot = 2.0 * ctx.style.spacing.pad_md + ctx.style.dimensions.icon_size;
     let spans = f32::from(ctl.span.max(1));
-    let base = if ctl.span > 1 {
-        BFlex::row().min_width(BLen::Measured(spans * slot + (spans - 1.0) * ctx.style.spacing.gap_xs)).div(ctx)
-    } else {
-        div()
+    let base = match (ctx.fill, ctl.span > 1) {
+        (true, _) => BFlex::row().width(BLen::Full).min_width(BLen::Zero).div(ctx),
+        (false, true) => BFlex::row().min_width(BLen::Measured(spans * slot + (spans - 1.0) * ctx.style.spacing.gap_xs)).div(ctx),
+        (false, false) => div(),
     };
     let mut element = base
         .id(SharedString::from(id_text.clone()))
@@ -114,7 +120,12 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
         // the full-height caps beside it stay pinned to the bottom edge.
         element = element.self_center();
     }
-    let mut element = chrome::paint(element, ctl.active, ctx).on_click(
+    let mut element = // On AND not in force do not stack: the fill says "in force", so a
+    // control that is muted does not take it however true its state is. The
+    // X-ray button was painting a full active fill with dim ink over it —
+    // "on" and "unavailable" at once, with no rule for what that should look
+    // like (`part/modebar/shading.rs`).
+    chrome::paint(element, ctl.active && !ctl.muted, ctx).on_click(
         move |_event: &ClickEvent, window, app| {
             (Rc::clone(&handler))(&action_copy, window, app);
         },

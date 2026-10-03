@@ -159,7 +159,7 @@ mod tests {
         assert!((hue - 216.4).abs() < 0.5 && (saturation - 19.2).abs() < 0.5 && (lightness - 28.6).abs() < 0.2, "{hue} {saturation} {lightness}");
         assert_eq!(hsl_of([0.5, 0.5, 0.5]), (0.0, 0.0, 50.0));
         assert_eq!(GRAPHITE.color(SEED_STEP).1, 0.0, "Graphite's seed is Blender's neutral grey");
-        for (ladder, hue) in [(TOKYO, 228.9), (SWIFT, 13.8), (CYBERPUNK, 265.3)] {
+        for (ladder, hue) in [(TOKYO, 228.9), (MOSS, 138.8), (EMBER, 12.0), (PLUM, 257.1), (SWIFT, 13.8), (CYBERPUNK, 265.3)] {
             assert!((ladder.color(SEED_STEP).0 - hue).abs() < 0.5, "{ladder:?} keeps its hue at the seed: {}", ladder.color(SEED_STEP).0);
         }
         // A light ladder is the same eighteen shades the other way up: its
@@ -175,5 +175,9 @@ mod tests {
         // whose saturation is now a tenth of what it was.
         assert!((SPHERE_LIGHT.color(SEED_STEP).0 - SPHERE.color(SEED_STEP).0).abs() < 8.0, "the hue survives the lift: {} vs {}", SPHERE_LIGHT.color(SEED_STEP).0, SPHERE.color(SEED_STEP).0);
         assert!(SPHERE_LIGHT.color(2).2 > 90.0 && SPHERE_LIGHT.color(16).2 < 30.0);
+        // Silver is born light: its dark seed is the silver lowered as far
+        // toward black as a dark seed is lifted toward white, a gunmetal.
+        assert_eq!(lowered(SILVER_LIGHT_SEED), [0x31, 0x32, 0x32]);
+        assert!(SILVER.color(SEED_STEP).2 < 20.0 && SILVER_LIGHT.color(2).2 > 90.0);
     }
 }

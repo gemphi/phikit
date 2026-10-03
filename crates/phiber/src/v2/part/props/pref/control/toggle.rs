@@ -9,6 +9,11 @@ pub struct BPreferenceToggle {
 }
 
 impl BPreferenceToggle {
+    /// The preference this edits, for the control the view builds from it.
+    pub(super) const fn row(self) -> BPreferenceRow {
+        self.row
+    }
+
     pub(super) fn new(row: BPreferenceRow, value: BStyleValue) -> Self {
         let BStyleValue::Bool(checked) = value else {
             unreachable!("toggle metadata must describe a boolean value")

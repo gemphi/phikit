@@ -14,7 +14,7 @@ use super::color::{resolved_gradient, to_hsla};
 use super::ctx::BRenderCtx;
 use super::chrome;
 use super::atom::icon_path;
-use super::flex::{BFlex, BFlexed, BLen, BOverflow, BPlace};
+use super::flex::{BFill, BFlex, BFlexed, BLen, BOverflow, BPlace};
 
 pub mod cap;
 mod shape;
@@ -195,7 +195,7 @@ fn properties_layers(
 ) -> AnyElement {
     let group = SharedString::from(format!("{id_text}-paint-hover"));
     let paint_id_text = format!("{id_text}-background");
-    let mut paint = BCapPart::Paint
+    let mut paint = BCapPart::Paint { resting: !active }
         .flex(ctx)
         .div(ctx)
         .id(SharedString::from(paint_id_text.clone()))
@@ -232,7 +232,9 @@ enum BCapPart {
     Icon,
     /// The paint layer, spanning the cap top to bottom; its left and right
     /// come from `BCapSide::paint`.
-    Paint,
+    /// The paint layer. `resting` fills it with the tab's chip; the selected
+    /// tab paints its own gradient over the top.
+    Paint { resting: bool },
     /// The two-layer stack a Properties rail tab is: the paint, then the row.
     Layers,
 }
@@ -244,7 +246,10 @@ impl BFlexed for BCapPart {
                 let size = BLen::Measured(ctx.style.dimensions.icon_size);
                 BFlex::row().width(size).height(size).keeps_size()
             }
-            Self::Paint => BFlex::row().place(BPlace::Overlay),
+            Self::Paint { resting } => {
+                let flex = BFlex::row().place(BPlace::Overlay);
+                if *resting { flex.fill(BFill::RailTabResting) } else { flex }
+            }
             Self::Layers => BFlex::row()
                 .place(BPlace::Anchor)
                 .width(BLen::Full)

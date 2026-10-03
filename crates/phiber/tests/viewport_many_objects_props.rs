@@ -30,6 +30,7 @@ fn simple_obj(name: impl Into<String>) -> SceneObject {
         materials: Vec::new(),
         material_indices: Default::default(),
         uvs: Default::default(),
+        color: [1.0; 4],
     }
 }
 

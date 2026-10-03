@@ -1,0 +1,3 @@
+SHADE-MAPS.blend|Glow|Emission Color|emit_map.png
+SHADE-MAPS.blend|Metal|Metallic|metal_map.png
+SHADE-MAPS.blend|Rough|Roughness|rough_map.png

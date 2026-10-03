@@ -20,7 +20,7 @@ thread_local! {
 }
 
 /// The scroll handle for `id`, the same one every frame.
-fn handle(id: &SharedString) -> ScrollHandle {
+pub(super) fn handle(id: &SharedString) -> ScrollHandle {
     HANDLES.with(|h| h.borrow_mut().entry(id.clone()).or_default().clone())
 }
 
@@ -29,6 +29,13 @@ fn handle(id: &SharedString) -> ScrollHandle {
 pub(super) fn scroller(element: Stateful<gpui::Div>, id: &SharedString, ctx: &BRenderCtx) -> Stateful<gpui::Div> {
     let handle = handle(id);
     let colour = to_hsla(ctx.style.colors.text);
+    let lit = to_hsla(ctx.style.colors.accent);
+    // The scroller rides the container's right-hand gutter — the same inner
+    // pad the content is already held off the edge by — so it sits in space
+    // the content does not use instead of over the top of it. Centre line,
+    // not edge inset: the thumb then swells about that line and takes half
+    // its new thickness either side.
+    let gutter = ctx.style.spacing.pad_md;
     let paint_handle = handle.clone();
     let bar = gpui::canvas(
         |_, _, _| (),
@@ -40,15 +47,18 @@ pub(super) fn scroller(element: Stateful<gpui::Div>, id: &SharedString, ctx: &BR
             let Some(t) = scroll::thumb(viewport, content, offset) else { return };
             let near = area.contains(&window.mouse_position());
             let alpha = if near { 1.0 } else { scroll::MIN_ALPHA };
-            let width = scroll::SCROLL_WIDTH - 2.0 * scroll::THUMB_INSET;
+            // One width, pointer or no pointer: the thumb lives inside the
+            // gutter and swelling it there would put the extra thickness over
+            // the content on one side and the area's border on the other.
+            // The pointer changes its colour and its alpha instead. Narrower
+            // than the gutter as well, so it clears both its edges.
+            let width = scroll::THUMB_WIDTH.min(gutter);
+            let centre = area.origin.x + area.size.width - gpui::px(gutter / 2.0);
             let rect = gpui::Bounds::new(
-                gpui::point(
-                    area.origin.x + area.size.width - gpui::px(scroll::SCROLL_WIDTH - scroll::THUMB_INSET),
-                    area.origin.y + gpui::px(t.start),
-                ),
+                gpui::point(centre - gpui::px(width / 2.0), area.origin.y + gpui::px(t.start)),
                 gpui::size(gpui::px(width), gpui::px(t.len)),
             );
-            let mut fill = colour;
+            let mut fill = if near { lit } else { colour };
             fill.a *= 0.35 * alpha;
             window.paint_quad(gpui::fill(rect, fill).corner_radii(gpui::px(width / 2.0)));
         },

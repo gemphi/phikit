@@ -19,6 +19,7 @@ fn look(studio: bool) -> BRayLook {
     BRayLook {
         sky: gpui::hsla(0.0, 0.0, 0.24, 1.0),
         grid: gpui::hsla(0.0, 0.0, 0.3, 1.0),
+        grid_hide: 0,
         world: None,
         lights: Vec::new(),
         wire: None,

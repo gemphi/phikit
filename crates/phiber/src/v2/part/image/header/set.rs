@@ -11,6 +11,9 @@ use crate::v2::view::BView;
 
 /// The render result's data-block name, and `IMAGE_HT_header`'s New / Open.
 pub const RENDER_RESULT: &str = "Render Result";
+/// The header while a render runs: its bar's label and the button that stops it.
+pub const RENDERING: &str = "Rendering";
+pub const CANCEL: &str = "Cancel";
 pub const NEW: &str = "New";
 pub const OPEN: &str = "Open";
 /// `RE_SLOT_COUNT`-style render slots, named as Blender names them.

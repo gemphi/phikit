@@ -11,11 +11,9 @@ use crate::v2::scene::render_job::{self, BRenderShot};
 use crate::v2::scene::render_status;
 use crate::v2::theme::{BAnimColors, BCheckerColors, BColor};
 use crate::v2::view::draw::color::to_hsla;
-use gpui::{App, Bounds, Corners, Hsla, Pixels, RenderImage, SharedString, TextRun, Window, fill, point, px, size};
+use gpui::{App, Bounds, Corners, Pixels, RenderImage, SharedString, TextRun, Window, fill, point, px, size};
 use std::sync::Arc;
 
-/// `draw_render_info`: the bar's fill, a quarter-black over the picture.
-const INFO_FILL: Hsla = Hsla { h: 0.0, s: 0.0, l: 0.0, a: 0.25 };
 /// `ED_region_info_draw_multiline`: the text starts 0.6 widget units in.
 const INFO_INSET: f32 = 12.0;
 /// `UI_FSTYLE_WIDGET` points at scale 1.
@@ -122,10 +120,14 @@ pub fn info_text(view: &BImageView, scene: &(String, String), frame: &str) -> Op
 }
 
 /// `draw_render_info`: the bar across the top of the window.
-pub fn paint_info(view: &BImageView, scene: &(String, String), frame: &str, text: BColor, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
+pub fn paint_info(view: &BImageView, scene: &(String, String), frame: &str, text: BColor, dim: BColor, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
     let Some(line) = info_text(view, scene, frame) else { return };
     let bar = Bounds::new(at.origin, size(at.size.width, px(INFO_BAR_HEIGHT)));
-    window.paint_quad(fill(bar, INFO_FILL));
+    // `draw_render_info` lays a quarter-black over the picture; here that
+    // scrim is the theme's dim, the same one a modal lays over the
+    // workspace, so it follows the palette instead of being black whatever
+    // the theme.
+    window.paint_quad(fill(bar, to_hsla(dim)));
     let run = TextRun { len: line.len(), font: window.text_style().font(), color: to_hsla(text), background_color: None, underline: None, strikethrough: None };
     let shaped = window.text_system().shape_line(SharedString::from(line), px(FONT), &[run], None);
     let line_height = px(FONT * 1.3);

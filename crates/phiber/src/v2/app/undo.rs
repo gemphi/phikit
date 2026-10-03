@@ -26,7 +26,7 @@ fn document_keys() -> (Vec<String>, Vec<String>, Vec<String>) {
         CtxKey::FrameStart.path().encode(),
         CtxKey::FrameEnd.path().encode(),
         CtxKey::Fps.path().encode(),
-        CtxKey::Markers.path().encode(),
+        CtxKey::Markers.path().encode(), CtxKey::KeySelected.path().encode(),
         SceneKey::Added.path().encode(),
         SceneKey::Deleted.path().encode(),
         SceneKey::Copied.path().encode(),
@@ -38,6 +38,8 @@ fn document_keys() -> (Vec<String>, Vec<String>, Vec<String>) {
         SceneKey::Assigned.path().encode(),
         SceneKey::MadeActions.path().encode(),
         SceneKey::ActionRanges.path().encode(),
+        SceneKey::Keyed.path().encode(),
+        SceneKey::Nla.path().encode(),
         SceneKey::Transformed.path().encode(),
     ];
     let domains = vec![domain_of(OutlinerKey::Search.path().encode()), domain_of(ButsKey::NavbarTab.path().encode())];
@@ -56,6 +58,12 @@ fn domain_of(encoded: String) -> String {
     let mut parts: Vec<&str> = encoded.split('.').collect();
     parts.truncate(2);
     format!("{}.", parts.join("."))
+}
+
+/// A gesture under way whose steps are one undo step: a marker grab, a
+/// G / R / S, a key move in the Dope Sheet.
+pub fn holding(s: &BState) -> bool {
+    crate::v2::scene::grab::BMarkerGrab::active(s) || crate::v2::scene::xform::BTransformModal::active(s) || crate::v2::scene::action::dope::BKeyGrab::active(s)
 }
 
 /// The document as it stands: its keys and values.

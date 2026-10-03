@@ -66,14 +66,14 @@ impl BFlexed for BCardPart {
                     BCardKind::Panel => column
                         .radius(BRadius::Role(BStyleRole::Card))
                         .border(BEdge::All)
-                        .fill(BFill::Tone(panel_tone(ctx))),
-                    // A sub-panel is a branch of its panel's tree: indented
-                    // under its parent's rows with a guide down its left
-                    // edge, as an Outliner child row is, on the panel's own
-                    // shade (`BSurfaceTone::Nested` is the card's).
+                        .fill(panel_fill(ctx)),
+                    // A sub-panel is its parent's card again, one shade in:
+                    // no indent and no guide down its left edge. Both marked
+                    // it out as a different kind of thing, when the whole
+                    // point is that a nested accordion is an accordion — it
+                    // sits in its parent's body on that body's inset, so the
+                    // space around it is even on all four sides.
                     BCardKind::Sub { depth } => column
-                        .margin_left(BSpace::PadSm)
-                        .border(BEdge::Guide)
                         .radius(BRadius::Role(BStyleRole::Card))
                         .fill(BFill::Tone(BSurfaceTone::Nested(*depth))),
                     BCardKind::Bare | BCardKind::Strip(_) | BCardKind::Column(_) => column,
@@ -94,9 +94,14 @@ impl BFlexed for BCardPart {
                     // (`heading_surface`). Blender paints only a top-level
                     // header (`panel_draw_aligned_backdrop`); the approved
                     // mock-ups lift a sub-panel's too, off its own well.
-                    BCardKind::Panel => strip.fill(BFill::Heading(BSurfaceTone::Card)).radius(rounded),
+                    BCardKind::Panel => {
+                        strip.fill(BFill::Heading(BSurfaceTone::Card)).radius(rounded).overflow(BOverflow::Clip)
+                    }
                     BCardKind::Sub { depth } => {
-                        strip.fill(BFill::Heading(BSurfaceTone::Nested(*depth))).radius(rounded)
+                        strip
+                            .fill(BFill::Heading(BSurfaceTone::Nested(*depth)))
+                            .radius(rounded)
+                            .overflow(BOverflow::Clip)
                     }
                     BCardKind::Bare | BCardKind::Strip(_) | BCardKind::Column(_) => strip,
                 }
@@ -134,9 +139,25 @@ impl BFlexed for BCardPart {
 
 /// A panel's body surface (`TH_PANEL_BACK`): a step over the region it sits
 /// in, in Properties as everywhere (Blender's `#3D3D3D` panel on its
-/// `#303030` region).
-fn panel_tone(_ctx: &BRenderCtx) -> BSurfaceTone {
-    BSurfaceTone::Card
+/// `#303030` region) — and how that step is painted, with the theme's sweep
+/// or flat.
+///
+/// Flat when the panel IS the region: the activity bar's secondary strip,
+/// which fills its pane edge to edge with none of the pane showing round it.
+/// A sweep reads as a raised card BECAUSE there is a surface under it to be
+/// raised from; where none shows, the sweep's top stop is not a highlight but
+/// a second shade running down the panel's own edge. And measured, that stop
+/// was the exact shade the rail's entry tabs beside it are painted in, so the
+/// strip read as more rail than panel. Flat, it is the card shade throughout:
+/// the same shade as the content it carries.
+///
+/// One function, not a tone and a fill and a predicate. `card.rs` sits on its
+/// line cap (`renderer_decomposition`), so a rule that arrives here has to pay
+/// for itself — this one replaces the `panel_tone` that only ever answered
+/// `Card`.
+fn panel_fill(ctx: &BRenderCtx) -> BFill {
+    // Flat where the panel fills its region: the activity bar's strip.
+    if ctx.host == crate::v2::host::BHostType::Activity && ctx.region == Some(crate::v2::region::BRegionType::Center) { BFill::Flat(BSurfaceTone::Card) } else { BFill::Tone(BSurfaceTone::Card) }
 }
 
 /// The name a card's selectors are built from: its fold key, its title, or

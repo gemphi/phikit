@@ -26,7 +26,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::phiphx::scene::SceneModel;
-use crate::v2::scene::{BObject3D, current_scene};
+use crate::v2::scene::BObject3D;
 use crate::v2::state::BState;
 
 thread_local! {
@@ -46,7 +46,7 @@ thread_local! {
     /// the pointer it is keyed on cannot be reused by a different scene while
     /// the entry is alive — an address comparison is sound here only because
     /// of that.
-    static BUILT: RefCell<Option<(Option<std::sync::Arc<SceneModel>>, (Option<f32>, u64), Rc<Vec<BObject3D>>)>> =
+    static BUILT: RefCell<Option<(Option<std::sync::Arc<SceneModel>>, (Option<f32>, Option<f32>, u64), Rc<Vec<BObject3D>>)>> =
         const { RefCell::new(None) };
 }
 
@@ -99,6 +99,7 @@ pub fn set_loaded_at(model: Option<std::sync::Arc<SceneModel>>, state: &BState) 
     set_loaded_shared(model);
     super::motion::set_shown_frame(state);
     super::motion::set_moved(moved);
+    super::render_set::BResolution::scope(state);
 }
 
 /// Clear the loaded scene scope so it does not leak into the next render pass.
@@ -113,6 +114,11 @@ pub fn clear_scene_objects() {
     BUILT.with(|cell| *cell.borrow_mut() = None);
 }
 
+/// The scoped loaded model, shared.
+pub fn loaded_shared() -> Option<std::sync::Arc<SceneModel>> {
+    LOADED.with(|cell| cell.borrow().clone())
+}
+
 /// Borrow the scoped loaded model and call `f` with `Option<&SceneModel>`.
 /// The borrow is held only for the duration of `f`.
 pub fn with_loaded<R>(f: impl FnOnce(Option<&SceneModel>) -> R) -> R {
@@ -124,12 +130,9 @@ pub fn with_loaded<R>(f: impl FnOnce(Option<&SceneModel>) -> R) -> R {
 
 /// The single Scene_Source both the Viewport and the Outliner call instead of
 /// `current_scene(s, None)`. Reads the render-pass-scoped loaded model (set by
-/// `BPhiberApp::render`) and defers to the pure [`current_scene`]: yields the
-/// Default_Scene when no model is in scope, otherwise the loaded objects.
-///
-/// [`current_scene`] stays pure and unchanged — this is the only new surface;
-/// the scope read happens here, so unit tests calling `current_scene(s, None)`
-/// / `current_scene(s, Some(&m))` are unaffected.
+/// `BPhiberApp::render`): the Default_Scene when no model is in scope,
+/// otherwise the loaded objects, each rigged mesh as the poser has it
+/// (`scene::pose`). `current_scene` stays pure and exact.
 pub fn scene_source(s: &BState) -> Vec<BObject3D> {
     (*scene_objects(s)).clone()
 }
@@ -150,8 +153,10 @@ pub fn scene_objects(s: &BState) -> Rc<Vec<BObject3D>> {
     let model = LOADED.with(|cell| cell.borrow().clone());
     // A moving scene is rebuilt per frame, a still one only per model —
     // and either when something is added, deleted or duplicated.
+    // A rigged mesh is drawn as the poser's thread has it (`scene::pose`).
     let frame = model.as_deref().and_then(|m| super::motion::moving_frame(m, super::motion::shown_frame(s)));
-    let at = (frame, super::edit::BSceneEdit::now(s).fingerprint() ^ super::transform::BTransforms::fingerprint(s).rotate_left(17));
+    let posed = model.as_ref().map(|m| super::pose::BPoser::shown(m, s)).unwrap_or_default();
+    let at = (frame, posed.frame, super::edit::BSceneEdit::now(s).fingerprint() ^ super::transform::BTransforms::fingerprint(s).rotate_left(17));
     if let Some(hit) = BUILT.with(|cell| {
         cell.borrow()
             .as_ref()
@@ -161,7 +166,7 @@ pub fn scene_objects(s: &BState) -> Rc<Vec<BObject3D>> {
         return hit;
     }
     OBJECT_BUILDS.with(|n| n.set(n.get() + 1));
-    let built = Rc::new(current_scene(s, model.as_deref()));
+    let built = Rc::new(posed.scene(s, model.as_deref()));
     BUILT.with(|cell| *cell.borrow_mut() = Some((model, at, Rc::clone(&built))));
     built
 }
@@ -230,6 +235,7 @@ mod tests {
             materials: Vec::new(),
             material_indices: Default::default(),
             uvs: Default::default(),
+            color: [1.0; 4],
         }
     }
 
@@ -356,5 +362,36 @@ mod memo_tests {
         clear_loaded_scene();
         assert_eq!(scene_objects(&s).len(), OBJECTS.len());
         clear_scene_objects();
+    }
+}
+
+/// What the view layer shows, counted: objects, vertices, faces.
+///
+/// Blender's `info_stats` counts what is VISIBLE, not what the file holds —
+/// a character with three hidden hair variants reads 1.4M faces there and
+/// read 9M here until the hidden ones were filtered out. The viewport's
+/// read-out and the status bar both ask this, so the two can never disagree
+/// about how big the scene is.
+pub fn visible_metrics(s: &BState) -> (usize, usize, usize) {
+    let hidden = crate::v2::part::outliner::key::BHidden::now(s);
+    let visible: Vec<BObject3D> = scene_objects(s)
+        .iter()
+        .filter(|o| !hidden.hides(s, object_name(o)))
+        .cloned()
+        .collect();
+    super::scene_metrics(&visible)
+}
+
+/// That count as one line, in Blender's status-bar wording.
+pub fn stats_line(s: &BState) -> String {
+    let (objects, verts, faces) = visible_metrics(s);
+    format!("Objects: {objects} | Verts: {verts} | Faces: {faces}")
+}
+
+/// What an object is called. One match, in the layer that owns the enum: the
+/// painter, the pick and the stats all name an object the same way.
+pub fn object_name(object: &BObject3D) -> &str {
+    match object {
+        BObject3D::Primitive { name, .. } | BObject3D::Loaded { name, .. } => name,
     }
 }

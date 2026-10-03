@@ -59,6 +59,15 @@ static CONTEXT: &[BPropSpec] = &[
 
 // `CYCLES_RENDER_PT_sampling` has no rows of its own; its sub-panels do.
 static SAMPLING_VIEWPORT: &[BPropSpec] = &[i("cycles.preview_samples", "Max Samples", 0, 100000).at(1024)];
+// `CYCLES_RENDER_PT_sampling_viewport_denoise`: the toggle is its header.
+// Blender ships Viewport Denoising off; Phiber ships it on — a refining
+// viewport is shown filtered from its first sample, since a noisy view of
+// a plain cube was the first thing the user saw wrong. A file that never
+// set it is left as Blender's default when saved (the edit compares with
+// this default, so "on" writes nothing).
+static VIEWPORT_DENOISE_HEADER: &[BPropSpec] = &[b("cycles.use_preview_denoising", "Denoise").on()];
+static VIEWPORT_DENOISE: &[BPropSpec] = &[i("cycles.preview_denoising_start_sample", "Start Sample", 0, 1 << 24).at(1)];
+static SAMPLING_VIEWPORT_SUBS: &[BSectionSpec] = &[sec("Denoise", VIEWPORT_DENOISE).closed().header(VIEWPORT_DENOISE_HEADER)];
 static SAMPLING_RENDER: &[BPropSpec] = &[
     b("cycles.use_adaptive_sampling", "Adaptive Sampling"),
     f("cycles.adaptive_threshold", "Noise Threshold", BUnit::None),
@@ -68,10 +77,10 @@ static SAMPLING_RENDER: &[BPropSpec] = &[
 ];
 // `CYCLES_RENDER_PT_sampling_render_denoise`: the toggle is its header.
 static DENOISE_HEADER: &[BPropSpec] = &[b("cycles.use_denoising", "Denoise").on()];
-static DENOISE: &[BPropSpec] = &[e("cycles.denoiser", "Denoiser", DENOISER)];
+static DENOISE: &[BPropSpec] = &[e("cycles.denoiser", "Denoiser", DENOISER).picked("OPENIMAGEDENOISE")];
 static SAMPLING_RENDER_SUBS: &[BSectionSpec] = &[sec("Denoise", DENOISE).closed().header(DENOISE_HEADER)];
 static SAMPLING_SUBS: &[BSectionSpec] = &[
-    sec("Viewport", SAMPLING_VIEWPORT),
+    sec("Viewport", SAMPLING_VIEWPORT).subs(SAMPLING_VIEWPORT_SUBS),
     sec("Render", SAMPLING_RENDER).subs(SAMPLING_RENDER_SUBS),
 ];
 
@@ -112,7 +121,7 @@ static MOTION_BLUR: &[BPropSpec] = &[
 // header; Pixel Filter holds the type and width.
 static FILM_TRANSPARENT_HEADER: &[BPropSpec] = &[b("render.film_transparent", "Transparent")];
 static PIXEL_FILTER_ROWS: &[BPropSpec] = &[
-    e("cycles.pixel_filter_type", "Type", PIXEL_FILTER),
+    e("cycles.pixel_filter_type", "Type", PIXEL_FILTER).picked("BLACKMAN_HARRIS"),
     f("render.filter_size", "Width", BUnit::None),
 ];
 static FILM_SUBS: &[BSectionSpec] = &[
@@ -168,16 +177,20 @@ pub static SECTIONS: &[BSectionSpec] = &[
 /// own `'static` string, so the state key can be a `ButsKey` rather than a
 /// path spelt by hand.
 pub fn spec_of(key: &str) -> Option<&'static BPropSpec> {
-    fn walk(sections: &'static [BSectionSpec], key: &str) -> Option<&'static BPropSpec> {
-        for section in sections {
-            if let Some(found) = section.props.iter().chain(section.header).find(|s| s.key == key) {
-                return Some(found);
-            }
-            if let Some(found) = walk(section.list, key) {
-                return Some(found);
-            }
-        }
-        None
-    }
-    walk(SECTIONS, key)
+    specs().into_iter().find(|s| s.key == key)
 }
+
+/// Every property the Render tab draws, in panel order (a save walks them
+/// for the Cycles values that changed, `scene/render_edit.rs`).
+pub fn specs() -> Vec<&'static BPropSpec> {
+    fn walk(sections: &'static [BSectionSpec], out: &mut Vec<&'static BPropSpec>) {
+        for section in sections {
+            out.extend(section.props.iter().chain(section.header));
+            walk(section.list, out);
+        }
+    }
+    let mut out = Vec::new();
+    walk(SECTIONS, &mut out);
+    out
+}
+

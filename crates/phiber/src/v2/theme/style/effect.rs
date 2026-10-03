@@ -133,7 +133,9 @@ const fn effects(gradients: bool, gradient_lift: f32, surface_shadow: BShadowSty
         // lift was buying is better bought with `viewport_grid_alpha`.
         viewport_lightness_delta: 0.0,
         floating_alpha: 0.36,
-        control_rest_alpha: 0.10,
+        // Half: a resting control's ground is half the weight of the shade
+        // it is cut from, so a row reads as a row and not as a second panel.
+        control_rest_alpha: 0.5,
         control_hover_alpha: 0.22,
         control_active_alpha: 0.42,
         motion_ms: 180.0,
@@ -152,14 +154,19 @@ const fn effects(gradients: bool, gradient_lift: f32, surface_shadow: BShadowSty
 
 /// One set per theme: whether its surfaces sweep, how far, and how far its
 /// lifted surfaces cast. The shadow is the theme's *ceiling* — what a modal
-/// casts; every level under it is a rung softer (`style/elevation`). Graphite
-/// and Cyberpunk are flat, as Blender is.
+/// casts; every level under it is a rung softer (`style/elevation`). Graphite,
+/// Ember, Silver and Cyberpunk are flat, as Blender is.
 pub const SPHERE_EFFECTS: BEffects = effects(true, 0.035, BShadowStyle::ExtraLarge);
 pub const GRAPHITE_EFFECTS: BEffects = effects(false, 0.0, BShadowStyle::None);
 pub const TOKYO_EFFECTS: BEffects = effects(true, 0.025, BShadowStyle::Medium);
+pub const MOSS_EFFECTS: BEffects = effects(true, 0.05, BShadowStyle::Large);
+pub const EMBER_EFFECTS: BEffects = effects(false, 0.0, BShadowStyle::Small);
+pub const PLUM_EFFECTS: BEffects = effects(true, 0.03, BShadowStyle::ExtraLarge);
 pub const ONYX_EFFECTS: BEffects = effects(true, 0.02, BShadowStyle::Large);
 pub const GREY_EFFECTS: BEffects = effects(true, 0.03, BShadowStyle::Medium);
+pub const SILVER_EFFECTS: BEffects = effects(false, 0.0, BShadowStyle::Small);
 pub const APPLE_EFFECTS: BEffects = effects(false, 0.0, BShadowStyle::Medium);
+pub const APPLE_DARK_EFFECTS: BEffects = effects(false, 0.0, BShadowStyle::Medium);
 pub const SWIFT_EFFECTS: BEffects = effects(true, 0.03, BShadowStyle::Large);
 pub const BARBIE_EFFECTS: BEffects = effects(true, 0.04, BShadowStyle::ExtraLarge);
 pub const FENTY_EFFECTS: BEffects = effects(true, 0.035, BShadowStyle::Large);

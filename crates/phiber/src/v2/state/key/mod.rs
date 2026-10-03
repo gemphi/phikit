@@ -15,6 +15,7 @@ pub mod activity;
 pub mod app;
 pub mod area;
 pub mod buts;
+pub mod dope;
 pub mod ctx;
 pub mod file;
 pub mod image;
@@ -25,6 +26,7 @@ pub mod op;
 pub mod outliner;
 pub mod screen;
 pub mod scene;
+pub mod time_view;
 pub mod view3d;
 pub mod zone;
 
@@ -32,6 +34,7 @@ pub use activity::ActivityKey;
 pub use app::AppKey;
 pub use area::AreaKey;
 pub use buts::ButsKey;
+pub use dope::DopeKey;
 pub use ctx::CtxKey;
 pub use file::FileKey;
 pub use image::ImageKey;
@@ -42,6 +45,7 @@ pub use op::OpKey;
 pub use outliner::OutlinerKey;
 pub use screen::ScreenKey;
 pub use scene::SceneKey;
+pub use time_view::TimeViewKey;
 pub use view3d::View3dKey;
 pub use zone::ZoneKey;
 
@@ -127,6 +131,7 @@ pub mod ui_style {
         DIMENSION_ACTIVITY_WIDTH => "activity_width", DIMENSION_TOOLBAR_WIDTH => "toolbar_width",
         DIMENSION_SIDEBAR_WIDTH => "sidebar_width",
         DIMENSION_SIDEBAR_MIN_WIDTH => "sidebar_min_width",
+        DIMENSION_NUMBER_MIN_WIDTH => "number_min_width",
         DIMENSION_PANEL_WIDTH => "panel_width", DIMENSION_NAVBAR_WIDTH => "navbar_width",
         DIMENSION_CHANNELS_WIDTH => "channels_width",
         DIMENSION_TOOL_PROPS_WIDTH => "tool_props_width",

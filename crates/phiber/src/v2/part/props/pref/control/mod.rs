@@ -13,7 +13,7 @@ pub use toggle::BPreferenceToggle;
 
 use super::BPreferenceRow;
 use crate::v2::state::BState;
-use crate::v2::theme::{BPreferenceControl, BUiStyleDefaults};
+use crate::v2::theme::{BPreferenceControl, BStyleParser, BUiStyleDefaults};
 use crate::v2::view::{BAction, BControl, BView};
 
 #[derive(Clone, Copy)]
@@ -90,26 +90,56 @@ impl BPreferenceControls {
         }
     }
 
-    pub fn view(self) -> BView {
-        let mut list = match self.editor {
-            BPreferenceEditor::Field(field) => vec![
-                field.view(),
-                BView::Button(
-                    BControl::new()
-                        .with_icon("minus")
-                        .with_label("Decrease")
-                        .with_action(field.decrease_action()),
-                ),
-                BView::Button(
-                    BControl::new()
-                        .with_icon("plus")
-                        .with_label("Increase")
-                        .with_action(field.increase_action()),
-                ),
-            ],
-            editor => vec![editor.view()],
+    /// The row as the Properties host draws one: a `BCtrl` of the kind this
+    /// preference is, and the reset beside it.
+    ///
+    /// Preferences ARE properties. The model half of this file earns its keep —
+    /// `BStyleDescriptor` parses, validates, bounds and formats, which the
+    /// Properties controls do not do — but the VIEW half was a second control
+    /// family: a number was a text field with a "Decrease" and an "Increase"
+    /// button either side of it, where `BCtrlKind::Number` already draws a
+    /// field with a step on each side; a choice was one button per option in a
+    /// row, where `Select` is a dropdown; a toggle was a hand-built box glyph,
+    /// where `Check` is the checkbox. Three widgets reimplemented beside three
+    /// that existed, and the copies were the ones without the stepper.
+    ///
+    /// The bounds come from the descriptor's own parser, so the control cannot
+    /// step past what the descriptor would reject.
+    pub fn view(self, s: &BState) -> BView {
+        BView::row(vec![BView::ctrl(self.editor.ctrl(s)), self.reset.view()])
+    }
+}
+
+impl BPreferenceEditor {
+    /// The control this preference edits, as the rest of the app spells one.
+    fn ctrl(self, s: &BState) -> crate::v2::view::prim::BCtrl {
+        use crate::v2::state::BValue;
+        use crate::v2::view::prim::{BCtrl, BCtrlKind, BOption};
+        let row = match self {
+            Self::Field(field) => field.row(),
+            Self::Selector(selector) => selector.row(),
+            Self::Toggle(toggle) => toggle.row(),
         };
-        list.push(self.reset.view());
-        BView::row(list)
+        let key = row.key().clone();
+        match row.parser() {
+            // A hundredth of the range per step, or one whole unit where the
+            // value is in units — the same step the hand-built pair took.
+            BStyleParser::Number { min, max } => {
+                let step = if row.metadata().unit.is_some() { 1.0 } else { (max - min) / 100.0 };
+                BCtrl::read(BCtrlKind::Number { min, max, step }, key, BValue::Float(min), s)
+            }
+            BStyleParser::Bool => BCtrl::read(BCtrlKind::Check, key, BValue::Bool(false), s),
+            BStyleParser::ColorHsla => BCtrl::read(BCtrlKind::Color, key, BValue::Text(String::new()), s),
+            // Shadow and Font are choices: the descriptor lists them.
+            BStyleParser::Shadow | BStyleParser::Font => {
+                let options = row.descriptor().choices().iter().map(|choice| BOption {
+                    key: choice.value.to_string(),
+                    label: choice.label.to_string(),
+                    icon: String::new(),
+                });
+                let first = row.descriptor().choices().first().map(|c| c.value).unwrap_or_default();
+                BCtrl::read(BCtrlKind::Select, key, BValue::Enum(first.to_string()), s).with_options(options)
+            }
+        }
     }
 }

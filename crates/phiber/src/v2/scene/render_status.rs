@@ -57,10 +57,22 @@ pub fn status() -> Option<BRenderStatus> {
     j.shot.lock().ok().and_then(|shot| shot.as_ref().map(|shot| BRenderStatus::of(shot, seq)))
 }
 
-/// Time since the render began — and, once it is done, until it finished is
-/// not kept, so this keeps counting; the bar shows it while rendering.
+/// How long the render took, or how long it has been going.
+///
+/// Blender's `RenderStats.lastframetime` (`render/intern/pipeline.cc:1510`) is
+/// set ONCE when a frame ends — `BLI_time_now_seconds() - starttime` — and
+/// `make_renderinfo_string` prints that stored value from then on. So a finished
+/// render shows the time it took, frozen.
+///
+/// This used to return `started.elapsed()` with no finish time kept at all, so
+/// the bar counted up for as long as the app stayed open: the header read
+/// `Finished` beside a clock at 36 minutes on a render that had taken seconds.
 pub fn elapsed() -> Duration {
-    job().started.lock().ok().and_then(|started| started.map(|t| t.elapsed())).unwrap_or_default()
+    let j = job();
+    if let Some(took) = j.took.lock().ok().and_then(|took| *took) {
+        return took;
+    }
+    j.started.lock().ok().and_then(|started| started.map(|t| t.elapsed())).unwrap_or_default()
 }
 
 /// `BLI_timecode_string_from_time_simple`: `MM:SS.CC`.

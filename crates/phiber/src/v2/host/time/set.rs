@@ -27,11 +27,21 @@ static HEADER: &[BPaneSpec] = &[
 ];
 
 /// The channel list is hidden by default in Timeline mode
-/// (`action_create`: `RGN_FLAG_HIDDEN`), so the window is the whole centre.
-static CENTER_PANES: &[BPaneSpec] = &[BPaneSpec {
-    kind: BPaneType::Center,
-    parts: &[BPartType::Custom],
-}];
+/// (`action_create`: `RGN_FLAG_HIDDEN`), so the window runs from the left
+/// edge. The sidebar strip is on the right, as it is in the Dope Sheet this
+/// editor is a mode of (`host::action`): the same `RGN_TYPE_UI` region, the
+/// same part, the same tab set shape — it was the one timing editor without
+/// one, which left a column of nothing down its right.
+static CENTER_PANES: &[BPaneSpec] = &[
+    BPaneSpec {
+        kind: BPaneType::Center,
+        parts: &[BPartType::Custom],
+    },
+    BPaneSpec {
+        kind: BPaneType::Right,
+        parts: &[BPartType::Sidebar],
+    },
+];
 
 pub static REGIONS: &[BRegionSpec] = &[
     BRegionSpec {

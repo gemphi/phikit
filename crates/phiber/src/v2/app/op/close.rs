@@ -4,7 +4,10 @@
 //! title carries the `* ` (`wm_window_title`). Quit, New File and Open ask
 //! first while it is changed (`wm_operator_close_file_dialog_if_needed`):
 //! the dialog is `modal::file_close`, what to do after it is answered is
-//! `ctx.modal.file_close.then`, and this is where the answer lands.
+//! `ctx.modal.file_close.then`, and this is where the answer lands. The
+//! window's own close — the caption's X, the system's close, Alt F4 — asks
+//! the same way (`may_close`, armed by `app::run`): it used to close the
+//! window at once, changes and all, where only File ▸ Quit asked.
 
 use super::super::BPhiberApp;
 use crate::v2::modal::file_close::BCloseAnswer;
@@ -46,6 +49,18 @@ pub fn window_title(state: &BState) -> String {
 }
 
 impl BPhiberApp {
+    /// The platform asks whether the window may close (`wm_exit_blender`
+    /// through `wm_quit_with_optional_confirmation_prompt`): yes when
+    /// nothing is unsaved or Quit itself is closing it after the dialog;
+    /// otherwise the dialog opens and the window stays.
+    pub fn may_close(&mut self, window: &mut Window, cx: &mut Context<Self>) -> bool {
+        if self.closing || !has_unsaved_changes(&self.state) {
+            return true;
+        }
+        self.handle_action_in(&BAction::Set(OpKey::Quit.path(), String::new()), window, cx);
+        false
+    }
+
     /// The action that must wait for the dialog, as `then` spells it: quit,
     /// a new file, opening the browser for a file, or opening a named one
     /// (Recent). A commit from the browser that Open already asked for is
@@ -129,5 +144,25 @@ impl BPhiberApp {
             None => self.handle_action(&again, cx),
         }
         self.answered_close = false;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use gpui::TestAppContext;
+
+    #[gpui::test]
+    async fn the_window_may_close_clean_and_asks_first_when_changed(cx: &mut TestAppContext) {
+        let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
+        let answers = |app: &mut BPhiberApp, window: &mut Window, cx: &mut Context<BPhiberApp>| app.may_close(window, cx);
+        assert!(app.update_in(cx, |app, window, cx| answers(app, window, cx)), "nothing unsaved: it closes");
+        app.update(cx, |app, _| tag_modified(&mut app.state));
+        let closed = app.update_in(cx, |app, window, cx| answers(app, window, cx));
+        assert!(!closed, "unsaved changes: the window stays");
+        app.update(cx, |app, _| {
+            assert_eq!(app.state.get(ModalKey::Open), Some(V_MODAL_FILE_CLOSE), "and the dialog asks");
+            assert_eq!(app.state.get(ModalKey::CloseThen), Some("quit"));
+        });
     }
 }

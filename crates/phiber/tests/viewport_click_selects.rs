@@ -39,7 +39,7 @@ fn screen_point_of(state: &BState, name: &str) -> (f32, f32) {
 
 /// The lit rows: `(name, active)`.
 fn selected_rows(state: &BState) -> Vec<(String, bool)> {
-    let BView::Column { list } = BOutlinerItem::new().build(state) else { panic!("the outliner is a column") };
+    let BView::Column { list } = BOutlinerItem::new().build(state).shown().clone() else { panic!("the outliner is a column") };
     list.into_iter()
         .filter_map(|row| match row {
             BView::TreeRow { shade: shade @ (BRowShade::Selected | BRowShade::Active), list, .. } => list.iter().find_map(|cell| match cell {

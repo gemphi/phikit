@@ -61,7 +61,7 @@ fn fixture_renders_through_phiray() {
         };
         let setup = crate::v2::scene::camera::setup_from_state(&s);
         let (w, h) = (320u32, 180u32);
-        let look = world::BRayLook { sky: black(), grid: white().opacity(GRID_ALPHA), world: Some(model_world), lights: model_lights.clone(), wire: None, view: [0.0, 0.0, 1.0, 0.0], environment: None, set: Default::default(), studio: false };
+        let look = world::BRayLook { sky: black(), grid: white().opacity(GRID_ALPHA), grid_hide: 0, world: Some(model_world), lights: model_lights.clone(), wire: None, view: [0.0, 0.0, 1.0, 0.0], environment: None, set: Default::default(), studio: false };
         let cam = scene::camera(view_yaw(&s), view_pitch(&s), view_pan(&s), view_zoom(&s), setup, w as f32 / h as f32, &look);
         let t = std::time::Instant::now();
         let mut px = tracer.render(&gpu, cam, w, h).0;
@@ -99,20 +99,23 @@ fn render_thread_refines_latest_view() {
         shading: BShading::Rendered, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey,
     };
     let cube = BObject3D::Primitive { name: "Cube".into(), shape: BShape::Cube, x: 0.0, y: 0.0 };
-    worker.send(BRayJob::Scene(1, vec![cube], palette));
+    worker.send(BRayJob::Scene(1, 1, vec![cube], palette));
     let s = BState::default();
-    let look = world::BRayLook { sky: black(), grid: white().opacity(GRID_ALPHA), world: None, lights: Vec::new(), wire: None, view: [0.0, 0.0, 1.0, 0.0], environment: None, set: Default::default(), studio: false };
+    let look = world::BRayLook { sky: black(), grid: white().opacity(GRID_ALPHA), grid_hide: 0, world: None, lights: Vec::new(), wire: None, view: [0.0, 0.0, 1.0, 0.0], environment: None, set: Default::default(), studio: false };
     let setup = crate::v2::scene::camera::setup_from_state(&s);
     let cam = |yaw: f32| scene::camera(yaw, 30.0, (0.0, 0.0), 1.0, setup, 1.0, &look);
     // An outdated view first, then the one that must win.
-    worker.send(BRayJob::View(1, BRayShot { cam: cam(0.0), w: 32, h: 32, mode: phiray::Mode::Rendered, samples: 32, denoise: false }));
-    worker.send(BRayJob::View(2, BRayShot { cam: cam(45.0), w: 48, h: 48, mode: phiray::Mode::Rendered, samples: 32, denoise: false }));
-    let (mut seq, mut last) = (0, None);
+    worker.send(BRayJob::View(1, BRayShot { cam: cam(0.0), w: 32, h: 32, mode: phiray::Mode::Rendered, samples: 32, denoise_from: None }));
+    worker.send(BRayJob::View(2, BRayShot { cam: cam(45.0), w: 48, h: 48, mode: phiray::Mode::Rendered, samples: 32, denoise_from: None }));
+    let (mut seq, mut last, mut sizes) = (0, None, Vec::new());
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
     while std::time::Instant::now() < deadline {
         if let Some(f) = worker.take(seq) {
             seq = f.seq;
             let done = f.done && f.view == 2;
+            if f.view == 2 && sizes.last() != Some(&(f.w, f.h)) {
+                sizes.push((f.w, f.h));
+            }
             last = Some(f);
             if done {
                 break;
@@ -123,6 +126,33 @@ fn render_thread_refines_latest_view() {
     let f = last.expect("frames arrive");
     assert!(f.done && f.view == 2 && (f.w, f.h) == (48, 48), "settles on the newest view");
     assert_eq!(f.bgra.len(), 48 * 48 * 4);
+    // A navigated view's first image is small and grows to full size
+    // (`BCoarse`: an eighth, a quarter, a half, then 48 × 48 — the exact
+    // ladder is `a_navigated_view_starts_at_an_eighth_and_doubles_to_full`).
+    // The worker keeps only its newest frame, so a poll may miss the small
+    // ones — all of them, on a loaded machine; what it does see never
+    // shrinks.
+    assert!(sizes.windows(2).all(|w| w[0].0 <= w[1].0), "coarse first: {sizes:?}");
+}
+
+#[test]
+fn a_navigated_view_starts_at_an_eighth_and_doubles_to_full() {
+    use super::coarse::BCoarse;
+    let mut c = BCoarse::start(phiray::Mode::Rendered);
+    let mut sizes = Vec::new();
+    while !c.full() {
+        sizes.push(c.pixels(1600, 900));
+        c.next();
+    }
+    assert_eq!(sizes, [(200, 112), (400, 225), (800, 450)]);
+    assert_eq!(c.pixels(1600, 900), (1600, 900));
+    let mut solid = BCoarse::start(phiray::Mode::Solid);
+    assert_eq!(solid.pixels(1600, 900), (400, 225), "Workbench is one dispatch: a quarter is enough");
+    solid.next();
+    solid.next();
+    assert!(solid.full());
+    c.next();
+    assert!(c.full(), "full stays full");
 }
 
 /// Properties → Render → Light Paths → Max Bounces → Diffuse has to reach the
@@ -133,6 +163,7 @@ fn the_panels_bounce_count_reaches_the_camera() {
     let look = world::BRayLook {
         sky: black(),
         grid: white().opacity(GRID_ALPHA),
+        grid_hide: 0,
         world: None,
         lights: Vec::new(),
         wire: None,
@@ -143,4 +174,42 @@ fn the_panels_bounce_count_reaches_the_camera() {
     };
     let cam = scene::camera(0.0, 0.0, (0.0, 0.0), 1.0, Default::default(), 1.0, &look);
     assert_eq!(cam.bounces, 9);
+}
+
+/// A moved object reaches the render thread as a new pose of the scene it
+/// holds (the same shape: `Tracer::repose`, no build) and draws what a
+/// thread given the moved scene from the start draws.
+#[test]
+fn a_moved_object_draws_as_a_scene_built_there() {
+    use super::key::BRayKey;
+    use super::worker::{BRayFrame, BRayJob, BRayShot, BRayWorker};
+    use crate::v2::scene::{BObject3D, BShape};
+    let grey = white();
+    let palette = super::BMeshPalette { shading: BShading::Solid, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey };
+    let cubes = |x: f32| vec![BObject3D::Primitive { name: "Cube".into(), shape: BShape::Cube, x, y: 0.0 }, BObject3D::Primitive { name: "Ball".into(), shape: BShape::Sphere, x: -2.0, y: 0.0 }];
+    let scene_of = |x: f32| BRayJob::Scene(BRayKey::of(&cubes(x), &palette), BRayKey::shape(&cubes(x), &palette), cubes(x), palette);
+    assert_eq!(BRayKey::shape(&cubes(0.0), &palette), BRayKey::shape(&cubes(1.5), &palette), "one shape, two poses");
+    let look = world::BRayLook { sky: black(), grid: white().opacity(GRID_ALPHA), grid_hide: 0, world: None, lights: Vec::new(), wire: None, view: [0.0, 0.0, 1.0, 0.0], environment: None, set: Default::default(), studio: false };
+    let setup = crate::v2::scene::camera::setup_from_state(&BState::default());
+    let shot = BRayShot { cam: scene::camera(20.0, 30.0, (0.0, 0.0), 1.0, setup, 1.0, &look), w: 40, h: 40, mode: phiray::Mode::Solid, samples: 1, denoise_from: None };
+    let finished = |worker: &BRayWorker, after: u64| -> BRayFrame {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
+        while std::time::Instant::now() < deadline {
+            if let Some(f) = worker.take(after).filter(|f| f.done) {
+                return f;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+        panic!("no finished frame");
+    };
+    let (Some(moved), Some(built)) = (BRayWorker::start(), BRayWorker::start()) else { return };
+    moved.send(scene_of(0.0));
+    moved.send(BRayJob::View(1, shot));
+    let before = finished(&moved, 0);
+    moved.send(scene_of(1.5));
+    let after = finished(&moved, before.seq);
+    built.send(scene_of(1.5));
+    built.send(BRayJob::View(1, shot));
+    assert_ne!(before.bgra, after.bgra, "the cube moved");
+    assert_eq!(after.bgra, finished(&built, 0).bgra, "as a scene built there draws it");
 }

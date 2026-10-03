@@ -8,7 +8,7 @@
 //! document from before it while the grab is on).
 
 use super::marker::BMarkerList;
-use crate::v2::state::{BKey as _, BState, CtxKey, log};
+use crate::v2::state::{BState, CtxKey, log};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BMarkerGrab {

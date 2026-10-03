@@ -11,20 +11,27 @@ pub use set::{BAccents, BColor, BPalette};
 pub use shade::BShadeLadder;
 pub use theme::{palette_for, palette_in};
 
-/// The eleven themes Preferences offers. Each is one seed's ladder with
-/// its own accent, radius scale, gradients, shadow and seam gap, in a dark
-/// and a light mode (`BThemeMode`). Sphere, Graphite and Tokyo are phiber's
-/// own; Onyx and Grey are black and grey (Grey's light mode the silver);
-/// Apple is macOS's window greys with its blue; the last five are the
-/// `phi` appkit's variants.
+/// The sixteen themes Preferences offers — as many as it ever will
+/// (`BPaletteName::MAX`). Each is one seed's ladder with its own accent,
+/// radius scale, gradients, shadow and seam gap, in a dark and a light mode
+/// (`BThemeMode`). Sphere, Graphite and Tokyo are phiber's own; Moss, Ember
+/// and Plum its three warm ones; Onyx and Grey are black and grey (Grey's
+/// light mode the silver); Silver is that silver as a theme of its own;
+/// Apple is macOS's window greys with its blue, and Apple Dark its dark grey
+/// on both sides; the last five are the `phi` appkit's variants.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum BPaletteName {
     Sphere,
     Graphite,
     Tokyo,
+    Moss,
+    Ember,
+    Plum,
     Onyx,
     Grey,
+    Silver,
     Apple,
+    AppleDark,
     Swift,
     Barbie,
     Fenty,
@@ -43,7 +50,15 @@ pub enum BThemeMode {
 
 impl BThemeMode {
     pub const ALL: [BThemeMode; 2] = [BThemeMode::Dark, BThemeMode::Light];
-    pub const DEFAULT: BThemeMode = BThemeMode::Dark;
+
+    /// The mode in force until one is chosen.
+    ///
+    /// Light. Sphere's dark ladder puts shade 10 — the viewport canvas — at
+    /// the seed itself, `#3B4657`, so a fresh window opened on a near-black
+    /// blue-grey and the only way out was Preferences → Theme → Light, which
+    /// is not something a first run should have to go and find. The palette is
+    /// unchanged: the same blue-grey, read from white instead of from black.
+    pub const DEFAULT: BThemeMode = BThemeMode::Light;
 
     pub fn label(self) -> &'static str {
         match self {
@@ -68,15 +83,24 @@ impl BPaletteName {
         BPaletteName::Sphere,
         BPaletteName::Graphite,
         BPaletteName::Tokyo,
+        BPaletteName::Moss,
+        BPaletteName::Ember,
+        BPaletteName::Plum,
         BPaletteName::Onyx,
         BPaletteName::Grey,
+        BPaletteName::Silver,
         BPaletteName::Apple,
+        BPaletteName::AppleDark,
         BPaletteName::Swift,
         BPaletteName::Barbie,
         BPaletteName::Fenty,
         BPaletteName::Cyberpunk,
         BPaletteName::Chanel,
     ];
+
+    /// The most themes Preferences may offer: a list longer than this is
+    /// a list nobody reads to the end.
+    pub const MAX: usize = 16;
 
     /// The palette applied when no theme has been chosen.
     pub const DEFAULT: BPaletteName = BPaletteName::Sphere;
@@ -86,9 +110,14 @@ impl BPaletteName {
             BPaletteName::Sphere => "Sphere",
             BPaletteName::Graphite => "Graphite",
             BPaletteName::Tokyo => "Tokyo",
+            BPaletteName::Moss => "Moss",
+            BPaletteName::Ember => "Ember",
+            BPaletteName::Plum => "Plum",
             BPaletteName::Onyx => "Onyx",
             BPaletteName::Grey => "Grey",
+            BPaletteName::Silver => "Silver",
             BPaletteName::Apple => "Apple",
+            BPaletteName::AppleDark => "Apple Dark",
             BPaletteName::Swift => "Swift",
             BPaletteName::Barbie => "Barbie",
             BPaletteName::Fenty => "Fenty",
@@ -101,9 +130,14 @@ impl BPaletteName {
             BPaletteName::Sphere => "Sphere",
             BPaletteName::Graphite => "Graphite",
             BPaletteName::Tokyo => "Tokyo",
+            BPaletteName::Moss => "Moss",
+            BPaletteName::Ember => "Ember",
+            BPaletteName::Plum => "Plum",
             BPaletteName::Onyx => "Onyx",
             BPaletteName::Grey => "Grey",
+            BPaletteName::Silver => "Silver",
             BPaletteName::Apple => "Apple",
+            BPaletteName::AppleDark => "AppleDark",
             BPaletteName::Swift => "Swift",
             BPaletteName::Barbie => "Barbie",
             BPaletteName::Fenty => "Fenty",

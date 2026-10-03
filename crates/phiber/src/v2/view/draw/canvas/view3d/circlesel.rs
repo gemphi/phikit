@@ -70,7 +70,7 @@ fn painting(button: Option<MouseButton>, shift: bool) -> Option<bool> {
 pub(super) fn surface(ctx: &BRenderCtx, hit: BHit) -> gpui::Stateful<Div> {
     let brush = Rc::new(BBrush { hit, selection: BSelection::now(ctx.state), radius: BCircle::radius(ctx.state), handler: ctx.handler.clone() });
     let (on_move, on_down, on_wheel) = (Rc::clone(&brush), Rc::clone(&brush), Rc::clone(&brush));
-    super::hit::layer("view3d-circle-select", gpui::CursorStyle::Crosshair)
+    super::hit::layer("view3d-circle-select", gpui::CursorStyle::Crosshair, ctx)
         .on_mouse_move(move |e: &MouseMoveEvent, window, app| on_move.dab(e.position, painting(e.pressed_button, e.modifiers.shift), window, app))
         .on_any_mouse_down(move |e: &MouseDownEvent, window, app| match e.button {
             MouseButton::Right => on_down.fire(BAction::Set(View3dKey::CircleSelect.path(), V_FALSE.to_string()), window, app),

@@ -92,3 +92,45 @@ mod tests {
         assert_eq!(frames_due(due, stalled, period), (MAX_CATCH_UP, stalled + period), "a stall is capped and the grid restarts");
     }
 }
+
+/// How often the refining viewport is asked whether a frame landed.
+const RAY_POLL: Duration = Duration::from_millis(8);
+
+impl BPhiberApp {
+    /// Whether the window is being drawn by that task (a test reads it).
+    pub fn draws_on_frames(&self) -> bool {
+        self.ray_ticker
+    }
+
+    /// While the viewport's image refines, or a final render runs, a task
+    /// draws the window when a frame lands (`rendered::take_fresh`) and ends
+    /// when the image has settled — in place of a draw every vsync while
+    /// waiting.
+    pub(crate) fn ensure_ray_ticker(&mut self, cx: &mut Context<Self>) {
+        use crate::v2::view::draw::canvas::view3d::rendered::{refining, take_fresh};
+        let busy = || refining() || crate::v2::scene::render_job::rendering();
+        if self.ray_ticker || !busy() {
+            return;
+        }
+        self.ray_ticker = true;
+        crate::v2::view::draw::canvas::view3d::rendered::set_ticking(true);
+        cx.spawn(async move |this, cx| loop {
+            cx.background_executor().timer(RAY_POLL).await;
+            let go_on = this.update(cx, |app, cx| {
+                let fresh = take_fresh();
+                if fresh {
+                    cx.notify();
+                }
+                let on = fresh || busy();
+                app.ray_ticker = on;
+                crate::v2::view::draw::canvas::view3d::rendered::set_ticking(on);
+                on
+            });
+            if !go_on.unwrap_or(false) {
+                crate::v2::view::draw::canvas::view3d::rendered::set_ticking(false);
+                break;
+            }
+        })
+        .detach();
+    }
+}

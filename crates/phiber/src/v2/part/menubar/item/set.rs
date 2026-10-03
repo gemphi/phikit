@@ -145,6 +145,17 @@ pub const HISTORY: BMenuItem = BMenuItem {
     purpose: "",
     url: "",
 };
+/// A submenu whose entries `list` builds from the state when it opens.
+pub const fn live(label: &'static str, list: fn(&crate::v2::state::BState) -> Vec<crate::v2::view::BView>) -> BMenuItem {
+    BMenuItem {
+        label,
+        shortcut: "",
+        kind: BMenuKind::Live(list),
+        modal: "",
+        purpose: "",
+        url: "",
+    }
+}
 pub const fn sub(label: &'static str, items: &'static [BMenuItem]) -> BMenuItem {
     BMenuItem {
         label,
@@ -164,15 +175,20 @@ pub const SEP: BMenuItem = BMenuItem {
     url: "",
 };
 pub const fn m(label: &'static str, items: &'static [BMenuItem]) -> BMenuSpec {
-    BMenuSpec { label, items, mark: None, panel: None }
+    BMenuSpec { label, items, mark: None, panel: None, shown: None }
+}
+
+/// A menu the header draws only while `poll` holds.
+pub const fn polled(label: &'static str, items: &'static [BMenuItem], poll: fn(&crate::v2::state::BState) -> bool) -> BMenuSpec {
+    BMenuSpec { label, items, mark: None, panel: None, shown: Some(poll) }
 }
 
 /// A menu that shows a mark instead of its label.
 pub const fn marked(label: &'static str, icon: &'static str, items: &'static [BMenuItem]) -> BMenuSpec {
-    BMenuSpec { label, items, mark: Some(icon), panel: None }
+    BMenuSpec { label, items, mark: Some(icon), panel: None, shown: None }
 }
 
 /// A panel popover in the menubar's row (`layout.popover(panel=…)`).
 pub const fn panel(label: &'static str, body: fn(&crate::v2::state::BState) -> Vec<crate::v2::view::BView>) -> BMenuSpec {
-    BMenuSpec { label, items: &[], mark: None, panel: Some(body) }
+    BMenuSpec { label, items: &[], mark: None, panel: Some(body), shown: None }
 }

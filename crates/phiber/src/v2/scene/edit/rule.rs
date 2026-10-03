@@ -21,6 +21,14 @@ impl BRule for BSceneEditRule {
                 let name = unique_name(label, &names);
                 edit.added.push((name.clone(), shape.to_string()));
                 edit.write(state);
+                // At the 3D cursor, aligned to the world (`object.add`'s
+                // default `align='WORLD'`).
+                let at = crate::v2::scene::cursor::BCursor::now(state).location;
+                if at != glam::Vec3::ZERO {
+                    let mut transforms = crate::v2::scene::transform::BTransforms::now(state);
+                    transforms.set(&name, crate::v2::scene::transform::BTransform { location: at.into(), rotation: [0.0; 3], scale: [1.0; 3] });
+                    transforms.write(state);
+                }
                 state.set(CtxKey::Object, name.clone());
                 crate::v2::scene::select::BSelection { list: vec![name.clone()] }.write(state);
                 log::push(format!("Added {name}"));

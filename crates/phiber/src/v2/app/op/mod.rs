@@ -20,6 +20,7 @@ impl BPhiberApp {
     pub(crate) fn handle_window_op(&mut self, action: &BAction, window: &mut Window) -> bool {
         let BAction::Set(path, _) = action else { return false };
         if *path == OpKey::Quit.path() {
+            self.closing = true;
             window.remove_window();
             return true;
         }
@@ -56,6 +57,7 @@ impl BPhiberApp {
         } else if key == OpKey::Render.path().encode() {
             match value.as_str() {
                 "animation" => self.render_animation(cx),
+                "cancel" => crate::v2::scene::render_job::cancel(),
                 _ => self.render_image(),
             }
         } else if key == OpKey::Quit.path().encode() || key == OpKey::Fullscreen.path().encode() {

@@ -1,14 +1,19 @@
-//! Sub-panels are a tree, as the Outliner's rows are: each level steps in
-//! by the same indent under its parent's rows, carries a guide down its
-//! left edge, and is recessed a step toward the region — its heading a step
-//! over its own well — so Properties' Sampling ▸ Render ▸ Denoise reads as
-//! three levels in indent and in shade, in every theme.
+//! Sub-panels are a tree, and shade is what says so. A nested accordion sits
+//! on its parent's own row column — no extra indent, no guide down its left
+//! edge — and is recessed a step toward the region, its heading a step over
+//! its own well, so Properties' Sampling ▸ Render ▸ Denoise reads as three
+//! levels in shade alone, in every theme.
+//!
+//! It used to step in by a `pad_sm` and carry a left guide. Both marked a
+//! sub-panel out as a different kind of thing and left the space around it
+//! uneven — wider on the left than the inset its parent's body gives every
+//! other row. A nested accordion is an accordion: same card, one shade in.
 
 use gpui::{TestAppContext, px, size};
 use phiber::v2::app::BPhiberApp;
 use phiber::v2::space::BSpaceType;
 use phiber::v2::state::{BState, ButsKey, CtxKey};
-use phiber::v2::theme::{BPaletteName, BResolvedUiStyle, BSurfaceTone, METRICS, ui_style_defaults};
+use phiber::v2::theme::{BPaletteName, BResolvedUiStyle, BSurfaceTone, ui_style_defaults};
 use phiber::v2::view::prim::{BCard, BCardKind};
 
 /// A card's selector: `card-<key>` for its frame, `card-<what>-<key>` for a
@@ -40,11 +45,14 @@ async fn each_level_steps_in_by_one_indent_under_its_parents_rows(cx: &mut TestA
     let render_rows = at("row", "sampling_render-expanded-0");
     let denoise = at("", "sampling_render_denoise");
     let viewport = at("", "sampling_viewport");
-    let indent = METRICS.pad_sm;
-    // A sub-panel sits one indent in from where its parent's rows start; its
-    // own sub-panel one indent in from where *its* rows start.
-    assert_eq!(render - sampling_rows, indent, "Render steps in under Sampling's rows");
-    assert_eq!(denoise - render_rows, indent, "Denoise steps in under Render's rows");
+    // A sub-panel starts exactly where its parent's rows start, and its own
+    // sub-panel exactly where *its* rows start: the body's inset is the only
+    // space either side of it, so the gap around a nested accordion is the
+    // same on all four sides.
+    assert_eq!(render, sampling_rows, "Render starts on Sampling's row column");
+    assert_eq!(denoise, render_rows, "Denoise starts on Render's row column");
+    // Depth still reads left to right, because each level's rows are inset
+    // inside the level above.
     assert!(denoise > render, "a grandchild sits right of its parent");
     // Siblings share a column.
     assert_eq!(viewport, render);

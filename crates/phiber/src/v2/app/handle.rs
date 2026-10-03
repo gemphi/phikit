@@ -6,7 +6,7 @@ use super::import::should_import;
 use crate::v2::scene::{loaded_path_key, selected_key};
 use crate::v2::space::BSpaceType;
 use crate::v2::area::size::{apply_delta, apply_drag_with_min_extent, normalize};
-use crate::v2::state::{BKey as _, action::apply_action};
+use crate::v2::state::{BKey as _, CtxKey, action::apply_action};
 use crate::v2::zone::size::apply_zone_drag_with_min_extent;
 use crate::v2::view::prim::BAction;
 use crate::v2::zone::BZoneType;
@@ -99,17 +99,18 @@ impl BPhiberApp {
             BAction::Set(path, file) if *path == selected_key() && !file.is_empty() => Some((file.clone(), super::op::purpose_of(&self.state))),
             _ => None,
         };
-
-        // 1. Apply the pure state transition (unchanged behavior), and log
-        //    what it changed for the status bar's action log. The document
-        //    before it is an undo step when the action changed it.
+        // 1. Apply the pure state transition and log what it changed; the
+        //    document before it is an undo step when the action changed it.
         let before = self.state.clone();
         let document = super::undo::snapshot(&self.state);
         apply_action(&mut self.state, action);
         let name = crate::v2::state::log::record(action, &before, &self.state).unwrap_or_else(|| "Edit".to_string());
-        let holding = crate::v2::scene::grab::BMarkerGrab::active(&self.state) || crate::v2::scene::xform::BTransformModal::active(&self.state);
-        if self.history.record_held(document, &super::undo::snapshot(&self.state), &name, holding) {
+        if self.history.record_held(document, &super::undo::snapshot(&self.state), &name, super::undo::holding(&self.state)) {
             super::op::close::tag_modified(&mut self.state);
+        }
+        // The Rendering workspace opens on a render (`op/render.rs`).
+        if before.get(CtxKey::Space) != self.state.get(CtxKey::Space) {
+            self.render_on_entry();
         }
 
         // 2. Import spawn/settle shell around the pure core. If the just-applied

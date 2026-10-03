@@ -44,11 +44,15 @@ pub(super) fn studio(shading: BShading) -> bool {
 }
 
 /// Which phiray mode draws this shading. Every mode has a kernel now; the CPU
-/// painter is reached only when there is no GPU adapter at all.
+/// painter is reached only when there is no GPU adapter at all. Material
+/// Preview is its own deterministic kernel (`Mode::Preview`), as EEVEE is
+/// to Cycles: it used to be path traced like Rendered, so every orbit frame
+/// was one noisy sample of a scene of plain cubes.
 pub(super) fn gpu_mode(shading: BShading) -> Option<phiray::Mode> {
     match shading {
         BShading::Solid => Some(phiray::Mode::Solid),
-        BShading::Material | BShading::Rendered => Some(phiray::Mode::Rendered),
+        BShading::Material => Some(phiray::Mode::Preview),
+        BShading::Rendered => Some(phiray::Mode::Rendered),
         BShading::Wireframe => Some(phiray::Mode::Wire),
     }
 }
@@ -73,7 +77,7 @@ pub(super) struct BPlan {
 /// draw. The CPU painter is bounded: past its ceiling it draws nothing and
 /// the overlay says why, rather than freezing the window on a scene it cannot
 /// shade in a frame.
-pub(super) fn plan(shading: BShading, scene: &[crate::v2::scene::BObject3D], palette: &super::mesh::BMeshPalette) -> BPlan {
+pub(super) fn plan(shading: BShading, scene: &std::rc::Rc<Vec<crate::v2::scene::BObject3D>>, palette: &super::mesh::BMeshPalette) -> BPlan {
     use super::rendered::{self, BRayDeclined};
     let mode = gpu_mode(shading);
     let gpu = match mode {

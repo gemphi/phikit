@@ -10,32 +10,58 @@
 use super::layer::Ctx;
 use super::tree::{BOutlineRow, BRowKind, intern_name, is_expanded_or, summarise};
 use super::type_set::BOutlineIcon;
+use std::collections::{HashMap, HashSet};
 
 /// Deeper than any real hierarchy; stops a malformed parent loop.
 const MAX_DEPTH: u16 = 64;
+
+/// The objects of one collection level, and which of them each one
+/// parents — found once, so listing a level is one pass, not one scan of
+/// the level per object (THYMUS's 288 rows made that 80 000 look-ups a
+/// frame).
+struct BLevel<'a> {
+    objects: &'a [(String, &'static str)],
+    /// Indices into `objects` of each listed parent's children, in order.
+    kids: HashMap<&'a str, Vec<usize>>,
+    nest: bool,
+}
+
+impl<'a> BLevel<'a> {
+    fn new(objects: &'a [(String, &'static str)], nest: bool, cx: &Ctx) -> Self {
+        let mut kids: HashMap<&'a str, Vec<usize>> = HashMap::new();
+        if nest {
+            let listed: HashSet<&str> = objects.iter().map(|(n, _)| n.as_str()).collect();
+            for (i, (name, _)) in objects.iter().enumerate() {
+                if let Some(parent) = cx.tree.parent_of(name).and_then(|p| listed.get(p).copied()) {
+                    kids.entry(parent).or_default().push(i);
+                }
+            }
+        }
+        Self { objects, kids, nest }
+    }
+}
 
 /// The rows of `objects` (name, icon) at `depth`: the ones without a listed
 /// parent, each followed by its children.
 pub(super) fn push(rows: &mut Vec<BOutlineRow>, objects: Vec<(String, &'static str)>, depth: u16, cx: &Ctx) {
     let nest = cx.filter.children && !cx.filtering;
-    let listed = |name: &str| objects.iter().any(|(n, _)| n == name);
-    for (name, icon) in &objects {
-        let parent_listed = nest && cx.tree.parent_of(name).is_some_and(listed);
-        if !parent_listed {
-            push_object(rows, name, icon, depth, &objects, nest, cx);
+    let level = BLevel::new(&objects, nest, cx);
+    let nested: HashSet<usize> = level.kids.values().flatten().copied().collect();
+    for (i, (name, icon)) in objects.iter().enumerate() {
+        if !nested.contains(&i) {
+            push_object(rows, name, icon, depth, &level, cx);
         }
     }
 }
 
-fn push_object(rows: &mut Vec<BOutlineRow>, name: &str, icon: &'static str, depth: u16, all: &[(String, &'static str)], nest: bool, cx: &Ctx) {
+fn push_object(rows: &mut Vec<BOutlineRow>, name: &str, icon: &'static str, depth: u16, level: &BLevel, cx: &Ctx) {
     let hit = cx.filter.hits(name);
     if cx.filtering && !hit {
         return;
     }
-    let kids: Vec<&(String, &'static str)> = if nest && depth < MAX_DEPTH {
-        all.iter().filter(|(n, _)| cx.tree.parent_of(n) == Some(name)).collect()
-    } else {
-        Vec::new()
+    let kids: Vec<&(String, &'static str)> = match level.kids.get(name) {
+        Some(list) if level.nest && depth < MAX_DEPTH => list.iter().map(|&i| &level.objects[i]).collect(),
+        _ => Vec::new(),
     };
     let oid = intern_name(name);
     let open = !cx.filtering && is_expanded_or(cx.s, oid, false);
@@ -74,6 +100,6 @@ fn push_object(rows: &mut Vec<BOutlineRow>, name: &str, icon: &'static str, dept
         });
     }
     for (kid, kid_icon) in kids {
-        push_object(rows, kid, kid_icon, depth + 1, all, nest, cx);
+        push_object(rows, kid, kid_icon, depth + 1, level, cx);
     }
 }

@@ -316,6 +316,18 @@ async fn the_cpu_painter_stays_idle_while_the_gpu_draws(cx: &mut TestAppContext)
         // No adapter here: the CPU painter is the renderer and must run.
         return;
     }
+    // The painter stands in until the tracer's first image lands
+    // (`the_viewport_always_draws_something`), which on a busy machine takes
+    // a while: wait for the frame it stops at, then measure.
+    for _ in 0..300 {
+        let painted = rasterised();
+        app.update(cx, |_, cx| cx.notify());
+        cx.run_until_parked();
+        if rasterised() == painted {
+            break;
+        }
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
     // With the GPU drawing there is nothing for the CPU painter to fill. It
     // used to rasterise an empty, supersampled, viewport-sized frame anyway —
     // and upload it as a texture — on every frame, which was three quarters
@@ -399,7 +411,7 @@ async fn the_progress_bar_holds_its_place_as_the_stage_changes(cx: &mut TestAppC
 // ── Gradients ─────────────────────────────────────────────────────────────
 
 #[test]
-fn the_selected_properties_tab_sweeps_into_the_panel_beside_it() {
+fn the_selected_properties_tab_is_the_panel_beside_it() {
     use phiber::v2::theme::{
         BGradientAxis, BPaletteName, resolve_ui_style, ui_style_defaults,
     };
@@ -407,10 +419,14 @@ fn the_selected_properties_tab_sweeps_into_the_panel_beside_it() {
 
     let style = resolve_ui_style(ui_style_defaults(BPaletteName::DEFAULT), &BState::new());
     let fill = style.tab_active_gradient(BHostType::Buts);
-    // The sweep lands exactly on the panel's own tone, so the tab and the
-    // content are one continuous area rather than two matching boxes.
+    // The tab is exactly the panel's own surface, flat. It used to sweep in
+    // from one step over it; a gradient on one side of the join between the
+    // tab and the panel it selects is what made the two read as two matching
+    // boxes rather than as one continuous area — a hole cut in the strip
+    // onto what it selects (`tests/the_properties_strip_is_a_strip.rs`).
     assert_eq!(fill.bottom, style.colors.bg_panel);
-    assert_ne!(fill.top, fill.bottom, "the tab carries a sweep, not a flat fill");
+    assert_eq!(fill.top, fill.bottom, "flat, so the join has no edge");
+    assert_eq!(fill, style.host_body_surface(BHostType::Buts));
 
     // And it runs along the rail-to-panel axis, whichever side the rail is on.
     assert_eq!(

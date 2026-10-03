@@ -4,14 +4,15 @@
 //! What goes in is what the state holds over the file: the frame and the
 //! range, every object's toggles, eye, selection, name and transform, the
 //! active object, the collections' eye and toggles, the marker list once
-//! it was edited, the Outliner's moves, links, parents and nestings, the actions made and
-//! assigned, and the objects added
-//! (a primitive's mesh, welded and paired into quads), duplicated (a
-//! linked copy) or deleted. What cannot go in — a new mesh into a file older than Blender 3.6 — is said in the
-//! report, as Blender's `Warning:` lines are, so a save never quietly
-//! drops an edit. An existing file becomes `file.blend1` first
-//! (`use_save_versions`); a file the session did not open — the default
-//! scene, a new file — has nothing to write through, and says so.
+//! it was edited, the Outliner's moves, links, parents and nestings, the
+//! actions made and assigned, the Render and Output tabs (`render_edit.rs`),
+//! and the objects added (a primitive's mesh, welded and paired into
+//! quads), duplicated (a linked copy) or deleted. What cannot go in — a new
+//! mesh into a file older than Blender 3.6 — is said in the report, as
+//! Blender's `Warning:` lines are, so a save never quietly drops an edit.
+//! An existing file becomes `file.blend1` first (`use_save_versions`); a
+//! file the session did not open — the default scene, a new file — has
+//! nothing to write through, and says so.
 
 use crate::phiphx::blend::write::{BlendCollectionEdit, BlendCompression, BlendDuplicate, BlendEdits, BlendNewMesh, BlendNewObject, BlendObjectEdit, BlendSaveReport};
 use crate::phiphx::blend::{BlendFile, BlendVisibility};
@@ -24,12 +25,8 @@ use std::path::{Path, PathBuf};
 
 /// The file the document was read from: what a save writes through.
 pub fn source_path(state: &BState, model: &SceneModel) -> Option<PathBuf> {
-    state
-        .get(&super::loaded_path_key())
-        .filter(|p| !p.is_empty())
-        .map(PathBuf::from)
-        .or_else(|| model.source_path.as_deref().map(PathBuf::from))
-        .filter(|p| p.is_file())
+    let loaded = state.get(&super::loaded_path_key()).filter(|p| !p.is_empty()).map(PathBuf::from);
+    loaded.or_else(|| model.source_path.as_deref().map(PathBuf::from)).filter(|p| p.is_file())
 }
 
 /// The name an object has now, given the name the file has for it.
@@ -136,14 +133,17 @@ pub fn gather(state: &BState, model: &SceneModel) -> BlendEdits {
         frame: Some(int_or(state, CtxKey::Frame, model.timeline.current_frame)),
         frame_start: Some(int_or(state, CtxKey::FrameStart, model.timeline.frame_start)),
         frame_end: Some(int_or(state, CtxKey::FrameEnd, model.timeline.frame_end)),
+        cursor: super::cursor::BCursor::edited(state),
+        resolution: super::render_set::BResolution::now(state).edited(model),
+        view: super::render_set::BColorManagement::now(state, Some(model)).edited(model),
         objects,
         active: active_file_name,
         markers: state.get(CtxKey::Markers).map(|_| super::marker::BMarkerList::now(state).list),
         playback: Some(crate::v2::part::playback::settings::now(state)),
         collections: collection_edits,
-        ..super::links::BSceneLinks::now(state).edits()
+        ..super::render_edit::BRenderEdits::of(state, model).over(super::links::BSceneLinks::now(state).edits())
     };
-    super::action::BSceneActions::now(state).edits(edits)
+    super::action::BSceneActions::now(state).edits(model, edits)
 }
 
 /// Write the document to `target`: the source file with the edits through

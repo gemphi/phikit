@@ -1,47 +1,55 @@
-//! PHX - PHI Point Cloud eXtension
+//! phiphx — Phiber's asset core.
 //!
-//! Converts USD and glTF files to various point cloud formats.
-//! Supports PHX, PCD, LAS, and custom JSON formats.
+//! **Entry point: [`phx::Phx`].** Every consumer opens, peeks and converts
+//! files through it; the modules below are its parts.
+//!
+//! | Module | What it holds |
+//! |---|---|
+//! | [`phx`] | `Phx` — open / peek / detect, progress, errors (`phx.rs`) |
+//! | [`scene`] | `SceneModel` — the runtime scene every view draws |
+//! | [`blend`] | the native `.blend` reader (file, objects, meshes, materials, modifiers) |
+//! | [`import`] | other readers: glTF, USD, PLY, PHX, OBJ; asset router |
+//! | [`export`] | writers: PHX, glTF, USD, PLY, PCD, LAS, XYZ, JSON, binary, blend scripts |
+//! | [`cloud`] | point clouds and mesh → cloud sampling |
+//! | [`geom`] | vertices, bounds, meshes, BVH, subject selection |
+//! | [`format`] | output formats and material descriptions |
+//! | [`spatial`] | spatial UI objects (cards, springs, animator) |
+//!
+//! Every folder has a `README.md` (what it is) and a `jobs.md` (status).
 
-pub mod bounding_box;
-pub mod bvh;
-pub mod config;
-pub mod exporter;
-pub mod format;
-pub mod importer;
-pub mod mesh;
-pub mod point_cloud;
-pub mod project;
-pub mod selector;
-pub mod services;
-pub mod spatial;
-pub mod vertex;
-
+pub mod blend;
+pub mod cloud;
 pub mod error;
+pub mod export;
+pub mod format;
+pub mod geom;
+pub mod import;
+pub mod phx;
+#[cfg(test)]
+mod phx_tests;
+pub mod project;
+pub mod scene;
+pub mod spatial;
 
-pub use bounding_box::BoundingBox;
-pub use bvh::{BvhNode, SimpleRng};
-pub use config::{MeshToCloudConfig, SamplingMethod};
+pub use cloud::PointCloud;
+pub use cloud::config::{MeshToCloudConfig, SamplingMethod};
 pub use error::{PointCloudError, Result};
-pub use exporter::*;
+pub use export::*;
 pub use format::*;
-pub use importer::{
+pub use geom::bounds::BoundingBox;
+pub use geom::bvh::{BvhNode, SimpleRng};
+pub use geom::mesh::{Mesh, SampledPoint};
+pub use geom::selector::{MeshSource, SubjectSelector};
+pub use geom::vertex::{Vertex, VertexAttributes};
+pub use import::{
     AssetImportResult, AssetImporter, ImportedCollection, ImportedMaterial, ImportedObject,
 };
 #[cfg(feature = "appkit")]
-pub use importer::{ProjectImportResult, ProjectImporter};
-pub use mesh::{Mesh, SampledPoint};
-pub use point_cloud::PointCloud;
+pub use import::{ProjectImportResult, ProjectImporter};
+pub use phx::Phx;
 pub use project::*;
-pub use selector::{MeshSource, SubjectSelector};
 pub use spatial::{
     MeshSpaceConversion, PhiQuiMeshType, SpatialObject3D, SpatialSpring, SpatialTransform3D,
 };
 #[cfg(feature = "bui")]
 pub use spatial::{BSpatialButton, BSpatialCard, SpatialCard, SpatialMeshElement, SpatialScene};
-pub use vertex::{Vertex, VertexAttributes};
-
-// Backward-compatible plural module aliases for downstream crates
-pub use exporter as exporters;
-pub use format as formats;
-pub use importer as importers;

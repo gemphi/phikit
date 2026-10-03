@@ -36,7 +36,17 @@ fn a_narrow_window_folds_them_behind_one_icon() {
         matches!(anchor.as_ref(), BView::Button(ctl) if ctl.icon.as_deref() == Some("filter")),
         "the fold is one filter icon"
     );
-    assert_eq!(body.len(), 1, "and it holds the controls it replaced");
+    // All of them, not a number written down here: the viewport's header
+    // ends with the gizmo popover, the overlay popover and the shading radio
+    // (`part::filter::view3d`), and a fold that dropped one on the way would
+    // be a control you cannot reach at all on a narrow window.
+    let wide = BFilter::new(BHostType::View3D).build(&at_width(1600.0));
+    let inline = match &wide {
+        BView::Row { list } => list.len(),
+        _ => 1,
+    };
+    assert!(inline > 1, "the wide header shows a row of controls");
+    assert_eq!(body.len(), inline, "and the fold holds every control it replaced");
 }
 
 #[test]

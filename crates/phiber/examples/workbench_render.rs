@@ -65,7 +65,7 @@ fn main() {
         pivot: centre, units: 1.0, persp: 0, aspect: W as f32 / H as f32,
         // scale: world units per full frame height → 1 / (height * 1.1) on the horizontal axis
         scale: 1.0 / (height * 1.1) * (W as f32 / H as f32), dist: 10.0,
-        sky: [0.24, 0.24, 0.24, 1.0], env: [0.24, 0.24, 0.24, 1.0], grid: 0.0,
+        sky: [0.24, 0.24, 0.24, 0.0], env: [0.24, 0.24, 0.24, 1.0], grid: 0.0,
         ..Default::default()
     };
     let (px, _) = tr.render(&gpu, cam, W, H);

@@ -1,0 +1,6 @@
+object	Cube	Idle	HOLD	2
+track	Overlay	mute=1	solo=0
+strip	Walk Again	CLIP	120	168	1	49	1	1	HOLD	sel=1	mute=1	Walk
+track	Base Layer	mute=0	solo=0
+strip	Walk	CLIP	1	97	1	49	2	1	HOLD	sel=1	mute=0	Walk
+object	Sphere	-	HOLD	0

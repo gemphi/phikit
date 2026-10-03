@@ -2,7 +2,9 @@
 //! it sits; `element.rs` has how it takes space and arranges its children.
 
 use super::element::BFlex;
-use super::token::{BEdge, BFill, BInk, BOverflow, BPlace, BRadius, BType};
+use super::fill::BFill;
+use super::place::BOverflow;
+use super::token::{BEdge, BInk, BPlace, BRadius, BType};
 use crate::v2::theme::BElevation;
 
 impl BFlex {

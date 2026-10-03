@@ -58,3 +58,28 @@ fn empty_display_size_scales_the_shape() {
     assert_eq!(lines.len(), 3);
     assert_eq!(lines[0].b, [2.0, 0.0, 0.0]);
 }
+
+/// A rig draws its shown bones (phiphx `rig::display`): the fixture's `Rig`
+/// shows two octahedra, three circles and a cube, `Stick` one stick — and a
+/// deleted armature draws none.
+#[test]
+fn every_shown_bone_draws_as_blender_draws_it() {
+    let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../phiphx/tests/fixtures/armature_display.blend");
+    let scene = crate::phiphx::blend::BlendFile::parse_bytes(&std::fs::read(&path).unwrap()).unwrap().extract_scene().unwrap();
+    let model = SceneModel::from_blend_owned(scene, &path.to_string_lossy());
+    crate::v2::scene::source::set_loaded_scene(Some(model.clone()));
+    let mut s = crate::v2::state::BState::new();
+    let bones = |s: &crate::v2::state::BState| {
+        let mut count = std::collections::BTreeMap::new();
+        for l in scene_extras_now(s, &model).iter().filter(|l| l.kind == BExtraKind::Bone) {
+            *count.entry(l.file_name(&model).unwrap().to_string()).or_insert(0) += 1;
+        }
+        count
+    };
+    let drawn = bones(&s);
+    assert_eq!(drawn.get("Rig"), Some(&(2 * 12 + 3 * 16 + 12)), "{drawn:?}");
+    assert_eq!(drawn.get("Stick"), Some(&1), "the soloed collection's one bone");
+    crate::v2::scene::edit::BSceneEdit { deleted: vec!["Stick".into()], ..Default::default() }.write(&mut s);
+    assert_eq!(bones(&s).get("Stick"), None);
+    crate::v2::scene::source::set_loaded_scene(None);
+}

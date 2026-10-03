@@ -94,13 +94,29 @@ async fn the_rendering_workspace_is_the_image_editor_with_blenders_header(cx: &m
         "slot, view layer, pass and display-channel dropdowns: {names:?}"
     );
     // The picture: a 64 × 32 render fits the window, so it shows at 1:1,
-    // centred; the info bar is a quarter-black quad across the top.
+    // centred; the info bar is a scrim across the top of the window
+    // (`draw_render_info`).
     let scale = cx.update(|window, _| window.scale_factor());
     let painted = cx.scene_fingerprint();
     let picture = painted.iter().find(|line| line.starts_with("image ")).expect("the render is painted");
     let sizes: Vec<f32> = picture.split(' ').nth(2).unwrap().split('x').map(|v| v.parse::<f32>().unwrap() / scale).collect();
     assert_eq!(sizes, vec![64.0, 32.0], "1:1 — `image_view_all` keeps a fitting image at its size: {picture}");
-    let bar = painted.iter().find(|line| line.starts_with("quad ") && line.contains("l: 0.0, a: 0.25")).expect("the render info bar");
-    let bar_y: f32 = bar.split(' ').nth(1).unwrap().split(',').nth(1).unwrap().parse::<f32>().unwrap() / scale;
-    assert!((bar_y - f32::from(window.origin.y)).abs() < 1.0, "the bar sits at the top of the window: {bar}");
+    // Found by geometry, not by colour. Blender lays a quarter-black over the
+    // picture; `paint_info` lays the theme's own dim there instead, so the
+    // scrim follows the palette — and a test that pinned `l: 0.0, a: 0.25`
+    // pinned the one thing about the bar that is meant to change.
+    let height = phiber::v2::view::draw::canvas::image::INFO_BAR_HEIGHT;
+    // `quad <x>,<y> <w>x<h> clip …`
+    let top = |line: &str| line.split(' ').nth(1).unwrap().split(',').nth(1).unwrap().parse::<f32>().unwrap() / scale;
+    let size_of = |line: &str, n: usize| line.split(' ').nth(2).unwrap().split('x').nth(n).unwrap().parse::<f32>().unwrap() / scale;
+    let bar = painted
+        .iter()
+        .find(|line| {
+            line.starts_with("quad ")
+                && (size_of(line, 1) - height).abs() < 1.0
+                && (top(line) - f32::from(window.origin.y)).abs() < 1.0
+                && (size_of(line, 0) - f32::from(window.size.width)).abs() < 1.0
+        })
+        .unwrap_or_else(|| panic!("the render info bar, {height} px across the top of the window"));
+    assert!(bar.starts_with("quad "), "{bar}");
 }

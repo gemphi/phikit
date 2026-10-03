@@ -1,0 +1,75 @@
+//! What the viewport asks the tracer for this frame (`BRayView`).
+
+use super::world;
+use crate::v2::scene::camera::BViewSetup;
+use crate::v2::view::draw::ctx::BRenderCtx;
+use gpui::Hsla;
+
+/// What the painter needs this frame.
+#[derive(Clone, Copy)]
+pub(in crate::v2::view::draw::canvas::view3d) struct BRayView {
+    pub yaw: f32,
+    pub pitch: f32,
+    pub pan: (f32, f32),
+    pub zoom: f32,
+    pub setup: BViewSetup,
+    pub sky: Hsla,
+    pub grid: Hsla,
+    /// Material Preview: studio lighting, file lights and world ignored.
+    pub studio: bool,
+    /// Wireframe: the wire's colour.
+    pub wire: Hsla,
+    /// Which phiray kernel draws it — Workbench for Solid, the tracer
+    /// otherwise.
+    pub mode: phiray::Mode,
+    /// What Properties → Render asks for: how far to refine, how many diffuse
+    /// bounces, whether to denoise (`scene::render_set`).
+    pub set: crate::v2::scene::BRenderSet,
+    /// X-ray: how much every surface lets through (`BXray::see_through`).
+    pub see_through: f32,
+    /// The floor and axes the Overlays popover leaves out (`Camera::grid_hide`).
+    pub grid_hide: u32,
+    /// Color Management as the panel has it (`Camera::view`).
+    pub view: [f32; 4],
+    /// Workbench's Solid effects (`Camera::fx`, `::outline`, `::cavity`,
+    /// `::ssao`; `BSolidFx`).
+    pub fx: [f32; 4],
+    pub outline: [f32; 4],
+    pub cavity: [f32; 4],
+    pub ssao: [u32; 4],
+    pub shadow: [f32; 4],
+    pub shadow_fade: [f32; 4],
+    /// Solid's Lighting and Color (`Camera::shade`, `::single`; `BSolidShade`).
+    pub shade: [u32; 4],
+    pub single: [f32; 4],
+}
+
+impl BRayView {
+    /// The view the tracer is asked for, from the camera, the palette and
+    /// the theme. Blender draws unselected wires in the theme's wire colour
+    /// and the active object in `wire_active`; the kernel carries one wire
+    /// colour, so it takes the neutral one.
+    pub(in crate::v2::view::draw::canvas::view3d) fn of(camera: (f32, f32, (f32, f32), f32), setup: BViewSetup, sky: Hsla, grid: Hsla, studio: bool, mode: phiray::Mode, ctx: &BRenderCtx) -> Self {
+        let (yaw, pitch, pan, zoom) = camera;
+        let (wire, set) = (crate::v2::view::draw::color::to_hsla(ctx.style.colors.text_dim), crate::v2::scene::render_set(ctx.state));
+        let see_through = crate::v2::scene::BXray::now(ctx.state).see_through(crate::v2::scene::view_shading(ctx.state));
+        let grid_hide = world::BRayLook::grid_hide(crate::v2::scene::BOverlays::now(ctx.state));
+        let view = world::view_words(ctx.state);
+        let solid_fx = crate::v2::scene::BSolidFx::now(ctx.state);
+        let (fx, outline) = (solid_fx.fx_words(1.0), solid_fx.outline_words());
+        // The SSAO's disk is run over the anti-aliasing samples (`viewport_aa`).
+        let (cavity, ssao) = (solid_fx.cavity_words(), solid_fx.ssao_words(phiray::trace::taa::SAMPLES));
+        let (shadow, shadow_fade) = (solid_fx.shadow_words(), solid_fx.shadow_fade_words());
+        let shade = crate::v2::scene::BSolidShade::now(ctx.state);
+        // Workbench's Background (`ED_view3d_background_color_get`): the
+        // world's colour or the chosen one behind Solid and Wireframe, else
+        // the theme's sky with its sweep.
+        let sky = match mode {
+            phiray::Mode::Solid | phiray::Mode::Wire => shade
+                .background(crate::v2::scene::source::with_loaded(|m| m.map(|m| m.world.horizon_color)))
+                .map_or(sky, |[r, g, b]| gpui::Rgba { r, g, b, a: 0.0 }.into()),
+            _ => sky,
+        };
+        Self { yaw, pitch, pan, zoom, setup, sky, grid, studio, wire, mode, set, see_through, grid_hide, view, fx, outline, cavity, ssao, shadow, shadow_fade, shade: shade.shade_words(), single: shade.single_words() }
+    }
+}

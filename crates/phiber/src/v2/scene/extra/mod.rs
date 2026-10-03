@@ -1,9 +1,14 @@
 //! Viewport overlay "extras" — the wire shapes Blender's overlay engine draws
-//! for cameras, lights and empties (`overlay_extra.cc`, `overlay_empty.hh`,
+//! for cameras, lights, empties, rigs' bones and relationship lines (`overlay_extra.cc`, `overlay_empty.hh`,
 //! `BKE_camera_view_frame_ex`). Pure: returns world-space segments; the
 //! canvas projects and strokes them.
 
+mod bone;
+mod memo;
+mod relation;
 pub mod set;
+
+use memo::BExtrasMemo;
 
 use crate::phiphx::scene::{SceneCamera, SceneEmpty, SceneLight, SceneModel};
 use glam::{Mat4, Vec3};
@@ -15,6 +20,31 @@ pub enum BExtraKind {
     Camera,
     Light,
     Empty,
+    /// A rig's bones (`bone.rs`), by its armature object.
+    Bone,
+    /// A child's relationship line to the parent `of` (`relation.rs`); the
+    /// line's object and its parent are motion indices.
+    Parent { of: usize },
+    /// A constraint's relationship line from its target (`relation.rs`).
+    Constraint,
+}
+
+impl BExtraKind {
+    /// Drawn under the viewport's overlays as they stand: Extras for
+    /// cameras, lights and empties, Bones, Relationship Lines.
+    pub fn shown(self, overlays: super::BOverlays) -> bool {
+        match self {
+            Self::Camera | Self::Light | Self::Empty => overlays.extras,
+            Self::Bone => overlays.bones,
+            Self::Parent { .. } | Self::Constraint => overlays.relations,
+        }
+    }
+
+    /// Can a click pick it: what is drawn, but never a relationship line,
+    /// which Blender leaves out of selection.
+    pub fn picked(self, overlays: super::BOverlays) -> bool {
+        !matches!(self, Self::Parent { .. } | Self::Constraint) && self.shown(overlays)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -35,6 +65,8 @@ impl BExtraLine {
             BExtraKind::Camera => model.cameras.get(self.name_index).map(|c| c.name.as_str()),
             BExtraKind::Light => model.lights.get(self.name_index).map(|l| l.name.as_str()),
             BExtraKind::Empty => model.empties.get(self.name_index).map(|e| e.name.as_str()),
+            BExtraKind::Bone => model.objects.get(self.name_index).map(|o| o.name.as_str()),
+            BExtraKind::Parent { .. } | BExtraKind::Constraint => model.motion.motion.list.get(self.name_index).map(|m| m.name.as_str()),
         }
     }
 }
@@ -147,17 +179,34 @@ pub fn scene_extras_at(model: &SceneModel, frame: Option<f32>) -> Vec<BExtraLine
 /// What the viewport draws: every camera, light and empty where it stands
 /// at the frame in scope, after the Transform panel's and G / R / S's edits
 /// (`transform::BTransforms::extra_worlds`) — a light parented to a moved
-/// cube comes along.
-pub fn scene_extras_now(s: &crate::v2::state::BState, model: &SceneModel) -> Vec<BExtraLine> {
+/// cube comes along — and every rig's shown bones (`bone.rs`).
+///
+/// Kept from one frame to the next until the frame, the rigs' pose or the
+/// session's edits change ([`BExtrasMemo`]): the viewport and its picks ask
+/// every frame, and a rig is a few thousand lines.
+pub fn scene_extras_now(s: &crate::v2::state::BState, model: &SceneModel) -> std::rc::Rc<Vec<BExtraLine>> {
+    let loaded = super::source::loaded_shared().filter(|m| std::ptr::eq(m.as_ref(), model));
+    let key = loaded.map(|m| BExtrasMemo::key(s, m));
+    if let Some(hit) = key.as_ref().and_then(BExtrasMemo::get) {
+        return hit;
+    }
     let frame = super::motion::scoped_frame();
     let moved = super::transform::BTransforms::now(s).extra_worlds(s, model, frame);
-    scene_extras_moved(model, frame, moved.as_ref())
+    let mut out = scene_extras_moved(model, frame, moved.as_ref());
+    bone::push(&mut out, s, model);
+    relation::push(&mut out, s, model, frame);
+    let out = std::rc::Rc::new(out);
+    if let Some(key) = key {
+        BExtrasMemo::put(key, std::rc::Rc::clone(&out));
+    }
+    out
 }
 
 /// `scene_extras_at`, each extra `moved` names at its world there.
 pub fn scene_extras_moved(model: &SceneModel, frame: Option<f32>, moved: Option<&std::collections::HashMap<String, Mat4>>) -> Vec<BExtraLine> {
-    let r = &model.render;
-    let (ax, ay) = (r.resolution_x.max(1) as f32, r.resolution_y.max(1) as f32);
+    // The camera's shape follows Output ▸ Format as the panel has it.
+    let (ax, ay) = super::render_set::BResolution::scoped().base(model);
+    let (ax, ay) = (ax as f32, ay as f32);
     let aspect = if ax >= ay { [1.0, ay / ax] } else { [ax / ay, 1.0] };
     let posed = super::motion::posed(model, frame);
     let mut out = Vec::new();

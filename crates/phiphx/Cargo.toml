@@ -22,7 +22,9 @@ serde_json = { workspace = true }
 thiserror = { workspace = true }
 bytemuck = { version = "1.18", features = ["derive"] }
 zstd = { workspace = true }
-flate2 = { workspace = true }
+flate2 = { workspace = true, features = ["rust_backend"] }
+image = { workspace = true }
+rayon = { workspace = true }
 # `spatial::*` gpui cards (feature `bui`, on for Phiber). Without it the crate
 # is pure data and builds/tests anywhere.
 gpui = { workspace = true, optional = true }

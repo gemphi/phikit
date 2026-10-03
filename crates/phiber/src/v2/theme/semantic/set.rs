@@ -1,6 +1,6 @@
 //! What each slot gets — the surfaces, host panes, strips, tabs and
-//! canvases, every one a step of the ladder (`super`), and the few
-//! metrics the rails and tabs derive from the resolved spacing. The
+//! canvases, every one a step of the ladder (`super`). The metrics the
+//! rails and tabs derive from the resolved spacing are `rail.rs`; the
 //! strokes, checker and shadow are `stroke.rs`.
 
 use super::{BControlState, BGradientColors, BSurfaceTone};
@@ -8,47 +8,6 @@ use crate::v2::host::BHostType;
 use crate::v2::theme::{BColor, BResolvedUiStyle};
 
 impl BResolvedUiStyle {
-    /// Left edge of the Properties rail-tab paint layer. Two resolved border
-    /// strokes preserve the requested 2px default while remaining compatible
-    /// with runtime stroke overrides.
-    pub fn properties_tab_background_inset(&self) -> f32 {
-        self.strokes.border * 2.0
-    }
-
-    /// Content-facing overlap for Properties rail-tab paint. The paint layer
-    /// extends without changing the tab or strip allocation.
-    pub fn properties_tab_overlap(&self) -> f32 {
-        self.spacing.gap_xs.max(self.strokes.border)
-    }
-
-    /// The vertical pad a host's content region keeps above its first card:
-    /// Properties sits its panels close (Blender's `UI_PANEL_MARGIN_Y`); every
-    /// other region pads its content the module's `pad_md`.
-    pub fn content_pad(&self, host: BHostType) -> f32 {
-        match host {
-            BHostType::Buts => self.spacing.pad_sm,
-            _ => self.spacing.pad_md,
-        }
-    }
-
-    /// Top inset before a rail's first cap. Beside a column of cards
-    /// (Properties, Preferences) the cap sits level with the first row of
-    /// that column — the region's pad, the body column's border, its inner
-    /// pad and the card's border down — so a rail entry and the row beside
-    /// it share one grid (Themes lines up with the second theme row). A rail
-    /// with no cards beside it (a toolbar over a canvas, the activity bar)
-    /// keeps the module's own lead.
-    pub fn rail_lead(&self, host: BHostType) -> f32 {
-        // A rail entry is the card-head module, so the first entry's top is
-        // the first heading's top: nothing to centre.
-        match host {
-            BHostType::Buts | BHostType::Prefs => {
-                self.content_pad(host) + 2.0 * self.strokes.border + self.spacing.pad_sm
-            }
-            _ => self.spacing.pad_sm + self.spacing.pad_md,
-        }
-    }
-
     /// A selected thing under the pointer: one step up.
     pub fn selected_hover(&self, selected: BColor) -> BColor {
         self.step(selected, 1)
@@ -105,6 +64,42 @@ impl BResolvedUiStyle {
         Self::flat(self.host_background(host))
     }
 
+    /// A vertical strip's own surface: the host's body, flat — the strip and the
+    /// content beside it are one colour.
+    ///
+    /// Blender's, read rather than reasoned. `region_background_color_id`
+    /// (`editors/screen/area.cc:3012`) returns `TH_HEADER` for a header,
+    /// `TH_PREVIEW_BACK` for a preview and **`TH_BACK` for everything else** —
+    /// `RGN_TYPE_NAV_BAR` included. So the Properties navigation bar is painted
+    /// in exactly the same colour as the panel it sits beside; there is no
+    /// darker rail shade anywhere in Blender.
+    ///
+    /// What carries the distinction is the TABS, not the strip.
+    /// `userdef_default_theme.c`'s `wcol_tab` has `inner = 0x1d1d1d` and
+    /// `inner_sel = 0x303030` against a `space_properties.back` of `0x303030`:
+    /// an UNSELECTED tab is a darker chip, and the selected one is the
+    /// background's own shade, so it reads as a hole cut onto the panel.
+    ///
+    /// This used to be `step(body, -1)` — the whole strip darkened — with the
+    /// active tab at the body's shade. That is the same two shades as Blender's
+    /// with the roles swapped: the dark belonged on the resting tab
+    /// (`rail_tab_resting`) and the strip belonged level. A darkened strip reads
+    /// as a separate panel bolted to the side of the editor rather than as part
+    /// of it.
+    pub fn rail_surface(&self, host: BHostType) -> BGradientColors {
+        Self::flat(self.host_background(host))
+    }
+
+    /// A rail tab at rest: one step under the strip it sits on.
+    ///
+    /// `wcol_tab.inner` against `TH_BACK` — `0x1d1d1d` on `0x303030`, the chip
+    /// an unselected tab draws. Without it a strip level with its body would
+    /// show no tabs at all until one was hovered, which is what made the dark
+    /// strip look necessary.
+    pub fn rail_tab_resting(&self, host: BHostType) -> BColor {
+        self.step(self.host_background(host), -1)
+    }
+
     pub fn resting_host_background(&self, host: BHostType) -> BColor {
         self.host_background(host)
     }
@@ -118,12 +113,18 @@ impl BResolvedUiStyle {
         self.surface(BSurfaceTone::Header)
     }
 
-    /// A control's fill in a strip or rail. Docked chrome paints nothing at
-    /// rest (`None`) and takes the accent at an alpha for hover and active.
-    /// Floating chrome — the viewport's toolbar and sidebar tabs, sitting
-    /// on the canvas with no rail behind them — is a button: the control
-    /// shade at rest, the hover shade under the pointer, the accent when
-    /// active, as the approved mock-ups draw them.
+    /// A control's fill in a strip or rail.
+    ///
+    /// Every button carries the control shade at rest, docked or floating:
+    /// a header's icon reads as the same object as the viewport toolbar's,
+    /// which is what a button looks like here. Docked chrome used to paint
+    /// nothing at rest, so the same control was a tile on the canvas and a
+    /// bare glyph in a header.
+    ///
+    /// They still part under the pointer: floating chrome sits on the canvas
+    /// with no rail behind it and takes the hover shade, then the accent
+    /// when active; docked chrome washes the accent over its rail at an
+    /// alpha instead, so the strip shows through.
     pub fn control_fill(&self, state: BControlState, floating: bool) -> Option<BColor> {
         if floating {
             return Some(match state {
@@ -134,7 +135,15 @@ impl BResolvedUiStyle {
         }
         let (hue, saturation, lightness, _) = self.colors.accent;
         let alpha = match state {
-            BControlState::Rest => return None,
+            // The resting fill at `control_rest_alpha`, which was declared,
+            // given a value and never read — Rest returned `bg_control` whole.
+            // So a menu row's resting ground was as solid as the panel under
+            // it, and the knob for saying otherwise sat there unused. Wired,
+            // and set to half.
+            BControlState::Rest => {
+                let (hue, saturation, lightness, alpha) = self.colors.bg_control;
+                return Some((hue, saturation, lightness, alpha * self.effects.control_rest_alpha));
+            }
             BControlState::Hover => self.effects.control_hover_alpha,
             BControlState::Active => self.effects.control_active_alpha,
         };
@@ -187,20 +196,19 @@ impl BResolvedUiStyle {
     /// lands on the panel's own shade at the inner edge, so the selected tab
     /// and the content read as one surface (the caller turns it onto the
     /// rail-to-panel axis with `along`).
+    /// The active tab in a rail. In Properties it is exactly the surface of
+    /// the region beside it (`host_body_surface`) — flat, not a sheen: the
+    /// tab is a hole cut in the strip onto the panel it selects, and a
+    /// gradient on one side of that join makes the two read as two things.
     pub fn tab_active_gradient(&self, host: BHostType) -> BGradientColors {
         if host == BHostType::Buts {
-            return self.sheen(self.colors.bg_panel);
+            return self.host_body_surface(host);
         }
         self.host_item_active_gradient(host)
     }
 
     pub fn rail_tab_hover(&self, _host: BHostType) -> BColor {
         self.colors.bg_hover
-    }
-
-    /// Active fill for an icon-rail tab: the active shade, never the accent.
-    pub fn rail_tab_active(&self, _host: BHostType) -> BGradientColors {
-        self.sheen(self.colors.bg_active)
     }
 
     /// The canvas: the theme's sweep when it has one — a step lighter at

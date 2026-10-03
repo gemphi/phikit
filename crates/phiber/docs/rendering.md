@@ -22,8 +22,8 @@
 |---|---|---|---|
 | Wireframe | `phiray` `Mode::Wire` | 1 (deterministic) | none |
 | Solid (Workbench) | `Mode::Solid` | 1 (deterministic) | none |
-| Material Preview | `Mode::Preview` → path tracer, studio rig | refines to **32** | visible below ~64 |
-| Rendered | `Mode::Rendered` → path tracer, the file's lights and world | refines to **32** | visible below ~64 |
+| Material Preview | `Mode::Preview` — deterministic: prefiltered studio-light environment, hard-shadowed lamps, mipmapped textures (`preview.wgsl`, since batch 108) | 1 (deterministic) | none |
+| Rendered | `Mode::Rendered` → path tracer, the file's lights and world | refines to **32** (viewport: `preview_samples`) | the shown frame is denoised from the first sample (Viewport Denoising, on by default since batch 109); the samples beneath converge untouched |
 
 The still-image path for checks against Blender is
 `cargo run --release -p phiber --example color_render -- FILE OUT.png
@@ -70,7 +70,9 @@ Base colour + alpha, roughness, metallic, IOR, transmission, emission colour,
 weight / roughness, anisotropy and its rotation**, and five image slots: base
 colour, normal map (with strength), roughness, metallic, emission. A material
 record is 30 words on the GPU. Textures are capped at **2048 px** on upload in the
-viewport (`TEXTURE_LIMIT`), sampled bilinearly, no mipmaps.
+viewport (`TEXTURE_LIMIT`) and carry a mip chain (`Atlas::add`); Material
+Preview reads the level a pixel's footprint asks for, the path tracer the
+base level (it supersamples).
 
 ### 2.3 Integrator (fixed in the shader today, not exposed)
 
@@ -107,7 +109,7 @@ missing most:
 | 4 | **Denoising** | OpenImageDenoise / OptiX, albedo + normal guided | **Implemented** — a five-pass edge-avoiding a-trous filter guided by albedo, normal and depth (§10). Not a learned denoiser, so it is weaker than OIDN on fine detail |
 | 5 | **Full GI** — multiple diffuse bounces, colour bleed | `max_bounces` 12 by default, diffuse 4 | **Implemented**, `Camera::bounces`; the default is now **4** (Blender's diffuse default) whenever the world has a sampling table, and 1 without one |
 | 5b | **Environment next-event estimation** — sample the world image by luminance and shadow-ray it | Cycles builds a CDF over the environment and samples it directly | **Implemented** — `Atlas::add_env_cdf` + `env_light` in `light.wgsl`, MIS'd against the cosine sampler (see §9) |
-| 6 | **Texture fidelity**: 4–8 K maps, mipmaps, anisotropic filtering | Full-resolution, GPU-filtered | 2048 cap, bilinear, no mipmaps → lace and knit patterns alias in motion |
+| 6 | **Texture fidelity**: 4–8 K maps, mipmaps, anisotropic filtering | Full-resolution, GPU-filtered | 2048 cap; mip chains since batch 108 (Material Preview samples them trilinearly, Rendered still reads the base level and resolves aliasing by sampling) |
 | 7 | **Depth of field** | Camera aperture, bokeh shape | **Not implemented** — the camera itself is read and framed correctly (§12), only the aperture is missing |
 | 8 | **Shadow catcher / holdout / film transparency** for compositing onto a backdrop | Object flags + `film_transparent` | **Not implemented** |
 | 9 | **Output**: resolution %, 16-bit PNG / EXR, passes (AOVs), colour-managed save | Output panel | **Not implemented** — the still example writes 8-bit PNG at a fixed size |
@@ -1132,3 +1134,443 @@ scrollers, and the pixel-info footer. Guarded by
 `rendering_workspace_shows_the_render.rs`, which switches to the Rendering
 workspace, checks the header before and after a 64 × 32 render, and finds
 the picture at 1:1 with the bar over it.
+
+## 22. Material Preview is deterministic, and a sample yields to the hand (batch 108, 2026-10-03)
+
+The user's session journal (`app/journal.rs`, batch 107) from a release
+build on a GTX 1660 Ti said where the slowness was, and it was not the UI
+thread (1.8–5 ms a frame): every orbit step waited 0.3–1.2 s for its first
+image, because a full-size sample of the previous view — 2–6 s per view on
+Female-01's 4.5 M vertices — had to finish first; and Material Preview was
+one noisy sample per frame of even a plain cube, because it was path traced
+like Rendered.
+
+### Material Preview as EEVEE draws it
+
+`Mode::Preview` is its own kernel now (`trace/wgsl/preview.wgsl`), listed
+among the deterministic modes: one dispatch is the frame, and the frame is
+the same every time. What was precomputed for it (`trace/ibl.rs`, on the
+CPU when the scene is built, into the atlas beside the studio HDRI):
+
+- **irradiance** as nine spherical-harmonic coefficients over π
+  (Ramamoorthi & Hanrahan), so a diffuse surface's radiance is
+  `albedo · Σ cᵢ Yᵢ(n)`;
+- **prefiltered copies** of the environment at roughness 0.2, 0.4, 0.6,
+  0.8 and 1 (the image itself stands for 0): the GGX lobe convolved over
+  the sphere (Karis's split sum, `N = V = R`), 128 × 64 each, with filtered
+  importance sampling (each of 64 samples reads the image at the level its
+  lobe covers) so 64 samples are smooth where plain sampling speckles.
+
+The kernel then shades a surface as `albedo · irradiance(n) · (1 − F) +
+prefiltered(R, rough) · envBRDF(f0, rough, n·v) + lamps + emission`, with
+Karis's analytic fit for the split sum's second term, Lagarde's
+roughness-aware Fresnel, one shadow ray per lamp (every lamp, hard shadows),
+alpha blended deterministically through up to six layers, glass continued
+as one refracted ray, and the three-point rig only when there is no light
+of any kind — the same rule as the path tracer's. Textures are read
+trilinearly at the mip level the pixel's footprint asks for (`mip_level`:
+the triangle's texel density times the footprint, widened at a grazing
+angle); the footprint is `t · (1 / (scale · w)) / dist` in perspective and
+one pixel's world width in orthographic. What EEVEE has and this does not,
+yet: soft shadows, screen-space reflections of other objects, ambient
+occlusion.
+
+The atlas head's width carries the level count in its top byte
+(`head_levels`); `Atlas::add` builds the chain; `BRayKey` now tells a
+Material scene from a Rendered one, since they hold different images.
+`Tracer::denoise` is a no-op for a deterministic mode (it was filtering
+Solid frames that wrote no guides).
+
+Guarded by `phiray/tests/preview.rs`: one pass is the frame and the same
+frame again; a flat card's neighbouring pixels differ by under 1/255 where
+the path tracer's first sample differs by more than four times that; a
+64 × 64 single-texel checker tiled eight times over a card reads as one
+grey across it (no moiré); a lamp casts a shadow where the blocker is and
+not beside it.
+
+### A sample in slices
+
+`Tracer::sample_in(gpu, cam, w, h, slices, go)` dispatches a sample as
+`slices` pixel ranges (`Camera::slice`, `Pass::add_over` / `run_step`), the
+device drained after each and `go()` asked whether to carry on; `None`
+abandons the sample and the next one starts the image over, since a frame
+half of whose pixels have one sample more is no frame. The render thread
+(`rendered/worker.rs`, with `pace.rs`, `posted.rs`, `job.rs` and `build.rs`
+split out of it) cuts a full-size sample into enough slices for one to take
+about 25 ms, from how long the last full sample took per pixel, and `go` is
+"no newer view or scene has been posted" (`BPosted`, two atomics the UI
+side writes as it posts). And while views keep arriving — a drag — the next
+sample stays at the coarse size (an eighth) rather than doubling, as Cycles
+keeps a navigated viewport at its start size; it grows once the hand rests.
+`phiray/tests/slices.rs`: seven slices are the same pixels as one; a sample
+abandoned after its first slice leaves the next at sample 0.
+
+### The tracer accounts for itself
+
+The journal now carries the tracer's lines: `scene built — N triangles, M MB
+of images: triangles X ms, tree and upload Y ms` (the 184 s the user waited
+after opening Female-01 will be named on the next run), `scene posed in X
+ms`, `tree rebuilt over the pose in X ms`, and every 64 samples a tally —
+how many, over how long, at what size, the average and slowest trace, the
+average readback, how many were abandoned for a newer view.
+
+## 23. Objects are instances: a move is a matrix (batch 112, 2026-10-03)
+
+Blender's viewport (and Cycles' BVH) keeps each object's mesh once, in the
+object's space, and places it with `object_to_world`; a transform touches
+nothing but that matrix. The tracer baked everything into one world-space
+triangle soup, so a grab, a turn or a scale meant every vertex of the scene
+transformed on the CPU, uploaded again, and the one tree refitted and then
+rebuilt — the "objects too slow to move" of the user's list.
+
+### Two levels of tree
+
+`phiray/trace/instance.rs` — an `Instance` is a world matrix (Blender's
+`m[col][row]`) and the ranges of faces and vertices it owns.
+`Scene::instance(world)` begins one; the vertices and faces added next are
+its, in its own space; a face packs `material | instance << 16` in its
+fourth word (`face_mat`, `face_inst`; 65 536 instances, the rest share the
+last). A scene built from world-space triangles has one instance at the
+identity, so every test and caller from before draws exactly as it did.
+
+`phiray/trace/trees.rs` — `Trees::build` makes a tree per instance over its
+faces in object space (in parallel) and a top tree over the instances'
+placed bounds (`Instance::world_box` of each root). The kernel sees one
+node array: the top tree first in `2n − 1` reserved slots (so a top tree
+built again with a node fewer never moves what follows), then each
+instance's tree with its children and face slots shifted into place. A
+top-tree leaf carries the `INST` bit and ranges over slots of
+`inst_order`; the instance table behind the atlas in `data`
+(`Camera.insts = [first word, count]`) holds each instance's world rows,
+inverse rows, tree root, face range and an identity flag.
+
+`bvh.wgsl` — `trace` walks the top tree; at a leaf it calls `trace_blas`
+for each instance named, which takes the ray into object space by the
+inverse (direction left unnormalised, so `t` means the same along both
+rays), walks that instance's tree, and writes world `t` into the shared
+best hit. `tri_at` places a hit face's corners by the world rows and its
+normals by the inverse-transpose, so every shader — Solid, Wire, Preview,
+Rendered, the light table's emitters — sees world-space triangles as
+before. An instance at the identity skips both transforms.
+
+### What a move costs now
+
+`Tracer::reinstance(worlds)` sets the matrices, rebuilds the top tree
+(`retlas`) and writes it and the instance table in place
+(`GpuArray::write_at`) — a few kilobytes for hundreds of objects, nothing
+of the meshes — and starts the image over. `repose` (vertices moved: a
+rig's frame) refits each instance's tree and the top tree; `retree`
+rebuilds each instance's tree once the motion stops, the image keeping
+its samples. phiber's `rendered/place.rs` picks: the very same meshes,
+materials and textures (`Arc` identity) under other matrices are placed;
+otherwise posed; otherwise built.
+
+`phiray/tests/instances.rs`: a scaled, turned instance draws what the same
+wall baked in world space draws (within edge rounding); a moved instance
+draws as a scene built at the new place and starts at sample 0; a new
+tree after a move keeps the samples. Measured on the software GPU in the
+container, the tests only; the user's journal will carry `Tracer: N
+objects placed in X ms` from the next run.
+
+### Still open
+
+Instancing the *same* mesh twice (Blender's linked duplicates, particle
+instances) shares nothing yet — each object still uploads its own copy of
+the vertices; the instance table is ready for it (two instances naming
+one face range) once the scene builder dedups by `Arc`. The top tree is
+rebuilt whole on every move (cheap at hundreds of objects, not at tens of
+thousands); a refit would do when only one moved.
+
+## 24. Solid finds its surfaces the way Workbench does: a visibility prepass (batch 114, 2026-10-03)
+
+Blender's Solid and Wireframe viewports are Workbench, a rasterizer: the
+draw manager keeps one GPU batch per mesh (`DRW_cache_mesh_surface_get`),
+`workbench_mesh_passes.cc` draws them through the raster pipeline with a
+depth test (the prepass), and the composite pass shades what each pixel
+sees. Until this batch Phiber's Solid and Wireframe cast a ray per pixel
+through the BVH to find that surface — a ray tracer doing a rasterizer's
+job. The shading was already Workbench's (`workbench.wgsl`); the finding
+was not.
+
+### The prepass
+
+`phiray/src/gpu/raster.rs` (`Visibility`) and `trace/wgsl/raster.wgsl`: a
+wgpu render pipeline draws every face of the scene as three vertices
+**pulled from the tracer's own buffers** — the vertex shader reads the
+face's vertex ids (`face`), the vertex (`vert`) and the instance's world
+rows (`inst_at`, batch 112's table), so no second copy of the mesh exists
+on the GPU; the batch cache is the scene's own storage. The projection is
+`solid.wgsl`'s ray model inverted, so the pixel a point lands on is the
+pixel whose ray would have hit it:
+
+- perspective: the eye at `pivot + back · dist / units`; with `wv` the
+  depth along the view axis, `x_clip = 2 (cx · dist · scale + pan.x · wv)`,
+  `y_clip = 2 · aspect (cy · dist · scale − pan.y · wv)`, `w = wv`;
+- orthographic: `x_ndc = 2 (cx · units · scale + pan.x)`, `y_ndc = 2 ·
+  aspect (cy · units · scale − pan.y)`.
+
+Depth is reversed — `near / wv` in perspective, the scene's reach either
+side of the pivot in orthographic, compared *greater* — for float precision
+far from the eye. The fragment writes four words into an `Rgba32Uint`
+target: the face, the barycentrics `u, v` (the hardware's
+perspective-correct interpolation of the corner weights is the tracer's
+Möller–Trumbore `u, v`) and the distance along the ray; the target is
+copied into a buffer the kernels bind after the image (`vis2.wgsl`,
+`primary`). `solid.wgsl` and `wire.wgsl` call `primary(o, d, i)` where they
+called `trace`; X-ray (every surface along the ray) and the tiles of a
+still larger than one binding still trace.
+
+`phiray/tests/raster.rs`: Solid and Wireframe rasterized against the same
+frames traced, orthographic and perspective, over three placed instances
+(one turned and scaled): **0 of 5184 pixels differ** in each of the four
+cases — the same hit, the same shading, pixel for pixel. X-ray is traced
+either way and identical; a moved instance (`reinstance`) is drawn where it
+went.
+
+### What it costs, and where it is on
+
+| THYMUS (259 objects, 436 k faces), 1200 × 700, lavapipe (software) | Solid | Wireframe |
+|---|---|---|
+| Primary hits traced through the BVH | 83 ms | 82 ms |
+| Primary hits rasterized (1.3 M vertices pulled from storage) | 378 ms | 377 ms |
+
+A software rasterizer is slower than a software BVH walk for a scene of
+this size, so the prepass is **off on software adapters** and **on for
+hardware** (`Tracer::raster`, from `GpuAdapter::is_software`), where a
+GPU rasterizes 436 k triangles in well under a millisecond and the frame
+is left with the shading alone. The journal's `scene built` line says
+which path a session took. On the user's GTX 1660 Ti the traced Solid
+frame was already 0–18 ms (batch 111's journal); the first measurement of
+the rasterized one is the next journal's.
+
+### Still to port from Workbench
+
+- ~~Anti-aliasing~~ — §25, batch 118. Still: SMAA on the first frames,
+  `Scene.display.viewport_aa` / `render_aa` from the file.
+- ~~The object outline and the curvature effect~~ — §26, batch 119.
+  Still: Cavity ▸ World (SSAO, `workbench_cavity.bsl.hh`), shadows
+  (`workbench_shadow.cc`), matcaps, `Scene.display` from the file
+  (`viewport_aa`); ~~`shading.light`, `color_type`, the popover's
+  Lighting and Color~~ — §27, batch 121 (MatCap, Attribute and Texture
+  still draw as Studio / Material).
+- Material Preview on EEVEE's model (a raster prepass too; the prefiltered
+  environment shading of batch 108 stays).
+
+## 25. Solid and Wireframe are anti-aliased as Workbench is: eight jittered samples (batch 118, 2026-10-03)
+
+Workbench does not anti-alias an edge by supersampling it; it draws the
+view again and again, each time with the projection nudged by less than
+a pixel, and accumulates (`workbench_effect_antialiasing.cc`). Eight
+samples by default (`U.viewport_aa`, `render_aa` for F12), the first one
+unjittered so the view is sharp at once, SMAA over the first few so they
+are not aliased while the rest land. Until this batch Phiber's Solid was
+the first of those frames and stopped.
+
+### The table
+
+`BLI_jitter_init(n)` (`jitter.cc`) seeds `RandomNumberGenerator` with
+`31415926 + n`, lays `n` points along a diagonal with random noise, and
+relaxes them 24 times — `BLI_jitterate1` pushing each away from its
+neighbours and their wrapped copies within `1/√n`, `BLI_jitterate2` the
+same along each axis within `1/n` — then centres them in `−½ ..= ½`.
+`TaaSamples::init_samples` moves the point nearest the centre onto it,
+draws it first, and orders the rest so each is the farthest from the one
+before, in `−1 ..= 1` (half a pixel either way once `window_translate_m4`
+divides by the resolution). `phiray/trace/taa.rs` is that code line for
+line, generator included (`0x5DEECE66D`, `0xB`, 48 bits, `get_double =
+int32(x >> 17) / 2³¹`), so the table is Blender's table.
+
+### The gather
+
+For each sample Workbench splats the new frame over its 3 × 3
+neighbourhood with `filter_blackman_harris(|offset − neighbour|, 2)`
+weights (`setup_taa_weights`), in `log2(colour + 1)` so a highlight does
+not alias (#112211), and resolves by `exp2(sum / weight accumulated) −
+1`. In Phiber the Solid or Wireframe kernel writes its sample into the
+image's scratch words (`taa_sample`, `util.wgsl`) and a `Taa` kernel
+(`wgsl/taa.wgsl`) gathers them into running sums — frame 0 resets — and
+packs the resolved pixel. `Camera.taa` carries the jitter and the weight
+so far. The ray is moved by the jitter (`taa_jitter`) and the raster
+prepass by the same amount in clip space (`raster.wgsl`), so `raster.rs`'s
+test still finds the two paths drawing the same pixels.
+
+### Tiles
+
+The gather clamps at a tile's edge. A frame rendered in bands is now
+drawn a row over into each neighbour and laid in without that row
+(`rendered/still.rs`), so the bands are the whole frame pixel for pixel
+— `tiles_laid_together_are_the_whole_frame` and
+`a_still_rendered_in_bands_is_the_still_rendered_whole` say so.
+
+### What it costs
+
+Eight dispatches of the shading kernel and eight of the gather where
+there was one. The first is the frame of before, shown at once; the
+others land while the view rests, as Workbench's do, and any navigation
+starts the count over. On the raster path (hardware) a Solid sample was
+0–18 ms in the user's journal, so the eighth lands within a few frames;
+the next journal's `solid` lines will say. A sliced sample runs the gather
+after its last slice.
+
+### Not ported yet
+
+SMAA on the first frames (`workbench_effect_smaa_frag.glsl`, three
+passes with the area and search textures) — the edges are aliased until
+the eighth sample. The sample counts from the file
+(`Scene.display.viewport_aa`, `render_aa`) — eight always. The
+accumulation is of display-space colour with the grid in it; Blender
+accumulates the linear colour before the view transform and composites
+the overlays after.
+
+## 26. The object outline and the curvature effect (batch 119, 2026-10-03)
+
+Workbench's Solid view draws two things over its composite that a plain
+shaded hit does not have. The **object outline**
+(`workbench_effect_outline.cc`): the prepass writes every fragment's
+object id (`resource_id + 1`) to a buffer, and a full-screen pass samples
+it at the pixel and its four neighbours one `U.pixelsize` away,
+`outline_opacity = 1 − dot(equal(center, adjacent), 0.25)`, and blends
+`object_outline_color × opacity` premultiplied over the colour. The
+**curvature effect** (`workbench_curvature.bsl.hh`), part of the opaque
+composite when Cavity's type is Screen or Both: from the prepass's
+view-space normals, `normal_diff = (up.y − down.y) + (right.x − left.x)`,
+`curvature_soft_clamp`ed by `0.5 / ridge_factor²` (positive, a ridge) or
+`0.7 / valley_factor²` (negative, a valley), ×2, and the colour is
+multiplied by `clamp((1 − cavity)(1 + edges)(1 + curvature), 0, 4)` —
+unless the ids across the pixel differ (an object's edge) or all are 0
+(the background).
+
+Phiber: the Solid kernel (`solid.wgsl`) now leaves per pixel its
+scene-linear colour, the grid's premultiplied colour and coverage, the
+object id (the instance plus one, 0 for a miss) and the view normal in
+the scratch words the denoiser never touches in that mode (`fx_store`),
+and still writes the plain sample. An `Fx` kernel (`fx.wgsl`), between
+the shading kernel and the TAA gather, reads the four neighbours
+(clamped at the image's edge, as a texture fetch is), applies the
+curvature factor to the colour of a surface pixel, blends the outline
+over it in linear space, puts it through the view transform and lays the
+grid over — the sample the gather then filters. `Camera.fx` is `[outline
+on, 0.5 / ridge², 0.7 / valley², pixelsize]` and `Camera.outline` the
+colour, scene-linear; the tracer adds the step when either effect is
+asked for and X-ray is off (the transparent pass has neither), so a
+Solid frame with both off is the frame of batch 118 untouched.
+
+The settings come from the file: `View3DShading.flag` bits 0 and 5,
+`object_outline_color`, `cavity_type` and the four factors
+(`phiphx::SceneSolidFx`), seeded into `view3d.shade.<rna>` as the view
+opens and read by `BSolidFx` (`scene/solid_fx.rs`). Blender's startup
+file has the outline on and black and Cavity off, and so does Phiber's
+factory state.
+
+Bands of a still larger than the device binds overlap by two rows now
+(the effects and the gather each read a neighbour) and stay seamless.
+
+Not yet: Cavity ▸ World — the screen-space ambient occlusion
+(`cavity_compute`, the Alchemy AO: 16 Hammersley disk samples a sample
+rotated by a 64 × 64 blue-noise jitter from `eevee::lut::blue_noise`,
+`matcap_ssao_distance` 0.2, `matcap_ssao_attenuation` 1 from
+`Scene.display`) — the table is the reason it waits; shadows
+(`workbench_shadow.cc`); and a final render's own settings
+(`Scene.display.shading`), so F12 draws no outline. The Shading popover
+switches the outline and Cavity in the app since batch 120.
+
+### A hand-built camera's Material Preview (batch 120)
+
+`color_render.rs`'s image had gone dark and mirror-like on a white
+sweep: Material Preview has lit from the studio image's irradiance and
+prefiltered copies since §22 (batch 108), through `Camera::preview`,
+which only `lit` set — the example assembles its own camera. `still`
+now fills those words for a Material Preview camera that lacks them
+(`world::studio_lighting`, the one owner, used by `lit` too), and the
+examples' `sky.a` is 0 (it is the theme's sweep, not opacity). Female-01
+through the example matches Blender's `blender_color.png` again.
+
+## 27. Solid's Lighting, Color and Background (batch 121, 2026-10-03)
+
+Workbench picks each object's `Material` record by the view's
+`color_type` (`workbench_engine.cc`, `get_material`): the material's
+viewport colour (Material, Texture when no image), `ob.color` (Object), a
+hue hashed from `ob.id.name` (Random), the view's `single_color`
+(Single), or the vertex colour (Attribute) — the last four with
+`pack_data(0.0, 0.4, alpha)`, no metal and roughness 0.4
+(`workbench_materials.cc`). The composite then lights by `shading.light`:
+Studio (`get_world_lighting`), MatCap (`get_matcap_lighting`) or Flat
+(`color.rgb = base_color`). The background is the theme's, the world's
+`horr/horg/horb`, or `shading.background_color`
+(`ED_view3d_background_color_get`).
+
+Phiber: `Camera.shade = [light, color_type]` (the kernel keeps Studio at
+0 so a zeroed camera is unchanged; the colour word is
+`eV3DShadingColorType`'s) and `Camera.single`. The instance record has
+four spare words, now the object's colour (28–30, linear) and the murmur
+hash of its id name (31), written by `Scene::instance_of`
+(`rendered/scene.rs` hands both). `solid_at` swaps the base colour,
+roughness and metal for Object / Random / Single and returns the colour
+unlit for Flat; `random_color` is `BLI_hash_int_01` and `hsv_to_rgb_v`
+in WGSL over the hash `hash.rs` computed on the CPU — Blender's
+`BLI_hash_mm2` and Jenkins' `final` mix, line for line, with the `OB`
+prefix and the terminator the id name carries. The sky is set on the CPU
+(`BSolidShade::background`, `rendered/view.rs`), display-encoded as the
+theme's is; World without a world falls back to the theme, as Blender
+does.
+
+Not ported: matcap images (MatCap lights as Studio), the studio-light
+picker and world-space lighting, Attribute (needs vertex colours in the
+tracer's vertex record) and Texture (Solid uploads no image by design,
+§24), the wireframe colour type, Object colour's alpha, and
+`Scene.display.shading` for a Workbench F12.
+
+## 28. Cavity ▸ World — screen-space ambient occlusion (batch 122, 2026-10-03)
+
+Workbench's composite reads a depth and a normal buffer and, for each
+opaque pixel, walks a jittered disk of neighbours (`cavity_compute`,
+`workbench_cavity.bsl.hh`, after the Alchemy AO paper): the disk is
+`CavityEffect::load_samples_buf`'s Hammersley points — angle from the
+radical inverse of the index plus `it_add = (i / samples) · 0.499`, radius
+`fmod((i + 0.5 + it_add) / samples, 1)` — one run of `ssao_samples` per
+TAA sample out of `min(samples_len · ssao_samples, 512)`; each pixel turns
+the disk by its blue-noise angle and slides the radius by `(bn − 0.5) /
+sample_count` (`load_jitter_tx`, EEVEE's `blue_noise` table), and the disk
+is `cavity_distance` wide at the pixel's depth. A neighbour's view
+position minus the pixel's, against the normal: positive is a cavity,
+negative an edge, both over `1 / (len (1 + len² attenuation))` and past
+the `0.05 len + 0.0001` bias; the background takes the pixel's depth less
+`cavity_distance`. `cavities · valley` is clamped to 1, `edges · ridge`
+not, and the colour is multiplied by `(1 − cavities)(1 + edges)(1 +
+curvature)` clamped to 4.
+
+Phiber: the opaque pass stores the view depth (word 20n) beside the id and
+normal; `fx.wgsl`'s `cavity` is the shader above over the stored buffers,
+with `view_pos` standing in for `drw_point_screen_to_view` (the canvas
+point of `solid.wgsl`'s `main`, times `−z / dist` under perspective) and
+the offset in pixels from the frame's view span `1 / scale` (`1 / (scale
+· aspect)` up). The blue-noise table is `blue_noise.rs`, bound to the
+pass as `[cos φ, sin φ, bn₁]`; the radical inverse is `reverseBits(i) ·
+2⁻³²`. `Camera.cavity` and `.ssao` carry the settings; `Scene.display`'s
+three come from the file through phiphx `SceneSsao`.
+
+Not ported: `Scene.display.shading` for a Workbench F12 (the render path
+draws no effects), and Workbench's shadow and depth of field.
+
+## 29. Shadow — the one directional light (batch 123, 2026-10-03)
+
+Workbench's Shadow (`V3D_SHADING_SHADOW`) is a stencil shadow volume pass
+(`workbench_shadow.cc`): each casting object's silhouette is extruded along
+`direction_ws` — `Scene.display.light_direction` with y and z swapped and x
+and z negated — and the composite darkens the covered pixels. The factor
+is `get_shadow`'s: `light_factor = −N · shadow_direction_vs`, `mix =
+smoothstep(shadow_shift, shadow_focus, light_factor)`, zero where the
+stencil is set, then `mix · shadow_intensity + (1 − shadow_intensity)`;
+`shadow_focus` here is `1 − clamp(focus, 0.0001, 0.99999)(1 − shift)`.
+
+Phiber: `solid.wgsl`'s `shadow_factor` is that factor with the stencil
+replaced by a shadow ray — from the hit, nudged off the surface against the
+light's travel, `trace(org, −dir, INF, true)`: any surface means covered.
+The direction reaches the kernel in world space (`Camera.shadow`) and is
+taken into view space by the camera's axes for the dot with the stored view
+normal. Applied to the opaque colour before the effects pass stores it, so
+`(1 − cavity)(1 + edges)(1 + curvature)` multiplies over it as in Blender's
+composite; X-ray takes none.
+
+Not ported: `OB_DRAW_NO_SHADOW_CAST` (an object's Viewport Display ▸ Shadow
+off), and `Scene.display.shading` for a Workbench F12.

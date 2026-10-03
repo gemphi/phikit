@@ -4,6 +4,8 @@
 //! `_y`, `view2d_region_to_view_x`). Structure here; reading the view out
 //! of the state is `set.rs`.
 
+pub mod cur;
+pub mod op;
 pub mod set;
 
 use super::row::BTimeRow;
@@ -37,6 +39,8 @@ pub struct BTimeView {
     /// time — no frame range, no playhead, a base-ten grid, and the cursor
     /// crosses at `cursorTime / cursorVal`.
     pub drivers: bool,
+    /// The NLA editor: a press in its rows picks strips and tracks.
+    pub nla: bool,
     /// The channel rows, summary first where the editor lists one, and how
     /// tall each is (`NLATRACK_HEIGHT` in the NLA editor).
     pub rows: Vec<BTimeRow>,
@@ -51,6 +55,12 @@ pub struct BTimeView {
     pub markers: Vec<(f32, String, bool)>,
     /// A box being swept over the marker band: its two frames.
     pub marker_box: Option<(f32, f32)>,
+    /// The Dope Sheet's picked key columns, the box being swept over its
+    /// keys (two frames, two rows), and whether a key move is under way
+    /// (`scene::action::dope`).
+    pub key_picks: crate::v2::scene::action::dope::BKeySelection,
+    pub key_box: Option<(f32, f32, usize, usize)>,
+    pub key_grab: bool,
 }
 
 impl BTimeView {
@@ -67,12 +77,16 @@ impl BTimeView {
             last: end as f32 + super::VIEW_MARGIN,
             values: None,
             drivers: false,
+            nla: false,
             rows: Vec::new(),
             row_height: super::row::ROW_HEIGHT,
             curves: Vec::new(),
             channel_width: 0.0,
             markers: Vec::new(),
             marker_box: None,
+            key_picks: Default::default(),
+            key_box: None,
+            key_grab: false,
         }
     }
 
@@ -86,6 +100,17 @@ impl BTimeView {
     pub fn window(&self, at: Bounds<Pixels>) -> Bounds<Pixels> {
         let shift = px(self.channel_width.min(f32::from(at.size.width)));
         Bounds::new(point(at.origin.x + shift, at.origin.y), size(at.size.width - shift, at.size.height))
+    }
+
+    /// Whether row `row`'s key at `frame` is picked: an object's own
+    /// column, or for the summary any listed object's.
+    pub fn picked(&self, row: usize, frame: f32) -> bool {
+        use super::row::BRowKind;
+        match self.rows.get(row).map(|r| &r.kind) {
+            Some(BRowKind::Object(name)) => self.key_picks.has(name, frame),
+            Some(BRowKind::Summary { .. }) => self.key_picks.0.iter().any(|p| (p.frame - frame).abs() < 5e-4),
+            _ => false,
+        }
     }
 
     /// `view2d_view_to_region_x`.

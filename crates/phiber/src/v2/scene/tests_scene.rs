@@ -19,6 +19,7 @@ fn loaded_object(name: &str) -> SceneObject {
         materials: Vec::new(),
         material_indices: Default::default(),
         uvs: Default::default(),
+        color: [1.0; 4],
     }
 }
 
@@ -62,6 +63,7 @@ fn current_scene_some_yields_loaded_in_order() {
                 materials,
                 material_indices,
                 uvs,
+                color: _,
             } => {
                 assert_eq!(name, &src.name);
                 assert_eq!(matrix_world, &src.matrix_world);

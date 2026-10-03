@@ -163,7 +163,7 @@ fn selection_loop_reads_single_scene_table_and_writes_k_object() {
     // Fully-expanded outliner so object rows are present.
     let state = BState::new();
     let tree = BOutlinerItem::new().build(&state);
-    let BView::Column { list } = tree else {
+    let BView::Column { list } = tree.shown().clone() else {
         panic!("outliner root is a Column")
     };
 

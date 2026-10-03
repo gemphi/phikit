@@ -1,5 +1,5 @@
-//! Controls/Inspector host (Blender's Properties editor). Structure only: what the host *is*, and where its
-//! content lives. The regions, panes and parts are in `set.rs`, and the
+//! Inspector host (Blender's Properties editor). Structure only: what the
+//! host *is*, and where its content lives. The regions, panes and parts are in `set.rs`, and the
 //! widgets they name are in `part::`.
 
 pub mod set;
@@ -13,7 +13,7 @@ pub const SLUG: &str = "buts";
 
 pub static SPEC: BHostSpec = BHostSpec {
     kind: BHostType::Buts,
-    label: "Controls/Inspector",
+    label: "Inspector",
     icon: "properties",
     regions: set::REGIONS,
 };

@@ -64,34 +64,55 @@ const WORDMARK_BANNER_SCALE: f32 = 2.0 / 3.0;
 /// the touching ends pass through the stem's outline to its core (the arc
 /// is the outline's own shade; the hex's join is its own layer, painted
 /// over the outline and under the core), so no border shows between them.
-/// Layers are shades of the sphere colour #3B4657 over black — cool 40%,
-/// warm 60%, join 40%, line 30% — on a 30% ground, so it reads as texture
-/// behind the form. A canvas measures the window, so the mark keeps
-/// its proportions at every size.
-const BACKDROP_BG: u32 = 0x12151A;
+/// Layers are shades of the theme's own ladder, so it reads as texture behind
+/// the form. A canvas measures the window, so the mark keeps its proportions
+/// at every size.
+///
+/// By ladder STEP, not by hex. These were five frozen values, and what they
+/// were frozen to was Sphere's dark ladder — which the doc above this used to
+/// describe in words: "shades of the sphere colour over black — cool 40%,
+/// warm 60%, join 40%, line 30% — on a 30% ground". Those percentages ARE
+/// ladder positions, so the artwork was always a set of rungs; it just could
+/// not move off that one theme. The Welcome screen stayed a dark slab under
+/// every other palette, and under a light one — which is now the mode a fresh
+/// window opens in (`BThemeMode::DEFAULT`), so it was the first thing anybody
+/// would see. The five values it used to paint are kept in
+/// `tests/the_welcome_backdrop_follows_the_theme.rs`, which asserts these rungs
+/// still resolve to them under Sphere dark: the picture did not change, only
+/// what it is written in terms of.
+///
+/// A mark keeps its own colours in every palette; that is what `brand_warm`
+/// and `brand_cool` are for, and they are untouched. This is not the mark.
+/// It is the wall the mark hangs on, and a wall is a surface.
+const BACKDROP_GROUND: u8 = 3;
 /// The flat mark's art width in its 24-unit box (it is centred in the box).
 const BACKDROP_ART_WIDTH: f32 = 21.76;
-const BACKDROP_LAYERS: [(&str, u32); 4] = [
-    ("brand/welcome_bg_cool.svg", 0x232A34),
-    ("brand/welcome_bg_warm.svg", 0x2F3846),
-    ("brand/welcome_bg_join.svg", 0x232A34),
-    ("brand/welcome_bg_line.svg", 0x1E232C),
+const BACKDROP_LAYERS: [(&str, u8); 4] = [
+    ("brand/welcome_bg_cool.svg", 6),
+    ("brand/welcome_bg_warm.svg", 8),
+    ("brand/welcome_bg_join.svg", 6),
+    ("brand/welcome_bg_line.svg", 5),
 ];
 
-pub fn backdrop() -> AnyElement {
-    let paint = |bounds: gpui::Bounds<gpui::Pixels>, _: (), window: &mut gpui::Window, cx: &mut gpui::App| {
+pub fn backdrop(ctx: &BRenderCtx) -> AnyElement {
+    // Resolved here, out of the paint closure: a shade is a theme question and
+    // the closure's job is geometry.
+    let ladder = ctx.style.colors.ladder;
+    let layers: Vec<(&'static str, gpui::Hsla)> =
+        BACKDROP_LAYERS.iter().map(|(name, step)| (*name, to_hsla(ladder.color(*step)))).collect();
+    let paint = move |bounds: gpui::Bounds<gpui::Pixels>, _: (), window: &mut gpui::Window, cx: &mut gpui::App| {
         let w = f32::from(bounds.size.width);
         let side = px(w * 24.0 / BACKDROP_ART_WIDTH);
         let square = gpui::Bounds::centered_at(bounds.center(), gpui::size(side, side));
-        for (name, shade) in BACKDROP_LAYERS {
+        for (name, shade) in &layers {
             // A missing asset leaves the ground bare; nothing else to do.
             let _ = window
                 .paint_svg(
                     square,
-                    name.into(),
+                    (*name).into(),
                     None,
                     gpui::TransformationMatrix::unit(),
-                    gpui::rgb(shade).into(),
+                    *shade,
                     cx,
                 );
         }
@@ -102,7 +123,7 @@ pub fn backdrop() -> AnyElement {
         .absolute()
         .inset_0()
         .overflow_hidden()
-        .bg(gpui::rgb(BACKDROP_BG))
+        .bg(to_hsla(ladder.color(BACKDROP_GROUND)))
         .child(gpui::canvas(|_, _, _| (), paint).size_full())
         .into_any_element()
 }

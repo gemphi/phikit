@@ -50,6 +50,15 @@ pub enum OpKey {
     ActionCyclic,
     ActionStart,
     ActionEnd,
+    /// I: `insert` keys the selected objects' Location, Rotation and Scale
+    /// (`anim.keyframe_insert`), `channels` every curve they have
+    /// (`action.keyframe_insert` / `graph.keyframe_insert`, All Channels)
+    /// (`scene::action::keying`).
+    Keyframe,
+    /// The NLA editor's operators: `click:…`, `channel:…`, `select:all|none|
+    /// invert`, `delete`, `mute`, `tracks_add`, `tracks_add_above`,
+    /// `tracks_delete` (`scene::action::nla_editor`).
+    Nla,
     /// `screen.region_toggle`-ish for the Properties panels: `expand` / `collapse`.
     Props,
     /// `wm.read_factory_settings`.
@@ -66,6 +75,14 @@ pub enum OpKey {
     /// `wm.rename`-ish (F2, `TOPBAR_PT_name`): empty opens the dialog on the
     /// active object.
     Rename,
+    /// The 3D cursor (`view3d.snap_cursor_to_*`, `view3d.snap_selected_to_cursor`,
+    /// `view3d.view_all(center=True)`): `origin`, `selected`, `active`,
+    /// `selection_to_cursor`, `center_frame_all` (`scene::cursor`).
+    Cursor,
+    /// The Dope Sheet's keys (`action.select_all`, `action.delete`, a key
+    /// grab): `all`, `none`, `invert`, `delete`, `grab:…`
+    /// (`scene::action::dope`).
+    Keys,
     /// `wm.save_mainfile`: empty saves to the opened path (or asks for one),
     /// `incremental` to the next numbered name.
     Save,
@@ -74,12 +91,20 @@ pub enum OpKey {
     FileClose,
     /// `ed.undo_history`: the index of the step to stand at.
     UndoHistory,
+    /// An animation editor's `View2D`: `<editor>:all` (`action.view_all`,
+    /// Home), `<editor>:scene` (`anim.scene_range_frame`),
+    /// `<editor>:zoom:<steps>` (`view2d.zoom_in` / `_out`, the wheel) and
+    /// `<editor>:scroll:<pixels>` (`view2d.scroll_left` / `_right`, Ctrl
+    /// wheel) (`canvas/time/view/op.rs`).
+    TimeView,
 }
 
 impl BKey for OpKey {
     fn path(&self) -> BPath {
         let tail: &'static str = match self {
             Self::Report => "report",
+            Self::Cursor => "cursor",
+            Self::Keys => "keys",
             Self::Flip => "flip",
             Self::Quit => "quit",
             Self::Fullscreen => "fullscreen",
@@ -99,6 +124,8 @@ impl BKey for OpKey {
             Self::ActionCyclic => "action_cyclic",
             Self::ActionStart => "action_start",
             Self::ActionEnd => "action_end",
+            Self::Keyframe => "keyframe",
+            Self::Nla => "nla",
             Self::Props => "props",
             Self::Factory => "factory",
             Self::Render => "render",
@@ -109,6 +136,7 @@ impl BKey for OpKey {
             Self::Save => "save",
             Self::FileClose => "file_close",
             Self::UndoHistory => "undo_history",
+            Self::TimeView => "time_view",
         };
         BPath::owned(vec!["op", tail])
     }

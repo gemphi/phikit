@@ -34,10 +34,13 @@ pub enum BTransportButton {
     TimeBack,
     /// `screen.time_jump` (backward = False).
     TimeForward,
+    /// The magnet: `tool_settings.use_snap_playhead`. Scrubbing snaps the
+    /// playhead to whatever the Playhead popover beside it has ticked.
+    Snap,
 }
 
 impl BTransportButton {
-    pub const ALL: [Self; 10] = [
+    pub const ALL: [Self; 11] = [
         Self::AutoKey,
         Self::JumpStart,
         Self::PrevKey,
@@ -48,6 +51,7 @@ impl BTransportButton {
         Self::JumpEnd,
         Self::TimeBack,
         Self::TimeForward,
+        Self::Snap,
     ];
 
     /// The buttons the header shows: the two play buttons while stopped,
@@ -74,6 +78,7 @@ impl BTransportButton {
             Self::JumpEnd => "skip_end",
             Self::TimeBack => "chevron_left",
             Self::TimeForward => "chevron_right",
+            Self::Snap => "magnet",
         }
     }
 
@@ -89,6 +94,7 @@ impl BTransportButton {
             Self::JumpEnd => "Jump to Endpoint",
             Self::TimeBack => "Jump Back in Time",
             Self::TimeForward => "Jump Forward in Time",
+            Self::Snap => "Playhead Snapping",
         }
     }
 
@@ -96,6 +102,7 @@ impl BTransportButton {
     pub fn active(self, s: &BState) -> bool {
         match self {
             Self::AutoKey => s.get(CtxKey::AutoKey) == Some(V_TRUE),
+            Self::Snap => super::snap::BPlayheadSnap::now(s).on,
             Self::Pause => Self::playing(s),
             _ => false,
         }
@@ -104,7 +111,10 @@ impl BTransportButton {
     /// What pressing it writes.
     pub fn action(self, s: &BState) -> BAction {
         let step = |intent: String| BAction::Set(CtxKey::FrameStep.path(), intent);
-        let second = float_or(s, CtxKey::Fps, 24.0).round().max(1.0) as i32;
+        // How far the two arrows jump is the Time Jump popover's business —
+        // its unit and delta, in frames (`settings::time_jump_frames`), not a
+        // hardcoded second. The popover was built and nothing read it.
+        let jump = super::settings::time_jump_frames(s, float_or(s, CtxKey::Fps, 24.0));
         match self {
             Self::AutoKey => BAction::Toggle(CtxKey::AutoKey.path()),
             Self::JumpStart => step("start".into()),
@@ -116,8 +126,15 @@ impl BTransportButton {
             Self::Pause => BAction::Set(CtxKey::Playing.path(), V_FALSE.to_string()),
             Self::NextKey => step("key+".into()),
             Self::JumpEnd => step("end".into()),
-            Self::TimeBack => step(format!("-{second}")),
-            Self::TimeForward => step(format!("+{second}")),
+            Self::TimeBack => step(format!("-{jump}")),
+            Self::TimeForward => step(format!("+{jump}")),
+            // The magnet writes the value it is going to, the way every
+            // other settings box does — not a blind toggle, so the button
+            // and the popover's own box agree on what they wrote.
+            Self::Snap => BAction::Set(
+                super::settings::key(super::snap::ON_KEY),
+                if super::snap::BPlayheadSnap::now(s).on { V_FALSE } else { V_TRUE }.to_string(),
+            ),
         }
     }
 

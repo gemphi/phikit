@@ -10,7 +10,7 @@ use crate::phiphx::blend::BNlaTrack;
 use crate::phiphx::scene::{SceneAction, SceneNla};
 use crate::v2::host::BHostType;
 use crate::v2::scene::BShownKeys;
-use crate::v2::state::{BState, CtxKey};
+use crate::v2::state::BState;
 
 /// `ANIM_UI_get_channel_height`: `0.8 × widget_unit`.
 pub const ROW_HEIGHT: f32 = 0.8 * super::WIDGET_UNIT;
@@ -63,27 +63,27 @@ impl BTimeRow {
             BHostType::Drivers => return super::driver::BDriverList::now(s).rows(axis),
             _ => return vec![summary(false)],
         };
-        let active = s.get(CtxKey::Object).map(str::to_string);
         crate::v2::scene::source::with_loaded(|loaded| {
             let Some(model) = loaded else { return };
-            let mut names: Vec<&str> = model.selection.selected.iter().map(String::as_str).collect();
-            names.extend(active.as_deref());
-            names.dedup();
-            for name in names {
-                if host == BHostType::Nla {
-                    // `animfilter_nla`: the object, its action line, then its
-                    // tracks last first.
-                    if let Some(nla) = model.nla.iter().find(|nla| nla.object == name) {
-                        out.extend(Self::nla(nla, &model.actions));
-                    }
-                    continue;
+            if host == BHostType::Nla {
+                // `animfilter_nla`: each object, its action line, then its
+                // tracks last first.
+                for name in crate::v2::scene::action::BSceneActions::nla_shown(s, model) {
+                    out.extend(model.nla.iter().filter(|nla| nla.object == name).flat_map(|nla| Self::nla(nla, &model.actions)));
                 }
-                let keys = BShownKeys::of(&model.actions, &[name]);
-                if !keys.columns().is_empty() {
-                    out.push(Self::object(name, &model.actions));
-                }
+                return;
+            }
+            for name in crate::v2::scene::action::dope::BKeyTarget::shown(s, model) {
+                out.push(Self::object(&name, &model.actions));
             }
         });
+        // The Dope Sheet's summary is its objects' columns together.
+        if host == BHostType::Action && out.len() > 1 {
+            let mut keys: Vec<f32> = out[1..].iter().flat_map(|r| r.keys.iter().copied()).collect();
+            keys.sort_by(f32::total_cmp);
+            keys.dedup();
+            out[0].keys = keys;
+        }
         out
     }
 
@@ -109,9 +109,10 @@ impl BTimeRow {
         if host == BHostType::Nla { NLA_ROW_HEIGHT } else { ROW_HEIGHT }
     }
 
-    /// One object's row: the columns of every action it uses.
+    /// One object's row: the columns of the slot it is animated through in
+    /// every action it uses (`dope::BKeyTarget`).
     pub fn object(name: &str, actions: &[SceneAction]) -> Self {
-        Self { kind: BRowKind::Object(name.to_string()), keys: BShownKeys::of(actions, &[name]).columns().to_vec() }
+        Self { kind: BRowKind::Object(name.to_string()), keys: crate::v2::scene::action::dope::BKeyTarget::columns(actions, name) }
     }
 
     /// The channel's name as the channel region prints it
@@ -136,6 +137,25 @@ impl BTimeRow {
     pub fn center(index: usize, height: f32) -> f32 {
         Self::top(index, height) + height / 2.0
     }
+
+    /// `UI_view2d_listview_view_to_cell`: the row at `y` from the top of
+    /// the window, each row's cell its height and the skip below it.
+    pub fn index_at(y: f32, height: f32) -> Option<usize> {
+        let from = y - Self::top(0, height);
+        (from >= 0.0).then(|| (from / (height + ROW_SKIP)) as usize)
+    }
+
+    /// The NLA track row `index` of `rows` is: its object, and its place in
+    /// that object's stack counted from the bottom (the rows list it last
+    /// first).
+    pub fn track_at(rows: &[Self], index: usize) -> Option<(String, usize)> {
+        let BRowKind::Track(_) = rows.get(index)?.kind else { return None };
+        let head = rows[..index].iter().rposition(|r| matches!(r.kind, BRowKind::Object(_)))?;
+        let BRowKind::Object(object) = &rows[head].kind else { return None };
+        let tracks = rows[head + 1..].iter().take_while(|r| !matches!(r.kind, BRowKind::Object(_))).filter(|r| matches!(r.kind, BRowKind::Track(_))).count();
+        let above = rows[head + 1..index].iter().filter(|r| matches!(r.kind, BRowKind::Track(_))).count();
+        Some((object.clone(), tracks - 1 - above))
+    }
 }
 
 #[cfg(test)]
@@ -143,7 +163,9 @@ mod tests {
     use super::*;
 
     fn action(user: &str, keys: &[f32]) -> SceneAction {
-        SceneAction { name: format!("{user}Action"), keys: keys.to_vec(), users: vec![user.into()], ..Default::default() }
+        let mut curve = crate::phiphx::blend::BFCurve::keyed("location", 0);
+        keys.iter().for_each(|f| curve.insert(*f, 0.0));
+        SceneAction { name: format!("{user}Action"), keys: keys.to_vec(), users: vec![user.into()], curves: vec![curve], ..Default::default() }
     }
 
     #[test]
@@ -176,11 +198,15 @@ mod tests {
     #[test]
     fn the_nla_lists_the_object_its_action_line_and_its_tracks_last_first() {
         use crate::phiphx::blend::{BNlaStrip, BlendNla};
-        let track = |name: &str| BNlaTrack { name: name.into(), flag: 0, strips: vec![BNlaStrip { name: "Walk".into(), start: 1.0, end: 49.0, ..Default::default() }] };
-        let nla = BlendNla { object: "Cube".into(), action: Some("Idle".into()), extend: 0, flag: 0, tracks: vec![track("Base Layer"), track("Overlay")] };
+        let track = |name: &str| BNlaTrack { name: name.into(), flag: 0, strips: vec![BNlaStrip { name: "Walk".into(), start: 1.0, end: 49.0, ..Default::default() }], address: 0 };
+        let nla = BlendNla { object: "Cube".into(), action: Some("Idle".into()), extend: 0, flag: 0, tracks: vec![track("Base Layer"), track("Overlay")], ..Default::default() };
         let idle = SceneAction { name: "Idle".into(), keys: vec![10.0, 30.0], users: vec!["Cube".into()], ..Default::default() };
         let rows = BTimeRow::nla(&nla, &[idle]);
         assert_eq!(rows.iter().map(BTimeRow::name).collect::<Vec<_>>(), ["Cube", "Idle", "Overlay", "Base Layer"]);
+        assert_eq!((BTimeRow::track_at(&rows, 2), BTimeRow::track_at(&rows, 3)), (Some(("Cube".into(), 1)), Some(("Cube".into(), 0))), "counted from the bottom");
+        assert_eq!(BTimeRow::track_at(&rows, 1), None, "the action line is no track");
+        let h = NLA_ROW_HEIGHT;
+        assert_eq!((BTimeRow::index_at(BTimeRow::center(3, h), h), BTimeRow::index_at(super::super::SCRUB_HEIGHT, h)), (Some(3), None));
         assert_eq!(rows[1].keys, vec![10.0, 30.0], "the action line carries the action's key columns");
         let bare = BlendNla { object: "Sphere".into(), ..Default::default() };
         assert_eq!(BTimeRow::nla(&bare, &[])[1].name(), "<No Action>");

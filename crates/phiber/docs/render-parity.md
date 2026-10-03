@@ -79,7 +79,8 @@ maps the shading to a phiray kernel:
 | Shading | Path |
 |---|---|
 | Solid | **phiray `Mode::Solid`** — Workbench: one deterministic compute dispatch over the same `GpuBvh`, primary ray + studio rig, finished the frame it is asked for |
-| Material Preview, Rendered | **phiray `Mode::Rendered`** — the path tracer, refining while the view is still |
+| Material Preview | **phiray `Mode::Preview`** — deterministic since batch 108: prefiltered studio-light environment (irradiance SH + GGX-convolved copies), one shadow ray per lamp, mipmapped textures, one dispatch per frame (`rendering.md` §22) |
+| Rendered | **phiray `Mode::Rendered`** — the path tracer, refining while the view is still; a sample in slices so a newer view is taken within ~25 ms |
 | Wireframe | **phiray `Mode::Wire`** — one primary ray, barycentric edge distance, depth-tested |
 
 phiray also runs the GPU **skinning** kernel (`scene/skin.rs`).

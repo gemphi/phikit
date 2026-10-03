@@ -36,6 +36,7 @@ fn triangle(name: &str, x: f32) -> SceneObject {
         materials: Vec::new(),
         material_indices: Default::default(),
         uvs: Default::default(),
+        color: [1.0; 4],
     }
 }
 
@@ -89,7 +90,7 @@ fn moving_scene() -> SceneModel {
             display_size: 1.0,
             dof: Default::default(),
         }],
-        motion: SceneMotion { motion, object: vec![0, 1, 2], light: vec![3], camera: vec![4], empty: vec![] },
+        motion: SceneMotion { motion, object: vec![0, 1, 2], light: vec![3], camera: vec![4], empty: vec![], rigs: Default::default() },
         ..Default::default()
     }
 }

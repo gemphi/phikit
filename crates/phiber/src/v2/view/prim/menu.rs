@@ -54,8 +54,13 @@ impl BPick {
     }
 
     /// One row: `label`, ticked when it is the one in use, doing `action`.
+    ///
+    /// Ticked AND lit. This is the one shared builder for a picker's rows, and
+    /// it had picked the weaker of the two answers — a glyph and no fill — so
+    /// every picker built on it said "on" more quietly than the same dropdown
+    /// built through `BCtrlKind::Select`, which does both (`on_state_budget`).
     pub fn item(mut self, label: &str, ticked: bool, action: BAction) -> Self {
-        let row = crate::v2::view::prim::BControl::new().with_icon(if ticked { "check" } else { "" }).with_label(label).with_action(action);
+        let row = crate::v2::view::prim::BControl::new().with_icon(if ticked { "check" } else { "" }).with_label(label).with_active(ticked).with_action(action);
         self.items.push(BView::MenuItem(row));
         self
     }

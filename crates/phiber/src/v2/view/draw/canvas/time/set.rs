@@ -99,7 +99,10 @@ pub fn paint(view: &BTimeView, colors: &BAnimColors, at: Bounds<Pixels>, window:
     // themselves over its value axis.
     match view.values {
         None if view.row_height > super::row::ROW_HEIGHT => super::strip::set::paint_nla_rows(view, colors, at, window, cx),
-        None => super::row::set::paint_rows(&view.rows, colors, at, &x, window),
+        None => {
+            super::row::set::paint_rows(&view.rows, colors, at, &x, &|row, frame| view.picked(row, frame), window);
+            paint_key_box(view, colors, at, window);
+        }
         Some(_) => super::curve::set::paint_curves(view, &view.curves, colors, at, window),
     }
     super::driver::set::paint_cursor(view, colors, at, window);
@@ -108,6 +111,17 @@ pub fn paint(view: &BTimeView, colors: &BAnimColors, at: Bounds<Pixels>, window:
         super::marker::set::paint_markers(view, colors, at, window, cx);
         paint_playhead(view, colors, at, window, cx);
     }
+}
+
+/// A box being swept over the Dope Sheet's keys (`action.select_box`):
+/// the frames and rows it spans, in the selection's shade.
+fn paint_key_box(view: &BTimeView, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
+    let Some((f0, f1, r0, r1)) = view.key_box else { return };
+    let width = f32::from(at.size.width);
+    let (x0, x1) = (view.x_of(f0.min(f1), width), view.x_of(f0.max(f1), width));
+    let h = super::row::ROW_HEIGHT;
+    let (top, foot) = (super::row::BTimeRow::top(r0.min(r1), h), super::row::BTimeRow::top(r0.max(r1), h) + h);
+    window.paint_quad(fill(rect(x0, top, x1.max(x0 + 1.0), foot, at), hsla(colors.marker_line_selected)));
 }
 
 /// `ANIM_draw_framerange` and `ANIM_draw_previewrange`: the frames outside

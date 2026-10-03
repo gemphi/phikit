@@ -20,9 +20,23 @@ use std::rc::Rc;
 
 /// The gesture layer over the canvas every viewport tool draws on — the
 /// orbit, the box, the circle brush: the whole canvas, `cursor` over it.
-pub(super) fn layer(id: &'static str, cursor: gpui::CursorStyle) -> gpui::Stateful<gpui::Div> {
+///
+/// It takes the context only to describe its box in `BFlex` like everything
+/// else: an overlay filling its parent is `BPlace::Overlay`, not two raw
+/// calls repeated wherever a tool needs one.
+pub(super) fn layer(
+    id: &'static str,
+    cursor: gpui::CursorStyle,
+    ctx: &super::super::super::ctx::BRenderCtx,
+) -> gpui::Stateful<gpui::Div> {
+    use crate::v2::view::draw::flex::{BFlex, BPlace};
     use gpui::{InteractiveElement as _, Styled as _};
-    gpui::div().id(gpui::SharedString::from(id)).debug_selector(move || id.to_string()).absolute().inset_0().cursor(cursor)
+    BFlex::cell()
+        .place(BPlace::Overlay)
+        .div(ctx)
+        .id(gpui::SharedString::from(id))
+        .debug_selector(move || id.to_string())
+        .cursor(cursor)
 }
 
 /// What a click needs to find its object: the visible scene, the objects in
@@ -39,6 +53,24 @@ pub(super) struct BHit {
 }
 
 impl BHit {
+    /// Shift + right-click: the 3D cursor onto the surface under the
+    /// pointer, or over empty space onto the plane through the cursor that
+    /// faces the view — turned to the view (`view3d.cursor3d`, `use_depth`,
+    /// `orientation='VIEW'`; `scene::cursor`). With Ctrl too it is the
+    /// lasso's deselect (`lasso.rs`), as Blender's keymap has it.
+    pub fn on_cursor(self, ctx: &BRenderCtx) -> impl Fn(&gpui::MouseDownEvent, &mut Window, &mut App) + 'static {
+        let (handler, now) = (ctx.handler.clone(), crate::v2::scene::cursor::BCursor::now(ctx.state));
+        move |event: &gpui::MouseDownEvent, window: &mut Window, app: &mut App| {
+            let Some(bounds) = self.bounds.get().filter(|_| event.modifiers.shift && !event.modifiers.control) else { return };
+            let (x, y) = (f32::from(event.position.x - bounds.origin.x), f32::from(event.position.y - bounds.origin.y));
+            let (w, h) = (f32::from(bounds.size.width), f32::from(bounds.size.height));
+            let (su, sv) = BPickView::canvas_point(x, y, w, h);
+            let view = BPickView { aspect: w / h.max(1.0), ..self.view };
+            let Some(placed) = now.under(&self.scene, &view, (su, sv)) else { return };
+            (Rc::clone(&handler))(&BAction::Set(crate::v2::state::SceneKey::Cursor.path(), placed.encode()), window, app);
+        }
+    }
+
     /// The click handler: pick under the pointer, set the active object.
     pub fn on_click(self, ctx: &BRenderCtx) -> impl Fn(&ClickEvent, &mut Window, &mut App) + 'static {
         let handler = ctx.handler.clone();

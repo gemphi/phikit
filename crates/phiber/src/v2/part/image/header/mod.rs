@@ -8,7 +8,7 @@ pub mod set;
 
 use crate::v2::host::BHostType;
 use crate::v2::scene::render_job;
-use crate::v2::state::{BKey as _, BState, ImageKey, ModalKey, val::V_MODAL_FILE_BROWSER};
+use crate::v2::state::{BKey as _, BState, ImageKey, ModalKey, OpKey, val::V_MODAL_FILE_BROWSER};
 use crate::v2::view::prim::{BAction, BControl};
 use crate::v2::view::{BView, BViewItem};
 
@@ -34,7 +34,20 @@ impl BImageBlock {
 impl BViewItem for BImageBlock {
     fn build(&self, _s: &BState) -> BView {
         if self.shows_render() {
-            return BView::row(vec![BView::Tab(BControl::new().with_icon("image").with_label(set::RENDER_RESULT).with_tooltip("Image"))]);
+            let mut row = vec![BView::Tab(BControl::new().with_icon("image").with_label(set::RENDER_RESULT).with_tooltip("Image"))];
+            // While the render runs, its progress and a Cancel beside the
+            // image it is drawing — Blender keeps the job's bar and X in the
+            // status bar (`WM_jobs_stop`), which stays too; here it is also
+            // where the eye is.
+            if render_job::rendering()
+                && let Some(shot) = render_job::shot().0
+            {
+                row.push(BView::progress_bar(shot.fraction(), set::RENDERING));
+                row.push(BView::Button(
+                    BControl::new().with_icon("x").with_label(set::CANCEL).with_tooltip("Stop the render and keep what it has drawn (Esc)").with_action(BAction::Set(OpKey::Render.path(), "cancel".to_string())),
+                ));
+            }
+            return BView::row(row);
         }
         // `image.new` opens Blender's new-image popup, which phiber does not
         // have yet; `image.open` is the file browser.
@@ -47,8 +60,9 @@ impl BViewItem for BImageBlock {
     }
 }
 
-/// The right end: gizmo and overlay toggles, then — with an image — the
-/// slot, view layer and pass dropdowns and the display channels.
+/// The right end: with an image, the slot, view layer and pass dropdowns and
+/// the display channels (`template_image_layers`), and then the two controls
+/// `IMAGE_HT_header` ends with — the gizmo display and the overlays.
 #[derive(Clone, Copy, Debug)]
 pub struct BImageDisplay {
     pub host: BHostType,
@@ -62,10 +76,7 @@ impl BImageDisplay {
 
 impl BViewItem for BImageDisplay {
     fn build(&self, s: &BState) -> BView {
-        let mut list = vec![
-            set::toggle(s, ImageKey::Gizmo, "transform_gizmo", "Show Gizmo"),
-            set::toggle(s, ImageKey::Overlay, "layers", "Show Overlays"),
-        ];
+        let mut list = Vec::new();
         if BImageBlock::new(self.host).shows_render() {
             let (shot, _) = render_job::shot();
             let passes = set::passes(shot.as_ref());
@@ -74,6 +85,12 @@ impl BViewItem for BImageDisplay {
             list.push(set::dropdown(s, self.host, "pass", "layer", ImageKey::Pass, &passes, set::COMBINED));
             list.push(set::dropdown(s, self.host, "channels", "image", ImageKey::Channels, &set::CHANNELS, set::CHANNEL_DEFAULT));
         }
+        // The two Blender ends this header with. The overlay one was a toggle
+        // that nothing read and nothing drew — `IMAGE_PT_overlay` is a
+        // popover of seven boxes, and it is the same table the UV editor
+        // reads (`filter::overlay`), because they are one space in Blender.
+        list.push(set::toggle(s, ImageKey::Gizmo, "transform_gizmo", "Show Gizmo"));
+        list.push(crate::v2::part::filter::overlay::view(s, self.host));
         BView::row(list)
     }
 }

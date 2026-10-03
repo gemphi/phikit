@@ -107,6 +107,8 @@ impl BAsciiRenderer {
                 o.push_str(&format!("{p}Column\n"));
                 self.each(list, s, d + 1, o);
             }
+            // The view it holds, at this depth: sharing is not structure.
+            BView::Shared(view) => self.write(view, s, d, o),
             BView::Split { list } => {
                 o.push_str(&format!("{p}Split\n"));
                 self.each(list, s, d + 1, o);
@@ -121,8 +123,13 @@ impl BAsciiRenderer {
                 placeholder, value
             )),
             BView::Icon { name } => o.push_str(&format!("{p}Icon({:?})\n", name)),
-            BView::Button(ctl) => o.push_str(&format!("{p}Button({:?})\n", ctl.icon)),
-            BView::MenuItem(ctl) => o.push_str(&format!("{p}MenuItem({:?})\n", ctl.label)),
+            // `active` on both, as `Tab` / `RailEntry` / `MenuAnchor` already
+            // print it. Without it no snapshot could tell a ticked row from an
+            // unticked one, which is how fourteen call sites came to say "on"
+            // with a glyph and nothing else and never be caught
+            // (`on_state_budget`).
+            BView::Button(ctl) => o.push_str(&format!("{p}Button({:?}{})\n", ctl.icon, if ctl.active { " active" } else { "" })),
+            BView::MenuItem(ctl) => o.push_str(&format!("{p}MenuItem({:?}{})\n", ctl.label, if ctl.active { " active" } else { "" })),
             BView::MenuSep => o.push_str(&format!("{p}MenuSep\n")),
             BView::Spacer => o.push_str(&format!("{p}Spacer\n")),
             BView::ZoneToggleGroup { controls } => {

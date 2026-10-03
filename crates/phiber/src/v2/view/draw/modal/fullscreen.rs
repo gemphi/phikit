@@ -45,7 +45,7 @@ impl BFullscreen<'_> {
         // The Welcome backdrop (the mark, covering the window) is the ground
         // the form stands on: the whole window when maximised, the whole
         // screen behind it when restored.
-        let tunnel = (self.kind == BModalType::Splash).then(super::super::brand::backdrop);
+        let tunnel = (self.kind == BModalType::Splash).then(|| super::super::brand::backdrop(ctx));
         if maximized {
             return BModalPart::Fullscreen
                 .flex(ctx)

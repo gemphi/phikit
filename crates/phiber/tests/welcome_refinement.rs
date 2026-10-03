@@ -171,8 +171,9 @@ fn welcome_renderer_is_centered_bounded_resolved_and_fullscreen() {
     // The Welcome form's containers are `BModalPart` decisions: centred on
     // both axes and padded, a column bounded by the Splash spec's width, cards
     // spaced by the large gap.
-    let part = source("src/v2/view/draw/modal/part.rs");
-    let layout = part
+    // The Welcome form's own layout lives with the form, not in the modal
+    // vocabulary every modal shares.
+    let layout = welcome
         .split("Self::WelcomeLayout =>")
         .nth(1)
         .expect("welcome layout")
@@ -186,12 +187,14 @@ fn welcome_renderer_is_centered_bounded_resolved_and_fullscreen() {
     assert!(layout.contains(".justify(BJustify::Center)"));
     assert!(layout.contains(".pad(BSpace::PadLg)"));
     assert!(welcome.contains("max_width: BModalType::Splash.spec().width"));
-    assert!(part.contains(".max_width(BLen::Measured(max_width))"));
-    assert!(part.contains(".gap(BSpace::GapLg)"));
+    assert!(welcome.contains(".max_width(BLen::Measured(max_width))"));
+    assert!(welcome.contains(".gap(BSpace::GapLg)"));
     assert!(modal.contains("BModalType::Splash | BModalType::About"));
     assert!(modal.contains("fullscreen::BFullscreen { kind, body }.render(ctx)"));
     assert!(fullscreen.contains("BWelcome(self.body).render(ctx)"));
-    // Fullscreen covers the window: an overlay at full size.
+    // Fullscreen covers the window: an overlay at full size. This one is
+    // still shared modal vocabulary, so it stays in part.rs.
+    let part = source("src/v2/view/draw/modal/part.rs");
     let full = part
         .split("Self::Fullscreen =>")
         .nth(1)
@@ -238,7 +241,10 @@ fn modal_popover_and_canvas_decomposition_is_thin_and_resolved() {
     assert!(card.contains("modal-backdrop-"));
     assert!(popover.contains("pub struct BPopover"));
     assert!(popover.contains("BStyleRole::Popover"));
-    assert!(popover.contains("ctx.style.surface(BSurfaceTone::Card)"));
+    // The popover's panel is a card's frame that floats: it names the Card
+    // tone as a fill token and `fill.rs` resolves it, exactly as the modal
+    // card above does — not by reaching for the surface itself.
+    assert!(popover.contains(".fill(BFill::Tone(BSurfaceTone::Card))"));
     assert!(canvas.contains("view3d::BView3d { camera }.render(ctx)"));
     assert!(canvas.contains("fallback::BFallback(host).render(ctx)"));
     assert!(fallback.contains("ctx.style.viewport_gradient()"), "a canvas paints the theme's canvas sweep");

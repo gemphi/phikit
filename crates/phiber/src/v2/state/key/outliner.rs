@@ -25,6 +25,9 @@ pub enum OutlinerKey {
     /// One of the Filter popover's properties: `ctx.outliner.filter.<rna>`
     /// (`use_filter_object_mesh`, `filter_state`, …).
     Filter(&'static str),
+    /// How many objects have been picked: the list shows the active row
+    /// when it changes (`part::outliner::reveal`).
+    Reveal,
 }
 
 impl BKey for OutlinerKey {
@@ -38,6 +41,7 @@ impl BKey for OutlinerKey {
             Self::Column(field) => BPath::owned(vec!["outliner", "col", field]),
             Self::FilterOpen => BPath::owned(vec!["outliner", "filter_open"]),
             Self::Filter(rna) => BPath::owned(vec!["outliner", "filter", rna]),
+            Self::Reveal => BPath::owned(vec!["outliner", "reveal"]),
         }
     }
 }

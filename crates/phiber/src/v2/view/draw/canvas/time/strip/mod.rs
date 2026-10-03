@@ -82,7 +82,7 @@ mod tests {
 
     #[test]
     fn strips_hold_to_the_view_edges_and_mark_their_repeats() {
-        let track = BNlaTrack { name: "Base".into(), flag: 0, strips: vec![strip(1.0, 97.0, 2.0, EXTEND_HOLD), strip(97.0, 145.0, 1.0, EXTEND_HOLD), strip(200.0, 248.0, 1.0, EXTEND_NOTHING)] };
+        let track = BNlaTrack { name: "Base".into(), flag: 0, strips: vec![strip(1.0, 97.0, 2.0, EXTEND_HOLD), strip(97.0, 145.0, 1.0, EXTEND_HOLD), strip(200.0, 248.0, 1.0, EXTEND_NOTHING)], address: 0 };
         let laid = BTrackStrips::of(&track, -9.0, 260.0);
         assert_eq!(laid.boxes[0].held_before, Some(-9.0), "the first strip holds back to the view's start");
         assert_eq!(laid.boxes[0].held_after, None, "the next strip starts where this ends");
@@ -90,7 +90,7 @@ mod tests {
         assert_eq!(laid.boxes[1].held_before, None);
         assert_eq!(laid.boxes[1].held_after, Some(200.0), "held forward to the next strip");
         assert_eq!(laid.boxes[2].held_after, None, "`EXTEND_NOTHING` holds nowhere");
-        let lone = BNlaTrack { name: "Lone".into(), flag: 0, strips: vec![strip(10.0, 58.0, 1.0, EXTEND_HOLD_FORWARD)] };
+        let lone = BNlaTrack { name: "Lone".into(), flag: 0, strips: vec![strip(10.0, 58.0, 1.0, EXTEND_HOLD_FORWARD)], address: 0 };
         let laid = BTrackStrips::of(&lone, 0.0, 250.0);
         assert_eq!((laid.boxes[0].held_before, laid.boxes[0].held_after), (None, Some(250.0)));
     }

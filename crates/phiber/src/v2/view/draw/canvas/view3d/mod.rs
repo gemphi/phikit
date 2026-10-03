@@ -10,14 +10,15 @@ mod draw;
 mod extra;
 mod floor;
 mod frame;
+mod guide;
 mod hit;
-mod mesh;
-mod object;
+mod identity;
+pub mod mesh;
 mod orbit;
+mod shown;
 mod xform;
 pub mod rendered;
 pub use self::rendered::views_posted;
-pub(super) use self::object::name as object_name;
 
 use crate::v2::state::{CtxKey};
 pub use self::draw::on_gpu;
@@ -46,10 +47,9 @@ impl BView3d<'_> {
     pub fn render(&self, ctx: &BRenderCtx) -> AnyElement {
         let through = self::frame::through(self.camera.through);
         let grid = ctx.style.viewport_grid_stroke();
-        let axis_x = ctx.style.axis_stroke(ctx.style.colors.axis_x);
-        let axis_y = ctx.style.axis_stroke(ctx.style.colors.axis_y);
-        // The canvas shade; its alpha carries the theme's sweep — how much
-        // lighter the left edge is — for the tracer's sky (`Camera::sky.a`).
+        // The tracer's sky: the canvas shade, with the sweep lift in its alpha
+        // — a LIFT, not an opacity, so nothing else may be painted with it
+        // (`tests/viewport_lightness_regression.rs`).
         let mut vp = to_hsla(ctx.style.viewport_surface());
         vp.a = ctx.style.viewport_sweep_lift();
         let zoom_handler = ctx.handler.clone();
@@ -93,7 +93,7 @@ impl BView3d<'_> {
             self::frame::BViewParams::resolve(ctx.state, through.as_ref());
         // Blender outlines every selected object (`OVERLAY_outline`); the set
         // is the active object until a selection is made (`scene::select`).
-        let selected = crate::v2::scene::select::BSelection::now(ctx.state);
+        let selected = self::guide::BGuide::outlined(ctx.state);
         // Solid shading: every mesh — a primitive, a loaded model — in the
         // theme's one solid shade (`solid_shade`), so the viewport follows
         // the theme rather than each object bringing a grey of its own.
@@ -107,83 +107,66 @@ impl BView3d<'_> {
             accent: to_hsla(ctx.style.colors.accent),
             accent_active: to_hsla(ctx.style.step(ctx.style.colors.accent, 2)),
         };
-        let hidden = crate::v2::part::outliner::key::BHidden::now(ctx.state);
-        // The shared list, not a fresh copy: the overlay and the outliner read
-        // the same one this pass (`scene_objects`).
-        let scene: Rc<Vec<_>> = Rc::new(
-            crate::v2::scene::scene_objects(ctx.state)
-                .iter()
-                .filter(|object| !hidden.hides(ctx.state, self::mesh::name(object)))
-                .cloned()
-                .collect(),
-        );
+        // The shown objects and the ones a click may not pick, kept between
+        // frames (`shown`); the overlay and the outliner read the same
+        // objects this pass (`scene_objects`).
+        let self::shown::BShown { scene, unselectable } = self::shown::BShown::now(ctx.state);
         // The paint pass knows the canvas's bounds; the click, which needs
         // them to turn a pointer into a ray, reads them from here.
         let bounds: Rc<Cell<Option<Bounds<Pixels>>>> = Rc::new(Cell::new(None));
-        let unselectable = crate::v2::part::outliner::key::BHidden::for_select(ctx.state);
+        let extras = Rc::new(crate::v2::scene::source::with_loaded(|m| m.map(|m| crate::v2::scene::pick::extra::BPickExtra::list(ctx.state, m)).unwrap_or_default()));
         let hit = self::hit::BHit {
             scene: Rc::clone(&scene),
-            extras: Rc::new(crate::v2::scene::source::with_loaded(|m| m.map(|m| crate::v2::scene::pick::extra::BPickExtra::list(ctx.state, m)).unwrap_or_default())),
-            unselectable: Rc::new(
-                scene.iter().map(|object| self::mesh::name(object).to_string()).filter(|name| unselectable.hides(ctx.state, name)).collect(),
-            ),
+            extras: Rc::clone(&extras),
+            unselectable,
             view: crate::v2::scene::pick::BPickView { yaw, pitch, pan, zoom, setup, aspect: setup.aspect },
             bounds: Rc::clone(&bounds),
         };
         element = element.child(BOrbit { leave }.render(ctx, hit));
         // Every projection below runs through this frame's camera.
         crate::v2::scene::camera::with_view(setup, || {
-        let floor_lines = self::floor::lines(
-            (yaw, pitch, pan, zoom),
-            setup,
-            pivot,
-            self::floor::BFloorPalette {
-                grid: to_hsla(grid.color),
-                axis_x: to_hsla(axis_x.color),
-                axis_y: to_hsla(axis_y.color),
-            },
-        );
+        let guide = self::guide::BGuide::build(ctx, (yaw, pitch, pan, zoom), setup, pivot, &palette, &scene, &extras);
         let studio = self::draw::studio(palette.shading);
         let self::draw::BPlan { ray, cpu_draws, mode } = self::draw::plan(palette.shading, &scene, &palette);
-        let ray_view = self::rendered::BRayView {
-            yaw, pitch, pan, zoom, setup,
-            sky: vp,
-            grid: to_hsla(grid.color),
+        let ray_view = self::rendered::BRayView::of(
+            (yaw, pitch, pan, zoom),
+            setup,
+            vp,
+            to_hsla(grid.color),
             studio,
-            // Blender draws unselected wires in the theme's wire colour and
-            // the active object in `wire_active`; the kernel carries one wire
-            // colour, so it takes the neutral one.
-            wire: to_hsla(ctx.style.colors.text_dim),
             mode,
-            set: crate::v2::scene::render_set(ctx.state),
-        };
-        // Projecting every vertex is the most expensive thing a frame does,
-        // and it depends only on the camera, the palette and the scene — none
-        // of which a resize or a space change touches, so `cache` memoises it.
+            ctx,
+        );
+        // Projecting every vertex is the most expensive thing a frame does
+        // and depends only on the camera, the palette and the scene, so
+        // `cache` memoises it.
         let active = ctx.state.get(CtxKey::Object).unwrap_or("").to_string();
+        // With the GPU drawing, only the selection's outlines are projected
+        // here. The CPU painter stands in for a frame the tracer has not
+        // delivered (`tests/the_viewport_always_draws_something.rs`), so
+        // its triangles are projected *then* — in the paint, the moment it
+        // turns out there is no image — not on every frame it could be
+        // needed: that projected every vertex of every scene under its
+        // ceiling on every orbit frame, with the image already on screen.
+        let can_fall_back = self::draw::cpu_can_draw(crate::v2::scene::scene_metrics(&scene).2);
         let meshes = self::cache::meshes(cpu_draws, &scene, (yaw, pitch, pan, zoom), palette, &selected, &active);
-        // No sort. Ordering objects by the depth of their origin is what hid
-        // a character's clothes: one number per object cannot say which of
-        // two interleaved surfaces is nearer at a given pixel. The depth
-        // buffer answers that per pixel, so the order they arrive in stops
-        // mattering (`mesh::raster`).
+        let fall_back = {
+            let (scene, selected, active) = (Rc::clone(&scene), selected.clone(), active.clone());
+            move || self::cache::meshes(true, &scene, (yaw, pitch, pan, zoom), palette, &selected, &active)
+        };
+        // No sort: one number per object cannot say which of two interleaved
+        // surfaces is nearer at a pixel. The depth buffer answers per pixel,
+        // so arrival order stops mattering (`mesh::raster`).
         let outline_width = ctx.style.strokes.border * 2.0;
         let wire = palette.shading == crate::v2::scene::BShading::Wireframe;
         let frame_palette = self::frame::BFramePalette {
             passepartout: to_hsla(ctx.style.camera_passepartout()),
-            back: vp,
+            back: to_hsla(ctx.style.viewport_surface()),
             overlay: to_hsla(ctx.style.view_overlay()),
         };
-        let extra_lines = self::extra::project(
-            ctx.state,
-            yaw,
-            pitch,
-            pan,
-            zoom,
-            self::extra::BExtraPalette::from_style(ctx, &palette),
-        );
+        let corners = super::surface::corners(ctx);
         let seen = Rc::clone(&bounds);
-        let gestures = self::gesture::BGestureInk::now(ctx.state, vp, frame_palette.overlay, crate::v2::scene::pick::BPickView { yaw, pitch, pan, zoom, setup, aspect: setup.aspect });
+        let gestures = self::gesture::BGestureInk::now(ctx.state, to_hsla(ctx.style.viewport_surface()), frame_palette.overlay, crate::v2::scene::pick::BPickView { yaw, pitch, pan, zoom, setup, aspect: setup.aspect });
         element = element.child(
             canvas(
                 |_, _, _| {},
@@ -193,13 +176,15 @@ impl BView3d<'_> {
                     if crate::v2::scene::camera::note_size(w, h) {
                         window.refresh();
                     }
-                    if ray {
-                        self::rendered::paint(bounds, ray_view, window);
-                    } else {
-                        self::extra::paint(bounds, &floor_lines, 1.0, window);
+                    // The tracer paints the surface and its own grid; with
+                    // nothing yet, the floor and the shaded meshes stand in.
+                    let traced = ray && self::rendered::paint(bounds, ray_view, corners, window);
+                    if !traced {
+                        guide.paint_floor(bounds, window);
                     }
-                    BMesh::paint(bounds, &meshes, outline_width, wire, yaw, pitch, window);
-                    self::extra::paint(bounds, &extra_lines, outline_width * 0.5, window);
+                    let shown = if traced || cpu_draws || !can_fall_back { Rc::clone(&meshes) } else { fall_back() };
+                    BMesh::paint(bounds, &shown, outline_width, wire, yaw, pitch, corners, !traced, window);
+                    guide.paint_over(bounds, outline_width * 0.5, window);
                     if let Some(view) = &through {
                         self::frame::paint(bounds, view, frame_palette, window);
                     }
@@ -223,17 +208,13 @@ impl BView3d<'_> {
                     .place(div().absolute(), ctx)
                     .child(super::overlay::BOverlay { view_name: super::overlay::view_name(through.as_ref().map(|view| view.perspective), setup.perspective) }.render(ctx)),
             )
-            .child(
-                self::corner::gizmo_corner(ctx)
-                    .place(div().absolute(), ctx)
-                    .child(super::gizmo::BGizmo.compass(ctx)),
-            )
-            .child(
-                self::corner::gizmo_corner(ctx)
-                    .flipped()
-                    .place(div().absolute(), ctx)
-                    .child(super::gizmo::BGizmo.controls(ctx, self.camera)),
-            )
+            // The orientation gizmo and the view buttons, unless Navigate or
+            // the gizmos are off (`V3D_GIZMO_HIDE_NAVIGATE`, `V3D_GIZMO_HIDE`).
+            .when(crate::v2::scene::BOverlays::now(ctx.state).navigate, |element| {
+                element
+                    .child(self::corner::gizmo_corner(ctx).place(div().absolute(), ctx).child(super::gizmo::BGizmo.compass(ctx)))
+                    .child(self::corner::gizmo_corner(ctx).flipped().place(div().absolute(), ctx).child(super::gizmo::BGizmo.controls(ctx, self.camera)))
+            })
             .into_any_element()
     }
 }

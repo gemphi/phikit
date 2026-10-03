@@ -5,7 +5,7 @@ use std::time::Instant;
 fn main() {
     let path = std::env::args().nth(1).expect("path to .blend");
     let t0 = Instant::now();
-    let model = phiphx::services::scene::load_blend_scene_with_progress(
+    let model = phiphx::Phx::open_with(
         std::path::Path::new(&path),
         &|fraction, stage| {
             eprintln!("  {:5.1}% {stage}", fraction * 100.0);

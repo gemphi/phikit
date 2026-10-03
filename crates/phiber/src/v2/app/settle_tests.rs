@@ -22,6 +22,7 @@ use super::*;
                 materials: Vec::new(),
                 material_indices: Default::default(),
                 uvs: Default::default(),
+                color: [1.0; 4],
             }],
             source_path: Some(path.to_string()),
             ..Default::default()

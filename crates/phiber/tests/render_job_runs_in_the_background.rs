@@ -80,4 +80,39 @@ fn a_render_reports_progress_then_an_image_and_can_be_cancelled() {
     assert!(until(|| !render_job::rendering()), "cancel did not stop the render");
     let stopped = render_job::shot().0.expect("a shot");
     assert!(stopped.taken < 4000, "cancel was ignored: {} samples taken", stopped.taken);
+    assert!(stopped.done && stopped.has_image(), "a cancelled render is finished, with the image as far as it got");
+    assert_eq!(stopped.bgra.len(), 32 * 32 * 4);
+    assert!(stopped.bgra.chunks_exact(4).any(|p| p[3] != 0 && (p[0], p[1], p[2]) != (0, 0, 0)), "the partial image is drawn, not blank");
+    assert!(render_job::cancelled(), "an animation render reads this to stop at the frame");
+
+    // A plain Esc is that cancel wherever it lands — the render window
+    // (`render_view_cancel`), the Rendering workspace, a playing viewport —
+    // as Blender's `G.is_break` is; with no render under way it closes the
+    // window as before.
+    use phiber::v2::app::keymap::{BKeystroke, action_for};
+    use phiber::v2::view::prim::BAction;
+    use phiber::v2::state::{BKey, BState, ModalKey, OpKey, val::V_MODAL_RENDER};
+    let mut s = BState::new();
+    s.set(ModalKey::Open, V_MODAL_RENDER);
+    let esc = BKeystroke::parse("Escape").unwrap();
+    assert_eq!(action_for(&esc, &s).unwrap().0, BAction::Set(ModalKey::Open.path(), String::new()), "no render: Esc closes the window");
+    render_job::start(a_cube(), plan(4000), gpui::hsla(0.0, 0.0, 0.8, 1.0));
+    assert!(until(render_job::rendering));
+    assert_eq!(action_for(&esc, &s).unwrap().0, BAction::Set(OpKey::Render.path(), "cancel".to_string()), "rendering: Esc cancels");
+    let mut playing = BState::new();
+    playing.set(phiber::v2::state::CtxKey::Playing, "true");
+    assert_eq!(action_for(&esc, &playing).unwrap().0, BAction::Set(OpKey::Render.path(), "cancel".to_string()), "and in a playing Rendering workspace too, before it stops playback");
+    // The Image editor's header shows the render's bar and a Cancel beside
+    // the Render Result while it runs — not only the status bar's X.
+    use phiber::v2::part::image::header::BImageBlock;
+    use phiber::v2::view::{BView, BViewItem};
+    let header = BImageBlock::new(phiber::v2::host::BHostType::Image).build(&s);
+    let BView::Row { list, .. } = header.shown().clone() else { panic!("a row") };
+    let cancel = list.iter().find_map(|v| match v {
+        BView::Button(c) if c.label.as_deref() == Some("Cancel") => c.action.clone(),
+        _ => None,
+    });
+    assert_eq!(cancel, Some(BAction::Set(OpKey::Render.path(), "cancel".to_string())), "a Cancel button in the header: {list:?}");
+    render_job::cancel();
+    assert!(until(|| !render_job::rendering()));
 }

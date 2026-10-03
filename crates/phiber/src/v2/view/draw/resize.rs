@@ -112,7 +112,15 @@ impl BSeamLine {
         let hover = px(ctx.style.resize.hover_thickness().min(ctx.style.resize.hit_width));
         let active = to_hsla(ctx.style.resize_seam_active_color());
         let vertical = self.vertical;
-        let line = div().bg(to_hsla(ctx.style.resize_seam_resting_color())).group_hover(self.group, move |s| {
+        // Nothing at rest: the boundary is already drawn, by each area's own
+        // border either side of the gap, and a seam line painted on top of
+        // that is a second line in the same 4px. The seam is a pointer
+        // affordance, so it appears under the pointer and not before.
+        //
+        // It keeps its resting *width* so that swelling to `hover` grows it
+        // evenly about the gap's midline — the band is centred on that
+        // midline by `resize.inset`, and the line is centred in the band.
+        let line = div().group_hover(self.group, move |s| {
             let s = s.bg(active);
             if vertical { s.w(hover) } else { s.h(hover) }
         });

@@ -5,7 +5,7 @@
 //! panel roles; the painted ids stay `panel-header` / `panel-footer` /
 //! `panel-toolbar`.
 
-use super::flex::{BAlign, BDim, BFill, BFlex, BFlexed, BLen, BRadius, BSpace};
+use super::flex::{BAlign, BDim, BEdge, BFill, BFlex, BFlexed, BLen, BRadius, BSpace};
 use super::ctx::BRenderCtx;
 use super::walk;
 use crate::v2::theme::{BStyleRole, BSurfaceTone};
@@ -28,9 +28,14 @@ impl BFlexed for BBarPart {
         match self.0 {
             // A header keeps its height (the column it heads never trades
             // it for its cards') and rounds its top to the surface above.
+            // The line under a header is the accordion's own border, so a
+            // modal's header and a panel's card heading close the same way
+            // against what they head (`BEdge::Bottom` is `BEdge::All`'s
+            // stroke and colour, one edge of it).
             BStrip::Header => row
                 .height(BLen::Dim(BDim::HeaderHeight))
                 .keeps_size()
+                .border(BEdge::Bottom)
                 .radius(BRadius::Top(ctx.style.radius_for(BStyleRole::Panel))),
             BStrip::Footer => row.height(BLen::Dim(BDim::FooterHeight)),
             BStrip::Toolbar => row.height(BLen::Dim(BDim::HeaderHeight)),

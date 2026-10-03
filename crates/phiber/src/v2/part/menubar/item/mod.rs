@@ -36,6 +36,9 @@ pub enum BMenuKind {
     Recent,
     /// The undo steps, listed live from `app::undo::listing()`.
     History,
+    /// A submenu listed live from the state (Add ▸ Action: the file's
+    /// actions).
+    Live(fn(&crate::v2::state::BState) -> Vec<crate::v2::view::BView>),
 }
 
 /// No `PartialEq`: its `kind` holds `fn` pointers (see [`BMenuKind`]).
@@ -69,6 +72,16 @@ pub struct BMenuSpec {
     /// A panel popover rather than a menu (`layout.popover(panel=…)`): the
     /// body is built from the state, and `items` is unused.
     pub panel: Option<fn(&crate::v2::state::BState) -> Vec<crate::v2::view::BView>>,
+    /// The menu's poll (`if … : layout.menu(…)` in the header's draw):
+    /// shown only while it holds. `None`: always.
+    pub shown: Option<fn(&crate::v2::state::BState) -> bool>,
+}
+
+impl BMenuSpec {
+    /// Does the header show it now?
+    pub fn shows(&self, s: &crate::v2::state::BState) -> bool {
+        self.shown.is_none_or(|poll| poll(s))
+    }
 }
 
 impl BSpec for BMenuSpec {

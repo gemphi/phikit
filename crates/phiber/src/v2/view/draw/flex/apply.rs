@@ -99,6 +99,9 @@ impl BFlex {
             if let Some(w) = self.max_width {
                 style.max_size.width = Some(len(w));
             }
+            if let Some(h) = self.max_height {
+                style.max_size.height = Some(len(h));
+            }
         }
         element = match self.align {
             Some(BAlign::Start) => element.items_start(),

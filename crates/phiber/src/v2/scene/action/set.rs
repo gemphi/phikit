@@ -4,9 +4,13 @@
 //!
 //! - New actions join the list: a copy carries its source's curves and
 //!   slots (`BKE_id_copy`), an empty one nothing (`BKE_action_add`).
+//! - The keys I inserted go in, in order (`keys.rs`), making the slots and
+//!   curves they need; whoever those actions drive moves by them.
 //! - Each action's users and bindings are who has it now.
 //! - Each assigned object moves by its action's slot, or not at all with
 //!   no slot or no action, as Blender evaluates `AnimData`.
+//! - The NLA stacks the session edited stand in the file's (`nla.rs`);
+//!   whoever has one plays its NLA under its action.
 //! - The NLA editor's action line names the action an object has now.
 //!
 //! Built once per edit and model (`BActionScene`), so a frame costs a
@@ -41,6 +45,11 @@ impl BActionScene {
         BUILT.with(|cell| *cell.borrow_mut() = Some((model, edits, Arc::clone(&built))));
         built
     }
+
+    /// The file's model under `model`, when `model` is one `over` built.
+    pub fn raw(model: Arc<SceneModel>) -> Arc<SceneModel> {
+        BUILT.with(|cell| cell.borrow().as_ref().filter(|(_, _, built)| Arc::ptr_eq(built, &model)).map(|(raw, _, _)| Arc::clone(raw))).unwrap_or(model)
+    }
 }
 
 impl BSceneActions {
@@ -66,11 +75,23 @@ impl BSceneActions {
         model.actions.iter().find(|a| a.used_by(object)).map(|a| (a.name.clone(), a.slot_of(object).map_or(String::new(), |s| s.identifier.clone())))
     }
 
+    /// Every action as the session has it: the file's and the made ones,
+    /// with the keys inserted in.
+    pub fn keyed_actions(&self, model: &SceneModel) -> Vec<SceneAction> {
+        let mut actions = model.actions.clone();
+        actions.extend(self.made.iter().filter_map(|(name, _)| self.action(name, model)));
+        for insert in &self.keyed {
+            insert.apply(&mut actions);
+        }
+        actions
+    }
+
     /// `model` with these edits in.
     pub fn apply(&self, model: &SceneModel) -> SceneModel {
         let mut out = model.clone();
-        let made: Vec<SceneAction> = self.made.iter().filter_map(|(name, _)| self.action(name, model)).collect();
-        out.actions.extend(made);
+        out.actions = self.keyed_actions(model);
+        // Laid before the assignments, which name each action line after.
+        self.lay(&mut out);
         for pick in &self.assigned {
             for action in &mut out.actions {
                 action.users.retain(|u| *u != pick.object);
@@ -94,6 +115,15 @@ impl BSceneActions {
                 Some(nla) => nla.action = line,
                 None if line.is_some() => out.nla.push(SceneNla { object: pick.object.clone(), action: line, ..Default::default() }),
                 None => {}
+            }
+        }
+        // Whoever an action with new keys drives moves by them.
+        let SceneModel { actions, motion, .. } = &mut out;
+        for action in actions.iter().filter(|a| self.keyed.iter().any(|k| k.action() == a.name)) {
+            for (object, handle) in &action.bindings {
+                if let Some(m) = motion.motion.list.iter_mut().find(|m| m.name == *object) {
+                    m.curves = action.curves_of(*handle).to_vec();
+                }
             }
         }
         for BActionRange { action, range, cyclic } in &self.ranges {

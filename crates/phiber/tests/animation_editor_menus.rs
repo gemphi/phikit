@@ -12,7 +12,7 @@ use phiber::v2::part::menubar::item::BMenuSpec;
 use phiber::v2::part::sidebar::show::BSidebarShown;
 use phiber::v2::scene::marker::BMarkerList;
 use phiber::v2::space::BSpaceType;
-use phiber::v2::state::{BKey as _, CtxKey, ModalKey};
+use phiber::v2::state::{CtxKey, ModalKey};
 
 fn titles(host: BHostType) -> Vec<&'static str> {
     BMenuSpec::list_for(host).iter().map(|m| m.label).collect()
@@ -25,7 +25,10 @@ fn entries(host: BHostType, menu: &str) -> Vec<&'static str> {
 
 #[test]
 fn each_editor_has_blenders_menus_in_blenders_order() {
-    assert_eq!(titles(BHostType::Action), ["View", "Select", "Marker", "Channel", "Key"]);
+    // The Action menu (and the Channel menu in the Action Editor) is drawn
+    // only over an action (`action_menu_push_down_and_stash.rs`).
+    assert_eq!(titles(BHostType::Action), ["View", "Select", "Marker", "Channel", "Key", "Action"]);
+    assert_eq!(entries(BHostType::Action, "Action"), ["Merge Animation", "Separate Slots", "Move Slots to new Action", "Push Down Action", "Stash Action"]);
     assert_eq!(titles(BHostType::Ipo), ["View", "Select", "Marker", "Channel", "Key"]);
     assert_eq!(titles(BHostType::Drivers), ["View", "Select", "Channel", "Key"], "the Drivers editor has no markers");
     assert_eq!(titles(BHostType::Nla), ["View", "Select", "Marker", "Add", "Tracks", "Strips"]);

@@ -90,6 +90,10 @@ impl BPhiberApp {
                 let cancel_flag = cancel.clone();
                 let _ = this.update(cx, |this, cx| {
                     if let Some((f, stage)) = latest {
+                        // Each stage once, with its time, in the journal.
+                        if this.state.get(&load_stage_key()) != Some(stage.as_str()) {
+                            super::journal::BJournal::note(format!("Reading: {stage}"));
+                        }
                         this.state
                             .set(&load_progress_key(), format!("{:.3}", f.clamp(0.0, 1.0)));
                         this.state.set(&load_stage_key(), stage);
@@ -131,7 +135,15 @@ impl BPhiberApp {
                         .or_else(|| model.source_path.clone())
                         .unwrap_or(path);
                     this.scene_cache = Some((key, std::sync::Arc::new(model)));
+                    // Its large meshes' pick trees and outline points, on a
+                    // thread, before the first click or orbit asks for them.
+                    if let Some((_, model)) = &this.scene_cache {
+                        crate::v2::scene::warm::BWarm::of(model).start();
+                    }
                     super::op::close::tag_saved(&mut this.state);
+                    // Another document: its Render Result is not the old one's.
+                    crate::v2::scene::render_job::forget();
+                    this.render_on_entry();
                     // A startup file is untitled: no path to save over, and
                     // none in the recent list.
                     if this.untitled {

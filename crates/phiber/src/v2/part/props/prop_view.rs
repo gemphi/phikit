@@ -65,6 +65,11 @@ fn default_of(spec: &BPropSpec, kind: BPropKind) -> Option<BValue> {
 
 /// One control over `key`, read from the state.
 fn control(spec: &BPropSpec, key: BPath, s: &BState) -> BCtrl {
+    // The Render tab's Device: the card phiray draws on, not Cycles' CPU /
+    // GPU switch read from the file (`pref::device`).
+    if spec.key == "cycles.device" {
+        return crate::v2::part::pref::device::BRenderDevices::control(open_key(spec), s);
+    }
     let (kind, factory) = ctrl_for(spec.kind);
     let default = default_of(spec, spec.kind).unwrap_or(factory);
     let mut ctrl = BCtrl::read(kind, key, default, s);

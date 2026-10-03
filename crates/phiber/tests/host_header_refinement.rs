@@ -88,7 +88,10 @@ fn properties_rows_are_transparent_but_header_and_outer_card_remain_surfaces() {
     assert!(card.contains("BFill::Heading(BSurfaceTone::Nested(*depth))"), "sub-panel header surface was lost");
     assert!(card.contains(".border(BEdge::All)"), "outer panel border was lost");
     assert!(card.contains(".radius(BRadius::Role(BStyleRole::Card))"), "outer panel radius was lost");
-    assert!(card.contains(".fill(BFill::Tone(panel_tone(ctx)))"), "outer surface was lost");
+    // Through `panel_fill`, which picks swept or flat from the one card tone
+    // (`the_activity_strip_is_card_content`).
+    assert!(card.contains(".fill(panel_fill(ctx))"), "outer surface was lost");
+    assert!(card.contains("BFill::Tone(BSurfaceTone::Card)"), "and it is still the card tone, swept");
 }
 
 #[test]
@@ -128,9 +131,9 @@ fn switcher_uses_category_and_host_columns_without_replacing_host_metadata() {
     );
     // Host labels are DISPLAY names — `BHostType::slug()` carries identity —
     // so a relabel updates this expectation. Blender's "Properties" editor is
-    // labelled "Controls/Inspector" here.
+    // labelled "Inspector" here.
     assert!(labels(hosts).contains(&"3D Viewport"));
-    assert!(!labels(hosts).contains(&"Controls/Inspector"));
+    assert!(!labels(hosts).contains(&"Inspector"));
 
     let data_action = categories
         .iter()
@@ -148,7 +151,7 @@ fn switcher_uses_category_and_host_columns_without_replacing_host_metadata() {
 
     let rebuilt = open_switcher(&state);
     let (_, hosts) = popup_columns(&rebuilt);
-    assert!(labels(hosts).contains(&"Controls/Inspector"));
+    assert!(labels(hosts).contains(&"Inspector"));
     assert!(!labels(hosts).contains(&"3D Viewport"));
 }
 
@@ -230,11 +233,26 @@ fn host_switch_popup_opens_inside_its_area() {
         popover.contains("place::BPlacement::of(self.side, ctx)"),
         "placement must go through the shared rule, not a per-side builder chain"
     );
-    // And the panel is bounded, so a long host list scrolls inside it rather
-    // than running past the bottom of the area.
-    assert!(popover.contains(".max_w(px(ctx.style.dimensions.panel_width * 2.0))"));
-    assert!(popover.contains(".max_h(px(ctx.style.dimensions.panel_width * 2.0))"));
-    assert!(popover.contains(".overflow_y_scroll()"));
+    // And the panel is bounded on both axes, so a long host list scrolls inside
+    // it rather than running past the bottom of the area. The panel says so in
+    // `BFlex`, as every other level states its own box, and the content is
+    // still a scroller.
+    //
+    // Two panel widths still bounds the WIDTH — that is the two-column
+    // switcher's own measure. It no longer bounds the height: 480px is less
+    // than the File menu needs, so capping height by a width meant a menu that
+    // could not fit however it was drawn, and what hid that was its rows being
+    // squashed (`a_row_is_one_height`, `chrome_geometry`). Height comes from the
+    // window now, which is the thing a popover must not run past.
+    assert!(popover.contains("let wide = ctx.style.dimensions.panel_width * 2.0;"));
+    assert!(popover.contains(".max_width(BLen::Measured(wide))"));
+    assert!(popover.contains(".max_height(BLen::Measured("), "the height is still bounded");
+    assert!(popover.contains("AppKey::WindowHeight"), "and bounded by the window");
+    assert!(
+        !popover.contains(".max_height(BLen::Measured(wide))"),
+        "but not by a width — that was the cap no long menu could meet"
+    );
+    assert!(popover.contains(".scroller("));
 }
 
 /// A module is a file or a folder; read whichever spelling exists.

@@ -4,8 +4,8 @@
 //! `renamed`) applied over its object list, so Undo is a state step and a
 //! reload is a clean slate.
 //!
-//! Blender ref: `object.add` / `mesh.primitive_*_add` (at the 3D cursor —
-//! the origin here — named after the primitive, `.001` when taken),
+//! Blender ref: `object.add` / `mesh.primitive_*_add` (at the 3D cursor,
+//! `scene::cursor` — named after the primitive, `.001` when taken),
 //! `object.delete`, `object.duplicate` (in place), `object.hide_view_set`,
 //! `object.hide_view_clear` and the rename popup (`TOPBAR_PT_name`, F2).
 
@@ -118,6 +118,7 @@ impl BSceneEdit {
                     materials: Vec::new(),
                     material_indices: Default::default(),
                     uvs: Default::default(),
+                    color: [1.0; 4],
                 });
             }
         }

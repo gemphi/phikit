@@ -2,7 +2,8 @@
 //! `template_action` (`ctx.op.action`: pick an action, pick a slot,
 //! `action.new`, `action.unlink`) and the Action panel's Manual Frame
 //! Range, Cyclic, Start and End (`ctx.op.action_range`, `_cyclic`,
-//! `_start`, `_end`). Each is read once, made on the session's edits and
+//! `_start`, `_end`), and the Action menu's Push Down and Stash
+//! (`ctx.op.action` `push_down` / `stash`, `nla.rs`). Each is read once, made on the session's edits and
 //! said in the log.
 
 use super::BSceneActions;
@@ -20,6 +21,8 @@ pub enum BActionOp {
     Cyclic(bool),
     Start(f32),
     End(f32),
+    /// `action.push_down` (`stash` false) or `action.stash`.
+    Nla { stash: bool },
 }
 
 impl BActionOp {
@@ -37,6 +40,8 @@ impl BActionOp {
                 Some(("slot", id)) => Self::Slot(id.to_string()),
                 _ if value == "new" => Self::New,
                 _ if value == "unlink" => Self::Unlink,
+                _ if value == "push_down" => Self::Nla { stash: false },
+                _ if value == "stash" => Self::Nla { stash: true },
                 _ => return None,
             },
         })
@@ -44,6 +49,13 @@ impl BActionOp {
 }
 
 impl BSceneActions {
+    /// The active object's action and slot now, when it has one
+    /// (`context.active_action`).
+    pub fn active(state: &BState) -> Option<(String, String)> {
+        let object = state.get(CtxKey::Object).filter(|o| !o.is_empty())?;
+        crate::v2::scene::source::with_loaded(|model| Self::now(state).of(object, model?))
+    }
+
     /// Manual Frame Range (`None` when off) and Cyclic of `action` now.
     pub fn range_of(&self, action: &str, model: &SceneModel) -> (Option<(f32, f32)>, bool) {
         match self.ranges.iter().find(|r| r.action == action) {
@@ -65,6 +77,9 @@ impl BSceneActions {
             let slot = Self::slot_for(&action, object, before.as_deref());
             self.assign(object, name, &slot);
             return Some(format!("{object} uses {name}"));
+        }
+        if let BActionOp::Nla { stash } = op {
+            return self.lay_nla(object, *stash, model);
         }
         if matches!(op, BActionOp::New) {
             let taken = self.names(model);
@@ -95,7 +110,7 @@ impl BSceneActions {
             // and the start an end before it.
             BActionOp::Start(v) => self.set_range(&action, range.map(|(_, e)| (*v, e.max(*v))), cyclic),
             BActionOp::End(v) => self.set_range(&action, range.map(|(s, _)| (s.min(*v), *v)), cyclic),
-            BActionOp::Assign(_) | BActionOp::New => {}
+            BActionOp::Assign(_) | BActionOp::New | BActionOp::Nla { .. } => {}
         }
         Some(format!("{action}: frame range"))
     }
@@ -130,6 +145,7 @@ mod tests {
         assert_eq!(BActionOp::parse(OpKey::Action, "assign:Spin"), Some(BActionOp::Assign("Spin".into())));
         assert_eq!(BActionOp::parse(OpKey::Action, "slot:OBCube"), Some(BActionOp::Slot("OBCube".into())));
         assert_eq!(BActionOp::parse(OpKey::Action, "new"), Some(BActionOp::New));
+        assert_eq!(BActionOp::parse(OpKey::Action, "stash"), Some(BActionOp::Nla { stash: true }));
         assert_eq!(BActionOp::parse(OpKey::ActionRange, "true"), Some(BActionOp::Range(true)));
         assert_eq!(BActionOp::parse(OpKey::ActionStart, " 12 "), Some(BActionOp::Start(12.0)));
         assert_eq!(BActionOp::parse(OpKey::ActionEnd, "x"), None);

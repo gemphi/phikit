@@ -50,7 +50,7 @@ pub fn run() {
                 crate::v2::theme::vendor::install(cx);
 
                 let bounds = Bounds::centered(None, size(px(1024.0), px(768.0)), cx);
-                cx.open_window(
+                let window = cx.open_window(
                     WindowOptions {
                         window_bounds: Some(WindowBounds::Windowed(bounds)),
                         // Phiber draws its own title bar in the theme colours
@@ -67,6 +67,17 @@ pub fn run() {
                     |_, cx| cx.new(|_cx| crate::v2::app::BPhiberApp::new()),
                 )
                 .unwrap();
+                // Closing the window asks about unsaved changes as File ▸
+                // Quit does (`op::close::may_close`).
+                let _ = window.update(cx, |_, w, cx| {
+                    let app = cx.entity();
+                    w.on_window_should_close(cx, move |window, cx| app.update(cx, |app, cx| app.may_close(window, cx)));
+                });
+                // The session journal, then the Info log's first lines:
+                // the build, where the journal is, and the render device
+                // once phiray has it.
+                crate::v2::app::journal::BJournal::arm();
+                crate::v2::app::health::BHealth::arm();
 
                 cx.activate(true);
             });

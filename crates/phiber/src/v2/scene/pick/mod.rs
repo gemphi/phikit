@@ -13,6 +13,7 @@ use crate::v2::scene::camera::{BViewSetup, SCREEN};
 use crate::phiphx::spatial::SpatialObject3D;
 pub mod extra;
 pub mod occlude;
+pub mod tree;
 mod triangle;
 pub use triangle::triangle_t;
 use triangle::hits_box;
@@ -147,6 +148,9 @@ fn nearest(object: &BObject3D, ray: BPickRay) -> Option<f32> {
             let world: Vec<Vec3> = v.iter().map(|v| Vec3::new(ox + v.0, oy + v.2, v.1)).collect();
             nearest_in(&world, &idx, ray)
         }
+        // A large mesh through its tree, in its own space (`tree.rs`); a
+        // small one walked whole in the world.
+        BObject3D::Loaded { mesh, matrix_world, .. } if mesh.indices.len() / 3 >= tree::WHOLE => tree::BPickTree::of(mesh).nearest(matrix_world, ray),
         BObject3D::Loaded { mesh, matrix_world, .. } => {
             let m = Mat4::from_cols_array_2d(matrix_world);
             let world: Vec<Vec3> = mesh.vertices.iter().map(|v| m.transform_point3(Vec3::from(*v))).collect();
@@ -163,7 +167,7 @@ fn nearest_in(world: &[Vec3], indices: &[u32], ray: BPickRay) -> Option<f32> {
 }
 
 /// The nearest of `indices`' triangles along `ray`, the box already passed.
-fn nearest_triangle(world: &[Vec3], indices: &[u32], ray: BPickRay) -> Option<f32> {
+pub(super) fn nearest_triangle(world: &[Vec3], indices: &[u32], ray: BPickRay) -> Option<f32> {
     let mut best = f32::INFINITY;
     for t in indices.chunks_exact(3) {
         let [a, b, c] = [t[0] as usize, t[1] as usize, t[2] as usize];

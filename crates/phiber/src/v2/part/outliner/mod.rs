@@ -6,6 +6,7 @@ pub mod key;
 pub mod layer;
 pub mod object_rows;
 pub mod op;
+pub mod reveal;
 pub mod filter;
 pub mod mode;
 pub mod row_type;
@@ -65,7 +66,12 @@ impl BOutlinerItem {
         let on = s.get(&key) == Some(V_TRUE);
         let next = if on { V_FALSE } else { V_TRUE };
         // `eye` / `eye_off` is the one pair where the icon itself carries the
-        // state; the rest dim via the button's own disabled-ish styling.
+        // state. The rest were said to "dim via the button's own disabled-ish
+        // styling", and nothing set `muted`, so nothing dimmed: nine toggles
+        // that read their state and then rendered identically on and off.
+        //
+        // On takes the fill, off takes the quiet ink — which is how Blender
+        // draws a restriction column, and what `muted` is for.
         let shown = if field == "hide_get" && on {
             "eye_off"
         } else {
@@ -74,6 +80,8 @@ impl BOutlinerItem {
         BView::Button(
             BControl::new()
                 .with_icon(shown)
+                .with_active(on)
+                .with_muted(!on)
                 .with_action(BAction::Set(key, next.to_string())),
         )
     }
@@ -175,17 +183,35 @@ impl BOutlinerItem {
         let key = self::tree::k_restrict(id, "exclude");
         let excluded = s.get(&key) == Some(V_TRUE);
         let next = if excluded { V_FALSE } else { V_TRUE };
+        // Ticked AND lit when included, as every other checkable row in the
+        // app is — the glyph says which one when you are reading the column,
+        // the fill says it when you are not (`on_state_budget`).
         BView::Button(
             BControl::new()
                 .with_icon(if excluded { "square" } else { "check_square" })
+                .with_active(!excluded)
                 .with_tooltip("Exclude from View Layer")
                 .with_action(BAction::Set(key, next.to_string())),
         )
     }
 }
 
-impl BViewItem for BOutlinerItem {
-    fn build(&self, s: &BState) -> BView {
+thread_local! {
+    /// The list as last built, with what it was built from: the writes to
+    /// every key family but the viewport's (`BState::scene_revision`) and
+    /// the loaded model. An orbit changes neither, and building five hundred
+    /// rows was most of a debug frame's tree.
+    static BUILT: std::cell::RefCell<Option<(u64, usize, std::rc::Rc<BView>)>> = const { std::cell::RefCell::new(None) };
+}
+
+impl BOutlinerItem {
+    /// What the list is built from, as one pair.
+    fn built_from(s: &BState) -> (u64, usize) {
+        let model = crate::v2::scene::source::loaded_shared().map_or(0, |m| std::sync::Arc::as_ptr(&m) as usize);
+        (s.scene_revision(), model)
+    }
+
+    fn build_rows(s: &BState) -> BView {
         let selection = crate::v2::scene::select::BSelection::now(s);
         let restrictions = self::tree::display_mode(s).shows_restrictions();
         let rows = self::tree::flatten(s);
@@ -198,16 +224,51 @@ impl BViewItem for BOutlinerItem {
     }
 }
 
+impl BViewItem for BOutlinerItem {
+    fn build(&self, s: &BState) -> BView {
+        let (rev, model) = Self::built_from(s);
+        if let Some(view) = BUILT.with(|b| b.borrow().as_ref().filter(|(r, m, _)| (*r, *m) == (rev, model)).map(|(_, _, v)| std::rc::Rc::clone(v))) {
+            return BView::Shared(view);
+        }
+        let view = std::rc::Rc::new(Self::build_rows(s));
+        BUILT.with(|b| *b.borrow_mut() = Some((rev, model, std::rc::Rc::clone(&view))));
+        BView::Shared(view)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::v2::scene::OBJECTS;
 
     fn rows(state: &BState) -> Vec<BView> {
-        let BView::Column { list } = BOutlinerItem::new().build(state) else {
+        let BView::Column { list } = BOutlinerItem::new().build(state).shown().clone() else {
             panic!()
         };
         list
+    }
+
+    /// Built once for every frame of an orbit: the viewport's keys are not
+    /// the list's; a pick is.
+    #[test]
+    fn the_rows_are_built_again_only_when_what_they_read_changed() {
+        let shared = |v: BView| match v {
+            BView::Shared(rc) => rc,
+            _ => panic!("the list is shared"),
+        };
+        let mut state = BState::new();
+        let first = shared(BOutlinerItem::new().build(&state));
+        state.set(&crate::v2::scene::yaw_key(), "33");
+        state.set(&crate::v2::scene::zoom_key(), "1.5");
+        assert!(std::rc::Rc::ptr_eq(&first, &shared(BOutlinerItem::new().build(&state))), "an orbit: the same rows");
+        state.set(CtxKey::Frame, "17");
+        state.set(CtxKey::Playing, "true");
+        state.set(CtxKey::KeySelected, "17");
+        assert!(std::rc::Rc::ptr_eq(&first, &shared(BOutlinerItem::new().build(&state))), "a frame played, a key picked: the same rows");
+        state.set(CtxKey::Object, "Cube");
+        let picked = shared(BOutlinerItem::new().build(&state));
+        assert!(!std::rc::Rc::ptr_eq(&first, &picked), "a pick: built again");
+        assert!(std::rc::Rc::ptr_eq(&picked, &shared(BOutlinerItem::new().build(&state))));
     }
 
     #[test]

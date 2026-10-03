@@ -13,7 +13,7 @@ pub mod graph;
 pub mod nla;
 pub mod set;
 
-use super::super::item::{BMenuSpec, set::m};
+use super::super::item::{BMenuSpec, set::{m, polled}};
 use super::set::TIME_MARKER;
 
 /// `DOPESHEET_MT_editor_menus` in Dope Sheet and Action Editor modes.
@@ -21,8 +21,9 @@ pub static ACTION: &[BMenuSpec] = &[
     m("View", set::VIEW),
     m("Select", set::SELECT),
     m("Marker", TIME_MARKER),
-    m("Channel", set::CHANNEL),
+    polled("Channel", set::CHANNEL, set::BAnimMenu::channel_menu),
     m("Key", set::KEY),
+    polled("Action", set::ACTION, set::BAnimMenu::action_menu),
 ];
 /// `GRAPH_MT_editor_menus` in F-Curves mode.
 pub static IPO: &[BMenuSpec] = &[

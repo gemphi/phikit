@@ -25,6 +25,18 @@ pub enum BSidebarBody {
     View,
     /// `DOPESHEET_PT_action` / `_action_slot`: the active object's action.
     Action,
+    /// `TIME_PT_playback` and `TIME_PT_playhead_snapping` — the transport's
+    /// own panels. The same rows the header's popovers open
+    /// (`playback::panel`), as folding cards: one set of rows, two places to
+    /// reach them, so a change to the transport's settings cannot end up
+    /// true in the popover and false in the sidebar.
+    Playback,
+    /// The host's own box panel, the one its header opens too
+    /// (`filter::overlay`): `CLIP_PT_display` in the Movie Clip editor's View
+    /// tab, `SPREADSHEET_PT_filter` in the Spreadsheet's Filter tab. One
+    /// table, one card per sub-panel, so a box cannot end up ticked in the
+    /// popover and clear in the sidebar.
+    Overlay,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -69,38 +81,55 @@ static VIEW3D: &[BSidebarTabSpec] = &[
     t("tool", "Tool").with(BSidebarBody::Props(VIEW3D_TOOL)),
     t("view_layer", "View").with(BSidebarBody::View),
 ];
+/// The Image and UV editors are one space in two modes, so they share one
+/// tab set and one table of panels (`sidebar::image`, `space_image.py`).
 static IMAGE_UV: &[BSidebarTabSpec] = &[
-    t("image", "Image"),
-    t("tool", "Tool"),
-    t("view_layer", "View"),
+    t("image", "Image").with(BSidebarBody::Props(super::image::IMAGE)),
+    t("tool", "Tool").with(BSidebarBody::Props(VIEW3D_TOOL)),
+    t("view_layer", "View").with(BSidebarBody::Props(super::image::VIEW)),
 ];
+/// The four node editors are one space with a different tree in it, and
+/// Blender registers most of the N panel once for all of them
+/// (`sidebar::node`, `space_node.py`). Their Node and Group tabs are the
+/// same tables; the Options tab is the Compositor's own, and the Shader and
+/// Node editors' Options and Geometry Nodes' Attributes are still empty —
+/// each is a per-node-type `draw_buttons_ext`, not a table.
 static SHADER: &[BSidebarTabSpec] = &[
-    t("node", "Node"),
-    t("group", "Group"),
+    t("node", "Node").with(BSidebarBody::Props(super::node::NODE)),
+    t("group", "Group").with(BSidebarBody::Props(super::node::GROUP)),
     t("options", "Options"),
 ];
 static NODE: &[BSidebarTabSpec] = &[
-    t("node", "Node"),
-    t("group", "Group"),
+    t("node", "Node").with(BSidebarBody::Props(super::node::NODE)),
+    t("group", "Group").with(BSidebarBody::Props(super::node::GROUP)),
     t("options", "Options"),
 ];
 static GEONODE: &[BSidebarTabSpec] = &[
-    t("group", "Group"),
+    t("group", "Group").with(BSidebarBody::Props(super::node::GROUP)),
     t("data", "Attributes"),
-    t("node", "Node"),
+    t("node", "Node").with(BSidebarBody::Props(super::node::NODE)),
 ];
-static COMPOSITOR: &[BSidebarTabSpec] = &[t("node", "Node"), t("options", "Options")];
+static COMPOSITOR: &[BSidebarTabSpec] = &[
+    t("node", "Node").with(BSidebarBody::Props(super::node::NODE)),
+    t("options", "Options").with(BSidebarBody::Props(super::node::OPTIONS)),
+];
 static SEQ: &[BSidebarTabSpec] = &[
     t("strip", "Strip"),
     t("modifier", "Modifiers"),
     t("preview", "Preview"),
 ];
+/// The Movie Clip editor. Its View tab is `CLIP_PT_display`, the same panel
+/// its header opens — Marker Display and Clip Display, one card each.
 static CLIP: &[BSidebarTabSpec] = &[
     t("track", "Track"),
     t("solve", "Solve"),
-    t("view_layer", "View"),
+    t("view_layer", "View").with(BSidebarBody::Overlay),
 ];
-static TEXT: &[BSidebarTabSpec] = &[t("text", "Text"), t("options", "Properties")];
+/// `space_text.py` registers both of its panels under one `bl_category`,
+/// "Text" — `TEXT_PT_find` then `TEXT_PT_properties`. This had a tab for
+/// each, which is one more than Blender has and left nothing obvious to put
+/// in either (`sidebar::text`).
+static TEXT: &[BSidebarTabSpec] = &[t("text", "Text").with(BSidebarBody::Props(super::text::TEXT))];
 // `DOPESHEET_PT_action` / `DOPESHEET_PT_action_slot`: one tab, Action; the
 // View tab is Grease Pencil mode's alone.
 static ACTION: &[BSidebarTabSpec] = &[t("action", "Action").with(BSidebarBody::Action)];
@@ -111,7 +140,13 @@ static IPO: &[BSidebarTabSpec] = &[
     t("modifier", "Modifiers"),
     t("driver", "Drivers"),
 ];
-static SPREADSHEET: &[BSidebarTabSpec] = &[t("filter", "Filter")];
+/// The Spreadsheet's one tab is `SPREADSHEET_PT_filter`, which its header
+/// carries too.
+static SPREADSHEET: &[BSidebarTabSpec] = &[t("filter", "Filter").with(BSidebarBody::Overlay)];
+/// The Timeline's sidebar. Its Center region had a Right pane of nothing in
+/// it while every other timing editor beside it carried a strip, which is
+/// the empty column down the right of the Timeline.
+static TIME: &[BSidebarTabSpec] = &[t("play", "Playback").with(BSidebarBody::Playback)];
 
 pub fn tabs_for(host: BHostType) -> &'static [BSidebarTabSpec] {
     match host {
@@ -125,6 +160,7 @@ pub fn tabs_for(host: BHostType) -> &'static [BSidebarTabSpec] {
         BHostType::Clip => CLIP,
         BHostType::Text => TEXT,
         BHostType::Action => ACTION,
+        BHostType::Time => TIME,
         BHostType::Nla => NLA,
         BHostType::Ipo | BHostType::Drivers => IPO,
         BHostType::Spreadsheet => SPREADSHEET,

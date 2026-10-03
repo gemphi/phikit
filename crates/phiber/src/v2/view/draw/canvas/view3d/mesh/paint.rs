@@ -52,6 +52,7 @@ fn release_shown(window: &mut Window) {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn meshes(
     bounds: Bounds<Pixels>,
     meshes: &[BMesh],
@@ -59,12 +60,22 @@ pub(super) fn meshes(
     wire: bool,
     yaw: f32,
     pitch: f32,
+    // `corners`: the canvas's own (`canvas::surface::corners`). The raster
+    // is what reaches them, and `overflow_hidden` cannot round it, so the
+    // pixels are drawn rounded.
+    corners: gpui::Corners<Pixels>,
+    // `fill`: false when something else already put the surface on the canvas
+    // (the tracer's image). The outlines below still draw — they are the
+    // selection, not the surface.
+    fill: bool,
     window: &mut Window,
 ) {
     if wire {
         strokes(bounds, meshes, outline_width, yaw, pitch, window);
+    } else if fill {
+        fills(bounds, meshes, yaw, pitch, corners, window);
     } else {
-        fills(bounds, meshes, yaw, pitch, window);
+        release_shown(window);
     }
     // Selection outlines sit on top of the whole scene.
     for mesh in meshes {
@@ -91,6 +102,7 @@ fn fills(
     meshes: &[BMesh],
     yaw: f32,
     pitch: f32,
+    corners: gpui::Corners<Pixels>,
     window: &mut Window,
 ) {
     // Nothing to fill — the GPU is drawing, or the scene is empty. This used
@@ -136,7 +148,7 @@ fn fills(
         return;
     };
     let image = Arc::new(RenderImage::new(smallvec::smallvec![image::Frame::new(buffer)]));
-    let _ = window.paint_image(bounds, bounds, gpui::Corners::default(), Arc::clone(&image), 0, false);
+    let _ = window.paint_image(bounds, bounds, corners, Arc::clone(&image), 0, false);
     release_shown(window);
     SHOWN.with(|s| *s.borrow_mut() = Some(image));
 }

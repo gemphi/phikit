@@ -64,7 +64,7 @@ fn loaded_blend_outliner_mirrors_the_collection_tree() {
     // collection from the view layer, so everything under it goes too.
     set_loaded_scene(Some(settled.clone()));
     let views = phiber::v2::view::BViewItem::build(&phiber::v2::part::outliner::BOutlinerItem::new(), &s);
-    let phiber::v2::view::BView::Column { list } = &views else { panic!("a column") };
+    let phiber::v2::view::BView::Column { list } = views.shown() else { panic!("a column") };
     let grp = list
         .iter()
         .find(|v| matches!(v, phiber::v2::view::BView::TreeRow { list, .. } if list.iter().any(|c| matches!(c, phiber::v2::view::BView::Label { text } | phiber::v2::view::BView::Button(phiber::v2::view::prim::BControl { label: Some(text), .. }) if text == "THYMUS-GRP"))))
@@ -77,7 +77,7 @@ fn loaded_blend_outliner_mirrors_the_collection_tree() {
     let hidden = phiber::v2::part::outliner::layer::hidden_by_collections(&s, &settled, phiber::v2::part::outliner::key::is_hidden);
     assert!(hidden.contains("head_base_geo"), "excluded with its collection");
     let views = phiber::v2::view::BViewItem::build(&phiber::v2::part::outliner::BOutlinerItem::new(), &s);
-    let phiber::v2::view::BView::Column { list } = &views else { panic!() };
+    let phiber::v2::view::BView::Column { list } = views.shown() else { panic!() };
     let unchecked = list.iter().any(|v| matches!(v, phiber::v2::view::BView::TreeRow { lead, .. } if lead.iter().any(|c| matches!(c, phiber::v2::view::BView::Button(b) if b.icon.as_deref() == Some("square")))));
     assert!(unchecked, "the box is drawn unchecked");
     clear_loaded_scene();

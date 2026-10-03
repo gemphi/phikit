@@ -202,10 +202,14 @@ async fn host_headers_pad_horizontally_only(cx: &mut TestAppContext) {
     let b = cx
         .debug_bounds("region-Header-Buts")
         .expect("Buts header not painted");
+    // The header's rule sits below its band: the strip is the module plus
+    // that one stroke, so everything in the band keeps its place and the line
+    // is what the pane below meets (`chrome_geometry`).
+    let rule = phiber::v2::theme::style::metric::DEFAULT_STROKES.border;
     assert_eq!(
         f32::from(b.size.height),
-        METRICS.h_header,
-        "a header strip stays exactly h_header tall"
+        METRICS.h_header + rule,
+        "a header strip is its band plus the rule under it"
     );
     let _ = BHostType::Buts;
 }

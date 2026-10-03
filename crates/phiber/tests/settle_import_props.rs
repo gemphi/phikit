@@ -38,6 +38,7 @@ fn scene_obj(name: &str) -> SceneObject {
         materials: Vec::new(),
         material_indices: Default::default(),
         uvs: Default::default(),
+        color: [1.0; 4],
     }
 }
 

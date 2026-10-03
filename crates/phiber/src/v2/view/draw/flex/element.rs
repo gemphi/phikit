@@ -1,7 +1,9 @@
 //! `BFlex` itself: the record of one container's layout decisions, and the
 //! builder the levels describe themselves with.
 
-use super::token::{BAlign, BBasis, BEdge, BFill, BInk, BJustify, BLen, BOverflow, BPlace, BRadius, BSelf, BSpace, BType};
+use super::fill::BFill;
+use super::place::BOverflow;
+use super::token::{BAlign, BBasis, BEdge, BInk, BJustify, BLen, BPlace, BRadius, BSelf, BSpace, BType};
 // (`BEdge`, `BFill`, `BRadius`, `BType` are the record's field types; their
 // builder methods live in `surface.rs`.)
 use crate::v2::theme::BElevation;
@@ -23,6 +25,7 @@ pub struct BFlex {
     pub min_width: Option<BLen>,
     pub min_height: Option<BLen>,
     pub max_width: Option<BLen>,
+    pub max_height: Option<BLen>,
     pub align: Option<BAlign>,
     pub justify: Option<BJustify>,
     pub gap: Option<BSpace>,
@@ -98,6 +101,7 @@ impl BFlex {
         min_width: None,
         min_height: None,
         max_width: None,
+        max_height: None,
         align: None,
         justify: None,
         gap: None,
@@ -148,6 +152,13 @@ impl BFlex {
 
     pub const fn min_height(mut self, len: BLen) -> Self {
         self.min_height = Some(len);
+        self
+    }
+
+    /// A ceiling on its height: a popover bounded so a long list scrolls
+    /// inside its panel rather than running past the bottom of the area.
+    pub const fn max_height(mut self, len: BLen) -> Self {
+        self.max_height = Some(len);
         self
     }
 

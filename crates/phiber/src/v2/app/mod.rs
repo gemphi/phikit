@@ -11,6 +11,8 @@ pub mod import;
 pub mod load;
 mod playback;
 pub mod load_ui;
+pub mod health;
+pub mod journal;
 pub mod seed;
 
 use crate::v2::state::BKey as _;
@@ -46,6 +48,9 @@ pub struct BPhiberApp {
     pub scene_cache: Option<(String, std::sync::Arc<SceneModel>)>,
     /// A playback ticker is running (`playback.rs`).
     pub(crate) playing_ticker: bool,
+    /// The viewport's image is refining and a task waits for its frames
+    /// (`ensure_ray_ticker`).
+    pub(crate) ray_ticker: bool,
     /// The undo steps (`undo.rs`).
     pub history: self::undo::BHistory,
     /// The document is a fresh startup file with no path of its own yet
@@ -54,6 +59,8 @@ pub struct BPhiberApp {
     /// The "Save changes?" dialog was answered: the action it held runs
     /// once without asking again.
     pub(crate) answered_close: bool,
+    /// Quit is closing the window: the platform's "may it close?" is yes.
+    pub(crate) closing: bool,
     /// The window's title as last set (`op::close::window_title`).
     pub(crate) title: String,
 }
@@ -67,9 +74,11 @@ impl BPhiberApp {
             focus: None,
             scene_cache: None,
             playing_ticker: false,
+            ray_ticker: false,
             history: Default::default(),
             untitled: false,
             answered_close: false,
+            closing: false,
             title: String::new(),
         }
     }
@@ -139,15 +148,19 @@ impl Render for BPhiberApp {
         // and re-renders both consumers (Requirement 6.5).
         crate::v2::scene::source::set_loaded_at(self.scene_cache.as_ref().map(|(_, m)| std::sync::Arc::clone(m)), &self.state);
 
-        // Record the window's width so the tree — which is built from state
-        // alone — can lay out for the room it actually has. Only a real change
+        // Record the window's size so the view — which is built from state
+        // alone — can lay out for the room it actually has: the tree reads the
+        // width, a menu popover reads the height (it may be as tall as its rows
+        // need or as the window allows, whichever is less). Only a real change
         // is written, so this never churns the state between frames.
-        let width = f32::from(w.viewport_size().width).round();
-        if self.state.get(crate::v2::state::AppKey::WindowWidth)
-            != Some(width.to_string().as_str())
-        {
-            self.state
-                .set(crate::v2::state::AppKey::WindowWidth, width.to_string());
+        let size = w.viewport_size();
+        for (key, value) in [
+            (crate::v2::state::AppKey::WindowWidth, f32::from(size.width).round()),
+            (crate::v2::state::AppKey::WindowHeight, f32::from(size.height).round()),
+        ] {
+            if self.state.get(key) != Some(value.to_string().as_str()) {
+                self.state.set(key, value.to_string());
+            }
         }
 
         // The title bar: the document's name, `* ` while it has unsaved
@@ -162,6 +175,7 @@ impl Render for BPhiberApp {
         // Undo History's menu lists the app's steps: put this pass's copy
         // where the menu, built from the state alone, can read it.
         undo::publish(&self.history);
+        crate::v2::part::outliner::key::BHidden::begin_pass(); // the state holds still until drawn
         let (tree, tree_at) = trace::timed(|| BSpaceList::new().items(&self.state));
         let root = BView::Column { list: tree };
         let handler: BActionHandler = Rc::new(cx.listener(|this, action, w, cx| {
@@ -188,11 +202,26 @@ impl Render for BPhiberApp {
             Rc::new(move |space, zone, index, dpx, extent, w, cx| {
                 listener(&(space, zone, index, dpx, extent), w, cx);
             });
+        // The ticker is armed from the LAST paint's verdict — whether a
+        // viewport left its image still on its way (`rendered::refining`) —
+        // so it is asked before `drawing` clears that flag for this draw.
+        // Asked after, it read a flag just cleared, and the viewport never
+        // refreshed on its own: a session's first image waited for the
+        // first click, and so did every refined frame.
+        self.ensure_ray_ticker(cx);
+        crate::v2::view::draw::canvas::view3d::rendered::drawing();
         let (rendered, draw_at) = trace::timed(|| BGpuiRenderer::new(handler, resize).render(&root, &self.state));
-        // Frame accounting always runs so slow frames land in the log
-        // (`trace::log_path`); the scene walk for the counts only when a
-        // frame was slow or the stderr stream is on, so a fast frame pays
-        // nothing for it.
+        crate::v2::part::outliner::key::BHidden::end_pass();
+        // A rig still posing the shown frame on its thread: draw again until it lands.
+        if crate::v2::scene::pose::BPoser::waiting() {
+            w.request_animation_frame();
+        }
+        health::BHealth::each_frame();
+        journal::BJournal::each_frame();
+        // Every frame is counted (`trace::tick`: the journal's summaries);
+        // the scene walk for a frame's own line only when it was slow or
+        // the stderr stream is on, so a fast frame pays nothing for it.
+        trace::tick(tree_at, draw_at);
         if trace::on() || (tree_at + draw_at).as_secs_f32() * 1000.0 >= trace::SLOW_MS {
             let objects = crate::v2::scene::scene_objects(&self.state);
             let (count, _, tris) = crate::v2::scene::scene_metrics(&objects);

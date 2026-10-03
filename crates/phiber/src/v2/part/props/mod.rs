@@ -11,6 +11,7 @@ pub mod data;
 pub mod material;
 pub mod modifier;
 pub mod object;
+pub mod options;
 pub mod output;
 pub mod particles;
 pub mod physics;
@@ -26,6 +27,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use crate::v2::host::BHostType;
 use crate::v2::part::navbar::set::tabs_for;
+use crate::v2::state::BKey as _;
 use crate::v2::state::BPath;
 use crate::v2::state::BState;
 use crate::v2::state::val::V_FALSE;
@@ -184,16 +186,26 @@ impl BViewList for BPanelList {
             .find(|candidate| candidate.label == selected)
             .map(|candidate| candidate.label)
             .unwrap_or(fallback);
+        // The header's search narrows the tab to the panels whose name
+        // matches, and opens them: a match the user cannot see is no match
+        // (`SpaceProperties.search_filter`). An empty search is not a
+        // filter, so the tab reads exactly as it did before.
+        let query = s
+            .get(&crate::v2::state::ButsKey::Search.path())
+            .unwrap_or("")
+            .trim()
+            .to_lowercase();
         let mut cards: Vec<BView> = sections_for(self.host, tab)
             .iter()
+            .filter(|section| query.is_empty() || section.title.to_lowercase().contains(&query))
             .map(|section| {
                 let key = BPanelItem::expand_key(self.host, tab, section.title);
-                let expanded = BPanelItem::is_open(s, &key, section.closed);
+                let expanded = if query.is_empty() { BPanelItem::is_open(s, &key, section.closed) } else { true };
                 BPanelItem::new(self.host, tab, *section, expanded).build(s)
             })
             .collect();
         // `OBJECT_PT_animation`: the object's action, over the file's list.
-        if tab == "Object" {
+        if tab == "Object" && query.is_empty() {
             cards.extend(crate::v2::part::action::template::BActionTemplate::new(self.host).panel(tab, s));
         }
         // One region's panels: Ctrl-click on a header closes the rest.

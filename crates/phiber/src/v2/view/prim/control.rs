@@ -30,6 +30,29 @@ pub struct BControl {
     /// `scale_x` on the pause button that stands in for both play buttons.
     /// `0` and `1` are one slot.
     pub span: u8,
+    /// Drawn quiet: dimmed ink, no fill, still clickable.
+    ///
+    /// Two reasons, one ink, and they are named here because the audit found
+    /// `text_dim` carrying four meanings with nobody saying so:
+    ///
+    /// - not in force — Blender's `layout.active = False` (the X-ray button
+    ///   outside Solid and Wireframe);
+    /// - off — a toggle whose state is false, where Blender dims the icon
+    ///   rather than hiding it (the Outliner's restriction column).
+    ///
+    /// Both read as "this is here but it is not doing anything", which is why
+    /// they share an ink. `active` is the opposite pole and they do not stack:
+    /// a control that is on but not in force does not take the on fill, since
+    /// that fill is exactly the claim being denied (`view/draw/button.rs`).
+    pub muted: bool,
+    /// This row opens a menu of its own, so a menu renderer ends it with an
+    /// arrow column.
+    ///
+    /// The arrow used to be the string `"▶"` handed in as the `shortcut`,
+    /// which spent the one column a row has for a key binding and drew the
+    /// arrow in the shortcut's quieter caption type. A row can now say that
+    /// it leads somewhere AND say what key opens it.
+    pub submenu: bool,
 }
 
 impl BControl {
@@ -60,8 +83,16 @@ impl BControl {
         self.span = span;
         self
     }
+    pub fn with_muted(mut self, muted: bool) -> Self {
+        self.muted = muted;
+        self
+    }
     pub fn with_active(mut self, active: bool) -> Self {
         self.active = active;
+        self
+    }
+    pub fn with_submenu(mut self, submenu: bool) -> Self {
+        self.submenu = submenu;
         self
     }
     pub fn with_action(mut self, action: BAction) -> Self {

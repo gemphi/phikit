@@ -33,13 +33,13 @@ impl Render for BGhost {
 /// The armed surface over the canvas.
 pub(super) fn surface(ctx: &BRenderCtx, hit: BHit) -> gpui::Stateful<Div> {
     let drag = Arc::new(Mutex::new(BBoxDrag { start: (0.0, 0.0) }));
-    let xray = crate::v2::scene::view_shading(ctx.state).sees_through();
+    let xray = crate::v2::scene::BXray::now(ctx.state).active(crate::v2::scene::view_shading(ctx.state));
     let move_handler = ctx.handler.clone();
     let drop_handler = ctx.handler.clone();
     let hit = Rc::new(hit);
     let start_hit = Rc::clone(&hit);
     let move_hit = Rc::clone(&hit);
-    super::hit::layer("view3d-box-select", gpui::CursorStyle::Crosshair)
+    super::hit::layer("view3d-box-select", gpui::CursorStyle::Crosshair, ctx)
         .on_drag(drag, move |state, offset: Point<Pixels>, _window, cx| {
             // gpui hands the start as an offset from the surface, which is
             // the canvas: already canvas pixels.

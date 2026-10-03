@@ -1,0 +1,102 @@
+object	rig	101
+driver	pose.bones["MCH-upper_arm_parent.L"].constraints["Copy Rotation"].influence	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.L"].constraints["Limit Distance"].influence	0	0	1 -1
+driver	pose.bones["MCH-forearm_ik.L"].constraints["IK"].mute	0	0	0 1
+driver	pose.bones["MCH-forearm_ik.L"].constraints["IK.001"].mute	0	0	1 -1
+driver	pose.bones["ORG-upper_arm.L"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["ORG-forearm.L"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["ORG-hand.L"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["MCH-f_index.02_drv.L"].rotation_euler	0	0	-
+driver	pose.bones["MCH-f_index.03_drv.L"].rotation_euler	0	0	-
+driver	pose.bones["MCH-thumb.02_drv.L"].rotation_euler	0	0	-
+driver	pose.bones["MCH-thumb.03_drv.L"].rotation_euler	0	0	-
+driver	pose.bones["MCH-f_pinky.02_drv.L"].rotation_euler	0	0	-
+driver	pose.bones["MCH-f_pinky.03_drv.L"].rotation_euler	0	0	-
+driver	pose.bones["MCH-upper_arm_parent.R"].constraints["Copy Rotation"].influence	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.R"].constraints["Limit Distance"].influence	0	0	1 -1
+driver	pose.bones["MCH-forearm_ik.R"].constraints["IK"].mute	0	0	0 1
+driver	pose.bones["MCH-forearm_ik.R"].constraints["IK.001"].mute	0	0	1 -1
+driver	pose.bones["ORG-upper_arm.R"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["ORG-forearm.R"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["ORG-hand.R"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["MCH-f_index.02_drv.R"].rotation_euler	0	0	-
+driver	pose.bones["MCH-f_index.03_drv.R"].rotation_euler	0	0	-
+driver	pose.bones["MCH-thumb.02_drv.R"].rotation_euler	0	0	-
+driver	pose.bones["MCH-thumb.03_drv.R"].rotation_euler	0	0	-
+driver	pose.bones["MCH-f_pinky.02_drv.R"].rotation_euler	0	0	-
+driver	pose.bones["MCH-f_pinky.03_drv.R"].rotation_euler	0	0	-
+driver	pose.bones["MCH-ROT-neck"].constraints["Copy Rotation"].influence	0	0	1 -1
+driver	pose.bones["MCH-ROT-head"].constraints["Copy Rotation"].influence	0	0	1 -1
+driver	pose.bones["MCH-thigh_parent.L"].constraints["Copy Rotation"].influence	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.L"].constraints["Limit Distance"].influence	0	0	1 -1
+driver	pose.bones["MCH-shin_ik.L"].constraints["IK"].mute	0	0	0 1
+driver	pose.bones["MCH-shin_ik.L"].constraints["IK.001"].mute	0	0	1 -1
+driver	pose.bones["ORG-thigh.L"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["ORG-shin.L"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["ORG-foot.L"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["ORG-toe.L"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["MCH-thigh_parent.R"].constraints["Copy Rotation"].influence	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.R"].constraints["Limit Distance"].influence	0	0	1 -1
+driver	pose.bones["MCH-shin_ik.R"].constraints["IK"].mute	0	0	0 1
+driver	pose.bones["MCH-shin_ik.R"].constraints["IK.001"].mute	0	0	1 -1
+driver	pose.bones["ORG-thigh.R"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["ORG-shin.R"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["ORG-foot.R"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["ORG-toe.R"].constraints["Copy Transforms.001"].influence	0	0	1 -1
+driver	pose.bones["MCH-torso.parent"].constraints["SWITCH_PARENT"].targets[0].weight	0	0	-
+driver	pose.bones["MCH-hand_ik.parent.L"].constraints["SWITCH_PARENT"].targets[0].weight	0	0	-
+driver	pose.bones["MCH-hand_ik.parent.L"].constraints["SWITCH_PARENT"].targets[1].weight	0	0	-
+driver	pose.bones["MCH-hand_ik.parent.L"].constraints["SWITCH_PARENT"].targets[2].weight	0	0	-
+driver	pose.bones["MCH-hand_ik.parent.L"].constraints["SWITCH_PARENT"].targets[3].weight	0	0	-
+driver	pose.bones["MCH-hand_ik.parent.L"].constraints["SWITCH_PARENT"].targets[4].weight	0	0	-
+driver	pose.bones["MCH-hand_ik.parent.L"].constraints["SWITCH_PARENT"].targets[5].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[0].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[1].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[2].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[3].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[4].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[5].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[6].weight	0	0	-
+driver	pose.bones["MCH-hand_ik.parent.R"].constraints["SWITCH_PARENT"].targets[0].weight	0	0	-
+driver	pose.bones["MCH-hand_ik.parent.R"].constraints["SWITCH_PARENT"].targets[1].weight	0	0	-
+driver	pose.bones["MCH-hand_ik.parent.R"].constraints["SWITCH_PARENT"].targets[2].weight	0	0	-
+driver	pose.bones["MCH-hand_ik.parent.R"].constraints["SWITCH_PARENT"].targets[3].weight	0	0	-
+driver	pose.bones["MCH-hand_ik.parent.R"].constraints["SWITCH_PARENT"].targets[4].weight	0	0	-
+driver	pose.bones["MCH-hand_ik.parent.R"].constraints["SWITCH_PARENT"].targets[5].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[0].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[1].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[2].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[3].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[4].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[5].weight	0	0	-
+driver	pose.bones["MCH-upper_arm_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[6].weight	0	0	-
+driver	pose.bones["MCH-foot_ik.parent.L"].constraints["SWITCH_PARENT"].targets[0].weight	0	0	-
+driver	pose.bones["MCH-foot_ik.parent.L"].constraints["SWITCH_PARENT"].targets[1].weight	0	0	-
+driver	pose.bones["MCH-foot_ik.parent.L"].constraints["SWITCH_PARENT"].targets[2].weight	0	0	-
+driver	pose.bones["MCH-foot_ik.parent.L"].constraints["SWITCH_PARENT"].targets[3].weight	0	0	-
+driver	pose.bones["MCH-foot_ik.parent.L"].constraints["SWITCH_PARENT"].targets[4].weight	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[0].weight	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[1].weight	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[2].weight	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[3].weight	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[4].weight	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.parent.L"].constraints["SWITCH_PARENT"].targets[5].weight	0	0	-
+driver	pose.bones["MCH-foot_ik.parent.R"].constraints["SWITCH_PARENT"].targets[0].weight	0	0	-
+driver	pose.bones["MCH-foot_ik.parent.R"].constraints["SWITCH_PARENT"].targets[1].weight	0	0	-
+driver	pose.bones["MCH-foot_ik.parent.R"].constraints["SWITCH_PARENT"].targets[2].weight	0	0	-
+driver	pose.bones["MCH-foot_ik.parent.R"].constraints["SWITCH_PARENT"].targets[3].weight	0	0	-
+driver	pose.bones["MCH-foot_ik.parent.R"].constraints["SWITCH_PARENT"].targets[4].weight	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[0].weight	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[1].weight	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[2].weight	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[3].weight	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[4].weight	0	0	-
+driver	pose.bones["MCH-thigh_ik_target.parent.R"].constraints["SWITCH_PARENT"].targets[5].weight	0	0	-
+driver	pose.bones["upper_arm_ik_target.L"].hide	0	0	1 -1
+driver	pose.bones["VIS_upper_arm_ik_pole.L"].hide	0	0	1 -1
+driver	pose.bones["upper_arm_ik_target.R"].hide	0	0	1 -1
+driver	pose.bones["VIS_upper_arm_ik_pole.R"].hide	0	0	1 -1
+driver	pose.bones["thigh_ik_target.L"].hide	0	0	1 -1
+driver	pose.bones["VIS_thigh_ik_pole.L"].hide	0	0	1 -1
+driver	pose.bones["thigh_ik_target.R"].hide	0	0	1 -1
+driver	pose.bones["VIS_thigh_ik_pole.R"].hide	0	0	1 -1

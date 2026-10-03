@@ -21,8 +21,7 @@ const RANGE_LINE_UNDER_BACK: i32 = -4;
 /// The preview-range curtain and the summary / object backdrops.
 const PREVIEW_ALPHA: f32 = 0.28;
 const BACKDROP_ALPHA: f32 = 0.5;
-/// `space_nla.anim_active` is the warm accent at 0.4; `anim_non_active`
-/// the same twenty points darker at 0.3; `strip` is near-black at a half.
+/// `anim_active` is the warm accent at 0.4, `anim_non_active` twenty points darker at 0.3, `strip` near-black at a half.
 const ACTION_ALPHA: f32 = 0.4;
 const NO_ACTION_ALPHA: f32 = 0.3;
 const NO_ACTION_UNDER: f32 = -0.20;
@@ -34,8 +33,7 @@ const CURSOR_TIME_SHADE: f32 = -0.16;
 const CURSOR_ALPHA: f32 = 0.8;
 /// An unselected handle: its selected colour darkened (`handle_*` under `handle_sel_*`).
 const HANDLE_UNDER_SELECTED: f32 = -0.25;
-/// `time_marker_line` is black at 96/255 in the factory theme (the dashed
-/// stalk, mostly see-through); `time_marker_line_selected` white at 160/255.
+/// `time_marker_line` is black at 96/255 (the dashed stalk), `_selected` white at 160/255.
 const MARKER_LINE_ALPHA: f32 = 0.376;
 const MARKER_LINE_SELECTED_ALPHA: f32 = 0.627;
 
@@ -71,8 +69,9 @@ pub struct BAnimColors {
     /// `TH_ANIM_ACTIVE` (the summary) and `TH_DOPESHEET_CHANNELOB` (an object).
     pub summary_back: BColor,
     pub object_back: BColor,
-    /// `TH_KEYTYPE_KEYFRAME` / `TH_KEYBORDER`.
+    /// `TH_KEYTYPE_KEYFRAME`, `_SELECT` (the warm accent) / `TH_KEYBORDER`.
     pub key: BColor,
+    pub key_select: BColor,
     pub key_border: BColor,
     /// `TH_VERTEX` / `TH_VERTEX_SELECT`: the Graph editor's key dots.
     pub vertex: BColor,
@@ -174,6 +173,7 @@ impl BResolvedUiStyle {
             summary_back: with_alpha(colors.bg_active, BACKDROP_ALPHA), // a surface, not the selection accent
             object_back: with_alpha(colors.row_alt, BACKDROP_ALPHA),
             key: colors.text,
+            key_select: colors.brand_warm,
             key_border: colors.bg_app,
             vertex: colors.bg_app,
             vertex_select: colors.brand_warm,

@@ -119,7 +119,7 @@ fn filter_popover(s: &BState) -> BView {
     let open = s.get(&fkey) == Some(V_TRUE);
     let toggle = BAction::Set(fkey.clone(), if open { V_FALSE } else { V_TRUE }.to_string());
     let close = BAction::Set(fkey, V_FALSE.to_string());
-    let anchor = BView::Button(BControl::new().with_icon("chevron_down").with_action(toggle));
+    let anchor = BView::Button(BControl::new().with_icon("chevron_down").with_active(open).with_action(toggle));
     BView::popover(anchor, filter_body(s), open, close, BPopoverSide::Below)
 }
 

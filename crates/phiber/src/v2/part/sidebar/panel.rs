@@ -14,6 +14,16 @@ use crate::v2::state::{BState, CtxKey, View3dKey};
 use crate::v2::view::prim::{BCard, BCtrl, BCtrlKind, with_peers};
 use crate::v2::view::{BView, BViewItem};
 
+/// A panel named once and laid out by rows that already exist elsewhere.
+type BPanelRows = (&'static str, fn(&BState) -> Vec<BView>);
+
+/// The Timeline sidebar's panels: the transport's two, whose rows are the
+/// header popovers' own (`playback::panel`).
+static PLAYBACK_PANELS: [BPanelRows; 2] = [
+    ("Playback", crate::v2::part::playback::panel::body),
+    ("Playhead Snapping", crate::v2::part::playback::panel::snap_body),
+];
+
 /// `View3D.lens`'s range in Blender (`rna_space.cc`), mm.
 const LENS_RANGE: (f32, f32) = (1.0, 5000.0);
 
@@ -44,7 +54,43 @@ impl BSidebarPanels {
             BSidebarBody::Object(sections) | BSidebarBody::Props(sections) => self.cards(tab.label, sections, s),
             BSidebarBody::View => vec![self.view_card(tab.label, s)],
             BSidebarBody::Action => crate::v2::part::action::template::BActionTemplate::new(self.host).cards(tab.label, s),
+            BSidebarBody::Playback => self.folded(tab.label, &PLAYBACK_PANELS, s),
+            BSidebarBody::Overlay => self.overlay_cards(tab.label, s),
         }
+    }
+
+    /// The host's box panel as folding cards, one per sub-panel
+    /// (`filter::overlay::groups`). The rows are the header popover's own, so
+    /// the two places cannot disagree about what is ticked.
+    fn overlay_cards(&self, tab: &'static str, s: &BState) -> Vec<BView> {
+        with_peers(
+            crate::v2::part::filter::overlay::groups(s, self.host)
+                .into_iter()
+                .map(|(title, rows)| {
+                    let key = BPanelItem::expand_key(self.host, tab, title);
+                    let open = BPanelItem::is_open(s, &key, false);
+                    let body = if open { rows } else { Vec::new() };
+                    BCard::panel(title).fold(key, open).body(body).into()
+                })
+                .collect(),
+        )
+    }
+
+    /// Cards built from rows someone else already owns: the title, and the
+    /// function that lays the rows out. Each folds on its own key, as every
+    /// other panel in every other sidebar does.
+    fn folded(&self, tab: &'static str, panels: &'static [BPanelRows], s: &BState) -> Vec<BView> {
+        with_peers(
+            panels
+                .iter()
+                .map(|(title, rows)| {
+                    let key = BPanelItem::expand_key(self.host, tab, title);
+                    let open = BPanelItem::is_open(s, &key, false);
+                    let body = if open { rows(s) } else { Vec::new() };
+                    BCard::panel(*title).fold(key, open).body(body).into()
+                })
+                .collect(),
+        )
     }
 
     fn cards(&self, tab: &'static str, sections: &'static [BSectionSpec], s: &BState) -> Vec<BView> {

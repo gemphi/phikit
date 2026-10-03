@@ -45,6 +45,11 @@ pub enum CtxKey {
     MarkerGrab,
     /// A box swept over the marker band (`scene::grab::BMarkerBox`).
     MarkerBox,
+    /// The Dope Sheet's selected keys, its key grab and its box
+    /// (`scene::action::dope`).
+    KeySelected,
+    KeyGrab,
+    KeyBox,
 }
 
 impl BKey for CtxKey {
@@ -72,6 +77,9 @@ impl BKey for CtxKey {
             Self::MarkerSelected => return BPath::owned(vec!["markers", "selected"]),
             Self::MarkerGrab => return BPath::owned(vec!["markers", "grab"]),
             Self::MarkerBox => return BPath::owned(vec!["markers", "box"]),
+            Self::KeySelected => return BPath::owned(vec!["keys", "selected"]),
+            Self::KeyGrab => return BPath::owned(vec!["keys", "grab"]),
+            Self::KeyBox => return BPath::owned(vec!["keys", "box"]),
         };
         BPath::owned(vec![seg])
     }

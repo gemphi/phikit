@@ -82,8 +82,10 @@ impl BMesh {
         wire: bool,
         yaw: f32,
         pitch: f32,
+        corners: gpui::Corners<gpui::Pixels>,
+        fill: bool,
         window: &mut Window,
     ) {
-        super::paint::meshes(bounds, meshes, outline_width, wire, yaw, pitch, window);
+        super::paint::meshes(bounds, meshes, outline_width, wire, yaw, pitch, corners, fill, window);
     }
 }

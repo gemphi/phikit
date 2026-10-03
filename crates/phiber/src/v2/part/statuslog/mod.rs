@@ -37,6 +37,9 @@ impl BViewItem for BStatusLog {
         let toggle = BControl::new()
             .with_icon(if open { "chevron_down" } else { "chevron_up" })
             .with_tooltip(if open { "Fold the log" } else { "Show the log" })
+            // Lit while the drawer is down, as the asset shelf's identical
+            // chevron fold already was (`on_state_budget`).
+            .with_active(open)
             .with_action(BAction::Toggle(AppKey::StatusLogOpen.path()));
         BView::log(open, toggle)
     }

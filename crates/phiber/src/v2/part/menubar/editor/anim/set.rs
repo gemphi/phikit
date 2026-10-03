@@ -1,12 +1,17 @@
 //! The Dope Sheet's menu entries (`bl_ui/space_dopesheet.py`), and the
 //! submenus every animation editor shares: the channel settings, the key
-//! types and modes, and the Area menu (`INFO_MT_area`).
+//! types and modes, and the Area menu (`INFO_MT_area`). The Action menu,
+//! and the Channel menu in the Action Editor, show while the active object
+//! has an action (`DOPESHEET_MT_editor_menus`).
 
 use super::super::super::item::set::*;
 use super::super::super::item::BMenuItem;
 use crate::v2::host::BHostType;
+use crate::v2::part::action::template::ACTION_EDITOR;
+use crate::v2::part::modebar::active_mode;
 use crate::v2::part::sidebar::show::BSidebarShown;
-use crate::v2::state::{BKey as _, BPath, CtxKey, val::V_FALSE};
+use crate::v2::scene::action::BSceneActions;
+use crate::v2::state::{BKey as _, BPath, BState, CtxKey, OpKey, val::V_FALSE};
 use crate::v2::view::prim::BAction;
 
 /// What the animation editors' menus act with.
@@ -20,6 +25,20 @@ impl BAnimMenu {
     /// `anim.previewrange_clear`: the scene plays its whole range again.
     pub fn clear_preview() -> BAction {
         BAction::Set(CtxKey::PreviewRange.path(), V_FALSE.to_string())
+    }
+
+    fn action_editor(s: &BState) -> bool {
+        active_mode(s, BHostType::Action) == ACTION_EDITOR
+    }
+
+    /// The Action menu: in the Action Editor, over an action.
+    pub fn action_menu(s: &BState) -> bool {
+        Self::action_editor(s) && BSceneActions::active(s).is_some()
+    }
+
+    /// The Channel menu: in the Action Editor only over an action.
+    pub fn channel_menu(s: &BState) -> bool {
+        !Self::action_editor(s) || BSceneActions::active(s).is_some()
     }
 }
 
@@ -83,8 +102,8 @@ pub static VIEW: &[BMenuItem] = &[
     op("Playback Controls", ""),
     SEP,
     op("Frame Selected", "Numpad ."),
-    op("Frame All", "Home"),
-    op("Frame Scene Range", ""),
+    fire("Frame All", "Home", OpKey::TimeView, "action:all"),
+    fire("Frame Scene Range", "", OpKey::TimeView, "action:scene"),
     op("Go to Current Frame", "Numpad 0"),
     SEP,
     op("Multi-Word Match Search", ""),
@@ -111,9 +130,9 @@ pub static VIEW: &[BMenuItem] = &[
 ];
 /// `DOPESHEET_MT_select`.
 pub static SELECT: &[BMenuItem] = &[
-    op("All", "A"),
-    op("None", "Alt A"),
-    op("Invert", "Ctrl I"),
+    fire("All", "A", OpKey::Keys, "all"),
+    fire("None", "Alt A", OpKey::Keys, "none"),
+    fire("Invert", "Ctrl I", OpKey::Keys, "invert"),
     SEP,
     op("Box Select", "B"),
     op("Box Select (Axis Range)", "Alt B"),
@@ -159,7 +178,7 @@ pub static CHANNEL: &[BMenuItem] = &[
     SEP,
     op("Frame Selected Channels", ""),
 ];
-pub static TRANSFORM: &[BMenuItem] = &[op("Move", "G"), op("Extend", "E"), op("Slide", "Shift T"), op("Scale", "S")];
+pub static TRANSFORM: &[BMenuItem] = &[fire("Move", "G", OpKey::Keys, "grab:start"), op("Extend", "E"), op("Slide", "Shift T"), op("Scale", "S")];
 pub static SNAP: &[BMenuItem] = &[
     op("Selection to Current Frame", ""),
     op("Selection to Nearest Frame", ""),
@@ -174,7 +193,8 @@ pub static KEY: &[BMenuItem] = &[
     sub("Snap", SNAP),
     sub("Mirror", MIRROR),
     SEP,
-    op("Insert Keyframes", "I"),
+    // `action.keyframe_insert` asks which channels; I keys them all.
+    fire("Insert Keyframes", "I", OpKey::Keyframe, "channels"),
     SEP,
     op("Jump to Keyframes", "Ctrl G"),
     SEP,
@@ -182,7 +202,7 @@ pub static KEY: &[BMenuItem] = &[
     op("Paste Keyframes", "Ctrl V"),
     op("Paste Flipped", "Shift Ctrl V"),
     op("Duplicate", "Shift D"),
-    op("Delete Keyframes", "X"),
+    fire("Delete Keyframes", "X", OpKey::Keys, "delete"),
     SEP,
     sub("Keyframe Type", KEYFRAME_TYPE),
     sub("Handle Type", HANDLE_TYPE),
@@ -193,4 +213,14 @@ pub static KEY: &[BMenuItem] = &[
     op("Bake Keyframes", "Shift Alt O"),
     SEP,
     op("Discontinuity (Euler) Filter", ""),
+];
+/// `DOPESHEET_MT_action`.
+pub static ACTION: &[BMenuItem] = &[
+    op("Merge Animation", ""),
+    op("Separate Slots", ""),
+    SEP,
+    op("Move Slots to new Action", ""),
+    SEP,
+    fire("Push Down Action", "", OpKey::Action, "push_down"),
+    fire("Stash Action", "", OpKey::Action, "stash"),
 ];

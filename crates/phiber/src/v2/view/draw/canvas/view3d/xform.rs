@@ -45,7 +45,7 @@ impl BTransformDrive {
 pub(super) fn surface(ctx: &BRenderCtx, hit: BHit, modal: BTransformModal) -> gpui::Stateful<Div> {
     let drive = Rc::new(BTransformDrive { modal, hit, handler: ctx.handler.clone() });
     let (on_move, on_down) = (Rc::clone(&drive), drive);
-    super::hit::layer("view3d-transform", gpui::CursorStyle::Crosshair)
+    super::hit::layer("view3d-transform", gpui::CursorStyle::Crosshair, ctx)
         .on_mouse_move(move |event: &MouseMoveEvent, window, app| on_move.moved(event, window, app))
         .on_any_mouse_down(move |event: &MouseDownEvent, window, app| on_down.pressed(event, window, app))
 }

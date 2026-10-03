@@ -103,8 +103,11 @@ impl BCapShape {
     }
 
     /// How the whole cap sits in its strip. A labelled strip cap takes the
-    /// strip's own alignment; the rest keep their full height — a rail with
-    /// more entries than room must scroll, never squash its icons to fit.
+    /// strip's own alignment — it is already pinned to the strip's base by
+    /// `BCapSide::gap`, which is what puts its whole gap above it and lands
+    /// its bottom edge on the header's rule. The rest keep their full height
+    /// — a rail with more entries than room must scroll, never squash its
+    /// icons to fit.
     pub fn seat(self, ctx: &BRenderCtx, cap: BFlex) -> BFlex {
         match self {
             Self::StripTab => cap,

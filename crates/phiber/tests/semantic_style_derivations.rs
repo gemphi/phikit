@@ -21,9 +21,16 @@ fn every_surface_tone_is_a_shade_and_a_gradient_is_one_step_up() {
     for name in BPaletteName::ALL.iter().copied() {
         let style = style(name);
         let panel = on_ladder(&style, style.colors.bg_panel);
+        // A header, a footer and a card are one shade: an editor's header
+        // and the accordions under it read as one surface, and so does a
+        // modal's title bar against its cards.
         let header = style.surface(BSurfaceTone::Header);
-        assert_eq!(header.bottom, style.colors.bg_header);
-        assert_eq!(style.surface(BSurfaceTone::Footer).bottom, style.colors.bg_header, "footers share the header shade");
+        assert_eq!(on_ladder(&style, header.bottom), panel + 1, "a header sits on the card's step");
+        assert_eq!(
+            style.surface(BSurfaceTone::Footer).bottom,
+            header.bottom,
+            "footers share the header shade"
+        );
         assert_eq!(style.surface(BSurfaceTone::Sidebar).bottom, style.colors.bg_panel);
         assert_eq!(style.surface(BSurfaceTone::Body).bottom, style.colors.bg_panel);
         assert_eq!(on_ladder(&style, style.surface(BSurfaceTone::Card).bottom), panel + 1, "a card is one step over the panel");
@@ -101,17 +108,24 @@ fn every_host_shares_the_panel_shade_and_the_chrome_its_own() {
         assert_eq!(style.strip_gradient(host).bottom, style.colors.bg_header, "{host:?}'s strip is the header shade");
         assert_eq!(style.host_item_hover(host), style.colors.bg_hover);
         assert_eq!(style.host_item_active_gradient(host).bottom, style.colors.bg_active);
-        assert_eq!(style.host_header_surface(host).bottom, style.colors.bg_header);
+        // An editor's header is the card shade, not a shade of its own.
+        assert_eq!(style.host_header_surface(host).bottom, style.surface(BSurfaceTone::Card).bottom);
     }
     assert_eq!(style.host_background(BHostType::Topbar), style.colors.bg_top);
     assert_eq!(style.host_background(BHostType::Statusbar), style.colors.bg_bottom);
     assert_eq!(style.host_background(BHostType::Activity), style.colors.bg_panel, "the activity bar is an area like any other: no darker shade");
     assert_eq!(style.host_body_surface(BHostType::Activity), style.host_body_surface(BHostType::View3D));
     assert_eq!(style.host_header_surface(BHostType::Topbar).bottom, style.colors.bg_top, "the top bar is its own chrome");
+    // The active Properties tab is EXACTLY the surface of the region beside
+    // it, flat. It used to sweep in from one step over the panel, which is a
+    // gradient across the join between the tab and the panel it selects —
+    // and a gradient on one side of that join makes the two read as two
+    // things rather than as a hole cut in the strip
+    // (`tests/the_properties_strip_is_a_strip.rs`).
     let tab = style.tab_active_gradient(BHostType::Buts);
     assert_eq!(tab.bottom, style.colors.bg_panel, "the active Properties tab lands on the panel");
-    assert_eq!(on_ladder(&style, tab.top), on_ladder(&style, style.colors.bg_panel) + 1, "sweeping in from one step over it");
-    assert_eq!(style.rail_tab_active(BHostType::Activity).bottom, style.colors.bg_active);
+    assert_eq!(tab.top, tab.bottom, "and is flat, so the join has no edge");
+    assert_eq!(tab, style.host_body_surface(BHostType::Buts), "it is the panel's own surface");
     let viewport = style.viewport_gradient();
     assert!(viewport.bottom == style.viewport_surface() && viewport.bottom.3 == 1.0);
     let node_grid = style.node_grid_stroke();
@@ -144,7 +158,20 @@ fn steps_stay_on_the_ladder_and_off_ladder_colours_nudge() {
     let checker = style.image_checker_colors();
     assert_eq!(on_ladder(&style, checker.light), canvas);
     assert_eq!(on_ladder(&style, checker.dark), canvas - 1);
-    assert_eq!(on_ladder(&style, style.selected_hover(style.colors.row_selected)), on_ladder(&style, style.colors.row_selected) + 1);
+    // A selected row under the pointer is one step lighter than the selection
+    // it already carries. `row_selected` is not always a ladder shade — in
+    // several palettes it is an accent tint with its own alpha — so the rule
+    // is stated the way the accent's is below: a step is a step whether the
+    // colour it starts from is on the ladder or beside it.
+    let selected = style.colors.row_selected;
+    let lit = style.selected_hover(selected);
+    match style.colors.ladder.step_of(selected) {
+        Some(rung) => assert_eq!(on_ladder(&style, lit), rung + 1, "a ladder selection steps on the ladder"),
+        None => {
+            assert_eq!((lit.0, lit.1, lit.3), (selected.0, selected.1, selected.3), "an off-ladder selection keeps its hue, saturation and alpha");
+            assert!(lit.2 > selected.2, "and lightens: {selected:?} -> {lit:?}");
+        }
+    }
     assert_eq!(on_ladder(&style, style.shade(style.colors.bg_panel, 0.06)), on_ladder(&style, style.colors.bg_panel) + 2, "a 0.06 lift is two steps");
     assert_eq!(style.shade(style.colors.bg_panel, 0.01), style.colors.bg_panel, "a lift under half a step is none");
     assert_eq!(on_ladder(&style, style.step(style.colors.text, 5)), 18, "steps clamp at the top");

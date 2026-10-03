@@ -35,7 +35,8 @@ fn main() {
         world: Some(model.world.background.radiance()),
         lights: phiber::v2::scene::scene_lights(),
         wire: None,
-        view: view_words(),
+        view: view_words(&s),
+        grid_hide: 0,
         environment: environment().map(|(_, rot)| rot),
         set,
         // A camera render stands in the file's OWN world — its lamps, its

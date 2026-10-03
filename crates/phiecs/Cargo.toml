@@ -1,0 +1,11 @@
+[package]
+name = "phiecs"
+version = "0.1.0"
+edition = "2024"
+description = "An entity-component-system for language: words as entities, relations as edges, conditions as state, and a quest that learns them by asking."
+
+[features]
+default = []
+# Reading a corpus through phiano's lexicon. Off by default so phiecs builds
+# standalone; the bridge lives in `corpus::facet`.
+phiano-facet = []

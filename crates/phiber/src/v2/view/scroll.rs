@@ -19,6 +19,13 @@ pub const THUMB_MIN: f32 = 30.0;
 pub const MIN_ALPHA: f32 = 0.4;
 /// Space between the bar's edge and the thumb drawn inside it.
 pub const THUMB_INSET: f32 = 2.0;
+/// The thumb as drawn: the inset bar, two pixels thinner again, and the one
+/// width it ever has. Blender swells its scroller under the pointer; here the
+/// thumb rides a gutter only as wide as `pad_md`, so swelling it put the
+/// extra thickness over the content and the area's border either side. The
+/// pointer changes its colour instead, which says the same thing without
+/// moving an edge (`tests/scroller_fits_its_gutter.rs`).
+pub const THUMB_WIDTH: f32 = SCROLL_WIDTH - 2.0 * THUMB_INSET - 2.0;
 
 /// The thumb along the bar: where it starts and how long it is.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -66,5 +73,13 @@ mod tests {
     #[test]
     fn the_bar_is_blenders_width() {
         assert_eq!(SCROLL_WIDTH, 11.0);
+    }
+
+    #[test]
+    fn the_thumb_fits_a_pad_md_gutter_with_room_either_side() {
+        // `pad_md` is 8; the thumb is 5, so it clears the gutter's edges by
+        // 1.5 on each side and never reaches the content or the border.
+        assert_eq!(THUMB_WIDTH, 5.0);
+        assert!(THUMB_WIDTH < 8.0);
     }
 }

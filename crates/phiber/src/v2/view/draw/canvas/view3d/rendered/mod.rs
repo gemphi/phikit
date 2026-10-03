@@ -5,27 +5,40 @@
 //! world. Falls back to the mesh painter when
 //! there is no GPU adapter.
 
+mod bands;
+mod build;
+mod clock;
+mod job;
+mod coarse;
 mod key;
+mod pace;
+mod place;
+mod posted;
+mod reframe;
 mod scene;
 mod settle;
 mod still;
 pub mod studio;
 mod vert;
+mod view;
+mod wake;
 mod worker;
 mod world;
 pub use self::still::{BStill, still, still_stepwise};
-pub use self::world::{BRayLook, ENV_CDF_SLOT, ENV_SLOT, environment, light, lit, view_words};
+pub use self::world::{BRayLook, ENV_CDF_SLOT, ENV_IRRADIANCE_SLOT, ENV_PREFILTERED_SLOT, ENV_SLOT, environment, light, lit, studio_lighting, view_words};
 #[cfg(test)]
 mod tests;
 
 use super::mesh::BMeshPalette;
 use crate::v2::scene::BObject3D;
-use crate::v2::scene::camera::BViewSetup;
-use gpui::{Bounds, Corners, Hsla, Pixels, RenderImage, Window};
+use gpui::{Bounds, Corners, Pixels, RenderImage, Window};
 use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use self::worker::{BRayJob, BRayShot, BRayWorker};
+pub(in crate::v2::view::draw::canvas::view3d) use self::view::BRayView;
+pub use self::wake::{drawing, landed, refining, set_ticking, take_fresh, ticking};
+pub(super) use self::wake::REFINING;
 
 /// Longest rendered side in device pixels (keeps frames interactive).
 const MAX_SIDE: f32 = 1600.0;
@@ -39,6 +52,10 @@ struct BRayState {
     image: Option<(u64, u64, bool, Arc<RenderImage>)>,
     /// Holds the traced size still while the viewport is being dragged.
     settle: self::settle::BSettle,
+    /// What each view posted lately was framed for (`reframe.rs`).
+    shots: self::reframe::BShotLog,
+    /// How long the posted view takes to arrive (`clock.rs`).
+    clock: self::clock::BViewClock,
 }
 
 thread_local! {
@@ -53,27 +70,6 @@ pub fn views_posted() -> usize {
     POSTED.with(std::cell::Cell::get)
 }
 
-/// What the painter needs this frame.
-#[derive(Clone, Copy)]
-pub(super) struct BRayView {
-    pub yaw: f32,
-    pub pitch: f32,
-    pub pan: (f32, f32),
-    pub zoom: f32,
-    pub setup: BViewSetup,
-    pub sky: Hsla,
-    pub grid: Hsla,
-    /// Material Preview: studio lighting, file lights and world ignored.
-    pub studio: bool,
-    /// Wireframe: the wire's colour.
-    pub wire: Hsla,
-    /// Which phiray kernel draws it — Workbench for Solid, the tracer
-    /// otherwise. Solid finishes in one dispatch, so it never re-polls.
-    pub mode: phiray::Mode,
-    /// What Properties → Render asks for: how far to refine, how many diffuse
-    /// bounces, whether to denoise (`scene::render_set`).
-    pub set: crate::v2::scene::BRenderSet,
-}
 
 /// Why the GPU is not drawing this frame, when it is not.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -86,15 +82,20 @@ pub(in super::super::super) enum BRayDeclined {
 
 /// Hand `scene` to the render thread when it changed. `Err` → the GPU is not
 /// drawing, and says why, so the fallback can decide what it can honestly do.
-pub(super) fn prepare(scene: &[BObject3D], palette: &BMeshPalette) -> Result<(), BRayDeclined> {
+pub(super) fn prepare(scene: &std::rc::Rc<Vec<BObject3D>>, palette: &BMeshPalette) -> Result<(), BRayDeclined> {
     STATE.with(|s| {
         let mut s = s.borrow_mut();
+        // Another render device was picked: the old worker's thread ends with
+        // its channel, and the new one builds the scene again.
+        if s.worker.as_ref().is_some_and(|w| w.as_ref().is_some_and(|w| w.generation != phiray::Gpu::generation())) {
+            (s.worker, s.scene) = (None, 0);
+        }
         s.worker.get_or_insert_with(BRayWorker::start);
-        let key = self::key::key(scene, palette);
+        let key = self::key::BRayKey::of_list(scene, palette);
         let fresh = key != s.scene;
         let Some(Some(w)) = s.worker.as_ref() else { return Err(BRayDeclined::NoGpu) };
         if fresh {
-            w.send(BRayJob::Scene(key, scene.to_vec(), *palette));
+            w.send(BRayJob::Scene(key, self::key::BRayKey::shape(scene, palette), scene.to_vec(), *palette));
         }
         let refused = w.refused(key);
         if fresh {
@@ -105,14 +106,21 @@ pub(super) fn prepare(scene: &[BObject3D], palette: &BMeshPalette) -> Result<(),
     })
 }
 
-/// Post the view, then paint the newest image into `bounds`.
-pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, window: &mut Window) {
+/// Paint the traced frame. Answers whether an image actually landed: the
+/// tracer is asynchronous, so the first frames after a change — and every
+/// frame on a machine whose adapter went away — have nothing to show, and
+/// the caller has to draw something rather than leave the canvas empty.
+pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pixels>, window: &mut Window) -> bool {
     let (bw, bh) = (f32::from(bounds.size.width), f32::from(bounds.size.height));
     if bw < 1.0 || bh < 1.0 {
-        return;
+        return false;
     }
     let dpr = window.scale_factor();
     let fit = (MAX_SIDE / (bw.max(bh) * dpr)).min(1.0);
+    // And no more pixels than the device can bind as one image
+    // (`Tracer::max_pixels`): a larger view is traced smaller and stretched.
+    let most = phiray::Gpu::opened().map_or(f32::MAX, |gpu| phiray::Tracer::max_pixels(&gpu) as f32);
+    let fit = fit * (most / (bw * bh * dpr * dpr * fit * fit)).sqrt().min(1.0);
     let live = ((bw * dpr * fit) as u32, (bh * dpr * fit) as u32);
     // While the viewport is being dragged, trace at the size already in hand
     // and stretch it; take the new size once the drag stops (`settle`).
@@ -121,6 +129,7 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, window: &mut Window)
     let look = BRayLook {
         sky: view.sky,
         grid: view.grid,
+        grid_hide: view.grid_hide,
         set: view.set,
         // Workbench (Solid, Wireframe) draws the theme's viewport shade behind
         // the scene, whatever the file's world says (`View3DShading.
@@ -137,28 +146,42 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, window: &mut Window)
         },
         lights: if view.studio { Vec::new() } else { crate::v2::scene::scene_lights() },
         wire: (view.mode == phiray::Mode::Wire).then_some(view.wire),
-        view: self::world::view_words(),
+        view: view.view,
         studio: view.studio,
     };
     // The camera frames the size being traced, not the live bounds: the image
     // is stretched to fit, so a drag shows the old frame widened rather than
     // a new one squeezed into the old pixels.
-    let cam = self::scene::camera(view.yaw, view.pitch, view.pan, view.zoom, view.setup, w as f32 / h.max(1) as f32, &look);
+    let cam = phiray::Camera {
+        see_through: view.see_through,
+        fx: view.fx,
+        cavity: view.cavity,
+        ssao: view.ssao,
+        shadow: view.shadow,
+        shadow_fade: view.shadow_fade,
+        outline: view.outline,
+        shade: view.shade,
+        single: view.single,
+        ..self::scene::camera(view.yaw, view.pitch, view.pan, view.zoom, view.setup, w as f32 / h.max(1) as f32, &look)
+    };
     let (image, settled) = STATE.with(|s| {
-        let mut s = s.borrow_mut();
-        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        let (mut held, mut hasher) = (s.borrow_mut(), std::collections::hash_map::DefaultHasher::new());
+        let s = &mut *held;
         // The sample target and the denoise flag are not part of `Camera`,
         // so they join the key by hand — changing either has to restart the
         // refinement, not carry on with the old one.
-        (s.scene, w, h, view.mode as u32, bytemuck::bytes_of(&cam), view.set.preview_samples, view.set.denoise)
+        (s.scene, w, h, view.mode as u32, bytemuck::bytes_of(&cam), view.set.preview_samples, view.set.preview_denoise, view.set.preview_denoise_from)
             .hash(&mut hasher);
         let key = hasher.finish();
         let Some(Some(worker)) = s.worker.as_ref() else { return (None, true) };
+        let shot = |aspect| self::reframe::BShotView { zoom: view.zoom, pan: view.pan, aspect, orbit: (view.yaw, view.pitch, view.setup.pivot, view.setup.perspective) };
         if key != s.view {
+            s.shots.note(key, shot(w as f32 / h.max(1) as f32));
+            s.clock.posted(key);
             POSTED.with(|n| n.set(n.get() + 1));
             worker.send(BRayJob::View(
                 key,
-                BRayShot { cam, w, h, mode: view.mode, samples: view.set.preview_samples, denoise: view.set.denoise },
+                BRayShot { cam, w, h, mode: view.mode, samples: view.set.preview_samples, denoise_from: view.set.preview_denoise.then_some(view.set.preview_denoise_from) },
             ));
         }
         let seq = s.image.as_ref().map_or(0, |i| i.0);
@@ -168,6 +191,9 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, window: &mut Window)
         // show, but the view has settled — the theme canvas stays.
         let mut blank = false;
         if let Some(f) = frame {
+            if let Some(line) = s.clock.landed(f.view, f.done) {
+                crate::v2::app::journal::BJournal::note(line);
+            }
             if f.bgra.is_empty() {
                 blank = f.done && f.view == key;
             } else if let Some(buf) = image::RgbaImage::from_raw(f.w, f.h, f.bgra) {
@@ -177,17 +203,31 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, window: &mut Window)
                 }
             }
         }
+        // The image where its own view puts it in this one (`reframe.rs`).
+        let place = |v: u64| s.shots.get(v).map_or(bounds, |old| old.place(&shot(bw / bh), bounds));
         match &s.image {
-            Some((_, v, done, img)) => (Some(img.clone()), *done && *v == key),
+            Some((_, v, done, img)) => (Some((img.clone(), place(*v))), *done && *v == key),
             None => (None, blank),
         }
     });
-    if let Some(img) = image {
-        let _ = window.paint_image(bounds, bounds, Corners::default(), img, 0, false);
+    let painted = match image {
+        Some((img, at)) => {
+            let _ = window.paint_image(bounds, at, corners, img, 0, false);
+            true
+        }
+        None => false,
+    };
+    // While a new size is waiting, draw again so the end of the drag is
+    // seen; while the view refines, the app draws when a frame lands (the
+    // flag is cleared as each window draw begins, `wake::drawing`, so any
+    // one unsettled viewport keeps it).
+    if !settled {
+        REFINING.store(true, std::sync::atomic::Ordering::Release);
     }
-    // Poll for new samples until the current view is fully refined — and
-    // while a new size is waiting, so the end of the drag is seen.
-    if !settled || waiting {
+    // No ticker yet to carry the frames the tracer is about to land: one
+    // more frame, in which `render` sees the flag and starts it (`wake`).
+    if waiting || (!settled && !self::wake::ticking()) {
         window.request_animation_frame();
     }
+    painted
 }

@@ -100,7 +100,7 @@ pub fn outliner_filter(s: &BState) -> BView {
         if open { V_FALSE.to_string() } else { V_TRUE.to_string() },
     );
     let close = BAction::Set(fkey, V_FALSE.to_string());
-    let anchor = BView::Button(BControl::new().with_icon("filter").with_action(toggle));
+    let anchor = BView::Button(BControl::new().with_icon("filter").with_active(open).with_action(toggle));
     BView::popover(
         anchor,
         crate::v2::part::outliner::filter::popover::body(s),

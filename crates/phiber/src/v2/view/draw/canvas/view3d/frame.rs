@@ -22,7 +22,8 @@ pub(super) fn through(camera: bool) -> Option<BCameraView> {
         let model = model?;
         let cam = crate::v2::scene::motion::active_camera_at(model, crate::v2::scene::motion::scoped_frame())?;
         let cam = &cam;
-        let render = (model.render.resolution_x.max(1) as f32, model.render.resolution_y.max(1) as f32);
+        let (x, y) = crate::v2::scene::render_set::BResolution::scoped().base(model);
+        let render = (x as f32, y as f32);
         // The zoom the file saved for its camera view (`RegionView3D.camzoom`)
         // — the largest 3D view's, which is the one phiphx reads — else
         // Blender's frame-to-fit zoom.

@@ -52,24 +52,23 @@ pub fn is_perspective(s: &BState) -> bool {
 // 0° = looking level with the ground plane; +30° = looking down onto it
 // (Blender's default user-perspective elevation).
 
-/// State key for the view pitch (degrees). Written by the orbit up/down
-/// gizmo controls and clamped to `[-90, 90]` on read.
+/// State key for the view pitch (degrees). Written by the orbit drag and
+/// the orbit up/down controls; read wrapped into one turn.
 pub fn pitch_key() -> BPath {
     BViewSlot::key(View3dKey::Pitch)
 }
 
-/// Read the current view pitch in degrees, clamped to `[-90, 90]`.
-/// Defaults to 30° — Blender's startup elevation angle.
+/// Read the current view pitch in degrees, in `(-180, 180]` — past ±90 the
+/// view has gone over a pole (`orbit::BTurntable`). Defaults to 30° —
+/// Blender's startup elevation angle.
 pub fn view_pitch(s: &BState) -> f32 {
-    BViewSlot::get(s, View3dKey::Pitch)
-        .and_then(|v| v.parse::<f32>().ok())
-        .unwrap_or(30.0)
-        .clamp(-90.0, 90.0)
+    let pitch = BViewSlot::get(s, View3dKey::Pitch).and_then(|v| v.parse::<f32>().ok());
+    super::orbit::BTurntable::wrap(pitch.unwrap_or(30.0))
 }
 
-/// Add `delta_deg` to the current pitch and clamp to `[-90, 90]`.
+/// Add `delta_deg` to the current pitch, over a pole if it goes that far.
 pub fn pitch_step(pitch: f32, delta_deg: f32) -> f32 {
-    (pitch + delta_deg).clamp(-90.0, 90.0)
+    super::orbit::BTurntable::wrap(pitch + delta_deg)
 }
 
 // ── Pan (view translation) state ────────────────────────────────────────

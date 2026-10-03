@@ -4,7 +4,7 @@
 //! structure from the unified [`AssetImportResult`]. Doesn't know or care
 //! whether the source is `.blend`, `.gltf`, `.usd`, or any other format.
 
-use super::importer::{AssetImportResult, AssetImporter};
+use crate::import::{AssetImportResult, AssetImporter};
 use crate::{PointCloudError, Result};
 use std::fs;
 use std::path::{Path, PathBuf};

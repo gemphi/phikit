@@ -17,9 +17,10 @@ pub mod source;
 pub use source::{
     clear_loaded_scene, clear_scene_objects, scene_actions, scene_cameras, scene_lights,
     object_builds, scene_objects, scene_render, scene_source, scene_timeline, scene_world, set_loaded_scene,
-    set_loaded_shared, with_loaded,
+    object_name, set_loaded_shared, stats_line, visible_metrics, with_loaded,
 };
 
+pub mod keep;
 pub mod key;
 #[cfg(test)]
 mod keys_tests;
@@ -32,17 +33,21 @@ pub use key::{
 
 pub mod project;
 pub mod render_job;
+pub mod render_fit;
 pub mod render_status;
 pub use render_job::{BRenderPlan, active_camera, camera_of, plan as render_plan, render_size};
 pub mod output_set;
 pub use output_set::{output_set, pass_set, pass_state};
 pub mod render_save;
 pub use render_save::{BSaveKind, kind_of as save_kind, save as save_render, save_to as save_render_to, written_pass};
+pub mod render_edit;
 pub mod render_set;
+pub mod video;
 pub use render_set::{BRenderSet, render_set};
 pub mod action;
 pub mod camera;
 pub mod camera_view;
+pub mod cursor;
 pub mod color;
 pub mod keyframe;
 pub use keyframe::BShownKeys;
@@ -53,6 +58,9 @@ pub mod import;
 pub mod marker;
 pub mod grab;
 pub mod motion;
+pub mod overlay;
+pub use overlay::BOverlays;
+pub mod pose;
 pub mod save;
 pub mod template;
 pub mod boxsel;
@@ -61,13 +69,19 @@ pub mod lasso;
 pub mod pick;
 pub mod select;
 pub mod view_op;
+pub mod orbit;
 pub mod shading;
+pub mod solid_fx;
+pub use solid_fx::BSolidFx;
+pub mod solid_shade;
+pub use solid_shade::BSolidShade;
 pub mod viewpoint;
+pub mod warm;
 pub mod view_slot;
 pub mod links;
 pub mod transform;
 pub mod xform;
-pub use shading::{BShading, shading_key, view_shading};
+pub use shading::{BShading, BXray, shading_key, view_shading};
 pub use project::{
     FIT_EPSILON, MESH_SCALE, fit_vertex, fit_vertices, mesh_bounds, project, project3,
     project3_full, project_zoom,
@@ -166,6 +180,9 @@ pub enum BObject3D {
         material_indices: std::sync::Arc<Vec<u16>>,
         /// Per-vertex UVs (`len == vertices.len()` when populated), else empty.
         uvs: std::sync::Arc<Vec<[f32; 2]>>,
+        /// `Object.col`, scene-linear RGBA: Solid's Color ▸ Object
+        /// (`SceneObject::color`; white when the file says nothing).
+        color: [f32; 4],
     },
 }
 
@@ -193,47 +210,11 @@ pub fn scene_metrics(objects: &[BObject3D]) -> (usize, usize, usize) {
     (objects.len(), verts, faces)
 }
 
-/// The single Scene_Source read by BOTH the Viewport and the Outliner.
-///
-/// Returns the Default_Scene (one [`BObject3D::Primitive`] per entry in the
-/// static [`OBJECTS`] table) when no blend model is loaded, otherwise one
-/// [`BObject3D::Loaded`] per object in `loaded`, in the same order.
+/// The single Scene_Source read by BOTH the Viewport and the Outliner, at
+/// the exact shown frame — every rigged mesh posed here
+/// ([`pose::BPosed::scene`]). The render pass reads it through
+/// `source::scene_objects`, which takes the posed meshes from the poser's
+/// thread instead.
 pub fn current_scene(s: &BState, loaded: Option<&SceneModel>) -> Vec<BObject3D> {
-    let objects = match loaded {
-        None => OBJECTS
-            .iter()
-            .map(|o| BObject3D::Primitive {
-                name: o.name.to_string(),
-                shape: o.shape,
-                x: o.x,
-                y: o.y,
-            })
-            .collect(),
-        Some(model) => {
-            // Where every object stands at the shown frame, while the scene moves.
-            let posed = motion::posed(model, motion::shown_frame(s));
-            model
-                .objects
-                .iter()
-                .enumerate()
-                .map(|(i, o)| BObject3D::Loaded {
-                    name: o.name.clone(),
-                    mesh: o.mesh.clone(),
-                    location: o.location,
-                    scale: o.scale,
-                    matrix_world: posed.as_ref().and_then(|p| p.object(i)).unwrap_or(o.matrix_world),
-                    materials: o.materials.clone(),
-                    material_indices: o.material_indices.clone(),
-                    uvs: o.uvs.clone(),
-                })
-                .collect()
-        }
-    };
-    // What was added, deleted and duplicated since the file was read, then
-    // where the Transform panel put them.
-    let mut objects = edit::BSceneEdit::now(s).apply(objects);
-    if let Some(model) = loaded {
-        transform::BTransforms::now(s).apply(s, model, &mut objects);
-    }
-    objects
+    pose::BPosed::exact(loaded, motion::shown_frame(s)).scene(s, loaded)
 }

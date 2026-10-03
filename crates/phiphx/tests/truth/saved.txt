@@ -1,0 +1,113 @@
+# Blender 5.0.1 reading phiphx's saves (blender_saved.py)
+actions frame 42 3 77
+actions active Crate
+actions object Copy MESH 8v 6f at 0.500 0.000 0.250 rot 0.0 0.0 45.0 scale 2.000 2.000 2.000 world animated parent Crate mats Material render 1 viewport 1 hidden 0 selected 0
+actions object Crate MESH 8v 6f at animated parent - mats - render 1 viewport 1 hidden 0 selected 1
+actions object Light LIGHT at animated parent - mats - render 1 viewport 1 hidden 0 selected 0
+actions object Renamed MESH 8v 6f at 0.000 0.000 0.000 rot 0.0 0.0 0.0 scale 1.000 1.000 1.000 world 0.000 0.000 0.000 parent - mats Material render 0 viewport 0 hidden 1 selected 0
+actions collection Scene Collection [Crate] exclude 0 hide 0 render 1
+actions collection Scene Collection/Collection [Copy,Light,Renamed] exclude 0 hide 1 render 0
+actions action Action slots [OBCrate] range - cyclic 0
+actions action CameraAction slots [OBCamera] range 10.00-50.00 cyclic 1
+actions action CubeAction slots [OBCube] range - cyclic 0
+actions action CubeAction.001 slots [OBCube] range 5.00-30.00 cyclic 1
+actions action Spin slots [OBCube] range - cyclic 0
+actions anim Crate Action OBCrate
+actions curve Action OBCrate location[0] keys 1.000,1.000 20.000,4.000 handles -5.333,1.000/7.333,1.000 13.667,4.000/26.333,4.000 blenders
+actions curve Action OBCrate location[1] keys 1.000,2.000 20.000,2.000 handles -5.333,2.000/7.333,2.000 13.667,2.000/26.333,2.000 blenders
+actions curve Action OBCrate location[2] keys 1.000,3.000 20.000,3.000 handles -5.333,3.000/7.333,3.000 13.667,3.000/26.333,3.000 blenders
+actions curve Action OBCrate rotation_euler[0] keys 1.000,0.000 20.000,0.000 handles -5.333,0.000/7.333,0.000 13.667,0.000/26.333,0.000 blenders
+actions curve Action OBCrate rotation_euler[1] keys 1.000,0.000 20.000,0.000 handles -5.333,0.000/7.333,0.000 13.667,0.000/26.333,0.000 blenders
+actions curve Action OBCrate rotation_euler[2] keys 1.000,0.000 20.000,0.000 handles -5.333,0.000/7.333,0.000 13.667,0.000/26.333,0.000 blenders
+actions curve Action OBCrate scale[0] keys 1.000,1.000 20.000,1.000 handles -5.333,1.000/7.333,1.000 13.667,1.000/26.333,1.000 blenders
+actions curve Action OBCrate scale[1] keys 1.000,1.000 20.000,1.000 handles -5.333,1.000/7.333,1.000 13.667,1.000/26.333,1.000 blenders
+actions curve Action OBCrate scale[2] keys 1.000,1.000 20.000,1.000 handles -5.333,1.000/7.333,1.000 13.667,1.000/26.333,1.000 blenders
+actions curve CameraAction OBCamera location[0] keys 1.000,7.359 40.000,7.359 handles -12.000,7.359/14.000,7.359 27.000,7.359/53.000,7.359 blenders
+actions curve CameraAction OBCamera location[1] keys 1.000,-6.926 40.000,-6.926 handles -12.000,-6.926/14.000,-6.926 27.000,-6.926/53.000,-6.926 blenders
+actions curve CameraAction OBCamera location[2] keys 1.000,5.000 40.000,9.000 handles -12.000,5.000/14.000,5.000 27.000,9.000/53.000,9.000 blenders
+actions curve CubeAction OBCube location[0] keys 1.000,0.000 20.000,3.000 handles -5.333,0.000/7.333,0.000 13.667,3.000/26.333,3.000 blenders
+actions curve CubeAction OBCube location[1] keys 1.000,0.000 20.000,0.000 handles -5.333,0.000/7.333,0.000 13.667,0.000/26.333,0.000 blenders
+actions curve CubeAction OBCube location[2] keys 1.000,0.000 20.000,0.000 handles -5.333,0.000/7.333,0.000 13.667,0.000/26.333,0.000 blenders
+actions curve CubeAction.001 OBCube location[0] keys 1.000,0.000 10.000,1.500 20.000,3.000 handles -2.000,0.000/4.000,0.000 7.000,0.786/13.333,2.294 16.667,3.000/23.333,3.000 blenders
+actions curve CubeAction.001 OBCube location[1] keys 1.000,0.000 20.000,0.000 handles -5.333,0.000/7.333,0.000 13.667,0.000/26.333,0.000 blenders
+actions curve CubeAction.001 OBCube location[2] keys 1.000,0.000 20.000,0.000 handles -5.333,0.000/7.333,0.000 13.667,0.000/26.333,0.000 blenders
+actions curve CubeAction.001 OBCube scale[2] keys 10.000,2.000 handles 9.000,2.000/11.000,2.000 blenders
+actions curve Spin OBCube rotation_euler[2] keys 1.000,0.000 24.000,3.142 handles -6.667,0.000/8.667,0.000 16.333,3.142/31.667,3.142 blenders
+actions nla Light track Spin mute 0 lock 0 sel 1 act 1 [Spin:Spin:OBCube:1.00-24.00:1.00-24.00:sync1:cyclic0:sel1:act1:mute0:extend0:blend0:influence1.00]
+actions at Light 1 1.000 -2.000 3.000 y 0.000 1.000 0.000
+actions at Light 5 1.000 -2.000 3.000 y -0.249 0.968 0.000
+actions at Light 12 1.000 -2.000 3.000 y -0.995 0.102 0.000
+actions at Light 24 1.000 -2.000 3.000 y -0.000 -1.000 0.000
+actions at Light 30 1.000 -2.000 3.000 y -0.000 -1.000 0.000
+actions at Light 42 1.000 -2.000 3.000 y -0.000 -1.000 0.000
+actions nla Renamed track [Action Stash] mute 1 lock 1 sel 1 act 1 [CubeAction.001:CubeAction.001:OBCube:5.00-30.00:5.00-30.00:sync1:cyclic1:sel0:act0:mute0:extend0:blend0:influence0.00]
+actions marker 5 A
+actions marker 50 B
+actions playback FRAME_DROP scrub 1 lock 1 subframe 1 autokey 1
+actions render CYCLES film 1 samples 48 preview 7 bounces 2 denoise 0 OPENIMAGEDENOISE filter GAUSSIAN path //renders/shot_ format OPEN_EXR depth 16 mode RGB
+collections frame 42 3 77
+collections active Crate
+collections object Camera CAMERA at 7.359 -6.926 4.958 rot 63.6 0.0 46.7 scale 1.000 1.000 1.000 world 7.359 -6.926 4.958 parent - mats - render 1 viewport 1 hidden 0 selected 0
+collections object Copy MESH 8v 6f at 0.500 0.000 0.250 rot 0.0 0.0 45.0 scale 2.000 2.000 2.000 world 0.500 0.000 0.250 parent Crate mats Material render 1 viewport 1 hidden 0 selected 0
+collections object Crate MESH 8v 6f at 1.000 2.000 3.000 rot 0.0 0.0 0.0 scale 1.000 1.000 1.000 world 1.000 2.000 3.000 parent - mats - render 1 viewport 1 hidden 0 selected 1
+collections object Renamed MESH 8v 6f at 0.000 0.000 0.000 rot 0.0 0.0 0.0 scale 1.000 1.000 1.000 world 0.000 0.000 0.000 parent - mats Material render 0 viewport 0 hidden 1 selected 0
+collections collection Scene Collection [Crate] exclude 0 hide 0 render 1
+collections collection Scene Collection/Collection [Camera,Copy,Renamed] exclude 0 hide 1 render 0
+collections collection Scene Collection/Props [Copy] exclude 0 hide 0 render 1
+collections collection Scene Collection/Props/Lamps [] exclude 0 hide 0 render 1
+collections marker 5 A
+collections marker 50 B
+collections playback FRAME_DROP scrub 1 lock 1 subframe 1 autokey 1
+collections render CYCLES film 1 samples 48 preview 7 bounces 2 denoise 0 OPENIMAGEDENOISE filter GAUSSIAN path //renders/shot_ format OPEN_EXR depth 16 mode RGB
+nla_cube frame 42 3 77
+nla_cube active Crate
+nla_cube object Copy MESH 8v 6f at 0.500 0.000 0.250 rot 0.0 0.0 45.0 scale 2.000 2.000 2.000 world 0.500 0.000 0.250 parent Crate mats - render 1 viewport 1 hidden 0 selected 0
+nla_cube object Crate MESH 8v 6f at 1.000 2.000 3.000 rot 0.0 0.0 0.0 scale 1.000 1.000 1.000 world 1.000 2.000 3.000 parent - mats - render 1 viewport 1 hidden 0 selected 1
+nla_cube object Renamed MESH 8v 6f at animated parent - mats - render 0 viewport 0 hidden 1 selected 0
+nla_cube collection Scene Collection [Copy,Crate,Renamed] exclude 0 hide 0 render 1
+nla_cube collection Scene Collection/Collection [] exclude 0 hide 1 render 0
+nla_cube action Idle slots [OBCube] range - cyclic 0
+nla_cube action Walk slots [OBCube] range - cyclic 0
+nla_cube anim Renamed Idle OBCube
+nla_cube nla Renamed track Base Layer mute 0 lock 0 sel 0 act 0 [Walk:Walk:OBCube:1.00-97.00:1.00-49.00:sync1:cyclic0:sel1:act1:mute1:extend0:blend0:influence0.00 Idle:Idle:OBCube:100.00-120.00:10.00-30.00:sync1:cyclic0:sel1:act0:mute0:extend0:blend0:influence0.00]
+nla_cube nla Renamed track NlaTrack mute 0 lock 0 sel 1 act 1 [Idle.001:Idle:OBCube:100.00-120.00:10.00-30.00:sync1:cyclic0:sel1:act0:mute0:extend0:blend0:influence0.00]
+nla_cube marker 5 A
+nla_cube marker 50 B
+nla_cube playback FRAME_DROP scrub 1 lock 1 subframe 1 autokey 1
+nla_cube render CYCLES film 1 samples 48 preview 7 bounces 2 denoise 0 OPENIMAGEDENOISE filter GAUSSIAN path //renders/shot_ format OPEN_EXR depth 16 mode RGB
+startup-3 frame 42 3 77
+startup-3 active Crate
+startup-3 object Copy MESH 8v 6f at 0.500 0.000 0.250 rot 0.0 0.0 45.0 scale 2.000 2.000 2.000 world 0.500 0.000 0.250 parent Crate mats Material render 1 viewport 1 hidden 0 selected 0
+startup-3 object Crate MESH 8v 6f at 1.000 2.000 3.000 rot 0.0 0.0 0.0 scale 1.000 1.000 1.000 world 1.000 2.000 3.000 parent - mats - render 1 viewport 1 hidden 0 selected 1
+startup-3 object Light LIGHT at 1.000 -2.000 3.000 rot 0.0 90.0 0.0 scale 1.000 1.000 1.000 world 1.000 -2.000 3.000 parent - mats - render 1 viewport 1 hidden 0 selected 0
+startup-3 object Renamed MESH 8v 6f at 0.000 0.000 0.000 rot 0.0 0.0 0.0 scale 1.000 1.000 1.000 world 0.000 0.000 0.000 parent - mats Material render 0 viewport 0 hidden 1 selected 0
+startup-3 collection Scene Collection [Crate] exclude 0 hide 0 render 1
+startup-3 collection Scene Collection/Collection [Copy,Light,Renamed] exclude 0 hide 1 render 0
+startup-3 marker 5 A
+startup-3 marker 50 B
+startup-3 playback FRAME_DROP scrub 1 lock 1 subframe 1 autokey 1
+startup-3 render CYCLES film 1 samples 48 preview 7 bounces 2 denoise 0 OPENIMAGEDENOISE filter GAUSSIAN path //renders/shot_ format OPEN_EXR depth 16 mode RGB
+startup-4 frame 42 3 77
+startup-4 active Crate
+startup-4 object Copy MESH 8v 6f at 0.500 0.000 0.250 rot 0.0 0.0 45.0 scale 2.000 2.000 2.000 world 0.500 0.000 0.250 parent Crate mats Material render 1 viewport 1 hidden 0 selected 0
+startup-4 object Crate MESH 8v 6f at 1.000 2.000 3.000 rot 0.0 0.0 0.0 scale 1.000 1.000 1.000 world 1.000 2.000 3.000 parent - mats - render 1 viewport 1 hidden 0 selected 1
+startup-4 object Light LIGHT at 1.000 -2.000 3.000 rot 0.0 90.0 0.0 scale 1.000 1.000 1.000 world 1.000 -2.000 3.000 parent - mats - render 1 viewport 1 hidden 0 selected 0
+startup-4 object Renamed MESH 8v 6f at 0.000 0.000 0.000 rot 0.0 0.0 0.0 scale 1.000 1.000 1.000 world 0.000 0.000 0.000 parent - mats Material render 0 viewport 0 hidden 1 selected 0
+startup-4 collection Scene Collection [Crate] exclude 0 hide 0 render 1
+startup-4 collection Scene Collection/Collection [Copy,Light,Renamed] exclude 0 hide 1 render 0
+startup-4 marker 5 A
+startup-4 marker 50 B
+startup-4 playback FRAME_DROP scrub 1 lock 1 subframe 1 autokey 1
+startup-4 render CYCLES film 1 samples 48 preview 7 bounces 2 denoise 0 OPENIMAGEDENOISE filter GAUSSIAN path //renders/shot_ format OPEN_EXR depth 16 mode RGB
+startup-5 frame 42 3 77
+startup-5 active Crate
+startup-5 object Copy MESH 8v 6f at 0.500 0.000 0.250 rot 0.0 0.0 45.0 scale 2.000 2.000 2.000 world 0.500 0.000 0.250 parent Crate mats Material render 1 viewport 1 hidden 0 selected 0
+startup-5 object Crate MESH 8v 6f at 1.000 2.000 3.000 rot 0.0 0.0 0.0 scale 1.000 1.000 1.000 world 1.000 2.000 3.000 parent - mats - render 1 viewport 1 hidden 0 selected 1
+startup-5 object Light LIGHT at 1.000 -2.000 3.000 rot 0.0 90.0 0.0 scale 1.000 1.000 1.000 world 1.000 -2.000 3.000 parent - mats - render 1 viewport 1 hidden 0 selected 0
+startup-5 object Renamed MESH 8v 6f at 0.000 0.000 0.000 rot 0.0 0.0 0.0 scale 1.000 1.000 1.000 world 0.000 0.000 0.000 parent - mats Material render 0 viewport 0 hidden 1 selected 0
+startup-5 collection Scene Collection [Crate] exclude 0 hide 0 render 1
+startup-5 collection Scene Collection/Collection [Copy,Light,Renamed] exclude 0 hide 1 render 0
+startup-5 marker 5 A
+startup-5 marker 50 B
+startup-5 playback FRAME_DROP scrub 1 lock 1 subframe 1 autokey 1
+startup-5 render CYCLES film 1 samples 48 preview 7 bounces 2 denoise 0 OPENIMAGEDENOISE filter GAUSSIAN path //renders/shot_ format OPEN_EXR depth 16 mode RGB

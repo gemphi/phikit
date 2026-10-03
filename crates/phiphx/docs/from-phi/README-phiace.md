@@ -8,7 +8,7 @@ exists here in evolved form, so no reader code was ported back.
 What was worth bringing across:
 
 - `tests/fixtures/*.blend` — two small real production files (see
-  `tests/fixtures/README.md`); the large ones stay in `phi/crates/phiphx/assets`.
+  `tests/fixtures/README.md`); the large ones stay in `crates/phiber/assets/production`.
 - `examples/inspect_blend.rs` — compiles against the current API.
 - `docs/from-phi/*.md` — the Blender DNA coverage table and conversion
   guides (reference only; the live gap analysis is
