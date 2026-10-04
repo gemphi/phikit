@@ -2,15 +2,16 @@
 
 | State | Open | Done |
 |---|---|---|
-| 🟡 in progress | 2 | 7 |
+| 🟡 in progress | 2 | 8 |
 
 ## Todo
 
-- [ ] Per-pixel procedural textures (Noise, Voronoi) and Bump; a Mix Shader's two closures as two lobes in the kernel (folded to one for now); B-spline / cardinal / HSV colour ramps
+- [ ] Per-pixel procedural textures (Noise, Voronoi) and Bump; a Mix Shader's factor per pixel; B-spline / cardinal / HSV colour ramps
 - [ ] Image colour space and UDIM tiles
 
 ## Done
 
+- [x] A Mix Shader's two closures as two lobes (`BlendMix`, `surface_mix`): each side folded, the factor, and which side holds the reached Principled — the tracer shades both (`tests/surface_truth.rs`)
 - [x] The surface from the Material Output (`surface.rs`): the active output's Surface link, through Mix / Add Shader and reroutes, to the closures — Principled, Emission, Glass / Refraction, Transparent / Holdout, Diffuse / Translucent, Glossy, Sheen, Subsurface — folded to one `BlendBsdf` (Mix lerps by its factor, Add averages and sums emission); Light Path folds for a camera ray; the Principled the surface reaches is the one whose textures and normal map are read (`tests/surface_truth.rs`)
 
 - [x] Material slots (object and mesh), viewport colour, Principled base colour

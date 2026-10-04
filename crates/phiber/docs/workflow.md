@@ -108,20 +108,19 @@ All of these are read from the file, drive the render, and save with Ctrl S
 | Render Region (Ctrl B in the camera view or the Image editor, Ctrl Alt B; Output ▸ Format's Render Region, Crop) | works (batch 137) | F12 fills the region alone, cropped or framed in black; read from and saved to the file |
 | The viewport's own render region (Ctrl B outside the camera view, Ctrl Alt B; sidebar View ▸ Render Region) | works (batch 138) | Rendered shading with Cycles/EEVEE traces the region alone; Workbench the whole; read with Load UI, not written back |
 | Viewport Anti-Aliasing (Preferences ▸ Viewport ▸ Quality; `render_aa` for a Workbench render) | works (batch 139) | SMAA over the first four samples, as Blender; No / Single Pass / 5–32 samples; the preference is session state |
-| The surface shader from the Material Output: Mix / Add Shader, Emission, Glass, Transparent, Diffuse, Glossy, Sheen, SSS, Light Path | folded (batch 140) | one set of Principled parameters per material — exact for like lobes, a blend otherwise; the linked Principled's textures |
+| The surface shader from the Material Output: Mix / Add Shader, Emission, Glass, Transparent, Diffuse, Glossy, Sheen, SSS, Light Path | works (batch 140, 141) | a Mix Shader's two closures are two lobes — the path tracer picks one per hit by the factor, Material Preview blends both; the closure nodes as Principled parameters; the linked Principled's textures |
 
 **What limits "Blender quality" today is not the sampler** — a 512-sample
 frame here converges like Cycles' (`rendering.md` §7, §18) — but what the
-materials carry into it: a material is its surface shader folded to one
-set of Principled parameters (batch 140: the Material Output's link,
-through Mix and Add Shaders, with Emission, Glass, Transparent, Diffuse,
-Glossy and the rest as the parameters that draw most like them), so a
-Mix of two unlike lobes is one in-between lobe, a Noise or Voronoi
-texture its mean colour, and a Bump node nothing; and a texture the file
-does not pack, and whose path is not found, is a flat base colour (§8
-below). Those two — the closure stack and the per-pixel procedurals from
-`intern/cycles/kernel/svm/`, and Find Missing Files — are the rendering
-items in front of everything else.
+materials carry into it: a material is the shader its Material Output is
+linked to (batch 140), a Mix Shader's two closures as two lobes (batch
+141), each closure node as the Principled parameters that draw most like
+it — so what is still flat is a Noise or Voronoi texture (its mean
+colour), a Mix factor fed per pixel (one number), and a Bump node
+(nothing); and a texture the file does not pack, and whose path is not
+found, is a flat base colour (§8 below). Those two — the per-pixel
+procedurals from `intern/cycles/kernel/svm/`, and Find Missing Files —
+are the rendering items in front of everything else.
 
 ## 4. Render the animation — stills or a video
 
@@ -235,9 +234,8 @@ worlds with importance sampling; four view transforms; denoising; Depth /
 Normal / Diffuse Color passes; PNG, JPEG, TIFF, EXR (multi-layer), HDR
 saves; Film Transparent; the Render and Output panels read, applied and
 saved. **Not done:** the engine choice (everything renders with phiray —
-no Cycles, EEVEE or Workbench *final* renders), a Mix Shader's two
-closures as two lobes (folded to one since batch 140; procedural textures
-and Bump fold to a colour), Find Missing Files, motion blur, video
+no Cycles, EEVEE or Workbench *final* renders), procedural textures and
+Bump (fold to a colour), a Mix factor per pixel, Find Missing Files, motion blur, video
 output, Mist / AO / Position / Vector / Cryptomatte passes, adaptive
 sampling and time limit (read and saved, not applied).
 

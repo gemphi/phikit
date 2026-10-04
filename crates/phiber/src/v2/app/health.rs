@@ -82,9 +82,13 @@ mod tests {
 
     #[test]
     fn the_device_line_names_the_adapter_and_flags_a_software_one() {
+        // Both halves are absent on a machine with no usable adapter, and they
+        // are absent independently: `shared()` can hand back a GPU whose chosen
+        // adapter `in_use()` has not recorded. Unwrapping the second after
+        // guarding only the first is what panicked here.
         let Some(_) = phiray::Gpu::shared() else { return };
+        let Some(a) = phiray::Gpu::in_use() else { return };
         let line = BHealth::device_line().expect("the device is open");
-        let a = phiray::Gpu::in_use().unwrap();
         assert!(line.starts_with(&format!("Render device: {} ({}", a.name, a.backend_label())), "{line}");
         assert_eq!(line.contains("software adapter"), a.is_software(), "{line}");
     }

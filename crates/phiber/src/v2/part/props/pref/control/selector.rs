@@ -14,6 +14,11 @@ impl BPreferenceSelector {
         self.row
     }
 
+    /// The effective value this edits (`BPreferenceControls::for_row`).
+    pub(super) const fn value(self) -> BStyleValue {
+        self.value
+    }
+
     pub(super) fn new(row: BPreferenceRow, value: BStyleValue) -> Self {
         Self { row, value }
     }

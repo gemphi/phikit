@@ -14,6 +14,12 @@ impl BPreferenceField {
         self.row
     }
 
+    /// The effective value this edits — the override if there is one, the
+    /// palette's default if not (`BPreferenceControls::for_row` resolves it).
+    pub(super) const fn value(self) -> BStyleValue {
+        self.value
+    }
+
     pub(super) fn new(row: BPreferenceRow, value: BStyleValue) -> Self {
         Self { row, value }
     }

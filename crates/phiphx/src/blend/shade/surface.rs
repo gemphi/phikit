@@ -8,16 +8,29 @@
 //! Glass and Refraction as full transmission at their IOR, Transparent
 //! and Holdout as alpha 0, Emission as its radiance over black, Diffuse
 //! and Translucent as rough dielectrics, Glossy as a metal, Sheen as the
-//! sheen lobe, Subsurface Scattering as the subsurface lobe. Exact where
-//! the shaders share a lobe, an approximation otherwise — which is still
-//! the material's own shader, where the first Principled node in the tree
-//! was often one nothing was linked to.
+//! sheen lobe, Subsurface Scattering as the subsurface lobe. That fold is
+//! `surface_bsdf`, what anything wanting one set of numbers reads; the
+//! tracer takes the Mix Shader on the output as two lobes instead
+//! (`surface_mix`, [`BlendMix`]), each side folded, and shades both — so a
+//! Mix of unlike closures renders as both, not as one in-between lobe.
 
 use super::eval::BGraph;
 use super::links::BLink;
 use super::nodes::read_cstr;
 use crate::blend::file::types::*;
 use crate::blend::scene::types::BlendBsdf;
+
+/// The Mix Shader a material's surface is: its two closures, each folded,
+/// `fac` the weight of the second (0 all the first, 1 all the second), and
+/// which of the two holds the Principled the surface reaches — the one
+/// whose textures the material carries — if either.
+#[derive(Clone, Debug, PartialEq)]
+pub struct BlendMix {
+    pub first: BlendBsdf,
+    pub second: BlendBsdf,
+    pub fac: f32,
+    pub principled: Option<u8>,
+}
 
 /// `NODE_DO_OUTPUT` (`DNA_node_types.h`): the output node in use.
 const NODE_DO_OUTPUT: i32 = 1 << 6;
@@ -87,6 +100,33 @@ impl BlendFile {
         let node = self.surface_node(&nodes, &links, dna)?;
         let graph = BGraph::new(self, ma, dna);
         self.closure(ma, &nodes, &links, &graph, node, dna, 0)
+    }
+
+    /// The surface as two lobes, when it is a Mix Shader (through reroutes)
+    /// whose two inputs both fold; `None` for one closure, or a mix the
+    /// fold does not know a side of.
+    pub(crate) fn surface_mix(&self, ma: &BlendBlock, dna: &DnaType) -> Option<BlendMix> {
+        let nodes = self.shader_nodes(ma, dna);
+        let links = self.links(ma, dna);
+        let mut node = self.surface_node(&nodes, &links, dna)?;
+        for _ in 0..16 {
+            if !self.kind(node, dna).contains("NodeReroute") {
+                break;
+            }
+            node = self.linked_node(&nodes, &links, node, 0, dna)?;
+        }
+        if !self.kind(node, dna).contains("MixShader") {
+            return None;
+        }
+        let graph = BGraph::new(self, ma, dna);
+        let side = |i: usize| self.linked_node(&nodes, &links, node, i, dna);
+        let (a, b) = (side(1)?, side(2)?);
+        let first = self.closure(ma, &nodes, &links, &graph, a, dna, 1)?;
+        let second = self.closure(ma, &nodes, &links, &graph, b, dna, 1)?;
+        let reached = self.surface_principled(ma, dna).map(|n| n.old_address);
+        let holds = |n: &BlendBlock| self.first_principled(&nodes, &links, n, dna, 1).map(|n| n.old_address) == reached && reached.is_some();
+        let principled = if holds(a) { Some(0) } else if holds(b) { Some(1) } else { None };
+        Some(BlendMix { first, second, fac: self.arg(&graph, node, "Fac", dna, 0.5).clamp(0.0, 1.0), principled })
     }
 
     /// `name`'s value at `node`, folded (`eval.rs`), or `default`.

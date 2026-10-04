@@ -158,7 +158,9 @@ fn section_view(
 mod tests {
     use super::*;
     use crate::v2::part::props::pref::BPreferenceRow;
+    use crate::v2::state::BValue;
     use crate::v2::view::BAction;
+    use crate::v2::view::prim::BCtrlKind;
 
     fn section_card<'a>(view: &'a BView, title: &str) -> &'a [BView] {
         let BView::Card(column) = view else {
@@ -292,27 +294,45 @@ mod tests {
         state.set(radius.key(), "23");
         let view = BPrefsItem::new().build(&state);
 
+        // A preference control is a `BCtrl` of the kind the preference is, not
+        // a hand-built field: `BPreferenceControls::view` composes the same
+        // control family the Properties host uses. What the row has to carry is
+        // unchanged, and is the whole point of this test — the EFFECTIVE value,
+        // which is the override where there is one and the palette's default
+        // where there is not.
         let colors = section_card(&view, "Colors");
         let background = row_for(colors, "Application Background");
         let BView::Row { list } = &background[1] else {
             panic!("preference controls must be a B-prefixed row")
         };
-        let BView::Field { text } = &list[0] else {
-            panic!("color control must display its effective value")
+        let BView::Ctrl(ctrl) = &list[0] else {
+            panic!("a preference control is a `BCtrl`: {:?}", &list[0])
         };
         let color = row_named("Application Background");
         let expected = color
             .descriptor()
             .format_value(color.default_value(crate::v2::theme::ui_style_defaults(BPaletteName::Tokyo)))
             .expect("descriptor must format its default");
-        assert_eq!(text, &expected);
+        // In the descriptor's own spelling, which is what the swatch reads.
+        assert!(
+            matches!(&ctrl.value, BValue::Text(text) if text == &expected),
+            "an un-overridden colour must carry its palette default, not a blank: {:?}",
+            ctrl.value,
+        );
 
         let radii = section_card(&view, "Radii");
         let xs = row_for(radii, "Extra Small");
         let BView::Row { list } = &xs[1] else {
             panic!()
         };
-        assert!(matches!(&list[0], BView::Field { text } if text == "23 px"));
+        let BView::Ctrl(ctrl) = &list[0] else {
+            panic!("a preference control is a `BCtrl`: {:?}", &list[0])
+        };
+        assert!(
+            matches!(&ctrl.value, BValue::Float(px) if (px - 23.0).abs() < 1e-6),
+            "the stored override must win over the default: {:?}",
+            ctrl.value,
+        );
     }
 
     #[test]
@@ -326,11 +346,19 @@ mod tests {
         let BView::Row { list } = &row[1] else {
             panic!()
         };
-        assert!(matches!(
-            &list[0],
-            BView::Button(ctl)
-                if matches!(&ctl.action, Some(BAction::Set(key, value)) if key == gradients.key() && value == "false")
-        ));
+        // The edit is the control's now, not a button built beside it: a
+        // `BCtrlKind::Check` over the preference's own key, carrying its
+        // effective state. The flip to `false` is what the checkbox writes when
+        // it is on, and it is the checkbox's own rule rather than an action
+        // baked into this row — which is the point of the control family being
+        // shared with the Properties host.
+        let BView::Ctrl(ctrl) = &list[0] else {
+            panic!("a preference control is a `BCtrl`: {:?}", &list[0])
+        };
+        assert!(matches!(ctrl.kind, BCtrlKind::Check), "{:?}", ctrl.kind);
+        assert_eq!(&ctrl.key, gradients.key(), "the control edits the preference's own key");
+        assert!(matches!(&ctrl.value, BValue::Bool(true)), "{:?}", ctrl.value);
+        // The reset is still a button of this row's own, and still canonical.
         assert!(matches!(
             &list[1],
             BView::Button(ctl)

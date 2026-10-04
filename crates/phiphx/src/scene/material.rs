@@ -30,6 +30,8 @@ pub struct SceneMaterial {
     pub texture: Option<super::texture::SceneTexture>,
     /// Principled BSDF inputs (emission, alpha, transmission, IOR …).
     pub bsdf: SceneBsdf,
+    /// A Mix Shader's two lobes, when the surface is one (`BlendMix`).
+    pub mix: Option<crate::blend::shade::surface::BlendMix>,
     /// Normal map image key and strength (Normal Map node), if linked.
     pub normal_texture: Option<(String, f32)>,
     /// Decoded normal map (raw, non-colour bytes).
@@ -94,6 +96,7 @@ impl SceneMaterial {
             base_color_texture: None,
             texture: None,
             bsdf: SceneBsdf::default(),
+            mix: None,
             normal_texture: None,
             normal_map: None,
             maps: SceneMaps::default(),
@@ -123,6 +126,7 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
                 base_color_texture: m.base_color_texture.clone(),
                 texture: None,
                 bsdf: m.bsdf,
+                mix: m.mix.clone(),
                 normal_texture: m.normal_map.as_ref().map(|n| (n.image.clone(), n.strength)),
                 normal_map: None,
                 maps: SceneMaps::of(&m.maps),
@@ -149,6 +153,7 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
         base_color_texture: obj.texture_paths.first().cloned(),
         texture: None,
         bsdf: SceneBsdf::default(),
+        mix: None,
         normal_texture: None,
         normal_map: None,
         maps: SceneMaps::default(),

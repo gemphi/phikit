@@ -1782,9 +1782,9 @@ search and the normal-map search use.
 
 Exact where the shaders share a lobe (two Principleds, a Principled with
 a Transparent, Glass with Glossy), an approximation otherwise: a Mix of a
-Diffuse and a Glossy is one half-metal, not two lobes. Two lobes per hit —
-the kernel evaluating a small closure stack — is the next step
-(`jobs.md`), with per-pixel procedural textures and Bump.
+Diffuse and a Glossy is one half-metal, not two lobes — the fold is what
+anything wanting one set of numbers reads (Solid's colour, the panels);
+the tracer takes the two lobes themselves since batch 141 (§41).
 
 Tests: `phiphx/tests/surface_truth.rs` (THYMUS: the linked Principled
 keeps its own numbers, the idle Glass node does not win; LAND: the Glossy
@@ -1798,3 +1798,59 @@ whose Base Color comes from colour ramps fed by a Mapping node — the
 script's fold gives up there and reports the socket default 0.8, Phiber's
 folds the Mapping; both stand in for a texture. Pre-existing (the same on
 the batch 139 reader), noted here rather than hidden.
+
+## 41. A Mix Shader's two closures are two lobes (batch 141, 2026-10-05)
+
+Cycles samples a Mix Shader by weight: `svm_node_mix_closure` scales the
+two closures' weights by the factor, and the BSDF sampler then picks one
+closure per bounce with probability proportional to its weight — a coin
+per hit, unbiased, which is why a Diffuse mixed with a Glossy converges
+to both and not to a half-metal. EEVEE evaluates both closures and blends
+their results. Phiber now does each in its kernel.
+
+**The record.** A material (`Mat`, 32 words now, was 30) names a second
+material and the weight it takes — `second` (`NO_MAT` for one lobe) and
+`mix` — and a face's `Tri` carries the same (`Tri::with_second`), so a
+mixed surface is two entries of the material table and the face points
+at the first. The emitter table weighs a face's power by both lobes
+(`Mat::power_in`). The tracer's tight-binding test moved from 380 to 396
+bytes with the wider record (`tests/trace.rs`).
+
+**The kernels.** `layout.wgsl` splits `tri_at` into `tri_with(f, m)`,
+the face with any material word; `mat_second` and `mat_mix` read the
+lobe. The path tracer (`shade.wgsl`) draws `rnd < mix` at each hit and
+shades the face with the other material when it falls — the denoiser's
+guides, the texture, the alpha, the glass all come from the lobe picked.
+Material Preview (`preview.wgsl`) shades the surface once per lobe
+(`preview_lobe`) and lerps the two `Layer`s by the weight — radiance,
+alpha and throughput — the continued ray the heavier lobe's; a mixed
+surface costs two shadings there, an unmixed one nothing more.
+Workbench (Solid / Wireframe) shades the viewport colour and reads no
+lobe (`BSurface::tri` leaves the mix out under `uses_viewport_color`).
+
+**From the file.** `shade/surface.rs`'s `surface_mix`: when the output's
+surface (through reroutes) is a Mix Shader whose two inputs both fold,
+[`BlendMix`] keeps each side folded, the factor (through `eval.rs`, so a
+Light Path or a ramp decides it; a texture folds to its mean), and which
+side holds the Principled the surface reaches — the lobe the base image,
+the maps and the normal map belong to (`BSurface::tri`, which gives that
+lobe the textures and the other its colour alone). `BlendMaterial::mix`
+→ `SceneMaterial::mix`; `bsdf` stays the two folded together. The
+per-face build left `scene.rs` for `rendered/surface.rs` (`BSurface`) at
+the line cap.
+
+Tests: phiray `tests/mix.rs` (a red diffuse and a white mirror as one
+material at 0.5: the path tracer's 256-sample frame within noise of the
+mean of the two shaded alone, in linear light; Preview's frame that mean
+exactly; weights 0 and 1 each lobe alone), `tests/trace.rs`; phiber
+`rendered/surface.rs` (a Mix Shader is two materials and a weight, the
+first the face's, none under Workbench); phiphx `tests/surface_truth.rs`
+(THYMUS's glass one lobe; FLOWER-CITY's water two with the camera's
+weight 0 — the tracer then shades the glass alone — and its moss two with
+the Principled's side named and the ramp's factor between).
+
+Not yet: a per-pixel factor (a Voronoi or an image alpha feeding the Fac
+folds to one number — the common cutout, Mix(Transparent, Principled) by
+an image's alpha, still works through the Principled's own texture alpha
+once the fold lands on it); a third lobe (a Mix of Mixes folds the inner
+one); Add Shader as two lobes (folded, the emission summed).

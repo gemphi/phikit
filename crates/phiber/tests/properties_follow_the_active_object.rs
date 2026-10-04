@@ -33,6 +33,7 @@ fn object(name: &str, location: [f32; 3], scale: [f32; 3], color: [f32; 4], roug
             base_color_texture: None,
             texture: None,
             bsdf: Default::default(),
+            mix: None,
             normal_texture: None,
             normal_map: None,
             maps: Default::default(),

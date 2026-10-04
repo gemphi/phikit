@@ -90,6 +90,9 @@ pub struct BlendMaterial {
     pub base_color_texture: Option<String>,
     /// Principled BSDF inputs beyond colour/roughness/metallic.
     pub bsdf: BlendBsdf,
+    /// The surface as a Mix Shader's two lobes, when it is one
+    /// (`shade/surface.rs`); `bsdf` is then the two folded together.
+    pub mix: Option<crate::blend::shade::surface::BlendMix>,
     /// The material's node tree as the Shader editor draws it — every node with
     /// its type, name, position and size, and the links between them
     /// (`shade/graph.rs`). Empty for a material with no tree.

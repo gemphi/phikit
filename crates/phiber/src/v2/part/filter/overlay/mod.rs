@@ -130,7 +130,13 @@ mod tests {
         for (host, family) in DRAWN_BY {
             let panel = panel_for(host).unwrap_or_else(|| panic!("{host:?}"));
             assert_eq!(panel.family, family, "{host:?}");
-            assert_eq!(key(host, &panel.boxes[0]).encode(), format!("overlay.{family}.{}", panel.boxes[0].key));
+            // `encode` writes the scope it is read under, and every key has
+            // one: `BPath::encode` opens with `ctx` (`state/path.rs`). The
+            // expectation here never did, so it could not have matched.
+            assert_eq!(
+                key(host, &panel.boxes[0]).encode(),
+                format!("ctx.overlay.{family}.{}", panel.boxes[0].key),
+            );
         }
         // Two hosts in one family answer the same key; two families do not.
         assert_eq!(key(BHostType::Image, &IMAGE[0]), key(BHostType::Uv, &IMAGE[0]));

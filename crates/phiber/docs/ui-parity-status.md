@@ -1,6 +1,6 @@
 # Phiber UI — status
 
-**Suite: 1267 passing, 14 failing** (phiber, on the tree as it stands on the
+**Suite: 1268 passing, 14 failing** (phiber, on the tree as it stands on the
 machine, the other agent's node-editor / Timeline / swatch work included —
 all fourteen are theirs in progress: a region's host corners, the overlay
 family key test, the Preferences palette override and its rows' actions,
@@ -10,7 +10,7 @@ wheel zoom, two renderer-ownership rules, the Properties rail tab's paint
 layer, a popover's checkbox widths, and `level_structure` over three of
 their files past 240 lines — `state/key/op.rs`, `time/gesture.rs`,
 `time/row/mod.rs`). phiphx 208
-passing, 6 known asset-dependent; phiray 88 passing. Batches 17–140 are
+passing, 6 known asset-dependent; phiray 89 passing. Batches 17–141 are
 extracted on the machine; every item below is covered by a test. The
 Animation and Rendering workspaces have a full audit of their own in
 `animation-rendering-status.md`.
@@ -798,6 +798,29 @@ Blender's own choices.
   and Graph headers, which Blender leaves out of the Timeline.
 - Truth: `tests/marker_box_and_transport_popovers.rs`, `scene/grab.rs`,
   `part/playback/settings.rs`.
+
+## Batch 141 — a Mix Shader's two closures as two lobes
+
+- **Blender** renders a Mix Shader as both closures: Cycles picks one per
+  bounce by the factor (`svm_node_mix_closure` and the BSDF sampler),
+  EEVEE blends the two evaluations. Batch 140 folded them to one set of
+  parameters — a Diffuse mixed with a Glossy drew as a half-metal.
+- phiray: `Mat` / `Tri` carry `second` and `mix` (32-word record,
+  `NO_MAT`); `layout.wgsl`'s `tri_with`, `mat_second`, `mat_mix`;
+  `shade.wgsl` picks a lobe per hit by a coin; `preview.wgsl` shades both
+  (`preview_lobe`) and lerps the `Layer`s; the emitter table weighs both
+  lobes (`Mat::power_in`). `rendering.md` §41.
+- phiphx: `shade/surface.rs` — `BlendMix` (`surface_mix`): the output's
+  Mix Shader kept as two folded sides, its factor and which side holds
+  the reached Principled; `BlendMaterial::mix`, `SceneMaterial::mix`.
+- phiber: `rendered/surface.rs` — `BSurface`, the per-face material build
+  out of `scene.rs`: one lobe, or two with the second a material of its
+  own and the textures on the Principled's side; Workbench keeps the one
+  viewport colour.
+- Tests: phiray `tests/mix.rs`, `tests/trace.rs`; phiber
+  `rendered/surface.rs`; phiphx `tests/surface_truth.rs`.
+- **Suites:** see the head of this file.
+- **Not yet:** a per-pixel factor; a third lobe; Add Shader as two.
 
 ## Batch 140 — the surface shader from the Material Output
 

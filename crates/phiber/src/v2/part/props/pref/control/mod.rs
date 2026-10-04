@@ -13,7 +13,7 @@ pub use toggle::BPreferenceToggle;
 
 use super::BPreferenceRow;
 use crate::v2::state::BState;
-use crate::v2::theme::{BPreferenceControl, BStyleParser, BUiStyleDefaults};
+use crate::v2::theme::{BPreferenceControl, BStyleParser, BStyleValue, BUiStyleDefaults};
 use crate::v2::view::{BAction, BControl, BView};
 
 #[derive(Clone, Copy)]
@@ -49,6 +49,15 @@ pub enum BPreferenceEditor {
 }
 
 impl BPreferenceEditor {
+    /// The effective value, whichever editor holds it.
+    fn value(self) -> BStyleValue {
+        match self {
+            Self::Field(field) => field.value(),
+            Self::Selector(selector) => selector.value(),
+            Self::Toggle(toggle) => toggle.value(),
+        }
+    }
+
     pub fn view(self) -> BView {
         match self {
             Self::Field(field) => field.view(),
@@ -121,15 +130,38 @@ impl BPreferenceEditor {
             Self::Toggle(toggle) => toggle.row(),
         };
         let key = row.key().clone();
+        // The value `for_row` already resolved — the stored override, or the
+        // palette's default for this preference. `BCtrl::read` takes it as the
+        // DEFAULT, so a stored value still wins; what it replaces is the
+        // placeholder this used to pass.
+        //
+        // The placeholder was a real bug, not untidiness. An un-overridden
+        // colour reached the renderer as an empty string, `BCtrlSwatch::of` read
+        // no colour out of it, and the swatch drew nothing — for all 29 colours
+        // in Preferences until the user changed one. A number read as its
+        // minimum, so every unset slider sat at the far left.
+        let effective = self.value();
         match row.parser() {
             // A hundredth of the range per step, or one whole unit where the
             // value is in units — the same step the hand-built pair took.
             BStyleParser::Number { min, max } => {
                 let step = if row.metadata().unit.is_some() { 1.0 } else { (max - min) / 100.0 };
-                BCtrl::read(BCtrlKind::Number { min, max, step }, key, BValue::Float(min), s)
+                let at = match effective {
+                    BStyleValue::Number(value) => value,
+                    _ => min,
+                };
+                BCtrl::read(BCtrlKind::Number { min, max, step }, key, BValue::Float(at), s)
             }
-            BStyleParser::Bool => BCtrl::read(BCtrlKind::Check, key, BValue::Bool(false), s),
-            BStyleParser::ColorHsla => BCtrl::read(BCtrlKind::Color, key, BValue::Text(String::new()), s),
+            BStyleParser::Bool => {
+                let on = matches!(effective, BStyleValue::Bool(true));
+                BCtrl::read(BCtrlKind::Check, key, BValue::Bool(on), s)
+            }
+            // In the descriptor's own spelling, which is what the swatch reads
+            // (`ctrl::color` → `BCtrlSwatch::of`).
+            BStyleParser::ColorHsla => {
+                let text = row.descriptor().format_value(effective).unwrap_or_default();
+                BCtrl::read(BCtrlKind::Color, key, BValue::Text(text), s)
+            }
             // Shadow and Font are choices: the descriptor lists them.
             BStyleParser::Shadow | BStyleParser::Font => {
                 let options = row.descriptor().choices().iter().map(|choice| BOption {
@@ -137,8 +169,12 @@ impl BPreferenceEditor {
                     label: choice.label.to_string(),
                     icon: String::new(),
                 });
-                let first = row.descriptor().choices().first().map(|c| c.value).unwrap_or_default();
-                BCtrl::read(BCtrlKind::Select, key, BValue::Enum(first.to_string()), s).with_options(options)
+                let chosen = row
+                    .descriptor()
+                    .format_value(effective)
+                    .or_else(|| row.descriptor().choices().first().map(|c| c.value.to_string()))
+                    .unwrap_or_default();
+                BCtrl::read(BCtrlKind::Select, key, BValue::Enum(chosen), s).with_options(options)
             }
         }
     }

@@ -207,10 +207,9 @@ Noise, Limits, Envelope, Stepped); shape-key animation; Grease Pencil.
   wrap, sheen, coat, anisotropy), image textures, normal maps, alpha
   cut-outs; bladed bokeh; Standard, Filmic and AgX with exposure and gamma;
   a guided denoiser; Depth, Normal and Diffuse Color passes.
-- **Cannot yet:** a Mix Shader's two closures as two lobes (since batch
-  140 the surface the output is linked to — Mix and Add Shader, Emission,
-  Diffuse, Glossy, Glass, Transparent, Sheen, SSS — folds to one set of
-  Principled parameters; volumes fold to nothing); procedural textures
+- **Cannot yet:** a Mix Shader's factor per pixel (its two closures are
+  two lobes since batch 141; the closure nodes fold to Principled
+  parameters since 140; volumes fold to nothing); procedural textures
   (Noise, Voronoi fold to one colour);
   Bump; Sky Texture; Film Transparent (alpha is always opaque); motion
   blur; volumes; caustics; holdout and shadow catcher; adaptive sampling;
@@ -277,8 +276,10 @@ frames and the anti-aliasing sample count — Preferences ▸ Viewport ▸
 Quality, `render_aa` for a Workbench render (§39). **Batch 140:** the
 surface shader from the Material Output — Mix / Add Shader and the
 closure nodes folded to the Principled parameters, Light Path for a
-camera ray (§40). **Next:** two lobes per hit in the kernel; per-pixel
-Noise / Voronoi and Bump; then Material Preview on EEVEE's model.
+camera ray (§40). **Batch 141:** a Mix Shader's two closures as two lobes
+— a coin per hit in the path tracer, both blended in Material Preview
+(§41). **Next:** per-pixel Noise / Voronoi and Bump; then Material
+Preview on EEVEE's model.
 
 ## What to do next, in order
 

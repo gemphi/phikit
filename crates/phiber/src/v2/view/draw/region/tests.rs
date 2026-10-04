@@ -32,12 +32,18 @@ fn only_intentionally_painted_regions_claim_host_corners() {
         surface_opacity(BRegionType::Header, BHostType::Topbar),
         BSurfaceOpacity::Transparent
     );
-    // A vertical rail paints nothing of its own: the area's body shows.
+    // A vertical rail paints the strip shade — the same one the horizontal
+    // strips under a header take. It used to paint nothing, which left the rail
+    // and the panel beside it one flat field, so the active tab had no edge to
+    // be cut out of and the strip read as part of the content (`region_fill`).
+    //
+    // It still claims no corners: what it paints is a shade, not the host's
+    // rounded outline, and the area's body is what reaches the corners.
     assert_eq!(
         surface_opacity(BRegionType::NavBar, BHostType::Buts),
         BSurfaceOpacity::Transparent
     );
-    assert_eq!(super::region_fill(BRegionType::NavBar), super::BFill::Clear);
+    assert_eq!(super::region_fill(BRegionType::NavBar), super::BFill::HostRail);
     // The execute bar is a strip: the header surface, owning its corners.
     assert_eq!(super::region_fill(BRegionType::Execute), super::region_fill(BRegionType::Header));
     assert_eq!(surface_opacity(BRegionType::Execute, BHostType::File), BSurfaceOpacity::Opaque);

@@ -26,6 +26,7 @@ mod vert;
 mod view;
 mod wake;
 mod worker;
+mod surface;
 mod world;
 pub use self::region::BStillRegion;
 pub(in crate::v2::view::draw::canvas) use self::prepare::BRayDeclined;

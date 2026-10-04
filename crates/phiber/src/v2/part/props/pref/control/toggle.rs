@@ -14,6 +14,11 @@ impl BPreferenceToggle {
         self.row
     }
 
+    /// The effective value this edits, back in the descriptor's own terms.
+    pub(super) const fn value(self) -> BStyleValue {
+        BStyleValue::Bool(self.checked)
+    }
+
     pub(super) fn new(row: BPreferenceRow, value: BStyleValue) -> Self {
         let BStyleValue::Bool(checked) = value else {
             unreachable!("toggle metadata must describe a boolean value")

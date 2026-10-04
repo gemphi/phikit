@@ -152,6 +152,7 @@ fn materials_from_phx(
             base_color_texture: m.base_color_texture.clone(),
             texture: None,
             bsdf: Default::default(),
+            mix: None,
             normal_texture: None,
             normal_map: None,
             maps: Default::default(),
