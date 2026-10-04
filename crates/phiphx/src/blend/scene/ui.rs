@@ -42,6 +42,8 @@ pub struct BlendView3d {
     pub sidebar: bool,
     /// The Overlays and Gizmos popovers' switches (`overlay.rs`).
     pub overlay: super::overlay::BlendOverlay,
+    /// The view's own render region (`View3D.render_border`, `border.rs`).
+    pub border: super::border::BlendViewBorder,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -136,6 +138,13 @@ impl BlendFile {
         out
     }
 
+    /// `View3D.render_border` (an `rctf`: xmin, xmax, ymin, ymax) with
+    /// `flag2`'s `V3D_RENDER_BORDER`.
+    fn view_border_of(&self, v3d: &BlendBlock, dna: &DnaType) -> super::border::BlendViewBorder {
+        let rect = self.off("View3D", "render_border", dna).and_then(|o| self.ui_f32s::<4>(v3d, Some(o)));
+        super::border::BlendViewBorder::of(self.int_field(v3d, "View3D", "flag2", dna), rect.unwrap_or([0.0, 1.0, 0.0, 1.0]))
+    }
+
     fn area_view3d(&self, area: &BlendBlock, dna: &DnaType) -> Option<BlendView3d> {
         let data = self.off("ARegion", "*regiondata", dna);
         let regions = self.area_regions(area, dna);
@@ -158,6 +167,7 @@ impl BlendFile {
                 lens: v3d.and_then(|b| self.ui_f32s::<1>(b, self.off("View3D", "lens", dna))).map_or(50.0, |l| l[0]),
                 sidebar,
                 overlay: v3d.map(|b| self.overlay_of(b, dna)).unwrap_or_default(),
+                border: v3d.map(|b| self.view_border_of(b, dna)).unwrap_or_default(),
             });
         }
         None

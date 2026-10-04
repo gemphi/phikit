@@ -61,6 +61,7 @@ fn edits(scene: &BlendScene) -> BlendEdits {
             hidden: Some(true),
             selected: Some(true),
             transform: None,
+            shadow: None,
         }, BlendObjectEdit {
             // The Transform panel on the duplicate: moved, turned 45° about
             // Z, doubled — before it is parented, so it keeps that.

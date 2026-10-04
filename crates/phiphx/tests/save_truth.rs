@@ -50,6 +50,7 @@ fn the_edits_are_the_only_difference_and_read_back_in_every_layout() {
                 hidden: Some(false),
                 selected: Some(true),
                 transform: None,
+                shadow: None,
             }],
             active: Some(first.clone()),
             markers: Some(vec![(5, "A".into()), (50, "B".into())]),

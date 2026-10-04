@@ -198,6 +198,12 @@ impl<'a> BGraph<'a> {
                 let loc = arg("Location").map_or(0.0, |l| l.value());
                 Some(BVal::f(v.value() * scale + loc, false))
             }
+            // The fold is what a camera ray sees (`svm_node_light_path`
+            // for a ray straight from the camera): Is Camera Ray 1, every
+            // other Is-ray 0, the depths 0, the ray length 1 — so a Mix
+            // Shader keyed on Is Shadow Ray (the fake-caustics setup) folds
+            // to the shader the camera is shown.
+            "ShaderNodeLightPath" => Some(BVal::f(if out_name == "Is Camera Ray" || out_name == "Ray Length" { 1.0 } else { 0.0 }, true)),
             "ShaderNodeTexImage" => {
                 // A file Blender cannot find draws magenta — the pink the
                 // viewport shows for a missing texture — with alpha 1.

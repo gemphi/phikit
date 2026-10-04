@@ -59,8 +59,20 @@ pub struct BlendNode {
     pub outputs: Vec<BlendSocket>,
 }
 
-/// `NODE_SELECT` (`DNA_node_types.h`): the node is selected in the editor.
-pub const NODE_SELECT: i32 = 1;
+/// `NODE_SELECT` (`DNA_node_types.h:204`): the node is selected in the editor.
+pub const NODE_SELECT: i32 = 1 << 0;
+/// `NODE_ACTIVE` (`DNA_node_types.h:208`): the node that was clicked last.
+///
+/// Separate from selection and not a subset of it in spelling, though in
+/// practice the active node is selected. The distinction earns its keep in two
+/// places: `compare_node_depth` ranks **active above selected above nothing**,
+/// and `node_mouse_select`'s toggle checks `NODE_SELECT && NODE_ACTIVE` so that
+/// shift-clicking a selected-but-inactive node makes it active instead of
+/// deselecting it — *"Check active so clicking on an inactive node activates
+/// it."*
+pub const NODE_ACTIVE: i32 = 1 << 4;
+/// `NODE_DO_OUTPUT` (`DNA_node_types.h:211`): this is the output in use.
+pub const NODE_DO_OUTPUT: i32 = 1 << 6;
 
 impl BlendNode {
     /// What the header prints: the user's label when they set one, else the name.
@@ -75,6 +87,17 @@ impl BlendNode {
 
     pub fn selected(&self) -> bool {
         self.flag & NODE_SELECT != 0
+    }
+
+    /// Whether the file marks this as the active node.
+    pub fn active(&self) -> bool {
+        self.flag & NODE_ACTIVE != 0
+    }
+
+    /// Whether this is the output actually being rendered (`NODE_DO_OUTPUT`),
+    /// which is what decides whether an output node gets the output colour.
+    pub fn active_output(&self) -> bool {
+        self.flag & NODE_DO_OUTPUT != 0
     }
 }
 

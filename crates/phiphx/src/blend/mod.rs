@@ -52,6 +52,7 @@ pub use object::layer::{BASE_HIDDEN, BASE_SELECTED, LAYER_COLLECTION_EXCLUDE, LA
 pub use object::visibility::{BlendShadowCast, BlendVisibility};
 pub use idprop::{BIdGroup, BIdValue};
 pub use scene::movie::BlendMovie;
+pub use scene::border::{BlendRenderBorder, BlendViewBorder};
 pub use scene::output::{BlendImageFormat, BlendOutput};
 pub use scene::pass::{BPassKind, BlendPassSet};
 pub use scene::props::BlendSceneProps;

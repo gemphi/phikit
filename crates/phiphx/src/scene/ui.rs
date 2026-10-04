@@ -40,6 +40,9 @@ pub struct SceneView {
     pub solid_shade: Option<SceneSolidShade>,
     /// The Overlays and Gizmos popovers' switches, by RNA name.
     pub overlay: crate::blend::BlendOverlay,
+    /// The view's own render region, outside the camera view
+    /// (`View3D.render_border`, `use_render_border`).
+    pub border: crate::blend::BlendViewBorder,
 }
 
 /// `View3DShading`'s X-ray: Solid's switch and alpha (`show_xray`,
@@ -79,11 +82,15 @@ pub struct SceneSolidFx {
     /// `show_specular_highlight` (`V3D_SHADING_SPECULAR_HIGHLIGHT`).
     pub backface_culling: bool,
     pub specular: bool,
+    /// `use_dof` (`V3D_SHADING_DEPTH_OF_FIELD`): Workbench's depth of
+    /// field through the camera looked through.
+    pub dof: bool,
 }
 
 impl SceneSolidFx {
     /// `V3D_SHADING_OBJECT_OUTLINE`, `_CAVITY`, `_SHADOW`, `_BACKFACE_CULLING`,
-    /// `_SPECULAR_HIGHLIGHT`; the RNA names of `eView3DShading_CavityType`.
+    /// `_SPECULAR_HIGHLIGHT`, `_DEPTH_OF_FIELD`; the RNA names of
+    /// `eView3DShading_CavityType`.
     pub fn of(sh: &crate::blend::BlendShading) -> Self {
         Self {
             outline: sh.flag & 1 != 0,
@@ -98,6 +105,7 @@ impl SceneSolidFx {
             shadow_intensity: sh.shadow_intensity,
             backface_culling: sh.flag & (1 << 10) != 0,
             specular: sh.flag & (1 << 4) != 0,
+            dof: sh.flag & (1 << 11) != 0,
         }
     }
 }
@@ -190,6 +198,7 @@ pub(super) fn ui_from_blend(ui: &BlendUiState, objects: &[BlendSceneObject]) -> 
             shading: match v.shading.ty { 2 => "wireframe", 3 => "solid", 4 => "material", 5 => "rendered", _ => "" },
             sidebar: v.sidebar,
             overlay: v.overlay.clone(),
+            border: v.border,
             xray: Some(SceneXray::of(&v.shading)),
             solid_fx: Some(SceneSolidFx::of(&v.shading)),
             solid_shade: Some(SceneSolidShade::of(&v.shading)),
@@ -220,5 +229,13 @@ mod tests {
         // Numpad 3 looks along −X: back axis +X.
         let (yaw, _) = SceneView::angles([1.0, 0.0, 0.0]);
         assert!((yaw - 270.0).abs() < 1e-3, "{yaw}");
+    }
+
+    #[test]
+    fn the_solid_effects_read_their_flag_bits() {
+        let sh = crate::blend::BlendShading { flag: (1 << 0) | (1 << 2) | (1 << 10) | (1 << 11), ..Default::default() };
+        let fx = SceneSolidFx::of(&sh);
+        assert!(fx.outline && fx.shadow && fx.backface_culling && fx.dof && !fx.cavity && !fx.specular);
+        assert!(!SceneSolidFx::of(&Default::default()).dof, "Blender's default view has no depth of field");
     }
 }

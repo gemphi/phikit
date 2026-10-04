@@ -50,6 +50,8 @@ pub struct BlendSceneProps {
     /// Properties → Output: where a render is written, and in what format
     /// (`scene/output.rs`).
     pub output: crate::blend::scene::output::BlendOutput,
+    /// The render region (`Scene.r.border`, `R_BORDER`, `R_CROP`).
+    pub border: crate::blend::BlendRenderBorder,
     /// Output → Encoding, for FFmpeg Video (`scene/movie.rs`).
     pub movie: crate::blend::scene::movie::BlendMovie,
     /// Which render passes the view layer asks for (`scene/pass.rs`).
@@ -110,6 +112,7 @@ impl Default for BlendSceneProps {
             camera: String::new(),
             world: Default::default(),
             output: Default::default(),
+            border: Default::default(),
             movie: Default::default(),
             pass: Default::default(),
             cycles: Default::default(),
@@ -237,6 +240,10 @@ impl BlendFile {
             camera,
             world,
             output: self.extract_output(sc, dna),
+            border: crate::blend::BlendRenderBorder::of(
+                self.sp_i32(d, self.rd_off("mode", dna), 0) as u32,
+                self.rd_off("border", dna).map_or([0.0, 1.0, 0.0, 1.0], |o| std::array::from_fn(|i| self.sp_f32(d, Some(o + 4 * i), [0.0, 1.0, 0.0, 1.0][i]))),
+            ),
             movie: self.extract_movie(sc, dna),
             pass: self.extract_pass_set(sc, dna),
             cycles,

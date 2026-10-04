@@ -13,4 +13,5 @@ pub(crate) mod maps;
 pub(crate) mod principled;
 pub(crate) mod scalar;
 pub(crate) mod slots;
+pub(crate) mod surface;
 pub(crate) mod world;

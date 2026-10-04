@@ -14,7 +14,7 @@
 
 use super::layer::BlendCollectionAt;
 use super::mesh::BlendNewMesh;
-use crate::blend::BlendVisibility;
+use crate::blend::{BlendShadowCast, BlendVisibility};
 use crate::blend::file::types::*;
 use crate::blend::object::layer::{BASE_HIDDEN, BASE_SELECTED, LAYER_COLLECTION_EXCLUDE, LAYER_COLLECTION_HIDE};
 use crate::blend::object::visibility::{COLLECTION_HIDE_RENDER, COLLECTION_HIDE_SELECT, COLLECTION_HIDE_VIEWPORT, OB_HIDE_RENDER, OB_HIDE_SELECT, OB_HIDE_VIEWPORT};
@@ -34,6 +34,9 @@ pub struct BlendObjectEdit {
     /// Location, XYZ Euler rotation (radians) and scale, when the session
     /// changed them (the Transform panel); written with `rotmode` XYZ.
     pub transform: Option<([f32; 3], [f32; 3], [f32; 3])>,
+    /// Viewport Display ▸ Shadow (`dtx`'s `OB_DRAW_NO_SHADOW_CAST`) and
+    /// Ray Visibility ▸ Shadow (`OB_HIDE_SHADOW`), when the panel set them.
+    pub shadow: Option<crate::blend::BlendShadowCast>,
 }
 
 /// One collection's edits, keyed by its path (`Scene Collection/Props`).
@@ -101,6 +104,9 @@ pub struct BlendEdits {
     /// Output's path and image format, when the session changed them
     /// (`Scene.r.pic`, `Scene.r.im_format`; `write/render.rs`).
     pub output: Option<crate::blend::BlendOutput>,
+    /// The render region, when the session changed it (`Scene.r.border`,
+    /// `R_BORDER` and `R_CROP` in `Scene.r.mode`).
+    pub border: Option<crate::blend::BlendRenderBorder>,
     /// Render-panel values the session changed, by their name in
     /// `scene["cycles"]` (`write/render.rs`).
     pub cycles: Vec<(String, crate::blend::BIdValue)>,
@@ -202,6 +208,13 @@ impl BlendEdits {
         if let Some(output) = &self.output {
             patched += file.write_output(scene, output);
         }
+        if let Some(border) = &self.border {
+            let mode = file.field_span("Scene", "r.mode", &dna).filter(|(o, n)| *n == 4 && o + 4 <= file.blocks[scene].data.len()).map_or(0, |(o, _)| file.read_i32(&file.blocks[scene].data[o..o + 4])) as u32;
+            patched += usize::from(file.set_int(scene, "Scene", "r.mode", i64::from(border.mode_over(mode))));
+            for (field, value) in ["xmin", "xmax", "ymin", "ymax"].into_iter().zip(border.rect) {
+                patched += usize::from(file.set_f32(scene, "Scene", &format!("r.border.{field}"), value));
+            }
+        }
         patched += file.write_cycles(scene, &dna, &self.cycles, &mut report.warnings);
 
         let view_layer = file.view_layer_index(scene);
@@ -212,11 +225,20 @@ impl BlendEdits {
                 report.warnings.push(format!("'{}' is not in the file", edit.name));
                 continue;
             };
-            if let Some(v) = edit.visibility {
+            if edit.visibility.is_some() || edit.shadow.is_some() {
                 let field = file.object_visibility_field(&dna);
-                let flag = file.int_field(&file.blocks[object], "Object", field, &dna);
-                let flag = with_bit(with_bit(with_bit(flag, OB_HIDE_VIEWPORT, v.hide_viewport), OB_HIDE_SELECT, v.hide_select), OB_HIDE_RENDER, v.hide_render);
+                let mut flag = file.int_field(&file.blocks[object], "Object", field, &dna);
+                if let Some(v) = edit.visibility {
+                    flag = with_bit(with_bit(with_bit(flag, OB_HIDE_VIEWPORT, v.hide_viewport), OB_HIDE_SELECT, v.hide_select), OB_HIDE_RENDER, v.hide_render);
+                }
+                if let Some(shadow) = edit.shadow {
+                    flag = with_bit(flag, BlendShadowCast::OB_HIDE_SHADOW, !shadow.ray);
+                }
                 set(&mut patched, file, object, "Object", field, i64::from(flag));
+            }
+            if let Some(shadow) = edit.shadow {
+                let dtx = file.int_field(&file.blocks[object], "Object", "dtx", &dna);
+                set(&mut patched, file, object, "Object", "dtx", i64::from(with_bit(dtx, BlendShadowCast::OB_DRAW_NO_SHADOW_CAST, !shadow.display)));
             }
             if let Some((loc, rot, scale)) = edit.transform {
                 for axis in 0..3 {
@@ -449,11 +471,13 @@ mod tests {
                 hidden: Some(true),
                 selected: Some(true),
                 transform: None,
+                shadow: Some(BlendShadowCast { display: false, ray: false }),
             }],
             active: Some("Cube".into()),
             markers: Some(vec![(12, "Intro".into()), (100, "Cut".into())]),
             collections: vec![BlendCollectionEdit { path: "Scene Collection".into(), hidden: None, exclude: None, visibility: Some(BlendVisibility { hide_render: true, ..Default::default() }) }],
             unwritable: vec!["1 added object".into()],
+            border: Some(crate::blend::BlendRenderBorder { on: true, crop: true, rect: [0.25, 0.75, 0.1, 0.9] }),
             ..Default::default()
         };
         let report = edits.apply(&mut file);
@@ -466,6 +490,7 @@ mod tests {
         let crate_ = scene.objects.iter().find(|o| o.name == "Crate").expect("renamed");
         assert!(!scene.objects.iter().any(|o| o.name == "Cube"));
         assert!(crate_.visibility.hide_select && crate_.visibility.hide_render && !crate_.visibility.hide_viewport);
+        assert_eq!(crate_.shadow, BlendShadowCast { display: false, ray: false }, "both Shadow switches, `dtx` and the visibility flag");
         let index = scene.objects.iter().position(|o| o.name == "Crate").unwrap();
         // Hidden, so saved deselected: Blender drops the selection of what it
         // cannot see (`BKE_base_eval_flags`), and the file says so.
@@ -473,6 +498,7 @@ mod tests {
         assert_eq!(scene.active_object, Some(index), "the active object");
         assert_eq!(scene.props.markers.iter().map(|m| (m.frame, m.name.as_str())).collect::<Vec<_>>(), [(12, "Intro"), (100, "Cut")]);
         assert!(scene.collections[0].visibility.hide_render, "the collection's camera");
+        assert_eq!(scene.props.border, crate::blend::BlendRenderBorder { on: true, crop: true, rect: [0.25, 0.75, 0.1, 0.9] }, "the render region and its two mode bits");
     }
 }
 

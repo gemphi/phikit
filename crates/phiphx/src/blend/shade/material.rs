@@ -137,10 +137,11 @@ impl BlendFile {
                 _ => default,
             }
         };
-        // The Principled BSDF (where modern Blender stores the authored
-        // surface) wins; the legacy `Material.r/g/b/roughness/metallic`
-        // fields are the fallback for node-less materials.
-        match self.principled(ma, dna) {
+        // The surface the Material Output is linked to (`surface.rs`) —
+        // its Principled BSDF, or the other closures folded to one — wins;
+        // the legacy `Material.r/g/b/roughness/metallic` fields are the
+        // fallback for node-less materials.
+        match self.surface_bsdf(ma, dna).or_else(|| self.principled(ma, dna)) {
             Some(b) => (b.base, b.roughness.clamp(0.0, 1.0), b.metallic.clamp(0.0, 1.0), b),
             None => {
                 let color = [f("r", 0.8), f("g", 0.8), f("b", 0.8), f("a", 1.0)];

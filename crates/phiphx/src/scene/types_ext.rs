@@ -78,6 +78,8 @@ pub struct SceneRender {
     /// Properties → Output: where a render is written and in what format
     /// (`blend/scene/output.rs`).
     pub output: crate::blend::BlendOutput,
+    /// The render region (`Scene.r.border` and its mode bits).
+    pub border: crate::blend::BlendRenderBorder,
     /// Output → Encoding (`BlendMovie`), for FFmpeg Video.
     pub movie: crate::blend::BlendMovie,
     /// Which render passes the view layer asks for (`blend/scene/pass.rs`).
@@ -117,7 +119,9 @@ impl SceneDisplayShading {
             xray: super::SceneXray::of(sh),
             solid_fx: super::SceneSolidFx::of(sh),
             solid_shade: super::SceneSolidShade::of(sh),
-            samples: match render_aa { 5 | 8 | 11 | 16 | 32 => render_aa as u32, _ => 1 },
+            // `eSceneDisplay_AA`: off, the single pass (FXAA), or a count
+            // with a table; anything else is the DNA default.
+            samples: match render_aa { 0 | 1 | 5 | 8 | 11 | 16 | 32 => render_aa as u32, _ => 8 },
         }
     }
 }
@@ -168,6 +172,7 @@ impl Default for SceneRender {
             engine: String::from("BLENDER_EEVEE_NEXT"),
             view_transform: String::from("Standard"),
             output: Default::default(),
+            border: Default::default(),
             movie: Default::default(),
             pass: Default::default(),
             ssao: Default::default(),

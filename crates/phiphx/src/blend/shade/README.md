@@ -12,6 +12,7 @@ Callers enter through [`phx::Phx`](../../phx/README.md); this folder is one of i
 | `material.rs` | Per-object material extraction: resolves the object's first `Material` (`MA`) block and reads its diffuse colour + PBR roughness/metallic. |
 | `mod.rs` | Materials. |
 | `nodes.rs` | Material shader graph walk: `Material.*nodetree` → `bNode` list → Principled BSDF "Base Color" socket and the first Image Texture's… |
+| `surface.rs` | The surface shader the Material Output is linked to, folded to one `BlendBsdf`: Mix / Add Shader, Emission, Glass, Transparent, Diffuse, Glossy and the rest as the Principled parameters that draw most like them. |
 | `slots.rs` | Material slot resolution: `Object/Mesh.**mat` + `totcol` → `MA` blocks, and the exact-name DNA field-offset lookup the material readers use. |
 
 Status and next steps: [`jobs.md`](jobs.md).

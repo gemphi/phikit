@@ -172,6 +172,7 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
             gamma: p.gamma,
             film_transparent: p.film_transparent,
             output: p.output.clone(),
+            border: p.border,
             movie: p.movie,
             pass: p.pass,
             ssao: SceneSsao { samples: p.ssao[2].max(1.0) as u32, distance: p.ssao[0], attenuation: p.ssao[1] },

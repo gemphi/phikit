@@ -188,6 +188,8 @@ fn quick_info_reads_render_info_without_full_parse() {
         assert_eq!(v.persp, RV3D_CAMOB, "saved looking through the camera");
         assert!((2..=5).contains(&v.shading.ty), "shading type {}", v.shading.ty);
         assert!(s.objects.iter().any(|o| o.block_address == ui.camera && o.object_type == "CAMERA"));
+        // No viewport render region was ever set: off, the whole region.
+        assert_eq!(v.border, crate::blend::BlendViewBorder::default());
 
         let ui = load("modeling/operators.blend").props.ui;
         assert_eq!(ui.workspace, "Scripting");

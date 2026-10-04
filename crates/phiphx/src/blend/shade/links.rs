@@ -72,7 +72,7 @@ impl BlendFile {
     /// (the caller then falls back to the first Image Texture).
     pub(crate) fn socket_image(&self, ma: &BlendBlock, dna: &DnaType, socket: &str) -> Option<Option<String>> {
         let nodes = self.shader_nodes(ma, dna);
-        let bsdf = nodes.iter().find(|n| self.is_principled(n, dna))?;
+        let bsdf = self.surface_principled(ma, dna)?;
         let links = self.links(ma, dna);
         let idname = self.off("bNode", "idname", dna);
         let kind = |n: &BlendBlock| idname.map(|o| read_cstr(&n.data, o, 64)).unwrap_or_default();
@@ -107,7 +107,7 @@ impl BlendFile {
     /// Principled `Normal` ← Normal Map ← Image Texture, if the material has it.
     pub(crate) fn normal_map(&self, ma: &BlendBlock, dna: &DnaType) -> Option<BlendNormalMap> {
         let nodes = self.shader_nodes(ma, dna);
-        let bsdf = nodes.iter().find(|n| self.is_principled(n, dna))?;
+        let bsdf = self.surface_principled(ma, dna)?;
         let links = self.links(ma, dna);
         let nm = self.feeding(&links, bsdf.old_address, "Normal", dna)?;
         let nm = self.node_named(&nodes, nm, dna, "NormalMap")?;

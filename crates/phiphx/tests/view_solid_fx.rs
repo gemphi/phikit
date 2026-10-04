@@ -27,10 +27,10 @@ fn the_startup_viewport_outlines_its_objects_and_has_no_cavity() {
     // the viewport's defaults.
     let d = &model.render.display;
     assert_eq!((d.shading, d.samples), ("solid", 8));
-    assert_eq!(d.solid_fx, SceneSolidFx { outline: false, outline_color: [0.0; 3], cavity: false, cavity_type: "WORLD", cavity_valley_factor: 1.0, cavity_ridge_factor: 1.0, curvature_ridge_factor: 0.0, curvature_valley_factor: 0.0, shadow: false, shadow_intensity: 0.5, backface_culling: false, specular: true });
+    assert_eq!(d.solid_fx, SceneSolidFx { outline: false, outline_color: [0.0; 3], cavity: false, cavity_type: "WORLD", cavity_valley_factor: 1.0, cavity_ridge_factor: 1.0, curvature_ridge_factor: 0.0, curvature_valley_factor: 0.0, shadow: false, shadow_intensity: 0.5, backface_culling: false, specular: true, dof: false });
     assert_eq!((d.solid_shade.light, d.solid_shade.color_type, d.xray.solid), ("STUDIO", "MATERIAL", false));
     let view = model.ui.view.expect("the Layout viewport");
-    assert_eq!(view.solid_fx, Some(SceneSolidFx { outline: true, outline_color: [0.0; 3], cavity: false, cavity_type: "SCREEN", cavity_valley_factor: 1.0, cavity_ridge_factor: 1.0, curvature_ridge_factor: 1.0, curvature_valley_factor: 1.0, shadow: false, shadow_intensity: 0.5, backface_culling: false, specular: true }));
+    assert_eq!(view.solid_fx, Some(SceneSolidFx { outline: true, outline_color: [0.0; 3], cavity: false, cavity_type: "SCREEN", cavity_valley_factor: 1.0, cavity_ridge_factor: 1.0, curvature_ridge_factor: 1.0, curvature_valley_factor: 1.0, shadow: false, shadow_intensity: 0.5, backface_culling: false, specular: true, dof: false }));
     // Studio lighting, the material colour, a 0.8 grey single colour, the
     // theme background — `View3DShading`'s defaults.
     // The matcap is whatever the file names — this startup was saved with

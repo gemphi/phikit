@@ -1,6 +1,7 @@
-//! Principled BSDF inputs (`node_shader_bsdf_principled.cc`): the unlinked
-//! socket values of the first Principled node in `Material.*nodetree`.
-//! Socket names follow Blender 4.x, with the 2.8–3.x spellings as aliases.
+//! Principled BSDF inputs (`node_shader_bsdf_principled.cc`): the socket
+//! values of the Principled node the material's surface reaches
+//! (`surface.rs`; the first in the tree when none does). Socket names
+//! follow Blender 4.x, with the 2.8–3.x spellings as aliases.
 
 use super::nodes::read_cstr;
 use crate::blend::file::types::*;
@@ -49,11 +50,17 @@ const INPUTS: &[(&[&str], Apply)] = &[
 const FOLDED: [&str; 3] = ["Base Color", "Roughness", "Metallic"];
 
 impl BlendFile {
-    /// The material's Principled BSDF, `None` without a node tree or node.
-    /// Linked inputs are folded through the colour graph (`eval.rs`);
-    /// alpha, emission, IOR and transmission only when the fold is exact.
+    /// The material's Principled BSDF — the one its surface reaches
+    /// (`surface_principled`) — `None` without a node tree or node.
     pub(crate) fn principled(&self, ma: &BlendBlock, dna: &DnaType) -> Option<BlendBsdf> {
-        let node = self.shader_nodes(ma, dna).into_iter().find(|n| self.is_principled(n, dna))?;
+        let node = self.surface_principled(ma, dna)?;
+        self.principled_of(ma, node, dna)
+    }
+
+    /// `node`'s Principled inputs. Linked inputs are folded through the
+    /// colour graph (`eval.rs`); alpha, emission, IOR and transmission only
+    /// when the fold is exact.
+    pub(crate) fn principled_of(&self, ma: &BlendBlock, node: &BlendBlock, dna: &DnaType) -> Option<BlendBsdf> {
         let graph = super::eval::BGraph::new(self, ma, dna);
         let type_o = self.off("bNodeSocket", "type", dna)?;
         let mut bsdf = BlendBsdf::default();
