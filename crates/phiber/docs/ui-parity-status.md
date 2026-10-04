@@ -1,11 +1,11 @@
 # Phiber UI — status
 
-**Suite: 1037 passing, 7 failing** (phiber, on the tree as it stands on the
+**Suite: 1073 passing, 7 failing** (phiber, on the tree as it stands on the
 machine — all seven are the other agent's work in progress: a region's host
 corners, its overlay-family key test, the Preferences palette override and
 its rows' actions, the layout golden it recorded, the activity bar's
-treatment and the Outliner's guide lines; see batch 100). phiphx 191
-passing, 6 known asset-dependent; phiray 77 passing. Batches 17–124 are
+treatment and the Outliner's guide lines; see batch 100). phiphx 197
+passing, 6 known asset-dependent; phiray 82 passing. Batches 17–131 are
 extracted on the machine; every item below is covered by a test. The
 Animation and Rendering workspaces have a full audit of their own in
 `animation-rendering-status.md`.
@@ -793,6 +793,266 @@ Blender's own choices.
   and Graph headers, which Blender leaves out of the Timeline.
 - Truth: `tests/marker_box_and_transport_popovers.rs`, `scene/grab.rs`,
   `part/playback/settings.rs`.
+
+## Batch 131 — an object's Shadow switches
+
+- **Blender** has two per-object shadow toggles and reads one per engine.
+  Object ▸ Viewport Display ▸ Shadow is `Object.dtx`'s
+  `OB_DRAW_NO_SHADOW_CAST`; Workbench's `workbench_shadow.cc` skips the
+  object in the shadow pass (`ObjectState::use_shadow`, Solid and
+  Wireframe). Object ▸ Visibility ▸ Ray Visibility ▸ Shadow is
+  `Object.visibility_flag`'s `OB_HIDE_SHADOW`; Cycles and EEVEE leave the
+  object out of shadow rays and shadow maps (Material Preview, Rendered).
+  Phiber cast every object's shadow in every mode.
+- phiphx reads both into `BlendShadowCast { display, ray }` on
+  `SceneObject::shadow` (`BlendShadowCast::of_object(dtx,
+  visibility_flag)`, true/true when the file says nothing;
+  `visibility_flag` or the older `restrictflag` as batch 55's reader
+  found it). `BlendShadowCast::casts_in(display_shading)` picks the one
+  the mode reads.
+- phiray's instance carries `casts_shadow`, uploaded as bit 1 of the
+  instance's flag word 27 (bit 0 is the identity placement); `trace_blas`
+  returns before the instance's BLAS when the ray is a shadow ray and the
+  bit is set, so the kernel's shadow test is unchanged elsewhere.
+  `Scene::hide_shadow(inst)` is the one setter.
+- The viewport build (`rendered/scene.rs`) now keeps the id
+  `instance_of` returns and calls `hide_shadow` when
+  `shadow.casts_in(shading.uses_viewport_color())` is false — Viewport
+  Display's toggle under Solid and Wireframe, Ray Visibility's under
+  Material Preview and Rendered — for the live viewport, F12 and the
+  animation render alike, since they share the build.
+- Tests: phiray `tests/shadow.rs` (a block told to cast no shadow leaves
+  the wall behind it lit as the open wall), `instance.rs` (the flag word);
+  phiphx `object/visibility.rs` (both flags from the Object block); phiber
+  `rendered/paint_tests.rs` (Solid and Wireframe follow Viewport Display,
+  Rendered and Material follow Ray Visibility, the default casts),
+  `tests_scene.rs` (the switch rides into `BObject3D::Loaded`).
+- **Suites:** see the head of this file.
+- **Not yet:** a user matcap's specular pass, SMAA on Solid's first
+  frames, Depth of Field, Workbench's FXAA `render_aa`, and the
+  Properties editor's two checkboxes themselves (the file's values apply;
+  there is no panel to flip them yet).
+
+## Batch 130 — the colour attribute through the modifier stack
+
+- **Blender** interpolates every corner-domain attribute through the
+  modifiers with the loops (`BKE_subdiv_mesh`'s loop interpolation,
+  `CustomData_interp`), so a painted mesh stays painted when subdivided,
+  mirrored, arrayed, solidified, welded or triangulated. Phiber's evaluated
+  mesh carried the UVs that way and dropped the colours (batch 125's
+  limit).
+- `BlendEvalMesh.loop_colors` now rides with `loop_uvs` through each
+  modifier that changes topology: **Array** copies them with the copies;
+  **Mirror** gives the twin face its corners' colours (no flip —
+  that is a UV setting); **Solidify** reverses them with the inner shell,
+  lays the edge's two colours on each rim quad and turns them with FLIP;
+  **Subdivision Surface** interpolates — the edge midpoint the mean of
+  two, the face point the mean of the face; **Triangulate** splits them
+  with the faces; **Weld** keeps the surviving corners'. The deformers
+  (Armature, Lattice, Displace, Skin) leave the corners alone and need
+  nothing. `scene/object.rs` carries the evaluated colours to
+  `SceneCorners::colors` as the rest mesh's are.
+- Tests: phiphx `modifier/tests/stack.rs` (a painted quad through Array,
+  Solidify — inner shell reversed, the rim's two colours —, Triangulate
+  by corner and vertex, Subsurf — the face centre the mean, the corner its
+  own; nothing made up without an attribute).
+- **Suites:** see the head of this file.
+- **Not yet:** a user matcap's specular pass, SMAA on Solid's first
+  frames, Depth of Field, `OB_DRAW_NO_SHADOW_CAST`, Workbench's FXAA
+  `render_aa`.
+
+## Batch 129 — the user's own matcaps, and the session's code onto its types
+
+- **User matcaps** (`BKE_appdir_folder_id(BLENDER_USER_DATAFILES)` +
+  `studiolights/matcap/`, `STUDIOLIGHT_USER_DATAFILES`): the images in
+  Blender's user datafiles folder — `%APPDATA%\Blender Foundation\Blender\
+  <version>\datafiles\studiolights\matcap\` on Windows, the Library and
+  `~/.config` equivalents elsewhere, every version newest first — are listed
+  after the shipped set (`Matcap::name_list`) and read when named
+  (`Matcap::named`): an LDR image is sRGB (`IMB_float_from_byte`), an EXR or
+  HDR linear, fitted to 256², no specular pass (that needs the multilayer
+  EXR the decoder here does not read). A name that is nowhere, or whose file
+  no longer reads, falls to the default. The startup file's `.jpg` matcap
+  will now show on the machine that has it.
+- **Structure**, as asked — no free functions, no plural names, behaviour on
+  the type: the Shading popover is `BShadingPanel` (Lighting / Color /
+  Options / Cavity, `BViewList`, `shown(shading)` for Blender's polls) and
+  `BShadingPopover` (`BViewList` + `BViewItem`), the header building it as
+  `BShadingPopover.build(s)`; `BMeshPalette::lead(atlas)` leads the atlas;
+  `BStillLook::for_engine` picks F12's look; `BBandList` (was `BBands`);
+  `Matcap::DEFAULT / DIFFUSE_SLOT / SPECULAR_SLOT / name_list / named`;
+  `LIGHT_LIST / COLOR_LIST / BACKGROUND_LIST / CAVITY_TYPE_LIST`;
+  `BSolidShade::item`; phiray `ObjectHash::of(name).hue()` (was
+  `hash::object_hash` / `hue_of`), `BlueNoise::TABLE / words()`. The sRGB
+  transfer has one CPU owner, `phiray::Srgb` (`to_linear`, `from_linear`,
+  `byte_to_linear`, `linear_to_byte`), used by the outline and single
+  colours, the matcaps, `Scene::paint` and the tests; phiphx's colour
+  attribute reuses its own `texture::srgb_to_linear`.
+- Tests: phiber `scene/matcap.rs` (a folder with a PNG under a `.jpg`
+  name and a stray text file: the image alone is listed, a missing folder
+  skipped, green reads back linear at 256²); phiray `srgb.rs` (Blender's
+  values, bytes round-trip, half grey is 188); the restructured tests
+  renamed with their types.
+- Also: `part/filter/shading.rs` reached the 240-line limit, so its tests
+  moved beside it (`shading_tests.rs`).
+- **Suites:** see the head of this file.
+- **Not yet:** a user matcap's specular pass (multilayer EXR), Blender's
+  `studiolight` preference folder (`U.studiolight_dir`, `STUDIOLIGHT_PREFS`),
+  SMAA on Solid's first frames, Depth of Field, colours through the modifier
+  stack, `OB_DRAW_NO_SHADOW_CAST`.
+
+## Batch 128 — F12 follows the engine: a Workbench render
+
+- **Blender** renders F12 with the scene's engine: `BLENDER_WORKBENCH`
+  draws Solid (or Wireframe) with `Scene.display.shading` — the scene's own
+  `View3DShading`, not the viewport's — at `Scene.display.render_aa`
+  samples (`workbench_render.cc`); EEVEE and Cycles path-trace. Phiber's
+  Render job always path-traced.
+- **phiphx**: one `View3DShading` reader for both homes
+  (`blend/scene/shading.rs`, `BlendShading`, `shading_at(block, base)`):
+  the viewport's `View3D.shading` (`BlendView3d.shading`, whole) and
+  `Scene.display.shading` (`SceneRender.display`: `SceneDisplayShading
+  { shading, xray, solid_fx, solid_shade, samples }`, with `render_aa` —
+  `eSceneDisplay_AA`: OFF and FXAA one sample, else 5 / 8 / 11 / 16 / 32).
+  `SceneXray::of`, `SceneSolidFx::of`, `SceneSolidShade::of` build the
+  scene items from the raw struct, for the view and the display alike.
+  The startup file's display shading is `_DNA_DEFAULT_SceneDisplay`'s —
+  no outline, Cavity off with type SSAO and the curvature factors never
+  set, `render_aa` 8 — which differs from the viewport's defaults, as the
+  test now says.
+- **phiber**: `scene/render_engine.rs` picks the look — `BLENDER_WORKBENCH`
+  → `BStillLook { Solid or Wireframe, matcap, texture }` with the display's
+  words on the camera (`BSolidFx::of_file`, `BSolidShade::of_file`: the
+  shading as it stands, no state — effects, lighting, colour, shadow, SSAO,
+  X-ray's `see_through`, the Background's sky), `render_aa` as the sample
+  count and no denoise; any other engine → Rendered at the panel's
+  settings as before. `BRenderPlan.look` carries it; `still` /
+  `still_stepwise` take a `BStillLook` (shading, plain colour, matcap,
+  texture) in place of the shading and colour, so the examples and tests
+  pass one.
+- Tests: phiphx `view_solid_fx.rs` (the startup's display shading);
+  phiber `render_job_runs_in_the_background.rs` (a Cycles plan is Rendered
+  at 64 with denoise; the same file as Workbench with a MatCap / Texture /
+  Shadow / SSAO / X-ray display plans Solid at 16, no denoise, the camera
+  carrying each word, and the path tracer's camera carries none),
+  `solid_fx_tests.rs` / `solid_shade.rs` (`of_file`).
+- **Suites:** see the head of this file.
+- **Not yet:** Workbench's `render_aa` FXAA pass (one sample, no FXAA
+  here), its film transparency through `Scene.display`, Depth of Field.
+
+## Batch 127 — Color ▸ Texture: the material's image in Solid
+
+- **Workbench** (`workbench_image_lib.glsl`, `V3D_SHADING_TEXTURE_COLOR`):
+  the material's image is the surface colour — not a tint over the
+  material's — with the material's roughness and metallic; a mesh without
+  UVs or an image falls back to Material (`SceneState::has_uv`).
+- **phiber**: Solid's build has uploaded no image at all since the atlas
+  overflow (§24); under Texture it now uploads the materials' base-colour
+  images alone — none of the roughness / metallic / emission / normal maps
+  — keyed into the scene (`BMeshPalette::texture`, `BRayKey`) so the switch
+  rebuilds. `solid.wgsl` takes the image as the colour (it used to
+  multiply, a path Solid never reached). The popover's note is gone.
+- Also: `rendered/scene.rs` reached the 240-line limit, so what leads the
+  atlas (the environment, the matcap) moved to `rendered/atlas.rs`.
+- Tests: phiray `tests/shade.rs` (a wall with a green image draws green
+  under Flat, the wall without keeps its grey); phiber `paint_tests.rs`
+  (the TEXTURED-PACKED fixture: Material uploads nothing, Texture the
+  packed image and only that); `solid_shade.rs`.
+- **Suites:** see the head of this file.
+- **Not yet:** Blender's `ob->dt < OB_TEXTURE` check (an object's Display
+  As below Textured falls back), the active image when the material has
+  several (`workbench_image_lib`'s image paint override), the studio-light
+  picker for Studio lighting, colours through the modifier stack,
+  `OB_DRAW_NO_SHADOW_CAST`, `Scene.display.shading` for F12, Depth of Field.
+
+## Batch 126 — Lighting ▸ MatCap: Blender's matcaps, drawn
+
+- **The images.** Blender's 26 matcaps (`datafiles/studiolights/matcap/
+  *.exr`, CC0) are DWA-compressed multilayer EXRs — `diffuse` and
+  `specular` layers (`studiolight_load_matcap`) — which the Rust `exr`
+  decoder cannot read, so they were decoded once (OpenEXR) and ship as
+  `phiber/assets/matcap/<name>.png` and `<name>.specular.png`: 256², sRGB
+  8-bit at half scale (a value of 2 is 255; `fullmetal`'s specular peaks
+  at 1.2), 1.1 MB in all, back to linear on load (`scene/matcap.rs`,
+  decoded once per name). `check_normal+y` is a single-layer file and has
+  no specular; two have a black diffuse and only a specular, as Blender
+  reads them.
+- **The lighting** (`get_matcap_lighting`, `workbench_matcap_lib.glsl`):
+  `matcap_uv_compute` — the view normal in a basis built from the incident
+  vector, `× 0.496 + 0.5`, x negated when flipped — samples the diffuse
+  image times the colour, plus the specular image while Specular Lighting
+  is on; now `solid.wgsl`'s `matcap_uv`, the rows turned since the images
+  here run top-down. The build puts the chosen matcap's images first in the
+  Solid atlas (`matcap::DIFFUSE_SLOT`, `::SPECULAR_SLOT`), keyed into the
+  scene (`BRayKey`) so changing matcap rebuilds; `Camera.matcap = [diffuse
+  + 1, specular + 1 or 0, flip, _]` — all 0 and MatCap lights as Studio.
+- **From the file:** `View3DShading.matcap[256]` (the file's stem) and
+  `V3D_SHADING_MATCAP_FLIP_X` (flag bit 6) → phiphx `SceneSolidShade.
+  matcap`, `.matcap_flip_x`; `BSolidShade` resolves the name against the
+  shipped set and falls back to the first by name (`basic_bright` — Blender's
+  `BKE_studiolight_find_default` does the same once `basic_1.exr`, its
+  named default, is not in the set). The startup file here names a user's
+  own `.jpg` matcap, which falls back.
+- **The popover:** under MatCap, a list of the 26 by name standing in for
+  Blender's preview grid, and **Flip MatCap**.
+- Tests: phiray `tests/shade.rs` (a red | blue 4 × 4 matcap: the facing
+  wall reads the seam, a turned view reads red, flipped blue, the specular
+  image adds green until Specular Lighting is off, no words draw as
+  Studio); phiber `scene/matcap.rs` (26 names, the default first,
+  `clay_studio` decodes with its specular, lit side up, a single-layer one
+  has none, an unknown name is the default, decoded once),
+  `solid_shade.rs` (the words and slots, Flat uploads none, `basic_1`
+  falls back), `filter/shading.rs` (MatCap adds two rows); phiphx
+  `view_solid_fx.rs`.
+- **Suites:** see the head of this file.
+- **Not yet:** the studio-light picker for Studio lighting and world-space
+  lighting; user matcaps from the Blender config folder; Color ▸ Texture;
+  colours through the modifier stack; `OB_DRAW_NO_SHADOW_CAST`;
+  `Scene.display.shading` for F12; Depth of Field.
+
+## Batch 125 — Color ▸ Attribute: the mesh's colour attribute in Solid
+
+- **Workbench** (`workbench_state.cc`, `workbench_engine.cc`'s
+  `get_material`): `V3D_SHADING_VERTEX_COLOR` draws the mesh's active
+  colour attribute (`Mesh.active_color_attribute`) through
+  `material_attribute_color` — `pack_data(0.0, 0.4, 1.0)`, roughness 0.4,
+  no metal — and falls back to `MATERIAL_COLOR` for a mesh without one
+  (`SceneState::has_color`). Byte colours are sRGB and reach the shader
+  linear.
+- **phiphx** reads the attribute from Blender 5's `attribute_storage`
+  (`attrs.rs`, `attr_corner_colors`): the active name, else the first
+  visible colour attribute, `ColorByte` (9) or `ColorFloat` (10) on the
+  point or corner domain; a point-domain attribute is spread over the
+  faces' corners, byte colours decoded to linear. One colour per loop on
+  `BlendSceneObject.loop_colors`, then one per triangle corner on
+  `SceneCorners::colors` (`Triangles::mesh`, `corner_colors`), empty when
+  the mesh has none. Not carried through the modifier stack yet: an
+  evaluated mesh draws its material colour.
+- **phiber**'s build paints the tracer's vertices from the corners
+  (`Scene::paint`: sRGB bytes, Blender's byte colour, white where never
+  painted; a vertex shared by corners of two colours takes the last — the
+  same collapse `per_vertex_uvs` makes). The tracer uploads the colours
+  after the instance table when any object has them (`Camera.insts[2]`,
+  0 for none).
+- **The kernel** (`solid.wgsl`, `vertex_color`): the three corners' bytes,
+  linear, over the barycentrics, at roughness 0.4 and no metal; with no
+  colours uploaded Attribute is Material, as Blender's fallback. The
+  popover's note shrinks to Texture.
+- Tests: phiray `tests/shade.rs` (two walls painted red and blue draw
+  so under Flat; Material still the grey; an unpainted scene draws as
+  Material); phiphx `tests_traversal.rs` (a quad's loop colours land on
+  its six corners, none without a layer), `tests/colors_truth.rs`
+  against `fixtures/colors.blend` — **the fixture is Blender's to make:
+  `blender -b -P tests/fixtures/make_colors.py -- tests/fixtures/colors.blend`**
+  (a cube with a byte corner attribute red / green / blue in turn, a plane
+  with a float point attribute); the test passes vacuously until then;
+  phiber `rendered/paint_tests.rs` (corner colours become the vertex bytes;
+  none uploaded without an attribute).
+- **Suites:** see the head of this file.
+- **Not yet:** colours through the modifier stack (`BlendEvalMesh`), the
+  `.phx` path's colours, Color ▸ Texture, `OB_DRAW_NO_SHADOW_CAST`,
+  `Scene.display.shading` for a Workbench F12, Depth of Field, matcaps and
+  the studio-light picker.
 
 ## Batch 124 — Backface Culling and Specular Lighting
 

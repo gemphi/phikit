@@ -19,6 +19,7 @@ pub fn element_id(icon: &str, label: Option<&str>, action: &BAction) -> String {
     };
     let action_id = match action {
         BAction::Set(path, value) => format!("set-{}-{value}", path.encode()),
+        BAction::Adjust(path, value) => format!("adjust-{}-{value}", path.encode()),
         BAction::Toggle(path) => format!("toggle-{}", path.encode()),
         BAction::Open(path) => format!("open-{}", path.encode()),
         BAction::Reset(path) => format!("reset-{}", path.encode()),

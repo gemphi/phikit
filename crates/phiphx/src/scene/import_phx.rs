@@ -126,6 +126,7 @@ fn object_from_phx(
         material_indices: Default::default(),
         uvs: uvs.into(),
         color: [1.0; 4],
+        shadow: Default::default(),
     }
 }
 
@@ -146,6 +147,8 @@ fn materials_from_phx(
             viewport_pbr: [m.roughness, m.metallic],
             roughness: m.roughness,
             metallic: m.metallic,
+            // `.phx` carries no node tree.
+            graph: Default::default(),
             base_color_texture: m.base_color_texture.clone(),
             texture: None,
             bsdf: Default::default(),

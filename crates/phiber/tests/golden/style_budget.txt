@@ -9,13 +9,11 @@
   36 canvas/gizmo/compass/axis.rs
   19 canvas/gizmo/compass/mod.rs
   36 canvas/gizmo/mod.rs
-  46 canvas/node.rs
+  32 canvas/node/set.rs
    6 canvas/overlay.rs
    9 canvas/surface.rs
-   2 canvas/view3d/boxsel.rs
    4 canvas/view3d/corner.rs
   12 canvas/view3d/mod.rs
-   2 canvas/view3d/orbit.rs
   19 caption.rs
    5 chrome.rs
    9 column.rs
@@ -24,8 +22,8 @@
    3 modal/title.rs
    7 popover/leave.rs
    1 popover/place.rs
-  11 rail.rs
-  21 resize.rs
+  10 rail.rs
+  20 resize.rs
    6 row.rs
    1 scroller.rs
   13 search.rs

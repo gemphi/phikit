@@ -1,0 +1,126 @@
+//! Socket tests — split out so each file stays inside the
+//! 240-line read budget (`level_structure`), the way `canvas/time/row/` is.
+
+use super::*;
+
+fn sock(identifier: &str, kind: i32, flag: i32) -> BlendSocket {
+    BlendSocket {
+        identifier: identifier.into(),
+        name: identifier.into(),
+        kind,
+        flag,
+        ..Default::default()
+    }
+}
+
+fn node(inputs: Vec<BlendSocket>, outputs: Vec<BlendSocket>) -> BlendNode {
+    BlendNode { inputs, outputs, ..Default::default() }
+}
+
+#[test]
+fn the_outputs_sit_above_the_inputs() {
+    // The fact that makes a Blender graph read as a staircase: a result
+    // leaves from the top of the card, not the bottom.
+    let n = node(vec![sock("Base Color", 2, 0)], vec![sock("BSDF", 3, 0)]);
+    let rows = rows(&n);
+    let out = rows.iter().find(|r| r.side == BSocketSide::Output).unwrap();
+    let inp = rows.iter().find(|r| r.side == BSocketSide::Input).unwrap();
+    assert!(out.y < inp.y, "output at {} is not above input at {}", out.y, inp.y);
+}
+
+#[test]
+fn a_socket_sits_at_the_middle_of_its_row() {
+    // `locy - NODE_DYS` with `locy` at the row's top: half a row down.
+    let n = node(Vec::new(), vec![sock("BSDF", 3, 0)]);
+    assert_eq!(rows(&n)[0].y, PAD + HALF, "the first output is half a row below the pad");
+}
+
+#[test]
+fn consecutive_sockets_are_a_row_and_a_gap_apart() {
+    let n = node(Vec::new(), vec![sock("A", 0, 0), sock("B", 0, 0)]);
+    let rows = rows(&n);
+    assert!(
+        ((rows[1].y - rows[0].y) - (ROW + SPACING)).abs() < 1e-6,
+        "{} apart, wanted {}",
+        rows[1].y - rows[0].y,
+        ROW + SPACING
+    );
+}
+
+#[test]
+fn an_unavailable_socket_takes_no_room() {
+    use crate::phiphx::blend::shade::socket::SOCK_UNAVAIL;
+    // A Math node in single-operand mode: the second operand is switched
+    // off, and the card is a whole row shorter for it.
+    let both = node(vec![sock("A", 0, 0), sock("B", 0, 0)], Vec::new());
+    let one = node(vec![sock("A", 0, 0), sock("B", 0, SOCK_UNAVAIL)], Vec::new());
+    assert_eq!(rows(&one).len(), 1, "the disabled operand has no row");
+    assert!(
+        body_height(&one) < body_height(&both),
+        "{} is not shorter than {}",
+        body_height(&one),
+        body_height(&both)
+    );
+}
+
+#[test]
+fn blenders_asymmetric_gap_is_ported_not_tidied() {
+    use crate::phiphx::blend::shade::socket::SOCK_UNAVAIL;
+    // Outputs space only before an AVAILABLE next socket; inputs space
+    // before any next socket. Two lines apart in Blender, and the reason a
+    // node whose last input is followed by a disabled one is a tenth of a
+    // unit taller.
+    //
+    // The comparison has to be within one list, not between them: an
+    // outputs-only node also collects `NODE_DY / 4` after its outputs, so
+    // comparing one against an inputs-only node measures that pad as well
+    // and says nothing about the gap.
+    let one_in = node(vec![sock("A", 0, 0)], Vec::new());
+    let trailing_in = node(vec![sock("A", 0, 0), sock("B", 0, SOCK_UNAVAIL)], Vec::new());
+    let one_out = node(Vec::new(), vec![sock("A", 0, 0)]);
+    let trailing_out = node(Vec::new(), vec![sock("A", 0, 0), sock("B", 0, SOCK_UNAVAIL)]);
+
+    // One visible row either way — the trailing socket is never drawn.
+    for n in [&one_in, &trailing_in, &one_out, &trailing_out] {
+        assert_eq!(rows(n).len(), 1);
+    }
+    // An input followed by a disabled socket still gets its gap …
+    assert!(
+        (body_height(&trailing_in) - body_height(&one_in) - SPACING).abs() < 1e-6,
+        "inputs: {} against {}",
+        body_height(&trailing_in),
+        body_height(&one_in)
+    );
+    // … and an output followed by the same disabled socket does not.
+    assert_eq!(
+        body_height(&trailing_out),
+        body_height(&one_out),
+        "an output's gap waits for an available socket"
+    );
+}
+
+#[test]
+fn a_node_with_no_sockets_is_just_its_padding() {
+    // No sockets, no inputs, no outputs: Blender adds the top space and
+    // neither of the two conditional pads, so the body is a quarter unit.
+    assert_eq!(body_height(&node(Vec::new(), Vec::new())), PAD);
+    assert!(rows(&node(Vec::new(), Vec::new())).is_empty());
+}
+
+#[test]
+fn a_link_finds_its_end_by_identifier() {
+    let n = node(vec![sock("Base Color", 2, 0), sock("Metallic", 0, 0)], Vec::new());
+    assert_eq!(row_of(&n, "Metallic").unwrap().kind, 0);
+    assert!(row_of(&n, "Nonexistent").is_none(), "a missing socket is None, not the origin");
+}
+
+#[test]
+fn the_metrics_are_blenders_own_fractions() {
+    // Spelt out so a mistyped fraction fails here rather than as sockets
+    // that drift out of their cards.
+    assert_eq!(HALF, 0.5, "NODE_DYS is half a widget unit");
+    assert_eq!(PAD, 0.25, "NODE_DYS / 2");
+    assert_eq!(AFTER_OUTPUTS, 0.25, "NODE_DY / 4");
+    assert_eq!(SPACING, 0.1, "NODE_ITEM_SPACING_Y is a tenth");
+    assert_eq!(DOT, 0.25, "NODE_SOCKSIZE is a quarter");
+}

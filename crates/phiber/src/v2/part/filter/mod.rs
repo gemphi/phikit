@@ -129,7 +129,7 @@ impl BViewItem for BFilter {
                     view3d::overlays(s),
                     crate::v2::part::modebar::shading::BXrayButton::view(s),
                     crate::v2::part::modebar::shading::view(s),
-                    shading::shading(s),
+                    shading::BShadingPopover.build(s),
                 ];
                 if is_narrow(s) {
                     folded(s, self.host, controls)

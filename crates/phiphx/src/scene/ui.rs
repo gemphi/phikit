@@ -52,6 +52,13 @@ pub struct SceneXray {
     pub alpha_wireframe: f32,
 }
 
+impl SceneXray {
+    /// `V3D_SHADING_XRAY` and `V3D_SHADING_XRAY_WIREFRAME` with their alphas.
+    pub fn of(sh: &crate::blend::BlendShading) -> Self {
+        Self { solid: sh.flag & (1 << 1) != 0, alpha: sh.xray_alpha[0], wireframe: sh.flag & (1 << 8) != 0, alpha_wireframe: sh.xray_alpha[1] }
+    }
+}
+
 /// `View3DShading`'s Solid effects: the object outline (`show_object_outline`,
 /// `object_outline_color`) and Cavity (`show_cavity`, `cavity_type` as
 /// `"WORLD"` for SSAO, `"SCREEN"` for Curvature, `"BOTH"`, its four factors).
@@ -68,19 +75,63 @@ pub struct SceneSolidFx {
     /// Shadow (`show_shadows`, `V3D_SHADING_SHADOW`) and its intensity.
     pub shadow: bool,
     pub shadow_intensity: f32,
+    /// `show_backface_culling` (`V3D_SHADING_BACKFACE_CULLING`) and
+    /// `show_specular_highlight` (`V3D_SHADING_SPECULAR_HIGHLIGHT`).
+    pub backface_culling: bool,
+    pub specular: bool,
+}
+
+impl SceneSolidFx {
+    /// `V3D_SHADING_OBJECT_OUTLINE`, `_CAVITY`, `_SHADOW`, `_BACKFACE_CULLING`,
+    /// `_SPECULAR_HIGHLIGHT`; the RNA names of `eView3DShading_CavityType`.
+    pub fn of(sh: &crate::blend::BlendShading) -> Self {
+        Self {
+            outline: sh.flag & 1 != 0,
+            outline_color: sh.outline_color,
+            cavity: sh.flag & (1 << 5) != 0,
+            cavity_type: match sh.cavity_type { 0 => "WORLD", 2 => "BOTH", _ => "SCREEN" },
+            cavity_valley_factor: sh.cavity[0],
+            cavity_ridge_factor: sh.cavity[1],
+            curvature_ridge_factor: sh.cavity[2],
+            curvature_valley_factor: sh.cavity[3],
+            shadow: sh.flag & (1 << 2) != 0,
+            shadow_intensity: sh.shadow_intensity,
+            backface_culling: sh.flag & (1 << 10) != 0,
+            specular: sh.flag & (1 << 4) != 0,
+        }
+    }
 }
 
 /// `View3DShading`'s Lighting, Color and Background, by RNA item: `light`
 /// (`STUDIO`, `MATCAP`, `FLAT`), `color_type` (`MATERIAL`, `RANDOM`,
 /// `SINGLE`, `TEXTURE`, `OBJECT`, `VERTEX`) with `single_color`, and
 /// `background_type` (`THEME`, `WORLD`, `VIEWPORT`) with `background_color`.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SceneSolidShade {
     pub light: &'static str,
     pub color_type: &'static str,
+    /// `View3DShading.matcap` (the file's stem) and `V3D_SHADING_MATCAP_FLIP_X`.
+    pub matcap: String,
+    pub matcap_flip_x: bool,
     pub single_color: [f32; 3],
     pub background_type: &'static str,
     pub background_color: [f32; 3],
+}
+
+impl SceneSolidShade {
+    /// The RNA items of `eV3DShadingLightingMode`, `eV3DShadingColorType`
+    /// and `eV3DShadingBackgroundType`; `V3D_SHADING_MATCAP_FLIP_X`.
+    pub fn of(sh: &crate::blend::BlendShading) -> Self {
+        Self {
+            light: match sh.light { 0 => "FLAT", 2 => "MATCAP", _ => "STUDIO" },
+            matcap: sh.matcap.clone(),
+            matcap_flip_x: sh.flag & (1 << 6) != 0,
+            color_type: match sh.color_type { 1 => "RANDOM", 2 => "SINGLE", 3 => "TEXTURE", 4 => "OBJECT", 5 => "VERTEX", _ => "MATERIAL" },
+            single_color: sh.single_color,
+            background_type: match sh.background_type { 1 => "WORLD", 2 => "VIEWPORT", _ => "THEME" },
+            background_color: sh.background_color,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -136,37 +187,12 @@ pub(super) fn ui_from_blend(ui: &BlendUiState, objects: &[BlendSceneObject]) -> 
             pivot,
             width: width.max(1e-3),
             fov,
-            shading: match v.shading { 2 => "wireframe", 3 => "solid", 4 => "material", 5 => "rendered", _ => "" },
+            shading: match v.shading.ty { 2 => "wireframe", 3 => "solid", 4 => "material", 5 => "rendered", _ => "" },
             sidebar: v.sidebar,
             overlay: v.overlay.clone(),
-            // `V3D_SHADING_XRAY` and `V3D_SHADING_XRAY_WIREFRAME`.
-            xray: Some(SceneXray {
-                solid: v.shading_flag & (1 << 1) != 0,
-                alpha: v.xray_alpha[0],
-                wireframe: v.shading_flag & (1 << 8) != 0,
-                alpha_wireframe: v.xray_alpha[1],
-            }),
-            // `V3D_SHADING_OBJECT_OUTLINE`, `V3D_SHADING_CAVITY`; the RNA
-            // names of `eView3DShading_CavityType`.
-            solid_fx: Some(SceneSolidFx {
-                outline: v.shading_flag & 1 != 0,
-                outline_color: v.outline_color,
-                cavity: v.shading_flag & (1 << 5) != 0,
-                cavity_type: match v.cavity_type { 0 => "WORLD", 2 => "BOTH", _ => "SCREEN" },
-                cavity_valley_factor: v.cavity[0],
-                cavity_ridge_factor: v.cavity[1],
-                curvature_ridge_factor: v.cavity[2],
-                curvature_valley_factor: v.cavity[3],
-                shadow: v.shading_flag & (1 << 2) != 0,
-                shadow_intensity: v.shadow_intensity,
-            }),
-            solid_shade: Some(SceneSolidShade {
-                light: match v.light { 0 => "FLAT", 2 => "MATCAP", _ => "STUDIO" },
-                color_type: match v.color_type { 1 => "RANDOM", 2 => "SINGLE", 3 => "TEXTURE", 4 => "OBJECT", 5 => "VERTEX", _ => "MATERIAL" },
-                single_color: v.single_color,
-                background_type: match v.background_type { 1 => "WORLD", 2 => "VIEWPORT", _ => "THEME" },
-                background_color: v.background_color,
-            }),
+            xray: Some(SceneXray::of(&v.shading)),
+            solid_fx: Some(SceneSolidFx::of(&v.shading)),
+            solid_shade: Some(SceneSolidShade::of(&v.shading)),
         }
     });
     SceneUi { workspace: ui.workspace.clone(), view }

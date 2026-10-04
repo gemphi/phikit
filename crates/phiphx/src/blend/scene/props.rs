@@ -36,6 +36,11 @@ pub struct BlendSceneProps {
     /// `shadow_focus`; (1/√3, 1/√3, 1/√3), 0.1, 0 by default.
     pub light_direction: [f32; 3],
     pub shadow: [f32; 2],
+    /// The Workbench render engine's shading (`Scene.display.shading`, what
+    /// F12 draws with) and its anti-aliasing (`render_aa`: `eSceneDisplay_AA`
+    /// — 0 off, 1 FXAA, 5 / 8 / 11 / 16 / 32 samples; 8 by default).
+    pub display_shading: crate::blend::BlendShading,
+    pub render_aa: i16,
     pub world_color: [f32; 3],
     /// The world's Background node (what actually lights a 2.8+ render).
     pub world: crate::blend::BlendWorld,
@@ -99,6 +104,8 @@ impl Default for BlendSceneProps {
             ssao: [0.2, 1.0, 16.0],
             light_direction: [0.577_350_3; 3],
             shadow: [0.1, 0.0],
+            display_shading: Default::default(),
+            render_aa: 8,
             world_color: [0.05, 0.05, 0.05],
             camera: String::new(),
             world: Default::default(),
@@ -223,6 +230,9 @@ impl BlendFile {
             ssao: [self.sp_f32(d, disp("matcap_ssao_distance"), 0.2), self.sp_f32(d, disp("matcap_ssao_attenuation"), 1.0), self.sp_i32(d, disp("matcap_ssao_samples"), 16).clamp(1, 500) as f32],
             light_direction: disp("light_direction[3]").map_or(dflt.light_direction, |o| std::array::from_fn(|i| self.sp_f32(d, Some(o + 4 * i), dflt.light_direction[i]))),
             shadow: [self.sp_f32(d, disp("shadow_shift"), 0.1), self.sp_f32(d, disp("shadow_focus"), 0.0)],
+            display_shading: self.shading_at(Some(sc), disp("shading"), dna),
+            // `render_aa` is a `char` in DNA.
+            render_aa: disp("render_aa").and_then(|o| d.get(o)).map_or(8, |&b| i16::from(b as i8)),
             world_color,
             camera,
             world,

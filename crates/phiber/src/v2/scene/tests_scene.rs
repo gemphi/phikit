@@ -20,6 +20,7 @@ fn loaded_object(name: &str) -> SceneObject {
         material_indices: Default::default(),
         uvs: Default::default(),
         color: [1.0; 4],
+        shadow: Default::default(),
     }
 }
 
@@ -64,8 +65,10 @@ fn current_scene_some_yields_loaded_in_order() {
                 material_indices,
                 uvs,
                 color: _,
+                shadow,
             } => {
                 assert_eq!(name, &src.name);
+                assert_eq!(shadow, &src.shadow);
                 assert_eq!(matrix_world, &src.matrix_world);
                 assert!(std::sync::Arc::ptr_eq(mesh, &src.mesh), "mesh is shared, not copied");
                 assert_eq!(location, &src.location);

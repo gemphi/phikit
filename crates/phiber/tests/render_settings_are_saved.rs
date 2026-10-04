@@ -72,7 +72,7 @@ async fn the_render_and_output_tabs_are_written_by_ctrl_s(cx: &mut TestAppContex
     let look = phiber::v2::view::draw::canvas::view3d::rendered::BRayLook { sky: gpui::black(), grid: gpui::white(), grid_hide: 0, world: None, lights: Vec::new(), wire: None, view: [0.0, 0.0, 1.0, 0.0], environment: None, set: Default::default(), studio: false };
     let set = app.read_with(cx, |a, _| phiber::v2::scene::render_set(&a.state));
     assert!(set.film_transparent);
-    assert_eq!(phiber::v2::scene::render_plan(&saved, set, &look).expect("the factory camera").camera.film, [1, 0, 0, 0]);
+    assert_eq!(phiber::v2::scene::render_plan(&saved, set, &look, gpui::white()).expect("the factory camera").camera.film, [1, 0, 0, 0]);
     assert_eq!((cycles("samples"), cycles("use_denoising"), cycles("diffuse_bounces")), (Some(48), Some(0), Some(2)), "Ctrl S wrote the Cycles settings");
     assert_eq!(cycles("pixel_filter_type"), Some(1), "the enumeration as Blender's number (Gaussian)");
     // Opened again, the panel shows Gaussian.

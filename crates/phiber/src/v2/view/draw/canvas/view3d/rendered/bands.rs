@@ -5,7 +5,7 @@
 
 /// The horizontal bands a frame is rendered in: each `(first row, rows)`,
 /// as tall as the device binds, the last one the rest.
-pub struct BBands {
+pub struct BBandList {
     pub list: Vec<(u32, u32)>,
 }
 
@@ -21,7 +21,7 @@ pub(super) fn force(most: Option<u64>) {
     FORCED.with(|f| f.set(most));
 }
 
-impl BBands {
+impl BBandList {
     /// The pixels `gpu` binds as one image (a test may force fewer).
     pub(super) fn most(gpu: &phiray::Gpu) -> u64 {
         #[cfg(test)]
@@ -47,14 +47,14 @@ impl BBands {
 
 #[cfg(test)]
 mod tests {
-    use super::BBands;
+    use super::BBandList;
 
     #[test]
     fn a_frame_too_large_for_one_binding_is_cut_into_bands_that_cover_it() {
-        let bands = BBands::of(1920, 1080, 1_398_101);
+        let bands = BBandList::of(1920, 1080, 1_398_101);
         assert_eq!(bands.list, [(0, 724), (724, 356)], "728 rows bind; four are each band's overlap");
         assert_eq!(bands.progress(1, 10, 64), 37, "half way through the second band of two: 37 of 64");
-        assert_eq!(BBands::of(64, 32, 1_398_101).list, [(0, 32)], "a small frame is one band");
-        assert_eq!(BBands::of(4096, 4096, 1_398_101).list.len(), 13);
+        assert_eq!(BBandList::of(64, 32, 1_398_101).list, [(0, 32)], "a small frame is one band");
+        assert_eq!(BBandList::of(4096, 4096, 1_398_101).list.len(), 13);
     }
 }

@@ -5,6 +5,7 @@
 //! world. Falls back to the mesh painter when
 //! there is no GPU adapter.
 
+mod atlas;
 mod bands;
 mod build;
 mod clock;
@@ -24,8 +25,10 @@ mod view;
 mod wake;
 mod worker;
 mod world;
-pub use self::still::{BStill, still, still_stepwise};
+pub use self::still::{BStill, BStillLook, still, still_stepwise};
 pub use self::world::{BRayLook, ENV_CDF_SLOT, ENV_IRRADIANCE_SLOT, ENV_PREFILTERED_SLOT, ENV_SLOT, environment, light, lit, studio_lighting, view_words};
+#[cfg(test)]
+mod paint_tests;
 #[cfg(test)]
 mod tests;
 
@@ -159,6 +162,7 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
         ssao: view.ssao,
         shadow: view.shadow,
         shadow_fade: view.shadow_fade,
+        matcap: view.matcap,
         outline: view.outline,
         shade: view.shade,
         single: view.single,

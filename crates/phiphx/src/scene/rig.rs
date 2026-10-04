@@ -71,7 +71,7 @@ impl SceneRigs {
             .zip(skinned)
             .map(|(s, (object, posed))| {
                 let mesh = s.source.evaluate(posed, Self::world(&at.world, s.motion));
-                (object, s.tris.mesh(mesh.vertices, &[]))
+                (object, s.tris.mesh(mesh.vertices, &[], &[]))
             })
             .collect()
     }

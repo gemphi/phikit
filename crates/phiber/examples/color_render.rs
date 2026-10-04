@@ -8,7 +8,7 @@ use phiber::v2::app::seed::seed_view_layer;
 use phiber::v2::part::outliner::key::BHidden;
 use phiber::v2::scene::{BObject3D, BShading, current_scene, source::set_loaded_scene};
 use phiber::v2::state::BState;
-use phiber::v2::view::draw::canvas::view3d::rendered::{ENV_CDF_SLOT, ENV_SLOT, environment, light, still};
+use phiber::v2::view::draw::canvas::view3d::rendered::{BStillLook, ENV_CDF_SLOT, ENV_SLOT, environment, light, still};
 use phiray::{Camera, LIGHTS, Light};
 use std::time::Instant;
 
@@ -136,7 +136,7 @@ fn main() {
         ..Default::default()
     };
     let t = Instant::now();
-    let (px, samples) = still(&objects, shading, gpui::hsla(0.0, 0.0, 0.8, 1.0), cam, W, H, samples, denoise).expect("gpu adapter and a scene that fits");
+    let (px, samples) = still(&objects, BStillLook::new(shading, gpui::hsla(0.0, 0.0, 0.8, 1.0)), cam, W, H, samples, denoise).expect("gpu adapter and a scene that fits");
     let render = t.elapsed();
     image::RgbaImage::from_raw(W, H, px).expect("image").save(&out).expect("save");
     let ms = |d: std::time::Duration| d.as_secs_f64() * 1000.0;

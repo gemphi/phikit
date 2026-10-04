@@ -8,7 +8,8 @@
 use gpui::{TestAppContext, px, size};
 use phiber::phiphx::scene::SceneCamera;
 use phiber::v2::app::BPhiberApp;
-use phiber::v2::scene::{BObject3D, BRenderPlan, camera_of, render_job};
+use phiber::v2::scene::{BObject3D, BRenderPlan, BShading, camera_of, render_job};
+use phiber::v2::view::draw::canvas::view3d::rendered::BStillLook;
 use phiber::v2::space::BSpaceType;
 use phiber::v2::state::CtxKey;
 
@@ -26,7 +27,7 @@ fn plan(samples: u32) -> BRenderPlan {
         display_size: 1.0,
         dof: Default::default(),
     };
-    BRenderPlan { camera: camera_of(&cam, 64, 32), w: 64, h: 32, samples, denoise: false }
+    BRenderPlan { camera: camera_of(&cam, 64, 32), w: 64, h: 32, samples, denoise: false, look: BStillLook::new(BShading::Rendered, gpui::hsla(0.0, 0.0, 0.8, 1.0)) }
 }
 
 fn selectors(cx: &mut gpui::VisualTestContext) -> Vec<String> {
@@ -72,7 +73,6 @@ async fn the_rendering_workspace_is_the_image_editor_with_blenders_header(cx: &m
     render_job::start(
         vec![BObject3D::Primitive { name: "Cube".into(), shape: phiber::v2::scene::BShape::Cube, x: 0.0, y: 0.0 }],
         plan(4),
-        gpui::hsla(0.0, 0.0, 0.8, 1.0),
     );
     let mut ready = false;
     for _ in 0..600 {

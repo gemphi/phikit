@@ -25,6 +25,8 @@ use super::*;
             faces: Vec::new(),
             loop_normals: Vec::new(),
             loop_uvs: Vec::new(),
+            loop_colors: Vec::new(),
+            shadow: Default::default(),
             face_materials: Vec::new(),
             face_smooth: Vec::new(),
             data: Default::default(),

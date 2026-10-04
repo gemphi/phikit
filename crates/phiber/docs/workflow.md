@@ -253,11 +253,15 @@ and — World / Both — the SSAO settings (Samples, Distance, Attenuation,
 batch 122), drawn by the kernel as Blender's `cavity_compute`; Shadow with
 its intensity and settings (Direction, Offset, Focus, batch 123), one
 shadow ray per pixel with `get_shadow`'s terminator; Backface Culling and
-Specular Lighting (batch 124). **Not done:** SMAA on
-the first frames of Solid; MatCap, Attribute and Texture colour (they
-draw as Studio / Material and the popover says so); Workbench's depth of
-field; an object's Shadow switch (`OB_DRAW_NO_SHADOW_CAST`); Material
-Preview on EEVEE's model; `Scene.display.shading` for a Workbench F12.
+Specular Lighting (batch 124); Color ▸ Attribute, the mesh's colour
+attribute (batch 125); Lighting ▸ MatCap with Blender's 26 matcaps and
+Flip, and the user's own matcaps from Blender's config folder (batches
+126, 129); Color ▸ Texture (batch 127). Colours ride the modifier stack
+(batch 130); an object's Shadow switches — Viewport Display's under Solid,
+Ray Visibility's under Material Preview and Rendered (batch 131). **Not
+done:** SMAA on the first frames of Solid; Workbench's depth of field;
+Material Preview on EEVEE's model. F12 with the Workbench engine renders Solid
+with `Scene.display.shading` at `render_aa` samples (batch 128).
 
 **Animation — works:** playback of objects, NLA, rigs, constraints, IK,
 rig drivers; keying (I, auto-key, Alt I); Dope Sheet key select / move /

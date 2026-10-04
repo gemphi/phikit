@@ -99,6 +99,32 @@ impl BSolidFx {
         }
     }
 
+    /// A file's shading as it stands — the Workbench render engine's
+    /// `Scene.display.shading` with the scene's SSAO and shadow settings —
+    /// without the state (`scene::render_job`).
+    pub fn of_file(fx: &SceneSolidFx, ssao: &crate::phiphx::scene::SceneSsao, shadow: &crate::phiphx::scene::SceneShadow) -> Self {
+        Self {
+            outline: fx.outline,
+            outline_color: fx.outline_color,
+            cavity: fx.cavity,
+            cavity_type: fx.cavity_type,
+            cavity_valley_factor: fx.cavity_valley_factor,
+            cavity_ridge_factor: fx.cavity_ridge_factor,
+            curvature_ridge_factor: fx.curvature_ridge_factor,
+            curvature_valley_factor: fx.curvature_valley_factor,
+            ssao_samples: ssao.samples.clamp(1, 500),
+            ssao_distance: ssao.distance,
+            ssao_attenuation: ssao.attenuation,
+            shadow: fx.shadow,
+            shadow_intensity: fx.shadow_intensity,
+            light_direction: shadow.light_direction,
+            shadow_shift: shadow.shift,
+            shadow_focus: shadow.focus,
+            backface_culling: fx.backface_culling,
+            specular: fx.specular,
+        }
+    }
+
     /// A file's view's effects, into the state (`app::load_ui`).
     pub fn seed(s: &mut BState, fx: &SceneSolidFx) {
         let on = |b: bool| if b { V_TRUE } else { V_FALSE };
@@ -188,7 +214,7 @@ impl BSolidFx {
     /// `phiray::Camera::outline`: the outline colour, scene-linear, as
     /// Workbench blends it (`object_outline_color` is a `PROP_COLOR`).
     pub fn outline_words(&self) -> [f32; 4] {
-        let lin = |c: f32| if c <= 0.04045 { c / 12.92 } else { ((c + 0.055) / 1.055).powf(2.4) };
+        let lin = phiray::Srgb::to_linear;
         [lin(self.outline_color[0]), lin(self.outline_color[1]), lin(self.outline_color[2]), 1.0]
     }
 }

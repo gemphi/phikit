@@ -87,6 +87,7 @@ fn a_click_puts_the_cursor_on_the_surface_or_on_its_own_plane_turned_to_the_view
         material_indices: Default::default(),
         uvs: Default::default(),
         color: [1.0; 4],
+        shadow: Default::default(),
     };
     // Front: the view looks along +Y, right is +X, up is +Z.
     let view = BPickView { yaw: 0.0, pitch: 0.0, pan: (0.0, 0.0), zoom: 1.0, setup: BViewSetup::default(), aspect: 1.0 };

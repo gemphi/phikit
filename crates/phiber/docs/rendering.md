@@ -1586,3 +1586,67 @@ sky where nothing is behind. `V3D_SHADING_SPECULAR_HIGHLIGHT` is
 as the whole diffuse colour and no specular at all — `workbench.wgsl`
 branches the same way. Both ride in `Camera.shade`'s spare words, inverted
 where Blender's default has the flag set.
+
+## 31. Color ▸ Attribute (batch 125, 2026-10-03)
+
+Workbench's `V3D_SHADING_VERTEX_COLOR` shades with the mesh's active colour
+attribute at `pack_data(0.0, 0.4, 1.0)` and falls back to the material
+colour for a mesh without one (`SceneState::has_color`). Phiber: phiphx
+reads the attribute off Blender 5's `attribute_storage` — byte or float,
+point or corner domain, bytes decoded from sRGB — to a colour per loop,
+then per triangle corner (`SceneCorners::colors`); the build paints the
+tracer's vertices with them as sRGB bytes (`Scene::paint`), uploaded after
+the instance table; `solid.wgsl` decodes and interpolates the three
+corners. The modifier stack carries them with the UVs (batch 130).
+
+## 32. Lighting ▸ MatCap (batch 126, 2026-10-03)
+
+Workbench's MatCap samples a studio-light image by the view normal
+(`get_matcap_lighting`: `matcap_uv_compute(I, N, flipped)` over the diffuse
+and specular textures, `diffuse · base_color + specular · use_specular`).
+Blender's matcaps are DWA-compressed multilayer EXRs the Rust `exr` crate
+cannot read, so they ship decoded as 256² sRGB PNGs at half scale
+(`assets/matcap/`, 1.1 MB, CC0) and are decoded back to linear once per
+name (`scene/matcap.rs`). The Solid build uploads the chosen one's images
+first in the atlas and `solid.wgsl` samples them with `sample_env` (rows
+turned); `Camera.matcap` carries the slots and the flip. A name the set
+lacks — the user's own, or Blender's old default `basic_1` — falls to the
+first by name, as `BKE_studiolight_find_default` does.
+
+## 33. Color ▸ Texture (batch 127, 2026-10-03)
+
+`V3D_SHADING_TEXTURE_COLOR` draws the material's image as the colour
+(`workbench_image_lib.glsl`), Material where a mesh has no UVs or image.
+Solid's build uploads the base-colour images under Texture and nothing
+else; `solid.wgsl` takes the sampled image as the base colour.
+
+## 34. F12 with the Workbench engine (batch 128, 2026-10-04)
+
+`workbench_render.cc` renders F12 with `Scene.display.shading` and
+`render_aa` when the engine is `BLENDER_WORKBENCH`. Phiber: phiphx reads
+that shading with the same `View3DShading` reader as the viewport's
+(`BlendShading`, `SceneDisplayShading`), and `scene/render_engine.rs`
+turns it into the still's look and the camera's words — Solid or
+Wireframe, the matcap and images, every effect — at `render_aa` samples
+without denoise; other engines path-trace as before.
+
+## 35. The user's matcaps (batch 129, 2026-10-04)
+
+Blender lists a user's own matcaps from `BLENDER_USER_DATAFILES/studiolights/
+matcap/` beside the shipped ones. Phiber scans that folder once (every
+Blender version under the config root, newest first), lists the images after
+the shipped set and decodes one when named — LDR as sRGB, EXR / HDR as
+linear, fitted to 256², no specular pass; a missing or unreadable one falls
+to the default as `BKE_studiolight_find_default` would.
+
+## 36. An object's Shadow switches (batch 131, 2026-10-04)
+
+Blender keeps two per-object shadow toggles: Viewport Display ▸ Shadow
+(`Object.dtx & OB_DRAW_NO_SHADOW_CAST`), which Workbench reads for Solid
+and Wireframe, and Visibility ▸ Ray Visibility ▸ Shadow
+(`Object.visibility_flag & OB_HIDE_SHADOW`), which Cycles and EEVEE read.
+phiphx reads both into `SceneObject::shadow` (`BlendShadowCast`); the
+viewport build asks `casts_in(shading.uses_viewport_color())` and tells
+the tracer `Scene::hide_shadow(inst)`. The kernel carries it as bit 1 of
+the instance's flag word: `trace_blas` skips that instance for shadow
+rays only, so the object is still drawn, lit and occluding for the camera.

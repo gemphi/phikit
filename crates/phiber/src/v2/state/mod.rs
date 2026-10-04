@@ -23,7 +23,7 @@ pub use menu::{
     apply_open, apply_toggle, close_overlays, hover_open_if_menubar_active, is_menubar_active,
     is_menubar_active_in,
 };
-pub use path::BPath;
+pub use path::{BPath, intern};
 pub use seed::default_state;
 pub use val::*;
 

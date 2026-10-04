@@ -28,6 +28,8 @@ fn object(name: &str, location: [f32; 3], scale: [f32; 3], color: [f32; 4], roug
             viewport_pbr: [roughness, 0.25],
             roughness,
             metallic: 0.25,
+            // A test's material has no node tree.
+            graph: Default::default(),
             base_color_texture: None,
             texture: None,
             bsdf: Default::default(),
@@ -38,6 +40,7 @@ fn object(name: &str, location: [f32; 3], scale: [f32; 3], color: [f32; 4], roug
         material_indices: Default::default(),
         uvs: Default::default(),
         color: [1.0; 4],
+        shadow: Default::default(),
     }
 }
 

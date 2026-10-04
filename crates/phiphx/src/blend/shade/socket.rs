@@ -1,0 +1,207 @@
+//! A node's sockets — `bNode.inputs` and `bNode.outputs`, each a `ListBase` of
+//! `bNodeSocket` (`makesdna/DNA_node_types.h:1426`).
+//!
+//! `graph.rs` reads the nodes and the links between them, which is enough to draw
+//! cards and say which pairs are joined. It is not enough to draw a node editor:
+//! Blender's links run from a socket to a socket, and where those sockets sit is
+//! what gives a node its height and its link endpoints.
+//!
+//! The one thing a socket does NOT carry is its position.
+//! `bNodeSocket.runtime->location` is where Blender keeps it, and `runtime` is a
+//! pointer rebuilt on load — nothing of it is in the file. So a reader can only
+//! give the sockets, in order, with their type and flags, and the position has to
+//! be LAID OUT the way Blender lays it out (`node_draw.cc`'s
+//! `node_update_basis_from_socket_lists`, ported in phiber's
+//! `canvas/node/socket.rs`). That split is deliberate and is why this file
+//! carries no coordinates at all.
+//!
+//! | field | what it gives |
+//! |---|---|
+//! | `identifier[64]` | the stable id a `bNodeLink` names its ends by |
+//! | `name[64]` | what the row prints |
+//! | `type` | `eNodeSocketDatatype` — decides the socket's colour |
+//! | `flag` | `eNodeSocketFlag`: `SOCK_UNAVAIL`, `SOCK_HIDDEN`, … |
+//! | `in_out` | input or output; the lists already separate them |
+//!
+//! `type` is read through `int_field` rather than at a fixed width because it is
+//! a C++ enum in 5.x and was a `short` in older files, so the DNA is the only
+//! honest source for how wide it is in THIS file.
+
+use super::nodes::read_cstr;
+use crate::blend::file::types::*;
+
+/// One socket of a node, as the editor needs it.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct BlendSocket {
+    /// `bNodeSocket.identifier` — unique on its node and stable across renames,
+    /// which is what makes it the id a link's end is resolved by.
+    pub identifier: String,
+    /// `bNodeSocket.name` — what the socket's row prints.
+    pub name: String,
+    /// `bNodeSocket.type`, an `eNodeSocketDatatype`. `SOCK_CUSTOM` is `-1`.
+    pub kind: i32,
+    /// `bNodeSocket.flag`, an `eNodeSocketFlag`.
+    pub flag: i32,
+    /// `bNodeSocket.limit` — how many links this socket accepts.
+    ///
+    /// Set at creation to `in_out == SOCK_IN ? 1 : 0xFFF`
+    /// (`blenkernel/intern/node.cc:3090`), so an input takes ONE link and an
+    /// output takes 4095. That one number is why dropping a link on a
+    /// connected input replaces what is there instead of adding to it.
+    pub limit: i32,
+    /// The saved address, so a link can name this end.
+    pub address: u64,
+}
+
+/// `eNodeSocketFlag` (`DNA_node_types.h`), the bits that decide whether a socket
+/// is drawn at all.
+pub const SOCK_HIDDEN: i32 = 1 << 1;
+pub const SOCK_IS_LINKED: i32 = 1 << 2;
+pub const SOCK_UNAVAIL: i32 = 1 << 3;
+pub const SOCK_MULTI_INPUT: i32 = 1 << 11;
+
+impl BlendSocket {
+    /// `bNodeSocket::is_available` (`BKE_node_runtime.hh:1024`) — exactly
+    /// `(flag & SOCK_UNAVAIL) == 0`. An unavailable socket is one the node's type
+    /// has switched off (a Math node's second operand in single-operand mode),
+    /// and Blender's layout skips it, so it takes no row and no height.
+    pub fn available(&self) -> bool {
+        self.flag & SOCK_UNAVAIL == 0
+    }
+
+    /// Whether this socket gets a row.
+    ///
+    /// Blender's `is_visible()` is `!is_user_hidden() && is_available() &&
+    /// inferred_socket_visibility()`. The third term is a runtime inference over
+    /// the tree's topology and is not in the file, so it cannot be answered from
+    /// here; the first two are flags and are. A socket this calls visible is
+    /// therefore one Blender would at most also hide, never one it would show.
+    pub fn visible(&self) -> bool {
+        self.available() && self.flag & SOCK_HIDDEN == 0
+    }
+
+    /// `SOCK_IS_LINKED`: something is plugged in, so the row shows no value.
+    pub fn linked(&self) -> bool {
+        self.flag & SOCK_IS_LINKED != 0
+    }
+
+    /// `SOCK_MULTI_INPUT`: takes any number of links (a Join Geometry input).
+    /// Blender gives one of these a taller row — `NODE_MULTI_INPUT_LINK_GAP` per
+    /// link past the second — which the layout accounts for.
+    pub fn multi(&self) -> bool {
+        self.flag & SOCK_MULTI_INPUT != 0
+    }
+
+    /// `node_socket_link_limit` (`blenkernel/intern/node.cc:5409`).
+    ///
+    /// A multi-input socket takes 4095 whatever its stored `limit` says, which
+    /// is the first thing that function checks. After that Blender prefers the
+    /// socket TYPE's limit when `use_link_limits_of_type` is set, and falls back
+    /// to the stored field otherwise — `typeinfo` is a registry pointer and is
+    /// not in the file, so the stored field is what a reader has. It is the same
+    /// answer for every stock socket, whose type limits match the defaults.
+    pub fn link_limit(&self) -> i32 {
+        if self.multi() { MULTI_INPUT_LIMIT } else { self.limit }
+    }
+}
+
+/// What `node_socket_link_limit` returns for a multi-input socket.
+pub const MULTI_INPUT_LIMIT: i32 = 4095;
+
+impl BlendFile {
+    /// One of a node's two socket lists, in the file's own order.
+    ///
+    /// Order matters and is not sorted: it is the order Blender lays the rows out
+    /// in, so reordering here would move every socket on the card.
+    pub(crate) fn node_sockets(
+        &self,
+        node: &BlendBlock,
+        which: &'static str,
+        dna: &DnaType,
+    ) -> Vec<BlendSocket> {
+        let first = self.ptr(node, self.off("bNode", which, dna));
+        let next = self.off("bNodeSocket", "*next", dna);
+        let identifier = self.off("bNodeSocket", "identifier", dna);
+        let name = self.off("bNodeSocket", "name", dna);
+        self.list(first, next)
+            .into_iter()
+            .map(|s| BlendSocket {
+                identifier: identifier.map_or_else(String::new, |o| read_cstr(&s.data, o, 64)),
+                name: name.map_or_else(String::new, |o| read_cstr(&s.data, o, 64)),
+                // `type` is an enum in 5.x and was a `short` before it; the DNA
+                // says which, so the width is never assumed.
+                kind: self.int_field(s, "bNodeSocket", "type", dna) as i32,
+                flag: self.int_field(s, "bNodeSocket", "flag", dna) as i32,
+                limit: self.int_field(s, "bNodeSocket", "limit", dna) as i32,
+                address: s.old_address,
+            })
+            .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sock(flag: i32) -> BlendSocket {
+        BlendSocket { flag, ..Default::default() }
+    }
+
+    #[test]
+    fn an_unavailable_socket_is_the_one_the_layout_skips() {
+        // `is_available` is exactly one bit, and it is the bit that decides
+        // whether a socket takes a row — so a node in single-operand mode is
+        // shorter than the same node in two-operand mode.
+        assert!(sock(0).available());
+        assert!(!sock(SOCK_UNAVAIL).available());
+        // Being linked, or selected, is not being unavailable.
+        assert!(sock(SOCK_IS_LINKED).available());
+        assert!(sock(1).available(), "SOCK_SELECT is not SOCK_UNAVAIL");
+    }
+
+    #[test]
+    fn a_hidden_socket_is_available_but_not_drawn() {
+        // The two are separate bits and mean separate things: hidden is the
+        // user's choice (Ctrl+H), unavailable is the node type's.
+        let hidden = sock(SOCK_HIDDEN);
+        assert!(hidden.available(), "hiding a socket does not make it unavailable");
+        assert!(!hidden.visible());
+        assert!(sock(0).visible());
+    }
+
+    #[test]
+    fn the_flag_bits_are_blenders_own_values() {
+        // Spelt out, because a wrong shift here silently hides every socket or
+        // shows every disabled one, and both look like a layout bug.
+        assert_eq!(SOCK_HIDDEN, 2);
+        assert_eq!(SOCK_IS_LINKED, 4);
+        assert_eq!(SOCK_UNAVAIL, 8);
+        assert_eq!(SOCK_MULTI_INPUT, 2048);
+    }
+
+    #[test]
+    fn a_multi_input_socket_says_so() {
+        assert!(sock(SOCK_MULTI_INPUT).multi());
+        assert!(!sock(SOCK_IS_LINKED).multi());
+    }
+
+    #[test]
+    fn an_input_takes_one_link_and_an_output_takes_four_thousand() {
+        // `sock->limit = (in_out == SOCK_IN ? 1 : 0xFFF)` at creation
+        // (`node.cc:3090`). The asymmetry is the whole reason a link dropped on
+        // a connected input replaces it: one in, many out.
+        let input = BlendSocket { limit: 1, ..Default::default() };
+        let output = BlendSocket { limit: 0xFFF, ..Default::default() };
+        assert_eq!(input.link_limit(), 1);
+        assert_eq!(output.link_limit(), 4095);
+        assert_eq!(0xFFF, MULTI_INPUT_LIMIT, "an output's default IS the multi limit");
+    }
+
+    #[test]
+    fn a_multi_input_ignores_its_stored_limit() {
+        // The first thing `node_socket_link_limit` checks, before the type and
+        // before the field — a Join Geometry input is stored with limit 1.
+        let joined = BlendSocket { limit: 1, flag: SOCK_MULTI_INPUT, ..Default::default() };
+        assert_eq!(joined.link_limit(), MULTI_INPUT_LIMIT);
+    }
+}

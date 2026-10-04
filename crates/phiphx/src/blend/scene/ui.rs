@@ -35,34 +35,8 @@ pub struct BlendView3d {
     /// `View3D.lens` (mm; Blender default 50).
     pub lens: f32,
     /// `View3D.shading.type` (`eDrawType`: 2 wire, 3 solid, 4 material, 5 rendered).
-    pub shading: u8,
-    /// `View3D.shading.flag` (`eView3DShading_Flag`: X-ray is `1 << 1`,
-    /// X-ray in Wireframe `1 << 8`).
-    pub shading_flag: u16,
-    /// `View3D.shading.xray_alpha` and `xray_alpha_wire`.
-    pub xray_alpha: [f32; 2],
-    /// Workbench's Solid effects as the view had them: `cavity_type`
-    /// (`eView3DShading_CavityType`: 0 SSAO, 1 Curvature, 2 Both),
-    /// `object_outline_color`, and `[cavity_valley_factor,
-    /// cavity_ridge_factor, curvature_ridge_factor, curvature_valley_factor]`;
-    /// the outline's and the cavity's switches are `shading_flag` bits 0 and 5.
-    pub cavity_type: u8,
-    /// `View3DShading.shadow_intensity` (Shadow, 0 ..= 1); the shadow's
-    /// switch is `shading_flag` bit 2 (`V3D_SHADING_SHADOW`).
-    pub shadow_intensity: f32,
-    pub outline_color: [f32; 3],
-    pub cavity: [f32; 4],
-    /// Lighting, Color and Background as the view had them: `light`
-    /// (`eV3DShadingLightingMode`: 0 Flat, 1 Studio, 2 MatCap), `color_type`
-    /// (`eV3DShadingColorType`: 0 Material, 1 Random, 2 Single, 3 Texture, 4
-    /// Object, 5 Attribute), `single_color`, `background_type`
-    /// (`eV3DShadingBackgroundType`: 0 Theme, 1 World, 2 Viewport) and
-    /// `background_color`.
-    pub light: u8,
-    pub color_type: u8,
-    pub single_color: [f32; 3],
-    pub background_type: u8,
-    pub background_color: [f32; 3],
+    /// `View3D.shading`, whole (`shading.rs`).
+    pub shading: super::shading::BlendShading,
     /// The area's sidebar region is shown (`RGN_TYPE_UI` without
     /// `RGN_FLAG_HIDDEN`) — `SpaceView3D.show_region_ui`.
     pub sidebar: bool,
@@ -173,12 +147,6 @@ impl BlendFile {
             if self.int_field(rg, "ARegion", "regiontype", dna) != RGN_TYPE_WINDOW { continue; }
             let Some(rv) = self.block_at(self.ptr(rg, data)) else { continue };
             let v3d = self.block_at(self.ptr(area, self.off("ScrArea", "spacedata", dna)));
-            let at = |field: &str| self.off("View3D", "shading", dna).zip(self.off("View3DShading", field, dna)).map(|(a, b)| a + b);
-            let sh = at("type");
-            let flag = at("flag");
-            let (lo, hi) = v3d.map_or((0, 0), |b| (self.ui_byte(b, flag), self.ui_byte(b, flag.map(|o| o + 1))));
-            let shading_flag = if self.header.little_endian { u16::from_le_bytes([lo, hi]) } else { u16::from_be_bytes([lo, hi]) };
-            let alpha = |field: &str, default: f32| v3d.and_then(|b| self.ui_f32s::<1>(b, at(field))).map_or(default, |a| a[0]);
             let m: [f32; 16] = self.ui_f32s(rv, self.off("RegionView3D", "viewinv[4][4]", dna))?;
             return Some(BlendView3d {
                 view_inv: std::array::from_fn(|c| std::array::from_fn(|r| m[c * 4 + r])),
@@ -186,18 +154,7 @@ impl BlendFile {
                 dist: self.ui_f32s::<1>(rv, self.off("RegionView3D", "dist", dna)).map_or(10.0, |d| d[0]),
                 persp: self.ui_byte(rv, self.off("RegionView3D", "persp", dna)),
                 camzoom: self.ui_f32s::<1>(rv, self.off("RegionView3D", "camzoom", dna)).map_or(0.0, |z| z[0]),
-                shading: v3d.map_or(0, |b| self.ui_byte(b, sh)),
-                shading_flag,
-                xray_alpha: [alpha("xray_alpha", 0.5), alpha("xray_alpha_wire", 0.0)],
-                cavity_type: v3d.map_or(1, |b| self.ui_byte(b, at("cavity_type"))),
-                shadow_intensity: alpha("shadow_intensity", 0.5),
-                outline_color: v3d.and_then(|b| self.ui_f32s::<3>(b, at("object_outline_color[3]"))).unwrap_or([0.0; 3]),
-                cavity: [alpha("cavity_valley_factor", 1.0), alpha("cavity_ridge_factor", 1.0), alpha("curvature_ridge_factor", 1.0), alpha("curvature_valley_factor", 1.0)],
-                light: v3d.map_or(1, |b| self.ui_byte(b, at("light"))),
-                color_type: v3d.map_or(0, |b| self.ui_byte(b, at("color_type"))),
-                single_color: v3d.and_then(|b| self.ui_f32s::<3>(b, at("single_color[3]"))).unwrap_or([0.8; 3]),
-                background_type: v3d.map_or(0, |b| self.ui_byte(b, at("background_type"))),
-                background_color: v3d.and_then(|b| self.ui_f32s::<3>(b, at("background_color[3]"))).unwrap_or([0.05; 3]),
+                shading: self.shading_at(v3d, self.off("View3D", "shading", dna), dna),
                 lens: v3d.and_then(|b| self.ui_f32s::<1>(b, self.off("View3D", "lens", dna))).map_or(50.0, |l| l[0]),
                 sidebar,
                 overlay: v3d.map(|b| self.overlay_of(b, dna)).unwrap_or_default(),

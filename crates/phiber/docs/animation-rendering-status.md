@@ -255,8 +255,15 @@ and the kernel (`rendering.md` §27). **Batch 122:** Cavity ▸ World — the
 screen-space ambient occlusion, EEVEE's blue noise and the Hammersley
 disk (§28). **Batch 123:** Shadow — the directional light's shadow ray
 with `get_shadow`'s terminator (§29). **Batch 124:** Backface Culling and
-Specular Lighting (§30). **Next:** matcaps, Attribute and Texture colour,
-Depth of Field,
+Specular Lighting (§30). **Batch 125:** Color ▸ Attribute (§31). **Batch
+126:** MatCap lighting with Blender's 26 matcaps (§32). **Batch 127:**
+Color ▸ Texture (§33). **Batch 128:** F12 follows the engine — a
+Workbench file renders Solid with `Scene.display.shading` (§34). **Batch
+129:** the user's own matcaps from Blender's config folder (§35). **Batch
+130:** the colour attribute through the modifier stack. **Batch 131:** an
+object's Shadow switches — Viewport Display's for Solid, Ray Visibility's
+for the ray-traced modes (§36). **Next:** Depth of
+Field,
 `Scene.display` from the file (`viewport_aa`, `light`, `color_type`);
 then Material Preview on EEVEE's model and the shader nodes (Rendering 6).
 
@@ -287,9 +294,9 @@ then Material Preview on EEVEE's model and the shader nodes (Rendering 6).
    ~~The Shading popover (Options, Cavity)~~ — batch 120; ~~Lighting,
    Color, Background~~ — batch 121; ~~Cavity ▸ World (SSAO)~~ — batch 122;
    ~~Shadow~~ — batch 123; ~~Backface Culling, Specular Lighting~~ —
-   batch 124. Still: SMAA on the first frames, matcaps,
-   Attribute / Texture colour, Depth of Field and `Scene.display.shading`
-   for F12; then Material Preview on EEVEE's model. Medium each.
+   batch 124; ~~Attribute colour~~ — batch 125; ~~MatCap~~ — batch 126; ~~Texture colour~~ — batch 127.
+   ~~`Scene.display.shading` for F12~~ — batch 128. Still: SMAA on the
+   first frames, Depth of Field; then Material Preview on EEVEE's model. Medium each.
 1. ~~The panel's resolution reaches F12 and is saved~~ — batch 97.
 2. ~~The colour-management panel seeded from the file, read by F12 and the
    viewport, and saved~~ — batch 99 (Look is still not read).

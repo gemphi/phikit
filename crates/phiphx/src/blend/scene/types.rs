@@ -31,6 +31,8 @@ pub struct BlendSceneObject {
     /// `Object.col`: the object's own colour (RGBA, scene-linear), Solid's
     /// Color ▸ Object. White when the file has none.
     pub color: [f32; 4],
+    /// Whether it casts a shadow, in the viewport and to rays.
+    pub shadow: crate::blend::BlendShadowCast,
     pub vertices: Vec<[f32; 3]>,
     pub faces: crate::blend::BFaces,
     /// Per-loop normals (one per loop/corner, indexed same as face loops).
@@ -39,6 +41,9 @@ pub struct BlendSceneObject {
     /// Per-loop UV coordinates (one per loop/corner). Empty when no UV layer
     /// is present in the mesh.
     pub loop_uvs: Vec<[f32; 2]>,
+    /// The active colour attribute, scene-linear, one per loop (corner);
+    /// empty when the mesh has none (`attrs.rs`, `attr_corner_colors`).
+    pub loop_colors: Vec<[f32; 3]>,
     /// Camera / light / empty display data (overlay engine inputs).
     pub data: crate::blend::object::data::BlendObjectData,
     /// Per-face smooth flag (`!sharp_face`). Empty = unknown (draw flat).
@@ -85,6 +90,10 @@ pub struct BlendMaterial {
     pub base_color_texture: Option<String>,
     /// Principled BSDF inputs beyond colour/roughness/metallic.
     pub bsdf: BlendBsdf,
+    /// The material's node tree as the Shader editor draws it — every node with
+    /// its type, name, position and size, and the links between them
+    /// (`shade/graph.rs`). Empty for a material with no tree.
+    pub graph: crate::blend::shade::graph::BlendNodeGraph,
     /// Tangent-space normal map feeding the Principled `Normal` input.
     pub normal_map: Option<crate::blend::shade::links::BlendNormalMap>,
     /// Images linked to Roughness / Metallic / Emission Color.

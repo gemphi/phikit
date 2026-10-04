@@ -93,6 +93,7 @@ impl BPosed {
                         material_indices: o.material_indices.clone(),
                         uvs: o.uvs.clone(),
                         color: o.color,
+                        shadow: o.shadow,
                     })
                     .collect()
             }

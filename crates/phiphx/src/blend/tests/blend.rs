@@ -186,7 +186,7 @@ fn quick_info_reads_render_info_without_full_parse() {
         assert_eq!(ui.workspace, "Layout");
         let v = ui.view3d.as_ref().expect("THYMUS has a 3D view");
         assert_eq!(v.persp, RV3D_CAMOB, "saved looking through the camera");
-        assert!((2..=5).contains(&v.shading), "shading type {}", v.shading);
+        assert!((2..=5).contains(&v.shading.ty), "shading type {}", v.shading.ty);
         assert!(s.objects.iter().any(|o| o.block_address == ui.camera && o.object_type == "CAMERA"));
 
         let ui = load("modeling/operators.blend").props.ui;

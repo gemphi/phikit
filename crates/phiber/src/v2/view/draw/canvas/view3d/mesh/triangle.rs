@@ -18,6 +18,12 @@ pub(in super::super) struct BMeshPalette {
     pub gem: Hsla,
     pub loaded: Hsla,
     pub accent: Hsla,
+    /// MatCap lighting's image, for the Solid build to upload
+    /// (`BSolidShade::matcap_for_build`); none under Studio or Flat.
+    pub matcap: Option<&'static str>,
+    /// Color ▸ Texture: Solid uploads the materials' base-colour images
+    /// (`BSolidShade::texture_for_build`); Solid otherwise uploads none.
+    pub texture: bool,
 }
 
 /// How a surface responds to light: `Material.roughness` and

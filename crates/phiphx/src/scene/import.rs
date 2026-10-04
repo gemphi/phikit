@@ -8,7 +8,7 @@
 
 use super::{
     SceneAction, SceneCamera, SceneLight, SceneModel,
-    SceneObject, SceneRender, SceneShadow, SceneSsao, SceneTimeline, SceneWorld,
+    SceneDisplayShading, SceneObject, SceneRender, SceneShadow, SceneSsao, SceneTimeline, SceneWorld,
 };
 use crate::blend::BlendScene;
 use super::import_extras::{camera_from_blend, empty_from_blend, light_from_blend};
@@ -176,6 +176,7 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
             pass: p.pass,
             ssao: SceneSsao { samples: p.ssao[2].max(1.0) as u32, distance: p.ssao[0], attenuation: p.ssao[1] },
             shadow: SceneShadow { light_direction: p.light_direction, shift: p.shadow[0], focus: p.shadow[1] },
+            display: SceneDisplayShading::of(&p.display_shading, p.render_aa),
         },
         cameras,
         lights,

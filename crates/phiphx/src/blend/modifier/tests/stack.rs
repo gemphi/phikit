@@ -146,3 +146,41 @@ fn solidify_keeps_uvs_on_both_shells_and_the_rim() {
     // The copied shell carries the same UVs, reversed with its corners.
     assert_eq!(&m.loop_uvs[4..8], &[[0.0, 1.0], [1.0, 1.0], [1.0, 0.0], [0.0, 0.0]]);
 }
+
+/// Solid's Color ▸ Attribute through the stack: the colour attribute rides
+/// with the UVs — copied by Array, reversed with the inner shell and laid
+/// on the rim by Solidify, split with the faces by Triangulate, and
+/// interpolated by Subdivision Surface.
+#[test]
+fn the_colour_attribute_rides_the_stack_as_the_uvs_do() {
+    let paint = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 1.0, 1.0]];
+    let mut m = quad();
+    m.loop_colors = paint.to_vec();
+    eval(&mut m, &BArray { count: 2, offset_type: 1, constant: glam::Vec3::new(2.0, 0.0, 0.0), relative: glam::Vec3::ZERO, offset_ob: 0 });
+    assert_eq!(m.loop_colors.len(), 8, "the copy's corners take the colours");
+    assert_eq!(&m.loop_colors[4..], &paint);
+    let mut m = quad();
+    m.loop_colors = paint.to_vec();
+    eval(&mut m, &BSolidify { thickness: 0.1, offset: -1.0, flag: 1 << 0 });
+    assert_eq!(m.loop_colors.len(), m.faces.corners());
+    assert_eq!(&m.loop_colors[4..8], &[paint[3], paint[2], paint[1], paint[0]], "the inner shell, reversed with its corners");
+    assert_eq!(m.loop_colors[8], m.loop_colors[11], "a rim quad takes its edge's two colours");
+    let mut m = quad();
+    m.loop_colors = paint.to_vec();
+    eval(&mut m, &BTriangulate { min_vertices: 4 });
+    assert_eq!(m.faces.len(), 2);
+    assert_eq!(m.loop_colors.len(), 6);
+    for (c, &v) in m.faces.iter().flatten().enumerate() {
+        assert_eq!(m.loop_colors[c], paint[v as usize], "corner {c} keeps its vertex's colour");
+    }
+    let mut m = quad();
+    m.loop_colors = paint.to_vec();
+    eval(&mut m, &super::super::subsurf::BSubsurf::new(1, false, false, false));
+    assert_eq!((m.faces.len(), m.loop_colors.len()), (4, 16));
+    // Each sub-quad's third corner is the face centre: the mean colour.
+    assert!(m.loop_colors[2].iter().all(|c| (c - 0.5).abs() < 1e-6), "{:?}", m.loop_colors[2]);
+    assert_eq!(m.loop_colors[0], paint[0], "the original corner keeps its colour");
+    let mut m = quad();
+    eval(&mut m, &BTriangulate { min_vertices: 4 });
+    assert!(m.loop_colors.is_empty(), "no attribute, none made up");
+}

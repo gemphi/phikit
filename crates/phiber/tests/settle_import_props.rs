@@ -39,6 +39,7 @@ fn scene_obj(name: &str) -> SceneObject {
         material_indices: Default::default(),
         uvs: Default::default(),
         color: [1.0; 4],
+        shadow: Default::default(),
     }
 }
 

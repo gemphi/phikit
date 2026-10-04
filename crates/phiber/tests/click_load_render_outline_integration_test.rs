@@ -45,6 +45,7 @@ fn blend_obj(name: impl Into<String>) -> SceneObject {
         material_indices: Default::default(),
         uvs: Default::default(),
         color: [1.0; 4],
+        shadow: Default::default(),
     }
 }
 

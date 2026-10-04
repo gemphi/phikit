@@ -12,6 +12,7 @@ pub mod pass;
 pub mod playback;
 pub mod props;
 pub(crate) mod read;
+pub mod shading;
 pub mod bsdf;
 pub mod types;
 pub mod ui;

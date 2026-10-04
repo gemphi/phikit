@@ -106,6 +106,8 @@ impl BView3d<'_> {
             loaded: solid,
             accent: to_hsla(ctx.style.colors.accent),
             accent_active: to_hsla(ctx.style.step(ctx.style.colors.accent, 2)),
+            matcap: crate::v2::scene::BSolidShade::now(ctx.state).matcap_for_build(),
+            texture: crate::v2::scene::BSolidShade::now(ctx.state).texture_for_build(),
         };
         // The shown objects and the ones a click may not pick, kept between
         // frames (`shown`); the overlay and the outliner read the same

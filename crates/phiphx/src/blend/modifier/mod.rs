@@ -37,6 +37,9 @@ pub struct BlendEvalMesh {
     pub faces: crate::blend::BFaces,
     /// Per-corner UVs in face-corner order (empty when the mesh has none).
     pub loop_uvs: Vec<[f32; 2]>,
+    /// The colour attribute per corner, in the same order (empty when the
+    /// mesh has none); every modifier carries it as it carries the UVs.
+    pub loop_colors: Vec<[f32; 3]>,
     pub face_materials: Vec<u16>,
     pub face_smooth: Vec<bool>,
     /// Per-vertex `(group, weight)`; carried through topology changes so a
@@ -219,6 +222,7 @@ impl BlendFile {
                     vertices: o.vertices.clone(),
                     faces: o.faces.clone(),
                     loop_uvs: o.loop_uvs.clone(),
+                    loop_colors: o.loop_colors.clone(),
                     face_materials: o.face_materials.clone(),
                     face_smooth: o.face_smooth.clone(),
                     dverts,
@@ -271,6 +275,7 @@ impl BlendFile {
                     vertices: o.vertices.clone(),
                     faces: o.faces.clone(),
                     loop_uvs: o.loop_uvs.clone(),
+                    loop_colors: o.loop_colors.clone(),
                     face_materials: o.face_materials.clone(),
                     face_smooth: o.face_smooth.clone(),
                     dverts,

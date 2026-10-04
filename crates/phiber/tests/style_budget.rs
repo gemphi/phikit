@@ -25,6 +25,25 @@
 //! pointer-strayed-away test now owns the layer that asks it. That is the
 //! same calls in a different file, not new ones: `popover/mod.rs` fell from
 //! 42 to 39 in the same pass.
+//!
+//! `canvas/node.rs` became `canvas/node/mod.rs` + `canvas/node/set.rs` when the
+//! node editor stopped drawing two hardcoded cards and started drawing the
+//! material's real tree, which needed the fit maths and the graph lookup in
+//! `mod.rs` and the painting in `set.rs`. Its 46 moved to `set.rs` as **43** —
+//! the three that went were the mock graph's own, not a migration — and
+//! `mod.rs` holds none. A rename is the only other reason an entry changes
+//! path, and like a rise it needs saying here, or a file could be renamed out
+//! of its budget.
+//!
+//! `canvas/node/set.rs` fell from 46 to 43 and then to **32** when the node
+//! editor grew sockets. Eleven calls went and none arrived: the card's body div
+//! stopped printing the node's `idname` (five) and the links stopped being
+//! absolutely-positioned divs (seven), while the body gained one explicit height
+//! because Blender's socket layout IS the card's height calculation. The sockets
+//! and the links are painted now — a link is a cubic bezier and a socket is a
+//! circle straddling the card's border, and neither is a box — and a paint call
+//! is not a style call, so `canvas/node/paint/mod.rs` and
+//! `canvas/node/socket/mod.rs` both sit at zero, where a new file starts.
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};

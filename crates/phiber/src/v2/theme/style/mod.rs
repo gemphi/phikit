@@ -20,10 +20,14 @@ pub mod effect;
 pub mod elevation;
 pub mod font;
 pub mod metric;
+pub mod node;
+pub mod node_class;
 pub mod radius;
 pub mod uv;
 
 pub use anim::BAnimColors;
+pub use node::socket_color;
+pub use node_class::{BNodeClass, class_color, infer::class_of};
 pub use uv::BUvColors;
 pub use color::BResolvedColors;
 pub use effect::{

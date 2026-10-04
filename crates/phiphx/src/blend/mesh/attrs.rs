@@ -28,6 +28,8 @@ pub const ATTR_BOOL: i16 = 0;
 pub const ATTR_INT32: i16 = 3;
 pub const ATTR_FLOAT2: i16 = 6;
 pub const ATTR_FLOAT3: i16 = 7;
+pub const ATTR_COLOR_BYTE: i16 = 9;
+pub const ATTR_COLOR_FLOAT: i16 = 10;
 pub const DOMAIN_POINT: i8 = 0;
 pub const DOMAIN_FACE: i8 = 2;
 pub const DOMAIN_CORNER: i8 = 3;
@@ -120,6 +122,40 @@ impl BlendFile {
 
     pub(crate) fn attr_bool(&self, me: &BlendBlock, dna: &DnaType, name: &str, dom: i8) -> Option<Cow<'_, [u8]>> {
         self.attr_named(me, dna, name, ATTR_BOOL, dom)
+    }
+
+    /// Corner colours, scene-linear RGB (`Mesh.active_color_attribute`,
+    /// else the first visible colour attribute, as Workbench's Attribute
+    /// colour draws): a point-domain attribute is spread over `faces`'
+    /// corners; byte colours are sRGB and come back linear
+    /// (`srgb_to_linearrgb`), float colours linear already. Empty when
+    /// the mesh has none.
+    pub(crate) fn attr_corner_colors(&self, me: &BlendBlock, dna: &DnaType, active: Option<&str>, faces: &[Vec<u32>], points: usize) -> Vec<[f32; 3]> {
+        // The accepted attribute's type and domain, noted as it is picked.
+        let kind = std::cell::Cell::new((ATTR_COLOR_BYTE, DOMAIN_CORNER));
+        let is_color = |t: i16, d: i8| {
+            let ok = (t == ATTR_COLOR_BYTE || t == ATTR_COLOR_FLOAT) && (d == DOMAIN_POINT || d == DOMAIN_CORNER);
+            if ok {
+                kind.set((t, d));
+            }
+            ok
+        };
+        let found = active
+            .and_then(|a| self.mesh_attribute(me, dna, &|n, t, d| n == a && is_color(t, d)))
+            .or_else(|| self.mesh_attribute(me, dna, &|n, t, d| !n.starts_with('.') && is_color(t, d)));
+        let Some((_, b)) = found else { return Vec::new() };
+        let (ty, dom) = kind.get();
+        let count = if dom == DOMAIN_POINT { points } else { faces.iter().map(Vec::len).sum() };
+        let lin = crate::scene::texture::srgb_to_linear;
+        let values: Vec<[f32; 3]> = if ty == ATTR_COLOR_BYTE {
+            b.chunks_exact(4).take(count).map(|c| [lin(c[0]), lin(c[1]), lin(c[2])]).collect()
+        } else {
+            b.chunks_exact(16).take(count).map(|c| [self.read_f32(&c[0..4]), self.read_f32(&c[4..8]), self.read_f32(&c[8..12])]).collect()
+        };
+        if dom == DOMAIN_CORNER {
+            return values;
+        }
+        faces.iter().flatten().map(|&v| values.get(v as usize).copied().unwrap_or([1.0; 3])).collect()
     }
 
     /// Corner UVs: the named active map, else the first visible Float2

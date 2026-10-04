@@ -217,6 +217,7 @@ fn refine(m: &mut BlendEvalMesh, s: &BSubsurf, t: &Topology, sharp: &BSharpness)
     verts.extend(edge_pts);
     let total: usize = m.faces.corners();
     let uvs = m.loop_uvs.len() >= total;
+    let colors = m.loop_colors.len() >= total;
     let mut out = BlendEvalMesh { vertices: verts, dverts, ..Default::default() };
     out.faces.reserve(total, 4 * total);
     for (fi, f) in m.faces.iter().enumerate() {
@@ -224,11 +225,19 @@ fn refine(m: &mut BlendEvalMesh, s: &BSubsurf, t: &Topology, sharp: &BSharpness)
         let uv = |i: usize| m.loop_uvs.get(c0 + i % k).copied().unwrap_or([0.0; 2]);
         let center = (0..k).fold([0.0, 0.0], |a, i| [a[0] + uv(i)[0] / k as f32, a[1] + uv(i)[1] / k as f32]);
         let mid = |i: usize| { let (a, b) = (uv(i), uv(i + 1)); [(a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5] };
+        // The colour attribute interpolates as the UVs do (a corner-domain
+        // attribute in `BKE_subdiv_mesh`'s loop interpolation).
+        let col = |i: usize| m.loop_colors.get(c0 + i % k).copied().unwrap_or([0.0; 3]);
+        let col_center = (0..k).fold([0.0; 3], |a, i| std::array::from_fn(|x| a[x] + col(i)[x] / k as f32));
+        let col_mid = |i: usize| -> [f32; 3] { let (a, b) = (col(i), col(i + 1)); std::array::from_fn(|x| (a[x] + b[x]) * 0.5) };
         for i in 0..k {
             let (e_next, e_prev) = (t.corner_edge[c0 + i], t.corner_edge[c0 + (i + k - 1) % k]);
             out.faces.push(&[f[i], ebase + e_next, fbase + fi as u32, ebase + e_prev]);
             if uvs {
                 out.loop_uvs.extend([uv(i), mid(i), center, mid(i + k - 1)]);
+            }
+            if colors {
+                out.loop_colors.extend([col(i), col_mid(i), col_center, col_mid(i + k - 1)]);
             }
             out.face_materials.extend(m.face_materials.get(fi).copied());
             out.face_smooth.extend(m.face_smooth.get(fi).copied());

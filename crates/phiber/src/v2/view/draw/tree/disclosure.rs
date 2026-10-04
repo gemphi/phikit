@@ -47,6 +47,7 @@ impl BTreeDisclosure<'_> {
         let action_copy = action.clone();
         let row_id = match action {
             BAction::Set(path, _)
+            | BAction::Adjust(path, _)
             | BAction::Toggle(path)
             | BAction::Open(path)
             | BAction::Reset(path) => path.segs.last().copied().unwrap_or("row"),

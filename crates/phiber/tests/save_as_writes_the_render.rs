@@ -9,7 +9,8 @@
 //! test rather than as separate ones racing for it.
 
 use phiber::phiphx::scene::SceneCamera;
-use phiber::v2::scene::{BObject3D, BRenderPlan, camera_of, output_set, render_job};
+use phiber::v2::scene::{BObject3D, BRenderPlan, BShading, camera_of, output_set, render_job};
+use phiber::v2::view::draw::canvas::view3d::rendered::BStillLook;
 use phiber::v2::state::{BKey as _, BState, ButsKey, FileKey, action::apply_action};
 use phiber::v2::view::prim::BAction;
 
@@ -47,7 +48,7 @@ fn a_plan(samples: u32) -> BRenderPlan {
         display_size: 1.0,
         dof: Default::default(),
     };
-    BRenderPlan { camera: camera_of(&cam, 16, 16), w: 16, h: 16, samples, denoise: false }
+    BRenderPlan { camera: camera_of(&cam, 16, 16), w: 16, h: 16, samples, denoise: false, look: BStillLook::new(BShading::Rendered, gpui::hsla(0.0, 0.0, 0.5, 1.0)) }
 }
 
 /// Wait for the job to go idle, so the next `start` is not refused.
@@ -67,7 +68,7 @@ fn started(samples: u32) -> bool {
     if phiray::Ray::gpu().is_none() {
         return false;
     }
-    render_job::start(a_cube(), a_plan(samples), gpui::hsla(0.0, 0.0, 0.5, 1.0));
+    render_job::start(a_cube(), a_plan(samples));
     true
 }
 

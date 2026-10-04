@@ -24,7 +24,8 @@ impl BPhiberApp {
         let set = crate::v2::scene::render_set(&self.state);
         let look = self.render_look(&model, set);
         let frame = crate::v2::scene::motion::shown_frame(&self.state);
-        let Some(plan) = crate::v2::scene::render_job::plan_at(&model, set, &look, frame) else {
+        let plain = gpui::hsla(0.0, 0.0, 0.8, 1.0);
+        let Some(plan) = crate::v2::scene::render_job::plan_at(&model, set, &look, plain, frame) else {
             crate::v2::state::log::push("No camera found in scene".to_string());
             return false;
         };
@@ -34,7 +35,7 @@ impl BPhiberApp {
             .into_iter()
             .filter(|o| !matches!(o, crate::v2::scene::BObject3D::Loaded { name, .. } if hidden.hides(&self.state, name)))
             .collect();
-        render_job::start(objects, plan, gpui::hsla(0.0, 0.0, 0.8, 1.0));
+        render_job::start(objects, plan);
         true
     }
 

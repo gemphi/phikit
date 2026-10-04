@@ -92,6 +92,7 @@ impl BMirror {
         }
         m.vertices.extend(added.iter().map(|a| a.1));
         let with_uvs = m.loop_uvs.len() >= m.faces.corners();
+        let with_colors = m.loop_colors.len() >= m.faces.corners();
         let (faces, mut corner) = (m.faces.len(), 0);
         for fi in 0..faces {
             let f = m.faces[fi].to_vec();
@@ -110,6 +111,12 @@ impl BMirror {
                     if self.flag & MIRROR_U != 0 { uv[0] = 1.0 - uv[0] + self.uv_offset[0]; }
                     if self.flag & MIRROR_V != 0 { uv[1] = 1.0 - uv[1] + self.uv_offset[1]; }
                     m.loop_uvs.push([uv[0] + self.uv_offset_copy[0], uv[1] + self.uv_offset_copy[1]]);
+                }
+            }
+            if with_colors {
+                // The copy's corners keep their colours (the loop data of a face goes to its twin).
+                for &c in &order {
+                    m.loop_colors.push(m.loop_colors[corner + c]);
                 }
             }
             let (mat, smooth) = (m.face_materials.get(fi).copied(), m.face_smooth.get(fi).copied());

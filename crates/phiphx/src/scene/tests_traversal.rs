@@ -29,6 +29,7 @@ fn blend_obj(
         partype: 0,
         visibility: Default::default(),
         color: [1.0; 4],
+        shadow: Default::default(),
         vertices,
         faces: faces.into(),
         loop_normals,
@@ -36,6 +37,7 @@ fn blend_obj(
             face_smooth: Vec::new(),
             data: Default::default(),
         loop_uvs: Vec::new(),
+        loop_colors: Vec::new(),
         modifiers: Vec::new(),
         instance_targets: Vec::new(),
         is_instance: false,
@@ -245,4 +247,27 @@ fn scene_from_blend_leaves_uvs_empty_without_a_uv_layer() {
     );
     let model = SceneModel::from_blend(&blend_scene(vec![obj]), "nouv.blend");
     assert!(model.objects[0].uvs.is_empty());
+}
+
+#[test]
+fn scene_from_blend_carries_the_colour_attribute_to_the_corners() {
+    // A quad (two triangles) with a colour a loop: the triangles' corners
+    // take their loops' colours; without a layer, no colours at all.
+    let mut obj = blend_obj(
+        "Painted",
+        vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]],
+        vec![vec![0, 1, 2, 3]],
+        Vec::new(),
+    );
+    obj.loop_colors = vec![[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 1.0, 1.0]];
+    let model = SceneModel::from_blend(&blend_scene(vec![obj.clone()]), "col.blend");
+    let mesh = &model.objects[0].mesh;
+    assert_eq!(mesh.indices.len(), 6);
+    assert_eq!(mesh.corners.colors.len(), 6, "one colour per triangle corner");
+    for (c, &v) in mesh.indices.iter().enumerate() {
+        assert_eq!(mesh.corners.colors[c], obj.loop_colors[v as usize], "corner {c} is loop {v}'s colour");
+    }
+    obj.loop_colors.clear();
+    let model = SceneModel::from_blend(&blend_scene(vec![obj]), "col.blend");
+    assert!(model.objects[0].mesh.corners.colors.is_empty());
 }

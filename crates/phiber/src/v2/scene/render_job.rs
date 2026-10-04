@@ -133,6 +133,10 @@ pub struct BRenderPlan {
     pub h: u32,
     pub samples: u32,
     pub denoise: bool,
+    /// How the frame is drawn: the path tracer for EEVEE and Cycles, or —
+    /// `BLENDER_WORKBENCH` — Solid / Wireframe with `Scene.display.shading`,
+    /// as Blender's Workbench render engine draws F12 (`workbench_render.cc`).
+    pub look: crate::v2::view::draw::canvas::view3d::rendered::BStillLook,
 }
 
 /// What F12 would render, or `None` when the scene has no camera to look
@@ -140,13 +144,13 @@ pub struct BRenderPlan {
 ///
 /// `look` carries the world and the lamps, which a final render stands in
 /// exactly as the viewport does; only the framing differs.
-pub fn plan(model: &SceneModel, set: BRenderSet, look: &BRayLook) -> Option<BRenderPlan> {
-    plan_at(model, set, look, None)
+pub fn plan(model: &SceneModel, set: BRenderSet, look: &BRayLook, plain: gpui::Hsla) -> Option<BRenderPlan> {
+    plan_at(model, set, look, plain, None)
 }
 
 /// The same plan through the active camera where it stands at `frame`
 /// (Blender renders `cfra`; a still scene stands the same at every frame).
-pub fn plan_at(model: &SceneModel, set: BRenderSet, look: &BRayLook, frame: Option<f32>) -> Option<BRenderPlan> {
+pub fn plan_at(model: &SceneModel, set: BRenderSet, look: &BRayLook, plain: gpui::Hsla, frame: Option<f32>) -> Option<BRenderPlan> {
     let (w, h) = set.resolution.pixels(model);
     let cam = super::motion::active_camera_at(model, frame)?;
     let cam = &cam;
@@ -157,7 +161,8 @@ pub fn plan_at(model: &SceneModel, set: BRenderSet, look: &BRayLook, frame: Opti
     lit(&mut camera, look);
     // Film ▸ Transparent is a final render's: the viewport keeps its sky.
     camera.film = [u32::from(set.film_transparent), 0, 0, 0];
-    Some(BRenderPlan { camera, w, h, samples: set.samples.max(1), denoise: set.denoise })
+    let (still_look, samples, denoise) = crate::v2::view::draw::canvas::view3d::rendered::BStillLook::for_engine(model, set, &mut camera, plain);
+    Some(BRenderPlan { camera, w, h, samples, denoise, look: still_look })
 }
 
 // ---------------------------------------------------------------------------
@@ -272,7 +277,7 @@ pub fn forget() {
 /// The image is not returned: it arrives through [`shot`], which a painter
 /// polls. That is what lets the Rendering space show progress instead of
 /// freezing for the minutes a full-resolution render takes.
-pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan, plain: gpui::Hsla) {
+pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
     let j = job().clone();
     if j.running.swap(true, Ordering::SeqCst) {
         return;
@@ -305,8 +310,7 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan, plain: gpui::Hsla) {
         let began = std::time::Instant::now();
         let out = still_stepwise(
             &objects,
-            crate::v2::scene::BShading::Rendered,
-            plain,
+            plan.look,
             plan.camera,
             plan.w,
             plan.h,

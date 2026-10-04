@@ -9,6 +9,31 @@
 //! reads, per-menu-label lookups) use `BPath::of(&[..])` which allocates.
 
 use std::borrow::Cow;
+use std::collections::HashMap;
+use std::sync::Mutex;
+
+/// Intern a runtime name to a `&'static str` so it can be a `BPath` segment.
+///
+/// A plain `Box::leak` per frame would leak every frame; interning leaks each
+/// distinct name at most once, so the leaked set is bounded by the number of
+/// distinct names ever shown.
+///
+/// This lives here rather than in whichever part first needed it, because
+/// several now do: the Outliner's rows, the animation editors' channels and the
+/// node editors' cards are all named by the FILE, so none of their names is
+/// known at compile time. One pool means one leak per distinct name however
+/// many of them ask for it.
+pub fn intern(name: &str) -> &'static str {
+    static POOL: Mutex<Option<HashMap<String, &'static str>>> = Mutex::new(None);
+    let mut guard = POOL.lock().unwrap();
+    let map = guard.get_or_insert_with(HashMap::new);
+    if let Some(&interned) = map.get(name) {
+        return interned;
+    }
+    let leaked: &'static str = Box::leak(name.to_string().into_boxed_str());
+    map.insert(name.to_string(), leaked);
+    leaked
+}
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct BPath {

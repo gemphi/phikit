@@ -17,8 +17,6 @@
 //! case-insensitive and ON by default — Blender's flag is the inverted
 //! `SO_SKIP_SORT_ALPHA`.
 
-use std::collections::HashMap;
-use std::sync::Mutex;
 
 use crate::v2::scene::{BObject3D, scene_objects};
 use crate::v2::state::BState;
@@ -28,19 +26,13 @@ use crate::v2::state::BState;
 pub const LOADED_OBJECT_ICON: &str = "mesh";
 
 /// Intern a runtime object name to a `&'static str` so it can be a `BPath`
-/// segment. A plain `Box::leak` per frame would leak every frame; interning
-/// leaks each distinct name at most once, so the leaked set is bounded by the
-/// number of distinct object names ever shown.
+/// segment.
+///
+/// The pool itself moved to `state::intern` once the animation channels and the
+/// node editors' cards needed the same thing — a second pool would leak the
+/// same name twice. This stays as the Outliner's own spelling of it.
 pub fn intern_name(name: &str) -> &'static str {
-    static POOL: Mutex<Option<HashMap<String, &'static str>>> = Mutex::new(None);
-    let mut guard = POOL.lock().unwrap();
-    let map = guard.get_or_insert_with(HashMap::new);
-    if let Some(&s) = map.get(name) {
-        return s;
-    }
-    let leaked: &'static str = Box::leak(name.to_string().into_boxed_str());
-    map.insert(name.to_string(), leaked);
-    leaked
+    crate::v2::state::intern(name)
 }
 
 /// What a row represents — decides which columns and actions it gets.

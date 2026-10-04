@@ -96,6 +96,7 @@ impl BModifier for BArray {
         let verts = mesh.vertices.len() as u32;
         let base_faces = mesh.faces.len();
         let base_uvs = mesh.loop_uvs.len();
+        let base_colors = mesh.loop_colors.len();
 
         for copy in 1..self.count {
             let shift = step * copy as f32;
@@ -110,6 +111,9 @@ impl BModifier for BArray {
             }
             for n in 0..base_uvs {
                 mesh.loop_uvs.push(mesh.loop_uvs[n]);
+            }
+            for n in 0..base_colors {
+                mesh.loop_colors.push(mesh.loop_colors[n]);
             }
             for n in 0..base_faces {
                 let material = mesh.face_materials.get(n).copied().unwrap_or(0);

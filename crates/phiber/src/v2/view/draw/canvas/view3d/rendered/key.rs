@@ -50,6 +50,9 @@ impl BRayKey {
         // switching shading builds again rather than showing one mode's
         // data in the other.
         palette.shading.uses_viewport_color().hash(h);
+        // MatCap's image goes up with the Solid scene (`scene::build`).
+        palette.matcap.hash(h);
+        palette.texture.hash(h);
         (palette.shading == crate::v2::scene::BShading::Material).hash(h);
     }
 

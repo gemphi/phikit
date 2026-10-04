@@ -121,6 +121,7 @@ fn table_row_id(cell_list: &[BTableCell], action: Option<&BAction>) -> String {
     if let Some(action) = action {
         let segment = match action {
             BAction::Set(path, value) => format!("set-{}-{value}", path.encode()),
+            BAction::Adjust(path, value) => format!("adjust-{}-{value}", path.encode()),
             BAction::Toggle(path) => format!("toggle-{}", path.encode()),
             BAction::Open(path) => format!("open-{}", path.encode()),
             BAction::Reset(path) => format!("reset-{}", path.encode()),

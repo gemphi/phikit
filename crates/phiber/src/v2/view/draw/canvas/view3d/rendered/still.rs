@@ -4,10 +4,33 @@
 //! one binding (`bands.rs`).
 
 use super::super::mesh::BMeshPalette;
-use super::bands::BBands;
+use super::bands::BBandList;
 use super::scene;
 use crate::v2::scene::BObject3D;
 use gpui::Hsla;
+
+/// How a still is drawn: the shading mode, the colour of anything without a
+/// material, and — for Solid — the matcap and whether the materials' images
+/// go up (`BMeshPalette`).
+#[derive(Clone, Copy, Debug)]
+pub struct BStillLook {
+    pub shading: crate::v2::scene::BShading,
+    pub plain: Hsla,
+    pub matcap: Option<&'static str>,
+    pub texture: bool,
+}
+
+impl BStillLook {
+    /// `shading` with no images of its own.
+    pub fn new(shading: crate::v2::scene::BShading, plain: Hsla) -> Self {
+        Self { shading, plain, matcap: None, texture: false }
+    }
+
+    fn palette(&self) -> BMeshPalette {
+        let plain = self.plain;
+        BMeshPalette { shading: self.shading, cube: plain, sphere: plain, gem: plain, loaded: plain, accent: plain, accent_active: plain, matcap: self.matcap, texture: self.texture }
+    }
+}
 
 /// One finished still of `objects` through phiray, drawn the way the viewport
 /// draws `shading` — for side-by-side checks against Blender
@@ -16,10 +39,10 @@ use gpui::Hsla;
 /// not fit. `plain` paints anything without a material, `samples` is how far
 /// the still refines (Blender's Max Samples) and `denoise` runs the a-trous
 /// filter over the finished frame (Blender's Denoise).
-pub fn still(objects: &[BObject3D], shading: crate::v2::scene::BShading, plain: Hsla, cam: phiray::Camera, w: u32, h: u32, samples: u32, denoise: bool) -> Option<(Vec<u8>, u32)> {
+pub fn still(objects: &[BObject3D], look: BStillLook, cam: phiray::Camera, w: u32, h: u32, samples: u32, denoise: bool) -> Option<(Vec<u8>, u32)> {
     use crate::v2::scene::BShading;
     let gpu = phiray::Ray::gpu()?;
-    let palette = BMeshPalette { shading, cube: plain, sphere: plain, gem: plain, loaded: plain, accent: plain, accent_active: plain };
+    let (shading, palette) = (look.shading, look.palette());
     let cam = with_studio(cam, shading);
     let mut tracer = phiray::Tracer::from_scene(&gpu, scene::build(objects, &palette))?;
     tracer.set_samples(samples);
@@ -74,8 +97,7 @@ pub struct BStill {
 /// Rendering space can show progress rather than freeze (`scene/render_job.rs`).
 pub fn still_stepwise(
     objects: &[BObject3D],
-    shading: crate::v2::scene::BShading,
-    plain: Hsla,
+    look: BStillLook,
     cam: phiray::Camera,
     w: u32,
     h: u32,
@@ -85,7 +107,7 @@ pub fn still_stepwise(
 ) -> Option<u32> {
     use crate::v2::scene::BShading;
     let gpu = phiray::Ray::gpu()?;
-    let palette = BMeshPalette { shading, cube: plain, sphere: plain, gem: plain, loaded: plain, accent: plain, accent_active: plain };
+    let (shading, palette) = (look.shading, look.palette());
     let cam = with_studio(cam, shading);
     let mut tracer = phiray::Tracer::from_scene(&gpu, scene::build(objects, &palette))?;
     tracer.set_samples(samples);
@@ -95,7 +117,7 @@ pub fn still_stepwise(
         BShading::Material => phiray::Mode::Preview,
         BShading::Rendered => phiray::Mode::Rendered,
     });
-    let bands = BBands::of(w, h, BBands::most(&gpu));
+    let bands = BBandList::of(w, h, BBandList::most(&gpu));
     let mut whole = BStill::empty(w, h);
     for (k, (y0, rows)) in bands.list.iter().enumerate() {
         // A band is drawn two rows over into its neighbours and laid in
@@ -178,10 +200,10 @@ mod tests {
         let look = super::super::world::BRayLook { sky: gpui::black(), grid: gpui::white(), grid_hide: 0, world: None, lights: Vec::new(), wire: None, view: [0.0, 0.0, 1.0, 0.0], environment: None, set: Default::default(), studio: false };
         let setup = crate::v2::scene::camera::setup_from_state(&crate::v2::state::BState::default());
         let cam = phiray::Camera { fx: [1.0, 0.5, 0.7, 1.0], ..super::super::scene::camera(20.0, 30.0, (0.0, 0.0), 1.0, setup, 1.0, &look) };
-        let (whole, _) = super::still(&objects, BShading::Solid, gpui::white(), cam, 40, 40, 1, false).expect("a GPU");
+        let (whole, _) = super::still(&objects, super::BStillLook::new(BShading::Solid, gpui::white()), cam, 40, 40, 1, false).expect("a GPU");
         super::super::bands::force(Some(40 * 16));
         let mut banded = None;
-        super::still_stepwise(&objects, BShading::Solid, gpui::white(), cam, 40, 40, 1, false, |_, done| {
+        super::still_stepwise(&objects, super::BStillLook::new(BShading::Solid, gpui::white()), cam, 40, 40, 1, false, |_, done| {
             banded = banded.take().or(done);
             true
         });

@@ -18,6 +18,10 @@ pub struct SceneMaterial {
     pub viewport_pbr: [f32; 2],
     pub roughness: f32,
     pub metallic: f32,
+    /// The material's node tree as the Shader editor draws it
+    /// (`blend::shade::graph`). Empty for a material with no tree, and for a
+    /// `.phx` import, which carries no graph.
+    pub graph: crate::blend::shade::graph::BlendNodeGraph,
     /// Base-colour image texture path (Blender `//`-relative or absolute), if
     /// the material's shader graph links an Image Texture node. `None` when
     /// the material is a flat colour.
@@ -85,6 +89,8 @@ impl SceneMaterial {
             viewport_pbr: crate::blend::VIEWPORT_PBR,
             roughness: 0.5,
             metallic: 0.0,
+            // A stand-in material has no tree.
+            graph: Default::default(),
             base_color_texture: None,
             texture: None,
             bsdf: SceneBsdf::default(),
@@ -113,6 +119,7 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
                 viewport_pbr: m.viewport_pbr,
                 roughness: m.roughness,
                 metallic: m.metallic,
+                graph: m.graph.clone(),
                 base_color_texture: m.base_color_texture.clone(),
                 texture: None,
                 bsdf: m.bsdf,
@@ -137,6 +144,8 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
         viewport_pbr: crate::blend::VIEWPORT_PBR,
         roughness: obj.roughness,
         metallic: obj.metallic,
+        // The object's flat colour fields, not a tree.
+        graph: Default::default(),
         base_color_texture: obj.texture_paths.first().cloned(),
         texture: None,
         bsdf: SceneBsdf::default(),

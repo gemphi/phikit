@@ -125,7 +125,7 @@ const OWNERS: &[Owner] = &[
         name: "BImage",
     },
     Owner {
-        module: "canvas/node.rs",
+        module: "canvas/node/mod.rs",
         name: "BNode",
     },
     Owner {

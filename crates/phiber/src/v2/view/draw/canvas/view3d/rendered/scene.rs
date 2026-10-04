@@ -8,7 +8,7 @@ use crate::phiphx::scene::SceneNormals;
 use crate::phiphx::spatial::SpatialObject3D;
 use glam::Vec3;
 use gpui::Hsla;
-use super::world::{BRayLook, environment, lit};
+use super::world::{BRayLook, lit};
 use phiray::{Camera, Instance, NO_TEX, Scene, Tri};
 
 fn rgba(c: Hsla) -> [f32; 4] {
@@ -55,36 +55,25 @@ pub fn worlds(scene: &[BObject3D]) -> Vec<[[f32; 4]; 4]> {
 
 fn build_with(scene: &[BObject3D], palette: &BMeshPalette, images: bool) -> Scene {
     let mut out = Scene::default();
-    // Workbench modes never read the world, so no image goes up. Material
-    // Preview takes Blender's studio light; Rendered takes the file's world.
-    if images && !palette.shading.uses_viewport_color() {
-        let env = if palette.shading == crate::v2::scene::BShading::Material {
-            super::studio::environment()
-        } else {
-            environment().map(|(env, _)| std::sync::Arc::new(env))
-        };
-        if let Some(env) = env {
-            out.atlas.add_hdr(env.width, env.height, &env.rgb);
-            out.atlas.add_env_cdf(env.width, env.height, &env.rgb);
-            // Material Preview lights from the environment in one pass:
-            // its irradiance and prefiltered copies go up with it
-            // (`ENV_IRRADIANCE_SLOT`, `ENV_PREFILTERED_SLOT`).
-            if palette.shading == crate::v2::scene::BShading::Material {
-                let lighting = out.atlas.add_env_lighting(env.width, env.height, &env.rgb);
-                debug_assert_eq!((lighting.irradiance, lighting.prefiltered), (super::ENV_IRRADIANCE_SLOT, super::ENV_PREFILTERED_SLOT));
-            }
-        }
+    if images {
+        palette.lead(&mut out.atlas);
     }
     let mut ids: std::collections::HashMap<*const Vec<u8>, u32> = std::collections::HashMap::new();
     let mut verts = BRayVerts::default();
     for (o, world) in scene.iter().zip(worlds(scene)) {
         // The object's own colour and its name's hash: Solid's Color ▸
         // Object and ▸ Random (`workbench::Material(Object &, random)`).
-        let (name, color) = match o {
-            BObject3D::Primitive { name, .. } => (name.as_str(), [1.0; 3]),
-            BObject3D::Loaded { name, color, .. } => (name.as_str(), [color[0], color[1], color[2]]),
+        let (name, color, shadow) = match o {
+            BObject3D::Primitive { name, .. } => (name.as_str(), [1.0; 3], crate::phiphx::blend::BlendShadowCast::default()),
+            BObject3D::Loaded { name, color, shadow, .. } => (name.as_str(), [color[0], color[1], color[2]], *shadow),
         };
-        out.instance_of(world, color, phiray::trace::hash::object_hash(name));
+        let id = out.instance_of(world, color, phiray::trace::hash::ObjectHash::of(name));
+        // Solid and Wireframe follow Viewport Display ▸ Shadow
+        // (`OB_DRAW_NO_SHADOW_CAST`, `workbench_shadow.cc`); the ray-traced
+        // modes Visibility ▸ Ray ▸ Shadow (`OB_HIDE_SHADOW`).
+        if !shadow.casts_in(palette.shading.uses_viewport_color()) {
+            out.hide_shadow(id);
+        }
         match o {
             BObject3D::Primitive { shape, .. } => {
                 let (v, idx, n) = SpatialObject3D::buffers(shape.mesh_type());
@@ -120,6 +109,11 @@ fn build_with(scene: &[BObject3D], palette: &BMeshPalette, images: bool) -> Scen
                         let (nid, n) = n_of(face * 3 + k, i[k]);
                         verts.id(t[k], nid, || out.vertex(mesh.vertices[i[k]], n, uvs.get(i[k]).copied().unwrap_or_default()))
                     });
+                    // The colour attribute at the corners (Color ▸ Attribute);
+                    // a vertex shared by corners of two colours takes the last.
+                    for (k, &c) in mesh.corners.colors.get(face * 3..face * 3 + 3).unwrap_or(&[]).iter().enumerate() {
+                        out.paint(vid[k], c);
+                    }
                     let color = o.triangle_color(face, palette.shading).unwrap_or_else(|| linear(palette.loaded));
                     // PHIBER_OVERRIDE=1 is Blender's View Layer → Material
                     // Override with a white diffuse: every surface the same,
@@ -149,14 +143,18 @@ fn build_with(scene: &[BObject3D], palette: &BMeshPalette, images: bool) -> Scen
                     // goes to the GPU in those modes. Uploading a character's
                     // normal and roughness maps for a mode that never samples
                     // them is what pushed the atlas past one binding and made
-                    // the GPU decline the whole scene.
-                    let has_uv = images && i.iter().all(|&k| k < uvs.len()) && !palette.shading.uses_viewport_color();
+                    // the GPU decline the whole scene. Color ▸ Texture is the
+                    // exception: Solid then shows the base-colour image, and
+                    // that image alone.
+                    let uv_ok = images && i.iter().all(|&k| k < uvs.len());
+                    let has_uv = uv_ok && !palette.shading.uses_viewport_color();
+                    let has_base_image = has_uv || (uv_ok && palette.texture && palette.shading == crate::v2::scene::BShading::Solid);
                     let mut add = |t: &crate::phiphx::scene::SceneTexture| {
                         *ids.entry(std::sync::Arc::as_ptr(&t.rgba))
                             .or_insert_with(|| out.atlas.add_bounded(t.width, t.height, &t.rgba, TEXTURE_LIMIT))
                     };
                     let textured = slot.and_then(|m| m.texture.as_ref());
-                    if let (Some(tex), true) = (textured, has_uv) {
+                    if let (Some(tex), true) = (textured, has_base_image) {
                         // Base colour is the tint the image is multiplied by (image = white when folded).
                         let tint = slot.map_or([1.0; 4], |m| m.base_color);
                         tri.color = [tint[0], tint[1], tint[2], tri.color[3]];

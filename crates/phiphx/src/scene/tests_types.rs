@@ -27,6 +27,7 @@ fn scene_object_clone_eq() {
         material_indices: Default::default(),
         uvs: Default::default(),
             color: [1.0; 4],
+            shadow: Default::default(),
     };
     assert_eq!(obj.clone(), obj);
 }
@@ -56,6 +57,7 @@ fn scene_model_holds_objects_and_path() {
             material_indices: Default::default(),
             uvs: Default::default(),
             color: [1.0; 4],
+            shadow: Default::default(),
         }],
         source_path: Some("/tmp/monkey.blend".to_string()),
         ..Default::default()

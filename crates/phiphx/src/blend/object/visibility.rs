@@ -56,6 +56,42 @@ impl BlendVisibility {
     }
 }
 
+/// Whether an object casts a shadow: Viewport Display ▸ Shadow
+/// (`Object.dtx`'s `OB_DRAW_NO_SHADOW_CAST`, Workbench's) and Ray
+/// Visibility ▸ Shadow (`Object.visibility_flag`'s `OB_HIDE_SHADOW`,
+/// Cycles' and EEVEE's). Both on by default.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BlendShadowCast {
+    pub display: bool,
+    pub ray: bool,
+}
+
+impl Default for BlendShadowCast {
+    fn default() -> Self {
+        Self { display: true, ray: true }
+    }
+}
+
+impl BlendShadowCast {
+    pub const OB_DRAW_NO_SHADOW_CAST: u32 = 1 << 9;
+    pub const OB_HIDE_SHADOW: u32 = 1 << 8;
+
+    pub fn of_object(dtx: u32, visibility_flag: u32) -> Self {
+        Self { display: dtx & Self::OB_DRAW_NO_SHADOW_CAST == 0, ray: visibility_flag & Self::OB_HIDE_SHADOW == 0 }
+    }
+
+    /// Whether the object casts a shadow in a viewport that draws display
+    /// shading (Solid, Wireframe: Viewport Display's toggle) or, else, in
+    /// a ray-traced one (Material Preview, Rendered: Visibility ▸ Ray's).
+    pub fn casts_in(self, display_shading: bool) -> bool {
+        if display_shading {
+            self.display
+        } else {
+            self.ray
+        }
+    }
+}
+
 impl BlendFile {
     /// The DNA member that holds the object's toggles in this file:
     /// `visibility_flag` where a file spells it so, else `restrictflag`.
@@ -67,6 +103,12 @@ impl BlendFile {
     pub(crate) fn object_visibility(&self, block: &BlendBlock, dna: &DnaType) -> BlendVisibility {
         let field = self.object_visibility_field(dna);
         BlendVisibility::of_object(self.int_field(block, "Object", field, dna))
+    }
+
+    /// `Object.dtx` and `Object.visibility_flag`'s shadow bits.
+    pub(crate) fn object_shadow(&self, block: &BlendBlock, dna: &DnaType) -> BlendShadowCast {
+        let field = self.object_visibility_field(dna);
+        BlendShadowCast::of_object(self.int_field(block, "Object", "dtx", dna), self.int_field(block, "Object", field, dna))
     }
 
     /// `Object.col`: the object colour, white when unreadable.
@@ -93,6 +135,8 @@ mod tests {
         assert_eq!(object, BlendVisibility { hide_viewport: false, hide_select: true, hide_render: true });
         let collection = BlendVisibility::of_collection(COLLECTION_HIDE_RENDER | 1 << 2);
         assert_eq!(collection, BlendVisibility { hide_viewport: false, hide_select: false, hide_render: true }, "1<<2 is the retired bit");
+        assert_eq!(BlendShadowCast::of_object(0, 0), BlendShadowCast::default(), "casts both ways by default");
+        assert_eq!(BlendShadowCast::of_object(1 << 9, 1 << 8), BlendShadowCast { display: false, ray: false });
         assert!(!BlendVisibility::default().any() && object.any());
     }
 }

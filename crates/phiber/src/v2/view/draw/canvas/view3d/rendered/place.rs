@@ -86,6 +86,7 @@ mod tests {
             material_indices: Arc::default(),
             uvs: Arc::default(),
             color: [1.0; 4],
+            shadow: Default::default(),
         }
     }
 
@@ -114,7 +115,7 @@ mod tests {
     fn moved_objects_are_placed_and_a_rebuilt_mesh_is_posed() {
         let Some(gpu) = phiray::Gpu::new() else { return };
         let grey = gpui::white();
-        let palette = BMeshPalette { shading: crate::v2::scene::BShading::Solid, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey };
+        let palette = BMeshPalette { shading: crate::v2::scene::BShading::Solid, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false };
         let held = vec![cube(0.0), loaded()];
         let mut tracer = Tracer::from_scene(&gpu, scene::build(&held, &palette)).expect("a scene");
         let mut moved = held.clone();

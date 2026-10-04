@@ -35,6 +35,7 @@ pub(super) fn evaluated_object(src: &BlendSceneObject, eval: Option<&crate::blen
                 vertices: e.vertices.clone(),
                 faces: e.faces.clone(),
                 loop_uvs: e.loop_uvs.clone(),
+                loop_colors: e.loop_colors.clone(),
                 face_materials: e.face_materials.clone(),
                 face_smooth: e.face_smooth.clone(),
                 loop_normals: Vec::new(),
@@ -47,7 +48,7 @@ pub(super) fn evaluated_object(src: &BlendSceneObject, eval: Option<&crate::blen
     let vertices = obj.vertices.clone();
     let vert_count = vertices.len();
     let mut tris = STriangles::of(obj);
-    let mesh = tris.mesh(vertices, &obj.loop_normals);
+    let mesh = tris.mesh(vertices, &obj.loop_normals, &obj.loop_colors);
     let material_indices = std::mem::take(&mut tris.material_indices);
     let uvs = per_vertex_uvs(&obj.faces, &obj.loop_uvs, vert_count);
     let materials = materials_from_blend(obj);
@@ -61,6 +62,7 @@ pub(super) fn evaluated_object(src: &BlendSceneObject, eval: Option<&crate::blen
         material_indices: material_indices.into(),
         uvs: uvs.into(),
         color: obj.color,
+        shadow: obj.shadow,
     }
 }
 
@@ -112,13 +114,24 @@ impl STriangles {
 
     /// The mesh these triangles make over `vertices`, normals computed
     /// (`loop_normals`: saved split normals, empty for an evaluated mesh).
-    pub fn mesh(&self, vertices: Vec<[f32; 3]>, loop_normals: &[[f32; 3]]) -> SceneMesh {
+    pub fn mesh(&self, vertices: Vec<[f32; 3]>, loop_normals: &[[f32; 3]], loop_colors: &[[f32; 3]]) -> SceneMesh {
         if loop_normals.is_empty() && self.tri_smooth.iter().any(|s| *s) {
-            return self.smooth_mesh(vertices);
+            let mut mesh = self.smooth_mesh(vertices);
+            mesh.corners.colors = self.corner_colors(loop_colors);
+            return mesh;
         }
         let normals = build_normals(&vertices, &self.indices, loop_normals, &self.tri_loop_starts, self.indices.len() / 3, &self.tri_smooth);
-        let corners = SceneCorners::build(&vertices, &self.indices, loop_normals, &self.tri_loops, &self.tri_smooth);
+        let mut corners = SceneCorners::build(&vertices, &self.indices, loop_normals, &self.tri_loops, &self.tri_smooth);
+        corners.colors = self.corner_colors(loop_colors);
         SceneMesh { vertices, indices: self.indices.clone(), normals, corners }
+    }
+
+    /// The loops' colours at the triangles' corners; none when the mesh has none.
+    fn corner_colors(&self, loop_colors: &[[f32; 3]]) -> Vec<[f32; 3]> {
+        if loop_colors.is_empty() {
+            return Vec::new();
+        }
+        self.tri_loops.iter().flatten().map(|&l| loop_colors.get(l).copied().unwrap_or([1.0; 3])).collect()
     }
 
     /// `mesh` for smooth faces without saved normals — every frame of a
@@ -148,6 +161,6 @@ impl STriangles {
         let mut table = vec![[0.0; 3]];
         table.par_extend(accum.par_iter().map(|n| normalize(*n).unwrap_or([0.0; 3])));
         let ids = (0..indices.len()).map(|c| if self.tri_smooth.get(c / 3).copied().unwrap_or(false) { indices[c] + 1 } else { 0 }).collect();
-        SceneMesh { vertices, indices: indices.clone(), normals: SceneNormals::PerFace(normals), corners: SceneCorners { ids, normals: table } }
+        SceneMesh { vertices, indices: indices.clone(), normals: SceneNormals::PerFace(normals), corners: SceneCorners { ids, normals: table, colors: Vec::new() } }
     }
 }

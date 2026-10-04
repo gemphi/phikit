@@ -44,7 +44,7 @@ fn fixture_renders_through_phiray() {
         let objects = scene_source(&s);
         let grey = white();
         let palette = super::BMeshPalette {
-            shading: BShading::Rendered, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey,
+            shading: BShading::Rendered, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false,
         };
         let built = scene::build(&objects, &palette);
         if name.starts_with("TEXTURED") {
@@ -96,7 +96,7 @@ fn render_thread_refines_latest_view() {
     let Some(worker) = BRayWorker::start() else { return };
     let grey = white();
     let palette = super::BMeshPalette {
-        shading: BShading::Rendered, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey,
+        shading: BShading::Rendered, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false,
     };
     let cube = BObject3D::Primitive { name: "Cube".into(), shape: BShape::Cube, x: 0.0, y: 0.0 };
     worker.send(BRayJob::Scene(1, 1, vec![cube], palette));
@@ -185,7 +185,7 @@ fn a_moved_object_draws_as_a_scene_built_there() {
     use super::worker::{BRayFrame, BRayJob, BRayShot, BRayWorker};
     use crate::v2::scene::{BObject3D, BShape};
     let grey = white();
-    let palette = super::BMeshPalette { shading: BShading::Solid, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey };
+    let palette = super::BMeshPalette { shading: BShading::Solid, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false };
     let cubes = |x: f32| vec![BObject3D::Primitive { name: "Cube".into(), shape: BShape::Cube, x, y: 0.0 }, BObject3D::Primitive { name: "Ball".into(), shape: BShape::Sphere, x: -2.0, y: 0.0 }];
     let scene_of = |x: f32| BRayJob::Scene(BRayKey::of(&cubes(x), &palette), BRayKey::shape(&cubes(x), &palette), cubes(x), palette);
     assert_eq!(BRayKey::shape(&cubes(0.0), &palette), BRayKey::shape(&cubes(1.5), &palette), "one shape, two poses");

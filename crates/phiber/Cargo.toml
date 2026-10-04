@@ -19,6 +19,7 @@ phiphx = { path = "../phiphx" }
 phiray = { path = "../phiray" }
 exr = "1.74"
 image = { workspace = true }
+dirs = { workspace = true }
 smallvec = { workspace = true }
 gpui = { workspace = true }
 gpui_platform = { workspace = true }
@@ -50,5 +51,6 @@ proptest = { workspace = true }
 # The save tests read their own output back, so they need the codecs too.
 exr = "1.74"
 image = { workspace = true }
+dirs = { workspace = true }
 phiphx = { path = "../phiphx" }
 gpui = { workspace = true, features = ["test-support"] }

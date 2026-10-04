@@ -62,6 +62,9 @@ pub struct SceneObject {
     pub uvs: std::sync::Arc<Vec<[f32; 2]>>,
     /// `Object.col`, scene-linear RGBA: Solid's Color ▸ Object (white by default).
     pub color: [f32; 4],
+    /// Whether it casts a shadow — in the viewport (Viewport Display ▸
+    /// Shadow) and to rays (Ray Visibility ▸ Shadow).
+    pub shadow: crate::blend::BlendShadowCast,
 }
 
 impl SceneObject {
@@ -79,6 +82,7 @@ impl SceneObject {
             material_indices: Default::default(),
             uvs: Default::default(),
             color: [1.0; 4],
+            shadow: Default::default(),
         }
     }
 
@@ -222,7 +226,7 @@ mod material;
 mod object;
 pub(crate) mod polyfill;
 mod report;
-mod texture;
+pub(crate) mod texture;
 mod types_ext;
 mod ui;
 
@@ -239,5 +243,5 @@ pub use report::SceneReadReport;
 pub use texture::{SceneEnvironment, SceneTexture, TextureCache};
 pub use ui::{SceneSolidFx, SceneSolidShade, SceneUi, SceneView, SceneXray, VIEW_WIDTH_PER_DIST};
 pub use types_ext::{
-    SceneAction, SceneCamera, SceneDrivers, SceneEmpty, SceneLight, SceneNla, SceneRender, SceneShadow, SceneSsao, SceneTimeline, SceneWorld,
+    SceneAction, SceneCamera, SceneDrivers, SceneEmpty, SceneLight, SceneNla, SceneDisplayShading, SceneRender, SceneShadow, SceneSsao, SceneTimeline, SceneWorld,
 };

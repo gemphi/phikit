@@ -21,6 +21,12 @@ pub fn apply_action(state: &mut BState, action: &BAction) {
             // Any committed `Set` dismisses every deployed overlay.
             menu::close_overlays(state);
         }
+        BAction::Adjust(path, value) => {
+            // Everything `Set` does except closing what is open.
+            edit::before_set(state, path, value);
+            state.set(path, value);
+            rule::after_set(state, path, value);
+        }
         BAction::Toggle(path) if super::MenuKey::owns(path) => apply_toggle(state, path),
         BAction::Toggle(path) => {
             let next = if state.get(path) == Some(V_TRUE) { V_FALSE } else { V_TRUE };

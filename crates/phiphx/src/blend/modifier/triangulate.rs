@@ -35,9 +35,11 @@ impl BModifier for BTriangulate {
         }
         let mut out = crate::blend::BFaces::default();
         let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(mesh.loop_uvs.len());
+        let mut colors: Vec<[f32; 3]> = Vec::with_capacity(mesh.loop_colors.len());
         let mut materials: Vec<u16> = Vec::with_capacity(faces);
         let mut smooth: Vec<bool> = Vec::with_capacity(faces);
         let has_uvs = !mesh.loop_uvs.is_empty();
+        let has_colors = !mesh.loop_colors.is_empty();
 
         for face in 0..faces {
             let corners = mesh.faces.get(face).to_vec();
@@ -50,6 +52,9 @@ impl BModifier for BTriangulate {
                     for n in 0..corners.len() {
                         uvs.push(uv_at(mesh, start + n));
                     }
+                }
+                if has_colors {
+                    colors.extend((0..corners.len()).map(|n| mesh.loop_colors.get(start + n).copied().unwrap_or([0.0; 3])));
                 }
                 materials.push(material);
                 smooth.push(flat);
@@ -68,6 +73,9 @@ impl BModifier for BTriangulate {
                         uvs.push(uv_at(mesh, start + n));
                     }
                 }
+                if has_colors {
+                    colors.extend(tri.iter().map(|&n| mesh.loop_colors.get(start + n).copied().unwrap_or([0.0; 3])));
+                }
                 materials.push(material);
                 smooth.push(flat);
             }
@@ -75,6 +83,9 @@ impl BModifier for BTriangulate {
         mesh.faces = out;
         if has_uvs {
             mesh.loop_uvs = uvs;
+        }
+        if has_colors {
+            mesh.loop_colors = colors;
         }
         mesh.face_materials = materials;
         mesh.face_smooth = smooth;

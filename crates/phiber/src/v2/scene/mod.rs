@@ -32,6 +32,7 @@ pub use key::{
 };
 
 pub mod project;
+pub mod render_engine;
 pub mod render_job;
 pub mod render_fit;
 pub mod render_status;
@@ -71,6 +72,7 @@ pub mod select;
 pub mod view_op;
 pub mod orbit;
 pub mod shading;
+pub mod matcap;
 pub mod solid_fx;
 pub use solid_fx::BSolidFx;
 pub mod solid_shade;
@@ -183,6 +185,9 @@ pub enum BObject3D {
         /// `Object.col`, scene-linear RGBA: Solid's Color ▸ Object
         /// (`SceneObject::color`; white when the file says nothing).
         color: [f32; 4],
+        /// Whether it casts a shadow, per mode (`SceneObject::shadow`:
+        /// Viewport Display ▸ Shadow, Visibility ▸ Ray ▸ Shadow).
+        shadow: crate::phiphx::blend::BlendShadowCast,
     },
 }
 

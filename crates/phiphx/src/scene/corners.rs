@@ -1,5 +1,6 @@
 //! Shading normals per triangle corner, stored as an id per corner into a
-//! table of unique normals (4 bytes a corner instead of 12).
+//! table of unique normals (4 bytes a corner instead of 12), and the
+//! corners' colours when the mesh has a colour attribute.
 
 use super::geometry::{normalize, smooth_vertex_normals, tri_face_normal};
 use std::collections::HashMap;
@@ -12,6 +13,9 @@ pub struct SceneCorners {
     pub ids: Vec<u32>,
     /// Unique unit normals; `normals[0] == [0; 3]` when not empty.
     pub normals: Vec<[f32; 3]>,
+    /// The active colour attribute at each corner, scene-linear (`len ==
+    /// indices.len()`), or none — Solid's Color ▸ Attribute.
+    pub colors: Vec<[f32; 3]>,
 }
 
 impl SceneCorners {
@@ -61,7 +65,7 @@ impl SceneCorners {
                     })
                 })
                 .collect();
-            return Self { ids, normals };
+            return Self { ids, normals, colors: Vec::new() };
         }
         if !tri_smooth.iter().any(|s| *s) {
             return Self::default();
@@ -76,6 +80,6 @@ impl SceneCorners {
                 _ => 0,
             })
             .collect();
-        Self { ids, normals }
+        Self { ids, normals, colors: Vec::new() }
     }
 }

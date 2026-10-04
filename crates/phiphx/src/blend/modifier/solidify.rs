@@ -46,6 +46,7 @@ impl BModifier for BSolidify {
         let base_verts = mesh.vertices.len() as u32;
         let base_faces = mesh.faces.len();
         let uvs = mesh.loop_uvs.len() >= mesh.faces.corners();
+        let colors = mesh.loop_colors.len() >= mesh.faces.corners();
         // First corner of every face, so a face's UVs can be read back.
         let mut first = Vec::with_capacity(base_faces);
         let mut at = 0usize;
@@ -85,6 +86,7 @@ impl BModifier for BSolidify {
         // The copied shell faces the other way, and carries the same UVs
         // (Blender copies the loop data of each face to its twin).
         let mut shell_uvs: Vec<[f32; 2]> = Vec::new();
+        let mut shell_colors: Vec<[f32; 3]> = Vec::new();
         for face in 0..base_faces {
             let mut corners: Vec<u32> = mesh.faces.get(face).iter().map(|c| c + base_verts).collect();
             let mut face_uvs: Vec<[f32; 2]> = if uvs {
@@ -92,12 +94,15 @@ impl BModifier for BSolidify {
             } else {
                 Vec::new()
             };
+            let mut face_colors: Vec<[f32; 3]> = if colors { mesh.loop_colors[first[face]..first[face] + corners.len()].to_vec() } else { Vec::new() };
             if !flip {
                 corners.reverse();
                 face_uvs.reverse();
+                face_colors.reverse();
             }
             mesh.faces.push(&corners);
             shell_uvs.extend(face_uvs);
+            shell_colors.extend(face_colors);
             let material = mesh.face_materials.get(face).copied().unwrap_or(0);
             mesh.face_materials.push(material);
             let smooth = mesh.face_smooth.get(face).copied().unwrap_or(true);
@@ -116,12 +121,20 @@ impl BModifier for BSolidify {
             } else {
                 Vec::new()
             };
+            let mut quad_colors = if colors {
+                let (ca_col, cb_col) = (mesh.loop_colors[first[face] + ca], mesh.loop_colors[first[face] + cb]);
+                vec![cb_col, ca_col, ca_col, cb_col]
+            } else {
+                Vec::new()
+            };
             if flip {
                 quad.reverse();
                 quad_uvs.reverse();
+                quad_colors.reverse();
             }
             mesh.faces.push(&quad);
             shell_uvs.extend(quad_uvs);
+            shell_colors.extend(quad_colors);
             let material = mesh.face_materials.get(face).copied().unwrap_or(0);
             mesh.face_materials.push(material);
             let smooth = mesh.face_smooth.get(face).copied().unwrap_or(true);
@@ -131,6 +144,7 @@ impl BModifier for BSolidify {
             // FLIP turns the original shell over as well.
             let mut faces = crate::blend::BFaces::default();
             let mut flipped_uvs = Vec::with_capacity(mesh.loop_uvs.len());
+            let mut flipped_colors = Vec::with_capacity(mesh.loop_colors.len());
             for f in 0..mesh.faces.len() {
                 let mut c = mesh.faces.get(f).to_vec();
                 if f < base_faces {
@@ -140,6 +154,11 @@ impl BModifier for BSolidify {
                         u.reverse();
                         flipped_uvs.extend(u);
                     }
+                    if colors {
+                        let mut col = mesh.loop_colors[first[f]..first[f] + c.len()].to_vec();
+                        col.reverse();
+                        flipped_colors.extend(col);
+                    }
                 }
                 faces.push(&c);
             }
@@ -147,12 +166,22 @@ impl BModifier for BSolidify {
             if uvs {
                 mesh.loop_uvs = flipped_uvs;
             }
+            if colors {
+                mesh.loop_colors = flipped_colors;
+            }
         }
+        let base_corners = first.last().map_or(0, |f| f + mesh.faces.get(base_faces - 1).len());
         if uvs {
-            mesh.loop_uvs.truncate(first.last().map_or(0, |f| f + mesh.faces.get(base_faces - 1).len()));
+            mesh.loop_uvs.truncate(base_corners);
             mesh.loop_uvs.extend(shell_uvs);
         } else if !mesh.loop_uvs.is_empty() {
             mesh.loop_uvs.clear();
+        }
+        if colors {
+            mesh.loop_colors.truncate(base_corners);
+            mesh.loop_colors.extend(shell_colors);
+        } else if !mesh.loop_colors.is_empty() {
+            mesh.loop_colors.clear();
         }
     }
 }

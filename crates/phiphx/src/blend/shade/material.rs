@@ -86,8 +86,10 @@ impl BlendFile {
                             all_textures.push(p.clone());
                         }
                     }
+                    let graph = self.material_graph(ma, dna).unwrap_or_default();
                     materials.push(crate::blend::file::types::BlendMaterial {
                         name,
+                        graph,
                         base_color: color,
                         viewport_color,
                         viewport_pbr: self.viewport_pbr(ma, dna),
@@ -113,6 +115,8 @@ impl BlendFile {
                 metallic,
                 base_color_texture: None,
                 bsdf: Default::default(),
+                // The fallback material is the object's own colour, not a tree.
+                graph: Default::default(),
                 normal_map: None,
                 maps: Default::default(),
             });

@@ -5,7 +5,7 @@
 use phiber::phiphx::Phx;
 use phiber::v2::app::seed::{seed_render_props, seed_view_layer};
 use phiber::v2::part::outliner::key::BHidden;
-use phiber::v2::scene::{BShading, current_scene, render_plan, render_set, source::set_loaded_scene};
+use phiber::v2::scene::{current_scene, render_plan, render_set, source::set_loaded_scene};
 use phiber::v2::state::BState;
 use phiber::v2::view::draw::canvas::view3d::rendered::{BRayLook, environment, still, view_words};
 
@@ -44,7 +44,8 @@ fn main() {
         // HDRI would replace all three, so it stays off here.
         studio: false,
     };
-    let mut p = render_plan(&model, set, &look).expect("the scene names a camera");
+    let plain = gpui::hsla(0.0, 0.0, 0.8, 1.0);
+    let mut p = render_plan(&model, set, &look, plain).expect("the scene names a camera");
     // `PHIBER_SCALE=<n>` divides the resolution, for quick checks against a
     // Blender render at the same fraction.
     if let Ok(n) = std::env::var("PHIBER_SCALE").map(|v| v.parse::<u32>().unwrap_or(1)) {
@@ -70,7 +71,8 @@ fn main() {
         model.render.camera, p.w, p.h, p.samples, p.denoise
     );
     let t = std::time::Instant::now();
-    let (px, taken) = still(&objects, BShading::Rendered, gpui::hsla(0.0, 0.0, 0.8, 1.0), p.camera, p.w, p.h, p.samples, p.denoise)
+    // The engine's look: Workbench renders Solid with `Scene.display.shading`.
+    let (px, taken) = still(&objects, p.look, p.camera, p.w, p.h, p.samples, p.denoise)
         .expect("gpu adapter and a scene that fits");
     image::RgbaImage::from_raw(p.w, p.h, px).expect("image").save(&out).expect("save");
     println!("rendered {taken} samples in {:.0} ms -> {out}", t.elapsed().as_secs_f64() * 1000.0);

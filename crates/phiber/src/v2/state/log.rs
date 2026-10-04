@@ -93,7 +93,7 @@ fn title(slug: &str) -> String {
 /// The sentence for one action, or `None` when it is not worth a line.
 pub fn describe(action: &BAction, before: &BState, after: &BState) -> Option<String> {
     let path = match action {
-        BAction::Set(p, _) | BAction::Toggle(p) | BAction::Open(p) | BAction::Reset(p) => p,
+        BAction::Set(p, _) | BAction::Adjust(p, _) | BAction::Toggle(p) | BAction::Open(p) | BAction::Reset(p) => p,
     };
     let encoded = path.encode();
     let key = encoded.strip_prefix("ctx.").unwrap_or(&encoded);
@@ -182,7 +182,7 @@ pub fn describe(action: &BAction, before: &BState, after: &BState) -> Option<Str
             BAction::Toggle(_) => format!("{}: {}", title(key), if now == val::V_TRUE { "on" } else { "off" }),
             BAction::Reset(_) => format!("Reset {}", title(key)),
             BAction::Open(_) => format!("Opened {}", title(key)),
-            BAction::Set(..) => format!("{}: {}", title(key), now),
+            BAction::Set(..) | BAction::Adjust(..) => format!("{}: {}", title(key), now),
         },
     })
 }

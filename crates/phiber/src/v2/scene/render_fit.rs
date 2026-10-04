@@ -1,6 +1,6 @@
 //! A render job that never stays "running" after its thread died. (A frame
 //! larger than the device binds as one image is rendered in bands,
-//! `rendered/still.rs::BBands`.)
+//! `rendered/bands.rs::BBandList`.)
 
 use super::render_job::BJob;
 use std::sync::Arc;

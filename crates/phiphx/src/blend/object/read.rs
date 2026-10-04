@@ -30,6 +30,7 @@ impl BlendFile {
             vertices,
             faces,
             loop_uvs,
+            loop_colors,
             loop_normals,
             face_materials,
         ) = if let Some(ref dna) = self.dna {
@@ -54,6 +55,16 @@ impl BlendFile {
                 } else {
                     (Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new())
                 };
+                // The active colour attribute, a colour per corner (Solid's
+                // Color ▸ Attribute).
+                let loop_colors = if t == "MESH" {
+                    self.mesh_block_of(block, dna).map_or_else(Vec::new, |me| {
+                        let active = self.cstring_at(me, "Mesh", "*active_color_attribute", dna);
+                        self.attr_corner_colors(me, dna, active.as_deref(), &fac, verts.len())
+                    })
+                } else {
+                    Vec::new()
+                };
 
                 (
                     l,
@@ -68,6 +79,7 @@ impl BlendFile {
                     verts,
                     fac,
                     uvs,
+                    loop_colors,
                     norms,
                     face_mats,
                 )
@@ -92,6 +104,7 @@ impl BlendFile {
                     Vec::new(),
                     Vec::new(),
                     Vec::new(),
+                    Vec::new(),
                 )
             }
         } else {
@@ -110,6 +123,7 @@ impl BlendFile {
                 Vec::new(),
                 Vec::new(),
                 false,
+                Vec::new(),
                 Vec::new(),
                 Vec::new(),
                 Vec::new(),
@@ -158,10 +172,12 @@ impl BlendFile {
             partype: raw_xf.partype,
             visibility: self.dna.as_ref().map(|dna| self.object_visibility(block, dna)).unwrap_or_default(),
             color: self.dna.as_ref().map(|dna| self.object_color(block, dna)).unwrap_or([1.0; 4]),
+            shadow: self.dna.as_ref().map(|dna| self.object_shadow(block, dna)).unwrap_or_default(),
             vertices,
             faces: faces.into(),
             loop_normals,
             loop_uvs,
+            loop_colors,
             face_materials,
             data,
             face_smooth,

@@ -8,7 +8,8 @@
 //! run in sequence inside one test rather than as separate ones racing for it.
 
 use phiber::phiphx::scene::SceneCamera;
-use phiber::v2::scene::{BObject3D, BRenderPlan, camera_of, render_job};
+use phiber::v2::scene::{BObject3D, BRenderPlan, BShading, camera_of, render_job};
+use phiber::v2::view::draw::canvas::view3d::rendered::BStillLook;
 
 fn plan(samples: u32) -> BRenderPlan {
     let cam = SceneCamera {
@@ -24,7 +25,7 @@ fn plan(samples: u32) -> BRenderPlan {
         display_size: 1.0,
         dof: Default::default(),
     };
-    BRenderPlan { camera: camera_of(&cam, 32, 32), w: 32, h: 32, samples, denoise: false }
+    BRenderPlan { camera: camera_of(&cam, 32, 32), w: 32, h: 32, samples, denoise: false, look: BStillLook::new(BShading::Rendered, gpui::hsla(0.0, 0.0, 0.8, 1.0)) }
 }
 
 fn a_cube() -> Vec<BObject3D> {
@@ -51,7 +52,7 @@ fn a_render_reports_progress_then_an_image_and_can_be_cancelled() {
 
     // A render publishes its target before the first sample, so the
     // Rendering space can show "0 of N" rather than nothing.
-    render_job::start(a_cube(), plan(24), gpui::hsla(0.0, 0.0, 0.8, 1.0));
+    render_job::start(a_cube(), plan(24));
     let (first, _) = render_job::shot();
     let first = first.expect("a shot is published as the job starts");
     assert_eq!((first.w, first.h, first.target), (32, 32, 24));
@@ -59,7 +60,7 @@ fn a_render_reports_progress_then_an_image_and_can_be_cancelled() {
     assert_eq!(first.fraction(), 0.0);
 
     // Asking again while it runs does not start a second render.
-    render_job::start(a_cube(), plan(999), gpui::hsla(0.0, 0.0, 0.8, 1.0));
+    render_job::start(a_cube(), plan(999));
     assert_eq!(render_job::shot().0.expect("still the first").target, 24, "a second F12 restarted the render");
 
     assert!(until(|| !render_job::rendering()), "the render never finished");
@@ -73,7 +74,7 @@ fn a_render_reports_progress_then_an_image_and_can_be_cancelled() {
     assert!(seq > 1, "progress was never published, only the result");
 
     // Cancelling stops a render early: it reaches nothing like its target.
-    render_job::start(a_cube(), plan(4000), gpui::hsla(0.0, 0.0, 0.8, 1.0));
+    render_job::start(a_cube(), plan(4000));
     assert!(until(render_job::rendering));
     std::thread::sleep(std::time::Duration::from_millis(200));
     render_job::cancel();
@@ -96,7 +97,7 @@ fn a_render_reports_progress_then_an_image_and_can_be_cancelled() {
     s.set(ModalKey::Open, V_MODAL_RENDER);
     let esc = BKeystroke::parse("Escape").unwrap();
     assert_eq!(action_for(&esc, &s).unwrap().0, BAction::Set(ModalKey::Open.path(), String::new()), "no render: Esc closes the window");
-    render_job::start(a_cube(), plan(4000), gpui::hsla(0.0, 0.0, 0.8, 1.0));
+    render_job::start(a_cube(), plan(4000));
     assert!(until(render_job::rendering));
     assert_eq!(action_for(&esc, &s).unwrap().0, BAction::Set(OpKey::Render.path(), "cancel".to_string()), "rendering: Esc cancels");
     let mut playing = BState::new();
@@ -115,4 +116,54 @@ fn a_render_reports_progress_then_an_image_and_can_be_cancelled() {
     assert_eq!(cancel, Some(BAction::Set(OpKey::Render.path(), "cancel".to_string())), "a Cancel button in the header: {list:?}");
     render_job::cancel();
     assert!(until(|| !render_job::rendering()));
+}
+
+/// F12 follows the engine: `BLENDER_WORKBENCH` renders Solid with
+/// `Scene.display.shading` and `render_aa` samples, no denoise, the camera
+/// carrying the display's words; every other engine renders through the
+/// path tracer at the panel's settings.
+#[test]
+fn a_workbench_file_plans_a_solid_render_from_the_displays_shading() {
+    use phiber::phiphx::scene::{SceneDisplayShading, SceneModel};
+    use phiber::v2::scene::{BRenderSet, render_plan};
+    use phiber::v2::view::draw::canvas::view3d::rendered::BRayLook;
+    let mut model = SceneModel::default();
+    model.cameras.push(SceneCamera {
+        name: "Camera".into(),
+        location: [0.0, -4.0, 0.0],
+        matrix_world: [[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, -1.0, 0.0, 0.0], [0.0, -4.0, 0.0, 1.0]],
+        kind: "PERSP".into(),
+        focal_length_mm: 50.0,
+        sensor_width: 36.0,
+        ortho_scale: 6.0,
+        clip_start: 0.1,
+        clip_end: 100.0,
+        display_size: 1.0,
+        dof: Default::default(),
+    });
+    model.render.camera = "Camera".into();
+    let look = BRayLook { sky: gpui::black(), grid: gpui::white(), grid_hide: 0, world: None, lights: Vec::new(), wire: None, view: [0.0, 0.0, 1.0, 0.0], environment: None, set: Default::default(), studio: false };
+    let set = BRenderSet { samples: 64, denoise: true, ..Default::default() };
+    let plain = gpui::hsla(0.0, 0.0, 0.8, 1.0);
+    let cycles = render_plan(&model, set, &look, plain).expect("a camera");
+    assert_eq!((cycles.look.shading, cycles.samples, cycles.denoise), (BShading::Rendered, 64, true));
+    model.render.engine = "BLENDER_WORKBENCH".into();
+    let mut display = SceneDisplayShading::default();
+    display.solid_fx.shadow = true;
+    display.solid_fx.cavity = true;
+    display.solid_fx.cavity_type = "WORLD";
+    display.solid_shade.light = "MATCAP";
+    display.solid_shade.color_type = "TEXTURE";
+    display.xray.solid = true;
+    display.xray.alpha = 0.3;
+    display.samples = 16;
+    model.render.display = display;
+    let wb = render_plan(&model, set, &look, plain).expect("a camera");
+    assert_eq!((wb.look.shading, wb.samples, wb.denoise), (BShading::Solid, 16, false), "Workbench: Solid at render_aa, no denoise");
+    assert!(wb.look.matcap.is_some() && wb.look.texture, "the matcap and the images go up");
+    assert_eq!(wb.camera.shade[0], 1, "MatCap lighting");
+    assert_eq!(wb.camera.shadow[3], 0.5, "the display's shadow at its intensity");
+    assert_eq!(wb.camera.ssao[0], 16, "Cavity ▸ World's samples");
+    assert!((wb.camera.see_through - 0.7).abs() < 1e-6, "X-ray at 0.3");
+    assert_eq!(cycles.camera.shade, [0; 4], "the path tracer takes none of it");
 }

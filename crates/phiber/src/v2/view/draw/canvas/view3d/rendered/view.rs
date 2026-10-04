@@ -42,6 +42,7 @@ pub(in crate::v2::view::draw::canvas::view3d) struct BRayView {
     /// Solid's Lighting and Color (`Camera::shade`, `::single`; `BSolidShade`).
     pub shade: [u32; 4],
     pub single: [f32; 4],
+    pub matcap: [u32; 4],
 }
 
 impl BRayView {
@@ -70,6 +71,6 @@ impl BRayView {
                 .map_or(sky, |[r, g, b]| gpui::Rgba { r, g, b, a: 0.0 }.into()),
             _ => sky,
         };
-        Self { yaw, pitch, pan, zoom, setup, sky, grid, studio, wire, mode, set, see_through, grid_hide, view, fx, outline, cavity, ssao, shadow, shadow_fade, shade: solid_fx.shade_words(shade.shade_words()), single: shade.single_words() }
+        Self { yaw, pitch, pan, zoom, setup, sky, grid, studio, wire, mode, set, see_through, grid_hide, view, fx, outline, cavity, ssao, shadow, shadow_fade, shade: solid_fx.shade_words(shade.shade_words()), matcap: shade.matcap_words(), single: shade.single_words() }
     }
 }

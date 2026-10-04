@@ -86,6 +86,40 @@ pub struct SceneRender {
     pub ssao: SceneSsao,
     /// Workbench's shadow settings (`Scene.display`).
     pub shadow: SceneShadow,
+    /// What a Workbench F12 draws with (`Scene.display.shading`, `render_aa`).
+    pub display: SceneDisplayShading,
+}
+
+/// `Scene.display`'s shading for the Workbench render engine: the type
+/// (`"solid"` or `"wireframe"` — Workbench renders nothing else), X-ray,
+/// the Solid effects and the Lighting / Color / Background items as the
+/// viewport's `SceneView` has them, and `render_aa` as a sample count
+/// (`eSceneDisplay_AA`: OFF and FXAA one sample, else 5 / 8 / 11 / 16 / 32).
+#[derive(Clone, Debug, PartialEq)]
+pub struct SceneDisplayShading {
+    pub shading: &'static str,
+    pub xray: super::SceneXray,
+    pub solid_fx: super::SceneSolidFx,
+    pub solid_shade: super::SceneSolidShade,
+    pub samples: u32,
+}
+
+impl Default for SceneDisplayShading {
+    fn default() -> Self {
+        Self::of(&crate::blend::BlendShading::default(), 8)
+    }
+}
+
+impl SceneDisplayShading {
+    pub fn of(sh: &crate::blend::BlendShading, render_aa: i16) -> Self {
+        Self {
+            shading: if sh.ty == 2 { "wireframe" } else { "solid" },
+            xray: super::SceneXray::of(sh),
+            solid_fx: super::SceneSolidFx::of(sh),
+            solid_shade: super::SceneSolidShade::of(sh),
+            samples: match render_aa { 5 | 8 | 11 | 16 | 32 => render_aa as u32, _ => 1 },
+        }
+    }
 }
 
 /// `Scene.display`'s shadow — the Shading popover's gear popover
@@ -138,6 +172,7 @@ impl Default for SceneRender {
             pass: Default::default(),
             ssao: Default::default(),
             shadow: Default::default(),
+            display: Default::default(),
             exposure: 0.0,
             gamma: 1.0,
             film_transparent: false,

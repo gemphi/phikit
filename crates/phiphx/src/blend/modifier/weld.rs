@@ -128,8 +128,9 @@ impl BModifier for BWeld {
             return;
         }
         let has_uvs = !mesh.loop_uvs.is_empty();
+        let has_colors = !mesh.loop_colors.is_empty();
         let mut faces = crate::blend::BFaces::default();
-        let (mut uvs, mut materials, mut smooth) = (Vec::new(), Vec::new(), Vec::new());
+        let (mut uvs, mut colors, mut materials, mut smooth) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
         for face in 0..mesh.faces.len() {
             let start = mesh.faces.start(face);
             let mut kept: Vec<(u32, usize)> = Vec::new();
@@ -150,6 +151,9 @@ impl BModifier for BWeld {
             if has_uvs {
                 uvs.extend(kept.iter().map(|(_, c)| mesh.loop_uvs.get(*c).copied().unwrap_or_default()));
             }
+            if has_colors {
+                colors.extend(kept.iter().map(|(_, c)| mesh.loop_colors.get(*c).copied().unwrap_or_default()));
+            }
             materials.push(mesh.face_materials.get(face).copied().unwrap_or(0));
             smooth.push(mesh.face_smooth.get(face).copied().unwrap_or(true));
         }
@@ -160,6 +164,9 @@ impl BModifier for BWeld {
         mesh.face_smooth = smooth;
         if has_uvs {
             mesh.loop_uvs = uvs;
+        }
+        if has_colors {
+            mesh.loop_colors = colors;
         }
     }
 }
