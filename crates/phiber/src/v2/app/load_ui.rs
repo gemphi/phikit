@@ -59,6 +59,8 @@ pub fn apply_view(state: &mut BState, v: &SceneView) {
     }
     // The Overlays and Gizmos popovers as the view had them (`View3D.overlay`).
     crate::v2::scene::BOverlays::seed(state, &v.overlay.list);
+    // The view's own render region (`View3D.render_border`).
+    crate::v2::scene::view_border::BViewBorder::seed(state, v.border);
     // The sidebar as the file left it (`SpaceView3D.show_region_ui`).
     let shown = crate::v2::part::sidebar::show::BSidebarShown::view3d_key();
     state.set(&shown, if v.sidebar { crate::v2::state::val::V_TRUE } else { crate::v2::state::val::V_FALSE });
@@ -92,7 +94,7 @@ mod tests {
 
     #[test]
     fn restores_workspace_and_view() {
-        let v = SceneView { yaw_deg: 90.0, pitch_deg: 45.0, perspective: false, camera_view: false, camzoom: 0.0, pivot: [1.0, 2.0, 3.0], width: 10.0, fov: 1.44, shading: "material", sidebar: true, xray: None, solid_fx: None, solid_shade: None, overlay: Default::default() };
+        let v = SceneView { yaw_deg: 90.0, pitch_deg: 45.0, perspective: false, camera_view: false, camzoom: 0.0, pivot: [1.0, 2.0, 3.0], width: 10.0, fov: 1.44, shading: "material", sidebar: true, xray: None, solid_fx: None, solid_shade: None, overlay: Default::default(), border: Default::default() };
         let mut s = BState::default();
         restore_ui(&mut s, &model("UV Editing", Some(v)));
         assert_eq!(s.get(CtxKey::Space), Some("UvEditing"));

@@ -29,6 +29,9 @@ impl Render for BGhost {
 /// Blender's `ED_view3d_persp_switch_from_camera` on the first orbit.
 pub(super) struct BOrbit {
     pub leave: Option<Vec<BAction>>,
+    /// The camera frame in canvas pixels, when looking through the camera
+    /// (the render-region gesture's reference).
+    pub frame: Option<crate::v2::scene::camera_view::BCameraFrame>,
 }
 
 impl BOrbit {
@@ -43,6 +46,10 @@ impl BOrbit {
         // B armed the box: the drag is the box, not an orbit (`boxsel`).
         if crate::v2::scene::boxsel::armed(ctx.state) {
             return super::boxsel::surface(ctx, hit);
+        }
+        // Ctrl B armed the render region (`render_border`).
+        if super::render_border::armed(ctx.state) {
+            return super::render_border::surface(ctx, hit, self.frame);
         }
         if crate::v2::scene::circlesel::BCircle::armed(ctx.state) {
             return super::circlesel::surface(ctx, hit);

@@ -31,11 +31,39 @@ impl BCoarse {
         ((w / self.0).max(1), (h / self.0).max(1))
     }
 
+    /// A tile of a larger frame (`Camera::tile`), at this size: the frame
+    /// and the corner shrink with the image, so the tile's rays stay the
+    /// region's (the viewport's own render region, `BRayView::border`).
+    pub fn tile(self, tile: [u32; 4]) -> [u32; 4] {
+        if tile == [0; 4] {
+            return tile;
+        }
+        [tile[0] / self.0, tile[1] / self.0, (tile[2] / self.0).max(1), (tile[3] / self.0).max(1)]
+    }
+
     pub fn full(self) -> bool {
         self.0 == 1
     }
 
     pub fn next(&mut self) {
         self.0 = (self.0 / 2).max(1);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_tile_shrinks_with_the_coarse_image() {
+        let mut c = BCoarse::start(Mode::Rendered);
+        assert_eq!(c.pixels(800, 400), (100, 50));
+        // The right half's lower half of an 800 × 400 frame, at an eighth.
+        assert_eq!(c.tile([400, 200, 800, 400]), [50, 25, 100, 50]);
+        assert_eq!(c.tile([0; 4]), [0; 4], "the frame itself stays the frame");
+        while !c.full() {
+            c.next();
+        }
+        assert_eq!(c.tile([400, 200, 800, 400]), [400, 200, 800, 400]);
     }
 }

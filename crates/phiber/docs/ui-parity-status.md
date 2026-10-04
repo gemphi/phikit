@@ -1,11 +1,16 @@
 # Phiber UI — status
 
-**Suite: 1073 passing, 7 failing** (phiber, on the tree as it stands on the
-machine — all seven are the other agent's work in progress: a region's host
-corners, its overlay-family key test, the Preferences palette override and
-its rows' actions, the layout golden it recorded, the activity bar's
-treatment and the Outliner's guide lines; see batch 100). phiphx 197
-passing, 6 known asset-dependent; phiray 82 passing. Batches 17–131 are
+**Suite: 1267 passing, 14 failing** (phiber, on the tree as it stands on the
+machine, the other agent's node-editor / Timeline / swatch work included —
+all fourteen are theirs in progress: a region's host corners, the overlay
+family key test, the Preferences palette override and its rows' actions,
+the layout golden, the activity bar's treatment, the Outliner's guide
+lines, the Dope Sheet's G-grab under its new expandable rows, the Timeline
+wheel zoom, two renderer-ownership rules, the Properties rail tab's paint
+layer, a popover's checkbox widths, and `level_structure` over three of
+their files past 240 lines — `state/key/op.rs`, `time/gesture.rs`,
+`time/row/mod.rs`). phiphx 208
+passing, 6 known asset-dependent; phiray 88 passing. Batches 17–140 are
 extracted on the machine; every item below is covered by a test. The
 Animation and Rendering workspaces have a full audit of their own in
 `animation-rendering-status.md`.
@@ -793,6 +798,442 @@ Blender's own choices.
   and Graph headers, which Blender leaves out of the Timeline.
 - Truth: `tests/marker_box_and_transport_popovers.rs`, `scene/grab.rs`,
   `part/playback/settings.rs`.
+
+## Batch 140 — the surface shader from the Material Output
+
+- **Blender** renders what the Material Output is linked to
+  (`ntreeShaderOutputNode`; Cycles' SVM / EEVEE's codegen evaluate the
+  closure tree). Phiber read a material's *first* Principled BSDF, linked
+  or not: `LAND`'s window glass is a Glossy BSDF on the output, `FLOWER-
+  CITY`'s water a Mix Shader of Glass and Transparent keyed on Light Path
+  ▸ Is Shadow Ray, its moss a Mix of Diffuse and Principled by a Voronoi
+  ramp — all of them shaded from the wrong node, and the base image and
+  normal map searched from it too.
+- phiphx: `blend/shade/surface.rs` — the active output's Surface link
+  walked through Mix / Add Shader and reroutes to the closures and folded
+  to one `BlendBsdf` (`mixed` lerps by the factor, `added` averages and
+  sums emission; Glass / Refraction, Transparent / Holdout, Emission,
+  Diffuse / Translucent / Toon, Glossy / Anisotropic / Metallic, Sheen /
+  Velvet, Subsurface Scattering each as the Principled parameters that
+  draw most like them); `surface_principled` — the Principled the surface
+  reaches, now what `principled`, `socket_image` and `normal_map` start
+  from (`principled_of` takes the node); `eval.rs` folds Light Path for a
+  camera ray; `material.rs` takes the surface, the Principled as the
+  fallback. `rendering.md` §40.
+- Tests: `tests/surface_truth.rs` (fixtures always; LAND and FLOWER-CITY
+  when present), `surface.rs` (mix and add arithmetic); `bsdf_truth.rs`
+  skips surfaces that are not the script's Principled.
+- **Also this batch (hotfix 139a):** the other agent's tree had
+  overwritten `canvas/image/mod.rs` and `set.rs` with pre-batch-135
+  versions (render slots, named images, the Image editor's Ctrl B gone)
+  and a line of `activity/profile.rs`'s test — restored; and its
+  half-landed callees implemented so the tree builds: `chrome::
+  paint_state` (the active fill kept, faded, when muted), `BEffects::
+  control_muted_alpha`, `BControl::with_swatch`, `pub mod sheet` back in
+  `time/mod.rs`, `paint_rows`'s `picked` closure. Their
+  `dope_sheet_edits_keys` fails at the G-grab under the new expandable
+  rows — theirs to finish.
+- **Suites:** see the head of this file.
+- **Not yet:** two lobes per hit (a Mix of unlike closures is one blend);
+  node groups; volumes; procedural textures and Bump per pixel.
+
+## Batch 139 — SMAA on Solid's first frames, and Viewport Anti-Aliasing
+
+- **Blender** smooths a Solid or Wireframe view's first anti-aliasing
+  samples with SMAA (`workbench_effect_antialiasing.cc`,
+  `workbench_effect_smaa_frag.glsl`, `gpu_shader_smaa_lib.glsl`), fading
+  it out over the first four (`smaa_mix_factor_`), so no frame shows a
+  staircase; the sample count is `U.viewport_aa` (Preferences ▸ Viewport
+  ▸ Quality ▸ Viewport Anti-Aliasing: No / Single Pass / 5 / 8 / 11 / 16
+  / 32, default 8) in the viewport and `render_aa` for a render, with
+  tables for each (`TaaSamples`). Phiber's Solid was aliased until the
+  eighth sample and eight always, the file's `render_aa` ignored.
+- phiray: `trace/smaa.rs` (the area and search tables, Blender's bytes),
+  `wgsl/smaa_lib.wgsl` + `wgsl/smaa.wgsl` (SMAA 1x HIGH as three compute
+  stages over the gather's sums, the `Smaa` kernel), `Tracer::tail` (the
+  dispatches after the slices), `taa::offset(k, n)` with `COUNTS` and
+  `count`, `Tracer::set_aa_samples` / `aa_samples` / `seam_rows`, the
+  count part of the view (a change starts over). `rendering.md` §39.
+- phiber: `scene/viewport_aa.rs` (`BViewportAa`: Blender's items over
+  `ctx.pref.viewport_aa`, `AppKey::ViewportAa`), `part/pref/quality.rs`
+  (the Quality panel under Preferences ▸ Viewport), `BRayShot::aa` and
+  `BRayView::aa` (the viewport reposts on a change; the SSAO disk runs
+  over the count), the Workbench still taking `render_aa` as the count
+  (`BStillLook::for_engine`, 0 and 1 kept; phiphx `SceneDisplayShading`
+  keeps them too), bands and the region drawn `seam_rows` over;
+  `rendered/still_tests.rs` takes `still.rs`'s tests (the cap).
+- Tests: phiray `tests/smaa.rs`, `trace/smaa.rs`, `trace/taa.rs`; phiber
+  `tests/viewport_anti_aliasing.rs`, `scene/viewport_aa.rs`,
+  `part/pref/quality.rs`, `rendered/still.rs`, `rendered/region.rs`.
+- **Suites:** see the head of this file.
+- **Not yet:** the preference saved to disk; `Scene.display.viewport_aa`
+  for a Rendered / Material view on the Workbench engine; the
+  linear-light accumulation (§25).
+
+## Batch 138 — the viewport's own render region
+
+- **Blender** keeps a second region per 3D view: `View3D.render_border`
+  (an `rctf` of fractions of the region, y up) with `V3D_RENDER_BORDER`
+  in `View3D.flag2` — `use_render_border`, the sidebar's View ▸ Render
+  Region, active only outside the camera view. `render_border_exec`
+  branches on `rv3d->persp`: in the camera view the box becomes
+  `Scene.r.border`, outside it the viewport's own, as fractions of the
+  region (`vb = 0 … winx/winy`), an empty box turning the flag off;
+  `clear_render_border_exec` picks the same way (off, the whole region
+  back). `view3d_draw_border` draws it outside the camera view as
+  `drawrenderborder`'s dashed box in (1, 0.25, 0.25) over the region.
+  `ED_view3d_calc_render_border` hands it to the engine only when the
+  shading is Rendered and the engine draws the viewport itself
+  (`view3d_main_region_do_render_draw`: `view_update` and `view_draw` —
+  EEVEE, Cycles; not Workbench): EEVEE's film then renders the rectangle
+  alone (`Film::init` with `output_rect`), nothing outside it. It is
+  view data: no undo step, saved only with the screen. Batch 137's
+  gesture said this was not read yet.
+- phiphx: `blend/scene/border.rs` — `BlendViewBorder { on, rect }` from
+  `View3D.flag2` and `render_border` (an all-zero `rctf`, a view that
+  never had a box, read as the whole region, as `versioning_260` did);
+  `BlendView3d::border`, `SceneView::border`.
+- phiber: `scene/view_border.rs` — `BViewBorder`: the switch and the
+  rectangle as two view keys (`ctx.view3d.render_border.use` / `.rect`,
+  `View3dKey::BorderUse` / `BorderRect`), seeded with Load UI, no undo
+  (as Blender); `from_region_box` (the other branch of
+  `render_border_exec`), `set`, `clear`, `is_the_view_s` (the viewport
+  the pointer is over is not looking through the camera — the branch
+  both operators take), `filled_by(engine)` and `pixels_of`. The
+  viewport's gesture (`view3d/render_border.rs`) outside the camera view
+  now sets it (`BRenderBorderRule`: `view:…`, `view_off`); `clear` clears
+  whichever the viewport at hand looks at, the Image editor's Clear is
+  `clear_scene`. The sidebar's View card gains Render Region beside Focal
+  Length. The canvas draws the dashed box over the region when not in the
+  camera view (`frame::paint_region`, one painter for both boxes).
+  Rendered shading with Cycles or EEVEE as the engine traces the region
+  alone: `BRayView::border` → the frame stays the viewport's, the image
+  is the region's pixels of it as a tile (`Camera::tile`; `BCoarse::tile`
+  shrinks the tile with the small first passes), drawn in its place
+  (`BShotView::part`) and nothing outside — Workbench and Material
+  Preview draw the whole viewport, as Blender's do. `rendered::prepare`
+  split out of `rendered/mod.rs` for the cap.
+- Tests: `tests/view_render_border.rs` (Ctrl B outside the camera view
+  sets the viewport's own, the scene's untouched; the sidebar switch;
+  Ctrl Alt B clears the viewport's over this viewport and the scene's
+  when looking through the camera), `tests/view_render_border_fills.rs`
+  (Rendered + Cycles traces the lower right quarter alone at full size —
+  the images double up to half the viewport's; Workbench fills the whole),
+  `scene/view_border.rs`, `scene/render_border.rs` (the rule's view
+  values), `rendered/coarse.rs` (a tile shrinks with the coarse image),
+  `rendered/reframe.rs` (a part lands where the frame puts it), phiphx
+  `scene/border.rs` and `blend/tests/blend.rs` (THYMUS: off, whole).
+- **Suites:** see the head of this file.
+- **Not yet:** one region per viewport (the keys are shared, as the
+  file's largest view seeds them); writing the view's border back (no
+  screen data is written yet); Clipping Region (Alt B).
+
+## Batch 137 — Render Region
+
+- **Blender** renders a region of the frame: `Scene.r.border` (an `rctf` of
+  fractions, y up) with `R_BORDER` and `R_CROP` in `Scene.r.mode` —
+  Properties → Output → Format's Render Region and Crop to Render Region.
+  The box is dragged in the camera view (View ▸ View Regions ▸ Render
+  Region, Ctrl B; `view3d.render_border`: the box as fractions of the
+  camera frame, clamped, an empty box turning the region off) or over the
+  Image editor's picture (View ▸ Set Render Region, Ctrl B;
+  `image.render_border`: inside the crop when the picture is cropped,
+  snapped outward to the frame's pixels, the whole frame or no pixel
+  turning it off), and cleared by Ctrl Alt B (`clear_render_border`: off,
+  the whole frame again). `drawrenderborder` draws it in the camera view
+  as a dashed box in (1, 0.25, 0.25). `render_init_from_main` fills
+  `disprect` alone: the result is the region's size with Crop, else the
+  frame with the rest black and alpha 0. Phiber had the two Output rows
+  (labelled Border Render) that nothing read, and the two menu entries
+  inert.
+- phiphx: `blend/scene/border.rs` — `BlendRenderBorder { on, crop, rect }`
+  read from `RenderData.mode` and `border` (`SceneProps`, `SceneRender::
+  border`), `pixels(w, h)` as `render_init_from_main` truncates and clamps
+  (rows from the top); written back (`BlendEdits::border`: the two bits
+  over `r.mode`, the four floats of `r.border`).
+- phiber: `scene/render_border.rs` — `BRenderBorder`: the panel's two
+  switches (`use_border`, `use_crop_to_border`, now labelled as Blender's)
+  over the file's, the rectangle one key over the file (`ctx.scene.
+  render_border`, stepped by Undo, seeded from the file, saved through
+  `BRenderEdits::border`); `from_frame_box` and `from_image_box` as the
+  two operators compute; `BRenderBorderRule` on `ctx.op.render_border`
+  (`arm`, `arm_image`, `set:…`, `off`, `clear`). The viewport's gesture
+  surface (`view3d/render_border.rs`, armed by Ctrl B through View ▸ View
+  Regions, the box painted as the select box is) sets it in the camera
+  view — outside it Blender sets the viewport's own border, which nothing
+  reads yet, so the gesture says so; the Image editor's (`canvas/image/
+  border.rs`, armed by View ▸ Set Render Region) over the picture. The
+  camera frame paints the region's dashed box (`frame.rs`). Esc disarms
+  either. `BRenderSet::border` carries it to the plan; `BRenderPlan::
+  region` (`rendered/region.rs`, `BStillRegion`): the still draws the
+  region two pixels wider each way — the effects and the anti-aliasing
+  gather read neighbours, as the bands overlap for — and cuts it back,
+  alone with Crop or laid into the black frame.
+- Tests: `tests/render_menu_actions.rs` (a region through F12: cropped
+  to a quarter, then framed with black outside and pixels inside, then
+  cleared), `rendered/region.rs` (every pixel of a region equals the
+  frame's there, cropped and framed), `scene/render_border.rs` (both
+  operators' arithmetic, the rule, the seed), phiphx `scene/border.rs`
+  (pixels, mode bits), `write/edit.rs` (the region lands and reads back).
+- **Suites:** see the head of this file.
+- **Not yet:** Clipping Region (Alt B); the region's box drawn in
+  the Image editor (Blender draws none); Crop's effect on Save As (the
+  result is already cropped). The viewport's own border: batch 138.
+
+## Batch 136 — images in the Image editor
+
+- **Blender**'s Image editor shows an `Image` data-block picked from the
+  header's `template_ID` — the Render Result or any image in the file —
+  with New and Open beside the name. `image.new` opens a dialog
+  (`image_new_draw`: Name "Untitled", Width and Height 1024, Color black
+  with Alpha on, Generated Type Blank / UV Grid / Color Grid, Float,
+  Tiled) and makes the picture (`BKE_image_buf_fill_color`, `_checker`,
+  `_checker_color` in `image_gen.cc`); `image.open` reads a file, named as
+  the file; Image ▸ Invert (the colours, or one channel), Transform ▸ Flip
+  Horizontally / Vertically and Rotate 90° / 90° CCW / 180° change the
+  shown image's pixels (`image.invert`, `image.flip`,
+  `image.rotate_orthogonal`); Copy (Ctrl C, `image.clipboard_copy`) puts
+  it on the clipboard; Reload reads it again; Save As… writes it. Phiber's
+  header offered New and Open that did nothing or opened the `.blend`
+  browser, and every Image-menu entry but Save was inert.
+- `scene/image_list.rs` — `BImage` (name, path, size, BGRA rows), the
+  session's images (`BImageList`: add with Blender's `.001` naming, get,
+  change in place, forget with the renders), `BImage::open`, `generated`,
+  `reload`, `save`, `png`; `BPixelOp` (Invert `[r, g, b, a]`, Flip, Rotate)
+  over BGRA rows, a quarter turn swapping the sides. `scene/image_gen.rs`
+  — `BImageGrid::uv` and `::color`, `image_buf_fill_checker_slice` and
+  `checker_board_color_prepare_slice` byte for byte (the 32-pixel checks
+  of 64 and 150 grey with the hue-stepped `+`; the hue sweep brightening
+  down, tinted by 1-, 4-, 32- and 128-pixel checks and ruled every 32),
+  rows turned over for the canvas; the grid's lettering
+  (`checker_board_text`, Blender's mono font) is not drawn.
+- `part/image/shown.rs` — `BShownImage` (`sima->image`: the Render Result
+  or a name, `ImageKey::Shown`), its `name_list` for the header, `picture`
+  and `seq` for the canvas, `run(op)` over the shown picture (the Render
+  Result's shown slot, as Blender's operators change its display buffer);
+  `BImageOpRule` takes `image.op` (an operator's slug, or `reload`). The
+  header's `template_ID` is the browse dropdown over the names with New
+  (`V_MODAL_NEW_IMAGE`) and Open (`BFilePurpose::OpenImage`, "Open
+  Image") beside it; the slot, layer, pass and channel dropdowns show for
+  the Render Result alone. The canvas (`BImageView::shown`) paints the
+  named picture at its size with no render bar.
+- `modal/new_image` — the dialog: Name, Width, Height, Generated Type,
+  Color (for Blank), Alpha, OK; `BNewImageRule` makes and shows the image
+  and closes it. Float and Tiled are not offered (every image here is
+  8-bit, untiled).
+- `app/op/image.rs` — `image_copy` (Ctrl C): the picture as a PNG on the
+  clipboard. `part/file/save_image.rs` — `BImageSave::to`: the Save
+  commit, a named image in its extension's format (`.png` when none), the
+  Render Result as before. `app/load.rs` forgets the images with the
+  renders on a new document.
+- Tests: `tests/image_editor_images.rs` (open, shown and listed, painted at
+  its size; flip, invert a channel, rotate; copy as PNG; save; reload;
+  New's dialog making a UV grid and the header listing both; back by
+  name), `scene/image_gen.rs` (both grids' pixels), `part/image/shown.rs`,
+  `modal/new_image` (OK with fields, the defaults, `.001`).
+- **Suites:** see the head of this file.
+- **Not yet:** Paste, Replace…, Edit Externally, Open Cached Render, Save
+  Sequence / All Images, Resize; the grid's lettering; 32-bit float and
+  tiled images; Image ▸ New's Float and Tiled; Pack / Unpack; Alt N / Alt
+  O / Alt R / Alt S bound in the Image editor alone (the menu entries
+  carry the shortcuts; the keymap takes the top bar's first).
+
+## Batch 135 — render slots
+
+- **Blender** keeps eight render slots on the Render Result
+  (`Image.renderslots`, `IMA_MAX_RENDER_SLOT`). F12 renders into the slot
+  shown (`render_slot`), which becomes `last_render_slot`, and the slot
+  rendered before keeps its result (`BKE_image_backup_render`), so two
+  renders are compared by switching; the Image editor's header picks a
+  slot from its dropdown, and View ▸ Render Slot Cycle Next / Previous
+  (J, Alt J; `image.cycle_render_slot`) step to the next slot holding a
+  render or the one last rendered into, falling to the first two by turns
+  when none does (`ED_image_slot_cycle`). An empty slot shows blank with
+  the Render Result still the data-block. Phiber's dropdown listed eight
+  names over one render; every F12 replaced it.
+- `render_job` holds the eight slots (`BJob::slots`, `active`, `last`;
+  `slot(i)` / `put(i, shot)` the one way in and out); `shot()` is the
+  shown slot's render, `start` renders into the shown slot and marks it
+  last, `show` (the player) puts up in the shown slot, `forget` empties
+  them all. `scene/render_slot.rs` — `BRenderSlot`: `COUNT`, `NAME_LIST`,
+  `active`, `last`, `filled`, `any_filled`, `select`, `cycle(reverse)` as
+  `ED_image_slot_cycle` has it; `BRenderSlotRule` takes the dropdown's
+  `image.slot = Slot n` and the menu's `image.slot_cycle = next |
+  previous` (`ImageKey::SlotCycle`), setting the dropdown's key to the
+  slot reached so the two stay one. The header shows the Render Result
+  while any slot holds a render (`any_filled`); the canvas's `slot_filled`
+  reads the shown slot. A render thread that fails finishes the slot it
+  was rendering into (`render_fit::BRunning`).
+- Tests: `tests/render_menu_actions.rs` (Slot 2 empty under an existing
+  Render Result, F12 into it at half size, Slot 1 keeps the first render,
+  J and Alt J step between the two and move the dropdown),
+  `scene/render_slot.rs` (names).
+- **Suites:** see the head of this file.
+- **Not yet:** renaming a slot and the slot count (Blender's `+` / `−`
+  and the double-click rename in the dropdown); Clear Render Slot (the
+  View menu's); the slot shown is not saved with the file.
+
+## Batch 134 — the Render menu's actions
+
+- **Blender**: Render ▸ Render Image (F12, `render.render`) renders the
+  scene through its camera — the startup file has one, so a fresh
+  session renders its cube; View Render (F11, `render.view_show`) shows
+  the render window with whatever the last render left and, on the open
+  window, puts it away, starting no render; View Animation (Ctrl F11,
+  `render.play_rendered_anim`, `screen_play_rendered_anim.py`) plays the
+  frames an animation render wrote where Output points, at the scene's
+  frame rate, in a player — its own by default — and warns "File '…' not
+  found" when the first frame is not there; Render Audio…
+  (`sound.mixdown`) opens the file browser (title and button "Mixdown")
+  and writes the scene's audio over the frame range — FLAC container and
+  codec, stereo, 16-bit at the scene's 48 kHz by default, the extension
+  appended; Lock Interface (`use_lock_interface`, `WM_set_locked_
+  interface`) holds back, while a render runs, every operator that would
+  change data (`wm_operator_check_locked_interface`). In Phiber F12 on
+  the default scene said "open a file first", F11 started a render,
+  Ctrl F11 did the same, Render Audio… and Lock Interface did nothing.
+- **Render Image, Render Animation, the Rendering workspace** on a
+  fresh session: `scene/startup_camera.rs` — `BStartupCamera`, the
+  startup file's 50 mm camera on its line of sight (7.36, −6.93, 4.96),
+  pulled back to frame the default scene's three primitives for the
+  render's aspect; `render_now` reads it as the scene's camera when no
+  file is open (`render_on_entry` no longer waits for one).
+- **View Render**: `fire(OpKey::Render, "view")` → `render_view`: the
+  window toggled, no render; the old "open the window and a render
+  starts" (`ensure_render`) is gone — F12 renders by itself.
+- **View Animation**: `scene/render_play.rs` — `BRenderedPlayback::plan`
+  names the frames `start ..= end` (`render_save::frame_file`) or the
+  movie a video output wrote, erring with Blender's warning when the
+  first is not on disk; `load` reads a frame as a shot. `render_play`
+  opens the render window and plays the frames round and round
+  (`render_job::show`, a new entry that puts a shot up while no render
+  runs), one frame time apart (`CtxKey::Fps`), until the window closes
+  or a render starts, then puts the Render Result back; a movie goes to
+  the system's player (`cx.open_url`), as Blender's external-player
+  presets do.
+- **Render Audio…**: `op_file(…, "mixdown")`, `BFilePurpose::Mixdown`
+  (title and button "Mixdown"); the browser opens beside the `.blend` on
+  `<stem>.flac` (`BMixdown::name_for`); the commit (`mixdown_to`) writes
+  `scene/mixdown.rs`'s `BMixdown` — the range's seconds of 16-bit stereo
+  silence at 48 kHz, through `ffmpeg` in the container the name asks
+  (`anullsrc`), else a WAV written here, reported as the movie writer's
+  fallback is.
+- **Lock Interface**: `interface_locked_against(action)` — the switch on
+  and a render under way: an action that would change the document
+  (`undo::snapshot` before and after) is dropped with a status line;
+  the view, the menus, the window and Cancel go through.
+- Tests: `tests/render_menu_actions.rs` (all five on a fresh session:
+  F11 shows and hides without rendering, F12 renders the default scene,
+  the lock holds an edit and lets the window close, Ctrl F11 warns with
+  no frames and plays two written ones then puts the result back, the
+  mixdown's bytes); `scene/startup_camera.rs` (the camera frames every
+  vertex from the startup corner), `scene/render_play.rs` (the plan, the
+  warning, a frame loaded BGRA), `scene/mixdown.rs` (seconds, the WAV's
+  header and silence, the default name and extension), `keymap/set.rs`
+  (F11, Ctrl F11), `file/op.rs`'s rules.
+- **Suites:** see the head of this file.
+- **Not yet:** `use_lock_interface` read from and saved to the file
+  (`RenderData.flag`); the mixdown's Container / Codec / Format /
+  Bitrate / Split Channels options in the browser's side panel; a
+  Preferences ▸ Animation Player choice (the render window is the
+  player); the Render Result kept apart from the played frames (the
+  player stands in the render window, so the result is put back after).
+
+## Batch 133 — Depth of Field
+
+- **Blender** (`workbench_effect_dof.cc`): Solid's Options ▸ Depth of
+  Field (`use_dof`, `V3D_SHADING_DEPTH_OF_FIELD`) blurs the view through
+  the camera with the camera's own Depth of Field settings — `SceneState::
+  draw_dof` wants the camera view (`RV3D_CAMOB`), `CAM_DOF_ENABLED` and
+  the flag together. `DofPass::init` turns f-stop, focal length, sensor
+  and focus distance (`BKE_camera_object_dof_distance`: the focus object's
+  distance along the axis when one is named) into `aperture_size`,
+  `distance` and `invsensor_size`; five shaders then run every sample
+  after the composite and before the anti-aliasing gather: `dof_prepare`
+  (a half-resolution colour with the circle of confusion, `dof_calculate_
+  coc`, the far field's pixels taking priority), `dof_downsample` twice
+  (the texture's mips), `dof_blur1` (a 49-sample gather over the disk —
+  `setup_samples`' rings shaped by the blades, rotation and ratio — each
+  sample weighted by its own CoC reaching back, the mip by the CoC,
+  jittered by interleaved gradient noise over the blue noise), `dof_blur2`
+  (McGuire and Whitson's 3 × 3 median where the CoC passes 9) and
+  `dof_resolve` (the blur blended over the colour by `smoothstep(1, 3,
+  |coc|)`). Phiber drew every Solid frame pin-sharp.
+- phiray: `Camera::dof` (`[aperture_size, −focus, invsensor per frame
+  pixel, −clip_end]`); `dof.wgsl` ports the five shaders as stages of the
+  effects kernel (`Camera::slice.z`), each over its own pixel count, the
+  half image and its CoC in the image's words at `21n` / `24n`, the mips
+  and the blur in Solid's empty display-sum words (`dof_region`);
+  `fx_finish` is the one owner of the view transform and grid step, run
+  by the composite without the effect and by `dof_resolve` with it. The
+  noise offset is `frame / samples` (`Camera::taa.w`), so the frames
+  converge as Blender's do. The bokeh takes `blades`, `blade_spin` and
+  `aperture_ratio` — the camera's words the path tracer already had.
+- phiphx: `SceneSolidFx::dof` (`V3D_SHADING_DEPTH_OF_FIELD`, bit 11).
+- phiber: `BSolidFx::dof` (`use_dof`, `RNA[20]`, off at the factory, read
+  from and seeded by the file); the Options row after Shadow's settings;
+  `scene/solid_dof.rs` — `BCameraLens` (what `DofPass::init` reads off the
+  camera: on, lens, sensor, f-stop, focus, clip end; `focused_at` the
+  focus object's distance) carried by `BCameraView`, and
+  `BSolidFx::dof_words` (zero unless the shading's switch, a camera view
+  and the camera's own switch all hold). The viewport's `invsensor` is
+  the camera frame's share of the region's width over the sensor
+  (`rv3d->viewcamtexcofac[0]`), times the traced width in the kernel;
+  F12 (`for_engine`, through `BCameraLens`) takes the whole frame.
+- Tests: phiray `tests/workbench_dof.rs` (a striped card out of focus
+  smears toward its mean in scene-linear light, in focus stays crisp, a
+  wider aperture smears more; the wall in focus is untouched; off is the
+  plain frame); phiber `scene/solid_dof.rs` (the words against
+  `DofPass::init`, zero unless everything is on), `camera_view/set.rs`
+  (the lens), `tests/render_job_runs_in_the_background.rs` (a Workbench
+  F12 with the display's switch alone draws none; with the camera's on,
+  the words), `shading_tests.rs` (the row); phiphx `scene/ui.rs` (the
+  flag bits).
+- **Suites:** see the head of this file.
+- **Not yet:** the row dimmed under X-ray (`row.active = not xray_active`
+  — it is inert there, as in Blender, but drawn full); a Workbench frame
+  rendered in tiles blurs each tile with its own edges clamped; a user
+  matcap's specular pass, SMAA on Solid's first frames, Workbench's FXAA
+  `render_aa`.
+
+## Batch 132 — the Shadow checkboxes in the Properties editor
+
+- **Blender** draws the two switches batch 131 reads: Object ▸ Viewport
+  Display ▸ Shadow (`OBJECT_PT_display`, `obj.display.show_shadows`, the
+  negative of `dtx`'s `OB_DRAW_NO_SHADOW_CAST`) and Object ▸ Visibility ▸
+  Ray Visibility ▸ Shadow (`OBJECT_PT_visibility`, `visible_shadow`, the
+  negative of `visibility_flag`'s `OB_HIDE_SHADOW`). Both on by default;
+  a click redraws the viewport and a save writes the bit.
+- The Object tab now has both rows (`part/props/object.rs`: `show_shadows`
+  under Viewport Display, `visible_shadow` under Visibility, `.on()`),
+  drawn by the one `uiItemR` mechanism as checkboxes over `ctx.buts.*`.
+  `BActiveObjectRule` seeds them from the active object's
+  `SceneObject::shadow` (`seed_shadow`), then from what the session
+  switched, as the Transform fields are.
+- `scene/shadow.rs`: `BObjectShadowList` — every object the panel
+  switched, one key over the file (`ctx.scene.shadow_cast`,
+  `name=display,ray|…`), stepped by Undo with the other scene edits,
+  forgotten on Delete; `apply` lays the switches over the viewport's
+  object list after the transforms (`pose::scene`), and the list's
+  fingerprint joins the object-list memo. `BObjectShadowRule`: a click on
+  either checkbox gives the active object the panel's pair. The viewport
+  build then picks the switch the mode reads (batch 131), for the live
+  view, F12 and the animation render alike.
+- **Save** (`scene/save.rs` → `BlendObjectEdit::shadow`): phiphx writes
+  `dtx`'s `OB_DRAW_NO_SHADOW_CAST` and the visibility field's
+  `OB_HIDE_SHADOW` — the latter folded into the one write of that field
+  with the monitor / arrow / camera toggles, so neither clobbers the other.
+- Tests: phiber `scene/shadow.rs` (round trip, apply, the rule),
+  `tests/properties_follow_the_active_object.rs` (the panel shows the
+  file's switches, a click switches the active object alone, the panel
+  remembers it, the save carries both bits and nothing for an unswitched
+  object); phiphx `write/edit.rs` (both bits land and read back through
+  `object_shadow`).
+- **Suites:** see the head of this file.
+- **Not yet:** a user matcap's specular pass, SMAA on Solid's first
+  frames, Depth of Field, Workbench's FXAA `render_aa`; Blender shows Ray
+  Visibility only under EEVEE and for geometry types — here the row is
+  always drawn.
 
 ## Batch 131 — an object's Shadow switches
 

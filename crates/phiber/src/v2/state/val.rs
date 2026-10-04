@@ -25,6 +25,7 @@ pub const V_MODAL_SPACES: &str = "spaces";
 pub const V_MODAL_COLLAB: &str = "collab";
 pub const V_MODAL_READER: &str = "reader";
 pub const V_MODAL_RENAME: &str = "rename";
+pub const V_MODAL_NEW_IMAGE: &str = "new_image";
 /// `wm_close_file_dialog`: "Save changes before closing?".
 pub const V_MODAL_FILE_CLOSE: &str = "file_close";
 pub const V_MODAL_REVERT: &str = "revert";

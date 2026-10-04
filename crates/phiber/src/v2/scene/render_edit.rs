@@ -50,12 +50,14 @@ pub struct BRenderEdits {
     pub film_transparent: Option<bool>,
     pub cycles: Vec<(String, BIdValue)>,
     pub output: Option<BlendOutput>,
+    /// The render region, when it differs from the file's.
+    pub border: Option<crate::phiphx::blend::BlendRenderBorder>,
 }
 
 impl BRenderEdits {
     /// `edits` with these three fields set from here.
     pub fn over(self, edits: crate::phiphx::blend::write::BlendEdits) -> crate::phiphx::blend::write::BlendEdits {
-        crate::phiphx::blend::write::BlendEdits { engine: self.engine, film_transparent: self.film_transparent, cycles: self.cycles, output: self.output, ..edits }
+        crate::phiphx::blend::write::BlendEdits { engine: self.engine, film_transparent: self.film_transparent, cycles: self.cycles, output: self.output, border: self.border, ..edits }
     }
 
     /// The panel's values that differ from `model`'s file.
@@ -75,7 +77,8 @@ impl BRenderEdits {
         let file = &model.render.output;
         let panel = BlendOutput { quality: file.quality, compress: file.compress, exr_codec: file.exr_codec, ..crate::v2::scene::output_set(s) };
         let output = Some(panel).filter(|o| *o != *file);
-        Self { engine, film_transparent, cycles, output }
+        let border = Some(crate::v2::scene::render_border::BRenderBorder::now(s, model.render.border)).filter(|b| *b != model.render.border);
+        Self { engine, film_transparent, cycles, output, border }
     }
 
     /// `name`'s panel value, when it differs from the file's (or, with none

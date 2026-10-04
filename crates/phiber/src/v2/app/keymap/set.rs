@@ -117,6 +117,10 @@ pub fn bindings(over: Option<BHostType>) -> Vec<BBinding> {
             BAction::Set(View3dKey::BoxSelect.path(), V_FALSE.to_string())
         } else if crate::v2::scene::circlesel::BCircle::armed(state) {
             BAction::Set(View3dKey::CircleSelect.path(), V_FALSE.to_string())
+        } else if state.get(View3dKey::RenderBorder) == Some(V_TRUE) {
+            BAction::Set(View3dKey::RenderBorder.path(), V_FALSE.to_string())
+        } else if state.get(crate::v2::state::ImageKey::BorderArm) == Some(V_TRUE) {
+            BAction::Set(crate::v2::state::ImageKey::BorderArm.path(), V_FALSE.to_string())
         } else {
             BAction::Set(ModalKey::Open.path(), V_EMPTY.to_string())
         }
@@ -151,6 +155,8 @@ mod tests {
         let all = bindings(None);
         let find = |label: &str| all.iter().find(|b| b.stroke == stroke(label)).map(|b| b.name.clone());
         assert_eq!(find("F12").as_deref(), Some("Render ▸ Render Image"));
+        assert_eq!(find("F11").as_deref(), Some("Render ▸ View Render"));
+        assert_eq!(find("Ctrl F11").as_deref(), Some("Render ▸ View Animation"));
         assert_eq!(find("Ctrl Z").as_deref(), Some("Edit ▸ Undo"));
         assert_eq!(find("Ctrl Q").as_deref(), Some("File ▸ Quit"));
         assert_eq!(find("Ctrl S").as_deref(), Some("File ▸ Save"));

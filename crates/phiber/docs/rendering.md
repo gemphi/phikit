@@ -1345,12 +1345,11 @@ the rasterized one is the next journal's.
 
 ### Still to port from Workbench
 
-- ~~Anti-aliasing~~ — §25, batch 118. Still: SMAA on the first frames,
-  `Scene.display.viewport_aa` / `render_aa` from the file.
+- ~~Anti-aliasing~~ — §25, batch 118; ~~SMAA on the first frames and the
+  sample counts~~ — §39, batch 139.
 - ~~The object outline and the curvature effect~~ — §26, batch 119.
   Still: Cavity ▸ World (SSAO, `workbench_cavity.bsl.hh`), shadows
-  (`workbench_shadow.cc`), matcaps, `Scene.display` from the file
-  (`viewport_aa`); ~~`shading.light`, `color_type`, the popover's
+  (`workbench_shadow.cc`), matcaps; ~~`shading.light`, `color_type`, the popover's
   Lighting and Color~~ — §27, batch 121 (MatCap, Attribute and Texture
   still draw as Studio / Material).
 - Material Preview on EEVEE's model (a raster prepass too; the prefiltered
@@ -1414,11 +1413,8 @@ after its last slice.
 
 ### Not ported yet
 
-SMAA on the first frames (`workbench_effect_smaa_frag.glsl`, three
-passes with the area and search textures) — the edges are aliased until
-the eighth sample. The sample counts from the file
-(`Scene.display.viewport_aa`, `render_aa`) — eight always. The
-accumulation is of display-space colour with the grid in it; Blender
+~~SMAA on the first frames~~ and ~~the sample counts~~ — §39, batch 139.
+The accumulation is of display-space colour with the grid in it; Blender
 accumulates the linear colour before the view transform and composites
 the overlays after.
 
@@ -1650,3 +1646,155 @@ viewport build asks `casts_in(shading.uses_viewport_color())` and tells
 the tracer `Scene::hide_shadow(inst)`. The kernel carries it as bit 1 of
 the instance's flag word: `trace_blas` skips that instance for shadow
 rays only, so the object is still drawn, lit and occluding for the camera.
+
+## 37. The Shadow checkboxes (batch 132, 2026-10-04)
+
+The two switches of §36 are now in the Properties editor's Object tab —
+Viewport Display ▸ Shadow (`show_shadows`) and Visibility ▸ Ray Visibility
+▸ Shadow (`visible_shadow`), on by default — seeded from the active
+object, kept per object in `ctx.scene.shadow_cast` (`scene/shadow.rs`),
+laid over the viewport's object list and written to the file on save
+(`dtx` and the visibility field). The build's choice of switch per shading
+mode is unchanged.
+
+## 38. Depth of Field (batch 133, 2026-10-04)
+
+Workbench's `workbench_effect_dof.cc`, through the camera looked through
+with the camera's own Depth of Field: `dof.wgsl` ports its five shaders —
+the CoC-aware half-resolution prepare and two downsamples, the 49-sample
+bokeh gather shaped by the blades, the 3 × 3 median and the resolve
+blending the blur in by the circle of confusion — as stages of the effects
+kernel, every sample before the anti-aliasing gather, the noise offset
+walking with the sample. `Camera::dof` carries `DofPass::init`'s words
+(`BSolidFx::dof_words` from `BCameraLens`, the camera's lens, sensor,
+f-stop, focus and clip end; the frame's share of the region scales the
+sensor), zero unless Solid's `use_dof`, a camera view and the camera's
+`CAM_DOF_ENABLED` all hold — in the viewport and for a Workbench F12.
+
+## 39. SMAA over the first samples, and the sample count (batch 139, 2026-10-04)
+
+Workbench runs SMAA over its anti-aliasing accumulation while the
+jittered samples are still landing (`workbench_effect_antialiasing.cc`:
+`smaa_mix_factor_ = 1 − sample / 4`, so the first frame is all SMAA, the
+fourth onward the plain resolve), which is why a Solid view in Blender
+never shows a staircase, not even for a frame. The three passes are
+Jimenez's SMAA 1x (`gpu_shader_smaa_lib.glsl`, `SMAA_PRESET_HIGH`:
+threshold 0.1, 16 search steps, 8 diagonal, corner rounding 25) with the
+luma weights all 1: **edge detection** over the accumulation's luma with
+local contrast adaptation, **blending weights** from the searches along
+the edge line — the orthogonal ones two texels a step with the search
+texture adding the last step, the diagonal ones — and the area texture's
+coverages, corner patterns rounding the ends; and **neighbourhood
+blending**, which mixes a pixel with the neighbour the weights point at,
+then the stage-2 resolve: the blend mixed with the plain accumulation by
+`mix_factor`, over the weight accumulated, out of log space.
+
+Phiber: `smaa_lib.wgsl` and `smaa.wgsl` are the library line for line as
+compute, a `Smaa` kernel after the gather with the stage in `Camera::
+slice.z` (`Tracer::tail`); the colour it reads is the gather's running
+sums (words n..4n, Blender's `taa_accumulation_tx_`), the edges and the
+weights live in the words the frame is done with (17n..23n, the opaque
+pass's ids and normals and the Depth of Field's half image), and the area
+(160 × 560 RG8) and search (64 × 16 R8) tables are one storage buffer
+from `BLI_smaa_textures.h`'s bytes (`smaa.rs`, `smaa/area.bin`,
+`smaa/search.bin`; MIT). Texture fetches are bilinear with the edge
+clamped, as the library asks and as Blender bound them until the draw
+manager rewrite (`GPU_SAMPLER_FILTER`; today's `bind_texture` takes the
+default nearest sampler for the edges and weights, which the library's
+bilinear tricks were not written for). Texcoords are `(x + ½) / w` with
+row 0 at the top — a vertical mirror of Blender's, which SMAA does not
+mind. From the fourth sample the stages return at once.
+
+**The count.** `SceneState::samples_len`: a Solid or Wireframe viewport
+draws `U.viewport_aa` samples — the user preference, 8 by default, not
+the scene's — `scene->display.viewport_aa` only when a Rendered or
+Material view runs on the Workbench engine, and `render_aa` for a render;
+0 (`SCE_DISPLAY_AA_OFF`) is no anti-aliasing at all, 1 (`_FXAA`) the one
+sample with SMAA left on it, else 5, 8, 11, 16 or 32 with a jitter table
+each (`TaaSamples::x5 … x32`). Phiber: `taa::offset(k, n)` has the five
+tables (`taa::COUNTS`, `taa::count` falling back to the five-sample one
+as `setup_view`'s `switch` does); `Tracer::set_aa_samples` is the count
+apart from the path tracer's target — until now a Workbench F12's
+`render_aa` reached `set_samples` and was ignored, eight always — and a
+new count starts the samples over (`reset_taa`). Preferences ▸ Viewport
+▸ Quality ▸ Viewport Anti-Aliasing (`part/pref/quality.rs`,
+`scene/viewport_aa.rs`) is the preference, Blender's seven items over
+`ctx.pref.viewport_aa`, session state like the render device; the
+viewport posts a new view when it changes (`BRayShot::aa`), the SSAO disk
+runs over that many samples, and a Workbench render takes `render_aa`
+with 0 and 1 meaning what they do in Blender. A still the single pass
+leaves SMAA on is drawn in bands 40 rows over into each other and its
+region 40 pixels wider (`Tracer::seam_rows`: as far as SMAA reads), where
+two sufficed for the gather.
+
+Tests: phiray `tests/smaa.rs` (the first frame of a slanted edge has
+pixels between the two colours where a staircase has none — 0 with SMAA
+off, 48+ on — and the settled frame is the gather's; off, the single
+pass, five, a count without a table, a change of count), `trace/smaa.rs`
+(the tables are Blender's bytes), `taa.rs` (every count's table);
+phiber `tests/viewport_anti_aliasing.rs` (the Quality panel, the default,
+a choice reposts the view), `scene/viewport_aa.rs`, `pref/quality.rs`,
+`rendered/still_tests.rs` (bands under the single pass are the whole
+frame), `rendered/region.rs`.
+
+Not yet: the preference saved to disk (no preference is); a Rendered or
+Material view on the Workbench engine taking `Scene.display.viewport_aa`;
+Blender's one-sample-with-SMAA while navigating (`is_navigating`:
+Phiber's small first frames of a drag are each sample 0, so SMAA is on
+them, which is the same picture); the linear-light accumulation.
+
+## 40. The surface is what the Material Output is linked to (batch 140, 2026-10-04)
+
+Until now a material was its tree's **first** Principled BSDF — whatever
+the Material Output was linked to. In the production files that was wrong
+more often than it looks: `LAND`'s `HB04_Glass_Shader` links a Glossy
+BSDF to the output with a Principled left over beside it; `FLOWER-CITY`
+has a dozen `mat_glass.*` with an idle Glass node next to the linked
+Principled (fine by luck), a `Material` that is Mix Shader(Fac = Light
+Path ▸ Is Shadow Ray; Glass, Transparent) — the fake-caustics setup — and
+two `MOSS-GRASS-TEXTURE` materials that mix a Diffuse and a Principled by
+a Voronoi through a colour ramp; and the texture and normal-map searches
+started from that first Principled too, so a Mix of two Principleds read
+the wrong one's image.
+
+Blender: `ntreeShaderOutputNode` — the output with `NODE_DO_OUTPUT`, else
+the first — and then Cycles' SVM and EEVEE's codegen evaluate the closure
+tree itself. Phiber (`phiphx/blend/shade/surface.rs`) walks it the same
+way and folds it to the one `BlendBsdf` the tracer takes: a **Mix
+Shader** lerps the two shaders' parameters by its factor (folded through
+`eval.rs`, so a ramp or a value feeds it; a texture folds to its mean, as
+colours do), an **Add Shader** averages the lobes and sums the emission,
+a reroute passes through, and each closure node lands as the Principled
+parameters that draw most like it — **Glass / Refraction** as full
+transmission at their colour, roughness and IOR; **Transparent** and
+**Holdout** as alpha 0; **Emission** as its radiance over black; **Diffuse
+/ Translucent / Toon** as a rough dielectric; **Glossy / Anisotropic /
+Metallic** as a metal at its roughness and anisotropy; **Sheen / Velvet**
+as the sheen lobe; **Subsurface Scattering** as the subsurface lobe.
+**Light Path** folds for a camera ray (Is Camera Ray 1, the other
+Is-rays 0, the depths 0), so the fake-caustics `Material` folds to the
+glass the camera is shown — water at IOR 1.33 — where it used to fold
+half transparent. A group, a volume or another node the fold does not
+know leaves the surface `None`, and the material falls back to its
+Principled as before. The Principled the surface *reaches* (through Mix /
+Add, the first input first) is now the one `principled`, the base-image
+search and the normal-map search use.
+
+Exact where the shaders share a lobe (two Principleds, a Principled with
+a Transparent, Glass with Glossy), an approximation otherwise: a Mix of a
+Diffuse and a Glossy is one half-metal, not two lobes. Two lobes per hit —
+the kernel evaluating a small closure stack — is the next step
+(`jobs.md`), with per-pixel procedural textures and Bump.
+
+Tests: `phiphx/tests/surface_truth.rs` (THYMUS: the linked Principled
+keeps its own numbers, the idle Glass node does not win; LAND: the Glossy
+is a metal at IOR 1.5; FLOWER-CITY: the Light Path mix is the glass, the
+mirror its Principled, the moss its lerp with the texture found through
+the mix — the production files when present), `surface.rs` (mixed, added),
+`bsdf_truth.rs` now skips a material whose surface is not the Principled
+its Blender script read. Known: with `LAND` present, `bsdf_truth` differs
+on four materials (`Material.099`, `.101`, `.111`, `Terracota_Shader.001`)
+whose Base Color comes from colour ramps fed by a Mapping node — the
+script's fold gives up there and reports the socket default 0.8, Phiber's
+folds the Mapping; both stand in for a texture. Pre-existing (the same on
+the batch 139 reader), noted here rather than hidden.

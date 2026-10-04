@@ -45,40 +45,44 @@ pub fn vertex_color(drawn: &BDrawnCurve, selected: bool, colors: &BAnimColors) -
     color
 }
 
-/// Every curve: its line, then a dot on each key in view.
-pub fn paint_curves(view: &BTimeView, curves: &[BDrawnCurve], colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
-    let width = f32::from(at.size.width);
-    if width < 2.0 || view.values.is_none() {
-        return;
-    }
-    // `graph_draw_curves(…, 0)` then `(…, 1)`: unselected curves first.
-    let mut ordered: Vec<&BDrawnCurve> = curves.iter().collect();
-    ordered.sort_by_key(|drawn| drawn.curve.selected());
-    for drawn in ordered {
-        super::line::set::paint(view, drawn, colors, at, window);
-        if drawn.curve.generator.is_some() {
-            continue;
+impl BTimeView {
+    /// Every curve: its line, then a dot on each key in view.
+    pub fn paint_curves(&self, curves: &[BDrawnCurve], colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
+        let width = f32::from(at.size.width);
+        if width < 2.0 || self.values.is_none() {
+            return;
         }
-        // `draw_fcurve_handles_check`: no handles on a protected curve.
-        if drawn.curve.flag & FLAG_PROTECTED == 0 {
-            super::handle::set::paint_handles(view, drawn, colors, at, window);
+        // `graph_draw_curves(…, 0)` then `(…, 1)`: unselected curves first.
+        let mut ordered: Vec<&BDrawnCurve> = curves.iter().collect();
+        ordered.sort_by_key(|drawn| drawn.curve.selected());
+        for drawn in ordered {
+            self.paint_curve_line(drawn, colors, at, window);
+            if drawn.curve.generator.is_some() {
+                continue;
+            }
+            // `draw_fcurve_handles_check`: no handles on a protected curve.
+            if drawn.curve.flag & FLAG_PROTECTED == 0 {
+                self.paint_handles(drawn, colors, at, window);
+            }
+            self.paint_vertices(drawn, colors, at, window);
         }
-        paint_vertices(view, drawn, colors, at, window);
     }
 }
 
-fn paint_vertices(view: &BTimeView, drawn: &BDrawnCurve, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
-    let width = f32::from(at.size.width);
-    let height = f32::from(at.size.height);
-    let size = if drawn.curve.flag & FLAG_PROTECTED != 0 { VERTEX_SIZE * PROTECTED_VERTEX_SCALE } else { VERTEX_SIZE };
-    let half = size / 2.0;
-    // Unselected keys first, selected over them.
-    for selected in [false, true] {
-        let color = vertex_color(drawn, selected, colors);
-        for key in drawn.curve.keys.iter().filter(|key| key.selected == selected) {
-            let (x, y) = (view.x_of(key.co[0], width), view.y_of(key.co[1], height));
-            if x >= -half && x <= width + half {
-                window.paint_quad(fill(rect(x - half, y - half, x + half, y + half, at), color).corner_radii(Corners::all(px(half))));
+impl BTimeView {
+    fn paint_vertices(&self, drawn: &BDrawnCurve, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
+        let width = f32::from(at.size.width);
+        let height = f32::from(at.size.height);
+        let size = if drawn.curve.flag & FLAG_PROTECTED != 0 { VERTEX_SIZE * PROTECTED_VERTEX_SCALE } else { VERTEX_SIZE };
+        let half = size / 2.0;
+        // Unselected keys first, selected over them.
+        for selected in [false, true] {
+            let color = vertex_color(drawn, selected, colors);
+            for key in drawn.curve.keys.iter().filter(|key| key.selected == selected) {
+                let (x, y) = (self.x_of(key.co[0], width), self.y_of(key.co[1], height));
+                if x >= -half && x <= width + half {
+                    window.paint_quad(fill(rect(x - half, y - half, x + half, y + half, at), color).corner_radii(Corners::all(px(half))));
+                }
             }
         }
     }

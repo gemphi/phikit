@@ -162,4 +162,14 @@ pub static SET: &[BModalSpec] = &[
         shape: BModalShape::Card,
         areas: &[],
     },
+    // `image_new_draw`: a property dialog, seven rows.
+    BModalSpec {
+        kind: BModalType::NewImage,
+        label: super::new_image::TITLE,
+        icon: "image",
+        width: 380.0,
+        height: 340.0,
+        shape: BModalShape::Card,
+        areas: &[],
+    },
 ];

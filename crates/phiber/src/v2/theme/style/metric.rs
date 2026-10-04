@@ -109,11 +109,10 @@ pub const MODULE: f32 = 36.0;
 
 pub const DEFAULT_DIMENSIONS: BDimensions = BDimensions {
     header_height: MODULE,
-    // A footer is a strip like the header (`ED_area_footersize` is
-    // `ED_area_headersize`): the Dope Sheet's carries the transport.
+    // `ED_area_footersize` is `ED_area_headersize`.
     footer_height: MODULE,
     // A row is a control plus its room: one answer (`a_row_is_one_height`).
-    row_height: BUTTON_HEIGHT + HEAD_ROOM,
+    row_height: MODULE,
     button_height: BUTTON_HEIGHT,
     scrubbing_height: 24.0,
     asset_shelf_height: 120.0,
@@ -162,12 +161,12 @@ pub const DEFAULT_DIMENSIONS: BDimensions = BDimensions {
     object_glyph_size: 24.0,
 };
 
-/// A control's own height, and what a row adds over the control in it: room,
-/// so a lit button never touches the rows either side of it. Blender's
-/// `PNL_HEADER` is 1.25 units over a 1-unit button. A row is the two together
-/// (`row_height`); a control standing on its own is the first alone.
-pub const BUTTON_HEIGHT: f32 = 26.0;
+/// A control is the module less its room, and a row IS the module. The room
+/// keeps a lit button off the rows either side (Blender's `PNL_HEADER` is 1.25
+/// units over a 1-unit button). What this replaced, and why a strip tab is the
+/// one heading that is still shorter, is in `tests/a_row_is_one_height.rs`.
 pub const HEAD_ROOM: f32 = 4.0;
+pub const BUTTON_HEIGHT: f32 = MODULE - HEAD_ROOM;
 
 impl BDimensions {
     /// Every row: [`Self::row_height`], the sum this used to compute itself.

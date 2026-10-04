@@ -6,10 +6,10 @@
 //! active object, the collections' eye and toggles, the marker list once
 //! it was edited, the Outliner's moves, links, parents and nestings, the
 //! actions made and assigned, the Render and Output tabs (`render_edit.rs`),
-//! and the objects added (a primitive's mesh, welded and paired into
-//! quads), duplicated (a linked copy) or deleted. What cannot go in — a new
-//! mesh into a file older than Blender 3.6 — is said in the report, as
-//! Blender's `Warning:` lines are, so a save never quietly drops an edit.
+//! the Shadow switches, and the objects added (a primitive's mesh, welded
+//! and paired into quads), duplicated (a linked copy) or deleted. What
+//! cannot go in — a new mesh into a file older than Blender 3.6 — is said
+//! in the report, as Blender's `Warning:` lines are, so no edit is dropped.
 //! An existing file becomes `file.blend1` first (`use_save_versions`); a
 //! file the session did not open — the default scene, a new file — has
 //! nothing to write through, and says so.
@@ -60,16 +60,13 @@ pub fn gather(state: &BState, model: &SceneModel) -> BlendEdits {
     let edit = super::edit::BSceneEdit::now(state);
     let selection = super::select::BSelection::now(state);
     let active = state.get(CtxKey::Object).unwrap_or("").to_string();
-    let file_names: Vec<String> = model
-        .objects
-        .iter()
-        .map(|o| o.name.clone())
+    let file_names: Vec<String> = (model.objects.iter().map(|o| o.name.clone()))
         .chain(model.cameras.iter().map(|c| c.name.clone()))
         .chain(model.lights.iter().map(|l| l.name.clone()))
         .chain(model.empties.iter().map(|e| e.name.clone()))
         .collect();
     let mut active_file_name = None;
-    let transforms = super::transform::BTransforms::now(state);
+    let (transforms, shadows) = (super::transform::BTransforms::now(state), super::shadow::BObjectShadowList::now(state));
     let mut objects: Vec<BlendObjectEdit> = file_names
         .iter()
         .filter(|name| !edit.deleted.contains(name))
@@ -85,6 +82,7 @@ pub fn gather(state: &BState, model: &SceneModel) -> BlendEdits {
                 hidden: Some(is_hidden(state, &now) && state.get(&k_restrict(&now, "hide_viewport")) != Some(V_TRUE)),
                 selected: Some(selection.contains(&now)),
                 transform: transforms.get(&now).map(|t| t.to_blend()),
+                shadow: shadows.get(&now),
             }
         })
         .collect();

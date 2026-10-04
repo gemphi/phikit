@@ -16,7 +16,7 @@ use crate::v2::state::{
 };
 
 /// The render settings phiray honours.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BRenderSet {
     /// `cycles.samples` — samples for a final render.
     pub samples: u32,
@@ -35,6 +35,9 @@ pub struct BRenderSet {
     /// Film ▸ Transparent (`render.film_transparent`): a final render's
     /// background cut away to alpha 0 (`phiray::Camera::film`).
     pub film_transparent: bool,
+    /// Output ▸ Format's Render Region and Crop to Render Region with the
+    /// rectangle set (`scene::render_border`).
+    pub border: crate::phiphx::blend::BlendRenderBorder,
 }
 
 impl Default for BRenderSet {
@@ -50,6 +53,7 @@ impl Default for BRenderSet {
             preview_denoise_from: 1,
             resolution: BResolution::default(),
             film_transparent: false,
+            border: Default::default(),
         }
     }
 }
@@ -86,6 +90,7 @@ pub fn render_set(s: &BState) -> BRenderSet {
         preview_denoise_from: int_at(s, "cycles.preview_denoising_start_sample", d.preview_denoise_from),
         resolution: BResolution::now(s),
         film_transparent: bool_at(s, "render.film_transparent", d.film_transparent),
+        border: super::render_border::BRenderBorder::now(s, super::source::with_loaded(|m| m.map(|m| m.render.border).unwrap_or_default())),
     }
 }
 

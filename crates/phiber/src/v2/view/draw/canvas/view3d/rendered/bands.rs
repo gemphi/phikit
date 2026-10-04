@@ -31,9 +31,9 @@ impl BBandList {
         phiray::Tracer::max_pixels(gpu)
     }
 
-    pub fn of(w: u32, h: u32, most: u64) -> Self {
-        // Four rows of each band are its overlap into its neighbours (`still_stepwise`).
-        let rows = ((most / u64::from(w.max(1))).saturating_sub(4) as u32).clamp(1, h.max(1));
+    pub fn of(w: u32, h: u32, most: u64, over: u32) -> Self {
+        // `over` rows each way of a band are its overlap into its neighbours (`still_stepwise`).
+        let rows = ((most / u64::from(w.max(1))).saturating_sub(u64::from(2 * over)) as u32).clamp(1, h.max(1));
         let list = (0..h.max(1)).step_by(rows as usize).map(|y0| (y0, rows.min(h.max(1) - y0))).collect();
         Self { list }
     }
@@ -51,10 +51,10 @@ mod tests {
 
     #[test]
     fn a_frame_too_large_for_one_binding_is_cut_into_bands_that_cover_it() {
-        let bands = BBandList::of(1920, 1080, 1_398_101);
+        let bands = BBandList::of(1920, 1080, 1_398_101, 2);
         assert_eq!(bands.list, [(0, 724), (724, 356)], "728 rows bind; four are each band's overlap");
         assert_eq!(bands.progress(1, 10, 64), 37, "half way through the second band of two: 37 of 64");
-        assert_eq!(BBandList::of(64, 32, 1_398_101).list, [(0, 32)], "a small frame is one band");
-        assert_eq!(BBandList::of(4096, 4096, 1_398_101).list.len(), 13);
+        assert_eq!(BBandList::of(64, 32, 1_398_101, 2).list, [(0, 32)], "a small frame is one band");
+        assert_eq!(BBandList::of(4096, 4096, 1_398_101, 2).list.len(), 13);
     }
 }

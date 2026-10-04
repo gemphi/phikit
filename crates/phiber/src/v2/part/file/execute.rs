@@ -102,7 +102,7 @@ pub fn has_purpose(s: &BState) -> bool {
     s.get(&FileKey::Purpose.path()).is_some()
         && matches!(
             purpose(s),
-            BFilePurpose::Open | BFilePurpose::SaveAs | BFilePurpose::SaveCopy | BFilePurpose::Import | BFilePurpose::Export | BFilePurpose::SaveImage
+            BFilePurpose::Open | BFilePurpose::SaveAs | BFilePurpose::SaveCopy | BFilePurpose::Import | BFilePurpose::Export | BFilePurpose::SaveImage | BFilePurpose::Mixdown | BFilePurpose::OpenImage
         )
 }
 

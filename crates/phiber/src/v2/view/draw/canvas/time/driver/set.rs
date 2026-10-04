@@ -14,18 +14,20 @@ const CURSOR_WIDTH: f32 = 2.0;
 /// `SpaceGraph.cursorTime / cursorVal` as `graph_create` leaves them.
 pub const CURSOR: (f32, f32) = (0.0, 0.0);
 
-/// The value line, and the input line in the Drivers editor. Nothing
-/// without a value axis: the Dope Sheet has no cursor.
-pub fn paint_cursor(view: &BTimeView, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
-    if view.values.is_none() {
-        return;
-    }
-    let width = f32::from(at.size.width);
-    let height = f32::from(at.size.height);
-    let (time, value) = CURSOR;
-    let y = view.y_of(value, height).floor();
-    window.paint_quad(fill(rect(0.0, y - CURSOR_WIDTH / 2.0, width, y + CURSOR_WIDTH / 2.0, at), hsla(colors.cursor_value)));
-    if view.drivers {
-        line_x(view.x_of(time, width) - CURSOR_WIDTH / 2.0, super::super::SCRUB_HEIGHT, height, CURSOR_WIDTH, colors.cursor_time, at, window);
+impl BTimeView {
+    /// The value line, and the input line in the Drivers editor. Nothing
+    /// without a value axis: the Dope Sheet has no cursor.
+    pub fn paint_cursor(&self, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
+        if self.values.is_none() {
+            return;
+        }
+        let width = f32::from(at.size.width);
+        let height = f32::from(at.size.height);
+        let (time, value) = CURSOR;
+        let y = self.y_of(value, height).floor();
+        window.paint_quad(fill(rect(0.0, y - CURSOR_WIDTH / 2.0, width, y + CURSOR_WIDTH / 2.0, at), hsla(colors.cursor_value)));
+        if self.drivers {
+            line_x(self.x_of(time, width) - CURSOR_WIDTH / 2.0, super::super::SCRUB_HEIGHT, height, CURSOR_WIDTH, colors.cursor_time, at, window);
+        }
     }
 }

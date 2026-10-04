@@ -123,7 +123,18 @@ impl BRail<'_> {
         let strip = element
             // The leading inset belongs to the region, which knows what the
             // content beside the rail is inset by (`style.rail_lead`).
-            .gap(px(ctx.style.dimensions.menu_top_gap))
+            //
+            // The gap is the CONTENT region's gap, and has to be: `rail_lead`
+            // already lines the first icon up with the first heading beside it
+            // ("A rail entry is the card-head module, so the first entry's top
+            // is the first heading's top"), and a rail entry is the same
+            // `card_head_height` as a panel heading. So the two columns start
+            // level and step by the same height — and then drifted, because
+            // the strip stepped by `menu_top_gap` (2) and the region beside it
+            // by `gap_xs` (4). Two pixels a row is invisible at the first and
+            // most of a row out by the ninth, which is what made the icons
+            // look unrelated to the panels they open.
+            .gap(px(ctx.style.spacing.gap_xs))
             .into_any_element();
 
         // The panels beside the strip, while the sidebar is open. The part

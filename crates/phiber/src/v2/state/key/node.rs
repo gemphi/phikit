@@ -20,12 +20,17 @@ use crate::v2::state::BPath;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum NodeKey {
-    /// `ctx.<host>.node.selected` — the node `NODE_SELECT` would mark.
+    /// `ctx.<host>.node.selected` — the nodes `NODE_SELECT` marks, the
+    /// `NODE_ACTIVE` one first.
     ///
-    /// One name, so one node. Blender's selection is a set and a box select or
-    /// a Shift-click grows it; phiber has no multi-selection yet, and the drag
-    /// here moves the grabbed node alone for the same reason — see
-    /// `canvas/node/drag.rs`.
+    /// A set, as Blender's is, with the active member named by its position.
+    /// One key for the whole thing rather than a key per node: selecting five
+    /// nodes is then one store write and one undo step, and the active mark
+    /// cannot drift out of agreement with the membership. Blender keeps both in
+    /// `bNode.flag` and commits a selection change in one pass
+    /// (`node_select_single` walks every node, then notifies once).
+    ///
+    /// `canvas/node/select/` holds the click and box rules and the spelling.
     Selected(BHostType),
     /// `ctx.<host>.node.at.<name>` — how far the user has dragged this node
     /// from where the file put it, as `"dx, dy"` in canvas fractions.
@@ -57,6 +62,25 @@ pub enum NodeKey {
     /// keep the anchored end and the cursor. That is this key, and it is
     /// cleared on release either way (`canvas/node/link/live/mod.rs`).
     Linking(BHostType),
+    /// `ctx.<host>.node.boxing` — where a box select began, as a canvas
+    /// fraction.
+    ///
+    /// Blender needs no equivalent: `PRESS` and `CLICK_DRAG` are different
+    /// event values and the keymap binds them to different operators, so the
+    /// box operator is only ever invoked once the drag is already a drag
+    /// (`WM_gesture_box_invoke`). GPUI delivers a press and a release and
+    /// leaves the distinction to the listener, so the press has to record
+    /// where it was in case the release turns out to be a sweep.
+    Boxing(BHostType),
+    /// `ctx.<host>.node.view` — the rectangle this editor is looking at, as
+    /// `"xmin, ymin, xmax, ymax"` in view units (`canvas/node/view/store.rs`).
+    ///
+    /// Blender keeps this in `SpaceNode.v2d.cur`, which is saved in the .blend:
+    /// the file remembers where you were looking. The file is read-only here, so
+    /// the view is an overlay over it like every other node edit — and absent by
+    /// default, which is what makes the editor open framed on the graph rather
+    /// than on a remembered window that may belong to another file.
+    View(BHostType),
 }
 
 impl BKey for NodeKey {
@@ -66,6 +90,8 @@ impl BKey for NodeKey {
             Self::At(host, name) => BPath::owned(vec![host.slug(), "node", "at", name]),
             Self::Wired(host) => BPath::owned(vec![host.slug(), "node", "wired"]),
             Self::Linking(host) => BPath::owned(vec![host.slug(), "node", "linking"]),
+            Self::Boxing(host) => BPath::owned(vec![host.slug(), "node", "boxing"]),
+            Self::View(host) => BPath::owned(vec![host.slug(), "node", "view"]),
         }
     }
 }

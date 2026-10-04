@@ -50,6 +50,9 @@ impl BRule for BSceneEditRule {
                 let mut transforms = crate::v2::scene::transform::BTransforms::now(state);
                 selection.list.iter().for_each(|name| transforms.forget(name));
                 transforms.write(state);
+                let mut shadows = crate::v2::scene::shadow::BObjectShadowList::now(state);
+                selection.list.iter().for_each(|name| shadows.forget(name));
+                shadows.write(state);
                 let mut actions = crate::v2::scene::action::BSceneActions::now(state);
                 selection.list.iter().for_each(|name| actions.forget(name));
                 actions.write(state);

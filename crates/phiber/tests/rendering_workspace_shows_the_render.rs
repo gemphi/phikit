@@ -27,7 +27,7 @@ fn plan(samples: u32) -> BRenderPlan {
         display_size: 1.0,
         dof: Default::default(),
     };
-    BRenderPlan { camera: camera_of(&cam, 64, 32), w: 64, h: 32, samples, denoise: false, look: BStillLook::new(BShading::Rendered, gpui::hsla(0.0, 0.0, 0.8, 1.0)) }
+    BRenderPlan { camera: camera_of(&cam, 64, 32), w: 64, h: 32, samples, denoise: false, look: BStillLook::new(BShading::Rendered, gpui::hsla(0.0, 0.0, 0.8, 1.0)), region: Default::default() }
 }
 
 fn selectors(cx: &mut gpui::VisualTestContext) -> Vec<String> {
@@ -62,7 +62,7 @@ async fn the_rendering_workspace_is_the_image_editor_with_blenders_header(cx: &m
     assert!(gap >= 0.0 && gap <= seam + 2.0, "the Image window ends a seam above the Timeline, not {gap} px (seam {seam})");
     let names = selectors(cx);
     let has = |needle: &str| names.iter().any(|s| s.contains(needle));
-    assert!(has("ctx.modal-file_browser"), "without an image the header offers Open (the file browser): {names:?}");
+    assert!(has("ctx.file.purpose-open_image") && has("ctx.modal-new_image"), "without an image the header offers Open (the image browser) and New (its dialog): {names:?}");
     assert!(!has("ctx.menu.image.slot"), "no render slots before a render");
     assert!(has("ctx.menu.image.View") && has("ctx.menu.image.Image"), "the View and Image menus: {names:?}");
     assert!(!has("ctx.menu.image.Select") && !has("ctx.menu.image.UV"), "no Select or UV menu outside the UV editor");

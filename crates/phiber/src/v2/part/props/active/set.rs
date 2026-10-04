@@ -74,6 +74,12 @@ pub fn seed_edited(state: &mut BState, t: &crate::v2::scene::transform::BTransfo
     write_vec3(state, "scale", t.scale);
 }
 
+/// The object's two Shadow switches (`show_shadows`, `visible_shadow`).
+pub fn seed_shadow(state: &mut BState, shadow: crate::phiphx::blend::BlendShadowCast) {
+    write(state, crate::v2::scene::shadow::DISPLAY_FIELD, BValue::Bool(shadow.display));
+    write(state, crate::v2::scene::shadow::RAY_FIELD, BValue::Bool(shadow.ray));
+}
+
 pub fn seed_material(state: &mut BState, material: &SceneMaterial) {
     write(state, "diffuse_color", BValue::Color(material.base_color));
     write(state, "metallic", BValue::Float(material.metallic));

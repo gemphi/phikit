@@ -21,6 +21,9 @@ pub(super) struct BRayShot {
     pub mode: Mode,
     /// How far to refine (Blender's Max Samples).
     pub samples: u32,
+    /// Solid and Wireframe's anti-aliasing count (`U.viewport_aa`,
+    /// `scene::viewport_aa`; `Tracer::set_aa_samples`).
+    pub aa: u32,
     /// Viewport Denoising: the sample the shown frame is filtered from
     /// (`Tracer::denoise_shown`), or none.
     pub denoise_from: Option<u32>,

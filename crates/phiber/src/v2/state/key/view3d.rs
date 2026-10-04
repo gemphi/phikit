@@ -44,6 +44,14 @@ pub enum View3dKey {
     /// `view3d.select_box` armed (B): the next drag on the canvas is the
     /// box, not an orbit.
     BoxSelect,
+    /// `view3d.render_border` armed: the next drag is the render region.
+    RenderBorder,
+    /// The view's own render region outside the camera view
+    /// (`View3D.render_border`, `V3D_RENDER_BORDER`): whether it is on
+    /// (`use_render_border`) and its rectangle, `xmin,xmax,ymin,ymax`
+    /// (`scene::view_border::BViewBorder`).
+    BorderUse,
+    BorderRect,
     /// The box while it is dragged, `x0,y0,x1,y1` in canvas pixels.
     BoxRect,
     /// `view3d.select_circle` on (C) — until the right button or Escape.
@@ -106,6 +114,9 @@ impl BKey for View3dKey {
             Self::Lens => "lens",
             Self::GizmoCorner => return BPath::owned(vec!["view3d", "gizmo", "corner"]),
             Self::BoxSelect => return BPath::owned(vec!["view3d", "box", "select"]),
+            Self::RenderBorder => return BPath::owned(vec!["view3d", "box", "render_border"]),
+            Self::BorderUse => return BPath::owned(vec!["view3d", "render_border", "use"]),
+            Self::BorderRect => return BPath::owned(vec!["view3d", "render_border", "rect"]),
             Self::BoxRect => return BPath::owned(vec!["view3d", "box", "rect"]),
             Self::CircleSelect => return BPath::owned(vec!["view3d", "circle", "select"]),
             Self::CircleAt => return BPath::owned(vec!["view3d", "circle", "at"]),

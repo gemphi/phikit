@@ -10,14 +10,13 @@ use crate::v2::view::prim::{BAction, BControl, BPick};
 use crate::v2::view::BView;
 
 /// The render result's data-block name, and `IMAGE_HT_header`'s New / Open.
-pub const RENDER_RESULT: &str = "Render Result";
+pub const RENDER_RESULT: &str = super::super::shown::RENDER_RESULT;
 /// The header while a render runs: its bar's label and the button that stops it.
 pub const RENDERING: &str = "Rendering";
 pub const CANCEL: &str = "Cancel";
 pub const NEW: &str = "New";
 pub const OPEN: &str = "Open";
 /// `RE_SLOT_COUNT`-style render slots, named as Blender names them.
-pub const SLOTS: [&str; 8] = ["Slot 1", "Slot 2", "Slot 3", "Slot 4", "Slot 5", "Slot 6", "Slot 7", "Slot 8"];
 /// The view layer a fresh scene has.
 pub const VIEW_LAYER: &str = "ViewLayer";
 /// The pass every render has, and the extra passes as `RenderPass.name`

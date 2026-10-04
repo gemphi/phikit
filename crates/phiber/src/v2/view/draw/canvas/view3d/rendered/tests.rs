@@ -43,7 +43,7 @@ fn fixture_renders_through_phiray() {
         set_loaded_scene(Some(model));
         let objects = scene_source(&s);
         let grey = white();
-        let palette = super::BMeshPalette {
+        let palette = super::super::mesh::BMeshPalette {
             shading: BShading::Rendered, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false,
         };
         let built = scene::build(&objects, &palette);
@@ -95,7 +95,7 @@ fn render_thread_refines_latest_view() {
     use crate::v2::scene::{BObject3D, BShape};
     let Some(worker) = BRayWorker::start() else { return };
     let grey = white();
-    let palette = super::BMeshPalette {
+    let palette = super::super::mesh::BMeshPalette {
         shading: BShading::Rendered, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false,
     };
     let cube = BObject3D::Primitive { name: "Cube".into(), shape: BShape::Cube, x: 0.0, y: 0.0 };
@@ -105,8 +105,8 @@ fn render_thread_refines_latest_view() {
     let setup = crate::v2::scene::camera::setup_from_state(&s);
     let cam = |yaw: f32| scene::camera(yaw, 30.0, (0.0, 0.0), 1.0, setup, 1.0, &look);
     // An outdated view first, then the one that must win.
-    worker.send(BRayJob::View(1, BRayShot { cam: cam(0.0), w: 32, h: 32, mode: phiray::Mode::Rendered, samples: 32, denoise_from: None }));
-    worker.send(BRayJob::View(2, BRayShot { cam: cam(45.0), w: 48, h: 48, mode: phiray::Mode::Rendered, samples: 32, denoise_from: None }));
+    worker.send(BRayJob::View(1, BRayShot { cam: cam(0.0), w: 32, h: 32, mode: phiray::Mode::Rendered, samples: 32, aa: 8, denoise_from: None }));
+    worker.send(BRayJob::View(2, BRayShot { cam: cam(45.0), w: 48, h: 48, mode: phiray::Mode::Rendered, samples: 32, aa: 8, denoise_from: None }));
     let (mut seq, mut last, mut sizes) = (0, None, Vec::new());
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
     while std::time::Instant::now() < deadline {
@@ -185,13 +185,13 @@ fn a_moved_object_draws_as_a_scene_built_there() {
     use super::worker::{BRayFrame, BRayJob, BRayShot, BRayWorker};
     use crate::v2::scene::{BObject3D, BShape};
     let grey = white();
-    let palette = super::BMeshPalette { shading: BShading::Solid, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false };
+    let palette = super::super::mesh::BMeshPalette { shading: BShading::Solid, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false };
     let cubes = |x: f32| vec![BObject3D::Primitive { name: "Cube".into(), shape: BShape::Cube, x, y: 0.0 }, BObject3D::Primitive { name: "Ball".into(), shape: BShape::Sphere, x: -2.0, y: 0.0 }];
     let scene_of = |x: f32| BRayJob::Scene(BRayKey::of(&cubes(x), &palette), BRayKey::shape(&cubes(x), &palette), cubes(x), palette);
     assert_eq!(BRayKey::shape(&cubes(0.0), &palette), BRayKey::shape(&cubes(1.5), &palette), "one shape, two poses");
     let look = world::BRayLook { sky: black(), grid: white().opacity(GRID_ALPHA), grid_hide: 0, world: None, lights: Vec::new(), wire: None, view: [0.0, 0.0, 1.0, 0.0], environment: None, set: Default::default(), studio: false };
     let setup = crate::v2::scene::camera::setup_from_state(&BState::default());
-    let shot = BRayShot { cam: scene::camera(20.0, 30.0, (0.0, 0.0), 1.0, setup, 1.0, &look), w: 40, h: 40, mode: phiray::Mode::Solid, samples: 1, denoise_from: None };
+    let shot = BRayShot { cam: scene::camera(20.0, 30.0, (0.0, 0.0), 1.0, setup, 1.0, &look), w: 40, h: 40, mode: phiray::Mode::Solid, samples: 1, aa: 8, denoise_from: None };
     let finished = |worker: &BRayWorker, after: u64| -> BRayFrame {
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
         while std::time::Instant::now() < deadline {

@@ -15,9 +15,11 @@ mod key;
 mod pace;
 mod place;
 mod posted;
+mod prepare;
 mod reframe;
 mod scene;
 mod settle;
+mod region;
 mod still;
 pub mod studio;
 mod vert;
@@ -25,19 +27,23 @@ mod view;
 mod wake;
 mod worker;
 mod world;
+pub use self::region::BStillRegion;
+pub(in crate::v2::view::draw::canvas) use self::prepare::BRayDeclined;
+pub(in crate::v2::view::draw::canvas::view3d) use self::prepare::prepare;
 pub use self::still::{BStill, BStillLook, still, still_stepwise};
 pub use self::world::{BRayLook, ENV_CDF_SLOT, ENV_IRRADIANCE_SLOT, ENV_PREFILTERED_SLOT, ENV_SLOT, environment, light, lit, studio_lighting, view_words};
 #[cfg(test)]
 mod paint_tests;
 #[cfg(test)]
+mod still_tests;
+#[cfg(test)]
 mod tests;
 
-use super::mesh::BMeshPalette;
-use crate::v2::scene::BObject3D;
 use gpui::{Bounds, Corners, Pixels, RenderImage, Window};
 use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
+use self::reframe::BShotView;
 use self::worker::{BRayJob, BRayShot, BRayWorker};
 pub(in crate::v2::view::draw::canvas::view3d) use self::view::BRayView;
 pub use self::wake::{drawing, landed, refining, set_ticking, take_fresh, ticking};
@@ -73,41 +79,17 @@ pub fn views_posted() -> usize {
     POSTED.with(std::cell::Cell::get)
 }
 
-
-/// Why the GPU is not drawing this frame, when it is not.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(in super::super::super) enum BRayDeclined {
-    /// No adapter at all: the CPU painter is the only renderer.
-    NoGpu,
-    /// The scene exceeds what this device can bind, even chunked.
-    TooLarge,
-}
-
-/// Hand `scene` to the render thread when it changed. `Err` → the GPU is not
-/// drawing, and says why, so the fallback can decide what it can honestly do.
-pub(super) fn prepare(scene: &std::rc::Rc<Vec<BObject3D>>, palette: &BMeshPalette) -> Result<(), BRayDeclined> {
+/// The traced image on show, its size in device pixels and whether it is
+/// of the view asked for last — a bordered view's is the region's pixels.
+pub fn shown_image() -> Option<((u32, u32), bool)> {
     STATE.with(|s| {
-        let mut s = s.borrow_mut();
-        // Another render device was picked: the old worker's thread ends with
-        // its channel, and the new one builds the scene again.
-        if s.worker.as_ref().is_some_and(|w| w.as_ref().is_some_and(|w| w.generation != phiray::Gpu::generation())) {
-            (s.worker, s.scene) = (None, 0);
-        }
-        s.worker.get_or_insert_with(BRayWorker::start);
-        let key = self::key::BRayKey::of_list(scene, palette);
-        let fresh = key != s.scene;
-        let Some(Some(w)) = s.worker.as_ref() else { return Err(BRayDeclined::NoGpu) };
-        if fresh {
-            w.send(BRayJob::Scene(key, self::key::BRayKey::shape(scene, palette), scene.to_vec(), *palette));
-        }
-        let refused = w.refused(key);
-        if fresh {
-            s.scene = key;
-            s.view = 0;
-        }
-        if refused { Err(BRayDeclined::TooLarge) } else { Ok(()) }
+        let s = s.borrow();
+        let (_, v, _, img) = s.image.as_ref()?;
+        let size = img.size(0);
+        Some(((size.width.0 as u32, size.height.0 as u32), *v == s.view))
     })
 }
+
 
 /// Paint the traced frame. Answers whether an image actually landed: the
 /// tracer is asynchronous, so the first frames after a change — and every
@@ -129,6 +111,14 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
     // and stretch it; take the new size once the drag stops (`settle`).
     let ((w, h), waiting) =
         STATE.with(|s| s.borrow_mut().settle.size(live, std::time::Instant::now()));
+    // The viewport's own render region: the frame is still `w × h`, the
+    // image traced is the region's pixels of it (`Camera::tile`), drawn in
+    // its place and nothing outside (`ED_view3d_calc_render_border`).
+    let part = view.border.and_then(|rect| crate::v2::scene::view_border::BViewBorder::pixels_of(rect, w, h));
+    let (tile, (tw, th)) = match part {
+        Some((x, y, rw, rh)) => ([x, y, w, h], (rw, rh)),
+        None => ([0; 4], (w, h)),
+    };
     let look = BRayLook {
         sky: view.sky,
         grid: view.grid,
@@ -166,6 +156,8 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
         outline: view.outline,
         shade: view.shade,
         single: view.single,
+        dof: view.dof,
+        tile,
         ..self::scene::camera(view.yaw, view.pitch, view.pan, view.zoom, view.setup, w as f32 / h.max(1) as f32, &look)
     };
     let (image, settled) = STATE.with(|s| {
@@ -174,18 +166,24 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
         // The sample target and the denoise flag are not part of `Camera`,
         // so they join the key by hand — changing either has to restart the
         // refinement, not carry on with the old one.
-        (s.scene, w, h, view.mode as u32, bytemuck::bytes_of(&cam), view.set.preview_samples, view.set.preview_denoise, view.set.preview_denoise_from)
+        (s.scene, w, h, view.mode as u32, bytemuck::bytes_of(&cam), view.set.preview_samples, view.aa, view.set.preview_denoise, view.set.preview_denoise_from)
             .hash(&mut hasher);
         let key = hasher.finish();
         let Some(Some(worker)) = s.worker.as_ref() else { return (None, true) };
-        let shot = |aspect| self::reframe::BShotView { zoom: view.zoom, pan: view.pan, aspect, orbit: (view.yaw, view.pitch, view.setup.pivot, view.setup.perspective) };
+        let shot = |aspect| self::reframe::BShotView {
+            zoom: view.zoom,
+            pan: view.pan,
+            aspect,
+            orbit: (view.yaw, view.pitch, view.setup.pivot, view.setup.perspective),
+            part: part.map(|(x, y, rw, rh)| (x as f32 / w as f32, y as f32 / h as f32, rw as f32 / w as f32, rh as f32 / h as f32)),
+        };
         if key != s.view {
             s.shots.note(key, shot(w as f32 / h.max(1) as f32));
             s.clock.posted(key);
             POSTED.with(|n| n.set(n.get() + 1));
             worker.send(BRayJob::View(
                 key,
-                BRayShot { cam, w, h, mode: view.mode, samples: view.set.preview_samples, denoise_from: view.set.preview_denoise.then_some(view.set.preview_denoise_from) },
+                BRayShot { cam, w: tw, h: th, mode: view.mode, samples: view.set.preview_samples, aa: view.aa, denoise_from: view.set.preview_denoise.then_some(view.set.preview_denoise_from) },
             ));
         }
         let seq = s.image.as_ref().map_or(0, |i| i.0);
@@ -208,7 +206,7 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
             }
         }
         // The image where its own view puts it in this one (`reframe.rs`).
-        let place = |v: u64| s.shots.get(v).map_or(bounds, |old| old.place(&shot(bw / bh), bounds));
+        let place = |v: u64| s.shots.get(v).map_or(bounds, |old| old.place(&BShotView { part: None, ..shot(bw / bh) }, bounds));
         match &s.image {
             Some((_, v, done, img)) => (Some((img.clone(), place(*v))), *done && *v == key),
             None => (None, blank),

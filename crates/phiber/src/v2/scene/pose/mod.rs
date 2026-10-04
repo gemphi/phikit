@@ -102,6 +102,7 @@ impl BPosed {
         if let Some(model) = loaded {
             transform::BTransforms::now(s).apply(s, model, &mut objects);
         }
+        super::shadow::BObjectShadowList::now(s).apply(&mut objects);
         objects
     }
 }

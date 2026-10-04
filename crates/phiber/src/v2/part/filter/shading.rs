@@ -128,6 +128,8 @@ impl BShadingPanel {
             }
             rows.push(BView::prop_row("", BCtrl::read(BCtrlKind::Slider { min: 0.0, max: 1.0 }, View3dKey::Shade(RNA[16]).path(), BValue::Float(f.shadow_shift), s).with_label("Offset")));
             rows.push(BView::prop_row("", BCtrl::read(BCtrlKind::Slider { min: 0.0, max: 1.0 }, View3dKey::Shade(RNA[17]).path(), BValue::Float(f.shadow_focus), s).with_label("Focus")));
+            // Depth of Field (`use_dof`): through the camera, with its own.
+            rows.push(BView::check_row(s, "", View3dKey::Shade(RNA[20]).path(), f.dof, "Depth of Field"));
             // Specular Lighting (`show_specular_highlight`): Studio and MatCap only.
             if BSolidShade::now(s).light != "FLAT" {
                 rows.push(BView::check_row(s, "", View3dKey::Shade(RNA[19]).path(), f.specular, "Specular Lighting"));

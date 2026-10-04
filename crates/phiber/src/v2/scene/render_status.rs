@@ -54,7 +54,7 @@ impl BRenderStatus {
 pub fn status() -> Option<BRenderStatus> {
     let j = job();
     let seq = j.seq.load(Ordering::Relaxed);
-    j.shot.lock().ok().and_then(|shot| shot.as_ref().map(|shot| BRenderStatus::of(shot, seq)))
+    j.slot(j.active.load(Ordering::Relaxed)).map(|shot| BRenderStatus::of(&shot, seq))
 }
 
 /// How long the render took, or how long it has been going.

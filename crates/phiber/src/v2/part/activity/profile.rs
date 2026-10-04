@@ -130,7 +130,7 @@ mod tests {
         state.set(AppKey::CollabChannel("1"), "review\tbob");
         state.set(AppKey::CollabPeer("0"), "bob\tfollows you");
         let view = body(&state);
-        let BView::Column { list } = &view else { panic!() };
+        let list = &view;
         let BView::Row { list: identity } = &list[0] else { panic!("identity first") };
         assert!(matches!(&identity[0], BView::Avatar { path, size } if path == "/pictures/me.png" && *size == AVATAR));
         assert_eq!(

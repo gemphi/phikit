@@ -2,6 +2,7 @@
 //! Blender ref: `space_userpref/space_userpref.cc` WINDOW region.
 
 pub mod device;
+pub mod quality;
 pub mod rule;
 
 use crate::v2::state::BKey as _;
@@ -49,6 +50,9 @@ impl BViewItem for BPrefsItem {
         }
         if category.kind == BSettingsCategory::System {
             cards.push(device::BRenderDevices::view(state));
+        }
+        if category.kind == BSettingsCategory::Viewport {
+            cards.push(quality::BViewportQuality::view(state));
         }
         let sections: Vec<BView> = SECTIONS
             .iter()
@@ -219,8 +223,9 @@ mod tests {
                 assert_eq!(list.len(), 1, "{}", category.label);
                 continue;
             }
-            // Themes carries the palette picker above the values it governs.
-            let extra = usize::from(category.kind == BSettingsCategory::Appearance);
+            // Themes carries the palette picker above the values it governs;
+            // Viewport its Quality panel (`quality.rs`).
+            let extra = usize::from(matches!(category.kind, BSettingsCategory::Appearance | BSettingsCategory::Viewport));
             assert_eq!(
                 list.len(),
                 category.sections.len() + extra,

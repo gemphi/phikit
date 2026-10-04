@@ -107,7 +107,18 @@ impl BTimeView {
     pub fn picked(&self, row: usize, frame: f32) -> bool {
         use super::row::BRowKind;
         match self.rows.get(row).map(|r| &r.kind) {
-            Some(BRowKind::Object(name)) => self.key_picks.has(name, frame),
+            Some(BRowKind::Object { name, .. }) => self.key_picks.has(name, frame),
+            // An unfolded object's F-curve rows answer with their object's
+            // picks: a key column is picked per object, and a curve under it
+            // shows the same column (`row::curves`).
+            Some(BRowKind::Curve { .. }) => self
+                .rows
+                .get(..row)
+                .and_then(|above| above.iter().rev().find_map(|r| match &r.kind {
+                    BRowKind::Object { name, .. } => Some(self.key_picks.has(name, frame)),
+                    _ => None,
+                }))
+                .unwrap_or(false),
             Some(BRowKind::Summary { .. }) => self.key_picks.0.iter().any(|p| (p.frame - frame).abs() < 5e-4),
             _ => false,
         }

@@ -29,6 +29,9 @@ pub(super) struct BShotView {
     pub aspect: f32,
     /// Yaw, pitch and the orbit's pivot: the view's direction.
     pub orbit: (f32, f32, (f32, f32, f32), bool),
+    /// The part of the frame the image is: `(x, y, w, h)` as fractions of
+    /// the frame, y down — the viewport's own render region — or the whole.
+    pub part: Option<(f32, f32, f32, f32)>,
 }
 
 impl BShotView {
@@ -44,7 +47,8 @@ impl BShotView {
         let tall = wide / self.aspect.max(1e-6);
         let left = 0.5 * w + pan.0.0 * w - 0.5 * wide - pan.1.0 * wide;
         let top = 0.5 * h + pan.0.1 * w - 0.5 * tall - pan.1.1 * wide;
-        Bounds::new(point(bounds.origin.x + px(left), bounds.origin.y + px(top)), size(px(wide), px(tall)))
+        let (px0, py0, pw, ph) = self.part.unwrap_or((0.0, 0.0, 1.0, 1.0));
+        Bounds::new(point(bounds.origin.x + px(left + px0 * wide), bounds.origin.y + px(top + py0 * tall)), size(px(pw * wide), px(ph * tall)))
     }
 }
 
@@ -73,7 +77,7 @@ mod tests {
     use super::*;
 
     fn view(zoom: f32, pan: (f32, f32), aspect: f32) -> BShotView {
-        BShotView { zoom, pan, aspect, orbit: (30.0, 20.0, (0.0, 0.0, 0.0), true) }
+        BShotView { zoom, pan, aspect, orbit: (30.0, 20.0, (0.0, 0.0, 0.0), true), part: None }
     }
 
     fn rect(b: Bounds<Pixels>) -> [f32; 4] {
@@ -114,6 +118,15 @@ mod tests {
         let window = 1000.0;
         let canvas = Bounds { size: gpui::Size { width: px(window), height: px(TALL) }, ..CANVAS };
         assert!(near(rect(old.place(&view(1.0, (0.0, 0.0), 1000.0 / 600.0), canvas)), [0.0, -75.0, 1000.0, 750.0]));
+    }
+
+    #[test]
+    fn a_part_of_the_frame_lands_where_the_frame_puts_it() {
+        // The right half's lower half, traced alone, drawn in that quarter —
+        // and twice as large with the zoom, about the same centre.
+        let v = BShotView { part: Some((0.5, 0.5, 0.5, 0.5)), ..view(1.0, (0.0, 0.0), 800.0 / 600.0) };
+        assert!(near(rect(v.place(&v, CANVAS)), [400.0, 300.0, 400.0, 300.0]));
+        assert!(near(rect(v.place(&view(2.0, (0.0, 0.0), 800.0 / 600.0), CANVAS)), [400.0, 300.0, 800.0, 600.0]));
     }
 
     #[test]

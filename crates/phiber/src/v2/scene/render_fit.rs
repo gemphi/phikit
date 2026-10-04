@@ -14,12 +14,12 @@ impl Drop for BRunning {
     fn drop(&mut self) {
         if std::thread::panicking() {
             crate::v2::state::log::push("The render failed on the GPU; see the console".to_string());
-            if let Ok(mut slot) = self.0.shot.lock()
-                && let Some(shot) = slot.as_mut()
-            {
+            // The slot it was rendering into is finished as it stands.
+            let into = self.0.last.load(Ordering::Relaxed);
+            if let Some(mut shot) = self.0.slot(into) {
                 shot.done = true;
+                self.0.put(into, Some(shot));
             }
-            self.0.seq.fetch_add(1, Ordering::Relaxed);
         }
         self.0.running.store(false, Ordering::Relaxed);
     }

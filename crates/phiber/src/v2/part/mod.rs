@@ -1,5 +1,6 @@
 //! Part — the leaf. Every variant lives in its own subfolder with item + list.
 
+mod kind;
 pub mod set;
 pub mod activity;
 pub mod assetshelf;
@@ -51,7 +52,7 @@ use self::assetshelf::BAssetShelf;
 use self::caption::BCaption;
 use self::caption::BCaptionSide;
 use self::channels::BChannels;
-use self::custom::BCustom;
+use self::custom::BCustomItem;
 use self::execute::BExecute;
 use self::hud::BHud;
 use self::menubar::BMenubar;
@@ -134,7 +135,55 @@ pub enum BPartType {
 }
 
 impl BPartType {
-    pub fn label(self) -> &'static str {
+    /// Every part, in the order the enum declares them.
+    ///
+    /// Hand-kept beside the enum, like `BHostType::ALL` — Rust cannot walk a
+    /// plain enum's variants. `every_part_is_a_part` checks the two agree, so
+    /// a variant added without a line here fails rather than going missing
+    /// from whatever walks parts.
+    pub const ALL: &'static [Self] = &[
+        Self::Menubar,
+        Self::Modebar,
+        Self::Switcher,
+        Self::Search,
+        Self::Filter,
+        Self::Spacebar,
+        Self::Toolbar,
+        Self::Sidebar,
+        Self::Panel,
+        Self::Channels,
+        Self::Statusbar,
+        Self::StatusLog,
+        Self::Zonebar,
+        Self::NavBar,
+        Self::HUD,
+        Self::Execute,
+        Self::FileNav,
+        Self::FileRefresh,
+        Self::PathBar,
+        Self::TypeFilter,
+        Self::SourceList,
+        Self::AssetShelf,
+        Self::AssetShelfHeader,
+        Self::ToolProps,
+        Self::AdjustLastOp,
+        Self::Playback,
+        Self::FrameRange,
+        Self::ImageBlock,
+        Self::ActionTemplate,
+        Self::UvSelect,
+        Self::UvTransform,
+        Self::ImageDisplay,
+        Self::Scrubbing,
+        Self::Activity,
+        Self::CaptionLead,
+        Self::CaptionTrail,
+        Self::Custom,
+    ];
+}
+
+impl BPartType {
+    pub const fn label(self) -> &'static str {
         match self {
             BPartType::Menubar => "Menu Bar",
             BPartType::Modebar => "Mode Bar",
@@ -178,10 +227,49 @@ impl BPartType {
 
 // `BPartSpec` — one part descriptor (identity + label).
 
+/// What every part is: a kind, a label, a way to make one for a host, and a
+/// view it builds.
+///
+/// `structure.md` has declared a `BPart` trait since the tree was laid out and
+/// `part/part.rs` was never written, so the shape lived as a convention — every
+/// part folder defines a `B<Name>` with `::new(host)` and `impl BViewItem`. A
+/// convention with nothing checking it holds until someone is in a hurry: the
+/// file browser's five parts reached free functions for months and nothing
+/// said so.
+///
+/// This is that convention with a name. `BViewItem` is the supertrait because
+/// building a view is what a part is FOR; the two consts are what the
+/// registration lists need, kept beside the builder rather than in three
+/// separate tables that drift.
+///
+/// It does not remove the dispatcher's match — Rust cannot turn a runtime
+/// `BPartType` into a type's associated consts, so something has to map one to
+/// the other. What it removes is the chance of the map disagreeing with the
+/// part: `every_part_is_a_part` checks each implementor's `KIND` and `LABEL`
+/// against the enum's own answers.
+pub trait BPart: BViewItem {
+    /// The variant this part answers to.
+    const KIND: BPartType;
+    /// What it is called. `BPartType::label` must agree.
+    const LABEL: &'static str;
+    /// One of these, for a host.
+    fn make(host: BHostType) -> Self;
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BPartSpec {
     pub kind: BPartType,
-    pub label: &'static str,
+}
+
+impl BPartSpec {
+    /// The part's label — `BPartType`'s own, not a second copy.
+    ///
+    /// This field used to hold its own string, so the label existed twice: once
+    /// here in a table of 28 entries and once in `BPartType::label`'s match of
+    /// 37. Nothing forced the table to be complete and nothing compared the two.
+    pub const fn label(&self) -> &'static str {
+        self.kind.label()
+    }
 }
 
 impl BSpec for BPartSpec {
@@ -189,7 +277,7 @@ impl BSpec for BPartSpec {
         BSpecKind::Part(self.kind)
     }
     fn label(&self) -> &'static str {
-        self.label
+        self.label()
     }
 }
 
@@ -225,11 +313,15 @@ impl BPartItem {
             BPartType::NavBar => BNavBar::new(h).build(s),
             BPartType::HUD => BHud::new(h).build(s),
             BPartType::Execute => BExecute::new(h).build(s),
-            BPartType::FileNav => crate::v2::part::file::nav::view(s),
-            BPartType::FileRefresh => crate::v2::part::file::nav::refresh(s),
-            BPartType::PathBar => crate::v2::part::file::path_bar::view(h, s),
-            BPartType::SourceList => crate::v2::part::file::sidebar::source_list(h, s),
-            BPartType::TypeFilter => crate::v2::part::file::path_bar::type_filter(s),
+            // The file browser's five used to reach free functions here while
+            // every other part went through `BViewItem`. Five exceptions in one
+            // corner is how an interface stops being one: nothing enforced the
+            // shape, so nothing told anyone it had been dropped.
+            BPartType::FileNav => crate::v2::part::file::nav::BFileNav::new(h).build(s),
+            BPartType::FileRefresh => crate::v2::part::file::nav::BFileRefresh::new(h).build(s),
+            BPartType::PathBar => crate::v2::part::file::path_bar::BPathBar::new(h).build(s),
+            BPartType::SourceList => crate::v2::part::file::sidebar::BSourceList::new(h).build(s),
+            BPartType::TypeFilter => crate::v2::part::file::path_bar::BTypeFilter::new(h).build(s),
             BPartType::AssetShelf => BAssetShelf::new(h).build(s),
             BPartType::AssetShelfHeader => {
                 crate::v2::part::assetshelf::BAssetShelfHeader::new(h).build(s)
@@ -239,7 +331,7 @@ impl BPartItem {
             BPartType::CaptionLead => BCaption { host: h, side: BCaptionSide::Lead }.build(s),
             BPartType::CaptionTrail => BCaption { host: h, side: BCaptionSide::Trail }.build(s),
             BPartType::StatusLog => crate::v2::part::statuslog::BStatusLog::new(h).build(s),
-            BPartType::Custom => BCustom::new(h).build(s),
+            BPartType::Custom => BCustomItem::new(h).build(s),
             BPartType::Playback => crate::v2::part::playback::BPlayback::new(h).build(s),
             BPartType::FrameRange => crate::v2::part::framerange::BFrameRange::new(h).build(s),
             BPartType::ImageBlock => crate::v2::part::image::header::BImageBlock::new(h).build(s),

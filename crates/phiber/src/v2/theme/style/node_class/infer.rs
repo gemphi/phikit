@@ -27,6 +27,79 @@ fn tail_of(idname: &str) -> &str {
     FAMILIES.iter().find_map(|p| idname.strip_prefix(p)).unwrap_or(idname)
 }
 
+/// Which words name which class, in the order they are tried.
+///
+/// A TABLE, not a chain of `else if`. The order is the whole rule here — a
+/// keyword search has no other way to break a tie — and a table shows that
+/// order as data you can read down, where a chain hides it in control flow.
+/// "Mapping" is a vector node and "MapRange" a converter; the only thing that
+/// decides is which row comes first, and that should be visible.
+const BY_KEYWORD: &[(BNodeClass, &[&str])] = &[
+    (
+        BNodeClass::Shader,
+        &["Bsdf", "MixShader", "AddShader", "Subsurface", "Emission", "Volume", "Background", "Holdout"],
+    ),
+    (BNodeClass::Script, &["Script"]),
+    (BNodeClass::Attribute, &["Attribute"]),
+    (BNodeClass::Matte, &["Matte", "Keying"]),
+    (
+        BNodeClass::Distort,
+        &["Distort", "Transform", "Translate", "Lensdist", "Stabilize", "CornerPin"],
+    ),
+    (BNodeClass::Filter, &["Blur", "Filter", "Glare", "Denoise", "Defocus", "Dilate"]),
+    (BNodeClass::Vector, &["Normal", "Mapping", "Bump", "Displacement", "Vector"]),
+    (BNodeClass::Color, &["RGB", "Color", "Hue", "Gamma", "Bright", "Invert"]),
+    (
+        BNodeClass::Input,
+        &["Value", "Camera", "Light", "Fresnel", "Geometry", "Object", "Particle", "UVMap", "Tangent", "Wireframe"],
+    ),
+    (
+        BNodeClass::Converter,
+        &["Math", "Mix", "Clamp", "Map", "Separate", "Combine", "Blackbody", "Wavelength", "Float"],
+    ),
+];
+
+/// The classes an idname's SHAPE decides, before any keyword is looked at.
+///
+/// These are the ones a keyword table cannot express, because each is about
+/// where in the name the word sits rather than whether it appears at all —
+/// `NodeGroupOutput` contains "Output" and is not an output.
+fn by_shape(idname: &str, tail: &str, active_output: bool) -> Option<BNodeClass> {
+    match idname {
+        // A group's own in and out. Blender registers both as
+        // `NODE_CLASS_INTERFACE` (`node_common.cc:1112` and `:1198`), and both
+        // contain a word the arms below would claim.
+        "NodeGroupInput" | "NodeGroupOutput" => Some(BNodeClass::Interface),
+        _ if idname.contains("NodeFrame") => Some(BNodeClass::Frame),
+        _ if idname.ends_with("NodeGroup") || idname.contains("CustomGroup") => {
+            Some(BNodeClass::Group)
+        }
+        // The tree's own output, and only when it is the one in use.
+        _ if tail.starts_with("Output") || tail.starts_with("Viewer") || tail == "Composite" => {
+            Some(if active_output { BNodeClass::Output } else { BNodeClass::Plain })
+        }
+        // A texture is named by its prefix, not by a word anywhere in it.
+        _ if tail.starts_with("Tex") => Some(BNodeClass::Texture),
+        _ => None,
+    }
+}
+
+/// Geometry Nodes name by suffix: all 270 types share the one prefix, so the
+/// prefix says nothing and the tail decides.
+///
+/// `GeometryNodeInput*` is `NODE_CLASS_INPUT` — `node_geo_input_position.cc`,
+/// `node_geo_input_normal.cc` and `node_geo_input_named_attribute.cc` all say
+/// so, the last one despite the word "Attribute" in it. Anything else naming an
+/// attribute is `NODE_CLASS_ATTRIBUTE` (`node_geo_store_named_attribute.cc`,
+/// `node_geo_remove_attribute.cc`); the rest are `NODE_CLASS_GEOMETRY`.
+fn in_geometry_tree(tail: &str) -> BNodeClass {
+    match tail {
+        _ if tail.starts_with("Input") => BNodeClass::Input,
+        _ if tail.contains("Attribute") => BNodeClass::Attribute,
+        _ => BNodeClass::Geometry,
+    }
+}
+
 /// Which class a node belongs to, from its `idname` and its `flag`.
 ///
 /// `active_output` is `bNode.flag & NODE_DO_OUTPUT`, and it matters: Blender
@@ -36,112 +109,18 @@ fn tail_of(idname: &str) -> &str {
 /// plain, which is how you see at a glance which one is rendering.
 ///
 /// Classification reads the TAIL, not the whole idname, because the prefix is
-/// the tree and the tail is the type. That matters most in Geometry Nodes,
-/// where all 270 types are spelt `GeometryNode…` and the prefix says nothing;
-/// there the convention IS the tail — `GeometryNodeInput*` is
-/// `NODE_CLASS_INPUT` (`node_geo_input_position.cc`, `node_geo_input_normal.cc`
-/// and `node_geo_input_named_attribute.cc` all say so, the last one despite
-/// being an attribute node), anything else naming an attribute is
-/// `NODE_CLASS_ATTRIBUTE` (`node_geo_store_named_attribute.cc`,
-/// `node_geo_remove_attribute.cc`), and the rest are `NODE_CLASS_GEOMETRY`.
-///
-/// The tail also settles a word that means two things: "Transform" is
-/// `NODE_CLASS_DISTORT` in the compositor (`node_composite_transform.cc`) and
-/// `NODE_CLASS_GEOMETRY` in a geometry tree
-/// (`node_geo_transform_geometry.cc`), so the family has to be decided first.
+/// the tree and the tail is the type. That also settles a word that means two
+/// things: "Transform" is `NODE_CLASS_DISTORT` in the compositor
+/// (`node_composite_transform.cc`) and `NODE_CLASS_GEOMETRY` in a geometry tree
+/// (`node_geo_transform_geometry.cc`), so the family is decided first.
 pub fn class_of(idname: &str, active_output: bool) -> BNodeClass {
-    // A group's own in and out come first: Blender registers both as
-    // `NODE_CLASS_INTERFACE` (`nodes/intern/node_common.cc:1112` and `:1198`),
-    // and `NodeGroupOutput` contains "Output", so an output test placed before
-    // this one would claim it.
-    if idname == "NodeGroupInput" || idname == "NodeGroupOutput" {
-        return BNodeClass::Interface;
-    }
-    if idname.contains("NodeFrame") {
-        return BNodeClass::Frame;
-    }
-    if idname.ends_with("NodeGroup") || idname.contains("CustomGroup") {
-        return BNodeClass::Group;
-    }
     let tail = tail_of(idname);
-    let has = |s: &str| tail.contains(s);
-    if tail.starts_with("Output") || tail.starts_with("Viewer") || tail == "Composite" {
-        return if active_output { BNodeClass::Output } else { BNodeClass::Plain };
-    }
-    if idname.starts_with("GeometryNode") {
-        return if tail.starts_with("Input") {
-            BNodeClass::Input
-        } else if has("Attribute") {
-            BNodeClass::Attribute
-        } else {
-            BNodeClass::Geometry
-        };
-    }
-    if tail.starts_with("Tex") {
-        BNodeClass::Texture
-    } else if has("Bsdf")
-        || has("MixShader")
-        || has("AddShader")
-        || has("Subsurface")
-        || has("Emission")
-        || has("Volume")
-        || has("Background")
-        || has("Holdout")
-    {
-        BNodeClass::Shader
-    } else if has("Script") {
-        BNodeClass::Script
-    } else if has("Attribute") {
-        BNodeClass::Attribute
-    } else if has("Matte") || has("Keying") {
-        BNodeClass::Matte
-    } else if has("Distort")
-        || has("Transform")
-        || has("Translate")
-        || has("Lensdist")
-        || has("Stabilize")
-        || has("CornerPin")
-    {
-        BNodeClass::Distort
-    } else if has("Blur")
-        || has("Filter")
-        || has("Glare")
-        || has("Denoise")
-        || has("Defocus")
-        || has("Dilate")
-    {
-        BNodeClass::Filter
-    } else if has("Normal") || has("Mapping") || has("Bump") || has("Displacement") || has("Vector")
-    {
-        BNodeClass::Vector
-    } else if has("RGB") || has("Color") || has("Hue") || has("Gamma") || has("Bright") || has("Invert")
-    {
-        BNodeClass::Color
-    } else if has("Value")
-        || has("Camera")
-        || has("Light")
-        || has("Fresnel")
-        || has("Geometry")
-        || has("Object")
-        || has("Particle")
-        || has("UVMap")
-        || has("Tangent")
-        || has("Wireframe")
-    {
-        BNodeClass::Input
-    } else if has("Math")
-        || has("Mix")
-        || has("Clamp")
-        || has("Map")
-        || has("Separate")
-        || has("Combine")
-        || has("Blackbody")
-        || has("Wavelength")
-        || has("Float")
-    {
-        BNodeClass::Converter
-    } else {
-        BNodeClass::Plain
+    match by_shape(idname, tail, active_output) {
+        Some(class) => class,
+        None if idname.starts_with("GeometryNode") => in_geometry_tree(tail),
+        None => BY_KEYWORD
+            .iter()
+            .find(|(_, words)| words.iter().any(|word| tail.contains(word)))
+            .map_or(BNodeClass::Plain, |(class, _)| *class),
     }
 }
-

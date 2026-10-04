@@ -215,9 +215,12 @@ macro_rules! font {
 }
 
 // Child modules — declared AFTER the macros so they can use them.
+mod hex;
 mod parser;
 mod table;
 #[cfg(test)]
 mod tests;
 
+pub use hex::{format_hex, parse_hex};
+pub use parser::{parse_color, parse_hsla};
 pub use table::UI_STYLE_DESCRIPTORS;

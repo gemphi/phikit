@@ -25,7 +25,7 @@ fn plan(samples: u32) -> BRenderPlan {
         display_size: 1.0,
         dof: Default::default(),
     };
-    BRenderPlan { camera: camera_of(&cam, 32, 32), w: 32, h: 32, samples, denoise: false, look: BStillLook::new(BShading::Rendered, gpui::hsla(0.0, 0.0, 0.8, 1.0)) }
+    BRenderPlan { camera: camera_of(&cam, 32, 32), w: 32, h: 32, samples, denoise: false, look: BStillLook::new(BShading::Rendered, gpui::hsla(0.0, 0.0, 0.8, 1.0)), region: Default::default() }
 }
 
 fn a_cube() -> Vec<BObject3D> {
@@ -166,4 +166,13 @@ fn a_workbench_file_plans_a_solid_render_from_the_displays_shading() {
     assert_eq!(wb.camera.ssao[0], 16, "Cavity ▸ World's samples");
     assert!((wb.camera.see_through - 0.7).abs() < 1e-6, "X-ray at 0.3");
     assert_eq!(cycles.camera.shade, [0; 4], "the path tracer takes none of it");
+    // Depth of Field (`use_dof`) wants the camera's own too: the display's
+    // switch alone draws nothing; with the camera's on, `DofPass::init`'s
+    // words — focused where the camera says, the sensor the frame's width.
+    model.render.display.solid_fx.dof = true;
+    assert_eq!(render_plan(&model, set, &look, plain).unwrap().camera.dof, [0.0; 4], "the camera's depth of field off");
+    model.cameras[0].dof = phiber::phiphx::blend::BlendDof { on: true, fstop: 2.0, focus_distance: 5.0, ..Default::default() };
+    let dof = render_plan(&model, set, &look, plain).unwrap().camera.dof;
+    assert!((dof[0] - 0.0125 * (0.05 / 4.95)).abs() < 1e-7 && dof[1] == -5.0 && (dof[2] - 1.0 / 0.036).abs() < 1e-3 && dof[3] == -100.0, "{dof:?}");
+    assert_eq!(cycles.camera.dof, [0.0; 4], "the path tracer blurs with its own aperture");
 }

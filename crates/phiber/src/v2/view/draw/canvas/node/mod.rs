@@ -6,21 +6,38 @@
 //! reads it now (`bNodeTree.nodes` → `bNode`, and `bNodeTree.links`), so this
 //! draws what the material actually contains.
 //!
-//! Two things here are Blender's and one is not. The nodes' positions are
-//! Blender's own `bNode.location`, and their names and order come straight from
-//! the tree. The **framing** is not: Blender gives the node editor a pannable,
-//! zoomable view (`SpaceNode.view2d`) and draws nodes at their coordinates
-//! through it, while this fits the whole graph to the canvas. Until the editor
-//! can pan and zoom, fitting is the one framing that always shows the graph; a
-//! 1:1 view with no way to move it would put most trees off-screen.
+//! The framing is Blender's now too. This used to FIT the whole graph to the
+//! canvas on every frame, because there was no view to draw through — and three
+//! separate divergences were recorded against that one absence: a dragged node's
+//! displacement had to be stored in canvas fractions, a node could not be
+//! dragged off the canvas, and the socket hit-test's zoom-compensated slack had
+//! no zoom to compensate against. `view/` is Blender's `SpaceNode.view2d`
+//! (`View2D.cur`, its zoom step and `NODE_OT_view_all`), the canvas pans and
+//! zooms through it, and all three divergences are gone with the fit.
+//!
+//! What fitting the graph became is the framing the editor OPENS on
+//! (`view/store.rs`), which is what `NODE_OT_view_all` is in Blender: one
+//! framing among many, reachable again rather than imposed every frame.
+//!
+//! One divergence remains, and it is about text rather than geometry. A card is
+//! a div, so its position and size are fractions of the canvas
+//! (`BNodeView::to_fraction` — the region cancels, which is what makes a card
+//! placeable before the canvas is measured). Fractions scale the card with the
+//! zoom, but `text_size` wants pixels and the element tree has none, so a
+//! node's title does not shrink with its card; below `set::LABEL_FLOOR` it is
+//! dropped instead. Blender also stops drawing the label rather than shrinking
+//! it to nothing, so the behaviour matches at small sizes and diverges in the
+//! middle, where Blender's text is scaled and phiber's is not.
 
 pub mod drag;
 pub mod link;
 pub mod paint;
 pub mod pick;
 pub mod plan;
+pub mod select;
 pub mod set;
 pub mod socket;
+pub mod view;
 pub mod wire;
 
 use super::super::ctx::BRenderCtx;
@@ -29,55 +46,9 @@ use crate::v2::state::CtxKey;
 use crate::v2::theme::palette::BColor;
 use gpui::AnyElement;
 
-/// How much of the canvas the graph is fitted into, and how far in it starts —
-/// so nodes never touch the edges and a card still has room to its right.
-const FIT: f32 = 0.72;
-const INSET: f32 = 0.06;
-
 pub struct BNode;
 
-/// Where a node sits once the graph is fitted to the canvas, as fractions.
-pub(super) struct BFitted {
-    pub(super) x: f32,
-    pub(super) y: f32,
-}
-
-/// The extent of a graph in Blender's own coordinates.
-pub(super) struct BExtent {
-    min_x: f32,
-    min_y: f32,
-    span_x: f32,
-    span_y: f32,
-}
-
-impl BExtent {
-    pub(super) fn of(nodes: &[BlendNode]) -> Self {
-        let pick = |f: fn(&BlendNode) -> f32, best: fn(f32, f32) -> f32| {
-            nodes.iter().map(f).fold(f32::NAN, best)
-        };
-        let (min_x, max_x) = (pick(|n| n.x, f32::min), pick(|n| n.x, f32::max));
-        let (min_y, max_y) = (pick(|n| n.y, f32::min), pick(|n| n.y, f32::max));
-        // One node, or a row of them, has no span on an axis; 1.0 keeps the
-        // division honest and puts it at the inset corner.
-        Self {
-            min_x: if min_x.is_nan() { 0.0 } else { min_x },
-            min_y: if min_y.is_nan() { 0.0 } else { min_y },
-            span_x: if (max_x - min_x).abs() < 1.0 { 1.0 } else { max_x - min_x },
-            span_y: if (max_y - min_y).abs() < 1.0 { 1.0 } else { max_y - min_y },
-        }
-    }
-
-    /// Blender's y runs UP the canvas and the window's runs down, so the vertical
-    /// share is flipped — a node Blender puts at the top is at the top here.
-    pub(super) fn place(&self, node: &BlendNode) -> BFitted {
-        BFitted {
-            x: INSET + ((node.x - self.min_x) / self.span_x) * FIT,
-            y: INSET + (1.0 - (node.y - self.min_y) / self.span_y) * FIT,
-        }
-    }
-}
-
-/// The order nodes are drawn in: the selected one last, so it is on top.
+/// The order nodes are drawn in: the active node last, so it is on top.
 ///
 /// Blender's, from `node_draw.cc`. `tree_draw_order_calc_nodes` sorts by
 /// `bNode.ui_order`, and `tree_draw_order_update` — called by every selection
@@ -89,15 +60,21 @@ impl BExtent {
 /// phiber drew nodes in tree order, so a selected node could sit under an
 /// unselected neighbour — and once a node can be dragged, that is the common
 /// case rather than the odd one: you grab a card, drag it over another, and it
-/// disappears behind it. With one selection there is no active-versus-selected
-/// distinction to make, so the rank has two levels rather than three.
+/// disappears behind it.
 ///
-/// The sort is stable, so nodes that are not selected keep the tree's own order
-/// — which is the file's, and is what `ui_order` starts out as.
-pub(super) fn draw_order<'a>(nodes: &'a [BlendNode], selected: &str) -> Vec<&'a BlendNode> {
+/// The rank had two levels while phiber's selection was a single name, because
+/// there was no active-versus-selected distinction to make. It has all three
+/// now (`select::rank`), which matters as soon as a group is selected: the node
+/// the next operator treats as its subject is the one drawn in front.
+///
+/// The sort is stable, so nodes of equal rank keep the tree's own order — which
+/// is the file's, and is what `ui_order` starts out as.
+pub(super) fn draw_order<'a>(
+    nodes: &'a [BlendNode],
+    selection: &select::BNodeSelection,
+) -> Vec<&'a BlendNode> {
     let mut ordered: Vec<&BlendNode> = nodes.iter().collect();
-    let raised = |n: &BlendNode| if selected.is_empty() { n.selected() } else { n.name == selected };
-    ordered.sort_by_key(|n| raised(n));
+    ordered.sort_by_key(|n| select::rank(n, selection));
     ordered
 }
 
@@ -115,9 +92,8 @@ pub(super) fn draw_order<'a>(nodes: &'a [BlendNode], selected: &str) -> Vec<&'a 
 /// `NODE_DO_OUTPUT` is why the whole node is passed rather than its idname: an
 /// output node is only tinted when it is the output actually in use.
 pub(super) fn header_color(node: &BlendNode, ctx: &BRenderCtx) -> BColor {
-    let active_output = node.flag & crate::v2::theme::style::node_class::NODE_DO_OUTPUT != 0;
     crate::v2::theme::class_color(
-        crate::v2::theme::class_of(&node.idname, active_output),
+        crate::v2::theme::class_of(&node.idname, node.active_output()),
         ctx.style.colors.bg_control,
     )
 }
@@ -148,26 +124,19 @@ mod tests {
     }
 
     #[test]
-    fn a_graph_is_fitted_into_the_canvas_with_blenders_y_flipped() {
-        // Blender's y runs UP; the window's runs down. A node Blender puts at the
-        // top must come out at the top, or every graph opens upside down.
+    fn the_opening_framing_puts_blenders_top_node_at_the_top() {
+        // Blender's y runs UP; the canvas's runs down. A node Blender puts at
+        // the top must come out at the top, or every graph opens upside down.
+        // The fit used to do this flip itself; it happens once now, in
+        // `BNodeView::to_fraction`, and this is the fact it has to keep.
         let nodes = vec![node("low", 0.0, 0.0), node("high", 100.0, 200.0)];
-        let extent = BExtent::of(&nodes);
-        let (low, high) = (extent.place(&nodes[0]), extent.place(&nodes[1]));
-        assert!(low.x < high.x, "the node further right in Blender is further right here");
-        assert!(high.y < low.y, "the node higher in Blender is higher here, not lower");
-        for p in [&low, &high] {
-            assert!((0.0..=1.0).contains(&p.x) && (0.0..=1.0).contains(&p.y), "{} {}", p.x, p.y);
+        let view = view::store::opening(&nodes, |_| 80.0, 240.0);
+        let (low, high) = (view.to_fraction((0.0, 0.0)), view.to_fraction((100.0, 200.0)));
+        assert!(low.0 < high.0, "the node further right in Blender is further right here");
+        assert!(high.1 < low.1, "the node higher in Blender is higher here, not lower");
+        for p in [low, high] {
+            assert!((0.0..=1.0).contains(&p.0) && (0.0..=1.0).contains(&p.1), "{p:?}");
         }
-    }
-
-    #[test]
-    fn a_graph_with_one_node_does_not_divide_by_its_own_span() {
-        // One node has no extent on either axis, so the span must not be zero.
-        let nodes = vec![node("only", 42.0, -17.0)];
-        let at = BExtent::of(&nodes).place(&nodes[0]);
-        assert!(at.x.is_finite() && at.y.is_finite(), "{} {}", at.x, at.y);
-        assert!((0.0..=1.0).contains(&at.x) && (0.0..=1.0).contains(&at.y));
     }
 
     #[test]
@@ -175,11 +144,25 @@ mod tests {
         // `compare_node_depth`: selection raises a node. Without it a dragged
         // card slides behind whatever it is dragged over.
         let nodes = vec![node("a", 0.0, 0.0), node("b", 1.0, 1.0), node("c", 2.0, 2.0)];
-        let order: Vec<&str> = draw_order(&nodes, "a").iter().map(|n| n.name.as_str()).collect();
+        let one = |name: &str| select::BNodeSelection::of(&[name]);
+        let order: Vec<&str> =
+            draw_order(&nodes, &one("a")).iter().map(|n| n.name.as_str()).collect();
         assert_eq!(order, vec!["b", "c", "a"], "the selected node is painted over the others");
         // And the ones that are not selected keep the tree's own order.
-        let order: Vec<&str> = draw_order(&nodes, "b").iter().map(|n| n.name.as_str()).collect();
+        let order: Vec<&str> =
+            draw_order(&nodes, &one("b")).iter().map(|n| n.name.as_str()).collect();
         assert_eq!(order, vec!["a", "c", "b"]);
+    }
+
+    #[test]
+    fn the_active_node_is_drawn_over_the_rest_of_its_group() {
+        // Three levels, not two: the node the next operator acts on is the one
+        // in front, which is only expressible now that a selection is a set.
+        let nodes = vec![node("a", 0.0, 0.0), node("b", 1.0, 1.0), node("c", 2.0, 2.0)];
+        let group = select::BNodeSelection::of(&["b", "a"]);
+        let order: Vec<&str> =
+            draw_order(&nodes, &group).iter().map(|n| n.name.as_str()).collect();
+        assert_eq!(order, vec!["c", "a", "b"], "c behind, a selected, b active and in front");
     }
 
     #[test]
@@ -188,7 +171,10 @@ mod tests {
         // what raises a node until the user has clicked anything.
         let mut nodes = vec![node("a", 0.0, 0.0), node("b", 1.0, 1.0)];
         nodes[0].flag = crate::phiphx::blend::shade::graph::NODE_SELECT;
-        let order: Vec<&str> = draw_order(&nodes, "").iter().map(|n| n.name.as_str()).collect();
+        let order: Vec<&str> = draw_order(&nodes, &select::BNodeSelection::default())
+            .iter()
+            .map(|n| n.name.as_str())
+            .collect();
         assert_eq!(order, vec!["b", "a"], "the file's selected node is raised");
     }
 

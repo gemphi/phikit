@@ -11,6 +11,29 @@
 //! the question has one answer and moving `BUTTON_HEIGHT` moves every row with
 //! it. A menu's rows are the rows of a list that happens to float; floating
 //! does not make a row shorter.
+//!
+//! ## The second answer, and the third
+//!
+//! That settled a row against a control. It left two more disagreements, both
+//! of them things a reader sees as one kind of element drawn at two sizes.
+//!
+//! **A heading had three heights.** A bar or region header took
+//! `header_height` — the module the whole window's grid is built from. A card's
+//! own heading took `row_height`, which was six pixels shorter, so the
+//! Properties panel's title sat visibly under the bar above it. And a
+//! horizontal strip's tab took `header_height - menu_top_gap`.
+//!
+//! The first two are now one: `row_height` IS the module, so a card head, a
+//! row and a bar header are one height. The third stays, and is the one worth
+//! keeping — a tab HANGS from its bar with the gap above it, which is the
+//! topbar's tab shape and what `chrome_geometry` checks. A Properties rail tab
+//! is not one of those; it is a card head, which is what lets it line up with
+//! the panel headings beside it.
+//!
+//! **A control had two.** `field.rs` drew a field at `row_height` while every
+//! button drew at `button_height`, so a button standing next to a field was
+//! `HEAD_ROOM` shorter than it. A field is a control, and takes a control's
+//! height now.
 
 use gpui::{TestAppContext, px, size};
 use phiber::v2::app::BPhiberApp;
@@ -20,6 +43,78 @@ use phiber::v2::theme::{BPaletteName, BThemeMode, ui_style_defaults_in};
 
 /// A row gives the control it holds room over and under it, and that is the
 /// whole of what a row's height is.
+/// A heading is one height, wherever it is drawn.
+///
+/// There were three. A bar or region header took `header_height` (the module);
+/// a strip tab took `header_height - menu_top_gap`, two pixels under it; and a
+/// card's own heading took `row_height`, which was six under. All three read as
+/// "a heading" on screen — the Properties panel's title, the tab that opens it
+/// and the bar above both — and no two were the same height.
+///
+/// The strip tab's subtraction is the one worth naming: it made the tabs
+/// unable to line up with the card headings beside them *at any gap*, because
+/// the items themselves were different sizes. Matching the column gaps was not
+/// enough on its own, which is what the pitch guard in
+/// `the_properties_strip_is_a_strip.rs` is paired with.
+#[test]
+fn a_heading_is_one_height() {
+    for name in BPaletteName::ALL.iter().copied() {
+        for mode in BThemeMode::ALL {
+            let d = ui_style_defaults_in(name, mode).dimensions;
+            assert_eq!(
+                d.card_head_height(),
+                d.header_height,
+                "{name:?}/{mode:?}: a card's heading is a header's height",
+            );
+            assert_eq!(
+                d.row_height,
+                d.header_height,
+                "{name:?}/{mode:?}: and a row is the module too, so a row of controls \
+                 fills the band it sits in",
+            );
+        }
+    }
+    // A Properties rail tab is a card head, so it is the module too — which
+    // is what lets it line up with the panel headings beside it. A horizontal
+    // strip's caps are NOT: they hang from their bar with the menu gap above,
+    // which is the topbar's tab shape and is deliberate (`chrome_geometry`).
+    let shape = include_str!("../src/v2/view/draw/tab/shape.rs");
+    let height = shape.split("pub fn height(").nth(1).expect("the cap height");
+    let height = &height[..height.find("\n    }").unwrap_or(height.len())];
+    let code: String = height
+        .lines()
+        .map(|l| l.split("//").next().unwrap_or(""))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        code.contains("card_head_height()"),
+        "a rail tab takes the card-head module, which is now the header's own height",
+    );
+}
+
+/// A control is one height too, and a field is a control.
+///
+/// `field.rs` was the one control that took `row_height` instead, so every
+/// button standing next to a field came out `HEAD_ROOM` shorter than it. That
+/// is what "the buttons look thin" was.
+#[test]
+fn a_field_is_a_control_not_a_row() {
+    let field = include_str!("../src/v2/view/draw/field.rs");
+    assert!(
+        field.contains("dimensions.button_height"),
+        "a field takes a control's height",
+    );
+    let code: String = field
+        .lines()
+        .map(|l| l.split("//").next().unwrap_or(""))
+        .collect::<Vec<_>>()
+        .join("\n");
+    assert!(
+        !code.contains(".h(px(ctx.style.dimensions.row_height))"),
+        "and not a row's, or a button beside it is shorter than it is",
+    );
+}
+
 #[test]
 fn a_row_is_a_control_plus_the_room_around_it() {
     use phiber::v2::theme::style::metric::{BUTTON_HEIGHT, HEAD_ROOM};

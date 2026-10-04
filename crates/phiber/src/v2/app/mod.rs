@@ -311,7 +311,7 @@ impl Render for BPhiberApp {
         // The scope stays set between passes. It used to be cleared here,
         // which left every reader that runs *after* `render` returns — the
         // canvas paint closures (the tracer's world and lamps), the action
-        // handler (F12's `ensure_render`, the Properties refresh on select)
+        // handler (F12's `render_image`, the Properties refresh on select)
         // — looking at no model at all: the render window opened and nothing
         // rendered. The next pass re-sets it from `scene_cache` anyway, so
         // nothing stale can leak: a new import replaces it, `File ▸ New`

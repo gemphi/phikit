@@ -8,11 +8,14 @@
 //! steps the way a frame number does. The number field is `number.rs`.
 
 mod number;
+mod picker;
+mod swatch;
 
-use self::number::number;
-use super::flex::{BAlign, BEdge, BFill, BFlex, BFlexed, BJustify, BLen, BRadius, BSpace};
+use self::swatch::BCtrlSwatch;
+use super::flex::{BAlign, BEdge, BFill, BFlex, BFlexed, BLen, BRadius, BSpace};
 use super::ctx::BRenderCtx;
-use super::{walk, button, search, tab};
+use super::{walk, button, search, tab, track};
+use super::track::BTrack;
 use crate::v2::state::val::BValue;
 use crate::v2::theme::BStyleRole;
 use crate::v2::view::BView;
@@ -23,38 +26,25 @@ use gpui::AnyElement;
 enum BCtrlPart {
     /// A row of the control's pieces: steps around a number, options of a radio.
     Row,
-    /// The number's read-out between its steps, and the bar of a slider.
-    Value,
-    /// A slider's filled part, `share` of the bar.
-    Bar { share: f32 },
-    /// A colour's swatch, filled with the value.
-    Swatch([f32; 4]),
+    /// A colour's swatch, filled with the value — in whichever spelling the
+    /// control carries it (`BCtrlSwatch`).
+    Swatch(BCtrlSwatch),
 }
 
 impl BFlexed for BCtrlPart {
     fn flex(&self, _c: &BRenderCtx) -> BFlex {
         match self {
             Self::Row => BFlex::row().align(BAlign::Center).gap(BSpace::GapXs).min_width(BLen::Zero),
-            Self::Value => BFlex::row()
-                .fills()
-                .min_width(BLen::Zero)
-                .align(BAlign::Center)
-                .justify(BJustify::Center)
-                .height(BLen::Dim(super::flex::BDim::ButtonHeight))
-                .radius(BRadius::Role(BStyleRole::Field))
-                .border(BEdge::All)
-                .overflow(super::flex::BOverflow::Clip),
-            Self::Bar { share } => BFlex::cell()
-                .width(BLen::Share(*share))
-                .height(BLen::Full)
-                .fill(BFill::Tone(crate::v2::theme::BSurfaceTone::Header)),
-            Self::Swatch(rgba) => BFlex::cell()
+            Self::Swatch(value) => BFlex::cell()
                 .width(BLen::Dim(super::flex::BDim::ButtonHeight))
                 .height(BLen::Dim(super::flex::BDim::ButtonHeight))
                 .keeps_size()
                 .radius(BRadius::Role(BStyleRole::Field))
                 .border(BEdge::All)
-                .fill(BFill::Swatch(*rgba)),
+                .fill(match value {
+                    BCtrlSwatch::Rgba(rgba) => BFill::Swatch(*rgba),
+                    BCtrlSwatch::Hsl(color) => BFill::SwatchHsl(*color),
+                }),
         }
     }
 }
@@ -76,7 +66,7 @@ impl BCtrlView<'_> {
             BCtrlKind::Toggle => self.flag(None, None, ctx),
             BCtrlKind::Radio => self.radio(ctx),
             BCtrlKind::Select => self.select(ctx),
-            BCtrlKind::Int { .. } | BCtrlKind::Number { .. } => number(self.0, ctx),
+            BCtrlKind::Int { .. } | BCtrlKind::Number { .. } => self.number(ctx),
             BCtrlKind::Slider { .. } => self.slider(ctx),
             BCtrlKind::Text | BCtrlKind::Search | BCtrlKind::Path => self.text(ctx),
             BCtrlKind::Color => self.color(ctx),
@@ -158,18 +148,19 @@ impl BCtrlView<'_> {
     /// A bar filled to the value, a step either side of it.
     fn slider(&self, ctx: &BRenderCtx) -> AnyElement {
         let ctrl = self.0;
-        let BCtrlKind::Slider { min, max } = ctrl.kind else { return number(ctrl, ctx) };
+        let BCtrlKind::Slider { min, max } = ctrl.kind else { return self.number(ctx) };
         let now = match ctrl.value {
             BValue::Float(v) => v,
             BValue::Int(v) => v as f32,
             _ => min,
         };
-        let share = if max > min { ((now - min) / (max - min)).clamp(0.0, 1.0) } else { 0.0 };
-        let bar = BCtrlPart::Value
-            .flex(ctx)
-            .div(ctx)
-            .child(BCtrlPart::Bar { share }.flex(ctx).div(ctx))
-            .child(gpui::SharedString::from(ctrl.value.display()));
+        // The bar is the track, and `track.rs` describes what a track looks like
+        // and wires the gesture — the slider is one thing that has one.
+        let mut track = BTrack::across(ctrl.key.clone(), min, max);
+        if matches!(ctrl.value, BValue::Int(_)) {
+            track = track.whole();
+        }
+        let bar = track::view(&track, track::share_of(now, min, max), &ctrl.value.display(), ctx);
         let step = |icon: &str, steps: f32| {
             let mut ctl = BControl::new().with_icon(icon);
             if let Some(action) = ctrl.nudge(steps) {
@@ -195,17 +186,25 @@ impl BCtrlView<'_> {
     }
 
     /// A swatch of the value, and the value as text beside it.
+    ///
+    /// The swatch takes the value in whichever spelling the control carries: a
+    /// scene property hands it RGBA, a theme preference hands it the HSL text
+    /// its descriptor formats. This used to match `BValue::Color` and nothing
+    /// else, falling back to opaque black — and every one of the 29 colours in
+    /// Preferences is the text form, so every swatch there was black.
     fn color(&self, ctx: &BRenderCtx) -> AnyElement {
-        let rgba = match self.0.value {
-            BValue::Color(rgba) => rgba,
-            _ => [0.0, 0.0, 0.0, 1.0],
-        };
-        BCtrlPart::Row
-            .flex(ctx)
-            .div(ctx)
-            .child(BCtrlPart::Swatch(rgba).flex(ctx).div(ctx))
-            .child(self.text(ctx))
-            .into_any_element()
+        let ctrl = self.0;
+        let swatch = BCtrlSwatch::of(&ctrl.value);
+        let row = BCtrlPart::Row.flex(ctx).div(ctx);
+        // Clicking the colour opens the channel picker. Without somewhere to
+        // record open-ness the swatch is just the swatch, the way a `Select`
+        // without an `open_key` is a plain button showing its choice.
+        match picker::popover(ctrl, swatch, ctx.state) {
+            Some(view) => row.child(walk(&view, ctx)),
+            None => row.child(BCtrlPart::Swatch(swatch).flex(ctx).div(ctx)),
+        }
+        .child(self.text(ctx))
+        .into_any_element()
     }
 }
 

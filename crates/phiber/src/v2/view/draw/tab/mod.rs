@@ -14,7 +14,7 @@ use super::color::{resolved_gradient, to_hsla};
 use super::ctx::BRenderCtx;
 use super::chrome;
 use super::atom::icon_path;
-use super::flex::{BFill, BFlex, BFlexed, BLen, BOverflow, BPlace};
+use super::flex::{BFlex, BFlexed, BLen, BOverflow, BPlace};
 
 pub mod cap;
 mod shape;
@@ -67,6 +67,12 @@ fn cap_view(ctl: &BControl, side: BCapSide, ctx: &BRenderCtx) -> AnyElement {
     let hover_fill = if shape.icon_only() && ctx.host != BHostType::Buts {
         // Activity bar and non-Properties icon rails: lift from the soft strip.
         to_hsla(ctx.style.rail_tab_hover(ctx.host))
+    } else if shape.paints_separately() {
+        // A Properties tab previews what clicking it will do: hover takes the
+        // shade the SELECTED tab has, so the cap under the pointer already
+        // reads as joined to the panel. A hover tone of its own would be a
+        // third shade on a strip that only has two states to tell apart.
+        to_hsla(ctx.style.tab_active_gradient(ctx.host).top)
     } else {
         to_hsla(ctx.style.tab_hover(ctx.host))
     };
@@ -195,7 +201,7 @@ fn properties_layers(
 ) -> AnyElement {
     let group = SharedString::from(format!("{id_text}-paint-hover"));
     let paint_id_text = format!("{id_text}-background");
-    let mut paint = BCapPart::Paint { resting: !active }
+    let mut paint = BCapPart::Paint
         .flex(ctx)
         .div(ctx)
         .id(SharedString::from(paint_id_text.clone()))
@@ -213,6 +219,14 @@ fn properties_layers(
         // rail and the content read as one area.
         paint.bg(resolved_gradient(ctx.style.tab_active_gradient(ctx.host).along(side.gradient_axis())))
     } else {
+        // An unselected tab paints NOTHING at rest. It used to draw a darker
+        // chip, which left the strip reading inside out: the resting tabs were
+        // the dark squares and the selected one was the gap between them. The
+        // step that chip used is the body's now (`host_body_surface`), so the
+        // selected tab is the one with a shade and a resting tab is strip.
+        //
+        // Hover borrows the selected tab's shade rather than a third tone of
+        // its own, so the cap under the pointer shows what clicking it gives.
         paint.group_hover(group.clone(), move |style| style.bg(hover_fill))
     };
     BCapPart::Layers
@@ -231,10 +245,9 @@ enum BCapPart {
     /// The icon cell: one icon size, never shrinking.
     Icon,
     /// The paint layer, spanning the cap top to bottom; its left and right
-    /// come from `BCapSide::paint`.
-    /// The paint layer. `resting` fills it with the tab's chip; the selected
-    /// tab paints its own gradient over the top.
-    Paint { resting: bool },
+    /// come from `BCapSide::paint`. The selected tab paints its gradient onto
+    /// it and hover borrows that shade; at rest it paints nothing.
+    Paint,
     /// The two-layer stack a Properties rail tab is: the paint, then the row.
     Layers,
 }
@@ -246,10 +259,7 @@ impl BFlexed for BCapPart {
                 let size = BLen::Measured(ctx.style.dimensions.icon_size);
                 BFlex::row().width(size).height(size).keeps_size()
             }
-            Self::Paint { resting } => {
-                let flex = BFlex::row().place(BPlace::Overlay);
-                if *resting { flex.fill(BFill::RailTabResting) } else { flex }
-            }
+            Self::Paint => BFlex::row().place(BPlace::Overlay),
             Self::Layers => BFlex::row()
                 .place(BPlace::Anchor)
                 .width(BLen::Full)

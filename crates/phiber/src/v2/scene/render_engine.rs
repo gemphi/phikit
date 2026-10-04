@@ -11,10 +11,11 @@ use phiray::Camera;
 
 impl BStillLook {
     /// `BLENDER_WORKBENCH`'s render: `Scene.display.shading` on the camera's
-    /// words (its effects, lighting, colour and shadow — the viewport's state
-    /// plays no part), `render_aa` as the sample count, and no denoise; every
+    /// words (its effects, lighting, colour, shadow and depth of field through
+    /// `lens`, the scene camera's — the viewport's state plays no part),
+    /// `render_aa` as the sample count, and no denoise; every
     /// other engine renders through the path tracer at the panel's settings.
-    pub fn for_engine(model: &SceneModel, set: BRenderSet, camera: &mut Camera, plain: gpui::Hsla) -> (Self, u32, bool) {
+    pub fn for_engine(model: &SceneModel, set: BRenderSet, lens: super::BCameraLens, camera: &mut Camera, plain: gpui::Hsla) -> (Self, u32, bool) {
         if model.render.engine != "BLENDER_WORKBENCH" {
             return (Self::new(crate::v2::scene::BShading::Rendered, plain), set.samples.max(1), set.denoise);
         }
@@ -31,10 +32,13 @@ impl BStillLook {
         camera.shade = fx.shade_words(shade.shade_words());
         camera.single = shade.single_words();
         camera.matcap = shade.matcap_words();
+        // Depth of Field through the scene camera, the frame the sensor's.
+        camera.dof = fx.dof_words(Some(lens), 1.0);
         camera.see_through = super::BXray { solid: d.xray.solid, alpha: d.xray.alpha, wireframe: d.xray.wireframe, alpha_wireframe: d.xray.alpha_wireframe }.see_through(shading);
         if let Some([r, g, b]) = shade.background(Some(model.world.horizon_color)) {
             camera.sky = [r, g, b, 0.0];
         }
-        (Self { shading, plain, matcap: shade.matcap_for_build(), texture: shade.texture_for_build() }, d.samples.max(1), false)
+        // `render_aa` as it is: 0 and 1 are Workbench's off and single pass.
+        (Self { shading, plain, matcap: shade.matcap_for_build(), texture: shade.texture_for_build() }, d.samples, false)
     }
 }

@@ -9,9 +9,7 @@
 
 use std::path::Path;
 
-use super::history;
-use super::listing;
-use super::sidebar;
+use super::{history, listing, sidebar};
 use crate::v2::modal::splash::recent;
 use crate::v2::state::val::{V_EMPTY, V_FALSE, V_MODAL_FILE_BROWSER};
 use crate::v2::state::{BKey, BPath, BState, FileKey, ModalKey, rule::BRule};
@@ -110,11 +108,11 @@ impl BRule for BPurposeRule {
             s.set(crate::v2::state::OpKey::ExportFormat, format.to_string());
             s.set(FileKey::Purpose, super::purpose::BFilePurpose::Export.slug());
         }
-        if value == super::purpose::BFilePurpose::SaveImage.slug() {
-            seed_image_target(s);
-        }
-        if value == super::purpose::BFilePurpose::SaveAs.slug() || value == super::purpose::BFilePurpose::SaveCopy.slug() {
-            seed_blend_target(s);
+        match super::purpose::BFilePurpose::from_slug(value) {
+            Some(super::purpose::BFilePurpose::SaveImage) => seed_image_target(s),
+            Some(super::purpose::BFilePurpose::Mixdown) => seed_mixdown_target(s),
+            Some(super::purpose::BFilePurpose::SaveAs | super::purpose::BFilePurpose::SaveCopy) => seed_blend_target(s),
+            _ => {}
         }
         if !value.is_empty() && s.get(ModalKey::Open).filter(|m| !m.is_empty()).is_none() {
             s.set(ModalKey::Open, V_MODAL_FILE_BROWSER);
@@ -135,11 +133,14 @@ fn seed_image_target(s: &mut BState) {
     let folder = Path::new(&blend).parent().map(Path::to_path_buf).unwrap_or_default();
     let file = output.file_of(&folder);
     let Some(name) = file.file_name().map(|n| n.to_string_lossy().to_string()) else { return };
-    if let Some(dir) = file.parent().filter(|d| !d.as_os_str().is_empty()) {
-        history::goto(s, &dir.to_string_lossy());
-    }
-    // After `goto`, which clears the pending name as entering a folder does.
-    s.set(FileKey::Filename, name);
+    seed_target(s, &file, name);
+}
+
+/// `sound.mixdown` opens beside the `.blend`, on its name with Blender's
+/// default container's extension (`sound_mixdown_check`: `.flac`).
+fn seed_mixdown_target(s: &mut BState) {
+    let blend = s.get(&crate::v2::scene::loaded_path_key()).unwrap_or_default().to_string();
+    seed_target(s, Path::new(&blend), crate::v2::scene::mixdown::BMixdown::name_for(Path::new(&blend)));
 }
 
 /// `wm.save_as_mainfile` opens on the file that is open, named as it is,
@@ -148,6 +149,12 @@ fn seed_blend_target(s: &mut BState) {
     let blend = s.get(&crate::v2::scene::loaded_path_key()).unwrap_or_default().to_string();
     let file = Path::new(&blend);
     let Some(name) = file.file_name().map(|n| n.to_string_lossy().to_string()).filter(|n| !n.is_empty()) else { return };
+    seed_target(s, file, name);
+}
+
+/// The browser in `file`'s folder, on `name` — after `goto`, which clears
+/// the pending name as entering a folder does.
+fn seed_target(s: &mut BState, file: &Path, name: String) {
     if let Some(dir) = file.parent().filter(|d| !d.as_os_str().is_empty()) {
         history::goto(s, &dir.to_string_lossy());
     }
@@ -182,50 +189,15 @@ impl BRule for BSelectRule {
         if value.is_empty() {
             return;
         }
-        if super::purpose::purpose(s) == super::purpose::BFilePurpose::SaveImage {
-            save_render_to(s, value);
-            s.set(ModalKey::Open, V_EMPTY);
+        let purpose = super::purpose::purpose(s);
+        if purpose == super::purpose::BFilePurpose::SaveImage {
+            super::save_image::BImageSave::to(s, value);
             s.remove(&FileKey::Purpose.path());
-            return;
+        } else if !matches!(purpose, super::purpose::BFilePurpose::Mixdown | super::purpose::BFilePurpose::OpenImage) {
+            // A mixdown or an image names no `.blend` for the recent list.
+            recent::push_recent(s, value);
         }
-        recent::push_recent(s, value);
         s.set(ModalKey::Open, V_EMPTY);
     }
 }
 
-/// Write the Render Result where the browser was pointed, and report it the
-/// way Blender reports a save — in the status bar and the Info log, since a
-/// silent write leaves no way to tell a finished save from a refused one.
-///
-/// The format comes from the Output panel rather than from the typed
-/// extension, which is what Blender does: the extension follows the format,
-/// not the other way round.
-fn save_render_to(s: &mut BState, target: &str) {
-    use crate::v2::part::text::info::{BReportLevel, push};
-    let (shot, _) = crate::v2::scene::render_job::shot();
-    let Some(shot) = shot else {
-        push(s, BReportLevel::Error, "No render to save. Render an image first (F12).");
-        return;
-    };
-    // A render still in flight is refused by the writer itself, with its own
-    // message — the guard is not repeated here, so there is one place that
-    // decides whether a shot can be written.
-    let output = crate::v2::scene::output_set(s);
-    let pass = crate::v2::scene::pass_set(s, Default::default());
-    let file = output.file_of(Path::new(target).parent().unwrap_or(Path::new("")));
-    // `file_of` is given the typed path's folder and the panel's own name,
-    // so a name typed in the browser wins over the panel's while the format
-    // still decides the extension.
-    let file = match Path::new(target).file_name() {
-        Some(name) => file.with_file_name(name).with_extension(output.format.extension().trim_start_matches('.')),
-        None => file,
-    };
-    let written = crate::v2::scene::written_pass(&shot, pass);
-    match crate::v2::scene::save_render_to(&shot, &output, pass, &file) {
-        Ok(()) => {
-            let note = if written.len() > 1 { format!(" ({} passes)", written.len()) } else { String::new() };
-            push(s, BReportLevel::Info, &format!("Saved: '{}'{note}", file.display()));
-        }
-        Err(why) => push(s, BReportLevel::Error, &format!("Cannot save: {why}")),
-    }
-}

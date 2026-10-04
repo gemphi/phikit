@@ -28,7 +28,10 @@ pub fn shell(editing: bool, ctx: &BRenderCtx) -> gpui::Stateful<gpui::Div> {
         // The fill, the focus border and any hover all stop at the rounded
         // edge, so nothing bleeds onto the strip behind the field.
         .overflow_hidden()
-        .h(px(ctx.style.dimensions.row_height))
+        // A field is a CONTROL, so it is a control's height — not a row's. It
+        // was the one control reading `row_height`, which is why a button
+        // beside it came out four pixels shorter than it did.
+        .h(px(ctx.style.dimensions.button_height))
         // A text margin either side (Blender's `UI_TEXT_MARGIN_X`, 0.4 of a
         // unit): the text — and where it clips — stops short of the edge.
         .px(px(ctx.style.spacing.pad_md))

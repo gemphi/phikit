@@ -38,9 +38,8 @@ fn document_keys() -> (Vec<String>, Vec<String>, Vec<String>) {
         SceneKey::Assigned.path().encode(),
         SceneKey::MadeActions.path().encode(),
         SceneKey::ActionRanges.path().encode(),
-        SceneKey::Keyed.path().encode(),
-        SceneKey::Nla.path().encode(),
-        SceneKey::Transformed.path().encode(),
+        SceneKey::Keyed.path().encode(), SceneKey::Nla.path().encode(),
+        SceneKey::Transformed.path().encode(), SceneKey::ShadowCast.path().encode(), SceneKey::RenderBorder.path().encode(),
     ];
     let domains = vec![domain_of(OutlinerKey::Search.path().encode()), domain_of(ButsKey::NavbarTab.path().encode())];
     let ui = vec![

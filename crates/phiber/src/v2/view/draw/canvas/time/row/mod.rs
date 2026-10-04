@@ -4,6 +4,7 @@
 //! Structure: the rows and where they sit. Their backdrops, diamonds and
 //! names are `set.rs`.
 
+pub mod name;
 pub mod set;
 
 use crate::phiphx::blend::BNlaTrack;
@@ -27,8 +28,16 @@ pub enum BRowKind {
     /// `ANIMTYPE_SUMMARY`: every shown key. Collapsed in the Timeline,
     /// expanded — and so given its backdrop — in the Dope Sheet.
     Summary { expanded: bool },
-    /// `ANIMTYPE_OBJECT`: one shown object, its channels folded into it.
-    Object(String),
+    /// `ANIMTYPE_OBJECT`: one shown object. `expanded` is Blender's
+    /// `ACHANNEL_SETTING_EXPAND` (`ADT_UI_EXPANDED`): closed, the object's
+    /// keys are summarised onto its own row; open, its F-curves follow it as
+    /// `Curve` rows and the object keeps the summary above them, which is
+    /// what `ANIM_animdata_filter` emits for an expanded object.
+    Object { name: String, expanded: bool },
+    /// `ANIMTYPE_FCURVE`: one F-curve under an expanded object, named the way
+    /// `getname_anim_fcurve` names it (`name::fcurve_name`) and carrying the
+    /// curve's own colour for the swatch beside it.
+    Curve { name: String, color: [f32; 3] },
     /// `ANIMTYPE_NLAACTION`: an object's action line in the NLA editor —
     /// the active action, or `<No Action>`; `tweaking` while
     /// `ADT_NLA_EDIT_ON`.
@@ -74,7 +83,11 @@ impl BTimeRow {
                 return;
             }
             for name in crate::v2::scene::action::dope::BKeyTarget::shown(s, model) {
-                out.push(Self::object(&name, &model.actions));
+                let expanded = Self::is_expanded(s, &name);
+                out.push(Self::object_at(&name, &model.actions, expanded));
+                if expanded {
+                    out.extend(Self::curves(&name, &model.actions));
+                }
             }
         });
         // The Dope Sheet's summary is its objects' columns together.
@@ -96,7 +109,7 @@ impl BTimeRow {
             .and_then(|name| actions.iter().find(|action| action.name == name))
             .map_or(Vec::new(), |action| action.keys.clone());
         let mut out = vec![
-            Self { kind: BRowKind::Object(nla.object.clone()), keys: Vec::new() },
+            Self { kind: BRowKind::Object { name: nla.object.clone(), expanded: false }, keys: Vec::new() },
             Self { kind: BRowKind::Action { name: nla.action.clone(), tweaking: nla.flag & crate::phiphx::blend::ADT_EDIT_ON != 0 }, keys },
         ];
         out.extend(nla.tracks.iter().rev().map(|track| Self { kind: BRowKind::Track(track.clone()), keys: Vec::new() }));
@@ -112,7 +125,44 @@ impl BTimeRow {
     /// One object's row: the columns of the slot it is animated through in
     /// every action it uses (`dope::BKeyTarget`).
     pub fn object(name: &str, actions: &[SceneAction]) -> Self {
-        Self { kind: BRowKind::Object(name.to_string()), keys: crate::v2::scene::action::dope::BKeyTarget::columns(actions, name) }
+        Self::object_at(name, actions, false)
+    }
+
+    /// The same row, told whether it is unfolded.
+    pub fn object_at(name: &str, actions: &[SceneAction], expanded: bool) -> Self {
+        Self {
+            kind: BRowKind::Object { name: name.to_string(), expanded },
+            keys: crate::v2::scene::action::dope::BKeyTarget::columns(actions, name),
+        }
+    }
+
+    /// Whether `name`'s channel is unfolded.
+    ///
+    /// Closed by default, as Blender leaves an object's channels closed until
+    /// asked: a rig with three hundred bone curves would otherwise bury every
+    /// other object in the list on first paint.
+    pub fn is_expanded(s: &BState, name: &str) -> bool {
+        s.get(crate::v2::state::DopeKey::Expanded(crate::v2::state::intern(name)))
+            == Some(crate::v2::state::val::V_TRUE)
+    }
+
+    /// The F-curve rows of every action `name` uses, in the file's own order.
+    ///
+    /// `ANIM_animdata_filter` walks an expanded object's action and emits one
+    /// `ANIMTYPE_FCURVE` per curve. There is no group level here yet: the scene
+    /// model carries `SceneAction.curves` flat, without the `bActionGroup` that
+    /// Blender would nest them under.
+    pub fn curves(name: &str, actions: &[SceneAction]) -> Vec<Self> {
+        actions
+            .iter()
+            .filter(|action| action.users.iter().any(|user| user == name))
+            .flat_map(|action| action.curves.iter())
+            .map(|curve| Self {
+                kind: BRowKind::Curve { name: name::fcurve_name(curve), color: curve.color },
+                // `BezTriple.co` is (frame, value); the frame is the x.
+                keys: curve.keys.iter().map(|key| key.co[0]).collect(),
+            })
+            .collect()
     }
 
     /// The channel's name as the channel region prints it
@@ -120,7 +170,8 @@ impl BTimeRow {
     pub fn name(&self) -> &str {
         match &self.kind {
             BRowKind::Summary { .. } => "Summary",
-            BRowKind::Object(name) => name,
+            BRowKind::Object { name, .. } => name,
+            BRowKind::Curve { name, .. } => name,
             BRowKind::Action { name, .. } => name.as_deref().unwrap_or("<No Action>"),
             BRowKind::Track(track) => &track.name,
             BRowKind::Driver { name, .. } => name,
@@ -150,9 +201,9 @@ impl BTimeRow {
     /// first).
     pub fn track_at(rows: &[Self], index: usize) -> Option<(String, usize)> {
         let BRowKind::Track(_) = rows.get(index)?.kind else { return None };
-        let head = rows[..index].iter().rposition(|r| matches!(r.kind, BRowKind::Object(_)))?;
-        let BRowKind::Object(object) = &rows[head].kind else { return None };
-        let tracks = rows[head + 1..].iter().take_while(|r| !matches!(r.kind, BRowKind::Object(_))).filter(|r| matches!(r.kind, BRowKind::Track(_))).count();
+        let head = rows[..index].iter().rposition(|r| matches!(r.kind, BRowKind::Object { .. }))?;
+        let BRowKind::Object { name: object, .. } = &rows[head].kind else { return None };
+        let tracks = rows[head + 1..].iter().take_while(|r| !matches!(r.kind, BRowKind::Object { .. })).filter(|r| matches!(r.kind, BRowKind::Track(_))).count();
         let above = rows[head + 1..index].iter().filter(|r| matches!(r.kind, BRowKind::Track(_))).count();
         Some((object.clone(), tracks - 1 - above))
     }
@@ -210,5 +261,68 @@ mod tests {
         assert_eq!(rows[1].keys, vec![10.0, 30.0], "the action line carries the action's key columns");
         let bare = BlendNla { object: "Sphere".into(), ..Default::default() };
         assert_eq!(BTimeRow::nla(&bare, &[])[1].name(), "<No Action>");
+    }
+
+    use crate::phiphx::blend::BFCurve;
+
+    /// One object with two curves on it.
+    fn rig() -> Vec<SceneAction> {
+        vec![SceneAction {
+            name: "RigAction".into(),
+            users: vec!["Rig".into()],
+            curves: vec![
+                BFCurve::new(r#"pose.bones["Chest"].location"#, 0, Vec::new()),
+                BFCurve::new("rotation_quaternion", 0, Vec::new()),
+            ],
+            ..Default::default()
+        }]
+    }
+
+    #[test]
+    fn a_closed_object_lists_no_curves_and_an_open_one_lists_them_all() {
+        // `ACHANNEL_SETTING_EXPAND`. Closed is the default, as Blender leaves an
+        // object's channels closed until asked — a rig with three hundred bone
+        // curves would otherwise bury every other object on first paint.
+        let actions = rig();
+        let rows = BTimeRow::curves("Rig", &actions);
+        assert_eq!(rows.len(), 2, "one row per F-curve of every action the object uses");
+        // And they are named by the one naming function, not by their raw path.
+        assert_eq!(rows[0].name(), "X Location (Chest)");
+        assert_eq!(rows[1].name(), "W Quaternion Rotation");
+    }
+
+    #[test]
+    fn a_curve_row_wears_its_own_curves_colour() {
+        let actions = rig();
+        let rows = BTimeRow::curves("Rig", &actions);
+        let BRowKind::Curve { color, .. } = &rows[0].kind else { panic!("{:?}", rows[0].kind) };
+        assert_eq!(*color, actions[0].curves[0].color, "the swatch is the curve's own colour");
+    }
+
+    #[test]
+    fn only_the_objects_own_actions_are_listed() {
+        // `users` is what ties an action to an object; an action nobody uses, or
+        // one used by someone else, must not appear under this object.
+        let mut actions = rig();
+        actions.push(SceneAction {
+            name: "OtherAction".into(),
+            users: vec!["Cube".into()],
+            curves: vec![BFCurve::new("location", 1, Vec::new())],
+            ..Default::default()
+        });
+        assert_eq!(BTimeRow::curves("Rig", &actions).len(), 2);
+        assert_eq!(BTimeRow::curves("Cube", &actions).len(), 1);
+        assert_eq!(BTimeRow::curves("Nobody", &actions).len(), 0);
+    }
+
+    #[test]
+    fn expansion_is_read_per_object_and_defaults_closed() {
+        use crate::v2::state::{DopeKey, intern, val::V_TRUE};
+        let mut state = BState::default();
+        assert!(!BTimeRow::is_expanded(&state, "Rig"), "closed until asked");
+        state.set(DopeKey::Expanded(intern("Rig")), V_TRUE);
+        assert!(BTimeRow::is_expanded(&state, "Rig"));
+        // One object's fold is not another's — the key carries the name.
+        assert!(!BTimeRow::is_expanded(&state, "Cube"));
     }
 }

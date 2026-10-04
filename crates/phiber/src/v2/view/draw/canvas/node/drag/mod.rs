@@ -18,18 +18,18 @@
 //!   "so that multiple unsnapped nodes snap to the grid in sync while moving".
 //!   phiber has no node snap setting, so nothing here rounds.
 //!
-//! Two divergences, both from the canvas FITTING the graph rather than panning
-//! and zooming it (the divergence recorded in `mod.rs`):
+//! Two divergences used to be recorded here, both of them consequences of the
+//! canvas FITTING the graph rather than panning and zooming it. The view
+//! (`view/`) is wired now, so both are gone and it is worth saying how, because
+//! they read as facts about dragging and were facts about the framing:
 //!
-//! 1. **The displacement is in canvas fractions, not Blender units.** Everything
-//!    on a fitted canvas is a fraction, so a window resize rescales a drag along
-//!    with the graph it belongs to. A displacement in Blender units would feed
-//!    back into `BExtent`, and then dragging a node would reframe the graph under
-//!    the pointer and the card would not follow the cursor — which is why the
-//!    extent is computed from FILE positions alone.
-//! 2. **A node cannot be dragged off the canvas.** Blender lets you, because you
-//!    can always pan back; with no pan a node past the edge is gone for good, so
-//!    [`placed`] clamps into [`LIMIT`], the band the fit already reserves.
+//! 1. **The displacement was in canvas fractions.** It is in Blender units now,
+//!    the same units `bNode.location` is in. The fraction existed because a
+//!    displacement in units would have fed back into the fit, reframing the graph
+//!    under the pointer mid-drag; there is no fit to feed any more.
+//! 2. **A node could not be dragged off the canvas.** It can now, because you
+//!    can pan back to it — which is exactly Blender's reason for allowing it.
+//!    [`placed`] no longer clamps, and `LIMIT` is gone with the band it named.
 //!
 //! The drag writes `Adjust`, not `Set`: a move is not a decision, and a `Set` per
 //! mouse move would take every open overlay down on the first pixel. Nothing
@@ -37,7 +37,7 @@
 //! so a confirming `Set` would only close menus unrelated to the canvas.
 
 use super::super::super::ctx::BRenderCtx;
-use super::{FIT, INSET};
+use super::view::BNodeView;
 use crate::v2::host::BHostType;
 use crate::v2::state::{BKey as _, BState, NodeKey};
 use crate::v2::view::prim::BAction;
@@ -45,14 +45,6 @@ use gpui::prelude::*;
 use gpui::{App, Context, Div, DragMoveEvent, Pixels, Point, Render, Stateful, Window};
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
-
-/// The furthest a card's top-left corner may sit, as a fraction of the canvas.
-///
-/// The fit places nodes between `INSET` and `INSET + FIT`, leaving the rest as
-/// the room a card's own width and height need. A dragged node gets that same
-/// band, so one that has moved is no likelier to run off the edge than one that
-/// never did.
-pub const LIMIT: f32 = INSET + FIT;
 
 /// The drag in flight — one node: phiber's selection holds a single name (`NodeKey::Selected`), and
 /// Blender's `get_transformed_nodes` moves every node with `NODE_SELECT` set,
@@ -66,6 +58,10 @@ pub struct BNodeDrag {
     /// rather than an accumulation that drifts over a long drag.
     pub from: (f32, f32),
     /// The pointer when the first move arrived, as a canvas fraction.
+    ///
+    /// Still a fraction, and deliberately: the delta is converted to view units
+    /// against the view this render was built with, so a pan or zoom arriving
+    /// mid-drag cannot retroactively rescale the part of the drag already done.
     ///
     /// `None` until then: `on_drag`'s start callback is handed the pointer but
     /// not the canvas's bounds, and a fraction needs both, so there is nothing
@@ -101,21 +97,38 @@ pub fn offset_of(state: &BState, host: BHostType, name: &str) -> (f32, f32) {
     state.get(&key.path()).and_then(decode).unwrap_or((0.0, 0.0))
 }
 
-/// Where a node is drawn: fitted place plus displacement, clamped to [`LIMIT`].
+/// Where a node is, in view units: the file's place plus its displacement.
+///
+/// No clamp. There used to be one, because a node dragged past the edge of a
+/// canvas that could not pan was gone for good. The view pans, so a node off
+/// screen is a node you scroll to — which is what Blender does.
+///
+/// A non-finite displacement still reads as none: a key edited into nonsense
+/// should leave the node where the file put it rather than send it to infinity.
 pub fn placed(base: (f32, f32), offset: (f32, f32)) -> (f32, f32) {
-    let clamp = |v: f32| if v.is_finite() { v.clamp(0.0, LIMIT) } else { 0.0 };
-    (clamp(base.0 + offset.0), clamp(base.1 + offset.1))
+    let add = |a: f32, b: f32| if (a + b).is_finite() { a + b } else { a };
+    (add(base.0, offset.0), add(base.1, offset.1))
 }
 
-/// The displacement to WRITE for a pointer that has moved `delta` since it
-/// grabbed, given where the node was fitted and what it had already moved by.
-/// The clamp applies here and not only in [`placed`], so the STORED value is the
-/// one honoured. Clamping at draw time alone would let a drag past the edge bank
-/// up displacement the canvas never showed, and the node would then sit still
-/// through the first half of the drag back.
-pub fn moved(base: (f32, f32), from: (f32, f32), delta: (f32, f32)) -> (f32, f32) {
-    let at = placed(base, (from.0 + delta.0, from.1 + delta.1));
-    (at.0 - base.0, at.1 - base.1)
+/// The displacement to WRITE for a pointer that has moved `delta` view units
+/// since it grabbed, given what the node had already moved by.
+///
+/// `flushTransNodes` adds the accumulated offset to `td.iloc`, so this is a sum
+/// and not an accumulation: each write is `from + delta` measured from the grab,
+/// which is what keeps a long drag from drifting.
+pub fn moved(from: (f32, f32), delta: (f32, f32)) -> (f32, f32) {
+    (from.0 + delta.0, from.1 + delta.1)
+}
+
+/// A pointer delta in canvas fractions, as view units.
+///
+/// The X is the fraction times the view's width — the cancellation
+/// `BNodeView::pan_fraction` documents. The Y is NEGATED, because the canvas
+/// grows downward and `bNode.location` grows up: dragging a card down the screen
+/// must lower the node's `y`, not raise it. This is the only place in the drag
+/// that knows which way Y runs, and the one place it can be got wrong.
+pub fn in_view_units(delta: (f32, f32), view: &BNodeView) -> (f32, f32) {
+    (delta.0 * view.width(), -delta.1 * view.height())
 }
 
 /// Nothing leaves the card — the node moves, it is not dropped onto anything —
@@ -152,12 +165,13 @@ pub fn grab(card: Stateful<Div>, drag: BNodeDrag) -> Stateful<Div> {
 /// would be the card's — and the card moves as the drag proceeds, so every move
 /// would be measured against a different rectangle.
 ///
-/// `fitted` is each node's fitted position by name, captured for this render, so
-/// the clamp knows what the displacement is relative to.
-pub fn follow(canvas: Div, fitted: Vec<(String, (f32, f32))>, ctx: &BRenderCtx) -> Div {
+/// `moving` is what the drag carries, captured for this render; `view` is the
+/// framing those fractions are measured against, so the pointer's travel across
+/// the canvas becomes travel in node space.
+pub fn follow(canvas: Div, moving: Vec<BNodeMove>, view: BNodeView, ctx: &BRenderCtx) -> Div {
     let handler = ctx.handler.clone();
     let host = ctx.host;
-    let fitted = Rc::new(fitted);
+    let moving = Rc::new(moving);
     canvas.on_drag_move::<Arc<Mutex<BNodeDrag>>>(
         move |event: &DragMoveEvent<Arc<Mutex<BNodeDrag>>>, window, app: &mut App| {
             let bounds = event.bounds;
@@ -173,67 +187,32 @@ pub fn follow(canvas: Div, fitted: Vec<(String, (f32, f32))>, ctx: &BRenderCtx) 
             let state = Arc::clone(event.drag(app));
             let Ok(mut drag) = state.lock() else { return };
             let grabbed = *drag.grabbed.get_or_insert(now);
-            let Some((_, base)) = fitted.iter().find(|(name, _)| name == drag.name) else { return };
-            let offset = moved(*base, drag.from, (now.0 - grabbed.0, now.1 - grabbed.1));
-            let key = NodeKey::At(host, drag.name);
+            let delta = in_view_units((now.0 - grabbed.0, now.1 - grabbed.1), &view);
             drop(drag);
-            (Rc::clone(&handler))(&BAction::Adjust(key.path(), encode(offset)), window, app);
+            // Every node in `moving` gets the same delta — `get_transformed_nodes`
+            // keeps *"only nodes that are selected"* and `flushTransNodes` adds
+            // one offset to each of their own `td.iloc`, so a group moves
+            // rigidly rather than converging on the pointer.
+            for node in moving.iter() {
+                let offset = moved(node.from, delta);
+                let key = NodeKey::At(host, node.name);
+                (Rc::clone(&handler))(&BAction::Adjust(key.path(), encode(offset)), window, app);
+            }
         },
     )
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_displacement_round_trips() {
-        for offset in [(0.0, 0.0), (0.25, -0.125), (-0.5, 0.5)] {
-            assert_eq!(decode(&encode(offset)), Some(offset), "{offset:?}");
-        }
-        assert_eq!(decode("banana"), None, "nonsense is no displacement, not a panic");
-        assert_eq!(decode("0.5"), None, "a pair needs both halves");
-    }
-
-    #[test]
-    fn a_node_moves_by_the_delta_it_was_dragged() {
-        // `td.iloc` + offset: the card keeps the relationship to the pointer it
-        // had at the press.
-        let base = (0.2, 0.2);
-        let offset = moved(base, (0.0, 0.0), (0.1, -0.05));
-        assert!((offset.0 - 0.1).abs() < 1e-6 && (offset.1 + 0.05).abs() < 1e-6, "{offset:?}");
-        // A second drag starts from where the first left it.
-        assert!((moved(base, offset, (0.1, 0.0)).0 - 0.2).abs() < 1e-6);
-    }
-
-    #[test]
-    fn a_node_cannot_be_dragged_off_the_canvas_and_does_not_bank_up_surplus() {
-        let base = (0.5, 0.5);
-        let jammed = moved(base, (0.0, 0.0), (99.0, 99.0));
-        let at = placed(base, jammed);
-        assert!(at.0 <= LIMIT + 1e-6 && at.1 <= LIMIT + 1e-6, "{at:?} past the band");
-        let near = placed(base, moved(base, (0.0, 0.0), (-99.0, -99.0)));
-        assert!(near.0 >= 0.0 && near.1 >= 0.0, "{near:?} off the near edge");
-        // Jammed into the edge then nudged back, it moves on that nudge.
-        let stepped = placed(base, moved(base, jammed, (-0.1, 0.0)));
-        assert!(stepped.0 < at.0 - 1e-6, "{stepped:?} did not move back from {at:?}");
-    }
-
-    #[test]
-    fn an_undragged_node_sits_exactly_where_the_file_put_it() {
-        let base = (0.3, 0.4);
-        assert_eq!(
-            placed(base, offset_of(&BState::new(), BHostType::Shader, "Principled BSDF")),
-            base,
-            "no entry in state is no displacement"
-        );
-    }
-
-    #[test]
-    fn a_drags_grab_origin_is_taken_on_the_first_move_and_not_retaken() {
-        let mut drag = BNodeDrag::new("Principled BSDF", (0.0, 0.0));
-        assert_eq!(drag.grabbed, None, "the press cannot know the canvas");
-        assert_eq!(*drag.grabbed.get_or_insert((0.4, 0.4)), (0.4, 0.4));
-        assert_eq!(*drag.grabbed.get_or_insert((0.9, 0.9)), (0.4, 0.4), "measured from one origin");
-    }
+/// One node a drag will move: its name, where the fit puts it, and the
+/// displacement it already carries.
+///
+/// Gathered at render time because the move handler cannot read the store — and
+/// because `get_transformed_nodes` is evaluated once when the transform begins
+/// in Blender too, not re-derived on every mouse move.
+#[derive(Clone, Debug, PartialEq)]
+pub struct BNodeMove {
+    pub name: &'static str,
+    pub from: (f32, f32),
 }
+
+#[cfg(test)]
+mod tests;

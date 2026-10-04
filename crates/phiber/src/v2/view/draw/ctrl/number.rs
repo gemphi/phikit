@@ -47,7 +47,22 @@ impl BFlexed for BNumberPart {
     }
 }
 
-pub(super) fn number(ctrl: &BCtrl, ctx: &BRenderCtx) -> AnyElement {
+impl super::BCtrlView<'_> {
+    /// A number field: its value between two steppers.
+    ///
+    /// A method, like every other kind, because `BCtrlView`'s own doc says so
+    /// — *"Each kind is a method of this type rather than a free function
+    /// beside it, so the widget a kind draws as is reached through the
+    /// control, not from anywhere"* — and this was the one arm of `render`
+    /// that reached a free function instead, ten lines under that sentence.
+    pub(super) fn number(&self, ctx: &BRenderCtx) -> AnyElement {
+        build(self.0, ctx)
+    }
+}
+
+/// The field itself, kept as a function because it is long and the method
+/// above is the way in.
+fn build(ctrl: &BCtrl, ctx: &BRenderCtx) -> AnyElement {
     let step = |icon: &str, steps: f32, side: BSide| {
         let mut ctl = BControl::new().with_icon(icon);
         if let Some(action) = ctrl.nudge(steps) {

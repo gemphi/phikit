@@ -43,6 +43,14 @@ pub(in crate::v2::view::draw::canvas::view3d) struct BRayView {
     pub shade: [u32; 4],
     pub single: [f32; 4],
     pub matcap: [u32; 4],
+    /// Solid's Depth of Field through the camera (`Camera::dof`; `frame::dof_words`).
+    pub dof: [f32; 4],
+    /// The viewport's own render region (`View3D.render_border`, fractions
+    /// y up) when the Rendered shading fills only it (`BViewBorder::fills`).
+    pub border: Option<[f32; 4]>,
+    /// Viewport Anti-Aliasing's count (`scene::viewport_aa`): the jittered
+    /// samples Solid and Wireframe draw, 0 none, 1 a single pass.
+    pub aa: u32,
 }
 
 impl BRayView {
@@ -50,7 +58,7 @@ impl BRayView {
     /// the theme. Blender draws unselected wires in the theme's wire colour
     /// and the active object in `wire_active`; the kernel carries one wire
     /// colour, so it takes the neutral one.
-    pub(in crate::v2::view::draw::canvas::view3d) fn of(camera: (f32, f32, (f32, f32), f32), setup: BViewSetup, sky: Hsla, grid: Hsla, studio: bool, mode: phiray::Mode, ctx: &BRenderCtx) -> Self {
+    pub(in crate::v2::view::draw::canvas::view3d) fn of(camera: (f32, f32, (f32, f32), f32), setup: BViewSetup, sky: Hsla, grid: Hsla, studio: bool, mode: phiray::Mode, dof: [f32; 4], ctx: &BRenderCtx) -> Self {
         let (yaw, pitch, pan, zoom) = camera;
         let (wire, set) = (crate::v2::view::draw::color::to_hsla(ctx.style.colors.text_dim), crate::v2::scene::render_set(ctx.state));
         let see_through = crate::v2::scene::BXray::now(ctx.state).see_through(crate::v2::scene::view_shading(ctx.state));
@@ -58,8 +66,10 @@ impl BRayView {
         let view = world::view_words(ctx.state);
         let solid_fx = crate::v2::scene::BSolidFx::now(ctx.state);
         let (fx, outline) = (solid_fx.fx_words(1.0), solid_fx.outline_words());
-        // The SSAO's disk is run over the anti-aliasing samples (`viewport_aa`).
-        let (cavity, ssao) = (solid_fx.cavity_words(), solid_fx.ssao_words(phiray::trace::taa::SAMPLES));
+        // The SSAO's disk is run over the anti-aliasing samples (`viewport_aa`,
+        // `SceneState::samples_len`: at least the one).
+        let aa = crate::v2::scene::viewport_aa::BViewportAa::samples(ctx.state);
+        let (cavity, ssao) = (solid_fx.cavity_words(), solid_fx.ssao_words(phiray::trace::taa::count(aa).max(1)));
         let (shadow, shadow_fade) = (solid_fx.shadow_words(), solid_fx.shadow_fade_words());
         let shade = crate::v2::scene::BSolidShade::now(ctx.state);
         // Workbench's Background (`ED_view3d_background_color_get`): the
@@ -71,6 +81,13 @@ impl BRayView {
                 .map_or(sky, |[r, g, b]| gpui::Rgba { r, g, b, a: 0.0 }.into()),
             _ => sky,
         };
-        Self { yaw, pitch, pan, zoom, setup, sky, grid, studio, wire, mode, set, see_through, grid_hide, view, fx, outline, cavity, ssao, shadow, shadow_fade, shade: solid_fx.shade_words(shade.shade_words()), matcap: shade.matcap_words(), single: shade.single_words() }
+        Self { yaw, pitch, pan, zoom, setup, sky, grid, studio, wire, mode, set, see_through, grid_hide, view, fx, outline, cavity, ssao, shadow, shadow_fade, shade: solid_fx.shade_words(shade.shade_words()), matcap: shade.matcap_words(), single: shade.single_words(), dof, border: None, aa }
+    }
+
+    /// With the viewport's own region, for a traced mode: Workbench and
+    /// Material Preview draw the whole viewport (`ED_view3d_calc_render_border`).
+    pub(in crate::v2::view::draw::canvas::view3d) fn bordered(self, border: Option<[f32; 4]>) -> Self {
+        let traced = !matches!(self.mode, phiray::Mode::Wire | phiray::Mode::Solid);
+        Self { border: border.filter(|_| traced), ..self }
     }
 }

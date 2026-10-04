@@ -20,51 +20,54 @@ fn line_y(y: f32, x0: f32, x1: f32, color: BColor, at: Bounds<Pixels>, window: &
     window.paint_quad(fill(rect(x0, y, x1, y + 1.0, at), hsla(color)));
 }
 
-/// The frame lines under the scrub strip, `step` frames apart: the minors
-/// first, where they are far enough apart, then the majors over them.
-pub fn paint_frame_lines(view: &BTimeView, colors: &BAnimColors, step: f32, at: Bounds<Pixels>, window: &mut Window) {
-    let width = f32::from(at.size.width);
-    let height = f32::from(at.size.height);
-    let (major, minor) = (colors.grid, colors.grid_minor);
-    if let Some(minor_step) = BTimeView::minor_step(step, view.scale(width), MIN_GRID) {
-        for frame in view.lines(minor_step) {
-            line_x(view.x_of(frame, width), SCRUB_HEIGHT, height, 1.0, minor, at, window);
+impl BTimeView {
+    /// The frame lines under the scrub strip, `step` frames apart: the minors
+    /// first, where they are far enough apart, then the majors over them.
+    pub fn paint_frame_lines(&self, colors: &BAnimColors, step: f32, at: Bounds<Pixels>, window: &mut Window) {
+        let width = f32::from(at.size.width);
+        let height = f32::from(at.size.height);
+        let (major, minor) = (colors.grid, colors.grid_minor);
+        if let Some(minor_step) = BTimeView::minor_step(step, self.scale(width), MIN_GRID) {
+            for frame in self.lines(minor_step) {
+                line_x(self.x_of(frame, width), SCRUB_HEIGHT, height, 1.0, minor, at, window);
+            }
+        }
+        for frame in self.lines(step) {
+            line_x(self.x_of(frame, width), SCRUB_HEIGHT, height, 1.0, major, at, window);
         }
     }
-    for frame in view.lines(step) {
-        line_x(view.x_of(frame, width), SCRUB_HEIGHT, height, 1.0, major, at, window);
+
+    /// The value lines across the window, and their numbers. Nothing without
+    /// a value axis.
+    pub fn paint_value_lines(&self, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
+        if self.values.is_none() {
+            return;
+        }
+        let width = f32::from(at.size.width);
+        let height = f32::from(at.size.height);
+        let step = self.value_step(height, VALUE_BASE, MIN_GRID);
+        let (major, minor) = (colors.grid, colors.grid_minor);
+        if let Some(minor_step) = BTimeView::minor_step(step, self.value_scale(height), MIN_GRID) {
+            for value in self.value_lines(minor_step) {
+                line_y(self.y_of(value, height), 0.0, width, minor, at, window);
+            }
+        }
+        for value in self.value_lines(step) {
+            line_y(self.y_of(value, height), 0.0, width, major, at, window);
+        }
+        // `draw_vertical_scale_indicators`: a number on each major line, kept
+        // whole between the strip and the foot.
+        let half_glyph = FONT / 2.0 - 1.0;
+        for value in self.value_lines(step) {
+            let y = self.y_of(value, height);
+            if y - half_glyph >= SCRUB_HEIGHT && y + half_glyph <= height - SCALE_FOOT {
+                let line = shape(&value_label(value, step), colors.scale_text, window);
+                text_at(&line, SCALE_INSET, y, at, window, cx);
+            }
+        }
     }
 }
 
-/// The value lines across the window, and their numbers. Nothing without
-/// a value axis.
-pub fn paint_value_lines(view: &BTimeView, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
-    if view.values.is_none() {
-        return;
-    }
-    let width = f32::from(at.size.width);
-    let height = f32::from(at.size.height);
-    let step = view.value_step(height, VALUE_BASE, MIN_GRID);
-    let (major, minor) = (colors.grid, colors.grid_minor);
-    if let Some(minor_step) = BTimeView::minor_step(step, view.value_scale(height), MIN_GRID) {
-        for value in view.value_lines(minor_step) {
-            line_y(view.y_of(value, height), 0.0, width, minor, at, window);
-        }
-    }
-    for value in view.value_lines(step) {
-        line_y(view.y_of(value, height), 0.0, width, major, at, window);
-    }
-    // `draw_vertical_scale_indicators`: a number on each major line, kept
-    // whole between the strip and the foot.
-    let half_glyph = FONT / 2.0 - 1.0;
-    for value in view.value_lines(step) {
-        let y = view.y_of(value, height);
-        if y - half_glyph >= SCRUB_HEIGHT && y + half_glyph <= height - SCALE_FOOT {
-            let line = shape(&value_label(value, step), colors.scale_text, window);
-            text_at(&line, SCALE_INSET, y, at, window, cx);
-        }
-    }
-}
 
 /// `frame_to_string`: as many decimals as the step needs.
 pub fn value_label(value: f32, step: f32) -> String {

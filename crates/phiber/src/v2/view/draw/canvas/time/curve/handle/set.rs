@@ -26,33 +26,35 @@ pub fn handle_color(kind: u8, selected: bool, colors: &BAnimColors) -> BColor {
     table[(kind as usize).min(table.len() - 1)]
 }
 
-/// `draw_fcurve_handles` then `draw_fcurve_handle_vertices` for `drawn`,
-/// when `draw_fcurve_handles_check` allows them.
-pub fn paint_handles(view: &BTimeView, drawn: &BDrawnCurve, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
-    let width = f32::from(at.size.width);
-    let height = f32::from(at.size.height);
-    let handles = BCurveHandles::of(&drawn.curve, view.first, view.last, false);
-    let place = |[frame, value]: [f32; 2]| point(at.origin.x + px(view.x_of(frame, width)), at.origin.y + px(view.y_of(value, height)));
-    for segment in &handles.segments {
-        let mut path = PathBuilder::stroke(px(LINE_WIDTH));
-        path.move_to(place(segment.handle));
-        path.line_to(place(segment.key));
-        let mut color = to_hsla(handle_color(segment.kind, segment.selected, colors));
-        color.a = drawn.alpha;
-        if let Ok(path) = path.build() {
-            window.paint_path(path, color);
+impl BTimeView {
+    /// `draw_fcurve_handles` then `draw_fcurve_handle_vertices` for `drawn`,
+    /// when `draw_fcurve_handles_check` allows them.
+    pub fn paint_handles(&self, drawn: &BDrawnCurve, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
+        let width = f32::from(at.size.width);
+        let height = f32::from(at.size.height);
+        let handles = BCurveHandles::of(&drawn.curve, self.first, self.last, false);
+        let place = |[frame, value]: [f32; 2]| point(at.origin.x + px(self.x_of(frame, width)), at.origin.y + px(self.y_of(value, height)));
+        for segment in &handles.segments {
+            let mut path = PathBuilder::stroke(px(LINE_WIDTH));
+            path.move_to(place(segment.handle));
+            path.line_to(place(segment.key));
+            let mut color = to_hsla(handle_color(segment.kind, segment.selected, colors));
+            color.a = drawn.alpha;
+            if let Ok(path) = path.build() {
+                window.paint_path(path, color);
+            }
         }
-    }
-    let half = RING_SIZE / 2.0;
-    for ring in &handles.rings {
-        let (x, y) = (view.x_of(ring.at[0], width), view.y_of(ring.at[1], height));
-        if x < -half || x > width + half {
-            continue;
+        let half = RING_SIZE / 2.0;
+        for ring in &handles.rings {
+            let (x, y) = (self.x_of(ring.at[0], width), self.y_of(ring.at[1], height));
+            if x < -half || x > width + half {
+                continue;
+            }
+            let outline = to_hsla(if ring.selected { colors.handle_vertex_select } else { colors.handle_vertex });
+            let mut fill = outline;
+            fill.a = RING_FILL_ALPHA;
+            window.paint_quad(quad(rect(x - half, y - half, x + half, y + half, at), Corners::all(px(half)), fill, Edges::all(px(RING_OUTLINE)), outline, BorderStyle::Solid));
         }
-        let outline = to_hsla(if ring.selected { colors.handle_vertex_select } else { colors.handle_vertex });
-        let mut fill = outline;
-        fill.a = RING_FILL_ALPHA;
-        window.paint_quad(quad(rect(x - half, y - half, x + half, y + half, at), Corners::all(px(half)), fill, Edges::all(px(RING_OUTLINE)), outline, BorderStyle::Solid));
     }
 }
 

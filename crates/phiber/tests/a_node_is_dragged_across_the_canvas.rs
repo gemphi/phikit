@@ -13,7 +13,7 @@
 //! `node_snap_grid_apply` rounds the start and the offset separately, and only
 //! when snapping is on — phiber has no node snap setting, so nothing rounds.
 //!
-//! The drag maths lives in `canvas/node/drag.rs` and is unit-tested there. What
+//! The drag maths lives in `canvas/node/drag/` and is unit-tested there. What
 //! this file is for is the two things only the whole store can show: that a drag
 //! written as an action comes back out as a displacement, and that two node
 //! editors do not share one.
@@ -22,6 +22,7 @@ use phiber::v2::host::BHostType;
 use phiber::v2::state::action::apply_action;
 use phiber::v2::state::{BKey as _, BState, NodeKey, intern};
 use phiber::v2::view::draw::canvas::node::drag;
+use phiber::v2::view::draw::canvas::node::view::{BNodeView, view_all};
 use phiber::v2::view::prim::BAction;
 
 /// One drag, as the canvas dispatches it: `Adjust`, not `Set`.
@@ -90,26 +91,35 @@ fn two_node_editors_do_not_share_one_selection() {
 }
 
 #[test]
-fn a_node_dragged_at_the_edge_stays_reachable() {
-    // The one place this leaves Blender, and it follows from the canvas FITTING
-    // the graph rather than panning it (`canvas/node/mod.rs`): Blender lets a
-    // node go anywhere because you can always pan back to it, and here there is
-    // no pan, so a node pushed past the edge would be gone for good.
-    //
-    // The clamp is applied to the WRITE, not only to the draw, so a drag jammed
-    // into the edge and nudged back moves on that nudge instead of unwinding an
-    // invisible surplus first.
-    let base = (0.5, 0.5);
-    let jammed = drag::moved(base, (0.0, 0.0), (50.0, 50.0));
+fn a_node_dragged_off_the_canvas_is_reached_by_framing_the_graph() {
+    // This used to be the one place the drag left Blender, and it was really
+    // about the framing: the canvas FITTED the graph instead of panning it, so a
+    // node pushed past the edge was gone for good and `placed` clamped it into a
+    // band. The view is wired now (`canvas/node/view/`), so the clamp is gone and
+    // the Blender behaviour is back — along with the thing that makes it safe,
+    // which is what this checks end to end.
+    let base = (100.0, 100.0);
     let mut state = BState::new();
-    drag_to(&mut state, BHostType::Shader, "Principled BSDF", jammed);
-
+    // Four thousand units out, which no canvas is showing.
+    drag_to(&mut state, BHostType::Shader, "Principled BSDF", (4000.0, -4000.0));
     let stored = drag::offset_of(&state, BHostType::Shader, "Principled BSDF");
     let at = drag::placed(base, stored);
-    assert!(at.0 <= 0.79 && at.1 <= 0.79, "{at:?} left the band the fit reserves for cards");
+    assert_eq!(at, (4100.0, -3900.0), "nothing clamped it into a band");
 
-    let back = drag::placed(base, drag::moved(base, stored, (-0.05, 0.0)));
-    assert!(back.0 < at.0 - 1e-6, "nudged back from the edge it did not move: {back:?} vs {at:?}");
+    // Off screen for the view it was dragged in...
+    let looking = BNodeView { xmin: 0.0, ymin: 0.0, xmax: 400.0, ymax: 240.0 };
+    let off = looking.to_fraction(at);
+    assert!(off.0 > 1.0 && off.1 > 1.0, "the node should be off the canvas: {off:?}");
+
+    // ...and `NODE_OT_view_all` over the graph's own bounds brings it back,
+    // which is the reason Blender can let a node go anywhere at all.
+    let bounds = (base.0.min(at.0), at.1.min(base.1), base.0.max(at.0) + 240.0, base.1.max(at.1));
+    let framed = view_all(bounds, &looking, false);
+    let found = framed.to_fraction(at);
+    assert!(
+        (0.0..=1.0).contains(&found.0) && (0.0..=1.0).contains(&found.1),
+        "framing the graph did not reach the node it had been dragged to: {found:?}",
+    );
 }
 
 /// Every node editor can be dragged in, not only the Shader one.

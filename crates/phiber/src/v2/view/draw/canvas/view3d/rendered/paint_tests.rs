@@ -12,7 +12,7 @@ fn a_meshs_corner_colours_paint_the_tracers_vertices() {
     use crate::phiphx::scene::{SceneCorners, SceneMesh, SceneNormals};
     use crate::v2::scene::BObject3D;
     let grey = white();
-    let palette = super::BMeshPalette { shading: BShading::Solid, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false };
+    let palette = super::super::mesh::BMeshPalette { shading: BShading::Solid, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false };
     let tri = |colors: Vec<[f32; 3]>| BObject3D::Loaded {
         name: "Painted".into(),
         mesh: std::sync::Arc::new(SceneMesh {
@@ -47,7 +47,7 @@ fn solid_uploads_the_base_image_under_texture_alone() {
     set_loaded_scene(Some(model));
     let objects = scene_source(&BState::default());
     let grey = white();
-    let palette = |texture: bool| super::BMeshPalette { shading: BShading::Solid, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture };
+    let palette = |texture: bool| super::super::mesh::BMeshPalette { shading: BShading::Solid, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture };
     assert!(scene::build(&objects, &palette(false)).atlas.is_empty(), "Material: Solid reads no image");
     let textured = scene::build(&objects, &palette(true));
     assert!(!textured.atlas.is_empty(), "Texture: the packed image goes up");
@@ -64,7 +64,7 @@ fn an_objects_shadow_toggles_follow_the_mode() {
     use crate::phiphx::scene::{SceneCorners, SceneMesh, SceneNormals};
     use crate::v2::scene::BObject3D;
     let grey = white();
-    let palette = |shading| super::BMeshPalette { shading, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false };
+    let palette = |shading| super::super::mesh::BMeshPalette { shading, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false };
     let tri = |shadow: BlendShadowCast| BObject3D::Loaded {
         name: "Shy".into(),
         mesh: std::sync::Arc::new(SceneMesh {

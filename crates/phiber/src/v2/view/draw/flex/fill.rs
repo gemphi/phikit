@@ -9,7 +9,7 @@
 use super::super::color::{resolved_gradient, to_hsla};
 use super::super::ctx::BRenderCtx;
 use super::token::BInk;
-use crate::v2::theme::BSurfaceTone;
+use crate::v2::theme::{BColor, BSurfaceTone};
 use crate::v2::view::prim::BRowShade;
 use gpui::Background;
 
@@ -45,6 +45,14 @@ pub enum BFill {
     ModalDim,
     /// A value's own colour — a colour control's swatch. RGBA, 0..1.
     Swatch([f32; 4]),
+    /// The same, for a value held as HSL: hue in degrees, saturation and
+    /// lightness in percent, alpha 0..1 — the spelling a `BStyleDescriptor`
+    /// formats and parses back, which is what a Preferences colour carries.
+    ///
+    /// Without this, `ctrl/mod.rs` matched `BValue::Color` alone and fell back to
+    /// opaque black for anything else, so all 29 Preferences swatches were black
+    /// squares beside correct numbers.
+    SwatchHsl(BColor),
     /// An ink, as a fill — the filled part of a drawn glyph.
     Ink(BInk),
     /// A rule between entries — a menu's separator, a header's divider.
@@ -76,6 +84,7 @@ impl BFill {
             Self::RailTabResting => to_hsla(ctx.style.rail_tab_resting(ctx.host)).into(),
             Self::ModalDim => to_hsla(ctx.style.colors.bg_modal_dim).into(),
             Self::Swatch([r, g, b, a]) => gpui::Rgba { r, g, b, a }.into(),
+            Self::SwatchHsl(color) => to_hsla(color).into(),
             Self::Ink(ink) => ink.color(ctx).into(),
             Self::Separator => to_hsla(ctx.style.colors.sep).into(),
             Self::Flat(tone) => to_hsla(ctx.style.surface(tone).bottom).into(),

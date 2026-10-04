@@ -18,24 +18,26 @@ pub fn stroke(drawn: &BDrawnCurve) -> f32 {
     if drawn.active && drawn.curve.flag & FLAG_PROTECTED == 0 { ACTIVE_LINE_WIDTH } else { LINE_WIDTH }
 }
 
-/// The line of `drawn` across the window `at`.
-pub fn paint(view: &BTimeView, drawn: &BDrawnCurve, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
-    let width = f32::from(at.size.width);
-    let height = f32::from(at.size.height);
-    let line = BCurveLine::for_view(&drawn.curve, view.first, view.last, [view.scale(width), view.value_scale(height)]);
-    if line.points.len() < 2 {
-        return;
-    }
-    let mut path = PathBuilder::stroke(px(stroke(drawn)));
-    for (index, [frame, value]) in line.points.iter().enumerate() {
-        let here = point(at.origin.x + px(view.x_of(*frame, width)), at.origin.y + px(view.y_of(*value, height)));
-        if index == 0 {
-            path.move_to(here);
-        } else {
-            path.line_to(here);
+impl BTimeView {
+    /// The line of `drawn` across the window `at`.
+    pub fn paint_curve_line(&self, drawn: &BDrawnCurve, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
+        let width = f32::from(at.size.width);
+        let height = f32::from(at.size.height);
+        let line = BCurveLine::for_view(&drawn.curve, self.first, self.last, [self.scale(width), self.value_scale(height)]);
+        if line.points.len() < 2 {
+            return;
         }
-    }
-    if let Ok(path) = path.build() {
-        window.paint_path(path, super::super::set::line_color(drawn, colors));
+        let mut path = PathBuilder::stroke(px(stroke(drawn)));
+        for (index, [frame, value]) in line.points.iter().enumerate() {
+            let here = point(at.origin.x + px(self.x_of(*frame, width)), at.origin.y + px(self.y_of(*value, height)));
+            if index == 0 {
+                path.move_to(here);
+            } else {
+                path.line_to(here);
+            }
+        }
+        if let Ok(path) = path.build() {
+            window.paint_path(path, super::super::set::line_color(drawn, colors));
+        }
     }
 }

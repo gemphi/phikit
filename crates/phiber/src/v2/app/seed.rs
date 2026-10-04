@@ -134,6 +134,8 @@ pub fn seed_output_props(state: &mut BState, model: &SceneModel) {
         ("image_settings.color_mode", mode.to_string()),
         ("image_settings.color_depth", out.depth.to_string()),
     ];
+    // The render region (`Scene.r.border`, Output ▸ Format).
+    crate::v2::scene::render_border::BRenderBorder::seed(state, render.border);
     // The View Layer panel's pass toggles, so they show what the file asks
     // for rather than the property defaults.
     for (key, on) in crate::v2::scene::pass_state(render.pass) {

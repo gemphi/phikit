@@ -17,10 +17,11 @@ impl BPhiberApp {
     /// (Blender: "No camera found in scene").
     pub(crate) fn render_now(&mut self) -> bool {
         use crate::v2::scene::render_job;
-        let Some(model) = crate::v2::scene::source::with_loaded(|m| m.cloned()) else {
-            crate::v2::state::log::push("Nothing to render: open a file first".to_string());
-            return false;
-        };
+        // No file open: the default scene through the startup file's camera
+        // (`BStartupCamera`), as a fresh Blender renders its cube.
+        let loaded = crate::v2::scene::source::with_loaded(|m| m.cloned());
+        let scene = crate::v2::scene::current_scene(&self.state, loaded.as_ref());
+        let model = loaded.unwrap_or_else(|| crate::v2::scene::startup_camera::BStartupCamera::model(&scene));
         let set = crate::v2::scene::render_set(&self.state);
         let look = self.render_look(&model, set);
         let frame = crate::v2::scene::motion::shown_frame(&self.state);
@@ -31,7 +32,7 @@ impl BPhiberApp {
         };
         // The camera toggle decides a render, not the eye.
         let hidden = crate::v2::part::outliner::key::BHidden::for_render(&self.state);
-        let objects: Vec<_> = crate::v2::scene::current_scene(&self.state, Some(&model))
+        let objects: Vec<_> = scene
             .into_iter()
             .filter(|o| !matches!(o, crate::v2::scene::BObject3D::Loaded { name, .. } if hidden.hides(&self.state, name)))
             .collect();
@@ -88,12 +89,13 @@ impl BPhiberApp {
 
     /// Opening the Rendering workspace: its Image editor shows the Render
     /// Result, so with none yet the scene is rendered into it at once —
-    /// through the active camera, at Output's size, with Render's samples,
-    /// as F12 would, without F12's window. Blender opens the workspace on
+    /// through the active camera (the startup camera's stand-in before a
+    /// file is open), at Output's size, with Render's samples, as F12
+    /// would, without F12's window. Blender opens the workspace on
     /// whatever Render Result there is, or none.
     pub(crate) fn render_on_entry(&mut self) {
         let rendering = self.state.get(CtxKey::Space) == Some(crate::v2::space::BSpaceType::Rendering.slug());
-        if !rendering || render_job::rendering() || render_job::shot().0.is_some() || self.scene_cache.is_none() {
+        if !rendering || render_job::rendering() || render_job::shot().0.is_some() {
             return;
         }
         if self.render_now() {

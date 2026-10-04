@@ -156,7 +156,7 @@ pub fn scene_objects(s: &BState) -> Rc<Vec<BObject3D>> {
     // A rigged mesh is drawn as the poser's thread has it (`scene::pose`).
     let frame = model.as_deref().and_then(|m| super::motion::moving_frame(m, super::motion::shown_frame(s)));
     let posed = model.as_ref().map(|m| super::pose::BPoser::shown(m, s)).unwrap_or_default();
-    let at = (frame, posed.frame, super::edit::BSceneEdit::now(s).fingerprint() ^ super::transform::BTransforms::fingerprint(s).rotate_left(17));
+    let at = (frame, posed.frame, super::edit::BSceneEdit::now(s).fingerprint() ^ super::transform::BTransforms::fingerprint(s).rotate_left(17) ^ super::shadow::BObjectShadowList::fingerprint(s).rotate_left(41));
     if let Some(hit) = BUILT.with(|cell| {
         cell.borrow()
             .as_ref()

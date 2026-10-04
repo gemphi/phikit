@@ -12,8 +12,25 @@ pub enum ImageKey {
     /// `sima->xof / yof`: the view's offset from the image centre, in pixels.
     PanX,
     PanY,
-    /// `iuser->slot` as shown: `Slot 1` … `Slot 8`.
+    /// `iuser->slot` as shown: `Slot 1` … `Slot 8` (`scene::render_slot`).
     Slot,
+    /// `image.cycle_render_slot`'s intent: `next` or `previous`, taken by
+    /// the rule and cleared.
+    SlotCycle,
+    /// `sima->image`: the image shown by name (`scene::image_list`); empty
+    /// or absent is the Render Result.
+    Shown,
+    /// An Image-menu operator's intent over the shown image
+    /// (`BPixelOp::of_slug`, or `reload`), taken by the rule and cleared.
+    Op,
+    /// `image.render_border` armed: the next drag over the picture is the
+    /// render region; `BorderRect` is the box while it is dragged
+    /// (`x0,y0,x1,y1`, canvas pixels).
+    BorderArm,
+    BorderRect,
+    /// `image.new`'s dialog fields: `name`, `width`, `height`, `type`,
+    /// `color`, `alpha`, and `commit` (OK).
+    New(&'static str),
     /// `RenderLayer` name, `ViewLayer` by default.
     ViewLayer,
     /// The render pass shown: `Combined` by default.
@@ -35,6 +52,12 @@ impl BKey for ImageKey {
             Self::PanX => return BPath::owned(vec!["image", "pan", "x"]),
             Self::PanY => return BPath::owned(vec!["image", "pan", "y"]),
             Self::Slot => "slot",
+            Self::SlotCycle => "slot_cycle",
+            Self::Shown => "shown",
+            Self::Op => "op",
+            Self::BorderArm => "border_arm",
+            Self::BorderRect => "border_rect",
+            Self::New(field) => return BPath::owned(vec!["image", "new", field]),
             Self::ViewLayer => "view_layer",
             Self::Pass => "pass",
             Self::Channels => "channels",

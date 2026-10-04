@@ -11,7 +11,7 @@ pub mod vendor;
 
 pub use descriptor::{
     BPreferenceControl, BPreferenceMetadata, BStyleChoice, BStyleDescriptor, BStyleParseError,
-    BStyleParser, BStyleValue, UI_STYLE_DESCRIPTORS,
+    BStyleParser, BStyleValue, UI_STYLE_DESCRIPTORS, format_hex, parse_color, parse_hex, parse_hsla,
 };
 pub use palette::{BAccents, BColor, BPalette, BPaletteName, BShadeLadder, BThemeMode, palette_for, palette_in};
 pub use resolver::resolve_ui_style;

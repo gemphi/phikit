@@ -207,9 +207,11 @@ Noise, Limits, Envelope, Stepped); shape-key animation; Grease Pencil.
   wrap, sheen, coat, anisotropy), image textures, normal maps, alpha
   cut-outs; bladed bokeh; Standard, Filmic and AgX with exposure and gamma;
   a guided denoiser; Depth, Normal and Diffuse Color passes.
-- **Cannot yet:** any shader node but the first Principled BSDF (Mix and Add
-  Shader, Emission, Diffuse, Glossy, Glass, Transparent, Volume fold to a
-  flat colour); procedural textures (Noise, Voronoi fold to one colour);
+- **Cannot yet:** a Mix Shader's two closures as two lobes (since batch
+  140 the surface the output is linked to — Mix and Add Shader, Emission,
+  Diffuse, Glossy, Glass, Transparent, Sheen, SSS — folds to one set of
+  Principled parameters; volumes fold to nothing); procedural textures
+  (Noise, Voronoi fold to one colour);
   Bump; Sky Texture; Film Transparent (alpha is always opaque); motion
   blur; volumes; caustics; holdout and shadow catcher; adaptive sampling;
   Mist, AO, Position, Vector, UV, index and light passes; Cryptomatte.
@@ -243,8 +245,8 @@ slower of the two). **Batch 118:** Workbench's TAA — eight jittered
 frames (`BLI_jitter_init`, recentred), the 3 × 3 Blackman-Harris splat
 (`workbench_effect_antialiasing.cc`), ported step for step; Solid and
 Wireframe settle in eight samples, the first the sharp one, bands overlap
-a row so they join (`rendering.md` §25). Still: SMAA on the first frames,
-the counts from the file. **Batch 119:** the object outline
+a row so they join (`rendering.md` §25); SMAA on the first frames and
+the counts: batch 139 (§39). **Batch 119:** the object outline
 (`workbench_effect_outline.cc`) and the curvature effect
 (`workbench_curvature.bsl.hh`) in an `Fx` pass before the gather, the
 settings from the file's `View3DShading` (`rendering.md` §26). **Batch
@@ -262,10 +264,21 @@ Workbench file renders Solid with `Scene.display.shading` (§34). **Batch
 129:** the user's own matcaps from Blender's config folder (§35). **Batch
 130:** the colour attribute through the modifier stack. **Batch 131:** an
 object's Shadow switches — Viewport Display's for Solid, Ray Visibility's
-for the ray-traced modes (§36). **Next:** Depth of
-Field,
-`Scene.display` from the file (`viewport_aa`, `light`, `color_type`);
-then Material Preview on EEVEE's model and the shader nodes (Rendering 6).
+for the ray-traced modes (§36). **Batch 132:** their checkboxes in the
+Properties editor, saved to the file (§37). **Batch 133:** Depth of Field
+through the camera, Workbench's five-shader gather (§38). **Batch 134:**
+the Render menu entire — F11, Ctrl F11, Render Audio…, Lock Interface,
+and F12 on a fresh session. **Batch 135:** the eight render slots. **Batch 136:** images in the Image
+editor — New, Open, Invert, Flip, Rotate, Copy, Reload, Save As. **Batch
+137:** Render Region (Ctrl B, Crop). **Batch 138:** the viewport's own
+render region outside the camera view (View ▸ Render Region), traced
+alone under Rendered shading. **Batch 139:** SMAA on Solid's first
+frames and the anti-aliasing sample count — Preferences ▸ Viewport ▸
+Quality, `render_aa` for a Workbench render (§39). **Batch 140:** the
+surface shader from the Material Output — Mix / Add Shader and the
+closure nodes folded to the Principled parameters, Light Path for a
+camera ray (§40). **Next:** two lobes per hit in the kernel; per-pixel
+Noise / Voronoi and Bump; then Material Preview on EEVEE's model.
 
 ## What to do next, in order
 
@@ -295,8 +308,9 @@ then Material Preview on EEVEE's model and the shader nodes (Rendering 6).
    Color, Background~~ — batch 121; ~~Cavity ▸ World (SSAO)~~ — batch 122;
    ~~Shadow~~ — batch 123; ~~Backface Culling, Specular Lighting~~ —
    batch 124; ~~Attribute colour~~ — batch 125; ~~MatCap~~ — batch 126; ~~Texture colour~~ — batch 127.
-   ~~`Scene.display.shading` for F12~~ — batch 128. Still: SMAA on the
-   first frames, Depth of Field; then Material Preview on EEVEE's model. Medium each.
+   ~~`Scene.display.shading` for F12~~ — batch 128; ~~Depth of Field~~ —
+   batch 133; ~~SMAA on the first frames~~ — batch 139. Then Material Preview on
+   EEVEE's model. Medium each.
 1. ~~The panel's resolution reaches F12 and is saved~~ — batch 97.
 2. ~~The colour-management panel seeded from the file, read by F12 and the
    viewport, and saved~~ — batch 99 (Look is still not read).

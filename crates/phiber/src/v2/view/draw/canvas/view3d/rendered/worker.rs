@@ -164,9 +164,11 @@ fn run(gpu: Gpu, rx: Receiver<BRayJob>, out: Arc<Mutex<Option<BRayFrame>>>, refu
             continue;
         }
         let (Some(t), Some((key, shot))) = (tracer.as_mut(), view) else { continue };
-        let BRayShot { cam, w: full_w, h: full_h, mode, samples, denoise_from } = shot;
+        let BRayShot { cam, w: full_w, h: full_h, mode, samples, aa, denoise_from } = shot;
         let (w, h) = coarse.pixels(full_w, full_h);
+        let cam = phiray::Camera { tile: coarse.tile(cam.tile), ..cam };
         t.set_samples(samples);
+        t.set_aa_samples(aa);
         // Workbench and the tracer are different kernels over the same scene;
         // switching re-records the pass, which is why the mode rides with the
         // view rather than the scene.

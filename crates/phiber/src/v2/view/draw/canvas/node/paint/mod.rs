@@ -182,6 +182,8 @@ pub fn paint(
 }
 
 /// The socket's own dot and label.
+/// The canvas element itself — the one place pixels exist.
+pub mod canvas;
 mod dot;
 
 #[cfg(test)]

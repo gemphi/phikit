@@ -27,6 +27,7 @@ pub mod option;
 pub mod path_bar;
 pub mod preview;
 pub mod purpose;
+pub mod save_image;
 pub mod set;
 pub mod sidebar;
 pub mod table;

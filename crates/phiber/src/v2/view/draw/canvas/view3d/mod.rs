@@ -15,6 +15,7 @@ mod hit;
 mod identity;
 pub mod mesh;
 mod orbit;
+mod render_border;
 mod shown;
 mod xform;
 pub mod rendered;
@@ -124,12 +125,18 @@ impl BView3d<'_> {
             view: crate::v2::scene::pick::BPickView { yaw, pitch, pan, zoom, setup, aspect: setup.aspect },
             bounds: Rc::clone(&bounds),
         };
-        element = element.child(BOrbit { leave }.render(ctx, hit));
+        element = element.child(BOrbit { leave, frame: through.as_ref().map(|view| view.frame) }.render(ctx, hit));
         // Every projection below runs through this frame's camera.
         crate::v2::scene::camera::with_view(setup, || {
         let guide = self::guide::BGuide::build(ctx, (yaw, pitch, pan, zoom), setup, pivot, &palette, &scene, &extras);
         let studio = self::draw::studio(palette.shading);
         let self::draw::BPlan { ray, cpu_draws, mode } = self::draw::plan(palette.shading, &scene, &palette);
+        // The viewport's own render region, outside the camera view: what
+        // the Rendered shading fills (`ED_view3d_calc_render_border`) and
+        // the dashed box drawn over the region (`view3d_draw_border`).
+        let own_border = through.is_none().then(|| crate::v2::scene::view_border::BViewBorder::now(ctx.state)).filter(|b| b.on);
+        let engine = ctx.state.get(crate::v2::state::ButsKey::Value("engine")).unwrap_or("");
+        let filled = own_border.and_then(|_| crate::v2::scene::view_border::BViewBorder::filled_by(ctx.state, engine)).filter(|_| !studio);
         let ray_view = self::rendered::BRayView::of(
             (yaw, pitch, pan, zoom),
             setup,
@@ -137,8 +144,10 @@ impl BView3d<'_> {
             to_hsla(grid.color),
             studio,
             mode,
+            self::frame::dof_words(ctx.state, through.as_ref()),
             ctx,
-        );
+        )
+        .bordered(filled);
         // Projecting every vertex is the most expensive thing a frame does
         // and depends only on the camera, the palette and the scene, so
         // `cache` memoises it.
@@ -161,10 +170,13 @@ impl BView3d<'_> {
         // so arrival order stops mattering (`mesh::raster`).
         let outline_width = ctx.style.strokes.border * 2.0;
         let wire = palette.shading == crate::v2::scene::BShading::Wireframe;
+        let region = crate::v2::scene::source::with_loaded(|m| m.map(|m| m.render.border).unwrap_or_default());
+        let region = crate::v2::scene::render_border::BRenderBorder::now(ctx.state, region);
         let frame_palette = self::frame::BFramePalette {
             passepartout: to_hsla(ctx.style.camera_passepartout()),
             back: to_hsla(ctx.style.viewport_surface()),
             overlay: to_hsla(ctx.style.view_overlay()),
+            region: region.on.then_some(region.rect),
         };
         let corners = super::surface::corners(ctx);
         let seen = Rc::clone(&bounds);
@@ -189,6 +201,8 @@ impl BView3d<'_> {
                     guide.paint_over(bounds, outline_width * 0.5, window);
                     if let Some(view) = &through {
                         self::frame::paint(bounds, view, frame_palette, window);
+                    } else if let Some(own) = own_border {
+                        self::frame::paint_region(bounds, own.rect, frame_palette.back, window);
                     }
                     gestures.paint(bounds, window);
                 },

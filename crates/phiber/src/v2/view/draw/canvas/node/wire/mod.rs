@@ -15,6 +15,7 @@
 //! window uses (`canvas/time/gesture.rs`).
 
 use super::link::{self, BLinkEnd, BLinking};
+use super::select;
 use super::pick;
 use super::socket::BSocketSide;
 use super::super::super::ctx::{BActionHandler, BRenderCtx};
@@ -26,10 +27,6 @@ use gpui::{App, Bounds, Pixels, Point, Window};
 use std::cell::Cell;
 use std::rc::Rc;
 
-/// phiber's canvas has no zoom, so the hit-test's scale is 1. Named rather than
-/// spelled inline so the day the canvas zooms there is one place to change.
-const SCALE: f32 = 1.0;
-
 /// One render's worth of link gesturing.
 pub struct BWire {
     pub graph: BlendNodeGraph,
@@ -39,18 +36,24 @@ pub struct BWire {
     pub placed: Vec<(String, (f32, f32))>,
     pub edits: link::BLinkEdits,
     pub drag: Option<BLinking>,
+    pub selection: select::BNodeSelection,
+    /// Where a box select began, in canvas fractions — `None` when no box is
+    /// being swept.
+    pub box_from: Option<(f32, f32)>,
     pub handler: BActionHandler,
     pub host: BHostType,
     pub bounds: Rc<Cell<Option<Bounds<Pixels>>>>,
-    pub header: f32,
-    pub unit: f32,
-    pub card_width: f32,
+    /// A card's size in view units (`plan::BCardSize`).
+    pub size: super::plan::BCardSize,
+    /// What this editor is looking at — the framing every fraction here is
+    /// measured against, and what a pan or a zoom rewrites.
+    pub view: super::view::BNodeView,
 }
 
 impl BWire {
     /// The cursor in canvas pixels, and the canvas's size — `None` before the
     /// first paint, or outside it.
-    fn locate(&self, at: Point<Pixels>) -> Option<((f32, f32), (f32, f32))> {
+    pub(super) fn locate(&self, at: Point<Pixels>) -> Option<((f32, f32), (f32, f32))> {
         let bounds = self.bounds.get()?;
         let (w, h) = (f32::from(bounds.size.width), f32::from(bounds.size.height));
         if w <= 0.0 || h <= 0.0 {
@@ -62,21 +65,31 @@ impl BWire {
     }
 
     /// The cards as the painter has them, so the hit-test and the picture agree.
-    fn cards(&self, size: (f32, f32)) -> Vec<super::paint::BNodeCard> {
+    pub(super) fn cards(&self, region: (f32, f32)) -> Vec<super::paint::BNodeCard> {
         super::plan::plan(
             &self.graph,
             &self.wired,
             &self.placed,
-            size.0,
-            size.1,
-            self.header,
-            self.unit,
-            self.card_width,
+            region.0,
+            region.1,
+            self.size,
+            &self.view,
         )
         .0
     }
 
-    fn write(&self, key: NodeKey, value: String, window: &mut Window, app: &mut App) {
+    /// The hit-test's `view2d_scale` — a real number now.
+    ///
+    /// `node_find_indicated_socket` divides twenty screen pixels by this to get
+    /// the grab slack in view units, so that the area under the pointer stays
+    /// the same size however far you have zoomed. It was pinned at 1 while the
+    /// canvas could not zoom; the whole point of that note was that one line
+    /// would change, and this is the line.
+    pub(super) fn scale(&self, region: (f32, f32)) -> f32 {
+        self.view.zoom(region.0)
+    }
+
+    pub(super) fn write(&self, key: NodeKey, value: String, window: &mut Window, app: &mut App) {
         // `Adjust`, not `Set`: a gesture writes continuously, and a committed
         // `Set` would take every open overlay down on the first pixel.
         (self.handler)(&BAction::Adjust(key.path(), value), window, app);
@@ -91,15 +104,23 @@ impl BWire {
     pub fn down(&self, event: &gpui::MouseDownEvent, window: &mut Window, app: &mut App) {
         let Some((cursor, size)) = self.locate(event.position) else { return };
         let cards = self.cards(size);
-        let found = pick::socket_at(&cards, cursor, Some(BSocketSide::Output), SCALE)
+        let scale = self.scale(size);
+        let found = pick::socket_at(&cards, cursor, Some(BSocketSide::Output), scale)
             .map(|hit| (hit, true))
             .or_else(|| {
-                pick::socket_at(&cards, cursor, Some(BSocketSide::Input), SCALE)
+                pick::socket_at(&cards, cursor, Some(BSocketSide::Input), scale)
                     .map(|hit| (hit, false))
             });
-        // No socket: the press belongs to whatever is under it — a card's own
-        // click handler selects it, and the canvas keeps out of the way.
-        let Some(((index, row), output)) = found else { return };
+        // No socket: the press is a selection, or the start of a box.
+        //
+        // `node_box_select_invoke` is bound to CLICK_DRAG with
+        // `tweak=True`, and returns `OPERATOR_PASS_THROUGH` when the event is
+        // over a node or a socket — which is how one drag means three things
+        // in Blender: a link off a socket, a move off a card, a box off the
+        // canvas. The same three-way split, in the same order.
+        let Some(((index, row), output)) = found else {
+            return self.press_on_canvas(cursor, size, event, window, app);
+        };
         let Some(node) = cards
             .get(index)
             .and_then(|card| self.graph.nodes.iter().find(|n| n.name == card.name))
@@ -131,10 +152,13 @@ impl BWire {
     /// The release: commit if it landed on a socket, and clear the drag either
     /// way — a carried link never outlives the button.
     pub fn up(&self, at: Point<Pixels>, window: &mut Window, app: &mut App) {
+        if self.drag.is_none() {
+            return self.release_on_canvas(at, window, app);
+        }
         let Some(drag) = &self.drag else { return };
         let target = self.locate(at).and_then(|(cursor, size)| {
             let cards = self.cards(size);
-            let (index, row) = pick::socket_at(&cards, cursor, Some(drag.wants()), SCALE)?;
+            let (index, row) = pick::socket_at(&cards, cursor, Some(drag.wants()), self.scale(size))?;
             Some(BLinkEnd::new(&cards.get(index)?.name, &row.identifier))
         });
         if let Some(next) =
@@ -167,12 +191,49 @@ pub fn listen(canvas: gpui::Div, wire: Option<Rc<BWire>>, _ctx: &BRenderCtx) -> 
         .on_mouse_up_out(MouseButton::Left, move |event: &gpui::MouseUpEvent, window, app| {
             out.up(event.position, window, app)
         })
-        .when(carrying, |element| {
+        // The `View2D` keymap: the middle button pans, the wheel zooms about the
+        // cursor. Both are the canvas's, not a card's — a pan started over a
+        // node is still a pan, which is why these sit beside the link handlers
+        // rather than on the cards.
+        .on_mouse_down(MouseButton::Middle, {
+            let wire = Rc::clone(&wire);
+            move |event: &gpui::MouseDownEvent, _window, _app| wire.pan_start(event.position)
+        })
+        .on_mouse_up(MouseButton::Middle, {
+            let wire = Rc::clone(&wire);
+            move |_event: &gpui::MouseUpEvent, _window, _app| wire.pan_end()
+        })
+        // Released off the canvas: still a release, or the pan would resume on
+        // the next move over it.
+        .on_mouse_up_out(MouseButton::Middle, {
+            let wire = Rc::clone(&wire);
+            move |_event: &gpui::MouseUpEvent, _window, _app| wire.pan_end()
+        })
+        .on_scroll_wheel({
+            let wire = Rc::clone(&wire);
+            move |event: &gpui::ScrollWheelEvent, window, app| wire.zoom(event, window, app)
+        })
+        .when(carrying || BWire::panning(), |element| {
+            let wire = Rc::clone(&wire);
             element.on_mouse_move(move |event: &gpui::MouseMoveEvent, window, app| {
-                moved.moved(event.position, window, app)
+                // One move handler for both gestures: a carried link follows the
+                // cursor, a pan carries the view. They cannot both be in flight
+                // — a pan takes the middle button and a link the left.
+                wire.pan_move(event.position, window, app);
+                moved.moved(event.position, window, app);
             })
         })
 }
+
+pub use build::{BFrame, for_frame};
+
+/// Selecting cards and sweeping a box — the half of the gesture that is not
+/// about links.
+mod choose;
+/// Assembling one frame's gesture state from what the renderer already has.
+mod build;
+/// Panning and zooming — the `View2D` keymap.
+mod frame;
 
 #[cfg(test)]
 mod tests;

@@ -130,8 +130,18 @@ fn filter_popover(s: &BState) -> BView {
 /// `filter_search` does (`host.searches_in_tool_header()`).
 /// The directory and the search — the strip's centre, starting where the
 /// file list does; the folder moves are the column before it (`nav`).
-pub fn view(host: crate::v2::host::BHostType, s: &BState) -> BView {
-    BView::row(vec![directory_field(s), crate::v2::part::search::BSearch::new(host).build(s)])
+pub struct BPathBar(crate::v2::host::BHostType);
+
+impl BPathBar {
+    pub const fn new(host: crate::v2::host::BHostType) -> Self {
+        Self(host)
+    }
+}
+
+impl BViewItem for BPathBar {
+    fn build(&self, s: &BState) -> BView {
+        BView::row(vec![directory_field(s), crate::v2::part::search::BSearch::new(self.0).build(s)])
+    }
 }
 
 /// The header's right-hand icons: the display-mode radio. The `Filter` part
@@ -143,6 +153,16 @@ pub fn header_icons(s: &BState) -> BView {
 /// The path strip's right-hand icons: the hidden-files eye, the filter
 /// toggle and its settings popover (`FILEBROWSER_PT_filter`). The
 /// `TypeFilter` part, in the tool header's Right pane.
-pub fn type_filter(s: &BState) -> BView {
-    BView::row(vec![hidden_toggle(s), filter_toggle(s), filter_popover(s)])
+pub struct BTypeFilter;
+
+impl BTypeFilter {
+    pub const fn new(_host: crate::v2::host::BHostType) -> Self {
+        Self
+    }
+}
+
+impl BViewItem for BTypeFilter {
+    fn build(&self, s: &BState) -> BView {
+        BView::row(vec![hidden_toggle(s), filter_toggle(s), filter_popover(s)])
+    }
 }

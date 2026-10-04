@@ -62,6 +62,20 @@ impl BPhiberApp {
                     super::close::tag_saved(&mut self.state);
                 }
             }
+            BFilePurpose::OpenImage => {
+                self.state.remove(&FileKey::Purpose.path());
+                match crate::v2::scene::image_list::BImage::open(std::path::Path::new(path)) {
+                    Ok(image) => {
+                        let name = crate::v2::scene::image_list::BImageList::add(image);
+                        self.state.set(crate::v2::state::ImageKey::Shown, name);
+                    }
+                    Err(why) => info::push(&mut self.state, BReportLevel::Error, format!("Cannot open image: {why}")),
+                }
+            }
+            BFilePurpose::Mixdown => {
+                self.state.remove(&FileKey::Purpose.path());
+                self.mixdown_to(path);
+            }
             BFilePurpose::Link | BFilePurpose::Append => {
                 self.state.remove(&FileKey::Purpose.path());
                 let text = format!("{}: not available yet", purpose.title());

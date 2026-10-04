@@ -10,6 +10,48 @@
 //! Record a new golden (only when a layout change is intended):
 //!     UPDATE_LAYOUT_GOLDEN=1 cargo test -p phiber --test layout_fingerprint
 //!
+//! Re-recorded for the node editor. 74 golden lines no longer hold and **0 are
+//! new** — the asymmetry is the whole account: elements were removed and none
+//! appeared.
+//!
+//! The Shader/Node canvas used to draw two hardcoded cards, "Principled BSDF"
+//! and "Material Output", at two hardcoded fractions, with a hardcoded link
+//! between them — the same three elements for every file, including no file at
+//! all. It draws the material's real node tree now (`phiphx`'s `shade/graph.rs`
+//! reads `bNodeTree.nodes` and `.links`), and every scenario in this golden
+//! loads no file, so there is no tree and the canvas correctly paints nothing
+//! over its grid.
+//!
+//! The 74 are those three mock elements and their text, across the scenarios
+//! that show a node editor. The canvas, its grid and every surrounding region
+//! are untouched: no geometry moved, nothing was re-coloured, and nothing that
+//! belongs to a real graph has appeared because no scenario here has one.
+//!
+//! Re-recorded for the vertical strips. 48 golden lines no longer hold and 418
+//! are new; every one of them is one of two things, and the two are the same
+//! change seen from both sides.
+//!
+//! - The 48 are the strip backgrounds, one per space and per modal at both
+//!   window sizes. Their fill moved from `l: 0.91078` to `l: 0.89294` — off
+//!   `step(body, -1)` and onto the body itself. Blender paints a nav bar in
+//!   `TH_BACK`, the same colour as the region beside it
+//!   (`region_background_color_id`, `editors/screen/area.cc:3012`, which
+//!   returns `TH_BACK` for everything that is not a header or a preview). No
+//!   geometry moved: same origins, same sizes, fill only.
+//! - The 418 are resting tab chips, which did not exist before. A rail entry
+//!   at rest painted nothing and showed the strip through; with the strip now
+//!   level with the panel, an unpainted tab would be invisible, so each one
+//!   paints `rail_tab_resting` — and that lands at `l: 0.91078`, which is
+//!   exactly the shade the strip used to be. The two colours swapped roles,
+//!   which is the whole of this change: Blender's `wcol_tab` has
+//!   `inner = 0x1d1d1d` against a `back` of `0x303030`, so the chip is the
+//!   recessed one and the strip is not.
+//!
+//! Nothing else moved. No element appeared or vanished from the tagged set —
+//! the new lines are all `*-background` paint layers of entries that were
+//! already there, and the Profile column's card, which is the same container
+//! every other secondary activity column already had.
+//!
 //! Re-recorded for the header rule and the nested-accordion flattening. The
 //! drift was read element by element before it was absorbed: 15134 tagged
 //! elements in, 15134 out — nothing appeared and nothing vanished — and every
@@ -215,6 +257,173 @@
 //! a text field with a hand-built "Decrease" and "Increase" either side, and
 //! `BCtrlKind::Number` is a field with a real step on each side. The new parts
 //! are the controls the Properties host has had all along.
+//!
+//! And again for two controls that were drawn but not painted: 128 lines moved,
+//! 293 arrived, nothing vanished and no existing quad changed. Both changes are
+//! a control that had been asking for a treatment it never got, and between
+//! them they account for every line:
+//!
+//! - the X-ray button has an asset (`assets/icons/xray.svg`). `icon_coverage`
+//!   was naming it as the one icon the UI asks for and cannot draw, and an icon
+//!   button with no asset paints nothing and registers no bounds — so the button
+//!   was in the View3D header, clickable, invisible. It appears in all 38
+//!   captures now (19 × 2 sizes), and the 128 moves are the room it takes: one
+//!   button, 30px and a 4px gap, so every move is exactly ±34 and in the
+//!   direction its row's justification implies. In the 31 captures whose header
+//!   is pinned to the shading group, Gizmos and Overlays slide 34 left (62) and
+//!   the shading radio does not move; in the 7 that flow from the left, the four
+//!   shading buttons slide 34 right (28) and Gizmos and Overlays do not move;
+//!   and `pane-Right-View3D` is 34 wider in all 38, growing leftward in the 31
+//!   and rightward in the 7 (38). 62 + 28 + 38 = 128;
+//! - a zone toggle paints its state (`view/draw/toggle.rs` through
+//!   `chrome::paint`). 96 of the 127 new quads are the 96 zone-toggle buttons in
+//!   the capture, one each, exactly at their bounds: a shown zone's toggle rested
+//!   on no fill at all before, so the only thing separating it from a hidden
+//!   one was the brightness of a 16px glyph.
+//!
+//! The remaining 31 quads are the Gizmos button's own fill at its new x, in the
+//! 31 captures where it moved. Nothing went away because nothing was vacated:
+//! each position a button left was taken by the next button along, painting the
+//! same fill, so those lines are identical and only Gizmos' new home is new.
+//!
+//! And once more for a Preferences control showing its own default: 168 lines
+//! left, 168 arrived, all of them in `modal:settings`, 84 at each size — nothing
+//! moved, no quad changed, and no element appeared or vanished. The changed lines
+//! are number steppers, and what changed is the value each one steps TO, which
+//! the selector carries: `dimensions.activity_width-0-chevron_left` and `-1-`
+//! became `-63-` and `-65-`. `BCtrl::read`'s fallback had been shaped by the
+//! control's type rather than the preference — `Float(min)` for a number,
+//! `Text("")` for a colour — so an unset width sat at 0 and offered to step to 0
+//! and 1, where its declared default is 64. It steps around 64 now
+//! (`part/props/pref/control/mod.rs`). The geometry is identical because nothing
+//! about the layout changed: only what the controls were saying.
+//!
+//! And for a muted control being faded rather than recoloured: 240 quads left,
+//! 240 arrived, every one of them at the same position with the same hue,
+//! saturation and lightness, and nothing else in the capture touched — no
+//! selector moved, appeared or vanished. The only difference is alpha, 0.5 to
+//! 0.25, which is `control_rest_alpha` times the new `control_muted_alpha`: six
+//! controls per capture across all 40 are there but not in force, and their
+//! resting ground now fades with the rest of them. "Off" and "not available" had
+//! been one look — `button.rs` passed `active && !muted`, dropping the fill, and
+//! swapped the ink for `text_dim`, which is what an inactive tab's label takes.
+//!
+//! And for the font chooser becoming openable: 4 lines left, 8 arrived, all in
+//! `modal:settings`, which opens on Typography — and that section's one row is
+//! `typography.family`. The chooser had its eight families attached all along but
+//! no `open_key`, and a `Select` with nowhere to record open-ness renders as a
+//! label-only button with no action, which is why it had no selector of its own to
+//! appear in a capture. It is an anchor now
+//! (`btn-label-toggle-ctx.prefs.open.typography.family-text`, 2 appeared), the
+//! reset beside it narrowed to make room (2 moved), and the two of them paint two
+//! fills where there was one (2 quads became 4). Nothing vanished. The colour
+//! swatches are not in this drift because this capture shows Typography, not
+//! Appearance.
+//!
+//! And for the alternating row being Blender's: 212 quads left, 206 arrived, no
+//! selector moved, vanished or appeared. 120 go 91.08 → 89.29 and 6 stop recording a
+//! fill at all — those are the rows I had banded off the body, returning to the plain
+//! background, because Blender paints every OTHER row and leaves the rest alone. The
+//! other 86 go 87.51 → 87.89: the banded rows moving from a fixed ladder rung to the
+//! body blended 4/255 toward the readable extreme, which is `row_alternate =
+//! RGBA(0xffffff04)` through `immUniformThemeColorBlend(TH_BACK, TH_ROW_ALTERNATE,
+//! …)` in Blender 5.2.0. 1.78 points became 1.40, against Blender's own 1.33.
+//!
+//! Re-recorded for the Properties tab strip, which was reading inside out. An
+//! unselected tab drew a darker chip and the selected tab drew nothing, so the
+//! chips were the loudest thing in the editor and the selection — the thing the
+//! chips exist to point at — was the one tab with no mark on it. The step that
+//! chip used now belongs to the editor's body (`host_body_surface` for
+//! `BHostType::Buts`), so the strip is flat, a resting tab is strip, and the
+//! selected tab carries the body's shade and sinks into the panel it opens.
+//!
+//! 454 golden lines no longer hold and 84 are new. Every one is accounted for:
+//!
+//! - **370 removed outright** — every resting tab's chip: 328 at 76x60 and 42
+//!   at 60x60, across every space, every modal and both window sizes. Nothing
+//!   replaces them, which is the point: a resting tab now paints nothing.
+//! - **84 changed fill and nothing else** — same origin, same size, every one
+//!   `l: 0.89294` → `l: 0.91078`, which is the one ladder step moving from the
+//!   chip to the body. 42 are the Properties body quad (560 wide, four heights
+//!   across the scenarios) and 42 are the selected tab (76x60), which take the
+//!   same shade because they read the same token and are meant to be one
+//!   surface.
+//!
+//! No geometry moved anywhere: not one origin, size or clip differs, and the
+//! only quads that changed are the strip's own and the body it opens onto.
+//!
+//! Re-recorded again, for square icon buttons. An icon-only button's height was
+//! always `button_height`; its WIDTH was its horizontal padding twice plus an
+//! icon, and that padding differs inside a strip and out (`pad_md` against
+//! `pad_sm`). So one transport button came out one width in the Timeline's
+//! header and another in a panel, and no two icon rails agreed on how wide an
+//! icon is. Blender has no such drift — `UI_UNIT_X` and `UI_UNIT_Y` are both
+//! `U.widget_unit`, so an icon button is a unit square by construction — and it
+//! is decided in one place here now (`view/draw/button.rs`).
+//!
+//! 4371 golden lines no longer hold and 4392 are new, and the shape of that is
+//! the account:
+//!
+//! - **Not one colour changed.** Every `l:` and every `hsla(...)` in the lines
+//!   that left appears in the lines that arrived and the reverse. This is a
+//!   pure geometry re-record; nothing was re-shaded, re-themed or re-inked.
+//! - **Not one height changed.** The quads that moved are 52 and 60 tall before
+//!   and after, in the same counts. Only widths and origins differ.
+//! - **1298 quads went from 60x52 to 52x52** — the icon buttons themselves,
+//!   square now (52 is `button_height` at the golden's 2x capture scale).
+//! - **502 went from 52x52 to 28x52** — the padding box inside each of those,
+//!   collapsing onto the icon's own slot now that the square owns the width.
+//! - **Everything else is downstream shift.** A row holding a button that lost
+//!   8px re-measures (162x60 → 170x60 and so on) and every sibling after it on
+//!   that row moves by the same amount. That is why the count is four thousand
+//!   and not two thousand: one width change per button, and one re-measure for
+//!   every element sharing its row.
+//!
+//! The net is +21 quads, which is the rows that now fit one more element
+//! without clipping it away.
+//!
+//! Re-recorded for the strip's pitch. The Properties icons are meant to line up
+//! with the headings they open, row for row, and two of the three things that
+//! needs were already true: `rail_lead` puts the first icon's top on the first
+//! heading's top, and a rail entry is drawn at `card_head_height`, a panel
+//! heading's own height. The third was not — the strip stepped by
+//! `menu_top_gap` (2) and the region beside it by `gap_xs` (4), so the columns
+//! started level and drifted two pixels a row. Invisible at the first icon,
+//! most of a row out by the ninth.
+//!
+//! 480 golden lines no longer hold and 480 are new — the same count, and the
+//! account is that they are the same elements:
+//!
+//! - the multiset of (scenario, x, width, height) is **identical** on both
+//!   sides, so nothing changed size, nothing changed column, and nothing
+//!   appeared or vanished;
+//! - **not one colour changed**, by the same check as the two re-records above;
+//! - only `y` origins differ, and every difference is a multiple of the gap's
+//!   own change. Fourteen x columns are touched, which is the rails across the
+//!   spaces and modals at both window sizes.
+//!
+//! Re-recorded for one control height and one heading height
+//! (`tests/a_row_is_one_height.rs` carries the reasoning). Two numbers moved
+//! and everything in the window is measured from them, so this is the largest
+//! re-record in the file's history: 21143 golden lines no longer hold and 20766
+//! are new. The account is that it is two numbers:
+//!
+//! - **a control went from 26 to 32** — the module less its room, rather than a
+//!   size of its own. In the golden's 2x capture that is every `…x52.00`
+//!   becoming `…x64.00`: 3324 out, and 64 is the commonest height arriving.
+//! - **a row and a heading went from 30 to 36** — the module itself, so a
+//!   card's heading, a row of controls and the bar above them are one height.
+//!   That is `…x60.00` becoming `…x72.00`: 2617 out.
+//!
+//! Everything else is those two cascading. A row that grew six pixels moves
+//! every row under it; a panel whose headings each grew six is taller, so the
+//! column it sits in reflows. The line count falls by 377 because taller rows
+//! fit fewer of them in a fixed-height region before it clips.
+//!
+//! **Not one colour changed.** Every `l:` and every `hsla(...)` in the lines
+//! that left appears in the lines that arrived, and the reverse — checked the
+//! same way as the three re-records above. Nothing was re-shaded, re-themed or
+//! re-inked; this is geometry only, and two constants' worth of it.
 
 use phiber::v2::state::{CtxKey, ModalKey};
 use gpui::{TestAppContext, px, size};

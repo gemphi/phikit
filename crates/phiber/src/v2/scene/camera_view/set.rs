@@ -28,6 +28,8 @@ pub struct BCameraView {
     /// The canvas zoom showing the region's width at the pivot.
     pub zoom: f32,
     pub frame: BCameraFrame,
+    /// What Workbench's Depth of Field reads off the camera (`BSolidFx::dof_words`).
+    pub lens: crate::v2::scene::BCameraLens,
 }
 
 impl BCameraView {
@@ -56,7 +58,7 @@ impl BCameraView {
         let frame = BCameraFrame::of(region, render, camzoom.unwrap_or_else(|| BCameraFrame::fitted_camzoom(region, render)));
         // The region shows the frame and the passepartout around it.
         let region_width = frame_width * region.0 / frame.width().max(1.0);
-        Self { yaw, pitch, pivot, perspective, fov: region_width / PIVOT_AHEAD, zoom: zoom_for(region_width), frame }
+        Self { yaw, pitch, pivot, perspective, fov: region_width / PIVOT_AHEAD, zoom: zoom_for(region_width), frame, lens: crate::v2::scene::BCameraLens::of(cam) }
     }
 
     /// Orbiting out of the camera view (`ED_view3d_persp_switch_from_camera`):
@@ -110,6 +112,8 @@ mod tests {
         assert!((view.fov * PIVOT_AHEAD - 2.0 * 10.0 * 36.0 / 50.0).abs() < 1e-3, "{view:?}");
         assert!(view.perspective);
         assert!((view.frame.width() - 500.0).abs() < 1e-3);
+        let lens = view.lens;
+        assert!(!lens.on && (lens.lens - 0.05).abs() < 1e-6 && (lens.sensor - 0.036).abs() < 1e-6 && lens.fstop == 2.8 && lens.focus == 10.0 && lens.clip_end == 100.0, "{lens:?}");
     }
 
     #[test]

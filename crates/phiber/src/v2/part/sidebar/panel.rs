@@ -10,7 +10,7 @@ use crate::v2::part::props::{BPanelItem, BSectionSpec};
 use crate::v2::scene::camera::view_lens;
 use crate::v2::scene::view_slot::BViewSlot;
 use crate::v2::state::val::BValue;
-use crate::v2::state::{BState, CtxKey, View3dKey};
+use crate::v2::state::{BKey as _, BState, CtxKey, View3dKey};
 use crate::v2::view::prim::{BCard, BCtrl, BCtrlKind, with_peers};
 use crate::v2::view::{BView, BViewItem};
 
@@ -106,7 +106,9 @@ impl BSidebarPanels {
         )
     }
 
-    /// `VIEW3D_PT_view`: Focal Length, the area's own `View3D.lens`.
+    /// `VIEW3D_PT_view`: Focal Length, the area's own `View3D.lens`, and
+    /// Render Region (`use_render_border`, the view's own region outside
+    /// the camera view — `scene::view_border`).
     fn view_card(&self, tab: &'static str, s: &BState) -> BView {
         let key = BPanelItem::expand_key(self.host, tab, "View");
         let open = BPanelItem::is_open(s, &key, false);
@@ -116,7 +118,17 @@ impl BSidebarPanels {
             BValue::Float(view_lens(s)),
             s,
         );
-        let body = if open { vec![BView::split(vec![BView::label("Focal Length"), BView::ctrl(lens)])] } else { Vec::new() };
+        let border = BCtrl::read(
+            BCtrlKind::Check,
+            View3dKey::BorderUse.path(),
+            BValue::Bool(crate::v2::scene::view_border::BViewBorder::now(s).on),
+            s,
+        );
+        let body = if open {
+            vec![BView::split(vec![BView::label("Focal Length"), BView::ctrl(lens)]), BView::split(vec![BView::label("Render Region"), BView::ctrl(border)])]
+        } else {
+            Vec::new()
+        };
         BCard::panel("View").fold(key, open).body(body).into()
     }
 }

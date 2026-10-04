@@ -13,6 +13,7 @@ pub mod help;
 pub mod profile;
 pub mod progress;
 pub mod reader;
+pub mod new_image;
 pub mod rename;
 pub mod render;
 pub mod setting;
@@ -61,6 +62,8 @@ pub enum BModalType {
     FileClose,
     /// "Revert to the Saved File" (`wm.revert_mainfile`'s confirm).
     Revert,
+    /// `image.new`'s dialog (`image_new_draw`).
+    NewImage,
 }
 
 impl BModalType {
@@ -80,6 +83,7 @@ impl BModalType {
         Self::Rename,
         Self::FileClose,
         Self::Revert,
+        Self::NewImage,
     ];
 
     pub fn slug(self) -> &'static str {
@@ -99,6 +103,7 @@ impl BModalType {
             Self::Rename => "rename",
             Self::FileClose => "file_close",
             Self::Revert => "revert",
+            Self::NewImage => "new_image",
         }
     }
 
@@ -220,6 +225,7 @@ impl BViewItem for BModalItem {
             BModalType::FileClose => file_close::BFileCloseModal.build(s),
             BModalType::Revert => revert::BRevertModal.build(s),
             BModalType::Collab => collab::BCollabModal.build(s),
+            BModalType::NewImage => new_image::BNewImageModal.build(s),
         };
         BView::Modal {
             kind: self.modal,

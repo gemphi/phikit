@@ -6,6 +6,7 @@
 //! them in `BHostType` order. Widget content lives in `part::`.
 
 pub mod header;
+pub mod kind;
 pub mod set;
 pub mod action;
 pub mod activity;
@@ -268,6 +269,36 @@ impl BHostType {
 
 
 // `BHostSpec` — one editor host with its regions inline.
+
+/// What every host is: a kind, a slug, a spec and a set of regions.
+///
+/// `structure.md` has declared a `BHost` trait since the tree was laid out and
+/// `host/host.rs` was never written. Twenty-seven folders each carried a
+/// `pub const SLUG` and a `pub static SPEC` by convention, with an exhaustive
+/// match in `host/set.rs` as the only thing holding the shape — which it does
+/// well for the two things it matches on and not at all for anything else.
+///
+/// Each host is a zero-sized type in `host/kind.rs` implementing this. The type
+/// exists because a trait needs one: a host is a MODULE, and a module cannot
+/// implement anything. What that buys is a compiler-checked shape — the macro
+/// that writes these fails if a folder is missing its slug, its spec or its
+/// regions — and one list naming every host beside its module.
+///
+/// It does NOT remove the matches in `set.rs`. Rust cannot turn a runtime
+/// `BHostType` into a type's associated items, so something has to map one to
+/// the other, and a match is the honest way to write that map. The same is true
+/// of the `matches!` predicates on `BHostType`: they stay central lists, and a
+/// default method on this trait could not dispatch from a runtime value either.
+pub trait BHost {
+    /// The variant this host answers to.
+    const KIND: BHostType;
+    /// Its key inside a `BPath`.
+    const SLUG: &'static str;
+    /// Its label, icon and regions.
+    fn spec() -> &'static BHostSpec;
+    /// The regions it lays out.
+    fn regions() -> &'static [BRegionSpec];
+}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BHostSpec {

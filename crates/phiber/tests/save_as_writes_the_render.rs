@@ -48,7 +48,7 @@ fn a_plan(samples: u32) -> BRenderPlan {
         display_size: 1.0,
         dof: Default::default(),
     };
-    BRenderPlan { camera: camera_of(&cam, 16, 16), w: 16, h: 16, samples, denoise: false, look: BStillLook::new(BShading::Rendered, gpui::hsla(0.0, 0.0, 0.5, 1.0)) }
+    BRenderPlan { camera: camera_of(&cam, 16, 16), w: 16, h: 16, samples, denoise: false, look: BStillLook::new(BShading::Rendered, gpui::hsla(0.0, 0.0, 0.5, 1.0)), region: Default::default() }
 }
 
 /// Wait for the job to go idle, so the next `start` is not refused.

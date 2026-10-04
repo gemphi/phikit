@@ -45,6 +45,10 @@ pub enum AppKey {
     /// The render device picked in Preferences ▸ System: a GPU's name, or
     /// empty for Auto (`part::pref::device`).
     Gpu,
+    /// Preferences ▸ Viewport ▸ Quality ▸ Viewport Anti-Aliasing
+    /// (`U.viewport_aa`): `OFF`, `FXAA` or a sample count
+    /// (`scene::viewport_aa`); unset is Blender's 8.
+    ViewportAa,
 }
 
 impl BKey for AppKey {
@@ -68,6 +72,7 @@ impl BKey for AppKey {
             Self::CollabPeer(n) => BPath::owned(vec!["collab", "peer", n]),
             Self::CollabChannel(n) => BPath::owned(vec!["collab", "channel", n]),
             Self::Gpu => BPath::owned(vec!["gpu"]),
+            Self::ViewportAa => BPath::owned(vec!["pref", "viewport_aa"]),
         }
     }
 }

@@ -31,7 +31,7 @@ impl BStyleParser {
                 "false" => Ok(BStyleValue::Bool(false)),
                 _ => Err(BStyleParseError::Malformed),
             },
-            Self::ColorHsla => parse_hsla(raw).map(BStyleValue::Color),
+            Self::ColorHsla => parse_color(raw).map(BStyleValue::Color),
             Self::Shadow => BShadowStyle::from_slug(raw)
                 .map(BStyleValue::Shadow)
                 .ok_or(BStyleParseError::Malformed),
@@ -42,9 +42,40 @@ impl BStyleParser {
     }
 }
 
+/// A colour in either spelling it has: `"h, s, l, a"`, or a hex code.
+///
+/// Blender's picker has a Hex field beside its sliders
+/// (`interface_region_color_picker.cc:1008`, `hex_to_rgba`), and a hex code is how
+/// a colour arrives from a browser, a palette or another app. Accepting it here
+/// rather than only in the picker means the field already beside every swatch
+/// takes one — the colour has two spellings and one parser, the same reason
+/// `parse_hsla` is public.
+///
+/// A comma decides which: `"h, s, l, a"` always has three, and no hex code has
+/// any. So this cannot swallow an HSLA string, and `#3D3D3D`, `3d3d3d` and `50`
+/// are all read as hex, which is what Blender reads them as too.
+///
+/// One divergence, deliberate: Blender's hex field sits beside the colour it
+/// edits, so a form that states no alpha (`#RRGGBB`) keeps the colour's own. This
+/// parser is context-free — a descriptor validating a string has no current colour
+/// to keep an alpha from — so a hex without an alpha is opaque. The picker softens
+/// it by spelling a transparent colour's alpha out (`format_hex` writes eight
+/// digits whenever a colour is not opaque), so the digits are on screen to keep.
+pub fn parse_color(raw: &str) -> Result<BColor, BStyleParseError> {
+    if raw.contains(',') {
+        return parse_hsla(raw);
+    }
+    super::hex::parse_hex(raw, (0.0, 0.0, 0.0, 1.0)).ok_or(BStyleParseError::Malformed)
+}
+
 /// Parse an `"h, s, l, a"` string into a `BColor`, validating each channel's
 /// bounds independently (HSLA: h∈[0,360], s∈[0,100], l∈[0,100], a∈[0,1]).
-pub(super) fn parse_hsla(raw: &str) -> Result<BColor, BStyleParseError> {
+///
+/// Public because the renderer needs it too: a colour control carries its value
+/// in this spelling, and its swatch has to become that colour rather than guess.
+/// One parser for the string, so what the swatch shows cannot disagree with what
+/// the descriptor would accept.
+pub fn parse_hsla(raw: &str) -> Result<BColor, BStyleParseError> {
     let mut parts = raw.split(',').map(str::trim);
     let mut next = || {
         parts

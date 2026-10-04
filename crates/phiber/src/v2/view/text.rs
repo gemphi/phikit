@@ -115,6 +115,16 @@ impl BAsciiRenderer {
             }
             BView::Label { text } => o.push_str(&format!("{p}Label({:?})\n", text)),
             BView::Ctrl(ctrl) => o.push_str(&format!("{p}Ctrl({:?}, {}, {:?})\n", ctrl.kind, ctrl.key.encode(), ctrl.value)),
+            // The share is what a reader checks: a track that is 0.75 full is
+            // saying the value is three quarters along, which is the claim.
+            BView::Track { track, share, text } => {
+                o.push_str(&format!("{p}Track({}, {share:.2}, {:?})\n", track.key.encode(), text))
+            }
+            // Where the colour sits in the square is the claim worth printing.
+            BView::Plane { plane } => {
+                let (across, down) = plane.marker();
+                o.push_str(&format!("{p}Plane({}, {across:.2}, {down:.2})\n", plane.key.encode()))
+            }
             BView::Prose { role, text } => o.push_str(&format!("{p}Prose({role:?}, {:?})\n", text)),
             BView::VLabel { text } => o.push_str(&format!("{p}VLabel({:?})\n", text)),
             BView::Field { text } => o.push_str(&format!("{p}Field({:?})\n", text)),

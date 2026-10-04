@@ -176,6 +176,25 @@ pub enum BView {
     /// with their own constructor-per-prop-combination family.
     /// A widget that edits one state value (`prim::ctrl`).
     Ctrl(Box<prim::BCtrl>),
+    /// A bar you sweep: the pointer's place along it is the value
+    /// (`view/draw/track.rs`). `share` is how full it is drawn, 0..1.
+    ///
+    /// The joint between a declarative tree and a gesture. `track::draggable`
+    /// wants a `Stateful<Div>`, which only a renderer has, so anything that
+    /// describes its contents as `BView` — a popover's body, a panel's rows —
+    /// could not put a draggable bar in them. Now it says `Track` and the walker
+    /// does the wiring, the way it already does for a `Ctrl` or a `Popover`.
+    Track {
+        track: Box<crate::v2::view::draw::BTrack>,
+        share: f32,
+        /// What the bar reads out, beside itself.
+        text: String,
+    },
+    /// A square you drag in: two of a colour's channels at once
+    /// (`view/draw/track/plane.rs`).
+    Plane {
+        plane: Box<crate::v2::view::draw::BPlane>,
+    },
     Button(prim::BControl),
     /// Menu popover row — no bg by default, hover-only highlight.
     MenuItem(prim::BControl),

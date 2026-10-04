@@ -9,12 +9,20 @@
 use super::*;
 
 #[test]
-fn the_hit_test_scale_is_one_until_the_canvas_zooms() {
-    // Named rather than spelled inline so the day the canvas pans and zooms,
-    // `node_find_indicated_socket`'s `20.0 / view2d_scale` has one place to
-    // read its scale from.
-    assert_eq!(SCALE, 1.0);
-    assert_eq!(pick::max_distance(20.0, SCALE), pick::max_distance(20.0, 1.0));
+fn the_hit_tests_slack_now_answers_to_the_zoom() {
+    // `node_find_indicated_socket` divides twenty screen pixels by
+    // `view2d_scale`, so the grab area stays the same size under the pointer
+    // however far you have zoomed out. That scale was pinned at 1 while the
+    // canvas could not zoom; it is `BNodeView::zoom` now, and this is the fact
+    // that pinning hid: zoomed out, a socket's grab reach covers MORE view
+    // units, because the same screen pixels are worth more of them.
+    let wide = pick::max_distance(20.0, 0.5);
+    let close = pick::max_distance(20.0, 2.0);
+    assert!(wide > close, "zoomed out the slack grows: {wide} vs {close}");
+    // And the clamp still holds it between a quarter of a unit and one and a
+    // half, so neither extreme runs away.
+    assert_eq!(pick::max_distance(20.0, 1e-6), pick::max_distance(20.0, 0.001));
+    assert_eq!(pick::max_distance(20.0, 1e6), pick::max_distance(20.0, 1000.0));
 }
 
 #[test]

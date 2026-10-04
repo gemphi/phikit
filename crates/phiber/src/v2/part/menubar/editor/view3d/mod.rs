@@ -36,6 +36,13 @@ static VIEW3D_NAVIGATION: &[BMenuItem] = &[
 static VIEW3D_ALIGN: &[BMenuItem] = &[
     fire("Center Cursor and Frame All", "Shift C", OpKey::Cursor, "center_frame_all"),
 ];
+/// `VIEW3D_MT_view_regions`: the render region (`view3d.render_border`,
+/// `view3d.clear_render_border`; `scene::render_border`).
+static VIEW3D_REGIONS: &[BMenuItem] = &[
+    op("Clipping Region...", "Alt B"),
+    fire("Render Region...", "Ctrl B", OpKey::RenderBorder, "arm"),
+    fire("Clear Render Region", "Ctrl Alt B", OpKey::RenderBorder, "clear"),
+];
 pub static VIEW3D_VIEW: &[BMenuItem] = &[
     op("Toolbar", "T"),
     // `space_data.show_region_ui`: the sidebar region beside the tab strip.
@@ -48,6 +55,8 @@ pub static VIEW3D_VIEW: &[BMenuItem] = &[
     sub("Viewpoint", VIEW3D_VIEWPOINT),
     sub("Navigation", VIEW3D_NAVIGATION),
     sub("Align View", VIEW3D_ALIGN),
+    SEP,
+    sub("View Regions", VIEW3D_REGIONS),
     SEP,
     op("Toggle Maximize Area", "Ctrl Space"),
 ];

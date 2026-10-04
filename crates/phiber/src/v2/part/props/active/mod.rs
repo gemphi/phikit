@@ -35,9 +35,14 @@ pub fn seed(state: &mut BState, model: &SceneModel, name: &str) {
     let edit = crate::v2::scene::edit::BSceneEdit::now(state);
     if let Some(object) = model.objects.iter().find(|object| object.name == name) {
         set::seed_transform(state, object);
+        set::seed_shadow(state, object.shadow);
         if let Some(material) = object.materials.first() {
             set::seed_material(state, material);
         }
+    }
+    // What the panel switched for it this session, over what the file says.
+    if let Some(shadow) = crate::v2::scene::shadow::BObjectShadowList::now(state).get(name) {
+        set::seed_shadow(state, shadow);
     }
     if let Some(local) = BTransforms::file_local(&edit, model, name) {
         set::seed_edited(state, &BTransform::of_matrix(local));

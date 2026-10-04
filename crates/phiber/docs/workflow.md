@@ -99,15 +99,28 @@ All of these are read from the file, drive the render, and save with Ctrl S
 | Output: resolution, %, frame range, path, format, color depth | applied, saved | PNG, JPEG, BMP, TIFF, Targa, WebP, EXR, HDR |
 | Output ▸ Encoding: container, codec, quality (CRF), speed, keyframe interval, bitrate | applied (batch 116), read from the file; not saved back yet | one movie per Ctrl F12 through ffmpeg; MJPEG AVI without it; no audio |
 | View Layer passes | Combined, Depth, Normal, Diffuse Color | the rest listed, not rendered |
+| Render menu: Render Image (F12), Render Animation (Ctrl F12) | work, with no file open too (batch 134) | the default scene renders through the startup file's camera |
+| View Render (F11), View Animation (Ctrl F11) | work (batch 134) | F11 shows the last render without a new one, again closes; Ctrl F11 plays the rendered frames in the render window, a movie in the system's player |
+| Render Audio… | works (batch 134) | the range's audio — silence for a scene without sound — as FLAC through ffmpeg, else WAV |
+| Lock Interface | works (batch 134) | edits to the document wait while a render runs; the view, menus and Cancel do not |
+| Render slots (the header's Slot 1–8, J / Alt J) | work (batch 135) | F12 renders into the slot shown; the others keep their renders, to compare |
+| Image editor: Image ▸ New…, Open…, Reload, Copy, Invert, Flip, Rotate, Save As | work (batch 136) | images beside the Render Result; New's UV and Color grids as Blender draws them |
+| Render Region (Ctrl B in the camera view or the Image editor, Ctrl Alt B; Output ▸ Format's Render Region, Crop) | works (batch 137) | F12 fills the region alone, cropped or framed in black; read from and saved to the file |
+| The viewport's own render region (Ctrl B outside the camera view, Ctrl Alt B; sidebar View ▸ Render Region) | works (batch 138) | Rendered shading with Cycles/EEVEE traces the region alone; Workbench the whole; read with Load UI, not written back |
+| Viewport Anti-Aliasing (Preferences ▸ Viewport ▸ Quality; `render_aa` for a Workbench render) | works (batch 139) | SMAA over the first four samples, as Blender; No / Single Pass / 5–32 samples; the preference is session state |
+| The surface shader from the Material Output: Mix / Add Shader, Emission, Glass, Transparent, Diffuse, Glossy, Sheen, SSS, Light Path | folded (batch 140) | one set of Principled parameters per material — exact for like lobes, a blend otherwise; the linked Principled's textures |
 
 **What limits "Blender quality" today is not the sampler** — a 512-sample
 frame here converges like Cycles' (`rendering.md` §7, §18) — but what the
-materials carry into it: only the first Principled BSDF of a material is
-read, so a Mix Shader, an Emission, Glass, Transparent, a Noise or
-Voronoi texture, or a Bump node collapses to a flat colour; and a
-texture the file does not pack, and whose path is not found, is a flat
-base colour (§8 below). Those two — the shader-node port from
-`intern/cycles/kernel/svm/` and Find Missing Files — are the rendering
+materials carry into it: a material is its surface shader folded to one
+set of Principled parameters (batch 140: the Material Output's link,
+through Mix and Add Shaders, with Emission, Glass, Transparent, Diffuse,
+Glossy and the rest as the parameters that draw most like them), so a
+Mix of two unlike lobes is one in-between lobe, a Noise or Voronoi
+texture its mean colour, and a Bump node nothing; and a texture the file
+does not pack, and whose path is not found, is a flat base colour (§8
+below). Those two — the closure stack and the per-pixel procedurals from
+`intern/cycles/kernel/svm/`, and Find Missing Files — are the rendering
 items in front of everything else.
 
 ## 4. Render the animation — stills or a video
@@ -222,12 +235,11 @@ worlds with importance sampling; four view transforms; denoising; Depth /
 Normal / Diffuse Color passes; PNG, JPEG, TIFF, EXR (multi-layer), HDR
 saves; Film Transparent; the Render and Output panels read, applied and
 saved. **Not done:** the engine choice (everything renders with phiray —
-no Cycles, EEVEE or Workbench *final* renders), shader nodes beyond the
-first Principled BSDF (Mix / Add Shader, Emission, Glass, Transparent,
-procedural textures, Bump fold to a colour), Find Missing Files, render
-slots beyond the first, motion blur, video output, Mist / AO / Position /
-Vector / Cryptomatte passes, adaptive sampling and time limit (read and
-saved, not applied).
+no Cycles, EEVEE or Workbench *final* renders), a Mix Shader's two
+closures as two lobes (folded to one since batch 140; procedural textures
+and Bump fold to a colour), Find Missing Files, motion blur, video
+output, Mist / AO / Position / Vector / Cryptomatte passes, adaptive
+sampling and time limit (read and saved, not applied).
 
 **The node editors (Shading, ECS Wand — formerly Geometry Nodes,
 Compositing):** laid out as Blender lays them out, with a placeholder
@@ -258,10 +270,13 @@ attribute (batch 125); Lighting ▸ MatCap with Blender's 26 matcaps and
 Flip, and the user's own matcaps from Blender's config folder (batches
 126, 129); Color ▸ Texture (batch 127). Colours ride the modifier stack
 (batch 130); an object's Shadow switches — Viewport Display's under Solid,
-Ray Visibility's under Material Preview and Rendered (batch 131). **Not
-done:** SMAA on the first frames of Solid; Workbench's depth of field;
-Material Preview on EEVEE's model. F12 with the Workbench engine renders Solid
-with `Scene.display.shading` at `render_aa` samples (batch 128).
+Ray Visibility's under Material Preview and Rendered (batch 131), with
+their checkboxes in the Object tab (batch 132); Depth of Field through
+the camera, with the camera's own settings (batch 133); SMAA over Solid's
+first frames and the anti-aliasing count — Preferences ▸ Viewport ▸
+Quality, `render_aa` for a render (batch 139). **Not done:** Material
+Preview on EEVEE's model. F12 with the Workbench engine renders Solid
+with `Scene.display.shading` at `render_aa` samples (batch 128, 139).
 
 **Animation — works:** playback of objects, NLA, rigs, constraints, IK,
 rig drivers; keying (I, auto-key, Alt I); Dope Sheet key select / move /

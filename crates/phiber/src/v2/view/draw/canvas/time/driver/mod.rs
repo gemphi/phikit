@@ -12,66 +12,12 @@ use crate::phiphx::blend::BFCurve;
 use crate::phiphx::scene::SceneDrivers;
 use crate::v2::state::{BState, CtxKey};
 
-/// `RNA_property_ui_name` of the properties drivers reach, and the axis
-/// letters `RNA_property_array_item_char` gives their items.
-const PROPERTY_NAMES: &[(&str, &str, &str)] = &[
-    ("influence", "Influence", ""),
-    ("mute", "Disable", ""),
-    ("hide", "Hide", ""),
-    ("weight", "Weight", ""),
-    ("location", "Location", "XYZ"),
-    ("rotation_euler", "Euler Rotation", "XYZ"),
-    ("rotation_quaternion", "Quaternion Rotation", "WXYZ"),
-    ("scale", "Scale", "XYZ"),
-    ("value", "Value", ""),
-];
-/// `ConstraintTargetBone.weight`: the `targets[…]` of an Armature constraint.
-const TARGET_WEIGHT: &str = "Blend Weight";
-
-/// `BLI_str_quoted_substr(path, prefix, …)`: the quoted name after `prefix`.
-fn quoted_after<'a>(path: &'a str, prefix: &str) -> Option<&'a str> {
-    let rest = &path[path.find(prefix)? + prefix.len()..];
-    let rest = rest.strip_prefix('"')?;
-    rest.split_once('"').map(|(name, _)| name)
-}
-
 impl BTimeRow {
-    /// `getname_anim_fcurve`: `<axis> <property> (<struct>)` — the struct a
-    /// bone and its constraint (`bone : constraint`), the bone alone, an
-    /// object constraint alone, or nothing for the ID's own properties.
+    /// `getname_anim_fcurve` — now `row::name::fcurve_name`, shared with the
+    /// Dope Sheet's F-curve rows, which need the same names for the same curves.
     pub fn driver_name(curve: &BFCurve) -> String {
-        let property = curve.property();
-        let (label, axes) = PROPERTY_NAMES
-            .iter()
-            .find(|(name, _, _)| *name == property)
-            .map_or_else(|| (title_case(property), ""), |(_, label, axes)| ((*label).to_string(), *axes));
-        let label = if property == "weight" && curve.path.contains(".targets[") { TARGET_WEIGHT.to_string() } else { label };
-        let axis = axes.chars().nth(curve.index as usize).map_or(String::new(), |letter| format!("{letter} "));
-        let bone = quoted_after(&curve.path, "bones[");
-        let constraint = quoted_after(&curve.path, "constraints[");
-        let owner = match (bone, constraint) {
-            (Some(bone), Some(constraint)) => Some(format!("{bone} : {constraint}")),
-            (Some(bone), None) => Some(bone.to_string()),
-            (None, Some(constraint)) => Some(constraint.to_string()),
-            (None, None) => quoted_after(&curve.path, "modifiers[").map(str::to_string),
-        };
-        match owner {
-            Some(owner) => format!("{axis}{label} ({owner})"),
-            None => format!("{axis}{label}"),
-        }
+        super::row::name::fcurve_name(curve)
     }
-}
-
-/// `RNA_def_property`'s default UI name: the identifier, spaced and capitalised.
-fn title_case(identifier: &str) -> String {
-    identifier
-        .split('_')
-        .map(|word| {
-            let mut letters = word.chars();
-            letters.next().map_or(String::new(), |first| first.to_uppercase().chain(letters).collect())
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
 }
 
 /// The shown objects' drivers, in object order.
@@ -105,7 +51,7 @@ impl BDriverList {
         self.objects
             .iter()
             .flat_map(|drivers| {
-                let object = std::iter::once(BTimeRow { kind: BRowKind::Object(drivers.object.clone()), keys: Vec::new() });
+                let object = std::iter::once(BTimeRow { kind: BRowKind::Object { name: drivers.object.clone(), expanded: false }, keys: Vec::new() });
                 let curves: Vec<BTimeRow> = drivers
                     .curves
                     .iter()
@@ -145,7 +91,7 @@ mod tests {
         let axis = BAxisColors { x: [1.0; 3], y: [1.0; 3], z: [1.0; 3], w: [1.0; 3], other: [1.0; 3] };
         let rows = list.rows(axis);
         assert_eq!(rows.len(), 3);
-        assert_eq!(rows[0].kind, BRowKind::Object("rig".into()));
+        assert_eq!(rows[0].kind, BRowKind::Object { name: "rig".into(), expanded: false });
         assert_eq!(rows[1].name(), "Hide (a)");
         assert_eq!(rows[2].name(), "Z Location");
         let curves = list.curves(axis);

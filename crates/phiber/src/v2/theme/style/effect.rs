@@ -98,6 +98,10 @@ pub struct BEffects {
     pub control_rest_alpha: f32,
     pub control_hover_alpha: f32,
     pub control_active_alpha: f32,
+    /// The weight a control not in force paints at — its fill and its ink
+    /// alike (`chrome::paint_state`, `button.rs`): on and not available are
+    /// two looks, the fill still saying "on" through the fade.
+    pub control_muted_alpha: f32,
     /// How long a fold, unfold or slide takes, in milliseconds. One duration
     /// for every motion in the window, so nothing feels faster than the rest.
     pub motion_ms: f32,
@@ -138,6 +142,7 @@ const fn effects(gradients: bool, gradient_lift: f32, surface_shadow: BShadowSty
         control_rest_alpha: 0.5,
         control_hover_alpha: 0.22,
         control_active_alpha: 0.42,
+        control_muted_alpha: 0.45,
         motion_ms: 180.0,
         // The grid is drawn on the canvas, which is a near neighbour of it in
         // tone, so it needs enough alpha to separate.

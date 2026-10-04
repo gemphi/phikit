@@ -16,10 +16,16 @@ pub enum BFilePurpose {
     Export,
     Link,
     Append,
-    /// `IMAGE_OT_save_as` — write the Render Result to a file. The only
-    /// purpose that does not name a `.blend`, so it never touches the
+    /// `IMAGE_OT_save_as` — write the Render Result to a file. Like
+    /// Mixdown, it does not name a `.blend`, so it never touches the
     /// recent-files list.
     SaveImage,
+    /// `SOUND_OT_mixdown` — Render ▸ Render Audio…: the scene's audio to a
+    /// sound file (`scene::mixdown`).
+    Mixdown,
+    /// `IMAGE_OT_open` — an image file into the Image editor
+    /// (`scene::image_list`).
+    OpenImage,
 }
 
 impl BFilePurpose {
@@ -33,6 +39,8 @@ impl BFilePurpose {
             Self::Link => "link",
             Self::Append => "append",
             Self::SaveImage => "save_image",
+            Self::Mixdown => "mixdown",
+            Self::OpenImage => "open_image",
         }
     }
     /// Modal title.
@@ -46,6 +54,8 @@ impl BFilePurpose {
             Self::Link => "Link",
             Self::Append => "Append",
             Self::SaveImage => "Save Image",
+            Self::Mixdown => "Mixdown",
+            Self::OpenImage => "Open Image",
         }
     }
     /// Execute-button label.
@@ -59,6 +69,8 @@ impl BFilePurpose {
             Self::Link => "Link",
             Self::Append => "Append",
             Self::SaveImage => "Save As Image",
+            Self::Mixdown => "Mixdown",
+            Self::OpenImage => "Open Image",
         }
     }
     pub fn from_slug(s: &str) -> Option<Self> {
@@ -71,6 +83,8 @@ impl BFilePurpose {
             Self::Link,
             Self::Append,
             Self::SaveImage,
+            Self::Mixdown,
+            Self::OpenImage,
         ]
         .into_iter()
         .find(|p| p.slug() == s)

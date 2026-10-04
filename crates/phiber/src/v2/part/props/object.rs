@@ -84,6 +84,9 @@ static VISIBILITY: &[BPropSpec] = &[
     b("hide_render", "Disable in Renders"),
     b("hide_select", "Disable Selection"),
     b("show_in_front", "In Front"),
+    // Ray Visibility ▸ Shadow (`visible_shadow`, `!OB_HIDE_SHADOW`): what
+    // Material Preview and Rendered read.
+    b("visible_shadow", "Shadow").on(),
 ];
 
 static VIEWPORT_DISPLAY: &[BPropSpec] = &[
@@ -93,6 +96,9 @@ static VIEWPORT_DISPLAY: &[BPropSpec] = &[
     b("show_wire", "Wireframe"),
     b("show_bounds", "Bounds"),
     b("show_texture_space", "Texture Space"),
+    // `Object.display.show_shadows` (`!OB_DRAW_NO_SHADOW_CAST`): what Solid
+    // and Wireframe read.
+    b("show_shadows", "Shadow").on(),
     b("show_transparent", "Transparent"),
 ];
 

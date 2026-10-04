@@ -6,13 +6,14 @@
 //! Structure: the view ([`BImageView`]) and the element that owns it
 //! ([`BImage`]) with its zoom and pan gestures. What is painted is `set.rs`.
 
+pub mod border;
 pub mod set;
 pub mod uv;
 pub mod zoom;
 
 use super::super::ctx::BRenderCtx;
 use super::super::flex::{BFill, BFlex, BPlace};
-use crate::v2::part::image::header::set::{CHANNELS, CHANNEL_DEFAULT, COMBINED, SLOTS, chosen};
+use crate::v2::part::image::header::set::{CHANNELS, CHANNEL_DEFAULT, COMBINED, chosen};
 use crate::v2::part::menubar::editor::image::set::ZOOM_FIT;
 use crate::v2::scene::render_status::{self, BRenderStatus};
 use crate::v2::state::{BKey as _, BState, ImageKey};
@@ -72,11 +73,15 @@ pub struct BImageView {
     pub pass: String,
     /// The render lands in the first slot; another slot is empty.
     pub slot_filled: bool,
+    /// The render's progress, when the Render Result is what is shown.
     pub status: Option<BRenderStatus>,
+    /// Which image (`sima->image`): the Render Result or a named one.
+    pub shown: crate::v2::part::image::shown::BShownImage,
 }
 
 impl BImageView {
     pub fn now(s: &BState) -> Self {
+        let shown = crate::v2::part::image::shown::BShownImage::now(s);
         let zoom = s.get(&ImageKey::Zoom.path()).and_then(|v| if v == ZOOM_FIT { None } else { v.parse::<f32>().ok() });
         let fit = s.get(&ImageKey::Zoom.path()) == Some(ZOOM_FIT);
         let read = |key: ImageKey| s.get(&key.path()).and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.0);
@@ -85,13 +90,18 @@ impl BImageView {
             pan: (read(ImageKey::PanX), read(ImageKey::PanY)),
             channels: BChannels::of(chosen(s, ImageKey::Channels, CHANNEL_DEFAULT)),
             pass: chosen(s, ImageKey::Pass, COMBINED).to_string(),
-            slot_filled: chosen(s, ImageKey::Slot, SLOTS[0]) == SLOTS[0],
-            status: render_status::status(),
+            slot_filled: crate::v2::scene::render_slot::BRenderSlot::filled(crate::v2::scene::render_slot::BRenderSlot::active()),
+            status: if shown == crate::v2::part::image::shown::BShownImage::RenderResult { render_status::status() } else { None },
+            shown,
         }
     }
 
-    /// The image the window shows, if the slot and the render give one.
+    /// The image the window shows: the named one's size, or the render's
+    /// if the slot and the render give one.
     pub fn image(&self) -> Option<(u32, u32)> {
+        if let crate::v2::part::image::shown::BShownImage::Named(_) = &self.shown {
+            return self.shown.picture().map(|p| (p.w, p.h));
+        }
         let status = self.status.filter(|status| status.has_image && self.slot_filled)?;
         Some((status.w, status.h))
     }
@@ -146,14 +156,21 @@ impl BImage {
         let painted = view.clone();
         let scene = (ctx.state.get(crate::v2::state::CtxKey::Scene).unwrap_or("Scene").to_string(), ctx.state.get(crate::v2::state::CtxKey::ViewLayer).unwrap_or("ViewLayer").to_string());
         let frame = ctx.state.get(crate::v2::state::CtxKey::Frame).unwrap_or("1").to_string();
+        let dragged = ctx.state.get(ImageKey::BorderRect).and_then(crate::v2::scene::boxsel::dragged_of);
+        let ink = crate::v2::view::draw::color::to_hsla(ctx.style.view_overlay());
+        let back = crate::v2::view::draw::color::to_hsla(ctx.style.viewport_surface());
         let painter = canvas(|_, _, _| (), move |b, (), window, cx| {
             seen.set(Some(b));
             if uv {
-                set::paint_uv_grid(&painted, &colors, b, window);
+                painted.paint_uv_grid(&colors, b, window);
                 uv::BUvPaint { shown: &shown, colors: uv_colors, square: painted.uv_square(b) }.paint(window);
             } else {
-                set::paint_image(&painted, checker, b, window);
-                set::paint_info(&painted, &scene, &frame, text, dim, b, window, cx);
+                painted.paint_image(checker, b, window);
+                painted.paint_info(&scene, &frame, text, dim, b, window, cx);
+                // `image.render_border`'s box as it is dragged (`WM_gesture_draw`).
+                if let Some(rect) = dragged {
+                    border::paint_box(b, rect, back, ink, window);
+                }
             }
         });
         let window = BFlex::column().place(BPlace::Overlay).fill(BFill::Swatch(BAnimColors::rgba(colors.back)));
@@ -164,9 +181,10 @@ impl BImage {
         let pan_start = Rc::clone(&origin);
         let pan_view = view.clone();
         let pan_handler = ctx.handler.clone();
-        super::base(ctx)
-            .id(SharedString::from("image-window"))
-            .debug_selector(|| "image-window".to_string())
+        let border = border::BBorderGesture::of(ctx, Rc::clone(&bounds), view.clone());
+        let window_el = super::base(ctx).id(SharedString::from("image-window")).debug_selector(|| "image-window".to_string());
+        border
+            .attach(window_el)
             .child(window.div(ctx).child(BFlex::column().place(BPlace::Overlay).styled(painter, ctx)))
             // `image.view_zoom`: a wheel step scales by 1.25 about the view.
             .on_scroll_wheel(move |event: &ScrollWheelEvent, window, app| {
@@ -208,23 +226,5 @@ impl BImage {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn view_all_shows_a_fitting_image_at_one_and_a_larger_one_at_a_power_of_two() {
-        assert_eq!(BImageView::view_all(800.0, 600.0, 1000.0, 700.0), 1.0);
-        // 1920 × 1080 in 1268 × 486: the fit is 0.45, so 1/4.
-        assert_eq!(BImageView::view_all(1920.0, 1080.0, 1268.0, 486.0), 0.25);
-        assert_eq!(BImageView::view_all(1920.0, 1080.0, 1600.0, 800.0), 0.5);
-        let view = BImageView { zoom: Some(2.0), pan: (10.0, -5.0), channels: BChannels::Color, pass: COMBINED.into(), slot_filled: true, status: None };
-        // The guard on design literals reads `px(<number>)`; a test's geometry
-        // goes through a helper.
-        let at_px = |x: f32, y: f32, w: f32, h: f32| Bounds::new(point(px(x), px(y)), size(px(w), px(h)));
-        let rect = view.rect(100.0, 50.0, at_px(100.0, 50.0, 400.0, 300.0));
-        // Centred: (400 − 200) / 2 = 100, less the offset 2 × 10; (300 − 100) / 2 = 100, plus 2 × −5.
-        assert_eq!(rect, at_px(180.0, 140.0, 200.0, 100.0));
-        assert_eq!(BChannels::of("Alpha"), BChannels::Alpha);
-        assert_eq!(BChannels::of("nonsense"), BChannels::Color);
-    }
-}
+#[path = "view_tests.rs"]
+mod view_tests;

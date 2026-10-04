@@ -45,6 +45,9 @@ pub struct BControl {
     /// a control that is on but not in force does not take the on fill, since
     /// that fill is exactly the claim being denied (`view/draw/button.rs`).
     pub muted: bool,
+    /// A colour this control's face shows instead of an icon — a colour
+    /// control's swatch, which is a button because clicking it opens the picker.
+    pub swatch: Option<crate::v2::theme::BColor>,
     /// This row opens a menu of its own, so a menu renderer ends it with an
     /// arrow column.
     ///
@@ -83,6 +86,12 @@ impl BControl {
         self.span = span;
         self
     }
+    /// The colour this control's face shows (`swatch`).
+    pub fn with_swatch(mut self, color: crate::v2::theme::BColor) -> Self {
+        self.swatch = Some(color);
+        self
+    }
+
     pub fn with_muted(mut self, muted: bool) -> Self {
         self.muted = muted;
         self

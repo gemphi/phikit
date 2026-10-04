@@ -83,7 +83,9 @@ fn file_host_window_is_the_table_and_its_source_list_holds_the_bookmark_panels()
         matches!(&table, BView::Card(c) if c.kind == BCardKind::Column(BColumn::Body)),
         "the window region is the file table"
     );
-    let list = phiber::v2::part::file::sidebar::source_list(BHostType::File, &s);
+    // Reached through `BViewItem`, like every other part — the file browser's
+    // five used to be free functions and are types now.
+    let list = phiber::v2::part::file::sidebar::BSourceList::new(BHostType::File).build(&s);
     let BView::Card(column) = list else {
         panic!("the source list is a Sidebar column");
     };

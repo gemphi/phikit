@@ -40,22 +40,24 @@ pub fn action_color(has_action: bool, tweaking: bool, colors: &BAnimColors) -> B
     }
 }
 
-/// Every NLA row of `view`, in the window `at`.
-pub fn paint_nla_rows(view: &BTimeView, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
-    let width = f32::from(at.size.width);
-    let x = |frame: f32| view.x_of(frame, width);
-    for (index, row) in view.rows.iter().enumerate() {
-        let (top, bottom) = (BTimeRow::top(index, NLA_ROW_HEIGHT), BTimeRow::top(index, NLA_ROW_HEIGHT) + NLA_ROW_HEIGHT);
-        match &row.kind {
-            BRowKind::Action { name, tweaking } => paint_action(row, action_color(name.is_some(), *tweaking, colors), top, bottom, colors, at, &x, window),
-            BRowKind::Track(track) => {
-                let laid = BTrackStrips::of(track, view.first, view.last);
-                let muted_track = track.flag & TRACK_MUTED != 0;
-                for boxed in &laid.boxes {
-                    paint_strip(boxed, muted_track, top, bottom, colors, at, &x, window, cx);
+impl BTimeView {
+    /// Every NLA row of `view`, in the window `at`.
+    pub fn paint_nla_rows(&self, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
+        let width = f32::from(at.size.width);
+        let x = |frame: f32| self.x_of(frame, width);
+        for (index, row) in self.rows.iter().enumerate() {
+            let (top, bottom) = (BTimeRow::top(index, NLA_ROW_HEIGHT), BTimeRow::top(index, NLA_ROW_HEIGHT) + NLA_ROW_HEIGHT);
+            match &row.kind {
+                BRowKind::Action { name, tweaking } => paint_action(row, action_color(name.is_some(), *tweaking, colors), top, bottom, colors, at, &x, window),
+                BRowKind::Track(track) => {
+                    let laid = BTrackStrips::of(track, self.first, self.last);
+                    let muted_track = track.flag & TRACK_MUTED != 0;
+                    for boxed in &laid.boxes {
+                        paint_strip(boxed, muted_track, top, bottom, colors, at, &x, window, cx);
+                    }
                 }
+                BRowKind::Summary { .. } | BRowKind::Object { .. } | BRowKind::Driver { .. } | BRowKind::Curve { .. } => {}
             }
-            BRowKind::Summary { .. } | BRowKind::Object(_) | BRowKind::Driver { .. } => {}
         }
     }
 }

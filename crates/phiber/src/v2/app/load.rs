@@ -143,6 +143,7 @@ impl BPhiberApp {
                     super::op::close::tag_saved(&mut this.state);
                     // Another document: its Render Result is not the old one's.
                     crate::v2::scene::render_job::forget();
+                    crate::v2::scene::image_list::BImageList::forget();
                     this.render_on_entry();
                     // A startup file is untitled: no path to save over, and
                     // none in the recent list.

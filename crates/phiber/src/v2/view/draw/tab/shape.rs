@@ -75,6 +75,12 @@ impl BCapShape {
     pub fn height(self, ctx: &BRenderCtx) -> f32 {
         let d = &ctx.style.dimensions;
         match self {
+            // A HORIZONTAL strip's caps hang from it with the menu gap above,
+            // which is the topbar's tab shape and deliberate
+            // (`chrome_geometry`). The Properties rail's tab is
+            // `PropertiesTab` and falls to the arm below, so it is a card
+            // head — and a card head is the module now, which is what lines
+            // it up with the panel headings beside it.
             Self::StripTab | Self::StripIcon => d.header_height - d.menu_top_gap,
             _ => d.card_head_height(),
         }

@@ -15,35 +15,58 @@
 
 use super::super::super::color::to_hsla;
 use super::super::super::ctx::BRenderCtx;
-use super::{BExtent, BNode, drag, draw_order, header_color, link, paint, plan::plan, socket, wire};
+use super::{BNode, drag, draw_order, header_color, link, paint, select, wire};
+use super::plan::{BCardFraction, BCardSize, positions};
+use super::view::store as view_store;
 
 use crate::phiphx::blend::shade::graph::BlendNode;
-use crate::v2::state::{BKey as _, NodeKey};
 use crate::v2::theme::BStyleRole;
-use crate::v2::view::draw::flex::{BFlex, BPlace};
 use crate::v2::view::prim::BAction;
+
+use crate::v2::state::{BKey as _, NodeKey};
+use crate::v2::view::draw::flex::{BFlex, BPlace};
 use gpui::prelude::*;
-use gpui::{AnyElement, ClickEvent, SharedString, canvas, div, px};
+use gpui::{AnyElement, ClickEvent, SharedString, div, px};
 use std::rc::Rc;
+
+/// Below this share of the canvas's width a card stops showing its title.
+///
+/// Blender's `node_draw_basis` skips a node's label when it is too small to read
+/// rather than shrinking the font with the card. The threshold there is a zoom;
+/// here it is the card's own fraction of the canvas, which is the one measure of
+/// "how small on screen" available before the canvas is measured. A card narrower
+/// than a twentieth of the view has no room for a name anyway.
+const LABEL_FLOOR: f32 = 0.05;
 
 /// One node's card, at the place it is actually drawn.
 ///
 /// `from` is the displacement already stored for this node, carried into the
 /// gesture so a second drag continues from where the first left off instead of
-/// snapping back to the fitted position.
+/// snapping back.
+///
+/// Both the position AND the size are fractions of the canvas, because that is
+/// the only thing expressible before the canvas is measured (`to_fraction`) —
+/// and it is what makes the zoom real rather than cosmetic: zooming out shrinks
+/// the card instead of only sliding it toward its neighbours.
+///
+/// What does NOT scale is the text, because `text_size` wants pixels and there
+/// are none here. Blender stops drawing a node's label below a zoom threshold
+/// rather than shrinking it to nothing, so this does the same, with the card's
+/// own share of the canvas standing in for the zoom it cannot see
+/// ([`LABEL_FLOOR`]).
 fn card(
     node: &BlendNode,
     at: (f32, f32),
+    size: BCardFraction,
     from: (f32, f32),
     selected: bool,
     ctx: &BRenderCtx,
 ) -> AnyElement {
     let id = node.name.clone();
-    let unit = ctx.style.dimensions.row_height;
     let mut card = div()
         .flex()
         .flex_col()
-        .w(px(ctx.style.dimensions.channels_width))
+        .w(gpui::relative(size.width))
         .rounded(px(ctx.style.radius_for(BStyleRole::Card)))
         .bg(to_hsla(ctx.style.colors.bg_panel))
         .border(px(ctx.style.strokes.border))
@@ -51,20 +74,22 @@ fn card(
         .overflow_hidden()
         .child(
             div()
-                .h(px(ctx.style.dimensions.header_height))
+                .h(gpui::relative(size.header))
                 .px(px(ctx.style.spacing.pad_sm))
                 .flex()
                 .items_center()
                 .bg(to_hsla(header_color(node, ctx)))
                 .text_color(to_hsla(ctx.style.colors.text))
                 .text_size(px(ctx.style.typography.header))
-                .child(SharedString::from(node.title().to_string())),
+                .when(size.width >= LABEL_FLOOR, |header| {
+                    header.child(SharedString::from(node.title().to_string()))
+                }),
         )
         // The body is empty on purpose: everything in it — the socket dots and
         // their names — is painted over the canvas, because a socket sits ON
         // the card's border and a div cannot be drawn half outside its parent.
         // What the body contributes is its HEIGHT, which is Blender's.
-        .child(div().h(px(socket::body_height(node) * unit)));
+        .child(div().h(gpui::relative(size.body)));
     if selected {
         card = card
             .border(px(ctx.style.strokes.border * 2.0))
@@ -85,7 +110,7 @@ fn card(
 }
 
 pub fn render(ctx: &BRenderCtx) -> AnyElement {
-    let selected = ctx.state.get(&NodeKey::Selected(ctx.host).path()).unwrap_or("").to_string();
+    let selection = select::selection_of(ctx.state, ctx.host);
     let grid = ctx.style.node_grid_stroke();
     // The canvas, with the theme's sweep when it has one.
     let bg = super::super::super::color::resolved_gradient(ctx.style.viewport_gradient());
@@ -118,31 +143,17 @@ pub fn render(ctx: &BRenderCtx) -> AnyElement {
     let Some(graph) = BNode::graph(ctx) else {
         return canvas_div.into_any_element();
     };
-    let extent = BExtent::of(&graph.nodes);
-    // Two tables, because the drag needs both: where the FIT puts each node,
-    // which is what a displacement is measured from and what the clamp is
-    // relative to, and where it is drawn once its displacement is added. The
-    // extent is deliberately computed from the file's positions alone — adding
-    // displacements back into it would reframe the graph under the pointer
-    // while a card is being dragged (`drag.rs`).
-    let fitted: Vec<(String, (f32, f32))> = graph
-        .nodes
-        .iter()
-        .map(|n| {
-            let p = extent.place(n);
-            (n.name.clone(), (p.x, p.y))
-        })
-        .collect();
-    let offsets: Vec<(String, (f32, f32))> = fitted
-        .iter()
-        .map(|(name, _)| (name.clone(), drag::offset_of(ctx.state, ctx.host, name)))
-        .collect();
-    let placed: Vec<(String, (f32, f32))> = fitted
-        .iter()
-        .zip(offsets.iter())
-        .map(|((name, base), (_, from))| (name.clone(), drag::placed(*base, *from)))
-        .collect();
-
+    // A card's size in view units, which is the theme's pixels read as node
+    // space (`BCardSize`), and the rectangle this editor is looking at.
+    let size = BCardSize {
+        header: ctx.style.dimensions.header_height,
+        unit: ctx.style.dimensions.row_height,
+        width: ctx.style.dimensions.channels_width,
+    };
+    let view = view_store::view_of(ctx.state, ctx.host, &graph.nodes, |n| size.height_of(n), size.width);
+    // Where every node sits: the file's own location, what it has been dragged
+    // by, and the two added and framed by the view (`plan::positions`).
+    let (located, offsets, placed) = positions(&graph, &view, ctx.state, ctx.host);
     // The sockets and the links, painted under the cards: a socket straddles a
     // card's border, so the card's own fill has to go over it.
     let ink = paint::BNodeInk {
@@ -154,8 +165,6 @@ pub fn render(ctx: &BRenderCtx) -> AnyElement {
         outline: ctx.style.colors.border,
         ring: ctx.style.strokes.border,
     };
-    let (header, unit) = (ctx.style.dimensions.header_height, ctx.style.dimensions.row_height);
-    let card_width = ctx.style.dimensions.channels_width;
     // The file's links with this host's edits applied — a made or broken link
     // is an overlay, not a change to the file (`link/mod.rs`).
     let edits = link::edits_of(ctx.state, ctx.host);
@@ -174,60 +183,51 @@ pub fn render(ctx: &BRenderCtx) -> AnyElement {
             });
         }
     }
-    let painted = (graph.clone(), placed.clone(), wired.clone(), carrying.clone());
-    // The canvas's own rectangle, published by the paint pass for the gesture
-    // to measure the pointer against (`canvas/time/gesture.rs` does the same).
-    let painted_bounds: std::rc::Rc<std::cell::Cell<Option<gpui::Bounds<gpui::Pixels>>>> =
-        std::rc::Rc::new(std::cell::Cell::new(None));
-    let publish = std::rc::Rc::clone(&painted_bounds);
-    let painter = canvas(
-        |_, _, _| (),
-        move |bounds, (), window, cx| {
-            publish.set(Some(bounds));
-            let (w, h) = (f32::from(bounds.size.width), f32::from(bounds.size.height));
-            let (cards, mut links) =
-                plan(&painted.0, &painted.2, &painted.1, w, h, header, unit, card_width);
-            // The carried link, from its anchored socket to the cursor.
-            if let Some(drag) = &painted.3 {
-                let anchor = cards
-                    .iter()
-                    .find(|card| card.name == drag.anchor.node)
-                    .and_then(|card| {
-                        socket::row_of_card(card, &drag.anchor.socket)
-                            .map(|row| card.socket_at(&row))
-                    });
-                if let Some(anchor) = anchor {
-                    links.push(drag.preview((drag.at.0 * w, drag.at.1 * h), anchor));
-                }
-            }
-            paint::paint(&cards, &links, &ink, bounds, window, cx);
+    let (painter, painted_bounds) = paint::canvas::element(
+        paint::canvas::BNodePainting {
+            graph: graph.clone(),
+            wired: wired.clone(),
+            placed: placed.clone(),
+            carrying: carrying.clone(),
+            view,
+            size,
+            ink,
         },
+        ctx,
     );
     canvas_div =
         canvas_div.child(BFlex::column().place(BPlace::Overlay).styled(painter, ctx));
 
     // Selected last, so the one being dragged is over its neighbours
     // (`draw_order`, Blender's `compare_node_depth`).
-    for node in draw_order(&graph.nodes, &selected) {
+    for node in draw_order(&graph.nodes, &selection) {
         let Some((_, at)) = placed.iter().find(|(n, _)| *n == node.name) else { continue };
         let from = offsets.iter().find(|(n, _)| *n == node.name).map(|(_, o)| *o).unwrap_or((0.0, 0.0));
         // The editor's own selection wins; the file's `NODE_SELECT` is what
-        // it opens on.
-        let is = if selected.is_empty() { node.selected() } else { selected == node.name };
-        canvas_div = canvas_div.child(card(node, *at, from, is, ctx));
+        // it opens on. A card is drawn selected at rank 1 or 2 — the active one
+        // has no extra chrome yet beyond being drawn in front.
+        let is = select::rank(node, &selection) > 0;
+        // Sized off the same view its position came from, so the div and the
+        // painted sockets agree at every zoom (`plan` scales the painter's copy
+        // by that view's zoom).
+        let fraction = BCardFraction::of(size, &view, node);
+        canvas_div = canvas_div.child(card(node, *at, fraction, from, is, ctx));
     }
-    let wire = std::rc::Rc::new(wire::BWire {
-        graph: graph.clone(),
-        wired,
-        placed,
-        edits,
-        drag: carrying,
-        handler: ctx.handler.clone(),
-        host: ctx.host,
-        bounds: std::rc::Rc::clone(&painted_bounds),
-        header,
-        unit,
-        card_width,
-    });
-    wire::listen(drag::follow(canvas_div, fitted, ctx), Some(wire), ctx).into_any_element()
+    let (wire, moving) = wire::for_frame(
+        wire::BFrame {
+            graph: &graph,
+            wired,
+            placed,
+            edits,
+            carrying,
+            selection: &selection,
+            located: &located,
+            offsets: &offsets,
+            bounds: painted_bounds,
+            size,
+            view,
+        },
+        ctx,
+    );
+    wire::listen(drag::follow(canvas_div, moving, view, ctx), Some(wire), ctx).into_any_element()
 }

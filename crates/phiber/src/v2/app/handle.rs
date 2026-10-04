@@ -81,12 +81,21 @@ impl BPhiberApp {
                 return;
             }
         }
-        // 0a. Unsaved changes: quit, new and open wait for the dialog.
+        // 0a. Render ▸ Lock Interface, while a render runs: an edit to the
+        //     document does not go through (`wm->is_interface_locked`,
+        //     `wm_operator_check_locked_interface`); the view, the menus and
+        //     the render's own Cancel still do.
+        if self.interface_locked_against(action) {
+            crate::v2::state::log::push("Interface is locked while rendering (Render ▸ Lock Interface)".to_string());
+            cx.notify();
+            return;
+        }
+        // 0b. Unsaved changes: quit, new and open wait for the dialog.
         if self.asks_to_save_first(action) {
             cx.notify();
             return;
         }
-        // 0b. The app's own operators (`app/op.rs`) — undo, new, revert,
+        // 0c. The app's own operators (`app/op.rs`) — undo, new, revert,
         //     render — run instead of being stored.
         if self.handle_app_op(action, cx) {
             cx.notify();
@@ -131,31 +140,9 @@ impl BPhiberApp {
         // 3. Playback starts its ticker when Play turns on.
         self.ensure_playback(cx);
 
-        // 4. Opening the render window is Blender's F12: it starts the render
-        //    as well as showing the place the result will appear.
-        self.ensure_render();
-
-        // 5. Always notify after the synchronous part so the loading flag (and
+        // 4. Always notify after the synchronous part so the loading flag (and
         //    any other state change) shows on this render pass (as before).
         cx.notify();
-    }
-
-    /// Start a final render when the render window has just been opened
-    /// (`Render ▸ Render Image`, F12) and one is not already under way.
-    ///
-    /// Blender renders on opening that window rather than making the user ask
-    /// twice, and leaves the result there until the next F12 — so a window
-    /// that is already showing a finished render is not re-rendered.
-    fn ensure_render(&mut self) {
-        use crate::v2::scene::render_job;
-        let open = self.state.get(crate::v2::state::ModalKey::Open) == Some(crate::v2::state::val::V_MODAL_RENDER);
-        if !open || render_job::rendering() {
-            return;
-        }
-        if render_job::shot().0.is_some_and(|s| s.done) {
-            return;
-        }
-        self.render_now();
     }
 
     /// Apply an incremental area-resize delta (legacy seam kept for the

@@ -155,6 +155,16 @@ pub use super::asset_sidebar::k_library;
 
 /// The Tools region's content for either browser: the file browser's
 /// bookmarks panels, the asset browser's libraries and catalogs.
-pub fn source_list(host: crate::v2::host::BHostType, s: &BState) -> BView {
-    if matches!(host, crate::v2::host::BHostType::Asset) { asset_view(s) } else { view(s) }
+pub struct BSourceList(crate::v2::host::BHostType);
+
+impl BSourceList {
+    pub const fn new(host: crate::v2::host::BHostType) -> Self {
+        Self(host)
+    }
+}
+
+impl crate::v2::view::BViewItem for BSourceList {
+    fn build(&self, s: &BState) -> BView {
+        if matches!(self.0, crate::v2::host::BHostType::Asset) { asset_view(s) } else { view(s) }
+    }
 }

@@ -52,6 +52,12 @@ pub enum SceneKey {
     /// Objects the Transform panel moved, turned or scaled:
     /// `name=lx,ly,lz,rx,ry,rz,sx,sy,sz|…` (rotation in degrees, XYZ).
     Transformed,
+    /// Objects whose Shadow switches the Properties editor flipped:
+    /// `name=display,ray|…` (`1` casts; `scene::shadow`).
+    ShadowCast,
+    /// The render region the session set: `xmin,xmax,ymin,ymax`
+    /// (`scene::render_border`).
+    RenderBorder,
     /// The 3D cursor when the session moved it: `x,y,z,w,qx,qy,qz` — its
     /// place and its turn (`scene::cursor`).
     Cursor,
@@ -84,6 +90,8 @@ impl BKey for SceneKey {
             Self::Keyed => "keyed",
             Self::Nla => "nla",
             Self::Transformed => "transformed",
+            Self::ShadowCast => "shadow_cast",
+            Self::RenderBorder => "render_border",
             Self::Cursor => "cursor",
         };
         BPath::owned(vec!["scene", tail])

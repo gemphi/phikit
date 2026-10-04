@@ -1,13 +1,16 @@
 //! The operators only the app can run — the ones that need the window, the
 //! loaded file, the undo history or a background job: `wm.quit_blender`,
 //! `wm.window_fullscreen_toggle`, `ed.undo` / `ed.redo`, `wm.read_homefile`,
-//! `wm.revert_mainfile` here; `render.render` in `render.rs`; the export and
+//! `wm.revert_mainfile` here; `render.render` in `render.rs`, `render.view_show`,
+//! `render.play_rendered_anim` and `sound.mixdown` in `render_view.rs`; the export and
 //! import that a file-browser commit finishes in `file.rs`. Everything else
 //! a menu fires is a rule (`state/rule.rs`); this is the rest, in one place.
 
 pub(crate) mod close;
 mod file;
 mod render;
+mod image;
+mod render_view;
 
 use super::BPhiberApp;
 use crate::v2::part::file::purpose::{BFilePurpose, purpose};
@@ -19,52 +22,52 @@ impl BPhiberApp {
     /// The window's own operators: quit and fullscreen. `true` when taken.
     pub(crate) fn handle_window_op(&mut self, action: &BAction, window: &mut Window) -> bool {
         let BAction::Set(path, _) = action else { return false };
-        if *path == OpKey::Quit.path() {
-            self.closing = true;
-            window.remove_window();
-            return true;
+        match OpKey::of(path) {
+            Some(OpKey::Quit) => {
+                self.closing = true;
+                window.remove_window();
+            }
+            Some(OpKey::Fullscreen) => {
+                window.toggle_fullscreen();
+                log::push(
+                    if window.is_fullscreen() { "Left fullscreen" } else { "Fullscreen" }
+                        .to_string(),
+                );
+            }
+            _ => return false,
         }
-        if *path == OpKey::Fullscreen.path() {
-            window.toggle_fullscreen();
-            log::push(if window.is_fullscreen() { "Left fullscreen" } else { "Fullscreen" }.to_string());
-            return true;
-        }
-        false
+        true
     }
 
     /// The app's operators, before the state sees the action. `true` when
     /// the action was taken here and must not be applied as a `Set`.
     pub(crate) fn handle_app_op(&mut self, action: &BAction, cx: &mut Context<Self>) -> bool {
         let BAction::Set(path, value) = action else { return false };
-        if path.segs.first() != Some(&"op") {
-            return false;
-        }
-        let key = path.encode();
-        if key == OpKey::Undo.path().encode() {
-            self.undo();
-        } else if key == OpKey::Redo.path().encode() {
-            self.redo();
-        } else if key == OpKey::NewFile.path().encode() {
-            self.new_file(value, cx);
-        } else if key == OpKey::Revert.path().encode() {
-            self.revert(value, cx);
-        } else if key == OpKey::Save.path().encode() {
-            self.save_document(value == "incremental");
-        } else if key == OpKey::FileClose.path().encode() {
-            self.handle_file_close(value, None, cx);
-        } else if key == OpKey::UndoHistory.path().encode() {
-            self.undo_to(value.parse().unwrap_or(0));
-        } else if key == OpKey::Render.path().encode() {
-            match value.as_str() {
+        // A match on the op, not a family check and then ten string
+        // comparisons against ten freshly encoded paths. `OpKey::of` reads the
+        // path once — family and tail together — where the chain this replaces
+        // encoded up to ten keys per press to answer a question the key
+        // already knows, and read as a ladder rather than as the table of
+        // operators it is.
+        match OpKey::of(path) {
+            Some(OpKey::Undo) => self.undo(),
+            Some(OpKey::Redo) => self.redo(),
+            Some(OpKey::NewFile) => self.new_file(value, cx),
+            Some(OpKey::Revert) => self.revert(value, cx),
+            Some(OpKey::Save) => self.save_document(value == "incremental"),
+            Some(OpKey::FileClose) => self.handle_file_close(value, None, cx),
+            Some(OpKey::UndoHistory) => self.undo_to(value.parse().unwrap_or(0)),
+            Some(OpKey::Render) => match value.as_str() {
                 "animation" => self.render_animation(cx),
                 "cancel" => crate::v2::scene::render_job::cancel(),
+                "view" => self.render_view(),
+                "play" => self.render_play(cx),
                 _ => self.render_image(),
-            }
-        } else if key == OpKey::Quit.path().encode() || key == OpKey::Fullscreen.path().encode() {
+            },
+            Some(OpKey::ImageCopy) => self.image_copy(cx),
             // Only the window can do these; without one they are reported.
-            log::push("This needs the window".to_string());
-        } else {
-            return false;
+            Some(OpKey::Quit | OpKey::Fullscreen) => log::push("This needs the window".to_string()),
+            _ => return false,
         }
         crate::v2::state::menu::close_overlays(&mut self.state);
         if self.state.get(ModalKey::Open) == Some(crate::v2::state::val::V_MODAL_COMMAND) {

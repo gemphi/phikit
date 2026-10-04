@@ -2,6 +2,7 @@
 //! Blender ref: `space_image/space_image.cc` WINDOW region draw.
 
 pub mod header;
+pub mod shown;
 pub mod uv;
 
 use crate::v2::host::BHostType;

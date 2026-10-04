@@ -137,6 +137,10 @@ pub struct BRenderPlan {
     /// `BLENDER_WORKBENCH` — Solid / Wireframe with `Scene.display.shading`,
     /// as Blender's Workbench render engine draws F12 (`workbench_render.cc`).
     pub look: crate::v2::view::draw::canvas::view3d::rendered::BStillLook,
+    /// The render region (`Scene.r.border`, `R_BORDER`): the pixels filled
+    /// of the `w × h` frame, and whether the result is cropped to them
+    /// (`R_CROP`) or the frame around them left black.
+    pub region: crate::v2::view::draw::canvas::view3d::rendered::BStillRegion,
 }
 
 /// What F12 would render, or `None` when the scene has no camera to look
@@ -155,14 +159,17 @@ pub fn plan_at(model: &SceneModel, set: BRenderSet, look: &BRayLook, plain: gpui
     let cam = super::motion::active_camera_at(model, frame)?;
     let cam = &cam;
     let mut camera = camera_of(cam, w, h);
-    if let Some(focus) = focus_on(model, cam) {
+    let focus = focus_on(model, cam);
+    if let Some(focus) = focus {
         camera.focus = focus;
     }
     lit(&mut camera, look);
     // Film ▸ Transparent is a final render's: the viewport keeps its sky.
     camera.film = [u32::from(set.film_transparent), 0, 0, 0];
-    let (still_look, samples, denoise) = crate::v2::view::draw::canvas::view3d::rendered::BStillLook::for_engine(model, set, &mut camera, plain);
-    Some(BRenderPlan { camera, w, h, samples, denoise, look: still_look })
+    let lens = super::BCameraLens::of(cam).focused_at(focus);
+    let (still_look, samples, denoise) = crate::v2::view::draw::canvas::view3d::rendered::BStillLook::for_engine(model, set, lens, &mut camera, plain);
+    let region = crate::v2::view::draw::canvas::view3d::rendered::BStillRegion { pixels: set.border.pixels(w, h), crop: set.border.crop };
+    Some(BRenderPlan { camera, w, h, samples, denoise, look: still_look, region })
 }
 
 // ---------------------------------------------------------------------------
@@ -213,11 +220,16 @@ impl BRenderShot {
 
 #[derive(Default)]
 pub(crate) struct BJob {
-    pub(crate) shot: Mutex<Option<BRenderShot>>,
+    /// The Render Result's render slots (`Image.renderslots`, eight), the
+    /// one shown (`render_slot`) and the one the render in flight — or the
+    /// last — went into (`last_render_slot`); `scene::render_slot`.
+    pub(crate) slots: Mutex<Vec<Option<BRenderShot>>>,
+    pub(crate) active: AtomicU32,
+    pub(crate) last: AtomicU32,
     pub(crate) running: AtomicBool,
     cancel: AtomicBool,
-    /// Bumped whenever the shot changes, so a painter can tell a new frame
-    /// from the one it already drew.
+    /// Bumped whenever a slot changes or another is shown, so a painter can
+    /// tell a new frame from the one it already drew.
     pub(crate) seq: AtomicU32,
     /// When the render in flight (or the last one) began, for the info bar.
     pub(super) started: Mutex<Option<std::time::Instant>>,
@@ -237,10 +249,28 @@ pub(super) fn job() -> &'static Arc<BJob> {
     JOB.get_or_init(Arc::default)
 }
 
-/// The render in flight or the last one finished, and its sequence number.
+/// The shown slot's render — the one in flight or the last finished there
+/// — and the sequence number.
 pub fn shot() -> (Option<BRenderShot>, u32) {
     let j = job();
-    (j.shot.lock().ok().and_then(|s| s.clone()), j.seq.load(Ordering::Relaxed))
+    (j.slot(j.active.load(Ordering::Relaxed)), j.seq.load(Ordering::Relaxed))
+}
+
+impl BJob {
+    /// Slot `i`'s render, if one landed there.
+    pub(crate) fn slot(&self, i: u32) -> Option<BRenderShot> {
+        self.slots.lock().ok().and_then(|slots| slots.get(i as usize).cloned().flatten())
+    }
+
+    /// `shot` into slot `i`; the sequence moves on so painters see it.
+    pub(crate) fn put(&self, i: u32, shot: Option<BRenderShot>) {
+        if let Ok(mut slots) = self.slots.lock() {
+            let n = super::render_slot::BRenderSlot::COUNT.max(i as usize + 1);
+            slots.resize(n, None);
+            slots[i as usize] = shot;
+        }
+        self.seq.fetch_add(1, Ordering::Relaxed);
+    }
 }
 
 /// Whether a render is under way.
@@ -260,13 +290,28 @@ pub fn cancelled() -> bool {
     job().cancel.load(Ordering::Relaxed)
 }
 
-/// Drop the last render: a new document has no Render Result
-/// (`BPhiberApp::render_on_entry` renders the next one opened).
+/// Put `shot` up as the image shown — a rendered frame played back
+/// (`scene::render_play`) — in place of the Render Result, which the
+/// player puts back when it stops. Refused while a render is under way.
+pub fn show(shot: BRenderShot) -> bool {
+    let j = job();
+    if j.running.load(Ordering::Relaxed) {
+        return false;
+    }
+    j.put(j.active.load(Ordering::Relaxed), Some(shot));
+    true
+}
+
+/// Drop the renders: a new document has no Render Result, its slots empty
+/// and the first shown (`BPhiberApp::render_on_entry` renders the next one
+/// opened).
 pub fn forget() {
     let j = job();
-    if let Ok(mut slot) = j.shot.lock() {
-        *slot = None;
+    if let Ok(mut slots) = j.slots.lock() {
+        slots.clear();
     }
+    j.active.store(0, Ordering::Relaxed);
+    j.last.store(0, Ordering::Relaxed);
     j.seq.fetch_add(1, Ordering::Relaxed);
 }
 
@@ -290,17 +335,20 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
     if let Ok(mut took) = j.took.lock() {
         *took = None;
     }
+    // Into the slot shown (`BKE_image_backup_render`: the render goes to
+    // `render_slot`, which becomes `last_render_slot`; the slot rendered
+    // before keeps its result).
+    let into = j.active.load(Ordering::Relaxed);
+    j.last.store(into, Ordering::Relaxed);
     let publish = {
         let j = j.clone();
         move |shot: BRenderShot| {
-            if let Ok(mut slot) = j.shot.lock() {
-                *slot = Some(shot);
-            }
-            j.seq.fetch_add(1, Ordering::Relaxed);
+            j.put(into, Some(shot));
             crate::v2::view::draw::canvas::view3d::rendered::landed();
         }
     };
-    publish(BRenderShot { w: plan.w, h: plan.h, target: plan.samples, ..Default::default() });
+    let (ow, oh) = plan.region.size(plan.w, plan.h);
+    publish(BRenderShot { w: ow, h: oh, target: plan.samples, ..Default::default() });
     std::thread::spawn(move || {
         use crate::v2::view::draw::canvas::view3d::rendered::still_stepwise;
         let publish = publish;
@@ -308,6 +356,7 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
         // job must not stay "running" for ever (`BRunning`).
         let _running = super::render_fit::BRunning(j.clone());
         let began = std::time::Instant::now();
+        let (w, h) = plan.region.size(plan.w, plan.h);
         let out = still_stepwise(
             &objects,
             plan.look,
@@ -316,6 +365,7 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
             plan.h,
             plan.samples,
             plan.denoise,
+            plan.region,
             |taken, still| {
                 let done = still.is_some();
                 let still = still.unwrap_or(crate::v2::view::draw::canvas::view3d::rendered::BStill {
@@ -330,8 +380,8 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
                 // GPUI paints blue first; phiray hands back RGBA.
                 bgra.chunks_exact_mut(4).for_each(|p| p.swap(0, 2));
                 publish(BRenderShot {
-                    w: plan.w,
-                    h: plan.h,
+                    w,
+                    h,
                     bgra,
                     display: still.display,
                     linear: still.linear,
@@ -349,9 +399,9 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
             // No adapter, or a scene the GPU declined: the shot is finished
             // without an image rather than leaving the Rendering space
             // waiting for ever.
-            publish(BRenderShot { w: plan.w, h: plan.h, target: plan.samples, done: true, ..Default::default() });
+            publish(BRenderShot { w, h, target: plan.samples, done: true, ..Default::default() });
         }
-        let taken = j.shot.lock().ok().and_then(|s| s.as_ref().map(|s| s.taken)).unwrap_or(0);
+        let taken = j.slot(into).map(|s| s.taken).unwrap_or(0);
         let secs = began.elapsed().as_secs_f64();
         // `lastframetime`, stored once, for the info bar to print from here on.
         // Cancelled counts too: Blender keeps the time the frame took either way.

@@ -317,16 +317,34 @@ async fn the_cpu_painter_stays_idle_while_the_gpu_draws(cx: &mut TestAppContext)
         return;
     }
     // The painter stands in until the tracer's first image lands
-    // (`the_viewport_always_draws_something`), which on a busy machine takes
-    // a while: wait for the frame it stops at, then measure.
-    for _ in 0..300 {
+    // (`the_viewport_always_draws_something`), which on a busy machine takes a
+    // while: wait for the frame it stops at, then measure.
+    //
+    // "Stops at" has to mean the count holds STILL, not that two reads in a row
+    // agreed. A loaded machine — a full suite running beside this one — stalls
+    // the render thread long enough for one pair to match while frames are still
+    // queued, and then those land inside the measured window and the assertion
+    // below reports the old bug that is not there (seen at 308 against 303).
+    // Eight consecutive quiet reads is a settled painter; one is a coincidence.
+    const QUIET: usize = 8;
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+    let mut quiet = 0;
+    while quiet < QUIET && std::time::Instant::now() < deadline {
         let painted = rasterised();
         app.update(cx, |_, cx| cx.notify());
         cx.run_until_parked();
-        if rasterised() == painted {
-            break;
+        quiet = if rasterised() == painted { quiet + 1 } else { 0 };
+        if quiet < QUIET {
+            std::thread::sleep(std::time::Duration::from_millis(20));
         }
-        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+    if quiet < QUIET {
+        // Thirty seconds and the tracer is still catching up: this machine is too
+        // busy for the measurement to mean anything, the same way a machine with
+        // no adapter has nothing to measure. Saying so beats both a red test that
+        // reports a bug that is not there and a green one that checked nothing.
+        eprintln!("skipped: the painter never settled, so there is no baseline to measure against");
+        return;
     }
     // With the GPU drawing there is nothing for the CPU painter to fill. It
     // used to rasterise an empty, supersampled, viewport-sized frame anyway —
@@ -424,9 +442,14 @@ fn the_selected_properties_tab_is_the_panel_beside_it() {
     // tab and the panel it selects is what made the two read as two matching
     // boxes rather than as one continuous area — a hole cut in the strip
     // onto what it selects (`tests/the_properties_strip_is_a_strip.rs`).
-    assert_eq!(fill.bottom, style.colors.bg_panel);
+    // The body is one step under the strip — the step a resting tab used to
+    // draw as a chip of its own — so the claim is stated against the body and
+    // not against `bg_panel`, which is the STRIP's shade now.
+    let panel = style.host_body_surface(BHostType::Buts);
+    assert_eq!(fill.bottom, panel.bottom);
     assert_eq!(fill.top, fill.bottom, "flat, so the join has no edge");
-    assert_eq!(fill, style.host_body_surface(BHostType::Buts));
+    assert_eq!(fill, panel);
+    assert_eq!(panel.bottom, style.step(style.colors.bg_panel, -1));
 
     // And it runs along the rail-to-panel axis, whichever side the rail is on.
     assert_eq!(

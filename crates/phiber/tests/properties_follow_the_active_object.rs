@@ -76,3 +76,38 @@ fn switching_the_active_object_refills_the_object_and_material_tabs() {
     assert_eq!(value(&s, "location", "x"), -4.0, "an object the scene lacks changes nothing");
     clear_loaded_scene();
 }
+
+/// Viewport Display ▸ Shadow and Ray Visibility ▸ Shadow: the panel shows
+/// the file's switches for the active object, a click switches that object
+/// in the viewport's list and the save carries both bits (`dtx`,
+/// `visibility_flag`); the other object keeps the file's.
+#[test]
+fn the_shadow_checkboxes_switch_the_active_object() {
+    use phiber::phiphx::blend::BlendShadowCast;
+    use phiber::v2::scene::{BObject3D, scene_source};
+    let mut shy = object("Shy", [0.0; 3], [1.0; 3], [0.8; 4], 0.5);
+    shy.shadow = BlendShadowCast { display: false, ray: true };
+    let model = phiber::phiphx::scene::SceneModel { objects: vec![object("Cube", [0.0; 3], [1.0; 3], [0.8; 4], 0.5), shy], ..Default::default() };
+    set_loaded_scene(Some(model.clone()));
+    let mut s = BState::default();
+    apply_action(&mut s, &BAction::Set(CtxKey::Object.path(), "Shy".into()));
+    assert_eq!((s.get(ButsKey::Value("show_shadows")), s.get(ButsKey::Value("visible_shadow"))), (Some("false"), Some("true")), "the file's switches");
+    apply_action(&mut s, &BAction::Set(CtxKey::Object.path(), "Cube".into()));
+    assert_eq!((s.get(ButsKey::Value("show_shadows")), s.get(ButsKey::Value("visible_shadow"))), (Some("true"), Some("true")));
+    apply_action(&mut s, &BAction::Set(ButsKey::Value("visible_shadow").path(), "false".into()));
+    let shadow = |s: &BState, name: &str| match scene_source(s).into_iter().find(|o| matches!(o, BObject3D::Loaded { name: n, .. } if n == name)) {
+        Some(BObject3D::Loaded { shadow, .. }) => shadow,
+        _ => panic!("{name}"),
+    };
+    assert_eq!(shadow(&s, "Cube"), BlendShadowCast { display: true, ray: false }, "the click switches the active object");
+    assert_eq!(shadow(&s, "Shy"), BlendShadowCast { display: false, ray: true }, "the other keeps the file's");
+    // Back to Shy and again to Cube: the panel shows the session's switch.
+    apply_action(&mut s, &BAction::Set(CtxKey::Object.path(), "Shy".into()));
+    apply_action(&mut s, &BAction::Set(CtxKey::Object.path(), "Cube".into()));
+    assert_eq!(s.get(ButsKey::Value("visible_shadow")), Some("false"));
+    let edits = phiber::v2::scene::save::gather(&s, &model);
+    let cube = edits.objects.iter().find(|o| o.name == "Cube").expect("Cube's edit");
+    assert_eq!(cube.shadow, Some(BlendShadowCast { display: true, ray: false }), "the save writes both bits");
+    assert_eq!(edits.objects.iter().find(|o| o.name == "Shy").and_then(|o| o.shadow), None, "an unswitched object writes nothing");
+    clear_loaded_scene();
+}

@@ -29,13 +29,36 @@ fn button(s: &BState, spec: &BFileNavSpec) -> BView {
 }
 
 /// Previous, next and parent — the start of the strip's left column.
-pub fn view(s: &BState) -> BView {
-    BView::row(NAV.iter().filter(|spec| spec.action != NAV_REFRESH).map(|spec| button(s, spec)).collect())
+pub struct BFileNav;
+
+impl BFileNav {
+    pub const fn new(_host: crate::v2::host::BHostType) -> Self {
+        Self
+    }
+}
+
+impl crate::v2::view::BViewItem for BFileNav {
+    fn build(&self, s: &BState) -> BView {
+        BView::row(
+            NAV.iter().filter(|spec| spec.action != NAV_REFRESH).map(|spec| button(s, spec)).collect(),
+        )
+    }
 }
 
 /// Refresh — the end of the strip's left column, flush with the source
 /// list's edge under it.
-pub fn refresh(s: &BState) -> BView {
-    let spec = NAV.iter().find(|spec| spec.action == NAV_REFRESH).expect("the nav list carries a refresh");
-    button(s, spec)
+pub struct BFileRefresh;
+
+impl BFileRefresh {
+    pub const fn new(_host: crate::v2::host::BHostType) -> Self {
+        Self
+    }
+}
+
+impl crate::v2::view::BViewItem for BFileRefresh {
+    fn build(&self, s: &BState) -> BView {
+        let spec =
+            NAV.iter().find(|spec| spec.action == NAV_REFRESH).expect("the nav list carries a refresh");
+        button(s, spec)
+    }
 }

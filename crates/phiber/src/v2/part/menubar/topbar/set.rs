@@ -15,7 +15,7 @@ use super::super::item::set::*;
 use super::super::item::{BMenuItem, BMenuSpec};
 use crate::v2::state::{BKey as _, BPath, OpKey, ScreenKey, ZoneKey};
 use crate::v2::state::val::{
-    V_MODAL_ABOUT, V_MODAL_COMMAND, V_MODAL_HELP, V_MODAL_RENDER, V_MODAL_SETTINGS, V_MODAL_SPLASH,
+    V_MODAL_ABOUT, V_MODAL_COMMAND, V_MODAL_HELP, V_MODAL_SETTINGS, V_MODAL_SPLASH,
 };
 use crate::v2::zone::BZoneType;
 
@@ -174,10 +174,10 @@ static RENDER_ITEMS: &[BMenuItem] = &[
     fire("Render Image", "F12", OpKey::Render, "image"),
     fire("Render Animation", "Ctrl F12", OpKey::Render, "animation"),
     SEP,
-    op("Render Audio...", ""),
+    op_file("Render Audio...", "", "mixdown"),
     SEP,
-    op_modal("View Render", "F11", V_MODAL_RENDER),
-    op_modal("View Animation", "Ctrl F11", V_MODAL_RENDER),
+    fire("View Render", "F11", OpKey::Render, "view"),
+    fire("View Animation", "Ctrl F11", OpKey::Render, "play"),
     SEP,
     tog("Lock Interface", k_lock_interface),
 ];

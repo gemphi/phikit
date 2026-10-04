@@ -60,7 +60,19 @@ impl BResolvedUiStyle {
     /// A host's body: flat, every editor and the activity bar alike — a
     /// vertical strip takes the surface of the area it sits in, no darker
     /// shade of its own.
+    ///
+    /// The Properties editor is the exception, and its tab strip is why. The
+    /// body takes the one step that an unselected tab used to draw as a chip of
+    /// its own (`wcol_tab.inner` against `TH_BACK`). That turned the strip the
+    /// right way round: it was chips-on-flat, where the selection was the one
+    /// tab with NO mark on it, so the chips were the loudest thing in the editor
+    /// and the thing they point at was the quietest. Now a resting tab is strip
+    /// and the selected tab takes the body's shade, sinking into the panel it
+    /// opens — the paper-tab continuation `view/draw/tab/` is built for.
     pub fn host_body_surface(&self, host: BHostType) -> BGradientColors {
+        if host == BHostType::Buts {
+            return Self::flat(self.step(self.host_background(host), -1));
+        }
         Self::flat(self.host_background(host))
     }
 
@@ -90,12 +102,9 @@ impl BResolvedUiStyle {
         Self::flat(self.host_background(host))
     }
 
-    /// A rail tab at rest: one step under the strip it sits on.
-    ///
-    /// `wcol_tab.inner` against `TH_BACK` — `0x1d1d1d` on `0x303030`, the chip
-    /// an unselected tab draws. Without it a strip level with its body would
-    /// show no tabs at all until one was hovered, which is what made the dark
-    /// strip look necessary.
+    /// A rail tab at rest: one step under the strip it sits on — Blender's
+    /// `wcol_tab.inner` against `TH_BACK`. No Properties tab draws it any more;
+    /// that step belongs to the body (`host_body_surface`).
     pub fn rail_tab_resting(&self, host: BHostType) -> BColor {
         self.step(self.host_background(host), -1)
     }

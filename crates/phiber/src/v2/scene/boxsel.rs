@@ -118,7 +118,11 @@ pub fn armed(state: &BState) -> bool {
 
 /// The rectangle being dragged, in canvas pixels `(x0, y0, x1, y1)`.
 pub fn dragged(state: &BState) -> Option<(f32, f32, f32, f32)> {
-    let raw = state.get(View3dKey::BoxRect)?;
+    dragged_of(state.get(View3dKey::BoxRect)?)
+}
+
+/// A box as `encode` wrote it (the Image editor's region drag too).
+pub fn dragged_of(raw: &str) -> Option<(f32, f32, f32, f32)> {
     let mut it = raw.split(',').map(|v| v.trim().parse::<f32>().ok());
     Some((it.next()??, it.next()??, it.next()??, it.next()??))
 }

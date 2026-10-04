@@ -62,26 +62,6 @@ pub fn pixels(shot: &BRenderShot, pass: &str, channels: BChannels) -> Vec<u8> {
     out
 }
 
-/// The picture for the view's pass and channels, built when the shot or the
-/// choice changes.
-fn image(view: &BImageView, window: &mut Window) -> Option<Arc<RenderImage>> {
-    let seq = view.status?.seq;
-    let key = (seq, view.pass.clone(), view.channels);
-    SHOWN.with(|slot| {
-        let mut slot = slot.borrow_mut();
-        if slot.as_ref().is_none_or(|(k, _)| *k != key) {
-            let (shot, _) = render_job::shot();
-            let shot = shot.filter(BRenderShot::has_image)?;
-            let buffer = image::RgbaImage::from_raw(shot.w, shot.h, pixels(&shot, &view.pass, view.channels))?;
-            let made = Arc::new(RenderImage::new(smallvec::smallvec![image::Frame::new(buffer)]));
-            if let Some((_, old)) = slot.replace((key, made)) {
-                let _ = window.drop_image(old);
-            }
-        }
-        slot.as_ref().map(|(_, i)| i.clone())
-    })
-}
-
 /// `imm_draw_box_checker_2d` behind the picture, only when its alpha shows.
 fn paint_checker(at: Bounds<Pixels>, checker: BCheckerColors, window: &mut Window) {
     let (w, h) = (f32::from(at.size.width), f32::from(at.size.height));
@@ -97,56 +77,87 @@ fn paint_checker(at: Bounds<Pixels>, checker: BCheckerColors, window: &mut Windo
     }
 }
 
-/// The picture in the window `at`, at the view's zoom and offset.
-pub fn paint_image(view: &BImageView, checker: BCheckerColors, at: Bounds<Pixels>, window: &mut Window) {
-    let Some((w, h)) = view.image() else { return };
-    let rect = view.rect(w as f32, h as f32, at);
-    if view.channels == BChannels::ColorAlpha {
-        paint_checker(rect, checker, window);
+/// The painters hang off the view (`tests/a_renderer_hangs_off_its_type.rs`):
+/// what a view draws is reached through it, not from anywhere.
+impl BImageView {
+    /// The picture for the view's pass and channels, built when the image or
+    /// the choice changes.
+    fn render_image(&self, window: &mut Window) -> Option<Arc<RenderImage>> {
+            let view = self;
+        let key = (view.shown.seq(), format!("{}/{}", view.shown.name(), view.pass), view.channels);
+        SHOWN.with(|slot| {
+            let mut slot = slot.borrow_mut();
+            if slot.as_ref().is_none_or(|(k, _)| *k != key) {
+                // A named image is its own picture; the render carries passes.
+                let shot = match &view.shown {
+                    crate::v2::part::image::shown::BShownImage::RenderResult => render_job::shot().0.filter(BRenderShot::has_image)?,
+                    named => named.picture().map(|p| BRenderShot { w: p.w, h: p.h, bgra: p.bgra, done: true, ..Default::default() })?,
+                };
+                let buffer = image::RgbaImage::from_raw(shot.w, shot.h, pixels(&shot, &view.pass, view.channels))?;
+                let made = Arc::new(RenderImage::new(smallvec::smallvec![image::Frame::new(buffer)]));
+                if let Some((_, old)) = slot.replace((key, made)) {
+                    let _ = window.drop_image(old);
+                }
+            }
+            slot.as_ref().map(|(_, i)| i.clone())
+        })
     }
-    if let Some(image) = image(view, window) {
-        let _ = window.paint_image(rect, rect, Corners::default(), image, 0, false);
+
+    /// The picture in the window `at`, at the view's zoom and offset.
+    pub fn paint_image(&self, checker: BCheckerColors, at: Bounds<Pixels>, window: &mut Window) {
+            let view = self;
+        let Some((w, h)) = view.image() else { return };
+        let rect = view.rect(w as f32, h as f32, at);
+        if view.channels == BChannels::ColorAlpha {
+            paint_checker(rect, checker, window);
+        }
+        if let Some(image) = view.render_image(window) {
+            let _ = window.paint_image(rect, rect, Corners::default(), image, 0, false);
+        }
     }
-}
 
-/// `make_renderinfo_string` then the engine's status: `Frame:1 | Time:00:12.34
-/// | Mem:12M, Peak: 12M | Scene, ViewLayer | Sample 12/128`, `Finished` once
-/// the render is done.
-pub fn info_text(view: &BImageView, scene: &(String, String), frame: &str) -> Option<String> {
-    let status = view.status?;
-    let time = render_status::timecode(render_status::elapsed());
-    let progress = if status.done { "Finished".to_string() } else { format!("Sample {}/{}", status.taken, status.target) };
-    Some(format!("Frame:{frame} | Time:{time} | Mem:{m}M, Peak: {m}M | {}, {} | {progress}", scene.0, scene.1, m = status.megabytes()))
-}
+    /// `make_renderinfo_string` then the engine's status: `Frame:1 | Time:00:12.34
+    /// | Mem:12M, Peak: 12M | Scene, ViewLayer | Sample 12/128`, `Finished` once
+    /// the render is done.
+    pub fn info_text(&self, scene: &(String, String), frame: &str) -> Option<String> {
+            let view = self;
+        let status = view.status?;
+        let time = render_status::timecode(render_status::elapsed());
+        let progress = if status.done { "Finished".to_string() } else { format!("Sample {}/{}", status.taken, status.target) };
+        Some(format!("Frame:{frame} | Time:{time} | Mem:{m}M, Peak: {m}M | {}, {} | {progress}", scene.0, scene.1, m = status.megabytes()))
+    }
 
-/// `draw_render_info`: the bar across the top of the window.
-pub fn paint_info(view: &BImageView, scene: &(String, String), frame: &str, text: BColor, dim: BColor, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
-    let Some(line) = info_text(view, scene, frame) else { return };
-    let bar = Bounds::new(at.origin, size(at.size.width, px(INFO_BAR_HEIGHT)));
-    // `draw_render_info` lays a quarter-black over the picture; here that
-    // scrim is the theme's dim, the same one a modal lays over the
-    // workspace, so it follows the palette instead of being black whatever
-    // the theme.
-    window.paint_quad(fill(bar, to_hsla(dim)));
-    let run = TextRun { len: line.len(), font: window.text_style().font(), color: to_hsla(text), background_color: None, underline: None, strikethrough: None };
-    let shaped = window.text_system().shape_line(SharedString::from(line), px(FONT), &[run], None);
-    let line_height = px(FONT * 1.3);
-    let origin = point(at.origin.x + px(INFO_INSET), at.origin.y + px(INFO_BAR_HEIGHT / 2.0) - line_height / 2.0);
-    let _ = shaped.paint(origin, line_height, gpui::TextAlign::Left, None, window, cx);
-}
+    /// `draw_render_info`: the bar across the top of the window.
+    pub fn paint_info(&self, scene: &(String, String), frame: &str, text: BColor, dim: BColor, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
+            let view = self;
+        let Some(line) = view.info_text(scene, frame) else { return };
+        let bar = Bounds::new(at.origin, size(at.size.width, px(INFO_BAR_HEIGHT)));
+        // `draw_render_info` lays a quarter-black over the picture; here that
+        // scrim is the theme's dim, the same one a modal lays over the
+        // workspace, so it follows the palette instead of being black whatever
+        // the theme.
+        window.paint_quad(fill(bar, to_hsla(dim)));
+        let run = TextRun { len: line.len(), font: window.text_style().font(), color: to_hsla(text), background_color: None, underline: None, strikethrough: None };
+        let shaped = window.text_system().shape_line(SharedString::from(line), px(FONT), &[run], None);
+        let line_height = px(FONT * 1.3);
+        let origin = point(at.origin.x + px(INFO_INSET), at.origin.y + px(INFO_BAR_HEIGHT / 2.0) - line_height / 2.0);
+        let _ = shaped.paint(origin, line_height, gpui::TextAlign::Left, None, window, cx);
+    }
 
-/// `draw_image_grid`: the UV editor's 0..1 square, eight cells a side, at
-/// the view's zoom, centred as an image would be.
-pub fn paint_uv_grid(view: &BImageView, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
-    let rect = view.uv_square(at);
-    let side = f32::from(rect.size.width);
-    window.paint_quad(fill(rect, to_hsla(colors.grid)));
-    let line = to_hsla(colors.grid_line);
-    let step = side / UV_CELLS as f32;
-    for i in 0..=UV_CELLS {
-        let offset = px((i as f32 * step).round());
-        window.paint_quad(fill(Bounds::new(point(rect.origin.x + offset, rect.origin.y), size(px(UV_GRID_LINE), rect.size.height)), line));
-        window.paint_quad(fill(Bounds::new(point(rect.origin.x, rect.origin.y + offset), size(rect.size.width, px(UV_GRID_LINE))), line));
+    /// `draw_image_grid`: the UV editor's 0..1 square, eight cells a side, at
+    /// the view's zoom, centred as an image would be.
+    pub fn paint_uv_grid(&self, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window) {
+            let view = self;
+        let rect = view.uv_square(at);
+        let side = f32::from(rect.size.width);
+        window.paint_quad(fill(rect, to_hsla(colors.grid)));
+        let line = to_hsla(colors.grid_line);
+        let step = side / UV_CELLS as f32;
+        for i in 0..=UV_CELLS {
+            let offset = px((i as f32 * step).round());
+            window.paint_quad(fill(Bounds::new(point(rect.origin.x + offset, rect.origin.y), size(px(UV_GRID_LINE), rect.size.height)), line));
+            window.paint_quad(fill(Bounds::new(point(rect.origin.x, rect.origin.y + offset), size(rect.size.width, px(UV_GRID_LINE))), line));
+        }
     }
 }
 
@@ -168,7 +179,7 @@ mod tests {
 
     #[test]
     fn the_info_bar_reads_as_blenders() {
-        let mut view = BImageView { zoom: None, pan: (0.0, 0.0), channels: BChannels::Color, pass: "Combined".into(), slot_filled: true, status: None };
+        let mut view = BImageView { zoom: None, pan: (0.0, 0.0), channels: BChannels::Color, pass: "Combined".into(), slot_filled: true, status: None, shown: crate::v2::part::image::shown::BShownImage::RenderResult };
         assert_eq!(info_text(&view, &("Scene".into(), "ViewLayer".into()), "1"), None, "no render, no bar");
         view.status = Some(render_status::BRenderStatus { w: 4, h: 4, taken: 3, target: 8, done: false, has_image: true, depth: false, normal: false, albedo: false, bytes: 64, seq: 1 });
         let text = info_text(&view, &("Scene".into(), "ViewLayer".into()), "12").unwrap();
