@@ -58,8 +58,8 @@ fn a_mix_shader_is_two_materials_and_a_weight() {
 fn procedural_textures_land_in_the_lobes_slots() {
     use crate::phiphx::blend::shade::procedural::{BlendBump, BlendProc, BlendProcCoord, BlendProcKind, BlendProcedural};
     let noise = BlendProc { kind: BlendProcKind::NoiseFac, coords: BlendProcCoord::Object, location: [0.1, 0.2, 0.0], scale3: [2.0, 2.0, 1.0], scale: 8.0, detail: 3.0, roughness: 0.6, lacunarity: 2.5, distortion: 0.0, normalize: true, variant: 1, ramp: Some(vec![200; 256 * 4]), ..Default::default() };
-    let voronoi = BlendProc { kind: BlendProcKind::VoronoiDistance, coords: BlendProcCoord::Generated, scale: 12.0, distortion: 0.7, normalize: false, ramp: None, ..noise.clone() };
-    let fac = BlendProc { ramp: None, ..noise.clone() };
+    let voronoi = BlendProc { kind: BlendProcKind::VoronoiDistance, coords: BlendProcCoord::Generated, scale: 12.0, distortion: 0.7, normalize: false, ramp: None, ..noise };
+    let fac = BlendProc { ramp: None, ..noise };
     let red = SceneBsdf { base: [0.8, 0.1, 0.1, 1.0], roughness: 1.0, ..Default::default() };
     let mirror = SceneBsdf { base: [1.0; 4], roughness: 0.0, metallic: 1.0, ..Default::default() };
     let mut material = SceneMaterial::neutral();

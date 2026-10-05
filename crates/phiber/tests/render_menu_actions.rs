@@ -198,7 +198,10 @@ async fn the_render_menu_works_on_a_fresh_session(cx: &mut TestAppContext) {
 
     // Render Audio…: the browser's commit writes the range's silence.
     let target = dir.join("mix.wav");
-    app.update(cx, |app, _| app.handle_file_commit(&target.to_string_lossy(), BFilePurpose::Mixdown));
+    app.update(cx, |app, cx| app.handle_file_commit(&target.to_string_lossy(), BFilePurpose::Mixdown, cx));
+    // The encode is on the background pool since batch 149, so the write
+    // lands when the executor is driven, not inside the click.
+    cx.run_until_parked();
     let bytes = std::fs::read(&target).expect("the mixdown");
     // Two frames at 24 fps: a twelfth of a second of 16-bit stereo at 48 kHz.
     assert_eq!(bytes.len(), 44 + 4000 * 4);

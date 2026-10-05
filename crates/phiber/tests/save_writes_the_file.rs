@@ -67,15 +67,15 @@ async fn ctrl_s_saves_the_edits_save_as_moves_the_document_and_save_copy_does_no
     assert!(!log.contains("Warning"), "nothing was left out: {log}");
 
     // Save Copy: written beside, the document stays.
-    app.update(cx, |app, _| {
-        app.handle_file_commit(&dir.join("copy").to_string_lossy(), BFilePurpose::SaveCopy);
+    app.update(cx, |app, cx| {
+        app.handle_file_commit(&dir.join("copy").to_string_lossy(), BFilePurpose::SaveCopy, cx);
     });
     assert!(dir.join("copy.blend").is_file(), "the copy gets the extension it lacked");
     assert_eq!(app.read_with(cx, |a, _| a.state.get(&phiber::v2::scene::loaded_path_key()).map(str::to_string)), Some(blend.to_string_lossy().to_string()));
 
     // Save As: the document moves.
-    app.update(cx, |app, _| {
-        app.handle_file_commit(&dir.join("moved.blend").to_string_lossy(), BFilePurpose::SaveAs);
+    app.update(cx, |app, cx| {
+        app.handle_file_commit(&dir.join("moved.blend").to_string_lossy(), BFilePurpose::SaveAs, cx);
     });
     assert!(dir.join("moved.blend").is_file());
     assert_eq!(
@@ -122,7 +122,7 @@ async fn a_new_file_is_the_startup_scene_and_saves_through_it(cx: &mut TestAppCo
 
     // Save As: a file with the cube in it, and the document now has a path.
     let target = dir.join("fresh.blend");
-    app.update(cx, |app, _| app.handle_file_commit(&target.to_string_lossy(), BFilePurpose::SaveAs));
+    app.update(cx, |app, cx| app.handle_file_commit(&target.to_string_lossy(), BFilePurpose::SaveAs, cx));
     assert!(target.is_file());
     let saved = read_scene(&target);
     assert!(saved.objects.iter().any(|o| o.name == "Cube" && o.vertices.len() == 8), "{:?}", saved.objects.iter().map(|o| &o.name).collect::<Vec<_>>());
@@ -167,7 +167,7 @@ async fn a_new_file_takes_the_open_documents_version_or_the_one_named(cx: &mut T
     assert!(names.contains(&"Cube".to_string()) && names.contains(&"Camera".to_string()) && names.contains(&"Light".to_string()), "{names:?}");
     // …and Save As writes a 3.6 file with the cube in it.
     let target = dir.join("three.blend");
-    app.update(cx, |app, _| app.handle_file_commit(&target.to_string_lossy(), BFilePurpose::SaveAs));
+    app.update(cx, |app, cx| app.handle_file_commit(&target.to_string_lossy(), BFilePurpose::SaveAs, cx));
     let file = BlendFile::parse_bytes(&std::fs::read(&target).unwrap()).unwrap();
     assert_eq!(file.header.version_label(), "3.6");
     assert!(file.extract_scene().unwrap().objects.iter().any(|o| o.name == "Cube" && o.vertices.len() == 8));

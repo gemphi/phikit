@@ -62,6 +62,11 @@ impl BMixdown {
     }
 
     /// Write the mixdown to `target` (`file_for` it first).
+    ///
+    /// **Blocks the calling thread** — `ffmpeg` takes as long as the
+    /// mixdown is long — so its caller runs it on `cx.background_spawn`
+    /// (`docs/rendering.md` §49).
+    #[allow(clippy::disallowed_methods)]
     pub fn write(&self, target: &Path) -> Result<BMixdownMade, String> {
         let file = Self::file_for(target);
         if let Some(folder) = file.parent().filter(|f| !f.as_os_str().is_empty()) {

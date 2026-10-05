@@ -24,6 +24,13 @@ fn a_suns_angle_and_the_other_shapes_come_from_the_file() {
     let cone = of("Cone");
     assert_eq!((cone.kind, cone.size), (2, 0.2));
     assert!((cone.cone - 30.0_f32.to_radians().cos()).abs() < 1e-6, "the spot's half-angle cosine: {}", cone.cone);
+    // The Blend as a width in cosine, as EEVEE precomputes it
+    // (`spot_blend = (1 - spot_size) * spotblend`): the file's 0.6 of the
+    // way from the cone's edge to straight ahead.
+    let want = (1.0 - cone.cone) * 0.6;
+    assert!((cone.blend - want).abs() < 1e-6, "{} vs {want}", cone.blend);
+    // Blend 0 is a hard edge; a kind with no cone carries none.
+    assert_eq!((of("Sharp").blend, of("Bulb").blend), (1e-8, 0.0));
 }
 
 /// An area light's shape reaches the record with its own axes and the

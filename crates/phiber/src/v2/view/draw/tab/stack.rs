@@ -30,7 +30,7 @@ pub fn rail_stack(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
         .keeps_size()
         .div(ctx)
         .id(SharedString::from(icon_id_text.clone()))
-        .debug_selector(move || icon_id_text.clone())
+        .debug_selector(move || icon_id_text)
         .child(svg().path(icon_path(ic)).size(px(ctx.style.dimensions.icon_size)).text_color(icon_ink));
     let stack = BFlex::column()
         .width(BLen::Measured(width))
@@ -45,8 +45,8 @@ pub fn rail_stack(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
         .div(ctx)
         .id(SharedString::from(id_text.clone()))
         .debug_selector({
-            let id = id_text.clone();
-            move || id.clone()
+            let id = id_text;
+            move || id
         })
         .cursor_pointer()
         .child(icon)

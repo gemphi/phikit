@@ -2267,3 +2267,119 @@ calling thread for an unknown time and wants `smol::process::Command`
 instead. Those live in files the other agent is editing, and a
 forty-file mechanical sweep across them would collide with work in
 flight, so they are left for a batch of their own.
+
+## 49. The encode ran on the UI thread (batch 149, 2026-10-05)
+
+Batch 148 left phiber failing `cargo clippy`, and the three
+`disallowed_methods` denials in it turned out to name a real freeze rather
+than a style point.
+
+The workspace forbids `std::process::Command::output`
+(`disallowed_methods = "deny"` in `Cargo.toml`, the list itself in
+`clippy.toml`: *"can block the current thread for an unknown duration"*,
+replacement `smol::process::Command::output`) because it blocks the
+calling thread until the child exits. Three calls used it:
+`scene/video/mod.rs`'s `BMovieJob::ffmpeg_present` and `finish`, and
+`scene/mixdown.rs`'s `BMixdown::write`. Following their callers up:
+
+- `finish` is called from `app/op/render.rs`'s animation loop, inside
+  `cx.spawn(async move |this, cx| …)`. In gpui `cx.spawn` is the
+  **foreground** executor — the one that paints — so the `ffmpeg` encode
+  of the whole frame range ran on the UI thread. On the wave file (140
+  frames) that is seconds to minutes with the window frozen and not
+  repainting.
+- `mixdown_to` (Render ▸ Render Audio…, `app/op/render_view.rs`) did not
+  even have that much: it called `write` straight from the handler, so
+  the encode ran inside the click.
+
+So the freeze is real and the fix is to move the work, not to change how
+the program is spawned. The two callers put it on the pool:
+
+```rust
+// render.rs — the animation loop, already inside cx.spawn
+let made = cx.background_spawn(async move { job.finish() }).await;
+
+// render_view.rs — Render Audio…, which had no spawn at all
+cx.spawn(async move |this, cx| {
+    let made = cx.background_spawn(async move { mix.write(&file) }).await;
+    let _ = this.update(cx, |app, cx| { /* info::push over `made` */ cx.notify(); });
+})
+.detach();
+```
+
+`cx.background_spawn` comes from gpui's `AppContext` trait, so both files
+import it. `mixdown_to` now takes a `&mut Context<Self>`, which threaded
+through `app/op/file.rs`'s `handle_file_commit` and its five callers. The
+reports it pushes (`Saved: '…'`, the WAV fallback warning, the error) now
+land from `this.update` when the encode returns, which is where Blender
+puts them too: `WM_jobs` reports when the job ends, not when it starts.
+
+**The lint's own replacement does not work here, and that is the finding.**
+The first attempt did what `clippy.toml` suggests: `async fn` over
+`smol::process::Command`, whose `output()` is a future. It compiled, and
+it broke two tests:
+
+```
+Detected activity on thread Some("async-process") ThreadId(10), but test
+scheduler is running on Some("ctrl_f12_with_ffmpeg_video_writes_one_movie")
+ThreadId(2). Your test is not deterministic.
+```
+
+`smol::process` runs a reactor on a thread of its own (`async-io`'s
+driver), and when the child exits that thread wakes the task — which
+means it calls into `phicore`'s `TestScheduler`, whose
+`assert_correct_thread` fails any wake-up that does not come from the
+test's thread (`test_scheduler.rs:120`). A `smol` future is deterministic
+nowhere near the gpui harness.
+
+So the three functions stay blocking `std::process::Command` and say so,
+each with `#[allow(clippy::disallowed_methods)]` and a doc line naming
+`cx.background_spawn` as where they belong. That is the pattern the rest
+of the tree already uses for a program it has to run (`util/src/test.rs`,
+`util/src/command/darwin.rs`): the lint is about *which thread* blocks,
+and a pool thread blocking is what a pool is for. `phiber` needs no
+`smol` dependency.
+
+One test had to change with the behaviour rather than around it:
+`render_menu_actions.rs` read the mixdown file on the line after the
+commit, which only worked while the encode happened inside the click. It
+drives the executor first now (`cx.run_until_parked()`) — the write lands
+when the pool runs, which is the point of the batch.
+
+**The clone sweep.** The other 49 denials were `redundant_clone`, also
+`deny` workspace-wide: 42 that plain `cargo clippy -p phiber` names and 7
+more that only `--all-targets --keep-going` reaches, because clippy stops
+at the first failing target and `cargo test` never builds examples at
+all. Nearly all are `move || id.clone()` in a closure that is the last
+use of `id` — 39 files under `view/draw/` (`modal/`, `pane.rs`, `tab/`,
+`zone/`, `space/`, `track/`, `tree/`, `region/`, `split.rs`, `sort.rs`,
+`toggle.rs`, `card.rs`, `ctrl/number.rs`, `canvas/`), `app/`, `part/` and
+`scene/`, plus 14 test files. All plain moves.
+
+Two of them were not:
+
+- `examples/color_render.rs` had been broken since batch 146, which moved
+  the free `light()` into `BLamp::record` — invisible because `cargo
+  test` does not build examples. It is `.map(BLamp::record)` now.
+- `tests/space_shapes.rs:340` was a false positive: the clone feeds a
+  `prop_assert_eq!`, which consumes both sides, so removing it stopped
+  the file compiling. Restructured to call the pure `expected_shape`
+  helper twice instead, which is what the assertion wanted anyway.
+
+One of the 49 sits in `canvas/time/mod.rs`, which the other agent is
+rewriting (it has grown a `scrub_height` and a new `paint_channels`
+signature since batch 148). That file is **not** in this batch's archive:
+the one-token change — `BTimeGesture { view: view.clone(), … }` to the
+field shorthand `{ view, … }` — was applied in place on the machine's own
+current copy with `sed`, so their work in flight is untouched and
+`cargo clippy` is still clean there.
+
+Worth recording about the tooling: `redundant_clone`'s span points at the
+`.`, not at `clone`, so a position-exact sweep script has to accept both
+columns; and a sweep is not finished until `--all-targets --keep-going`
+is clean, or clippy's "first failing target" behaviour makes the count
+look like it oscillates.
+
+`cargo clippy --all-targets` is now clean for all three crates: phiphx
+214 passing and 6 asset-dependent, phiray 97 passing, phiber 1274 passing
+and 13 failing — all thirteen the other agent's work in progress.

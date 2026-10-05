@@ -87,6 +87,6 @@ async fn keys_over_the_dope_sheet_run_its_menus(cx: &mut TestAppContext) {
     // Ctrl C: Key ▸ Copy Keyframes, which says it is not here yet.
     cx.simulate_keystrokes("ctrl-c");
     cx.run_until_parked();
-    let said = phiber::v2::state::log::latest().map(|e| e.text.clone()).unwrap_or_default();
+    let said = phiber::v2::state::log::latest().map(|e| e.text).unwrap_or_default();
     assert!(said.contains("Copy Keyframes") && said.contains("not available yet"), "{said}");
 }

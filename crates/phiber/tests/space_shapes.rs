@@ -336,9 +336,8 @@ proptest! {
         let style_b = resolve_ui_style(ui_style_defaults(palette_b), &state_b);
         prop_assert_ne!(style_a, style_b);
 
-        let expected = expected_shape(space, visible, include_full);
-        prop_assert_eq!(generated_shape(space, &state_a, include_full), expected.clone());
-        prop_assert_eq!(generated_shape(space, &state_b, include_full), expected);
+        prop_assert_eq!(generated_shape(space, &state_a, include_full), expected_shape(space, visible, include_full));
+        prop_assert_eq!(generated_shape(space, &state_b, include_full), expected_shape(space, visible, include_full));
     }
 }
 

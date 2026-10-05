@@ -405,3 +405,87 @@ but was missing here): the side-by-side file list (`comm`) is what finds it.
   tick of `ensure_ray_ticker`; a render on the real GPU thread meanwhile
   needs a `std::thread::sleep` between ticks
   (`the_rendering_workspace_opens_on_a_render.rs`).
+
+## 6. Blender's source, local in the container (batch 146)
+
+Every batch is a port, so the source is read every batch — and reading it
+through `device_bash` is a round trip per grep. Stage it once instead and
+grep it locally. The machine has two full checkouts,
+`phiace/REFS/blender/blender` and `phiace/crates/phiber/refs/blender/blender`;
+either works.
+
+```bash
+# device: tar the subtrees a port actually reads (~7.8 MB gzipped)
+cd $HOME/mnt/phiace/crates/phiber/refs/blender/blender
+tar czf $HOME/mnt/phiace/_to_delete/sync/bsrc.tgz \
+    source/blender/makesdna source/blender/makesrna/intern \
+    source/blender/draw/engines/eevee source/blender/draw/engines/workbench \
+    source/blender/draw/intern source/blender/blenkernel/intern \
+    source/blender/blenlib/intern source/blender/nodes/shader \
+    source/blender/gpu/shaders intern/cycles/kernel intern/cycles/util \
+    intern/cycles/scene
+# container, after staging it:
+mkdir -p /home/claude/bsrc && tar xzf /mnt/user-data/uploads/phiace/_to_delete/sync/bsrc.tgz -C /home/claude/bsrc
+```
+
+43 MB unpacked, and it answers the questions a batch asks: `makesdna` for a
+struct's fields and their defaults (`DNA_light_types.h`'s `sun_angle`,
+`DNA_scene_types.h`'s `SceneEEVEE.flag`), `makesrna/intern` for the enum
+identifiers the UI shows (`prop_areashape_items`), `draw/engines/eevee` for
+what EEVEE does with them (`eevee_light.cc`, the `.bsl.hh` shaders),
+`intern/cycles/kernel` for the SVM nodes, `nodes/shader` for each node's
+socket defaults. Whole-tree `grep -rln` over the mount times out at 120 s;
+locally it is instant.
+
+Two notes. The checkout is gitignored (`/REFS/`, `/crates/phiber/refs/`), so
+it never travels in a batch. And a copy goes stale against the Blender the
+user runs — check the version in `source/blender/blenkernel/BKE_blender_version.h`
+when a field's presence matters.
+
+## 7. Clippy, and two ways it misleads (batch 149)
+
+`cargo clippy -p <crate>` is not a complete list. It **stops at the first
+failing target**, and it does not build examples at all — `cargo test`
+does not either, so `examples/color_render.rs` had been broken since
+batch 146 with every suite green. The sweep command is
+
+```bash
+cargo clippy -p phiber --all-targets --keep-going
+```
+
+and a sweep is not finished until that is clean. Without `--keep-going`
+the count looks like it oscillates: each pass fixes one target and
+uncovers the next.
+
+Two more notes for a mechanical sweep. `redundant_clone`'s span column
+points at the `.`, not at `clone`, so a position-exact script has to
+accept both. And the lint is sometimes wrong: at
+`tests/space_shapes.rs:340` the clone fed a `prop_assert_eq!`, which
+consumes both sides, so removing it stopped the file compiling — check
+that the file still builds after each removal rather than trusting the
+list.
+
+**`disallowed_methods` on `std::process::Command` does not mean reach for
+`smol`.** `clippy.toml` names `smol::process::Command` as the
+replacement, but `smol::process` wakes its task from `async-io`'s own
+driver thread, and phicore's `TestScheduler` panics on any wake-up off
+the test's thread (*"Your test is not deterministic"*,
+`test_scheduler.rs:120`). The lint is about which thread blocks: run the
+blocking `std::process::Command` on `cx.background_spawn` and mark it
+`#[allow(clippy::disallowed_methods)]` with a line saying where it
+belongs, which is what `util/src/test.rs` and `util/src/command/darwin.rs`
+already do.
+
+**A file the other agent is rewriting stays out of the archive.** When
+the batch's only change to it is a token (a `redundant_clone`), apply
+that change in place on the machine with `sed -i` after `grep`-ing the
+exact line, rather than shipping a copy that would overwrite their work.
+Record the drift (`scratchpad/machine/STALE.md`) so the next merge pulls
+their version in.
+
+**Transferring a file out of the device shell: verify the length.** A
+`gzip | base64 -w0` blob read back through a single `device_bash` call
+lost one character at ~2.8 kB, and the decoded file was garbage from that
+point on while still looking like Rust at the top. Print `wc -c` of the
+blob and read it in chunks of ~2 kB (`head -c`, `tail -c +N`), or check
+the file's `md5sum` on both sides before using it.

@@ -46,7 +46,7 @@ impl BStripPan {
         let listener = canvas(
             |_, _, _| (),
             move |_, (), window, _| {
-                let moved = moved.clone();
+                let moved = moved;
                 window.on_mouse_event(move |e: &MouseMoveEvent, phase, window, _| {
                     let Some((x0, start)) = GRAB.get() else { return };
                     if phase != DispatchPhase::Bubble {

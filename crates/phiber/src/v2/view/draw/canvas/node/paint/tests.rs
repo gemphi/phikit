@@ -53,6 +53,8 @@ fn an_input_sits_on_the_left_edge_and_an_output_on_the_right() {
         kind: 0,
         side,
         y: 1.0,
+        default: None,
+        linked: false,
     };
     let card = BNodeCard {
         name: "n".into(),
@@ -81,4 +83,43 @@ fn the_inner_line_is_blenders_fraction_of_the_outline() {
         LINK_WIDTH * INNER_SCALE < LINK_WIDTH,
         "the main line has to be narrower than the outline it sits on"
     );
+}
+
+#[test]
+fn an_input_reads_as_linked_only_when_a_wire_arrives_at_it() {
+    use crate::phiphx::blend::shade::graph::BlendNodeLink;
+    use crate::phiphx::blend::shade::socket::BSocketDefault;
+    let input = |id: &str| BSocketRow {
+        identifier: id.into(),
+        name: id.into(),
+        kind: 0,
+        side: BSocketSide::Input,
+        y: 1.0,
+        default: Some(BSocketDefault::Float(0.5)),
+        linked: false,
+    };
+    let output = BSocketRow { side: BSocketSide::Output, ..input("Out") };
+    let mut card = BNodeCard {
+        name: "Mix".into(),
+        x: 0.0,
+        y: 0.0,
+        width: 100.0,
+        header: 10.0,
+        unit: 10.0,
+        height: 40.0,
+        sockets: vec![input("Fac"), input("A"), output],
+    };
+    // One wire lands on "Fac"; nothing lands on "A".
+    let wired = vec![BlendNodeLink {
+        from: "Value".into(),
+        from_socket: "Value".into(),
+        to: "Mix".into(),
+        to_socket: "Fac".into(),
+    }];
+    card.mark_linked(&wired);
+    let linked = |id: &str| card.sockets.iter().find(|r| r.identifier == id).unwrap().linked;
+    assert!(linked("Fac"), "a wire arrives at Fac");
+    assert!(!linked("A"), "nothing arrives at A, so it keeps its value");
+    // The output is never marked — a value is only ever an input's.
+    assert!(!card.sockets.iter().find(|r| r.side == BSocketSide::Output).unwrap().linked);
 }

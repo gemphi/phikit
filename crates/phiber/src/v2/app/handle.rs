@@ -133,7 +133,7 @@ impl BPhiberApp {
                     self.start_import(file, cx);
                 }
             }
-            Some((file, purpose)) => self.handle_file_commit(&file, purpose),
+            Some((file, purpose)) => self.handle_file_commit(&file, purpose, cx),
             None => {}
         }
 

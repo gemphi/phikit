@@ -206,7 +206,7 @@ mod tests {
         assert!(first.contains_key(&object) && first.len() == 1, "menus are UI, not document: {first:?}");
 
         state.set(CtxKey::Object, "Sphere");
-        history.record(first.clone(), &snapshot(&state), "Select Sphere");
+        history.record(first, &snapshot(&state), "Select Sphere");
         state.set(CtxKey::Frame, "40");
         let second = snapshot(&state);
         history.record(snapshot_before(&state, &CtxKey::Frame.path().encode()), &second, "Frame 40");

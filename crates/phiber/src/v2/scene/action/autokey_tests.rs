@@ -113,7 +113,7 @@ fn replace_only_replaces_a_key_standing_on_the_frame() {
 #[test]
 fn off_nothing_is_keyed() {
     let model = factory();
-    crate::v2::scene::source::set_loaded_scene(Some(model.clone()));
+    crate::v2::scene::source::set_loaded_scene(Some(model));
     let mut s = BState::new();
     moved(&mut s, BTransformMode::Translate, [1.0, 0.0, 0.0]);
     assert!(BAutoKey::transformed(&mut s, BTransformMode::Translate, &["Cube".into()]).is_empty());

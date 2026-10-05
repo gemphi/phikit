@@ -84,6 +84,10 @@ pub fn collapsed_rows(node: &BlendNode) -> Vec<BSocketRow> {
                 kind: socket.kind,
                 side,
                 y: first + HALF * placed as f32,
+                // A collapsed node draws its sockets as dots only — no rows to
+                // hold a value widget in.
+                default: None,
+                linked: false,
             });
             placed += 1;
         }

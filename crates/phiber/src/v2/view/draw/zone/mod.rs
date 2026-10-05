@@ -186,7 +186,7 @@ pub fn view(kind: BZoneType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
             .flex(ctx)
             .div(ctx)
             .id(gpui::SharedString::from(selector.clone()))
-            .debug_selector(move || selector.clone())
+            .debug_selector(move || selector)
             .child(walk(child, ctx));
         if area_index > 0 && child_count > 1 {
             slot = slot.child(

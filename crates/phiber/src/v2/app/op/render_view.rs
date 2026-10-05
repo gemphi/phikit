@@ -10,7 +10,7 @@ use crate::v2::scene::mixdown::{BMixdown, BMixdownMade};
 use crate::v2::scene::render_job;
 use crate::v2::scene::render_play::BRenderedPlayback;
 use crate::v2::state::{CtxKey, ModalKey, log, val::{V_EMPTY, V_MODAL_RENDER}};
-use gpui::Context;
+use gpui::{AppContext as _, Context};
 
 impl BPhiberApp {
     /// Render ▸ Lock Interface (`use_lock_interface`), while a render runs
@@ -111,14 +111,25 @@ impl BPhiberApp {
     /// The mixdown the browser named: the range's audio — silence, for a
     /// scene without sound — in Blender's default FLAC, or a WAV where
     /// there is no `ffmpeg` to write one.
-    pub(super) fn mixdown_to(&mut self, path: &str) {
+    /// The encode runs on the pool and reports when it lands: `ffmpeg`
+    /// takes as long as the range is long, and this ran on the UI thread
+    /// until it moved (`rendering.md` §49).
+    pub(super) fn mixdown_to(&mut self, path: &str, cx: &mut Context<Self>) {
         let start = crate::v2::state::key::int_or(&self.state, CtxKey::FrameStart, 1);
         let end = crate::v2::state::key::int_or(&self.state, CtxKey::FrameEnd, 250);
         let fps = crate::v2::state::key::float_or(&self.state, CtxKey::Fps, 24.0);
-        match BMixdown::of_range(start, end, fps).write(std::path::Path::new(path)) {
-            Ok(BMixdownMade::Ffmpeg(file)) => info::push(&mut self.state, BReportLevel::Info, format!("Saved: '{}'", file.display())),
-            Ok(BMixdownMade::Wav(file)) => info::push(&mut self.state, BReportLevel::Warning, format!("ffmpeg is not installed: saved a WAV instead, '{}'", file.display())),
-            Err(why) => info::push(&mut self.state, BReportLevel::Error, format!("Cannot write the mixdown: {why}")),
-        }
+        let (mix, file) = (BMixdown::of_range(start, end, fps), std::path::PathBuf::from(path));
+        cx.spawn(async move |this, cx| {
+            let made = cx.background_spawn(async move { mix.write(&file) }).await;
+            let _ = this.update(cx, |app, cx| {
+                match made {
+                    Ok(BMixdownMade::Ffmpeg(file)) => info::push(&mut app.state, BReportLevel::Info, format!("Saved: '{}'", file.display())),
+                    Ok(BMixdownMade::Wav(file)) => info::push(&mut app.state, BReportLevel::Warning, format!("ffmpeg is not installed: saved a WAV instead, '{}'", file.display())),
+                    Err(why) => info::push(&mut app.state, BReportLevel::Error, format!("Cannot write the mixdown: {why}")),
+                }
+                cx.notify();
+            });
+        })
+        .detach();
     }
 }

@@ -77,7 +77,7 @@ impl BOrbit {
             .on_mouse_down(gpui::MouseButton::Right, hit.clone().on_cursor(ctx))
             .on_click(hit.on_click(ctx))
             .on_drag(
-                drag.clone(),
+                drag,
                 move |state, position: Point<Pixels>, window, cx| {
                     if let Ok(mut state) = state.lock() {
                         state.start = (f32::from(position.x), f32::from(position.y));

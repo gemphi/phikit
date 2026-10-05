@@ -59,7 +59,7 @@ impl BFullscreen<'_> {
             .flex(ctx)
             .div(ctx)
             .id(SharedString::from(id.clone()))
-            .debug_selector(move || id.clone())
+            .debug_selector(move || id)
             .children(self.content(false, ctx));
         let close_h = ctx.handler.clone();
         let close_a = close_action();

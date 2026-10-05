@@ -91,7 +91,7 @@ impl BAxis {
         let selector = format!("compass-{letter}-pos");
         div()
             .id(SharedString::from(selector.clone()))
-            .debug_selector(move || selector.clone())
+            .debug_selector(move || selector)
             .absolute()
             .top(px(self.cy - diameter / 2.0))
             .left(px(self.cx - diameter / 2.0))

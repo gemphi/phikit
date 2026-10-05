@@ -1,6 +1,6 @@
 # Phiber UI — status
 
-**Suite: 1273 passing, 14 failing** (phiber, on the tree as it stands on the
+**Suite: 1274 passing, 13 failing** (phiber, on the tree as it stands on the
 machine, the other agent's node-editor / Timeline / swatch work included —
 all fourteen are theirs in progress: a region's host corners, the overlay
 family key test, the Preferences palette override and its rows' actions,
@@ -798,6 +798,48 @@ Blender's own choices.
   and Graph headers, which Blender leaves out of the Timeline.
 - Truth: `tests/marker_box_and_transport_popovers.rs`, `scene/grab.rs`,
   `part/playback/settings.rs`.
+
+## Batch 149 — the encode ran on the UI thread
+
+- The three `disallowed_methods` denials batch 148 left named a real
+  freeze. `ffmpeg` ran through `std::process::Command::output`, which
+  blocks the calling thread, and its callers were on gpui's
+  **foreground** executor: `app/op/render.rs`'s animation loop uses
+  `cx.spawn` (the painting thread), and Render ▸ Render Audio… called
+  `BMixdown::write` straight from the click. A movie encode over a frame
+  range froze the window for as long as it took.
+- Both callers go through `cx.background_spawn` now and report from
+  `this.update` when the encode lands, as Blender's `WM_jobs` does.
+  `mixdown_to` took a `Context`, threaded through `handle_file_commit`
+  and its five callers.
+- The lint's own replacement does **not** work here: `smol::process`
+  wakes its task from `async-io`'s own driver thread, and phicore's
+  `TestScheduler` fails any wake-up off the test's thread
+  (*"Your test is not deterministic"*). The three functions stay blocking
+  `std::process::Command` with `#[allow(clippy::disallowed_methods)]` and
+  a doc line naming `cx.background_spawn` — the pattern the rest of the
+  tree uses (`util/src/test.rs`, `util/src/command/darwin.rs`). The lint
+  is about which thread blocks, and a pool thread blocking is the pool's
+  job.
+- 49 `redundant_clone` denials swept across 39 source files and 14 test
+  files — 42 that `cargo clippy -p phiber` names, 7 more only
+  `--all-targets --keep-going` reaches. Nearly all `move || id.clone()`
+  on the last use of `id`.
+- Two were not clones: `examples/color_render.rs` had been broken since
+  batch 146 (`cargo test` never builds examples), and
+  `tests/space_shapes.rs` was a false positive — the clone fed a
+  `prop_assert_eq!`, which consumes both sides.
+- `render_menu_actions.rs` drives the executor (`cx.run_until_parked()`)
+  before reading the mixdown, which is the new behaviour rather than a
+  workaround.
+- `canvas/time/mod.rs` is the other agent's in-flight file (a new
+  `scrub_height`, a new `paint_channels` signature), so it is left out of
+  the archive: its one token was changed in place on the machine with
+  `sed` instead.
+- **Suites:** phiber 1274 passing, 13 failing (all the other agent's);
+  phiphx 214 + 6 asset-dependent; phiray 97. `cargo clippy
+  --all-targets` clean for all three.
+- `rendering.md` §49.
 
 ## Batch 148 — clippy's dead code
 

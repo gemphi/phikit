@@ -108,7 +108,7 @@ impl BSort<'_> {
             .flex(ctx)
             .div(ctx)
             .id(SharedString::from(id_text))
-            .debug_selector(move || selector.clone())
+            .debug_selector(move || selector)
             .cursor_pointer()
             .child(content)
             .on_click(move |_event: &ClickEvent, window, app| {

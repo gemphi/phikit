@@ -67,7 +67,7 @@ impl BTime {
         let painted = view.clone();
         let playing = crate::v2::part::playback::set::BTransportButton::playing(ctx.state);
         let grabbing = crate::v2::scene::grab::BMarkerGrab::active(ctx.state);
-        let gesture = Rc::new(gesture::BTimeGesture { view: view.clone(), handler: ctx.handler.clone(), bounds, grabbing, snap: (crate::v2::part::playback::snap::BPlayheadSnap::now(ctx.state), crate::v2::part::playback::snap::BSnapTargets::now(ctx.state)) });
+        let gesture = Rc::new(gesture::BTimeGesture { view, handler: ctx.handler.clone(), bounds, grabbing, snap: (crate::v2::part::playback::snap::BPlayheadSnap::now(ctx.state), crate::v2::part::playback::snap::BSnapTargets::now(ctx.state)) });
         let (down, moved, dragged, up, cancel) = (gesture.clone(), gesture.clone(), gesture.clone(), gesture.clone(), gesture);
         // The window covers the host edge to edge (`BPlace::Overlay`) in
         // the theme's `TH_BACK`, and the canvas covers the window.

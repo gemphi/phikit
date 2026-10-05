@@ -79,7 +79,7 @@ fn build(ctrl: &BCtrl, ctx: &BRenderCtx) -> AnyElement {
         .flex(ctx)
         .div(ctx)
         .id(gpui::SharedString::from(id.clone()))
-        .debug_selector(move || id.clone())
+        .debug_selector(move || id)
         .cursor_pointer()
         .on_click(move |_, window, app| (std::rc::Rc::clone(&handler))(&focus, window, app));
     if let Some(label) = &ctrl.label {

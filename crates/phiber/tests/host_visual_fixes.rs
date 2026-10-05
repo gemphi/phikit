@@ -224,10 +224,10 @@ fn table_row_has_id() {
     use phiber::v2::view::prim::{BRowShade, BTableCell};
 
     let path_a = BPath::owned(vec!["file", "browser", "open"]);
-    let action_a = BAction::Open(path_a.clone());
+    let action_a = BAction::Open(path_a);
 
     let path_b = BPath::owned(vec!["ctx", "file", "name"]);
-    let action_b = BAction::Set(path_b.clone(), "cube.blend".to_string());
+    let action_b = BAction::Set(path_b, "cube.blend".to_string());
 
     // table_row_id produces "table-row-<action-seg>". We verify the
     // generated IDs are stable, action-scoped, and distinguishable.

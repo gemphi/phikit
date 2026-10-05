@@ -121,7 +121,7 @@ mod tests {
 
         let generation = Gpu::generation();
         apply_action(&mut state, &BAction::Set(AppKey::Gpu.path(), a.name.clone()));
-        assert_eq!(log::latest().map(|e| e.text.clone()), Some(format!("Render device: {}", a.name)));
+        assert_eq!(log::latest().map(|e| e.text), Some(format!("Render device: {}", a.name)));
         assert_eq!(Gpu::generation(), generation, "already drawing on it: nothing reopened");
         let mut shown = Vec::new();
         texts(&BRenderDevices::view(&state), &mut shown);

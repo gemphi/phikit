@@ -76,6 +76,7 @@ fn moving_scene() -> SceneModel {
             energy: 10.0,
             kind: "POINT".into(),
             spot_size: 0.0,
+            spot_blend: 0.15,
             size: 0.1,
             size_y: 0.1,
             shape: "SQUARE".into(),
@@ -154,7 +155,7 @@ fn a_moving_scene_is_rebuilt_per_frame_and_a_still_one_only_per_model() {
     assert_eq!(object_builds(), before + 1, "one build per frame, shared across a pass");
     // The playhead steps: a new build, standing further along.
     apply_action(&mut state, &BAction::Set(CtxKey::FrameStep.path(), "+5".into()));
-    set_loaded_at(Some(moving.clone()), &state);
+    set_loaded_at(Some(moving), &state);
     let later = scene_objects(&state);
     assert_eq!(object_builds(), before + 2);
     assert!(x_of(&later[0]) > x_of(&first[0]), "the Cube moved on");

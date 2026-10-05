@@ -132,7 +132,7 @@ impl BSeam {
         let mut handle = div()
             .id(SharedString::from(selector.clone()))
             .group(group)
-            .debug_selector(move || selector.clone())
+            .debug_selector(move || selector)
             .flex()
             .items_center()
             .justify_center()
@@ -157,7 +157,7 @@ impl BSeam {
             measured: self.measured,
             snap_threshold: ctx.style.resize.snap_threshold,
             min_extent: ctx.style.resize.min_extent,
-            dragging: dragging.clone(),
+            dragging: dragging,
         };
         handle = handle.on_drag(payload, |drag: &ZoneDrag, _, _, cx| {
             drag.dragging.store(true, Ordering::Relaxed);

@@ -166,6 +166,16 @@ Noise, Limits, Envelope, Stepped); shape-key animation; Grease Pencil.
   `BKE_movie_filepath_get`'s way (`shot_0001-0140.mkv`). Esc anywhere
   cancels a render (115); the Image editor's header carries Cancel and
   the progress (116).
+- **Batch 149:** that encode runs on the background pool. Until now
+  `ffmpeg` was spawned with `std::process::Command::output`, which blocks
+  its thread, from inside `cx.spawn` — gpui's *foreground* executor — so
+  the window stopped repainting for the length of the encode. The same
+  held for Render ▸ Render Audio…, which called `BMixdown::write` straight
+  from the click. Both callers go through `cx.background_spawn` now, and
+  the Info report lands when the encode returns, as `WM_jobs` reports at
+  the end of a job. The spawn stays a blocking `std::process::Command` on
+  purpose: `smol::process` wakes from its own driver thread, which the
+  test scheduler rejects as non-deterministic (`rendering.md` §49).
 - **Gaps:** the engine choice is ignored (Eevee, Workbench and Cycles all
   render with phiray); no bundled encoder (ffmpeg is the machine's), no
   audio, the Encoding panel is not written back to the file; an

@@ -133,8 +133,8 @@ proptest! {
         let outcome = match outcome_tag % 3 {
             0 => ImportOutcome::Loaded(SceneModel {
                 objects: vec![],
-                source_path: source_path.clone(),
-            ..Default::default()
+                source_path,
+                ..Default::default()
             }),
             1 => ImportOutcome::Failed(err),
             _ => ImportOutcome::TimedOut,

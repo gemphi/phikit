@@ -28,7 +28,7 @@ impl BSplit<'_> {
             .flex(ctx)
             .div(ctx)
             .id(gpui::SharedString::from(selector.clone()))
-            .debug_selector(move || selector.clone());
+            .debug_selector(move || selector);
         let last = self.0.len().saturating_sub(1);
         for (n, child) in self.0.iter().enumerate() {
             // The first and last columns are the two a reader lines up: the
@@ -47,7 +47,7 @@ impl BSplit<'_> {
                     .flex(ctx)
                     .div(ctx)
                     .id(gpui::SharedString::from(slot.clone()))
-                    .debug_selector(move || slot.clone())
+                    .debug_selector(move || slot)
                     .child(walk(child, &inner)),
             );
         }

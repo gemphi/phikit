@@ -5,6 +5,7 @@
 //! they can copy from another `.blend`.
 
 use super::super::BPhiberApp;
+use gpui::Context;
 use crate::v2::part::file::purpose::BFilePurpose;
 use crate::v2::part::text::info::{self, BReportLevel};
 use crate::v2::state::{BKey as _, CtxKey, FileKey, OpKey, log};
@@ -12,7 +13,7 @@ use crate::v2::state::{BKey as _, CtxKey, FileKey, OpKey, log};
 impl BPhiberApp {
     /// A file-browser commit that exports or imports, once the browser has
     /// its path. `purpose` is what the browser was opened for.
-    pub fn handle_file_commit(&mut self, path: &str, purpose: BFilePurpose) {
+    pub fn handle_file_commit(&mut self, path: &str, purpose: BFilePurpose, cx: &mut Context<Self>) {
         match purpose {
             BFilePurpose::Export => {
                 let format = self.state.get(OpKey::ExportFormat).unwrap_or("obj").to_string();
@@ -74,7 +75,7 @@ impl BPhiberApp {
             }
             BFilePurpose::Mixdown => {
                 self.state.remove(&FileKey::Purpose.path());
-                self.mixdown_to(path);
+                self.mixdown_to(path, cx);
             }
             BFilePurpose::Link | BFilePurpose::Append => {
                 self.state.remove(&FileKey::Purpose.path());

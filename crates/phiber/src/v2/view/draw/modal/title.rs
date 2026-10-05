@@ -27,7 +27,7 @@ impl BTitle {
     /// the modal's own action attached.
     fn button(&self, slug: &str, icon: &str, action: BAction, ctx: &BRenderCtx) -> gpui::Stateful<gpui::Div> {
         let handler = ctx.handler.clone();
-        let dispatched = action.clone();
+        let dispatched = action;
         super::super::caption::control(
             SharedString::from(format!("modal-{slug}")),
             icon,

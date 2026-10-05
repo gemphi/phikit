@@ -21,9 +21,9 @@ async fn an_opened_image_is_shown_changed_copied_and_saved(cx: &mut TestAppConte
     image::RgbaImage::from_fn(4, 2, |x, _| if x < 2 { image::Rgba([255, 0, 0, 255]) } else { image::Rgba([0, 0, 255, 255]) }).save(&file).unwrap();
     let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
     cx.simulate_resize(size(px(1400.0), px(800.0)));
-    app.update(cx, |app, _| {
+    app.update(cx, |app, cx| {
         app.state.remove(ModalKey::Open);
-        app.handle_file_commit(&file.to_string_lossy(), BFilePurpose::OpenImage);
+        app.handle_file_commit(&file.to_string_lossy(), BFilePurpose::OpenImage, cx);
     });
     let shown = app.read_with(cx, |a, _| BShownImage::now(&a.state));
     assert_eq!(shown.name(), "halves.png", "named as the file, and shown");

@@ -190,7 +190,7 @@ fn first_words(v: &BView) -> String {
 
 fn tagged(element: gpui::Div, id: String) -> gpui::Stateful<gpui::Div> {
     let selector = id.clone();
-    element.id(SharedString::from(id)).debug_selector(move || selector.clone())
+    element.id(SharedString::from(id)).debug_selector(move || selector)
 }
 
 fn head(card: &BCard, name: &str, ctx: &BRenderCtx) -> Option<AnyElement> {

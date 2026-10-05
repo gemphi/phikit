@@ -87,7 +87,7 @@ async fn i_keys_the_cube_where_it_stands_and_its_animation_then_drives_it(cx: &m
     let phiber::v2::scene::action::retime::BKeyStep::Insert(first) = &e.keyed[0] else { panic!("an insert") };
     let channels: Vec<String> = first.channels.iter().map(|c| format!("{}[{}]={}", c.path, c.index, c.value)).collect();
     assert_eq!(channels, ["location[0]=0", "location[1]=0", "location[2]=0", "rotation_euler[0]=0", "rotation_euler[1]=0", "rotation_euler[2]=0", "scale[0]=1", "scale[1]=1", "scale[2]=1"]);
-    let said = phiber::v2::state::log::latest().map(|e| e.text.clone()).unwrap_or_default();
+    let said = phiber::v2::state::log::latest().map(|e| e.text).unwrap_or_default();
     assert_eq!(said, "Keyed Cube at frame 1");
     let action = cube_action(cx);
     assert_eq!((action.users.as_slice(), action.curves.len(), action.keys.as_slice()), (&["Cube".to_string()][..], 9, &[1.0][..]));

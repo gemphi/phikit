@@ -82,7 +82,7 @@ fn picked(cx: Cx) -> Vec<(String, bool)> {
 }
 
 fn said() -> String {
-    phiber::v2::state::log::latest().map(|e| e.text.clone()).unwrap_or_default()
+    phiber::v2::state::log::latest().map(|e| e.text).unwrap_or_default()
 }
 
 fn cube_x(app: &gpui::Entity<BPhiberApp>, cx: Cx, frame: i32) -> f32 {

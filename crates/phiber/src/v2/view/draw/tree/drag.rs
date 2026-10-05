@@ -78,7 +78,7 @@ impl BRowDrag {
         let lit = BFlex::cell().fill(BFill::Row(BRowShade::Selected)).styled(StyleRefinement::default(), ctx);
         let debug = format!("outliner-row-{payload}");
         let ghost = Rc::new(BGhost::of(&drag.label, icon, ctx));
-        row.debug_selector(move || debug.clone())
+        row.debug_selector(move || debug)
             .on_drag(BRowDrag(payload), move |_, _, _, cx| cx.new(|_| (*ghost).clone()))
             .drag_over::<BRowDrag>(move |mut style, dragged: &BRowDrag, _, _| {
                 if dragged.0 != target {

@@ -115,6 +115,7 @@ All of these are read from the file, drive the render, and save with Ctrl S
 | A light's shape read from the file: Radius, Area Size, a Sun's Angle | works (batch 145) | `Light.sun_angle` is radians where the others are metres, and was not read at all — every sun drew at Blender's default 0.526° |
 | An area light's shape: Square, Rectangle, Disk, Ellipse, with Size Y and the object's scale | works (batch 146) | the taps spread over that shape in the light's own plane, so a strip light blurs along itself and not across |
 | A spot's Blend | works (batch 147) | the cone fades over the file's `spotblend`, not the 0.15 default both kernels had hard-coded; EEVEE's smoothstep in cosine |
+| Rendering a movie or a mixdown without freezing the window | works (batch 149) | `ffmpeg` runs on the background pool through `cx.background_spawn`, and the Info report lands when it finishes — the encode of a whole range had been running on the painting thread |
 
 **What limits "Blender quality" today is not the sampler** — a 512-sample
 frame here converges like Cycles' (`rendering.md` §7, §18) — but what the

@@ -55,7 +55,7 @@ impl BTreeDisclosure<'_> {
         let selector = format!("tree-arrow-{row_id}");
         let id = gpui::SharedString::from(super::super::button::element_id("tree", None, action));
         cell.id(id)
-            .debug_selector(move || selector.clone())
+            .debug_selector(move || selector)
             .cursor_pointer()
             .child(glyph())
             .on_click(move |_event, window, app| {

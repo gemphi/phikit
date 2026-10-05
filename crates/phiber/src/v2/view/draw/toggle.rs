@@ -104,7 +104,7 @@ impl BZoneToggles<'_> {
             .flex(ctx)
             .div(ctx)
             .id(SharedString::from(id_text.clone()))
-            .debug_selector(move || id_text.clone())
+            .debug_selector(move || id_text)
             .cursor_pointer()
             .child(BZoneGlyph { zone: control.zone, visible: control.visible }.render(ctx))
             .on_click(move |_event: &ClickEvent, window: &mut gpui::Window, cx: &mut gpui::App| {

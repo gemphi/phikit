@@ -8,7 +8,7 @@ use phiber::v2::app::seed::seed_view_layer;
 use phiber::v2::part::outliner::key::BHidden;
 use phiber::v2::scene::{BObject3D, BShading, current_scene, source::set_loaded_scene};
 use phiber::v2::state::BState;
-use phiber::v2::view::draw::canvas::view3d::rendered::{BStillLook, ENV_CDF_SLOT, ENV_SLOT, environment, light, still};
+use phiber::v2::view::draw::canvas::view3d::rendered::{BLamp, BStillLook, ENV_CDF_SLOT, ENV_SLOT, environment, still};
 use phiray::{Camera, LIGHTS, Light};
 use std::time::Instant;
 
@@ -90,7 +90,7 @@ fn main() {
     let usable: Vec<Light> = if studio {
         Vec::new()
     } else {
-        phiber::v2::scene::scene_lights().iter().map(light).filter(|l| l.color.iter().any(|c| *c > 0.0)).take(LIGHTS).collect()
+        phiber::v2::scene::scene_lights().iter().map(BLamp::record).filter(|l| l.color.iter().any(|c| *c > 0.0)).take(LIGHTS).collect()
     };
     lights[..usable.len()].copy_from_slice(&usable);
     let env_image = if studio { None } else { environment() };

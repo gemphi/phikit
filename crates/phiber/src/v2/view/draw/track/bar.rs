@@ -49,7 +49,7 @@ pub fn view(track: &BTrack, share: f32, text: &str, ctx: &BRenderCtx) -> gpui::A
         .div(ctx)
         .id(id.clone())
         .debug_selector({
-            let id = id.clone();
+            let id = id;
             move || id.to_string()
         });
     draggable(groove, track.clone(), ctx)

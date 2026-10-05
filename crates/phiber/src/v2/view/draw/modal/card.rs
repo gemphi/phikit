@@ -33,7 +33,7 @@ impl BCard<'_> {
         .flex(ctx)
         .div(ctx)
         .id(gpui::SharedString::from(id.clone()))
-        .debug_selector(move || id.clone())
+        .debug_selector(move || id)
         .child(
                 BTitle {
                     kind: self.kind,

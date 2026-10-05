@@ -233,7 +233,7 @@ mod tests {
         let far = BObject3D::Primitive { name: "Far".into(), shape: crate::v2::scene::BShape::Cube, x: 0.0, y: 3.0 * MESH_SCALE * 10.0 };
         let view = BPickView { yaw: 0.0, pitch: 0.0, pan: (0.0, 0.0), zoom: 1.0, setup: BViewSetup::default(), aspect: 1.0 };
         let ray = view.ray(0.0, 0.0);
-        let picked = pick(&[far.clone(), near.clone()], ray).expect("a cube under the centre");
+        let picked = pick(&[far, near.clone()], ray).expect("a cube under the centre");
         assert_eq!(picked.name, "Near");
         assert_eq!(pick(&[near], view.ray(0.49, 0.49)).map(|p| p.name), None, "the corner of the canvas shows nothing");
     }

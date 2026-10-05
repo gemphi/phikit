@@ -122,7 +122,7 @@ impl BRule for BSelectOpRule {
             "invert" => BSelection { list: visible.into_iter().filter(|name| !current.contains(name)).collect() },
             extend => match extend.strip_prefix("extend:") {
                 Some(name) if !current.contains(name) => {
-                    let mut list = current.list.clone();
+                    let mut list = current.list;
                     list.push(name.to_string());
                     BSelection { list }
                 }

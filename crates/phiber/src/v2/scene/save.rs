@@ -127,7 +127,7 @@ pub fn gather(state: &BState, model: &SceneModel) -> BlendEdits {
     let edits = BlendEdits {
         added,
         duplicated,
-        deleted: edit.deleted.clone(),
+        deleted: edit.deleted,
         frame: Some(int_or(state, CtxKey::Frame, model.timeline.current_frame)),
         frame_start: Some(int_or(state, CtxKey::FrameStart, model.timeline.frame_start)),
         frame_end: Some(int_or(state, CtxKey::FrameEnd, model.timeline.frame_end)),

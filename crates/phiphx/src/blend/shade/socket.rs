@@ -51,6 +51,28 @@ pub struct BlendSocket {
     pub limit: i32,
     /// The saved address, so a link can name this end.
     pub address: u64,
+    /// `bNodeSocket.default_value` — the value an UNCONNECTED input shows in its
+    /// row (a number, a colour swatch). `None` for a socket with no stored
+    /// default, or a type whose default phiber does not read yet. The editor
+    /// draws it only on an unconnected input (`socket::shows_value`).
+    pub default: Option<BSocketDefault>,
+}
+
+/// The value an unconnected input socket carries — Blender's type-specific
+/// `default_value` struct (`bNodeSocketValueFloat`/`RGBA`/`Vector`/… in
+/// `DNA_node_types.h`), read into the few shapes the shader editor draws.
+#[derive(Clone, Debug, PartialEq)]
+pub enum BSocketDefault {
+    /// `bNodeSocketValueFloat.value`.
+    Float(f32),
+    /// `bNodeSocketValueRGBA.value[4]` — RGBA.
+    Color([f32; 4]),
+    /// `bNodeSocketValueVector.value` — the first three of its `value[4]`.
+    Vector([f32; 3]),
+    /// `bNodeSocketValueBoolean.value`.
+    Bool(bool),
+    /// `bNodeSocketValueInt.value`.
+    Int(i32),
 }
 
 /// `eNodeSocketFlag` (`DNA_node_types.h`), the bits that decide whether a socket
@@ -125,17 +147,55 @@ impl BlendFile {
         let name = self.off("bNodeSocket", "name", dna);
         self.list(first, next)
             .into_iter()
-            .map(|s| BlendSocket {
-                identifier: identifier.map_or_else(String::new, |o| read_cstr(&s.data, o, 64)),
-                name: name.map_or_else(String::new, |o| read_cstr(&s.data, o, 64)),
-                // `type` is an enum in 5.x and was a `short` before it; the DNA
-                // says which, so the width is never assumed.
-                kind: self.int_field(s, "bNodeSocket", "type", dna) as i32,
-                flag: self.int_field(s, "bNodeSocket", "flag", dna) as i32,
-                limit: self.int_field(s, "bNodeSocket", "limit", dna) as i32,
-                address: s.old_address,
+            .map(|s| {
+                let kind = self.int_field(s, "bNodeSocket", "type", dna) as i32;
+                BlendSocket {
+                    identifier: identifier.map_or_else(String::new, |o| read_cstr(&s.data, o, 64)),
+                    name: name.map_or_else(String::new, |o| read_cstr(&s.data, o, 64)),
+                    // `type` is an enum in 5.x and was a `short` before it; the DNA
+                    // says which, so the width is never assumed.
+                    kind,
+                    flag: self.int_field(s, "bNodeSocket", "flag", dna) as i32,
+                    limit: self.int_field(s, "bNodeSocket", "limit", dna) as i32,
+                    address: s.old_address,
+                    default: self.socket_default(s, kind, dna),
+                }
             })
             .collect()
+    }
+
+    /// The value an input socket shows when nothing is plugged into it —
+    /// `bNodeSocket.default_value`, a pointer to a type-specific struct.
+    ///
+    /// Only the shapes the shader editor draws are read; any other socket type
+    /// (string, image, a geometry-nodes type) comes back `None` rather than a
+    /// guessed value.
+    fn socket_default(&self, sock: &BlendBlock, kind: i32, dna: &DnaType) -> Option<BSocketDefault> {
+        let addr = self.ptr(sock, self.off("bNodeSocket", "*default_value", dna));
+        let value = self.block_at(addr)?;
+        let f = |st: &str| {
+            // Array fields are stored as `value[N]`; a scalar as `value`.
+            let o = self.off(st, "value[4]", dna).or_else(|| self.off(st, "value", dna))?;
+            value.data.get(o..o + 4).map(|b| self.read_f32(b))
+        };
+        let floats = |st: &str, n: usize| -> Option<Vec<f32>> {
+            let o = self.off(st, "value[4]", dna).or_else(|| self.off(st, "value", dna))?;
+            (0..n).map(|i| value.data.get(o + i * 4..o + i * 4 + 4).map(|b| self.read_f32(b))).collect()
+        };
+        match kind {
+            0 => f("bNodeSocketValueFloat").map(BSocketDefault::Float),
+            1 => floats("bNodeSocketValueVector", 3).map(|v| BSocketDefault::Vector([v[0], v[1], v[2]])),
+            2 => floats("bNodeSocketValueRGBA", 4).map(|v| BSocketDefault::Color([v[0], v[1], v[2], v[3]])),
+            4 => {
+                let o = self.off("bNodeSocketValueBoolean", "value", dna)?;
+                value.data.get(o).map(|b| BSocketDefault::Bool(*b != 0))
+            }
+            6 => {
+                let o = self.off("bNodeSocketValueInt", "value", dna)?;
+                value.data.get(o..o + 4).map(|b| BSocketDefault::Int(self.read_i32(b)))
+            }
+            _ => None,
+        }
     }
 }
 

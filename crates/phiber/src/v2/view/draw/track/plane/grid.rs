@@ -72,7 +72,7 @@ const SQUARE_HEIGHT: f32 = 120.0;
 pub fn view(plane: &BPlane, ctx: &BRenderCtx) -> gpui::AnyElement {
     let id = gpui::SharedString::from(format!("plane-{}", plane.key.encode()));
     let mut square = BPlanePart::Square.flex(ctx).div(ctx).id(id.clone()).debug_selector({
-        let id = id.clone();
+        let id = id;
         move || id.to_string()
     });
     for row in 0..CELLS {

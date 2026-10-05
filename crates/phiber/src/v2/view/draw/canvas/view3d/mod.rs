@@ -162,7 +162,7 @@ impl BView3d<'_> {
         let can_fall_back = self::draw::cpu_can_draw(crate::v2::scene::scene_metrics(&scene).2);
         let meshes = self::cache::meshes(cpu_draws, &scene, (yaw, pitch, pan, zoom), palette, &selected, &active);
         let fall_back = {
-            let (scene, selected, active) = (Rc::clone(&scene), selected.clone(), active.clone());
+            let (scene, selected, active) = (Rc::clone(&scene), selected.clone(), active);
             move || self::cache::meshes(true, &scene, (yaw, pitch, pan, zoom), palette, &selected, &active)
         };
         // No sort: one number per object cannot say which of two interleaved

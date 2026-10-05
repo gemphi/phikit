@@ -61,7 +61,7 @@ impl BRule for BSceneEditRule {
                 log::push(format!("Deleted {} object(s)", selection.list.len()));
             }
             None if op == "duplicate" => {
-                let mut taken = names.clone();
+                let mut taken = names;
                 let mut copies = Vec::new();
                 for source in &selection.list {
                     let copy = unique_name(source, &taken);

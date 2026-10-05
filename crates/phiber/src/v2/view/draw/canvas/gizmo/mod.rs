@@ -25,11 +25,11 @@ impl BGizmo {
         ctx: &BRenderCtx,
     ) -> gpui::Stateful<gpui::Div> {
         let handler = ctx.handler.clone();
-        let dispatched = action.clone();
+        let dispatched = action;
         let selector = format!("gizmo-{name}");
         div()
             .id(SharedString::from(format!("gizmo-{name}")))
-            .debug_selector(move || selector.clone())
+            .debug_selector(move || selector)
             .flex()
             .items_center()
             .justify_center()

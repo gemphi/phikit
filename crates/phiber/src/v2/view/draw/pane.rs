@@ -259,7 +259,7 @@ pub fn view(kind: BPaneType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
             .flex(ctx)
             .div(ctx)
             .id(gpui::SharedString::from(id.clone()))
-            .debug_selector(move || id.clone());
+            .debug_selector(move || id);
         // Everything inside a floating pane is floating chrome: it connects
         // to nothing, so its controls round fully instead of capping into an
         // edge (`tab::cap`).
@@ -294,7 +294,7 @@ pub fn view(kind: BPaneType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
         .flex(ctx)
         .div(ctx)
         .id(gpui::SharedString::from(dbg.clone()))
-        .debug_selector(move || dbg.clone());
+        .debug_selector(move || dbg);
     // Only a content-region Center stretches its child to fill the slot (a
     // property stack or a canvas). A header Center hugs its content so menus
     // and the mode dropdown keep their natural width.

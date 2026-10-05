@@ -84,7 +84,7 @@ fn success_flow_viewport_and_outliner_see_loaded_objects() {
 
     // 4. Background task completes: build a stubbed SceneModel and settle it.
     let model = model_with("/dir/model.blend", &["Suzanne", "Cube"]);
-    let returned = settle_import(&mut state, ImportOutcome::Loaded(model.clone()));
+    let returned = settle_import(&mut state, ImportOutcome::Loaded(model));
 
     // 5. settle_import clears loading, sets loaded_path, clears error, returns model.
     assert_eq!(state.get(&loading_key()), None);
@@ -119,7 +119,7 @@ fn error_path_retains_prior_scene() {
 
     // Step 1: establish a successful prior load at model_a.
     let model_a = model_with("/dir/prev.blend", &["Alpha", "Beta"]);
-    let returned_a = settle_import(&mut state, ImportOutcome::Loaded(model_a.clone()));
+    let returned_a = settle_import(&mut state, ImportOutcome::Loaded(model_a));
     let cached_a = returned_a.expect("first load must succeed");
     assert_eq!(state.get(&loaded_path_key()), Some("/dir/prev.blend"));
 

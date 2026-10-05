@@ -98,7 +98,7 @@ pub fn plan(
         .iter()
         .filter_map(|node| {
             let (fx, fy) = at(&node.name)?;
-            Some(paint::BNodeCard {
+            let mut card = paint::BNodeCard {
                 name: node.name.clone(),
                 x: fx * width,
                 y: fy * height,
@@ -116,7 +116,10 @@ pub fn plan(
                 // the drawn card cannot disagree.
                 height: on_screen.height_of(node),
                 sockets: socket::rows(node),
-            })
+            };
+            // An input with a wire arriving shows the wire, not its value.
+            card.mark_linked(wired);
+            Some(card)
         })
         .collect();
     // A link joins two SOCKETS, so each end is looked up by its identifier;

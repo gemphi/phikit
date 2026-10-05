@@ -31,26 +31,20 @@
 //! readable: a node's result leaves from the top right and arrives at the next
 //! node's top left, so a chain of nodes reads as a descending staircase.
 //!
-//! One Blender quirk is ported rather than tidied: between two outputs the gap is
-//! added only when the NEXT output is available, and between two inputs whenever
-//! there is a next socket at all, available or not
-//! (`socket->next && socket->next->is_available()` against a bare
-//! `socket->next`). So a node whose last input is followed by a disabled one is a
-//! tenth of a unit taller than it looks like it should be. It is two lines apart
-//! in the same function, so it reads as an oversight — but it is what Blender
-//! draws, and a card a tenth of a unit shorter than Blender's would put every
-//! link below it a hair out.
+//! One Blender quirk is ported rather than tidied: the gap after an output is
+//! added only when the next output is available, but after an input whenever
+//! there is a next socket at all (`socket->next && is_available()` against a
+//! bare `socket->next`). So a node whose last input is followed by a disabled
+//! one is a tenth of a unit taller than it looks — but it is what Blender draws,
+//! and a shorter card would put every link below it a hair out.
 //!
-//! What is NOT here: a multi-input socket's extra height.
-//! `node_update_basis_socket` adds `max(total_inputs - 2, 0) *
-//! NODE_MULTI_INPUT_LINK_GAP` for a `SOCK_MULTI_INPUT`, where `total_inputs` is
-//! how many links actually arrive at it — a runtime count. No shader node has a
-//! multi-input socket (they are a Geometry Nodes thing, Join Geometry and the
-//! like), so the shader editor is unaffected; a geometry graph will need the link
-//! count threaded in.
+//! What is NOT here: a multi-input socket's extra height (`max(total_inputs - 2,
+//! 0) * NODE_MULTI_INPUT_LINK_GAP`, a runtime link count). No shader node has a
+//! multi-input socket — they are a Geometry Nodes thing — so the shader editor
+//! is unaffected; a geometry graph will need the link count threaded in.
 
 use crate::phiphx::blend::shade::graph::BlendNode;
-use crate::phiphx::blend::shade::socket::BlendSocket;
+use crate::phiphx::blend::shade::socket::{BSocketDefault, BlendSocket};
 
 /// `NODE_DY` — one socket's row.
 pub const ROW: f32 = 1.0;
@@ -88,6 +82,14 @@ pub struct BSocketRow {
     pub side: BSocketSide,
     /// Units below the bottom of the header, at the socket's own centre.
     pub y: f32,
+    /// `bNodeSocket.default_value`, carried so the painter can draw it on an
+    /// unconnected input (`value::widget`). `None` for an output, a reroute or
+    /// collapsed row, or a socket with no stored default.
+    pub default: Option<BSocketDefault>,
+    /// Whether a drawn wire arrives here — the overlay-applied truth, not the
+    /// file's `SOCK_IS_LINKED` (a link made or broken is an overlay). Layout
+    /// leaves it `false`; `BNodeCard::mark_linked` sets it from the wire set.
+    pub linked: bool,
 }
 
 /// Lay out one list, advancing `y` (which counts DOWN from the header in units).
@@ -116,6 +118,9 @@ fn place(
             kind: socket.kind,
             side,
             y: top + HALF,
+            // Only an input's default is ever shown (`value::widget`).
+            default: if side == BSocketSide::Input { socket.default.clone() } else { None },
+            linked: false,
         });
         *y = top + ROW;
         any = true;
@@ -141,11 +146,10 @@ fn place(
 /// dot (a circle of `DOT` radius) comes out centred on the location, which is
 /// exactly what a reroute is.
 ///
-/// The names are blanked: a reroute paints no socket labels (its only text is
-/// an optional node label, which phiber does not draw yet), and a row carrying
+/// The names are blanked: a reroute paints no socket labels, so a row carrying
 /// "Input"/"Output" would paint those words beside the dot. Both rows are kept
-/// even though they coincide, because a link names its end by `identifier` and
-/// a link leaving the reroute's output must still resolve.
+/// though they coincide, because a link leaving the output still resolves by
+/// `identifier`.
 pub fn reroute_rows(node: &BlendNode) -> Vec<BSocketRow> {
     let mut out = Vec::new();
     for (sockets, side) in [(&node.outputs, BSocketSide::Output), (&node.inputs, BSocketSide::Input)] {
@@ -156,6 +160,8 @@ pub fn reroute_rows(node: &BlendNode) -> Vec<BSocketRow> {
                 kind: socket.kind,
                 side,
                 y: 0.0,
+                default: None,
+                linked: false,
             });
         }
     }
@@ -186,14 +192,12 @@ pub fn rows(node: &BlendNode) -> Vec<BSocketRow> {
 /// calculation in Blender, which is why the two are one function here too. A
 /// card sized any other way would have its sockets inside it by luck.
 pub fn body_height(node: &BlendNode) -> f32 {
-    // A reroute has no body at all: the whole node is one painted dot sitting
-    // AT the location, so its sockets are placed from a zero-height body and its
-    // box size is set apart (`plan::BCardSize::height_of`, `loc ± NODE_SOCKSIZE`).
+    // A reroute has no body: the whole node is one painted dot, its box size set
+    // apart (`plan::BCardSize::height_of`, `loc ± NODE_SOCKSIZE`).
     if node.reroute() {
         return 0.0;
     }
-    // A collapsed node has no body: the pill IS its height, and `BCardSize`
-    // adds no header to it (`plan::BCardSize::height_of`).
+    // A collapsed node has no body either: the pill IS its height.
     if node.collapsed() {
         return collapsed_height(node);
     }
@@ -218,10 +222,8 @@ pub fn row_of(node: &BlendNode, identifier: &str) -> Option<BSocketRow> {
     rows(node).into_iter().find(|r| r.identifier == identifier)
 }
 
-/// One row of an already laid-out card, by identifier.
-///
-/// `row_of` takes the node and lays it out again; a card has its rows already,
-/// and the preview needs exactly one of them. Same lookup, no second layout.
+/// One row of an already laid-out card, by identifier — the same lookup as
+/// `row_of` without laying the node out a second time.
 pub fn row_of_card(card: &super::paint::BNodeCard, identifier: &str) -> Option<BSocketRow> {
     card.sockets.iter().find(|r| r.identifier == identifier).cloned()
 }
@@ -231,5 +233,8 @@ mod tests;
 
 /// `node_update_collapsed` — the layout of a node folded with H.
 pub mod collapsed;
+
+/// What an unconnected input socket shows for its default value.
+pub mod value;
 
 pub use collapsed::{COLLAPSED_RAD, collapsed_height, collapsed_rows, collapsed_top};

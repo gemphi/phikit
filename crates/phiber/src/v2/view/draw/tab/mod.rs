@@ -116,7 +116,7 @@ fn cap_view(ctl: &BControl, side: BCapSide, ctx: &BRenderCtx) -> AnyElement {
                 .flex(ctx)
                 .div(ctx)
                 .id(SharedString::from(icon_id_text.clone()))
-                .debug_selector(move || icon_id_text.clone())
+                .debug_selector(move || icon_id_text)
                 .child(
                     svg()
                         .path(icon_path(ic))
@@ -205,7 +205,7 @@ fn properties_layers(
         .flex(ctx)
         .div(ctx)
         .id(SharedString::from(paint_id_text.clone()))
-        .debug_selector(move || paint_id_text.clone());
+        .debug_selector(move || paint_id_text);
     // The far edge is inset and rounded; the pane-facing edge bleeds into the
     // content region, so it stays flush.
     paint = side.paint(

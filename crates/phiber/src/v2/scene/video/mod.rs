@@ -55,6 +55,13 @@ impl BMovieJob {
     }
 
     /// Whether an `ffmpeg` program answers on this machine.
+    ///
+    /// **Blocks the calling thread** while the program runs, so it belongs
+    /// on `cx.background_spawn`, never on gpui's foreground executor
+    /// (`docs/rendering.md` §49). `smol::process` would make it a future
+    /// instead, but its reactor wakes from a thread of its own, which the
+    /// test scheduler rejects as non-deterministic.
+    #[allow(clippy::disallowed_methods)]
     pub fn ffmpeg_present() -> bool {
         Command::new("ffmpeg").arg("-version").output().is_ok_and(|o| o.status.success())
     }
@@ -87,6 +94,11 @@ impl BMovieJob {
 
     /// Encode the frames gathered and remove them. The movie file's folder
     /// is made; a frame that fails to read is a failure.
+    ///
+    /// **Blocks the calling thread** for the length of the encode — seconds
+    /// to minutes over a frame range — so its caller runs it on
+    /// `cx.background_spawn` (`docs/rendering.md` §49).
+    #[allow(clippy::disallowed_methods)]
     pub fn finish(self) -> Result<BMovieMade, String> {
         if self.frames.is_empty() {
             return Err("no frames were rendered".to_string());
@@ -159,6 +171,8 @@ mod tests {
         // With ffmpeg on the machine: the AVI reads back as three MJPEG
         // frames, and the real encode writes the H.264 Matroska asked for.
         if BMovieJob::ffmpeg_present() {
+            // `ffprobe` here for the same reason as `ffmpeg` above.
+            #[allow(clippy::disallowed_methods)]
             let probe = |file: &Path| {
                 let out = Command::new("ffprobe").args(["-v", "error", "-count_frames", "-show_entries", "stream=codec_name,nb_read_frames", "-of", "csv=p=0"]).arg(file).output().unwrap();
                 String::from_utf8_lossy(&out.stdout).trim().to_string()

@@ -5,7 +5,7 @@ use super::super::BPhiberApp;
 use crate::v2::part::text::info::{self, BReportLevel};
 use crate::v2::scene::render_job;
 use crate::v2::state::{CtxKey, ModalKey, log, val::V_MODAL_RENDER};
-use gpui::Context;
+use gpui::{AppContext as _, Context};
 use std::time::Duration;
 
 /// How often the animation render looks for a finished frame.
@@ -158,7 +158,10 @@ impl BPhiberApp {
                 }
             }
             if let Some(job) = movie.take() {
-                let made = job.finish();
+                // The encode is `ffmpeg` over every frame of the range —
+                // seconds to minutes. It ran here on the UI thread until
+                // it moved to the pool (`rendering.md` §49).
+                let made = cx.background_spawn(async move { job.finish() }).await;
                 let _ = this.update(cx, |app, cx| {
                     app.movie_made(made);
                     cx.notify();

@@ -37,7 +37,7 @@ fn pick(cx: Cx, item: &'static str) {
 }
 
 fn said() -> String {
-    phiber::v2::state::log::latest().map(|e| e.text.clone()).unwrap_or_default()
+    phiber::v2::state::log::latest().map(|e| e.text).unwrap_or_default()
 }
 
 /// The Cube's NLA as the editors read it.

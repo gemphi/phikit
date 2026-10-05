@@ -30,7 +30,7 @@ fn button(state: &BState) -> (bool, bool) {
 }
 
 fn said() -> String {
-    phiber::v2::state::log::latest().map(|e| e.text.clone()).unwrap_or_default()
+    phiber::v2::state::log::latest().map(|e| e.text).unwrap_or_default()
 }
 
 #[gpui::test]

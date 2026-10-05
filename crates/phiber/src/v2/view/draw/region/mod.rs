@@ -316,7 +316,7 @@ pub fn view(kind: BRegionType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
     let strip = matches!(kind, BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute);
     let wraps = kind == BRegionType::Header && ctx.host.pins_header_cells() && crate::v2::part::filter::topbar_wraps(ctx.state);
     let element = if strip && !wraps { pan::BStripPan::of(&format!("{dbg}-{:?}", ctx.area)).attach(frame.strip_scroller(id, ctx), ctx) } else { frame.div(ctx).id(id) };
-    let mut element = element.debug_selector(move || dbg.clone());
+    let mut element = element.debug_selector(move || dbg);
     // Tag the context with this region kind so pane children can distinguish
     // a header pane (content hugs, Left/Center/Right tri-cell) from a
     // content-region Center pane (stretches to fill).
