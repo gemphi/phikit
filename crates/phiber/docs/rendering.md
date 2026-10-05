@@ -2217,9 +2217,11 @@ twentieth of the card at that distance (§44's note): a 25° spot lights the
 whole frame and has no visible edge at all, which is how the first attempt
 failed.
 
-Not yet: a spot on an object with a non-uniform scale is an *ellipse* in
-EEVEE (`spot_size_inv = scale.z / scale.xy`, used in
-`light_spot_attenuation`'s `ellipse` term); here the cone stays round.
+Not yet at the time: a spot on an object with a non-uniform scale is an
+*ellipse* in EEVEE (`spot_size_inv = scale.z / scale.xy`, used in
+`light_spot_attenuation`'s `ellipse` term); here the cone stayed round.
+Ported in batch 150 (§50), which also shows that the smoothstep above is
+that term's `[1, 1]` case.
 
 ## 48. Clippy's dead code, and what it turned out to be (batch 148, 2026-10-05)
 
@@ -2383,3 +2385,102 @@ look like it oscillates.
 `cargo clippy --all-targets` is now clean for all three crates: phiphx
 214 passing and 6 asset-dependent, phiray 97 passing, phiber 1274 passing
 and 13 failing — all thirteen the other agent's work in progress.
+
+## 50. A scaled spot is an ellipse (batch 150, 2026-10-05)
+
+The last of the light-shape gaps, and batch 147's own "not yet": a spot
+whose object is not uniformly scaled lights an *ellipse* in EEVEE, not a
+circle. Both kernels drew it round.
+
+`eevee_light.cc` keeps the scale as a pair, inverted:
+
+```c
+const float spot_size = cosf(la->spotsize * 0.5f);
+const float spot_blend = (1.0f - spot_size) * la->spotblend;
+l_spot.spot_size_inv = scale.z / max(scale.xy(), float2(1e-8f));
+l_spot.spot_mul = 1.0f / max(1e-8f, spot_blend);
+l_spot.spot_bias = -spot_size * l_spot.spot_mul;
+```
+
+and `eevee_light_lib.bsl.hh` spends it in the light's own frame:
+
+```glsl
+float3 lL = light_world_to_local_direction(light, L);
+float ellipse = inversesqrt(1.0f + length_squared(lL.xy * spot.spot_size_inv / lL.z));
+float spotmask = smoothstep(0.0f, 1.0f, ellipse * spot.spot_mul + spot.spot_bias);
+return (lL.z > 0.0f) ? spotmask : 0.0f;
+```
+
+`L` is `light.position() - P`, the vector from the surface to the light,
+and the local frame's +Z is the object's +Z — the way the lamp looks
+*from*. So `lL.z` is the cosine term the kernels already had, and the
+whole of the new behaviour is in `ellipse`.
+
+**Why this is a generalization and not a replacement.** At
+`spot_size_inv = [1, 1]`,
+
+    ellipse = 1 / sqrt(1 + |lL.xy|² / lL.z²) = lL.z / |lL| = cos θ
+
+and `ellipse * spot_mul + spot_bias` = `(cos θ − cos_size) / spot_blend`,
+which is exactly batch 147's `smoothstep(cone, cone + blend, dot(-l, dir))`.
+So the ported form has to agree with the old one on every unscaled
+spot — which is what `spot_scale == [1, 1]` in the record means, and what
+the old test for Blend still checks.
+
+**What moved.** `Light` grew `spot_scale: [f32; 2]` in the last two pad
+words, so the record is still 80 bytes (§46's budget holds). `light.wgsl`
+gained `spot_mask(li, l)` — it lives there because `light.wgsl` is the one
+file both the path tracer's and Material Preview's kernels include — and
+both call sites now call it instead of smoothstepping a dot product:
+
+```wgsl
+fn spot_mask(li: Light, l: vec3<f32>) -> f32 {
+    let d = -l;
+    let z = -dot(l, li.dir);
+    if (z <= 0.0) { return 0.0; }
+    let xy = vec2<f32>(dot(d, li.right), dot(d, cross(li.dir, li.right))) * li.spot_scale;
+    let ellipse = inverseSqrt(1.0 + dot(xy, xy) / (z * z));
+    return smoothstep(li.cone, li.cone + li.blend, ellipse);
+}
+```
+
+The frame is the light's own, so a spot now needs `right` — the field
+batch 146 added for area lights. `BLamp::record` fills it for a spot too
+(`BLamp::spot_scale` is the new trait method that computes
+`scale.z / scale.xy` from `matrix_world`); `up` is `cross(dir, right)`,
+as `shadow.wgsl` already derives it for an area light. `xy` enters
+squared, so neither axis's sign matters — only which scale pairs with
+which axis, and that is fixed by `right`.
+
+phiphx needed nothing: the object's scale was already reaching the reader
+in `SceneLight::matrix_world`. `tests/light_truth.rs` now says so
+(`a_spots_object_scale_reaches_the_reader`), because a silent change there
+would make this port wrong with no test to notice.
+
+**The reach is exactly `tan(half angle) / spot_scale`.** The mask passes
+where `ellipse > cone`, i.e. where `(s · tan θ)² < tan²(half angle)` — so
+the pool's radius along an axis is the round radius over that axis's
+scale, with no approximation. That is what phiray's
+`a_scaled_spots_pool_of_light_is_an_ellipse` asserts rather than merely
+"wider than tall": a 6° spot four units away gives a 26-pixel pool at
+`[1, 1]` and a 34-pixel one at 0.75, which is 26 / 0.75 to within a pixel.
+Measured on the frame, not predicted — 0.5 was the first value tried and
+it filled the frame, which would have made the test pass for the wrong
+reason.
+
+The fixture grew a light for it: `Squashed`, a 50° spot on an object
+scaled 1.5 in Y (`fixtures/make_lights.py`, Blender 5.0.1). Every other
+spot in `LIGHTS.blend` is unscaled, and the test says that too, so the
+round case stays pinned.
+
+**Found while reading, not fixed here.** `SceneModel::from_phx`
+(`scene/import_phx.rs`, 162 lines) and `PhxScene::add_light` have no
+callers at all. The `.phx` sidecar fast path they belong to was retired
+when the pointer remap became a hash lookup — `phx.rs` says so in
+as many words — and the asset pipeline reaches a sidecar through
+`PhxImporter::import` instead. Clippy cannot see it, because both are
+`pub` in a library. So the queue's old "the `.phx` round trip carries no
+light shape" item is not a parity gap: nothing writes a light into a
+`.phx` and nothing reads a scene back out of one. It is dead code to
+remove, and that is a batch of its own because `import_phx.rs` goes
+whole.

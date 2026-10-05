@@ -1,6 +1,6 @@
 # Phiber UI — status
 
-**Suite: 1274 passing, 13 failing** (phiber, on the tree as it stands on the
+**Suite: 1276 passing, 13 failing** (phiber, on the tree as it stands on the
 machine, the other agent's node-editor / Timeline / swatch work included —
 all fourteen are theirs in progress: a region's host corners, the overlay
 family key test, the Preferences palette override and its rows' actions,
@@ -9,8 +9,8 @@ lines, the Dope Sheet's G-grab under its new expandable rows, the Timeline
 wheel zoom, two renderer-ownership rules, the Properties rail tab's paint
 layer, a popover's checkbox widths, and `level_structure` over three of
 their files past 240 lines — `state/key/op.rs`, `time/gesture.rs`,
-`time/row/mod.rs`). phiphx 214
-passing, 6 known asset-dependent; phiray 97 passing. Batches 17–148 are
+`time/row/mod.rs`). phiphx 215
+passing, 6 known asset-dependent; phiray 97 passing. Batches 17–150 are
 extracted on the machine; every item below is covered by a test. The
 Animation and Rendering workspaces have a full audit of their own in
 `animation-rendering-status.md`.
@@ -799,6 +799,40 @@ Blender's own choices.
 - Truth: `tests/marker_box_and_transport_popovers.rs`, `scene/grab.rs`,
   `part/playback/settings.rs`.
 
+## Batch 150 — a scaled spot is an ellipse
+
+- **Blender** makes a spot's cone follow its object's scale
+  (`eevee_light.cc`: `spot_size_inv = scale.z / scale.xy`, spent in
+  `light_spot_attenuation`'s `ellipse` term). A spot on a non-uniformly
+  scaled object lights an ellipse; both kernels drew it round. This was
+  batch 147's own "not yet" and the last of the light-shape gaps.
+- At `[1, 1]` the ported term reduces to `cos` of the angle off the axis,
+  so it agrees with batch 147's smoothstep on every unscaled spot — the
+  record says `[1, 1]` there and the old Blend test still pins it.
+- phiray: `Light::spot_scale` in the last two pad words (the record is
+  still 80 bytes), and `spot_mask` in `light.wgsl` — the one file both the
+  path tracer's and Material Preview's kernels include — called from both
+  sites. A spot now shares `right` with an area light, because the term
+  is computed in the light's own frame.
+- phiber: `BLamp::spot_scale` computes `scale.z / scale.xy` from
+  `matrix_world`, and a spot gets `right` filled too.
+- phiphx: nothing to change — the scale was already in
+  `SceneLight::matrix_world`. A test now says so, so a silent change
+  there cannot break the port unnoticed.
+- The pool's reach along an axis is exactly `tan(half angle) / spot_scale`,
+  with no approximation, which is what the phiray test asserts: 26 pixels
+  round, 34 at 0.75.
+- Tests: phiphx `tests/light_truth.rs`
+  (`a_spots_object_scale_reaches_the_reader`), phiber
+  `tests/light_shapes_reach_the_tracer.rs`, phiray `tests/preview.rs`
+  (`a_scaled_spots_pool_of_light_is_an_ellipse`); the fixture grew
+  `Squashed`, a 50° spot scaled 1.5 in Y.
+- **Found, not fixed:** `SceneModel::from_phx` and `PhxScene::add_light`
+  have no callers — the `.phx` sidecar fast path was retired. So "the
+  `.phx` round trip carries no light shape" is not a parity gap but dead
+  code; clippy cannot see it because both are `pub`.
+- `rendering.md` §50.
+
 ## Batch 149 — the encode ran on the UI thread
 
 - The three `disallowed_methods` denials batch 148 left named a real
@@ -876,8 +910,8 @@ Blender's own choices.
   phiber `tests/light_shapes_reach_the_tracer.rs`, phiray
   `tests/preview.rs` (Blend 0 is a hard edge; the edge widens with Blend).
 - **Suites:** see the head of this file.
-- **Not yet:** a non-uniformly scaled spot is an ellipse in EEVEE; here the
-  cone stays round.
+- **Was not yet:** a non-uniformly scaled spot is an ellipse in EEVEE —
+  ported in batch 150.
 
 ## Batch 146 — an area light's shape
 

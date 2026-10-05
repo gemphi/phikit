@@ -65,3 +65,29 @@ fn an_area_lights_shape_and_its_second_edge() {
     let oval = of("Oval");
     assert_eq!((oval.shape.as_str(), oval.size, oval.size_y), ("ELLIPSE", 2.0, 0.75));
 }
+
+/// A light object's scale reaches the reader through `matrix_world`, which
+/// is what the cone's ellipse is computed from (`eevee_light.cc`'s
+/// `spot_size_inv = scale.z / scale.xy`; phiber's `BLamp::spot_scale`).
+/// `Squashed` is a spot whose object is 1.5× in Y.
+#[test]
+fn a_spots_object_scale_reaches_the_reader() {
+    let lights = lights();
+    let of = |name: &str| lights.iter().find(|l| l.name == name).unwrap_or_else(|| panic!("{name}")).clone();
+    let axes = |l: &SceneLight| {
+        let m = l.matrix_world;
+        [0, 1, 2].map(|i| (m[i][0] * m[i][0] + m[i][1] * m[i][1] + m[i][2] * m[i][2]).sqrt())
+    };
+
+    let squashed = of("Squashed");
+    assert_eq!(squashed.kind, "SPOT");
+    assert!((squashed.spot_size - 50.0_f32.to_radians()).abs() < 1e-6, "{}", squashed.spot_size);
+    let [x, y, z] = axes(&squashed);
+    assert!((x - 1.0).abs() < 1e-6 && (y - 1.5).abs() < 1e-6 && (z - 1.0).abs() < 1e-6, "the object's scale: {x} {y} {z}");
+
+    // Every other spot is unscaled, so its cone stays round.
+    for name in ["Cone", "Sharp"] {
+        let [x, y, z] = axes(&of(name));
+        assert!((x - 1.0).abs() < 1e-6 && (y - 1.0).abs() < 1e-6 && (z - 1.0).abs() < 1e-6, "{name}: {x} {y} {z}");
+    }
+}

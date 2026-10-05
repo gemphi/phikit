@@ -11,6 +11,8 @@ fallback (`blend/object/data.rs`, `scene/import_extras.rs`).
   Strip  — Area, Rectangle, Size 3 × 0.5, the object scaled 2 in X
   Round  — Area, Disk, Size 1.5 (its Size Y is ignored, left at 0.25)
   Oval   — Area, Ellipse, Size 2 × 0.75
+  Squashed — Spot, Spot Size 50°, the object scaled 1.5 in Y: EEVEE's cone
+            follows the object's scale, so this one lights an ellipse
 
 Run with bpy available (pip install bpy):
   python make_lights.py
@@ -45,5 +47,9 @@ strip = lamp("Strip", "AREA", 100.0, (4.0, 0.0, 3.0), shape="RECTANGLE", size=3.
 strip.scale = (2.0, 1.0, 1.0)
 lamp("Round", "AREA", 100.0, (-4.0, 0.0, 3.0), shape="DISK", size=1.5)
 lamp("Oval", "AREA", 100.0, (0.0, -4.0, 3.0), shape="ELLIPSE", size=2.0, size_y=0.75)
+# A spot's cone is round only while its object's scale is uniform
+# (`eevee_light.cc`: `spot_size_inv = scale.z / scale.xy`).
+squashed = lamp("Squashed", "SPOT", 300.0, (0.0, 4.0, 3.0), spot_size=math.radians(50.0))
+squashed.scale = (1.0, 1.5, 1.0)
 
 bpy.ops.wm.save_as_mainfile(filepath=__file__.replace("make_lights.py", "LIGHTS.blend"), compress=True)
