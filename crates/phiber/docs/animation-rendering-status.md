@@ -207,11 +207,14 @@ Noise, Limits, Envelope, Stepped); shape-key animation; Grease Pencil.
   wrap, sheen, coat, anisotropy), image textures, normal maps, alpha
   cut-outs; bladed bokeh; Standard, Filmic and AgX with exposure and gamma;
   a guided denoiser; Depth, Normal and Diffuse Color passes.
-- **Cannot yet:** a Mix Shader's factor per pixel (its two closures are
-  two lobes since batch 141; the closure nodes fold to Principled
-  parameters since 140; volumes fold to nothing); procedural textures
-  (Noise, Voronoi fold to one colour);
-  Bump; Sky Texture; Film Transparent (alpha is always opaque); motion
+- **Cannot yet:** Sky, Gabor and White Noise textures, and a texture
+  through Mix / Math nodes per pixel (since batches 142–143 every Noise
+  type, every Voronoi feature and metric, Checker, Brick, Gradient,
+  Magic and Wave on the base colour, through a ramp, on the Mix
+  Shader's factor, or as a Bump are evaluated per pixel; the closure
+  nodes fold to Principled parameters since 140, two lobes since 141;
+  volumes fold to nothing);
+  Mapping's rotation; Sky Texture; Film Transparent (alpha is always opaque); motion
   blur; volumes; caustics; holdout and shadow catcher; adaptive sampling;
   Mist, AO, Position, Vector, UV, index and light passes; Cryptomatte.
 
@@ -278,8 +281,16 @@ surface shader from the Material Output — Mix / Add Shader and the
 closure nodes folded to the Principled parameters, Light Path for a
 camera ray (§40). **Batch 141:** a Mix Shader's two closures as two lobes
 — a coin per hit in the path tracer, both blended in Material Preview
-(§41). **Next:** per-pixel Noise / Voronoi and Bump; then Material
-Preview on EEVEE's model.
+(§41). **Batch 142:** Noise, Voronoi and Bump per pixel — Cycles' SVM
+textures in the kernels, two slots per material, the ramp baked, the
+Mapping and Texture Coordinate read (§42). **Batch 143:** the rest of
+the texture nodes — every Noise type, every Voronoi feature and metric,
+Checker, Brick, Gradient, Magic, Wave (§43). **Batch 144:** Material
+Preview's shadows as soft as the light, EEVEE's shapes and sampling
+(§44). **Batch 145:** a light's shape — a sun's Angle included — read
+from the file (§45). **Next:** Material Preview's screen-space
+reflections and ambient occlusion, which EEVEE itself leaves off until
+Raytracing is turned on.
 
 ## What to do next, in order
 
@@ -310,8 +321,9 @@ Preview on EEVEE's model.
    ~~Shadow~~ — batch 123; ~~Backface Culling, Specular Lighting~~ —
    batch 124; ~~Attribute colour~~ — batch 125; ~~MatCap~~ — batch 126; ~~Texture colour~~ — batch 127.
    ~~`Scene.display.shading` for F12~~ — batch 128; ~~Depth of Field~~ —
-   batch 133; ~~SMAA on the first frames~~ — batch 139. Then Material Preview on
-   EEVEE's model. Medium each.
+   batch 133; ~~SMAA on the first frames~~ — batch 139; ~~Material
+   Preview's soft shadows~~ — batch 144. Then its screen-space
+   reflections and ambient occlusion. Medium each.
 1. ~~The panel's resolution reaches F12 and is saved~~ — batch 97.
 2. ~~The colour-management panel seeded from the file, read by F12 and the
    viewport, and saved~~ — batch 99 (Look is still not read).
@@ -321,11 +333,12 @@ Preview on EEVEE's model.
    output path and format)~~ — batches 102 and 104.
 5. ~~Film Transparent through the tracer and RGBA saves~~ — batch 103
    (transparent glass under it still to do).
-6. Shader coverage: Mix / Add Shader, Emission, Diffuse, Glossy, Glass,
-   Transparent; Bump; procedural Noise and Voronoi per pixel — each from
-   `intern/cycles/kernel/svm/` (`svm_noise.h`, `svm_voronoi.h`,
-   `svm_closure.h`) and the node graph compiled as `shader/graph.cpp`
-   folds it. Large.
+6. Shader coverage: ~~Mix / Add Shader, Emission, Diffuse, Glossy,
+   Glass, Transparent~~ — batches 140, 141; ~~Bump; procedural Noise and
+   Voronoi per pixel~~ — batch 142 (`procedural.wgsl` from
+   `intern/cycles/kernel/svm/`); ~~the other texture nodes~~ — batch
+   143. Then a Mix / Math node between a texture and its socket per
+   pixel, and Sky. Medium.
 7. Render slots, Image ▸ Open / New / Reload. Medium.
 8. Sampling controls: adaptive threshold, time limit, the other bounces,
    clamping. Medium.

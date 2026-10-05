@@ -132,8 +132,44 @@ fn place(
     any
 }
 
+/// A reroute's two sockets, both at the dot's centre.
+///
+/// `reroute_node_prepare_for_draw` puts a reroute's one input and one output at
+/// the SAME point — the node's location — so the single dot drawn stands for
+/// both ends. Here that is `y = 0`: every node's card is placed with its
+/// top-left at the location, the socket sits at that point, and the painter's
+/// dot (a circle of `DOT` radius) comes out centred on the location, which is
+/// exactly what a reroute is.
+///
+/// The names are blanked: a reroute paints no socket labels (its only text is
+/// an optional node label, which phiber does not draw yet), and a row carrying
+/// "Input"/"Output" would paint those words beside the dot. Both rows are kept
+/// even though they coincide, because a link names its end by `identifier` and
+/// a link leaving the reroute's output must still resolve.
+pub fn reroute_rows(node: &BlendNode) -> Vec<BSocketRow> {
+    let mut out = Vec::new();
+    for (sockets, side) in [(&node.outputs, BSocketSide::Output), (&node.inputs, BSocketSide::Input)] {
+        if let Some(socket) = sockets.iter().find(|s| s.visible()) {
+            out.push(BSocketRow {
+                identifier: socket.identifier.clone(),
+                name: String::new(),
+                kind: socket.kind,
+                side,
+                y: 0.0,
+            });
+        }
+    }
+    out
+}
+
 /// Every socket of `node`, placed, outputs first — which is also top first.
 pub fn rows(node: &BlendNode) -> Vec<BSocketRow> {
+    if node.reroute() {
+        return reroute_rows(node);
+    }
+    if node.collapsed() {
+        return collapsed_rows(node);
+    }
     let mut out = Vec::new();
     let mut y = PAD;
     let had_outputs = place(&node.outputs, BSocketSide::Output, true, &mut y, &mut out);
@@ -150,6 +186,17 @@ pub fn rows(node: &BlendNode) -> Vec<BSocketRow> {
 /// calculation in Blender, which is why the two are one function here too. A
 /// card sized any other way would have its sockets inside it by luck.
 pub fn body_height(node: &BlendNode) -> f32 {
+    // A reroute has no body at all: the whole node is one painted dot sitting
+    // AT the location, so its sockets are placed from a zero-height body and its
+    // box size is set apart (`plan::BCardSize::height_of`, `loc ± NODE_SOCKSIZE`).
+    if node.reroute() {
+        return 0.0;
+    }
+    // A collapsed node has no body: the pill IS its height, and `BCardSize`
+    // adds no header to it (`plan::BCardSize::height_of`).
+    if node.collapsed() {
+        return collapsed_height(node);
+    }
     let mut y = PAD;
     let had_outputs = place(&node.outputs, BSocketSide::Output, true, &mut y, &mut Vec::new());
     if had_outputs {
@@ -181,3 +228,8 @@ pub fn row_of_card(card: &super::paint::BNodeCard, identifier: &str) -> Option<B
 
 #[cfg(test)]
 mod tests;
+
+/// `node_update_collapsed` — the layout of a node folded with H.
+pub mod collapsed;
+
+pub use collapsed::{COLLAPSED_RAD, collapsed_height, collapsed_rows, collapsed_top};

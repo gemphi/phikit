@@ -45,6 +45,20 @@ pub struct BTimeView {
     /// tall each is (`NLATRACK_HEIGHT` in the NLA editor).
     pub rows: Vec<BTimeRow>,
     pub row_height: f32,
+    /// The frame-number strip's height, in pixels.
+    ///
+    /// `UI_TIME_SCRUB_MARGIN_Y` is where the number comes from, but it is the
+    /// THEME's header height that it has to equal: the scrub strip reads as a
+    /// header for the window below it, and a strip 23px tall against 36px
+    /// headers either side of it is the one thing in an animation editor that
+    /// does not line up with anything.
+    ///
+    /// It is a field and not the `SCRUB_HEIGHT` const it used to be because
+    /// every painter and hit-test here is a method of this view, so the view is
+    /// the one place the theme can reach them all. A const could not be told
+    /// what the theme says — which is why changing the theme's own
+    /// `scrubbing_height` had no effect on the painted band at all.
+    pub scrub_height: f32,
     /// The F-curves the Graph editor draws.
     pub curves: Vec<BDrawnCurve>,
     /// The channel region's width: the Dope Sheet and Graph editor show it,
@@ -80,6 +94,7 @@ impl BTimeView {
             nla: false,
             rows: Vec::new(),
             row_height: super::row::ROW_HEIGHT,
+            scrub_height: super::SCRUB_HEIGHT,
             curves: Vec::new(),
             channel_width: 0.0,
             markers: Vec::new(),

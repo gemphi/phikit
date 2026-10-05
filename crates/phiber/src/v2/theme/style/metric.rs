@@ -167,6 +167,7 @@ pub const DEFAULT_DIMENSIONS: BDimensions = BDimensions {
 /// one heading that is still shorter, is in `tests/a_row_is_one_height.rs`.
 pub const HEAD_ROOM: f32 = 4.0;
 pub const BUTTON_HEIGHT: f32 = MODULE - HEAD_ROOM;
+pub const MENU_ROW: f32 = BUTTON_HEIGHT - HEAD_ROOM;
 
 impl BDimensions {
     /// Every row: [`Self::row_height`], the sum this used to compute itself.

@@ -1171,9 +1171,10 @@ of any kind — the same rule as the path tracer's. Textures are read
 trilinearly at the mip level the pixel's footprint asks for (`mip_level`:
 the triangle's texel density times the footprint, widened at a grazing
 angle); the footprint is `t · (1 / (scale · w)) / dist` in perspective and
-one pixel's world width in orthographic. What EEVEE has and this does not,
-yet: soft shadows, screen-space reflections of other objects, ambient
-occlusion.
+one pixel's world width in orthographic. Shadows were hard here until
+§44, which aims the ray over the light's shape as EEVEE does. What EEVEE
+has and this does not, yet: screen-space reflections of other objects and
+ambient occlusion.
 
 The atlas head's width carries the level count in its top byte
 (`head_levels`); `Atlas::add` builds the chain; `BRayKey` now tells a
@@ -1353,7 +1354,8 @@ the rasterized one is the next journal's.
   Lighting and Color~~ — §27, batch 121 (MatCap, Attribute and Texture
   still draw as Studio / Material).
 - Material Preview on EEVEE's model (a raster prepass too; the prefiltered
-  environment shading of batch 108 stays).
+  environment shading of batch 108 stays). ~~Soft shadows~~ — §44, batch
+  144. Still: screen-space reflections, ambient occlusion.
 
 ## 25. Solid and Wireframe are anti-aliased as Workbench is: eight jittered samples (batch 118, 2026-10-03)
 
@@ -1854,3 +1856,268 @@ folds to one number — the common cutout, Mix(Transparent, Principled) by
 an image's alpha, still works through the Principled's own texture alpha
 once the fold lands on it); a third lobe (a Mix of Mixes folds the inner
 one); Add Shader as two lobes (folded, the emission summed).
+
+## 42. Noise, Voronoi and Bump per pixel (batch 142, 2026-10-05)
+
+Cycles evaluates a Noise or Voronoi Texture at every shading point —
+`svm_node_tex_noise` / `svm_node_tex_voronoi` over the coordinate the
+node's Vector is linked to — and a Bump node from the height's change
+across the pixel's footprint (`svm_node_set_bump`). Phiber folded a
+texture to its mean: a Noise on the base colour drew as one grey, a
+Voronoi on a Mix Shader's factor as one weight, a Bump as nothing. The
+kernels now carry the textures and evaluate them per hit.
+
+**The port** (`procedural.wgsl`, from `intern/cycles/kernel/svm/noise.h`,
+`fractal_noise.h`, `noisetex.h`, `voronoi.h`, `displace.h` and
+`util/hash.h`): Jenkins' lookup3 (`hash_uint2/3`) for the Perlin lattice,
+`hash_pcg3d` for the Voronoi cells; Perlin with Blender's fade and
+gradient table, `snoise_3d` at its 0.9820 scale repeating every 100 000;
+fBm over Detail, Roughness and Lacunarity, normalized to 0 ..= 1, the
+Color output three offset fBms; Distortion as three more; Voronoi F1
+Euclidean with Randomness, fractal over Detail, the Distance normalized
+by the largest it can be when the node's Normalize is on, the Color the
+cell's hash. The Bump is `svm_node_set_bump` with the node's Strength,
+Distance and Blender's Filter Width (0.1): the height at the hit and at
+two footprint-length steps along the surface, the gradient turned into a
+normal, blended to the shading normal by the strength.
+
+**The slots.** A material (`Mat`, 64 words now, was 32) carries two
+procedural slots of 16 words (`Proc`): the colour slot at `m + 32` — a
+Noise or Voronoi on the base colour (`proc_base`), on the mix weight
+(`mix_weight`), or both when the same texture feeds both — and the bump
+slot at `m + 48` (`proc_normal`). A slot names its kind (Fac / Color,
+Distance / Color, `PROC_NORMALIZE` for a normalized Voronoi), its
+coordinates (Generated, Object or UV), the Mapping node's Location and
+Scale, the texture's Scale, Detail, Roughness, Lacunarity and
+Distortion / Randomness, and a colour ramp as a 256 × 1 atlas image
+(`ramp`) sampled at the texture's scalar — the ramp's colour as the
+output, its luminance as the float. Generated coordinates are the hit in
+the object's texture space, the instance record (40 words now, was 32)
+carrying the bounding box's corner and size (`Instance::texspace`,
+`BKE_mesh_texspace_calc`: an axis the box is flat on takes a half-extent
+of one about its centre, so a plane's coordinate across it is a half and
+not the float noise of the hit divided by nothing — which is what drew
+the first version as a speckle). Object coordinates are the hit through
+the instance's inverse (`object_point`); UV the face's.
+
+**The kernels.** The path tracer (`shade.wgsl`) computes the hit's
+object point and UV before the lobe pick, so the mix weight is the
+slot's value there; the normal through the bump slot after the normal
+map; the base colour through the colour slot before the image multiplies
+it. Material Preview (`preview.wgsl`) does the same per lobe and reads
+the weight per pixel for its lerp. Workbench reads none of it.
+
+**From the file** (`shade/procedural.rs`, `BlendProcedural`): Principled
+Base Color ← [Color Ramp ←] Noise / Voronoi; the surface Mix Shader's
+Fac the same way, through reroutes; Principled Normal ← Bump(Strength,
+Distance) ▸ Height ← [ramp ←] texture (a Normal Map behind the Bump is
+still read, `links.rs`). The texture's Vector: unlinked is Generated; a
+Point Mapping gives its Location and Scale and is looked through to a
+Texture Coordinate's Generated, Object or UV output (a UV Map node is
+UV). The ramp is baked by `BKE_colorband_evaluate`'s port (linear, ease,
+constant) at 256 positions to linear RGBA bytes. Sockets are matched by
+identifier or name, since Blender 4.x labels the Mix Shader's and Color
+Ramp's `Fac` "Factor" — which had also left the Mix Shader's folded
+factor at its default in a 4.x file. `BlendMaterial::procedural` →
+`SceneMaterial::procedural`; `rendered/surface.rs` fills the slots: the
+base's and the Bump's on the lobe holding the Principled, the factor's
+on the first lobe (the one the tracer reads the weight from), the ramp
+uploaded once per build. The colour fold (`eval.rs`) still gives the
+material one base colour — the ramp at the texture's mean — for Solid
+and the material list.
+
+Tests: phiray `tests/procedural.rs` (a plain wall flat; a Noise varies
+it, grey for Fac, coloured for Color; Voronoi cells; a red–blue ramp
+adds no green beyond the lighting's and leans both ways; a Noise on the
+weight of a red / white mix varies where a constant is flat, the mean
+about the same; a Bump varies a flat wall — in both modes), `src/trace/
+instance.rs` (a flat axis's texture space), `tests/trace.rs` (the
+records' sizes); phiphx `tests/procedural_truth.rs` over the new
+`PROCEDURAL.blend` fixture (`fixtures/make_procedural.py`, Blender
+5.0.1: a ramped Noise over a Mapping of Object coordinates with a
+Voronoi Bump; a Noise on a Mix Shader's Fac through a reroute; a
+Voronoi's Color over UVs); phiber `rendered/surface_tests.rs` (the slots
+on the right lobes, the ramp's atlas id, none under Workbench),
+`tests/material_procedural.rs` (the fixture through the scene build).
+
+Not yet: the other noise types (Musgrave's, Ridged, Hetero Terrain) and
+Voronoi features (F2, Smooth F1, Distance to Edge, N-Sphere) and metrics;
+Wave, Magic, Brick, Checker, Gradient, Sky; Mapping's Rotation and its
+Texture / Vector / Normal types; Normal, Camera, Window and Reflection
+coordinates; a Mix node between the texture and the socket (folds to the
+mean); a second colour slot (two different textures on one lobe's base
+and factor leave the factor at its constant); 4D (W) textures.
+
+## 43. The rest of the texture nodes (batch 143, 2026-10-05)
+
+Batch 142 evaluated a Noise (fBm) or a Voronoi (F1, Euclidean) per pixel;
+every other texture node still folded to a grey of 0.5. The kernels now
+carry Cycles' SVM for all of them, split by family:
+
+- `noise.wgsl` — the hashes and Perlin of batch 142, and all five Noise
+  types (`fractal_noise.h`): fBm, Multifractal, Hybrid Multifractal,
+  Ridged Multifractal and Hetero Terrain with Offset and Gain,
+  `noise_select` as `noisetex.h` has it, Normalize honoured (fBm only),
+  Detail clamped to 0 ..= 15 and Roughness to ≥ 0 as the node does.
+- `voronoi.wgsl` — `voronoi.h`'s 3D case: F1, F2, Smooth F1 (the 5³
+  neighbourhood with Cycles' correction terms), Distance to Edge (its
+  own fractalization of lerps) and N-Sphere Radius, over Euclidean,
+  Manhattan, Chebychev and Minkowski (with its Exponent);
+  `max_distance` per metric (× 2 for F2) for Normalize.
+- `pattern.wgsl` — Checker (`checker.h`, with its precision nudge), Brick
+  (`brick.h`: Blender's integer noise for the tint, offset and squash
+  every n-th row, the mortar smoothed), Gradient (all seven types,
+  saturated), Magic (the ten distortion rounds, written as one switch
+  per round) and Wave (bands or rings along X / Y / Z / diagonal or
+  spherical, sine / saw / triangle, the fBm distortion).
+
+**The slot** (`Proc`, now `trace/proc.rs`) grew from 16 to 40 words to
+hold what the nodes add: the type (noise type, Voronoi feature, gradient
+type, wave type), a direction (Voronoi metric, bands direction, brick
+offset frequency), rings (rings direction, squash frequency, magic
+depth), the profile, Offset / Gain, Smoothness / Exponent, Bias, Brick
+Width and Row Height, and three colours (Color1, Color2, Mortar);
+`procedural.wgsl`'s head lists every word. A material is 112 words (32
+and two slots); the kind's flag `PROC_NORMALIZE` moved to bit 8 and now
+covers Noise too. `Proc::checker`, `brick`, `gradient`, `magic`, `wave`
+start each node at Blender's defaults; `colored()` reads the other output.
+
+**From the file** (`shade/texnode.rs`): the node's sockets folded through
+`eval.rs` with `node_shader_tex_*.cc`'s defaults, and its storage —
+`NodeTexNoise.type` / `normalize` (fBm and normalized for a file older
+than Blender 4.1 / 4.0, which had neither), `NodeTexVoronoi.feature` /
+`distance` / `normalize`, `NodeTexGradient.gradient_type`,
+`NodeTexMagic.depth`, `NodeTexWave` (type, both directions, profile),
+`NodeTexBrick` (offset, squash and their frequencies). The output read
+decides the kind (Fac / Color; Voronoi's Distance / Color / Radius;
+Position and W are not evaluated and fold as before).
+
+A note on Brick: it is a pattern in X and Y. On a wall standing in the
+XZ plane, Generated Y is one value across the whole wall — Blender draws
+that wall as one row's slice, often all mortar, and so does this; the
+test draws its bricks on a floor.
+
+Tests: phiray `tests/textures.rs` (a red / blue Checker is those two
+colours; Brick's mortar a minority of dark pixels; a Linear Gradient never
+falls left to right; Magic coloured; Wave varies; each Noise type varies
+and differs from fBm; F2 lies farther than F1; every feature and metric,
+and N-Sphere Radius, varies), `trace/proc.rs` (40 words, the kind's
+flag); phiphx `tests/texture_nodes_truth.rs` over eight new planes in
+`PROCEDURAL.blend` (`make_procedural.py`): Checker, Brick, Gradient,
+Magic, Wave, a Ridged Noise, Distance to Edge, Smooth F1 Minkowski — every
+setting the script set read back; phiber `rendered/surface_tests.rs` (a
+Brick's settings at the words the kernel reads).
+
+Not yet: Sky, Gabor, White Noise, IES, Image's procedural cousins
+(Environment is the world's); 4D (W) and 1D / 2D dimensions (read as
+3D); Mapping's Rotation and its Texture / Vector / Normal types; a Mix
+node between a texture and its socket; the colour fold (Solid, the
+material list) still takes a texture's mean as 0.5 grey, so a red / blue
+Checker's Solid colour is grey, not purple.
+
+## 44. Material Preview's shadows are as soft as the light (batch 144, 2026-10-05)
+
+Batch 108's Material Preview took one shadow ray per lamp, straight at its
+centre, so every shadow had a razor edge — the one thing that gave the mode
+away beside Blender's, where the default point light's 0.1 m radius already
+blurs a contact shadow over a few pixels.
+
+EEVEE does not aim at the centre. `shadow_ray_generate_punctual` picks a
+point on the light's shape and traces to that: a disk of the Radius turned
+to face the surface (a point light being a sphere, the disk takes the
+radius that spans the same angle, `light_sphere_disk_radius`), or the
+rectangle itself for an Area light. `shadow_ray_generate_directional`
+picks a direction inside the Sun's Angle (`sample_uniform_cone`). One such
+ray per frame, averaged over the viewport's sixteen samples.
+
+`shadow.wgsl` ports those three shapes with EEVEE's own sampling
+(`eevee_sampling_lib.bsl.hh`: `sample_disk`, `sample_uniform_cone`,
+`sample_circle`). What it cannot port is the accumulation: a Preview frame
+is one dispatch and the same frame every time (§22), so there is nothing
+to average over. It takes `SHADOW_TAPS` (8) rays at once instead, over the
+Hammersley set EEVEE samples its own lookup tables with (`hammersley_2d`,
+`van_der_corput_radical_inverse`), and averages their visibility. A light
+whose shape is a point — Shadow Soft Size at 0, which EEVEE also draws
+hard — still takes the one ray at the centre, so nothing pays for softness
+it hasn't asked for. The three-point rig's key and rim, which have no
+light record of their own, take the same taps over the 0.06 rad cone the
+path tracer gives them (`rig_visible`).
+
+An Area light's taps spread over a square of its edge: `Light::size` is
+the edge length for an area light and a radius for the rest
+(`scene/extras.rs`), and Blender's Size Y is not read, so a non-square
+area light is sampled as a square one.
+
+The cost is eight shadow rays where there was one, per lamp, per pixel —
+but only where the lamp has a shape. Measured on this container's software
+GPU the whole preview suite went from 83 s to 312 s; on hardware §22's
+13 ms sample is the figure to re-measure. A tap count that followed the
+penumbra's size on screen would be the next refinement if that proves too
+dear.
+
+Tests: phiray `tests/preview.rs` — `a_lamp_casts_a_shadow_as_soft_as_its_radius`
+replaces `a_lamp_casts_a_hard_shadow`: a small card's shadow on a big one,
+the lamp just off the axis so the shadow's outer edge clears the card's
+silhouette, counting the pixels along that edge which are neither the
+umbra nor the open light. A point-sized lamp has none — it steps from one
+to the other — radius 0.3 has two and radius 0.6 has four; and a Sun's
+Angle softens the same way, at the angle rather than a radius.
+
+Finding the geometry took three tries, which is worth recording: with the
+lamp where batch 108 had it, the blocker hid its own penumbra — the camera
+and the lamp were on the same side, the visible frame covers only world
+x ∈ [−0.72, 0.72] at the far card, and the soft edge fell outside it. The
+old test still passed, because the step it measured was the boundary
+between the umbra and the blocker's own lit face, not the shadow's edge at
+all.
+
+Still not EEVEE's, in Material Preview: screen-space reflections of other
+objects (the environment alone is reflected) and ambient occlusion —
+though both are off in EEVEE by default, since Raytracing
+(`SCE_EEVEE_SSR_ENABLED`) and Fast GI (`SCE_EEVEE_FAST_GI_ENABLED`) are
+not in `SceneEEVEE.flag`'s default, so the two match until the file turns
+Raytracing on. The sun's Angle, fixed here at Blender's default, is read
+from the file as of §45.
+
+## 45. A light's shape comes from the file (batch 145, 2026-10-05)
+
+Batch 144 made every lamp's shadow as soft as the lamp's shape, which
+turned a field nobody had looked at into something visible: the shape
+itself. A sun's was not read at all. `rendered/world.rs` wrote
+`(0, 0.0093, 0.0)` — Blender's default 0.526° in radians, hard-coded — so
+a file whose Sun has a 10° Angle drew the crisp shadow of a 0.5° one, and
+no setting in the file could change it.
+
+The reason it was missed is that a sun's shape is not a length. Blender
+keeps a point's and a spot's softness in `Light.radius` and an area
+light's in `Light.area_size`, both metres, but a sun's in
+`Light.sun_angle`, radians — the angular diameter of the disc in the sky,
+0.526° being the real sun's. `blend/object/data.rs` read `radius` and
+`area_size` and never `sun_angle`, and `scene/import_extras.rs` gave a
+sun `radius`, which for a sun is a number Blender's UI does not even
+show. So a sun carried 0.1 m as though it were an angle, and phiber threw
+that away for its own constant.
+
+Now `BlendLightData::sun_angle` is read (`SUN_ANGLE`, the 0.526° default,
+when a file predates the field), `SceneLight::size` is documented as the
+one shape field it is — a radius, an edge, or a sun's angular diameter —
+and `world.rs` passes it through. The tracer already halved it for the
+cone it samples (`shadow.wgsl`, `cone_dir`), which matches Cycles taking
+`angle/2` as the half-angle, so nothing downstream changed.
+
+Tests: phiphx `tests/light_truth.rs` over a new `LIGHTS.blend`
+(`fixtures/make_lights.py`): a Sun at 10°, a Point at radius 0.4, an Area
+at size 2.5, a Spot at radius 0.2 and a 60° cone — each a value the old
+default would not give, so a read value cannot be mistaken for a
+fallback; phiber `tests/light_shapes_reach_the_tracer.rs`, the same four
+through `world.rs`'s `light` into the tracer's records.
+
+One thing the fixture turned up: an area light's stored `Light.energy` is
+not the Watts its UI shows. Blender keeps 4/π of it — the script's 500 W
+reads back as 636.6 — so passing the stored number straight through, as
+the reader does, is right. The test asserts the scaled value and says why.
+
+Not read still: an area light's Size Y (`area_sizey`) and its shape, so a
+rectangular or elliptical area light is sampled as a square one (§44);
+and the `.phx` round trip carries no light shape at all — `PhxLight` has
+only the spot angle and area size, and its import populates no lights.

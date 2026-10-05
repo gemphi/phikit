@@ -93,6 +93,10 @@ pub struct BlendMaterial {
     /// The surface as a Mix Shader's two lobes, when it is one
     /// (`shade/surface.rs`); `bsdf` is then the two folded together.
     pub mix: Option<crate::blend::shade::surface::BlendMix>,
+    /// The Noise / Voronoi textures the surface reads per pixel — on the
+    /// base colour, the Mix Shader's factor, a Bump on the normal
+    /// (`shade/procedural.rs`).
+    pub procedural: crate::blend::shade::procedural::BlendProcedural,
     /// The material's node tree as the Shader editor draws it — every node with
     /// its type, name, position and size, and the links between them
     /// (`shade/graph.rs`). Empty for a material with no tree.

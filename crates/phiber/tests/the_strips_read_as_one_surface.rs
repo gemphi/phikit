@@ -96,12 +96,11 @@ fn a_resting_tab_is_the_strip_and_the_selected_one_is_the_panel() {
 #[test]
 fn every_secondary_activity_column_has_the_same_container() {
     use phiber::v2::part::activity::BActivityList;
-    use phiber::v2::part::activity::option::is_grouping;
     use phiber::v2::state::ActivityKey;
     use phiber::v2::view::BView;
 
     let mut checked = 0;
-    for entry in phiber::v2::part::activity::set::ENTRIES.iter().filter(|e| is_grouping(e)) {
+    for entry in phiber::v2::part::activity::set::ENTRIES.iter().filter(|e| e.is_grouping()) {
         let mut state = BState::new();
         state.set(ActivityKey::Group, entry.label);
         let strip = BActivityList::new().group_strip(&state);

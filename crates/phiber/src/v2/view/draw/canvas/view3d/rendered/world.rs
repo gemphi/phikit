@@ -92,7 +92,10 @@ pub fn light(l: &SceneLight) -> Light {
     let dir = (-m.z_axis.truncate()).normalize_or_zero().to_array();
     let e = l.energy.max(0.0);
     let (kind, size, cone) = match l.kind.as_str() {
-        "SUN" => (0, 0.0093, 0.0),
+        // A sun's shape is its Angle (`Light.sun_angle`), which the
+        // shadow taps spread over (`phiray`'s `shadow.wgsl`); it was fixed
+        // at Blender's default here until the file's own was read.
+        "SUN" => (0, l.size, 0.0),
         "SPOT" => (2, l.size, (l.spot_size * 0.5).cos()),
         "AREA" => (3, l.size, 0.0),
         _ => (1, l.size, 0.0),

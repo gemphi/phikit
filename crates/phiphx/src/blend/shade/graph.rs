@@ -52,6 +52,11 @@ pub struct BlendNode {
     pub flag: i32,
     /// The saved address, so links can name their ends.
     pub address: u64,
+    /// `bNode.*parent` — the address of the frame this node is parented into,
+    /// or `None`. A frame node (`NodeFrame`) is sized to bound its children, so
+    /// a frame has to know which nodes name it as their parent; the address is
+    /// what a child carries and the frame's own `address` is what it matches.
+    pub parent: Option<u64>,
     /// `bNode.inputs` and `bNode.outputs`, in the file's own order — which is
     /// the order Blender lays the rows out in, so it is not sorted. Where each
     /// one SITS is not in the file (`socket.rs`); phiber lays that out.
@@ -61,6 +66,14 @@ pub struct BlendNode {
 
 /// `NODE_SELECT` (`DNA_node_types.h:204`): the node is selected in the editor.
 pub const NODE_SELECT: i32 = 1 << 0;
+/// `NODE_COLLAPSED` (`DNA_node_types.h:207`): the node is folded to a pill —
+/// H in the editor. Blender lays it out and draws it a different way entirely
+/// (`node_update_collapsed` / `node_draw_collapsed`), so a reader that ignores
+/// this flag draws a saved file wrong rather than merely plainly.
+pub const NODE_COLLAPSED: i32 = 1 << 3;
+/// `NODE_MUTED` (`DNA_node_types.h:215`): the node passes its input through
+/// untouched, drawn faded with a wire across it (M in the editor).
+pub const NODE_MUTED: i32 = 1 << 9;
 /// `NODE_ACTIVE` (`DNA_node_types.h:208`): the node that was clicked last.
 ///
 /// Separate from selection and not a subset of it in spelling, though in
@@ -94,10 +107,51 @@ impl BlendNode {
         self.flag & NODE_ACTIVE != 0
     }
 
+    /// Whether the file has this node folded to a pill (`NODE_COLLAPSED`).
+    pub fn collapsed(&self) -> bool {
+        self.flag & NODE_COLLAPSED != 0
+    }
+
+    /// Whether the node is muted (`NODE_MUTED`): M in the editor. Blender draws
+    /// it `BUT_INACTIVE` — its contents faded and its outline blended toward the
+    /// background — and runs a pass-through wire across it. A reader that
+    /// ignores the flag draws a muted node as a live one.
+    pub fn muted(&self) -> bool {
+        self.flag & NODE_MUTED != 0
+    }
+
     /// Whether this is the output actually being rendered (`NODE_DO_OUTPUT`),
     /// which is what decides whether an output node gets the output colour.
     pub fn active_output(&self) -> bool {
         self.flag & NODE_DO_OUTPUT != 0
+    }
+
+    /// Whether this is a reroute (`NODE_REROUTE`): the little dot that tidies a
+    /// graph's wiring without changing it. Blender keys it off the TYPE, not a
+    /// flag — `node.is_reroute()` is `type == NODE_REROUTE`, and the type's
+    /// `idname` is `"NodeReroute"` (`node_common.cc:651`).
+    ///
+    /// It is drawn unlike any other node (`reroute_node_prepare_for_draw`): no
+    /// card, header, title or body — just one socket dot, with its single input
+    /// and single output both at the node's own location. A reader that ignores
+    /// the type draws a reroute as a full card with a title bar, which is the
+    /// shape phiber had before the type was recognised.
+    pub fn reroute(&self) -> bool {
+        self.idname == "NodeReroute"
+    }
+
+    /// Whether this is a frame (`NODE_FRAME`): the labelled box drawn BEHIND a
+    /// group of nodes to show they belong together. Blender keys it off the type
+    /// (`node.is_frame()` is `type == NODE_FRAME`), and the type's `idname` is
+    /// `"NodeFrame"` (`node_common.cc`).
+    ///
+    /// A frame is not a card: it has no sockets, no header and no title bar, and
+    /// it is sized to bound the nodes parented into it rather than to its own
+    /// content (`calc_node_frame_dimensions`). A reader that ignores the type
+    /// draws a frame as a tiny titled card floating among the nodes it is meant
+    /// to contain, which is the shape phiber had before the type was recognised.
+    pub fn frame(&self) -> bool {
+        self.idname == "NodeFrame"
     }
 }
 
@@ -155,6 +209,7 @@ impl BlendFile {
         let width_off = Self::struct_field_offset_exact("bNode", "width", dna, ps);
         let height_off = Self::struct_field_offset_exact("bNode", "height", dna, ps);
         let flag_off = Self::struct_field_offset_exact("bNode", "flag", dna, ps);
+        let parent_off = Self::struct_field_offset_exact("bNode", "*parent", dna, ps);
 
         let mut nodes = Vec::new();
         let mut addr = Self::read_ptr(&nt.data, nodes_off, ps, le);
@@ -177,6 +232,9 @@ impl BlendFile {
                 height: f32_at(height_off),
                 flag: flag_off.and_then(|o| node.data.get(o..o + 4)).map_or(0, |b| self.read_i32(b)),
                 address: addr,
+                parent: parent_off
+                    .map(|o| Self::read_ptr(&node.data, o, ps, le))
+                    .filter(|&p| p != 0),
                 inputs: self.node_sockets(node, "inputs", dna),
                 outputs: self.node_sockets(node, "outputs", dna),
             });
@@ -299,6 +357,36 @@ mod tests {
         // Other bits in `flag` are not selection.
         node.flag = 1 << 4;
         assert!(!node.selected(), "only NODE_SELECT means selected");
+    }
+
+    #[test]
+    fn a_reroute_is_known_by_its_type_name() {
+        // `node.is_reroute()` is a TYPE test in Blender, not a flag — the type's
+        // idname is `"NodeReroute"`. Every other node is drawn as a card; a
+        // reroute is drawn as a bare dot, so getting this wrong draws the dot as
+        // a card.
+        let mut node = BlendNode::default();
+        assert!(!node.reroute(), "an untyped node is not a reroute");
+        node.idname = "NodeReroute".into();
+        assert!(node.reroute());
+        node.idname = "ShaderNodeBsdfPrincipled".into();
+        assert!(!node.reroute(), "a real shader node is not a reroute");
+    }
+
+    #[test]
+    fn a_frame_is_known_by_its_type_name_and_carries_its_parent() {
+        // Like `reroute`, `is_frame()` is a TYPE test — the idname is
+        // `"NodeFrame"`. A node not inside any frame carries no parent.
+        let mut node = BlendNode::default();
+        assert!(!node.frame(), "an untyped node is not a frame");
+        assert_eq!(node.parent, None, "and it is parented into nothing");
+        node.idname = "NodeFrame".into();
+        assert!(node.frame());
+        node.idname = "ShaderNodeMath".into();
+        assert!(!node.frame());
+        // A child names its frame by the frame's own address.
+        node.parent = Some(0xBEEF);
+        assert_eq!(node.parent, Some(0xBEEF));
     }
 
     #[test]

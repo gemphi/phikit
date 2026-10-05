@@ -24,14 +24,14 @@ impl BTimeGesture {
         }
         let b = self.bounds.get()?;
         let (x, y) = (f32::from(event.position.x - b.origin.x) - v.channel_width, f32::from(event.position.y - b.origin.y));
-        if y < super::SCRUB_HEIGHT || v.in_marker_band(y, f32::from(b.size.height)) {
+        if y < v.scrub_height || v.in_marker_band(y, f32::from(b.size.height)) {
             return None;
         }
         if x < 0.0 || v.rows.is_empty() {
             return Some(BTimeDrag::Held);
         }
         let width = f32::from(v.window(b).size.width);
-        let row = BTimeRow::index_at(y, v.row_height).unwrap_or(0).min(v.rows.len() - 1);
+        let row = BTimeRow::index_at(y, v.row_height, v.scrub_height).unwrap_or(0).min(v.rows.len() - 1);
         let hit = v.rows[row].keys.iter().copied().filter(|&k| (v.x_of(k, width) - x).abs() <= 7.0).min_by(|a, b| (v.x_of(*a, width) - x).abs().total_cmp(&(v.x_of(*b, width) - x).abs()));
         let shift = event.modifiers.shift;
         Some(match hit {

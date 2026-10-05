@@ -53,7 +53,14 @@ pub(super) fn light_from_blend(obj: &BlendSceneObject) -> SceneLight {
         light.color = l.color;
         light.energy = l.energy;
         light.spot_size = l.spot_size;
-        light.size = if l.kind == 4 { l.area_size } else { l.radius };
+        // A sun's shape is an angle, not a length: `Light.radius` is not
+        // what Blender's Angle writes, and a sun left on `radius` drew a
+        // crisp shadow where Blender's is soft.
+        light.size = match l.kind {
+            1 => l.sun_angle,
+            4 => l.area_size,
+            _ => l.radius,
+        };
     }
     light
 }

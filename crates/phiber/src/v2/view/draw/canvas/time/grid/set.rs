@@ -4,7 +4,7 @@
 //! in the theme's colours (`BAnimColors`).
 
 use super::super::set::{hsla, line_x, rect, shape, text_at, FONT};
-use super::super::{BTimeView, MIN_GRID, SCRUB_HEIGHT};
+use super::super::{BTimeView, MIN_GRID};
 use crate::v2::theme::{BAnimColors, BColor};
 use gpui::{App, Bounds, Pixels, Window, fill};
 
@@ -29,11 +29,11 @@ impl BTimeView {
         let (major, minor) = (colors.grid, colors.grid_minor);
         if let Some(minor_step) = BTimeView::minor_step(step, self.scale(width), MIN_GRID) {
             for frame in self.lines(minor_step) {
-                line_x(self.x_of(frame, width), SCRUB_HEIGHT, height, 1.0, minor, at, window);
+                line_x(self.x_of(frame, width), self.scrub_height, height, 1.0, minor, at, window);
             }
         }
         for frame in self.lines(step) {
-            line_x(self.x_of(frame, width), SCRUB_HEIGHT, height, 1.0, major, at, window);
+            line_x(self.x_of(frame, width), self.scrub_height, height, 1.0, major, at, window);
         }
     }
 
@@ -60,7 +60,7 @@ impl BTimeView {
         let half_glyph = FONT / 2.0 - 1.0;
         for value in self.value_lines(step) {
             let y = self.y_of(value, height);
-            if y - half_glyph >= SCRUB_HEIGHT && y + half_glyph <= height - SCALE_FOOT {
+            if y - half_glyph >= self.scrub_height && y + half_glyph <= height - SCALE_FOOT {
                 let line = shape(&value_label(value, step), colors.scale_text, window);
                 text_at(&line, SCALE_INSET, y, at, window, cx);
             }

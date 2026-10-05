@@ -14,7 +14,6 @@
 //! come to disagree with the panel.
 
 use crate::v2::part::props::prop::BPropSpec;
-use crate::v2::part::props::prop_view::value_key;
 use crate::v2::state::val::{V_FALSE, V_TRUE};
 use crate::v2::state::{BKey as _, BState, MenuKey};
 use crate::v2::view::BView;
@@ -24,7 +23,7 @@ use crate::v2::host::BHostType;
 /// One row of a popover: the box over the key the panel and the canvas use.
 fn check(state: &BState, heading: &str, spec: &BPropSpec) -> BView {
     let on = matches!(spec.default, Some(crate::v2::part::props::prop::BDefault::Bool(true)));
-    BView::check_row(state, heading, value_key(spec), on, spec.label)
+    BView::check_row(state, heading, spec.value_key(), on, spec.label)
 }
 
 /// A group of boxes under one heading, as every other popover lays them out.
@@ -83,10 +82,10 @@ mod tests {
         // would silently fork the setting in three.
         use crate::v2::state::ButsKey;
         for spec in crate::v2::part::props::tool::OPTIONS {
-            assert_eq!(value_key(spec), ButsKey::Value(spec.key).path(), "{}", spec.key);
+            assert_eq!(spec.value_key(), ButsKey::Value(spec.key).path(), "{}", spec.key);
         }
         for spec in crate::v2::part::props::tool::OVERLAYS {
-            assert_eq!(value_key(spec), ButsKey::Value(spec.key).path(), "{}", spec.key);
+            assert_eq!(spec.value_key(), ButsKey::Value(spec.key).path(), "{}", spec.key);
         }
     }
 

@@ -35,8 +35,8 @@ pub struct BMarkerGlyph {
 
 impl BTimeView {
     /// The band's top edge, `height` down the canvas.
-    pub fn marker_band_top(height: f32) -> f32 {
-        (height - BAND_HEIGHT).max(super::SCRUB_HEIGHT)
+    pub fn marker_band_top(height: f32, scrub: f32) -> f32 {
+        (height - BAND_HEIGHT).max(scrub)
     }
 
     /// The markers across a canvas `width` wide — those inside the view,
@@ -60,7 +60,7 @@ impl BTimeView {
     /// within a glyph's width of its frame (`ed_marker_select`'s
     /// `find_nearest_marker`, which takes the nearest within a few pixels).
     pub fn marker_hit(&self, x: f32, y: f32, width: f32, height: f32) -> Option<BMarkerGlyph> {
-        if self.markers.is_empty() || y < Self::marker_band_top(height) {
+        if self.markers.is_empty() || y < Self::marker_band_top(height, self.scrub_height) {
             return None;
         }
         let reach = GLYPH_SIZE * 0.5;
@@ -72,7 +72,7 @@ impl BTimeView {
 
     /// Whether `(x, y)` is in the marker band at all.
     pub fn in_marker_band(&self, y: f32, height: f32) -> bool {
-        !self.markers.is_empty() && y >= Self::marker_band_top(height)
+        !self.markers.is_empty() && y >= Self::marker_band_top(height, self.scrub_height)
     }
 }
 
@@ -90,6 +90,9 @@ pub fn dashes(top: f32, foot: f32) -> Vec<(f32, f32)> {
 
 #[cfg(test)]
 mod tests {
+    /// Blender's own band height, so these numbers stay readable while the live
+    /// view takes its own from the theme.
+    const SCRUB: f32 = super::super::SCRUB_HEIGHT;
     use super::*;
 
     #[test]
@@ -106,8 +109,11 @@ mod tests {
         assert_eq!(view.marker_hit(cut_x + 3.0, 100.0, 1000.0, 400.0), None, "above the band");
         assert_eq!(view.marker_hit(cut_x + 40.0, 390.0, 1000.0, 400.0), None, "too far");
         assert!(view.in_marker_band(390.0, 400.0) && !view.in_marker_band(100.0, 400.0));
-        assert_eq!(BTimeView::marker_band_top(400.0), 400.0 - BAND_HEIGHT);
-        assert_eq!(BTimeView::marker_band_top(30.0), super::super::SCRUB_HEIGHT, "never over the scrub");
+        assert_eq!(BTimeView::marker_band_top(400.0, SCRUB), 400.0 - BAND_HEIGHT);
+        // A window shorter than the band cannot put the band over the scrub
+        // strip — whatever height the theme gives that strip.
+        assert_eq!(BTimeView::marker_band_top(30.0, SCRUB), SCRUB, "never over the scrub");
+        assert_eq!(BTimeView::marker_band_top(30.0, 36.0), 36.0, "nor with a taller strip");
         let d = dashes(0.0, 20.0);
         assert_eq!(d, [(0.0, 3.0), (6.0, 9.0), (12.0, 15.0), (18.0, 20.0)], "half of every six pixels, clipped at the foot");
     }

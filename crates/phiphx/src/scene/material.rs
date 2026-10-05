@@ -32,6 +32,8 @@ pub struct SceneMaterial {
     pub bsdf: SceneBsdf,
     /// A Mix Shader's two lobes, when the surface is one (`BlendMix`).
     pub mix: Option<crate::blend::shade::surface::BlendMix>,
+    /// The procedural textures the surface reads per pixel (`BlendProcedural`).
+    pub procedural: crate::blend::shade::procedural::BlendProcedural,
     /// Normal map image key and strength (Normal Map node), if linked.
     pub normal_texture: Option<(String, f32)>,
     /// Decoded normal map (raw, non-colour bytes).
@@ -97,6 +99,7 @@ impl SceneMaterial {
             texture: None,
             bsdf: SceneBsdf::default(),
             mix: None,
+            procedural: Default::default(),
             normal_texture: None,
             normal_map: None,
             maps: SceneMaps::default(),
@@ -127,6 +130,7 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
                 texture: None,
                 bsdf: m.bsdf,
                 mix: m.mix.clone(),
+                procedural: m.procedural.clone(),
                 normal_texture: m.normal_map.as_ref().map(|n| (n.image.clone(), n.strength)),
                 normal_map: None,
                 maps: SceneMaps::of(&m.maps),
@@ -154,6 +158,7 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
         texture: None,
         bsdf: SceneBsdf::default(),
         mix: None,
+        procedural: Default::default(),
         normal_texture: None,
         normal_map: None,
         maps: SceneMaps::default(),

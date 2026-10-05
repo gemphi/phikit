@@ -46,7 +46,7 @@ impl BTimeView {
         let width = f32::from(at.size.width);
         let x = |frame: f32| self.x_of(frame, width);
         for (index, row) in self.rows.iter().enumerate() {
-            let (top, bottom) = (BTimeRow::top(index, NLA_ROW_HEIGHT), BTimeRow::top(index, NLA_ROW_HEIGHT) + NLA_ROW_HEIGHT);
+            let (top, bottom) = (BTimeRow::top(index, NLA_ROW_HEIGHT, self.scrub_height), BTimeRow::top(index, NLA_ROW_HEIGHT, self.scrub_height) + NLA_ROW_HEIGHT);
             match &row.kind {
                 BRowKind::Action { name, tweaking } => paint_action(row, action_color(name.is_some(), *tweaking, colors), top, bottom, colors, at, &x, window),
                 BRowKind::Track(track) => {

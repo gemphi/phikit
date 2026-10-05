@@ -81,6 +81,16 @@ pub fn bindings(over: Option<BHostType>) -> Vec<BBinding> {
             walk(host, &mut vec![menu.label], menu.items, &mut out);
         }
     }
+    // A node editor's Home, `NODE_OT_view_all`. Outside the menus because the
+    // node editors have no View menu here yet — the framing existed and
+    // nothing could ask for it, which is the gap this closes.
+    if let Some(host) = over.filter(|host| {
+        matches!(host, BHostType::Node | BHostType::Shader | BHostType::Compositor | BHostType::GeoNode)
+    }) {
+        fixed(&mut out, "Home", "node.view_all", move |_| {
+            BAction::Set(OpKey::NodeView.path(), format!("{}:all", host.slug()))
+        });
+    }
     // The 3D Viewport's own key outside its menus: Alt Z, `view3d.toggle_xray`.
     if over == Some(BHostType::View3D) {
         fixed(&mut out, "Alt Z", "view3d.toggle_xray", |_| BAction::Set(OpKey::View3d.path(), "toggle_xray".to_string()));

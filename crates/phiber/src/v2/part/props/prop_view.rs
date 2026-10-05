@@ -13,17 +13,9 @@ use crate::v2::state::{BKey as _, BPath, BState, ButsKey, val::BValue};
 use crate::v2::view::BView;
 use crate::v2::view::prim::{BCtrl, BCtrlKind, BOption};
 
-/// State key that stores the value of `spec`. Segments live under `buts` so
-/// all Property-panel values share one root and can be introspected
-/// uniformly.
-pub fn value_key(spec: &BPropSpec) -> BPath {
-    ButsKey::Value(spec.key).path()
-}
 
-/// State key gating whether the dropdown for `spec` is open.
-fn open_key(spec: &BPropSpec) -> BPath {
-    ButsKey::Dropdown(spec.key).path()
-}
+
+
 
 fn options(items: &'static [BEnumItem]) -> impl Iterator<Item = BOption> {
     items.iter().map(|i| BOption { key: i.key.to_string(), label: i.label.to_string(), icon: String::new() })
@@ -68,14 +60,14 @@ fn control(spec: &BPropSpec, key: BPath, s: &BState) -> BCtrl {
     // The Render tab's Device: the card phiray draws on, not Cycles' CPU /
     // GPU switch read from the file (`pref::device`).
     if spec.key == "cycles.device" {
-        return crate::v2::part::pref::device::BRenderDevices::control(open_key(spec), s);
+        return crate::v2::part::pref::device::BRenderDevices::control(spec.open_key(), s);
     }
     let (kind, factory) = ctrl_for(spec.kind);
     let default = default_of(spec, spec.kind).unwrap_or(factory);
     let mut ctrl = BCtrl::read(kind, key, default, s);
     match spec.kind {
         BPropKind::Enum(items) => {
-            ctrl = ctrl.with_options(options(items)).with_menu(open_key(spec), s);
+            ctrl = ctrl.with_options(options(items)).with_menu(spec.open_key(), s);
         }
         BPropKind::Pointer { target } => ctrl = ctrl.with_label(target),
         _ => {}
@@ -87,7 +79,7 @@ fn value(spec: &BPropSpec, s: &BState) -> BView {
     let axes: &[&str] = match spec.kind {
         BPropKind::Vec3 { .. } => &["x", "y", "z"],
         BPropKind::Vec4 { .. } => &["r", "g", "b", "a"],
-        _ => return BView::ctrl(control(spec, value_key(spec), s)),
+        _ => return BView::ctrl(control(spec, spec.value_key(), s)),
     };
     BView::row(
         axes.iter()
@@ -106,4 +98,18 @@ pub fn prop_row(spec: &BPropSpec, s: &BState) -> BView {
 /// control alone, no label — Motion Blur's checkbox before the title.
 pub fn header_ctrl(spec: &BPropSpec, s: &BState) -> BView {
     value(spec, s)
+}
+
+impl BPropSpec {
+    /// State key that stores the value of `self`. Segments live under `buts` so
+    /// all Property-panel values share one root and can be introspected
+    /// uniformly.
+    pub fn value_key(&self) -> BPath {
+        ButsKey::Value(self.key).path()
+    }
+
+    /// State key gating whether the dropdown for `self` is open.
+    fn open_key(&self) -> BPath {
+        ButsKey::Dropdown(self.key).path()
+    }
 }

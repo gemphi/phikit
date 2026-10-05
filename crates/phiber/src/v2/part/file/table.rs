@@ -80,12 +80,12 @@ pub fn row(file: &BFileRow, selected_path: &str) -> BView {
         vec![
             BTableCell::flex(name),
             BTableCell::new(
-                BView::label(listing::format_time(file)),
+                BView::label(BFileRow::format_time(&file)),
                 BColWidth::FileDate,
                 BColAlign::Start,
             ),
             BTableCell::new(
-                BView::label(listing::format_size(file)),
+                BView::label(BFileRow::format_size(&file)),
                 BColWidth::FileSize,
                 BColAlign::End,
             ),

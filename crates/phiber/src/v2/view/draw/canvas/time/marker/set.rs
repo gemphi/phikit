@@ -19,7 +19,7 @@ impl BTimeView {
         }
         let width = f32::from(at.size.width);
         let height = f32::from(at.size.height);
-        let top = BTimeView::marker_band_top(height);
+        let top = BTimeView::marker_band_top(height, self.scrub_height);
         window.paint_quad(fill(rect(0.0, top, width, top + BAND_HEIGHT, at), hsla(colors.scrub_back)));
         // A box being swept: the band between its frames, in the selection's
         // shade, under the glyphs.
@@ -36,7 +36,7 @@ impl BTimeView {
                 (colors.marker_line, colors.marker, colors.marker_text)
             };
             // The stalk: dashed from the scrub's foot down to `STALK_FOOT`.
-            for (y0, y1) in dashes(super::super::SCRUB_HEIGHT, height - STALK_FOOT) {
+            for (y0, y1) in dashes(self.scrub_height, height - STALK_FOOT) {
                 line_x(glyph.x, y0, y1, 1.0, line_ink, at, window);
             }
             // The glyph, astride the frame, its base `GLYPH_FOOT` up.

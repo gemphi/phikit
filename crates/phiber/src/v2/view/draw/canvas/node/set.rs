@@ -15,7 +15,7 @@
 
 use super::super::super::color::to_hsla;
 use super::super::super::ctx::BRenderCtx;
-use super::{BNode, drag, draw_order, header_color, link, paint, select, wire};
+use super::{BNode, drag, draw_order, frame, header_color, link, paint, reroute, select, title_ink, wire};
 use super::plan::{BCardFraction, BCardSize, positions};
 use super::view::store as view_store;
 
@@ -79,7 +79,8 @@ fn card(
                 .flex()
                 .items_center()
                 .bg(to_hsla(header_color(node, ctx)))
-                .text_color(to_hsla(ctx.style.colors.text))
+                // A muted node's title fades with its header (`BUT_INACTIVE`).
+                .text_color(to_hsla(title_ink(node, ctx)))
                 .text_size(px(ctx.style.typography.header))
                 .when(size.width >= LABEL_FLOOR, |header| {
                     header.child(SharedString::from(node.title().to_string()))
@@ -183,6 +184,9 @@ pub fn render(ctx: &BRenderCtx) -> AnyElement {
             });
         }
     }
+    // Frames first, behind the links and cards: a frame is a backdrop for the
+    // nodes parented into it (`frame::layer`, Blender's `node_draw_nodetree`).
+    canvas_div = canvas_div.children(frame::layer(&graph.nodes, &view, size, &offsets, ctx));
     let (painter, painted_bounds) = paint::canvas::element(
         paint::canvas::BNodePainting {
             graph: graph.clone(),
@@ -199,19 +203,22 @@ pub fn render(ctx: &BRenderCtx) -> AnyElement {
         canvas_div.child(BFlex::column().place(BPlace::Overlay).styled(painter, ctx));
 
     // Selected last, so the one being dragged is over its neighbours
-    // (`draw_order`, Blender's `compare_node_depth`).
+    // (`draw_order`, Blender's `compare_node_depth`). A frame is not in this
+    // pass at all: it was drawn first, behind the links (`frame::layer`).
     for node in draw_order(&graph.nodes, &selection) {
+        if node.frame() { continue; }
         let Some((_, at)) = placed.iter().find(|(n, _)| *n == node.name) else { continue };
         let from = offsets.iter().find(|(n, _)| *n == node.name).map(|(_, o)| *o).unwrap_or((0.0, 0.0));
-        // The editor's own selection wins; the file's `NODE_SELECT` is what
-        // it opens on. A card is drawn selected at rank 1 or 2 — the active one
-        // has no extra chrome yet beyond being drawn in front.
+        // The editor's own selection wins; the file's `NODE_SELECT` is what it
+        // opens on. A reroute is no card — just the dot the socket pass paints
+        // and a square to grab it by; every other node is a card.
         let is = select::rank(node, &selection) > 0;
-        // Sized off the same view its position came from, so the div and the
-        // painted sockets agree at every zoom (`plan` scales the painter's copy
-        // by that view's zoom).
-        let fraction = BCardFraction::of(size, &view, node);
-        canvas_div = canvas_div.child(card(node, *at, fraction, from, is, ctx));
+        let el = if node.reroute() {
+            reroute::handle(node, *at, size, &view, from, is, ctx)
+        } else {
+            card(node, *at, BCardFraction::of(size, &view, node), from, is, ctx)
+        };
+        canvas_div = canvas_div.child(el);
     }
     let (wire, moving) = wire::for_frame(
         wire::BFrame {

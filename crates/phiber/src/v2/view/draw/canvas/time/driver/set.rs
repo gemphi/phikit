@@ -27,7 +27,7 @@ impl BTimeView {
         let y = self.y_of(value, height).floor();
         window.paint_quad(fill(rect(0.0, y - CURSOR_WIDTH / 2.0, width, y + CURSOR_WIDTH / 2.0, at), hsla(colors.cursor_value)));
         if self.drivers {
-            line_x(self.x_of(time, width) - CURSOR_WIDTH / 2.0, super::super::SCRUB_HEIGHT, height, CURSOR_WIDTH, colors.cursor_time, at, window);
+            line_x(self.x_of(time, width) - CURSOR_WIDTH / 2.0, self.scrub_height, height, CURSOR_WIDTH, colors.cursor_time, at, window);
         }
     }
 }

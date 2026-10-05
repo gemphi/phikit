@@ -12,7 +12,6 @@
 //! Blender keeps them per 3D view (`View3D.overlay`).
 
 use crate::v2::part::props::prop::{BDefault, BPropSpec};
-use crate::v2::part::props::prop_view::value_key;
 use crate::v2::part::props::tool::{OPTIONS, OVERLAYS};
 use crate::v2::state::BState;
 use crate::v2::state::val::{V_FALSE, V_TRUE};
@@ -63,7 +62,7 @@ impl BOverlays {
     /// One box of `table`: what was ticked, else its Blender default.
     fn on(s: &BState, table: &[BPropSpec], key: &str) -> bool {
         let Some(spec) = table.iter().find(|spec| spec.key == key) else { return false };
-        match s.get(&value_key(spec)) {
+        match s.get(&spec.value_key()) {
             Some(V_TRUE) => true,
             Some(V_FALSE) => false,
             _ => matches!(spec.default, Some(BDefault::Bool(true))),
@@ -76,7 +75,7 @@ impl BOverlays {
         for (name, on) in list {
             let spec = OVERLAYS.iter().chain(OPTIONS).find(|spec| spec.key == *name);
             if let Some(spec) = spec {
-                s.set(&value_key(spec), if *on { V_TRUE } else { V_FALSE });
+                s.set(&spec.value_key(), if *on { V_TRUE } else { V_FALSE });
             }
         }
     }

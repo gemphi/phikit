@@ -84,14 +84,11 @@ pub static TYPES: [BDopeFilterSpec; 23] = [
     f("show_pointclouds", "Point Clouds", true),
 ];
 
-/// The key one box reads and writes.
-pub fn key(spec: &BDopeFilterSpec) -> BPath {
-    DopeKey::Filter(spec.key).path()
-}
+
 
 /// What a box answers: what the user ticked, or what Blender ships with.
 pub fn is_on(state: &BState, spec: &BDopeFilterSpec) -> bool {
-    match state.get(&key(spec)) {
+    match state.get(&spec.key()) {
         Some(V_TRUE) => true,
         Some(V_FALSE) => false,
         _ => spec.default_on,
@@ -100,7 +97,7 @@ pub fn is_on(state: &BState, spec: &BDopeFilterSpec) -> bool {
 
 /// One box as a row, under `heading` when it leads a group.
 fn check(state: &BState, heading: &str, spec: &BDopeFilterSpec) -> BView {
-    BView::check_row(state, heading, key(spec), spec.default_on, spec.label)
+    BView::check_row(state, heading, spec.key(), spec.default_on, spec.label)
 }
 
 fn group<'a>(
@@ -161,9 +158,9 @@ mod tests {
     #[test]
     fn a_ticked_box_overrides_the_default_either_way() {
         let mut state = BState::new();
-        state.set(&key(&TYPES[0]), V_FALSE);
+        state.set(&TYPES[0].key(), V_FALSE);
         assert!(!is_on(&state, &TYPES[0]));
-        state.set(&key(&INLINE[1]), V_TRUE);
+        state.set(&INLINE[1].key(), V_TRUE);
         assert!(is_on(&state, &INLINE[1]));
     }
 
@@ -185,5 +182,12 @@ mod tests {
         sorted.sort_unstable();
         sorted.dedup();
         assert_eq!(sorted.len(), keys.len(), "two boxes would fight over one key");
+    }
+}
+
+impl BDopeFilterSpec {
+    /// The key one box reads and writes.
+    pub fn key(&self) -> BPath {
+        DopeKey::Filter(self.key).path()
     }
 }

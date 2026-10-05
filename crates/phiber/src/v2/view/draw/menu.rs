@@ -144,7 +144,7 @@ impl BFlexed for BMenuPart {
         match self {
             Self::Row => BFlex::row()
                 .width(BLen::Full)
-                .height(BLen::Dim(BDim::RowHeight))
+                .height(BLen::Dim(BDim::MenuRow))
                 // A row keeps its height when the menu is taller than the
                 // space under it: the popover scrolls, it does not squash
                 // its rows to fit — the same rule a tree row answers to.

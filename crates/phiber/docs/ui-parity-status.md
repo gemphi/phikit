@@ -1,6 +1,6 @@
 # Phiber UI — status
 
-**Suite: 1268 passing, 14 failing** (phiber, on the tree as it stands on the
+**Suite: 1272 passing, 14 failing** (phiber, on the tree as it stands on the
 machine, the other agent's node-editor / Timeline / swatch work included —
 all fourteen are theirs in progress: a region's host corners, the overlay
 family key test, the Preferences palette override and its rows' actions,
@@ -9,8 +9,8 @@ lines, the Dope Sheet's G-grab under its new expandable rows, the Timeline
 wheel zoom, two renderer-ownership rules, the Properties rail tab's paint
 layer, a popover's checkbox widths, and `level_structure` over three of
 their files past 240 lines — `state/key/op.rs`, `time/gesture.rs`,
-`time/row/mod.rs`). phiphx 208
-passing, 6 known asset-dependent; phiray 89 passing. Batches 17–141 are
+`time/row/mod.rs`). phiphx 213
+passing, 6 known asset-dependent; phiray 95 passing. Batches 17–145 are
 extracted on the machine; every item below is covered by a test. The
 Animation and Rendering workspaces have a full audit of their own in
 `animation-rendering-status.md`.
@@ -798,6 +798,95 @@ Blender's own choices.
   and Graph headers, which Blender leaves out of the Timeline.
 - Truth: `tests/marker_box_and_transport_popovers.rs`, `scene/grab.rs`,
   `part/playback/settings.rs`.
+
+## Batch 145 — a light's shape comes from the file
+
+- **Blender** keeps a point's and spot's softness in `Light.radius` and an
+  area light's in `Light.area_size` (metres), but a sun's in
+  `Light.sun_angle` (radians). The sun's was never read: `world.rs`
+  hard-coded Blender's default 0.526°, so a 10° Sun drew a crisp shadow.
+  Batch 144's soft shadows made that visible.
+- phiphx: `blend/object/data.rs` reads `sun_angle` (`SUN_ANGLE` the
+  default for a file without the field); `scene/import_extras.rs` gives a
+  sun its angle rather than `radius`; `SceneLight::size` documented as the
+  one shape field.
+- phiber: `rendered/world.rs` passes the file's shape through.
+- Tests: phiphx `tests/light_truth.rs` (new `LIGHTS.blend`: a 10° Sun, a
+  0.4 Point, a 2.5 Area, a 60° Spot — none of them a default); phiber
+  `tests/light_shapes_reach_the_tracer.rs`.
+- **Suites:** see the head of this file.
+- **Not yet:** an area light's Size Y and shape (sampled as square); the
+  `.phx` round trip carries no light shape.
+
+## Batch 144 — Material Preview's shadows are as soft as the light
+
+- **Blender** aims EEVEE's shadow ray at a point on the light's shape, not
+  at its centre, so a Radius or a Sun Angle gives a penumbra. Material
+  Preview here took one ray at the centre: every shadow had a razor edge.
+- phiray: `shadow.wgsl` — EEVEE's three shapes
+  (`shadow_ray_generate_punctual` / `_directional`) with its own sampling
+  (`sample_disk`, `sample_uniform_cone`, `hammersley_2d`): a disk of the
+  Radius for a point or spot, the square of its edge for an area light, a
+  cone of the Angle for a sun. EEVEE averages one ray over sixteen
+  viewport samples; a Preview frame is one dispatch, so this takes eight
+  taps at once. A point-sized light still takes one ray.
+  `rendering.md` §44.
+- phiber: `rendered/slot.rs` — the file's texture node as the tracer's
+  slot, now a trait on `BlendProc` rather than a function beside it.
+- Tests: phiray `tests/preview.rs` (the penumbra widens with the radius,
+  and with a sun's angle; a point-sized lamp steps).
+- **Suites:** see the head of this file.
+- **Not yet:** screen-space reflections, ambient occlusion, the sun's
+  Angle read from the file.
+
+## Batch 143 — the rest of the texture nodes
+
+- **Blender** evaluates every texture node per shading point; batch 142
+  did Noise fBm and Voronoi F1, the rest still folded to 0.5 grey.
+- phiray: `noise.wgsl` (all five Noise types), `voronoi.wgsl` (F1, F2,
+  Smooth F1, Distance to Edge, N-Sphere Radius; four metrics),
+  `pattern.wgsl` (Checker, Brick, Gradient, Magic, Wave) — Cycles' SVM;
+  `trace/proc.rs` — the slot at 40 words with each node's settings, a
+  material at 112. `rendering.md` §43.
+- phiphx: `shade/texnode.rs` — each node's sockets and storage
+  (`NodeTexNoise`, `NodeTexVoronoi`, `NodeTexGradient`, `NodeTexMagic`,
+  `NodeTexWave`, `NodeTexBrick`) with Blender's defaults.
+- phiber: `rendered/surface.rs` maps every kind and setting.
+- Tests: phiray `tests/textures.rs`, `trace/proc.rs`; phiphx
+  `tests/texture_nodes_truth.rs` (eight new planes in `PROCEDURAL.blend`);
+  phiber `rendered/surface_tests.rs`.
+- **Suites:** see the head of this file.
+- **Not yet:** Sky, Gabor, White Noise; 4D / W; Mapping's Rotation; the
+  colour fold still greys a texture.
+
+## Batch 142 — Noise, Voronoi and Bump per pixel
+
+- **Blender** evaluates a Noise or Voronoi Texture at every shading
+  point (`svm_node_tex_noise`, `svm_node_tex_voronoi`) and a Bump from
+  the height's change across the pixel (`svm_node_set_bump`). Phiber
+  folded a texture to its mean — one grey, one weight, no bump.
+- phiray: `procedural.wgsl` — Cycles' Perlin / fBm, Voronoi F1 and Bump
+  ported with their hashes; `Mat` carries two 16-word slots (`Proc`:
+  kind, coordinates, Mapping, the texture's inputs, a ramp as a 256 × 1
+  atlas image), 64 words; the instance record carries the texture space
+  (`Instance::texspace`, flat axes as Blender's), 40 words; `shade.wgsl`
+  and `preview.wgsl` read the base colour, the mix weight and the normal
+  through the slots per hit. `rendering.md` §42.
+- phiphx: `shade/procedural.rs` — `BlendProcedural`: Base Color ← [Color
+  Ramp ←] texture, the Mix Shader's Fac, Normal ← Bump ▸ Height; the
+  Mapping's Location / Scale over Generated / Object / UV; the ramp
+  baked; sockets by identifier or name (4.x's "Factor" labels, which had
+  also defaulted the folded Mix factor); a Normal Map behind a Bump.
+- phiber: `rendered/surface.rs` fills the slots on the right lobes and
+  uploads the ramp once; `rendered/surface_tests.rs`.
+- Tests: phiray `tests/procedural.rs`, `trace/instance.rs`,
+  `tests/trace.rs`; phiphx `tests/procedural_truth.rs` (new
+  `PROCEDURAL.blend`, `make_procedural.py`); phiber
+  `rendered/surface_tests.rs`, `tests/material_procedural.rs`.
+- **Suites:** see the head of this file.
+- **Not yet:** the other noise types, Voronoi features and metrics; Wave,
+  Magic, Brick, Checker, Gradient; Mapping's Rotation; two different
+  textures on one lobe's base and factor.
 
 ## Batch 141 — a Mix Shader's two closures as two lobes
 

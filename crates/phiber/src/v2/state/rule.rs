@@ -74,6 +74,7 @@ fn table() -> &'static [&'static dyn BRule] {
         &crate::v2::part::image::shown::BImageOpRule,
         &crate::v2::modal::new_image::BNewImageRule,
         &crate::v2::view::draw::canvas::time::view::op::BTimeViewRule,
+        &crate::v2::view::draw::canvas::node::view::op::BNodeViewRule,
         &back::BReaderOpenRule,
         &back::BReaderCloseRule,
         &pick::BSpacePickedRule,

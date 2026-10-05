@@ -185,6 +185,8 @@ impl BNodeView {
 pub mod fraction;
 /// Framing a graph — the Home key, and what a node's rectangle is.
 pub mod frame;
+/// `NODE_OT_view_all` — the Home key, as an operator.
+pub mod op;
 /// The view as the editor keeps it, and the framing it opens on.
 pub mod store;
 

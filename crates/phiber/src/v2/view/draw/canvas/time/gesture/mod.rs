@@ -113,11 +113,11 @@ impl BTimeGesture {
     fn nla_press(&self, event: &gpui::MouseDownEvent) -> Option<String> {
         let b = self.bounds.get()?;
         let (x, y) = (f32::from(event.position.x - b.origin.x), f32::from(event.position.y - b.origin.y));
-        if y < super::SCRUB_HEIGHT || self.view.in_marker_band(y, f32::from(b.size.height)) {
+        if y < self.view.scrub_height || self.view.in_marker_band(y, f32::from(b.size.height)) {
             return None;
         }
         let extend = event.modifiers.shift;
-        let hit = BTimeRow::index_at(y, self.view.row_height).and_then(|i| Some((i, BTimeRow::track_at(&self.view.rows, i)?)));
+        let hit = BTimeRow::index_at(y, self.view.row_height, self.view.scrub_height).and_then(|i| Some((i, BTimeRow::track_at(&self.view.rows, i)?)));
         let x = x - self.view.channel_width;
         if x < 0.0 {
             return Some(hit.map_or(String::new(), |(_, (object, track))| BNlaOp::channel(&object, track, extend)));
@@ -136,7 +136,7 @@ impl BTimeGesture {
     fn expander_press(&self, event: &gpui::MouseDownEvent) -> Option<BAction> {
         let b = self.bounds.get()?;
         let (x, y) = (f32::from(event.position.x - b.origin.x), f32::from(event.position.y - b.origin.y));
-        super::expander::expander_write(&self.view.rows, x, y, self.view.row_height, self.view.channel_width)
+        super::expander::expander_write(&self.view.rows, x, y, self.view.row_height, self.view.channel_width, self.view.scrub_height)
     }
 
     pub fn down(&self, event: &gpui::MouseDownEvent, window: &mut Window, app: &mut App) {
@@ -182,72 +182,7 @@ impl BTimeGesture {
         };
         self.marker(op, window, app);
     }
-
-    /// A drag begins: on what the press landed on.
-    pub fn drag_start() -> BTimeDrag {
-        PRESSED.replace(BTimeDrag::Scrub)
-    }
-
-    /// The pointer moved with the button held: the drag as it now stands.
-    pub fn drag_move(&self, drag: BTimeDrag, position: Point<Pixels>, window: &mut Window, app: &mut App) -> BTimeDrag {
-        match (drag, self.frame(position)) {
-            (BTimeDrag::Scrub, _) => {
-                self.scrub(position, window, app);
-                drag
-            }
-            (BTimeDrag::Marker(from), Some(to)) if to != from => {
-                self.marker(format!("move:{from}:{to}"), window, app);
-                BTimeDrag::Marker(to)
-            }
-            (BTimeDrag::Box(from), Some(to)) => {
-                self.marker(format!("box:{from}:{to}"), window, app);
-                drag
-            }
-            (BTimeDrag::Keys(from, started), Some(to)) => {
-                if !started {
-                    self.keys(format!("grab:start:{from}"), window, app);
-                }
-                self.keys(format!("grab:at:{to}"), window, app);
-                BTimeDrag::Keys(from, true)
-            }
-            (BTimeDrag::KeyBox(from, row), _) => {
-                let Some((x, y, width, _)) = self.locate(position) else { return drag };
-                let to = BTimeRow::index_at(y, self.view.row_height).unwrap_or(0).min(self.view.rows.len().saturating_sub(1));
-                self.keys(format!("box:{},{},{row},{to}", from as f32 / 1000.0, self.view.frame_at(x, width)), window, app);
-                drag
-            }
-            (BTimeDrag::Held, _) => drag,
-            _ => drag,
-        }
-    }
-
-    /// The button came up: a box ends (the markers in it stay selected).
-    pub fn up(&self, window: &mut Window, app: &mut App) {
-        if self.view.key_box.is_some() {
-            self.keys("box:end".into(), window, app);
-        }
-        if self.view.key_grab {
-            self.keys("grab:confirm".into(), window, app);
-        }
-        if self.view.marker_box.is_some() {
-            self.marker("box:end".into(), window, app);
-        }
-    }
-
-    /// While grabbing: the markers follow the pointer.
-    pub fn grab_move(&self, position: Point<Pixels>, window: &mut Window, app: &mut App) {
-        if let (true, Some(at)) = (self.view.key_grab, self.frame(position)) {
-            return self.keys(format!("grab:at:{at}"), window, app);
-        }
-        if let Some(at) = self.frame(position) {
-            self.marker(format!("grab:at:{at}"), window, app);
-        }
-    }
-
-    pub fn grab_cancel(&self, window: &mut Window, app: &mut App) {
-        if self.view.key_grab {
-            return self.keys("grab:cancel".into(), window, app);
-        }
-        self.marker("grab:cancel".into(), window, app);
-    }
 }
+
+/// What a held button does: the drag as it proceeds, and the grab.
+mod drag;

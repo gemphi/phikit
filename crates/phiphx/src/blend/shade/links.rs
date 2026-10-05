@@ -56,6 +56,16 @@ impl BlendFile {
         }
     }
 
+    /// `node`'s input socket called `name` — by identifier or by name:
+    /// Blender 4.x renamed a few labels (the Mix Shader's and Color Ramp's
+    /// `Fac` reads "Factor") and kept the identifiers.
+    pub(crate) fn socket_named(&self, node: &BlendBlock, name: &str, dna: &DnaType) -> Option<u64> {
+        let id = self.off("bNodeSocket", "identifier", dna);
+        let socks = self.input_sockets(node, dna);
+        let by_id = || socks.iter().copied().find(|&s| id.zip(self.block_at(s)).is_some_and(|(o, b)| read_cstr(&b.data, o, 64) == name));
+        by_id().or_else(|| socks.iter().copied().find(|&s| self.socket_name(s, dna) == name))
+    }
+
     /// The node feeding `node`'s input socket `name`.
     fn feeding(&self, links: &[BLink], node: u64, name: &str, dna: &DnaType) -> Option<u64> {
         links.iter().find(|l| l.to == node && self.socket_name(l.to_sock, dna) == name).map(|l| l.from)
@@ -104,12 +114,17 @@ impl BlendFile {
         self.list(first, self.off("bNodeSocket", "*next", dna)).into_iter().map(|s| s.old_address).collect()
     }
 
-    /// Principled `Normal` ← Normal Map ← Image Texture, if the material has it.
+    /// Principled `Normal` ← Normal Map ← Image Texture, if the material
+    /// has it — through a Bump node on the way, whose own `Normal` is the
+    /// map (the bump itself is `shade/procedural.rs`'s).
     pub(crate) fn normal_map(&self, ma: &BlendBlock, dna: &DnaType) -> Option<BlendNormalMap> {
         let nodes = self.shader_nodes(ma, dna);
         let bsdf = self.surface_principled(ma, dna)?;
         let links = self.links(ma, dna);
-        let nm = self.feeding(&links, bsdf.old_address, "Normal", dna)?;
+        let mut nm = self.feeding(&links, bsdf.old_address, "Normal", dna)?;
+        if let Some(bump) = self.node_named(&nodes, nm, dna, "Bump") {
+            nm = self.feeding(&links, bump.old_address, "Normal", dna)?;
+        }
         let nm = self.node_named(&nodes, nm, dna, "NormalMap")?;
         let strength = self
             .socket_values(nm, dna)

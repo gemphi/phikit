@@ -309,9 +309,14 @@ mod tests {
             panic!("a preference control is a `BCtrl`: {:?}", &list[0])
         };
         let color = row_named("Application Background");
+        // The defaults the PANEL draws from: `ui_style_defaults_for(state)`, the
+        // theme in force in the mode in force. `ui_style_defaults(name)` is the
+        // DARK ladder whatever the mode (`theme/style/mod.rs` says so), and the
+        // mode defaults to Light — so asking for it here compared a light
+        // background against a dark one and called the difference a bug.
         let expected = color
             .descriptor()
-            .format_value(color.default_value(crate::v2::theme::ui_style_defaults(BPaletteName::Tokyo)))
+            .format_value(color.default_value(crate::v2::theme::ui_style_defaults_for(&state)))
             .expect("descriptor must format its default");
         // In the descriptor's own spelling, which is what the swatch reads.
         assert!(

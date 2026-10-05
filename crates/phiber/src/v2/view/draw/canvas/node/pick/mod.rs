@@ -35,10 +35,11 @@
 //!   answers. Without it, dragging a card over another lets you grab sockets
 //!   through it.
 //!
-//! Blender's collapsed-node cases (`NODE_COLLAPSED`) and multi-input hit
-//! rectangle (`cursor_isect_multi_input_socket`, a wide box rather than a
-//! radius) are not here: phiber draws neither collapsed nodes nor multi-input
-//! sockets yet.
+//! Collapsed nodes ARE handled now: `node_update_collapsed` lays their sockets
+//! out (`socket/collapsed.rs`), and the header exclusion below is skipped for
+//! them exactly as Blender skips it (`!node_collapsed`). What is still not here
+//! is the multi-input hit rectangle (`cursor_isect_multi_input_socket`, a wide
+//! box rather than a radius): phiber draws no multi-input sockets yet.
 
 use super::paint::BNodeCard;
 use super::socket::{BSocketRow, BSocketSide, DOT, ROW};
@@ -82,7 +83,11 @@ pub fn socket_at(
         // subtraction flips. Ported the other way round it reads perfectly
         // well and guards the card's BOTTOM edge, which is why this carries
         // the axis note: the formula alone is not the fact.
-        if cursor.1 - card.y < ROW * card.unit {
+        // `if (!node->is_reroute() && !node_collapsed && draw_bounds.ymax -
+        // cursor.y < NODE_DY) continue;` — the exclusion is skipped for a
+        // collapsed node, which has no header to resize by. `header` is zero on
+        // a collapsed card, which is how that is spelt here.
+        if card.header > 0.0 && cursor.1 - card.y < ROW * card.unit {
             continue;
         }
         // A card drawn later covers this one, so its sockets do not answer.

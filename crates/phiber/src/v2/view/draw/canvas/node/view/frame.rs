@@ -10,6 +10,7 @@
 //! framing there was.
 
 use super::BNodeView;
+use super::super::socket;
 use crate::phiphx::blend::shade::graph::BlendNode;
 
 /// `BLI_rctf_scale(&cur_new, 1.1f)` — the padding "view all" leaves.
@@ -26,11 +27,24 @@ pub(super) const VIEW_ALL_PADDING: f32 = 1.1;
 /// recomputes it in `node_update_basis` from the socket layout every draw, so
 /// the saved value is whatever the last session happened to leave there.
 pub fn node_bounds(node: &BlendNode, height_units: f32, fallback_width: f32) -> (f32, f32, f32, f32) {
+    // A reroute's `draw_bounds` is `loc ± NODE_SOCKSIZE` — a square centred on
+    // the location, not a card hanging below it. `height_units` is that square's
+    // side (`BCardSize::height_of`), so half of it is the radius, and the file's
+    // own `bNode.width` is ignored exactly as Blender ignores it for a reroute
+    // (it overwrites it with `radius * 2` every draw).
+    if node.reroute() {
+        let r = height_units / 2.0;
+        return (node.x - r, node.y - r, node.x + r, node.y + r);
+    }
     // A width of zero means the file carried none for this type; the card's own
     // width is the honest stand-in rather than a zero-wide rectangle that no
     // box select could ever touch.
     let width = if node.width > 0.0 { node.width } else { fallback_width };
-    (node.x, node.y - height_units, node.x + width, node.y)
+    // A basis node's `draw_bounds.ymax` IS its location, so it hangs downward.
+    // A collapsed node's is `loc.y + height * 0.5 + offset`, so its pill is
+    // centred on the location instead (`socket::collapsed_top`).
+    let top = node.y + if node.collapsed() { socket::collapsed_top(node) } else { 0.0 };
+    (node.x, top - height_units, node.x + width, top)
 }
 
 /// `space_node_view_flag` — the framing that fits `bounds` for a view currently
@@ -99,6 +113,10 @@ pub fn graph_bounds(
 ) -> (f32, f32, f32, f32) {
     let mut bounds: Option<(f32, f32, f32, f32)> = None;
     for node in nodes {
+        // A frame is bounded by the nodes parented into it, which are already in
+        // this walk; its box is those children plus a margin, so counting it too
+        // would only pad the framing. Let the children drive.
+        if node.frame() { continue; }
         let (x0, y0, x1, y1) = node_bounds(node, height_of(node), fallback_width);
         bounds = Some(match bounds {
             None => (x0, y0, x1, y1),
@@ -127,6 +145,24 @@ mod tests {
         // `location` is the TOP-LEFT, the same fact the transform code states.
         let bounds = node_bounds(&node(100.0, 200.0, 140.0), 80.0, 999.0);
         assert_eq!(bounds, (100.0, 120.0, 240.0, 200.0));
+    }
+
+    #[test]
+    fn a_reroutes_bounds_are_a_square_centred_on_its_location() {
+        // `reroute_node_prepare_for_draw`: `draw_bounds = loc ± radius`. A basis
+        // node hangs DOWN from its location; a reroute is centred on it, so a
+        // reader that treated it like a card would frame it half a box too low.
+        let mut n = node(100.0, 200.0, 140.0);
+        n.idname = "NodeReroute".into();
+        let bounds = node_bounds(&n, 40.0, 999.0);
+        assert_eq!(bounds, (80.0, 180.0, 120.0, 220.0));
+        // Square: the box is the dot, as wide as it is tall …
+        assert_eq!(bounds.2 - bounds.0, bounds.3 - bounds.1);
+        // … and the file's own width is ignored, exactly as Blender overwrites
+        // it with `radius * 2` every draw.
+        let mut wide = node(100.0, 200.0, 9000.0);
+        wide.idname = "NodeReroute".into();
+        assert_eq!(node_bounds(&wide, 40.0, 999.0), bounds, "the saved width does not matter");
     }
 
     #[test]

@@ -28,7 +28,13 @@ pub struct BlendLightData {
     pub spot_size: f32,
     pub radius: f32,
     pub area_size: f32,
+    /// `Light.sun_angle`: a sun's angular diameter in radians. Blender's
+    /// default is the real sun's, 0.526°.
+    pub sun_angle: f32,
 }
+
+/// `Light.sun_angle`'s default: the real sun's angular diameter, 0.526°.
+pub const SUN_ANGLE: f32 = 0.009180432;
 
 /// `Object.empty_drawtype` (OB_ARROWS = 1 … OB_EMPTY_CONE = 7) + size.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -105,6 +111,7 @@ impl BlendFile {
                         spot_size: f("spotsize", std::f32::consts::FRAC_PI_4),
                         radius: f("radius", 0.1),
                         area_size: f("area_size", 0.25),
+                        sun_angle: f("sun_angle", SUN_ANGLE),
                     })
                 }
                 None => BlendObjectData::None,

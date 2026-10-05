@@ -30,10 +30,12 @@
 //! middle, where Blender's text is scaled and phiber's is not.
 
 pub mod drag;
+pub mod frame;
 pub mod link;
 pub mod paint;
 pub mod pick;
 pub mod plan;
+pub mod reroute;
 pub mod select;
 pub mod set;
 pub mod socket;
@@ -92,16 +94,53 @@ pub(super) fn draw_order<'a>(
 /// `NODE_DO_OUTPUT` is why the whole node is passed rather than its idname: an
 /// output node is only tinted when it is the output actually in use.
 pub(super) fn header_color(node: &BlendNode, ctx: &BRenderCtx) -> BColor {
-    crate::v2::theme::class_color(
+    let hue = crate::v2::theme::class_color(
         crate::v2::theme::class_of(&node.idname, node.active_output()),
         ctx.style.colors.bg_control,
-    )
+    );
+    // A muted node reads as off: its header dims toward the card's body —
+    // Blender's `get_color_blend_4f(TH_BACK, color_id, 0.4)`, mostly background
+    // with a little class hue left so the class is still legible.
+    if node.muted() {
+        return dim_toward(hue, ctx.style.colors.bg_panel, MUTED_HEADER);
+    }
+    hue
+}
+
+/// The fraction of the class hue a muted header keeps; the rest is background
+/// (`get_color_blend_4f`'s factor, Blender's 0.4).
+const MUTED_HEADER: f32 = 0.4;
+
+/// `a` blended toward `b`, keeping fraction `t` of `a`; alpha is `a`'s.
+fn dim_toward(a: BColor, b: BColor, t: f32) -> BColor {
+    let mix = |x: f32, y: f32| x + (y - x) * (1.0 - t);
+    (mix(a.0, b.0), mix(a.1, b.1), mix(a.2, b.2), a.3)
+}
+
+/// The title ink, faded on a muted node (`BUT_INACTIVE`, the weight a muted
+/// control takes — `effects.control_muted_alpha`).
+pub(super) fn title_ink(node: &BlendNode, ctx: &BRenderCtx) -> BColor {
+    let ink = ctx.style.colors.text;
+    if node.muted() {
+        (ink.0, ink.1, ink.2, ink.3 * ctx.style.effects.control_muted_alpha)
+    } else {
+        ink
+    }
 }
 
 impl BNode {
     /// The graph of the active object's first material, when a file is loaded.
     pub(super) fn graph(ctx: &BRenderCtx) -> Option<BlendNodeGraph> {
-        let active = ctx.state.get(CtxKey::Object)?.to_string();
+        Self::graph_of(ctx.state)
+    }
+
+    /// The same, from the store alone — what a rule has (`view/op.rs`).
+    ///
+    /// It never needed the render context: the active object is a state key and
+    /// the tree comes from the loaded file, so the `ctx` in the signature above
+    /// was only ever there because its one caller had one.
+    pub(crate) fn graph_of(state: &crate::v2::state::BState) -> Option<BlendNodeGraph> {
+        let active = state.get(CtxKey::Object)?.to_string();
         crate::v2::scene::source::with_loaded(|loaded| {
             let model = loaded?;
             let object = model.objects.iter().find(|o| o.name == active)?;
@@ -116,74 +155,4 @@ impl BNode {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn node(name: &str, x: f32, y: f32) -> BlendNode {
-        BlendNode { name: name.into(), x, y, ..Default::default() }
-    }
-
-    #[test]
-    fn the_opening_framing_puts_blenders_top_node_at_the_top() {
-        // Blender's y runs UP; the canvas's runs down. A node Blender puts at
-        // the top must come out at the top, or every graph opens upside down.
-        // The fit used to do this flip itself; it happens once now, in
-        // `BNodeView::to_fraction`, and this is the fact it has to keep.
-        let nodes = vec![node("low", 0.0, 0.0), node("high", 100.0, 200.0)];
-        let view = view::store::opening(&nodes, |_| 80.0, 240.0);
-        let (low, high) = (view.to_fraction((0.0, 0.0)), view.to_fraction((100.0, 200.0)));
-        assert!(low.0 < high.0, "the node further right in Blender is further right here");
-        assert!(high.1 < low.1, "the node higher in Blender is higher here, not lower");
-        for p in [low, high] {
-            assert!((0.0..=1.0).contains(&p.0) && (0.0..=1.0).contains(&p.1), "{p:?}");
-        }
-    }
-
-    #[test]
-    fn the_selected_node_is_drawn_last_so_it_is_on_top() {
-        // `compare_node_depth`: selection raises a node. Without it a dragged
-        // card slides behind whatever it is dragged over.
-        let nodes = vec![node("a", 0.0, 0.0), node("b", 1.0, 1.0), node("c", 2.0, 2.0)];
-        let one = |name: &str| select::BNodeSelection::of(&[name]);
-        let order: Vec<&str> =
-            draw_order(&nodes, &one("a")).iter().map(|n| n.name.as_str()).collect();
-        assert_eq!(order, vec!["b", "c", "a"], "the selected node is painted over the others");
-        // And the ones that are not selected keep the tree's own order.
-        let order: Vec<&str> =
-            draw_order(&nodes, &one("b")).iter().map(|n| n.name.as_str()).collect();
-        assert_eq!(order, vec!["a", "c", "b"]);
-    }
-
-    #[test]
-    fn the_active_node_is_drawn_over_the_rest_of_its_group() {
-        // Three levels, not two: the node the next operator acts on is the one
-        // in front, which is only expressible now that a selection is a set.
-        let nodes = vec![node("a", 0.0, 0.0), node("b", 1.0, 1.0), node("c", 2.0, 2.0)];
-        let group = select::BNodeSelection::of(&["b", "a"]);
-        let order: Vec<&str> =
-            draw_order(&nodes, &group).iter().map(|n| n.name.as_str()).collect();
-        assert_eq!(order, vec!["c", "a", "b"], "c behind, a selected, b active and in front");
-    }
-
-    #[test]
-    fn with_nothing_selected_the_file_decides_what_is_raised() {
-        // `NODE_SELECT` out of the file is what the editor opens on, so it is
-        // what raises a node until the user has clicked anything.
-        let mut nodes = vec![node("a", 0.0, 0.0), node("b", 1.0, 1.0)];
-        nodes[0].flag = crate::phiphx::blend::shade::graph::NODE_SELECT;
-        let order: Vec<&str> = draw_order(&nodes, &select::BNodeSelection::default())
-            .iter()
-            .map(|n| n.name.as_str())
-            .collect();
-        assert_eq!(order, vec!["b", "a"], "the file's selected node is raised");
-    }
-
-    #[test]
-    fn a_node_is_titled_by_its_label_and_identified_by_its_type() {
-        let mut n = node("Principled BSDF", 0.0, 0.0);
-        n.idname = "ShaderNodeBsdfPrincipled".into();
-        assert_eq!(n.title(), "Principled BSDF");
-        n.label = "Skin".into();
-        assert_eq!(n.title(), "Skin", "a labelled node is called by its label");
-    }
-}
+mod tests;

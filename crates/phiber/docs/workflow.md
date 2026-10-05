@@ -109,18 +109,25 @@ All of these are read from the file, drive the render, and save with Ctrl S
 | The viewport's own render region (Ctrl B outside the camera view, Ctrl Alt B; sidebar View ▸ Render Region) | works (batch 138) | Rendered shading with Cycles/EEVEE traces the region alone; Workbench the whole; read with Load UI, not written back |
 | Viewport Anti-Aliasing (Preferences ▸ Viewport ▸ Quality; `render_aa` for a Workbench render) | works (batch 139) | SMAA over the first four samples, as Blender; No / Single Pass / 5–32 samples; the preference is session state |
 | The surface shader from the Material Output: Mix / Add Shader, Emission, Glass, Transparent, Diffuse, Glossy, Sheen, SSS, Light Path | works (batch 140, 141) | a Mix Shader's two closures are two lobes — the path tracer picks one per hit by the factor, Material Preview blends both; the closure nodes as Principled parameters; the linked Principled's textures |
+| Noise and Voronoi textures per pixel — on the base colour, through a Color Ramp, on a Mix Shader's factor — and a Bump node | works (batch 142) | Cycles' SVM noise, Voronoi F1 and bump ported to the kernels; Generated / Object / UV coordinates through a Mapping's Location and Scale; the ramp baked to a 256-stop image |
+| The other texture nodes: Checker, Brick, Gradient, Magic, Wave; every Noise type; every Voronoi feature and metric | works (batch 143) | each node's settings read from the file and evaluated per pixel as Cycles' SVM does |
+| Material Preview's soft shadows | works (batch 144) | the shadow ray aimed over the light's shape as EEVEE does — a disk of the Radius, an area light's square, a sun's Angle cone; eight taps in one pass where EEVEE averages one ray over its samples |
+| A light's shape read from the file: Radius, Area Size, a Sun's Angle | works (batch 145) | `Light.sun_angle` is radians where the others are metres, and was not read at all — every sun drew at Blender's default 0.526° |
 
 **What limits "Blender quality" today is not the sampler** — a 512-sample
 frame here converges like Cycles' (`rendering.md` §7, §18) — but what the
 materials carry into it: a material is the shader its Material Output is
 linked to (batch 140), a Mix Shader's two closures as two lobes (batch
 141), each closure node as the Principled parameters that draw most like
-it — so what is still flat is a Noise or Voronoi texture (its mean
-colour), a Mix factor fed per pixel (one number), and a Bump node
-(nothing); and a texture the file does not pack, and whose path is not
-found, is a flat base colour (§8 below). Those two — the per-pixel
-procedurals from `intern/cycles/kernel/svm/`, and Find Missing Files —
-are the rendering items in front of everything else.
+it, the texture nodes — Noise (every type), Voronoi (every feature and
+metric), Checker, Brick, Gradient, Magic, Wave — on the base colour, the
+mix factor or a Bump evaluated per pixel (batches 142, 143) — so what is
+still flat is Sky / Gabor / White Noise, a Mix node between a texture and
+its socket (its mean), and the Mapping's rotation; and a texture the file
+does not pack, and whose path is not found, is a flat base colour (§8
+below). Those — a texture through the colour math nodes per pixel, and
+Find Missing Files — are the rendering items in front of everything
+else.
 
 ## 4. Render the animation — stills or a video
 
@@ -272,8 +279,9 @@ Ray Visibility's under Material Preview and Rendered (batch 131), with
 their checkboxes in the Object tab (batch 132); Depth of Field through
 the camera, with the camera's own settings (batch 133); SMAA over Solid's
 first frames and the anti-aliasing count — Preferences ▸ Viewport ▸
-Quality, `render_aa` for a render (batch 139). **Not done:** Material
-Preview on EEVEE's model. F12 with the Workbench engine renders Solid
+Quality, `render_aa` for a render (batch 139); Material Preview's soft
+shadows over the light's shape (batch 144). **Not done:** Material
+Preview's screen-space reflections and ambient occlusion. F12 with the Workbench engine renders Solid
 with `Scene.display.shading` at `render_aa` samples (batch 128, 139).
 
 **Animation — works:** playback of objects, NLA, rigs, constraints, IK,

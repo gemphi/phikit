@@ -100,7 +100,7 @@ fn an_untouched_box_answers_the_way_a_fresh_blender_does() {
 #[test]
 fn a_box_the_user_turned_off_stays_off() {
     let mut state = BState::new();
-    state.set(&dope::key(&dope::TYPES[0]), V_FALSE);
+    state.set(&dope::TYPES[0].key(), V_FALSE);
     assert!(!dope::is_on(&state, &dope::TYPES[0]), "an explicit false beats the default");
     assert_eq!(
         DopeKey::Filter("show_transforms").path().encode(),

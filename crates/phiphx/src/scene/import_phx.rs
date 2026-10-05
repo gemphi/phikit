@@ -153,6 +153,7 @@ fn materials_from_phx(
             texture: None,
             bsdf: Default::default(),
             mix: None,
+            procedural: Default::default(),
             normal_texture: None,
             normal_map: None,
             maps: Default::default(),

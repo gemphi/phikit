@@ -124,3 +124,42 @@ fn the_metrics_are_blenders_own_fractions() {
     assert_eq!(SPACING, 0.1, "NODE_ITEM_SPACING_Y is a tenth");
     assert_eq!(DOT, 0.25, "NODE_SOCKSIZE is a quarter");
 }
+
+// ── reroute nodes (`reroute_node_prepare_for_draw`) ─────────────────────────
+
+/// The same node, typed as a reroute.
+fn reroute(inputs: Vec<BlendSocket>, outputs: Vec<BlendSocket>) -> BlendNode {
+    BlendNode { inputs, outputs, idname: "NodeReroute".into(), ..Default::default() }
+}
+
+#[test]
+fn a_reroutes_two_sockets_sit_at_the_same_point() {
+    // `node.input_socket(0).location = node.output_socket(0).location = loc`:
+    // both ends are at the node's location, which is the one dot a reroute
+    // draws. If the two rows drifted apart the reroute would sprout a second
+    // dot and its links would land on empty canvas.
+    let n = reroute(vec![sock("Input", 2, 0)], vec![sock("Output", 2, 0)]);
+    let rows = rows(&n);
+    assert_eq!(rows.len(), 2, "one input and one output");
+    assert_eq!(rows[0].y, rows[1].y, "both at the same height");
+    assert_eq!(rows[0].y, 0.0, "and that height is the card's top — the location");
+    // One on each side, so a link into the reroute and a link out of it each
+    // resolve to an end.
+    assert!(rows.iter().any(|r| r.side == BSocketSide::Input));
+    assert!(rows.iter().any(|r| r.side == BSocketSide::Output));
+}
+
+#[test]
+fn a_reroute_has_no_body_and_paints_no_socket_labels() {
+    // A reroute is one painted dot, not a card: no body to size and no socket
+    // names drawn beside it (its only text is an optional node label, which is
+    // not drawn yet). A reader that left `body_height` on the basis walk would
+    // give the reroute a tall invisible card to click through.
+    let n = reroute(vec![sock("Input", 2, 0)], vec![sock("Output", 2, 0)]);
+    assert_eq!(body_height(&n), 0.0, "no body at all");
+    assert!(rows(&n).iter().all(|r| r.name.is_empty()), "no socket labels");
+    // The type is what decides this, not any flag — an ordinary node with the
+    // same sockets is a full card.
+    let ordinary = node(vec![sock("Input", 2, 0)], vec![sock("Output", 2, 0)]);
+    assert!(body_height(&ordinary) > 0.0, "an ordinary node still has a body");
+}

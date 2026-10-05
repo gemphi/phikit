@@ -100,7 +100,7 @@ impl BTimeView {
         // themselves over its value axis.
         match self.values {
             None if self.row_height > super::row::ROW_HEIGHT => self.paint_nla_rows(colors, at, window, cx),
-            None => super::row::set::paint_rows(&self.rows, colors, at, &x, &|row, frame| self.picked(row, frame), window),
+            None => super::row::set::paint_rows(&self.rows, colors, at, &x, &|row, frame| self.picked(row, frame), self.scrub_height, window),
             Some(_) => self.paint_curves(&self.curves, colors, at, window),
         }
         self.paint_cursor(colors, at, window);
@@ -121,13 +121,13 @@ impl BTimeView {
         let height = f32::from(at.size.height);
         let x = |frame: f32| self.x_of(frame, width);
         let (start, end) = (self.start as f32, self.end as f32);
-        window.paint_quad(fill(rect(0.0, super::SCRUB_HEIGHT, x(start), height, at), hsla(colors.out_of_range)));
-        window.paint_quad(fill(rect(x(end), super::SCRUB_HEIGHT, width, height, at), hsla(colors.out_of_range)));
-        line_x(x(start), super::SCRUB_HEIGHT, height, 1.0, colors.range_line, at, window);
-        line_x(x(end), super::SCRUB_HEIGHT, height, 1.0, colors.range_line, at, window);
+        window.paint_quad(fill(rect(0.0, self.scrub_height, x(start), height, at), hsla(colors.out_of_range)));
+        window.paint_quad(fill(rect(x(end), self.scrub_height, width, height, at), hsla(colors.out_of_range)));
+        line_x(x(start), self.scrub_height, height, 1.0, colors.range_line, at, window);
+        line_x(x(end), self.scrub_height, height, 1.0, colors.range_line, at, window);
         if let Some((first, last)) = self.preview {
-            window.paint_quad(fill(rect(0.0, super::SCRUB_HEIGHT, x(first as f32), height, at), hsla(colors.preview)));
-            window.paint_quad(fill(rect(x(last as f32), super::SCRUB_HEIGHT, width, height, at), hsla(colors.preview)));
+            window.paint_quad(fill(rect(0.0, self.scrub_height, x(first as f32), height, at), hsla(colors.preview)));
+            window.paint_quad(fill(rect(x(last as f32), self.scrub_height, width, height, at), hsla(colors.preview)));
         }
     }
 
@@ -135,11 +135,11 @@ impl BTimeView {
     /// spelt as `frame_to_string` spells them for the step.
     fn paint_scrub(&self, colors: &BAnimColors, step: f32, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
         let width = f32::from(at.size.width);
-        window.paint_quad(fill(rect(0.0, 0.0, width, super::SCRUB_HEIGHT, at), hsla(colors.scrub_back)));
+        window.paint_quad(fill(rect(0.0, 0.0, width, self.scrub_height, at), hsla(colors.scrub_back)));
         for frame in self.lines(step) {
             let line = shape(&frame_label(frame, step), colors.scrub_text, window);
             let x = self.x_of(frame, width) - (f32::from(line.width()) / 2.0).trunc();
-            text_at(&line, x, super::SCRUB_HEIGHT / 2.0, at, window, cx);
+            text_at(&line, x, self.scrub_height / 2.0, at, window, cx);
         }
     }
 
@@ -155,10 +155,10 @@ impl BTimeView {
         let box_width = (text_width + 8.0).max(24.0);
         let (margin, shadow) = (2.0, 1.0);
         // Stalk: `pixelsize` either side of the frame, a shadow either side.
-        let stalk = rect(x.floor() - 1.0 - shadow, super::SCRUB_HEIGHT, x.floor() + 2.0 + shadow, height, at);
+        let stalk = rect(x.floor() - 1.0 - shadow, self.scrub_height, x.floor() + 2.0 + shadow, height, at);
         window.paint_quad(quad(stalk, Corners::all(Pixels::ZERO), hsla(colors.playhead), Edges::all(px(shadow)), hsla(colors.playhead_shadow), BorderStyle::Solid));
         // Tip: a triangle under the box, its shadow first.
-        let tip_top = super::SCRUB_HEIGHT - margin;
+        let tip_top = self.scrub_height - margin;
         let tip = |half: f32, drop: f32, dy: f32| {
             (
                 point(at.origin.x + px(x - half), at.origin.y + px(tip_top + dy)),
@@ -169,11 +169,11 @@ impl BTimeView {
         let (a, b, c) = tip(6.0 + shadow + 0.4, 6.0 + shadow + 0.4, 0.0);
         triangle(a, b, c, colors.playhead_shadow, window);
         // Box: `draw_roundbox_4fv_ex` with a one-pixel shadow outline.
-        let boxed = rect(x - box_width / 2.0, margin - shadow, x + box_width / 2.0 + 1.0, super::SCRUB_HEIGHT - margin + shadow, at);
+        let boxed = rect(x - box_width / 2.0, margin - shadow, x + box_width / 2.0 + 1.0, self.scrub_height - margin + shadow, at);
         window.paint_quad(quad(boxed, Corners::all(px(BOX_RADIUS)), hsla(colors.playhead), Edges::all(px(shadow)), hsla(colors.playhead_shadow), BorderStyle::Solid));
         let (a, b, c) = tip(6.0, 6.0, 0.0);
         triangle(a, b, c, colors.playhead, window);
-        text_at(&line, x - text_width / 2.0, super::SCRUB_HEIGHT / 2.0, at, window, cx);
+        text_at(&line, x - text_width / 2.0, self.scrub_height / 2.0, at, window, cx);
     }
 }
 

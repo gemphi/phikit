@@ -20,10 +20,10 @@ const NAME_PAD: f32 = 3.0;
 /// window `at` (`x_of` maps a frame to a pixel across it); a picked column
 /// (`picked(row, frame)`) in `TH_KEYTYPE_KEYFRAME_SELECT`. The NLA's rows
 /// are `strip/set.rs`.
-pub fn paint_rows(rows: &[BTimeRow], colors: &BAnimColors, at: Bounds<Pixels>, x_of: &dyn Fn(f32) -> f32, picked: &dyn Fn(usize, f32) -> bool, window: &mut Window) {
+pub fn paint_rows(rows: &[BTimeRow], colors: &BAnimColors, at: Bounds<Pixels>, x_of: &dyn Fn(f32) -> f32, picked: &dyn Fn(usize, f32) -> bool, scrub: f32, window: &mut Window) {
     let width = f32::from(at.size.width);
     for (index, row) in rows.iter().enumerate() {
-        let (top, center) = (BTimeRow::top(index, ROW_HEIGHT), BTimeRow::center(index, ROW_HEIGHT));
+        let (top, center) = (BTimeRow::top(index, ROW_HEIGHT, scrub), BTimeRow::center(index, ROW_HEIGHT, scrub));
         let back = match &row.kind {
             BRowKind::Summary { expanded: true } => Some(colors.summary_back),
             BRowKind::Summary { expanded: false } => None,
@@ -89,12 +89,12 @@ pub fn diamond(x: f32, y: f32, size: f32, inner: crate::v2::theme::BColor, color
 /// line's own colour, a track's), and each row's name on its line — a
 /// selected track's in the selection's colour, as its strips are
 /// (`TH_TEXT_HI` in Blender).
-pub fn paint_channels(rows: &[BTimeRow], row_height: f32, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
+pub fn paint_channels(rows: &[BTimeRow], row_height: f32, scrub: f32, colors: &BAnimColors, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
     let height = f32::from(at.size.height);
     window.paint_quad(fill(rect(0.0, 0.0, CHANNEL_WIDTH, height, at), hsla(colors.channel_back)));
     let indent = super::super::WIDGET_UNIT * 0.5;
     for (index, row) in rows.iter().enumerate() {
-        let top = BTimeRow::top(index, row_height);
+        let top = BTimeRow::top(index, row_height, scrub);
         let back = match &row.kind {
             BRowKind::Object { .. } if row_height > ROW_HEIGHT => Some(colors.object_back),
             BRowKind::Action { name, tweaking } => Some(super::super::strip::set::action_color(name.is_some(), *tweaking, colors)),
@@ -116,7 +116,7 @@ pub fn paint_channels(rows: &[BTimeRow], row_height: f32, colors: &BAnimColors, 
         // pads `0.2 × widget_unit` instead; an F-curve gets neither, because
         // "F-Curves are not containers" (`acf_fcurve_setting_valid`).
         if let BRowKind::Object { expanded, .. } = &row.kind {
-            expander(*expanded, indent, BTimeRow::center(index, row_height), colors, at, window);
+            expander(*expanded, indent, BTimeRow::center(index, row_height, scrub), colors, at, window);
         }
         let ink = match &row.kind {
             BRowKind::Track(track) if track.flag & crate::phiphx::blend::TRACK_SELECTED != 0 => colors.strip_select,
@@ -133,7 +133,7 @@ pub fn paint_channels(rows: &[BTimeRow], row_height: f32, colors: &BAnimColors, 
             // from the channel it belongs to, past its swatch and toggle.
             BRowKind::Driver { .. } | BRowKind::Curve { .. } => CURVE_OFFSET + ICON_WIDTH * 2.0 + NAME_PAD,
         };
-        text_at(&line, x, BTimeRow::center(index, row_height), at, window, cx);
+        text_at(&line, x, BTimeRow::center(index, row_height, scrub), at, window, cx);
     }
 }
 

@@ -94,7 +94,7 @@ impl BActivityList {
         let rows: Vec<BView> = if entry.options == BActivityOptions::Profile {
             self::profile::body(s)
         } else {
-            option::options_for(entry, s).into_iter().map(BView::MenuItem).collect()
+            entry.options_for(s).into_iter().map(BView::MenuItem).collect()
         };
         if rows.is_empty() {
             return BView::empty();

@@ -26,12 +26,16 @@ pub(crate) fn expander_write(
     y: f32,
     row_height: f32,
     channel_width: f32,
+    scrub: f32,
 ) -> Option<BAction> {
     use crate::v2::state::val::{V_FALSE, V_TRUE};
-    if y < super::SCRUB_HEIGHT || x >= channel_width {
+    if y < scrub || x >= channel_width {
         return None;
     }
-    let index = BTimeRow::index_at(y - super::SCRUB_HEIGHT, row_height)?;
+    // `y` as the window measures it. `index_at` counts past the band itself, so
+    // subtracting it here — which this used to do — took it off twice and found
+    // the row below the one under the pointer.
+    let index = BTimeRow::index_at(y, row_height, scrub)?;
     let BRowKind::Object { name, expanded } = &rows.get(index)?.kind else { return None };
     let slot = super::WIDGET_UNIT * 0.5;
     if x < slot || x >= slot + 0.85 * super::WIDGET_UNIT {
@@ -49,6 +53,10 @@ mod tests {
     use super::*;
     use crate::v2::state::val::{V_FALSE, V_TRUE};
 
+    /// A band the tests measure against — Blender's own, so the numbers here
+    /// stay readable whatever the theme says.
+    const SCRUB: f32 = super::super::SCRUB_HEIGHT;
+
     fn rows() -> Vec<BTimeRow> {
         vec![
             BTimeRow { kind: BRowKind::Summary { expanded: true }, keys: Vec::new() },
@@ -58,8 +66,13 @@ mod tests {
     }
 
     /// The vertical middle of row `index`, in the gesture's own coordinates.
+    ///
+    /// Which is what `center` already gives: it counts from the top of the
+    /// window, past the band. This used to add the band again, so the test's
+    /// coordinates were shifted by exactly as much as the code under test —
+    /// two errors that cancelled, and the hit-test passed while being a row out.
     fn mid_of(index: usize, row_height: f32) -> f32 {
-        super::super::SCRUB_HEIGHT + BTimeRow::center(index, row_height)
+        BTimeRow::center(index, row_height, SCRUB)
     }
 
     #[test]
@@ -68,15 +81,15 @@ mod tests {
         let slot = super::super::WIDGET_UNIT * 0.5;
         let y = mid_of(1, h);
         // Left of the slot: the indent, which is not a target.
-        assert!(expander_write(&rows, slot - 1.0, y, h, 500.0).is_none());
+        assert!(expander_write(&rows, slot - 1.0, y, h, 500.0, SCRUB).is_none());
         // Inside it: the object's fold flips on.
-        let BAction::Set(path, value) = expander_write(&rows, slot + 1.0, y, h, 500.0).expect("in the slot") else {
+        let BAction::Set(path, value) = expander_write(&rows, slot + 1.0, y, h, 500.0, SCRUB).expect("in the slot") else {
             panic!("a press writes")
         };
         assert!(path.encode().ends_with(".expanded.Rig"), "{}", path.encode());
         assert_eq!(value, V_TRUE, "a shut channel opens");
         // Past it: the name, which is a selection in Blender and not ours yet.
-        assert!(expander_write(&rows, slot + 0.85 * super::super::WIDGET_UNIT + 1.0, y, h, 500.0).is_none());
+        assert!(expander_write(&rows, slot + 0.85 * super::super::WIDGET_UNIT + 1.0, y, h, 500.0, SCRUB).is_none());
     }
 
     #[test]
@@ -85,7 +98,7 @@ mod tests {
         rows[1].kind = BRowKind::Object { name: "Rig".into(), expanded: true };
         let h = super::super::row::ROW_HEIGHT;
         let x = super::super::WIDGET_UNIT * 0.5 + 1.0;
-        let BAction::Set(_, value) = expander_write(&rows, x, mid_of(1, h), h, 500.0).expect("in the slot") else {
+        let BAction::Set(_, value) = expander_write(&rows, x, mid_of(1, h), h, 500.0, SCRUB).expect("in the slot") else {
             panic!("a press writes")
         };
         assert_eq!(value, V_FALSE);
@@ -98,8 +111,8 @@ mod tests {
         // flip the object above it.
         let (rows, h) = (rows(), super::super::row::ROW_HEIGHT);
         let x = super::super::WIDGET_UNIT * 0.5 + 1.0;
-        assert!(expander_write(&rows, x, mid_of(2, h), h, 500.0).is_none(), "an F-curve row");
-        assert!(expander_write(&rows, x, mid_of(0, h), h, 500.0).is_none(), "the summary row");
+        assert!(expander_write(&rows, x, mid_of(2, h), h, 500.0, SCRUB).is_none(), "an F-curve row");
+        assert!(expander_write(&rows, x, mid_of(0, h), h, 500.0, SCRUB).is_none(), "the summary row");
     }
 
     #[test]
@@ -108,7 +121,7 @@ mod tests {
         // scrub band itself. Neither may flip a channel.
         let (rows, h) = (rows(), super::super::row::ROW_HEIGHT);
         let x = super::super::WIDGET_UNIT * 0.5 + 1.0;
-        assert!(expander_write(&rows, 600.0, mid_of(1, h), h, 500.0).is_none(), "right of the column");
-        assert!(expander_write(&rows, x, super::super::SCRUB_HEIGHT - 1.0, h, 500.0).is_none(), "the scrub band");
+        assert!(expander_write(&rows, 600.0, mid_of(1, h), h, 500.0, SCRUB).is_none(), "right of the column");
+        assert!(expander_write(&rows, x, SCRUB - 1.0, h, 500.0, SCRUB).is_none(), "the scrub band");
     }
 }

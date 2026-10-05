@@ -26,6 +26,7 @@ mod vert;
 mod view;
 mod wake;
 mod worker;
+mod slot;
 mod surface;
 mod world;
 pub use self::region::BStillRegion;
@@ -37,6 +38,8 @@ pub use self::world::{BRayLook, ENV_CDF_SLOT, ENV_IRRADIANCE_SLOT, ENV_PREFILTER
 mod paint_tests;
 #[cfg(test)]
 mod still_tests;
+#[cfg(test)]
+mod surface_tests;
 #[cfg(test)]
 mod tests;
 

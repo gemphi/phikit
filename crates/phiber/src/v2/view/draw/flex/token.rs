@@ -70,6 +70,8 @@ pub enum BDim {
     FooterHeight,
     ButtonHeight,
     RowHeight,
+    /// A menu-popover row: compact, below the module (`menu_row_height`).
+    MenuRow,
     ScrubbingHeight,
     AssetShelfHeight,
     BottomStripHeight,
@@ -92,6 +94,7 @@ impl BDim {
             Self::FooterHeight => d.footer_height,
             Self::ButtonHeight => d.button_height,
             Self::RowHeight => d.row_height,
+            Self::MenuRow => crate::v2::theme::style::metric::MENU_ROW,
             Self::ScrubbingHeight => d.scrubbing_height,
             Self::AssetShelfHeight => d.asset_shelf_height,
             Self::BottomStripHeight => d.bottom_strip_height,

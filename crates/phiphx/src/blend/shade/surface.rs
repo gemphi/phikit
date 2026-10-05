@@ -38,7 +38,7 @@ const NODE_DO_OUTPUT: i32 = 1 << 6;
 const THROUGH: [&str; 3] = ["MixShader", "AddShader", "NodeReroute"];
 
 impl BlendFile {
-    fn kind(&self, node: &BlendBlock, dna: &DnaType) -> String {
+    pub(crate) fn kind(&self, node: &BlendBlock, dna: &DnaType) -> String {
         self.off("bNode", "idname", dna).map(|o| read_cstr(&node.data, o, 64)).unwrap_or_default()
     }
 
@@ -59,8 +59,9 @@ impl BlendFile {
 
     /// The node linked into `node`'s input named `name`.
     fn linked_named<'a>(&self, nodes: &[&'a BlendBlock], links: &[BLink], node: &BlendBlock, name: &str, dna: &DnaType) -> Option<&'a BlendBlock> {
-        let index = self.input_sockets(node, dna).iter().position(|&s| self.socket_name(s, dna) == name)?;
-        self.linked_node(nodes, links, node, index, dna)
+        let sock = self.socket_named(node, name, dna)?;
+        let link = links.iter().find(|l| l.to_sock == sock)?;
+        nodes.iter().copied().find(|n| n.old_address == link.from)
     }
 
     /// The node the active output's Surface is linked to.
@@ -102,22 +103,25 @@ impl BlendFile {
         self.closure(ma, &nodes, &links, &graph, node, dna, 0)
     }
 
+    /// The Mix Shader the surface is, through reroutes, if it is one.
+    pub(crate) fn surface_mix_node<'a>(&self, nodes: &[&'a BlendBlock], links: &[BLink], dna: &DnaType) -> Option<&'a BlendBlock> {
+        let mut node = self.surface_node(nodes, links, dna)?;
+        for _ in 0..16 {
+            if !self.kind(node, dna).contains("NodeReroute") {
+                break;
+            }
+            node = self.linked_node(nodes, links, node, 0, dna)?;
+        }
+        self.kind(node, dna).contains("MixShader").then_some(node)
+    }
+
     /// The surface as two lobes, when it is a Mix Shader (through reroutes)
     /// whose two inputs both fold; `None` for one closure, or a mix the
     /// fold does not know a side of.
     pub(crate) fn surface_mix(&self, ma: &BlendBlock, dna: &DnaType) -> Option<BlendMix> {
         let nodes = self.shader_nodes(ma, dna);
         let links = self.links(ma, dna);
-        let mut node = self.surface_node(&nodes, &links, dna)?;
-        for _ in 0..16 {
-            if !self.kind(node, dna).contains("NodeReroute") {
-                break;
-            }
-            node = self.linked_node(&nodes, &links, node, 0, dna)?;
-        }
-        if !self.kind(node, dna).contains("MixShader") {
-            return None;
-        }
+        let node = self.surface_mix_node(&nodes, &links, dna)?;
         let graph = BGraph::new(self, ma, dna);
         let side = |i: usize| self.linked_node(&nodes, &links, node, i, dna);
         let (a, b) = (side(1)?, side(2)?);
@@ -131,13 +135,11 @@ impl BlendFile {
 
     /// `name`'s value at `node`, folded (`eval.rs`), or `default`.
     fn arg(&self, graph: &BGraph, node: &BlendBlock, name: &str, dna: &DnaType, default: f32) -> f32 {
-        let sock = self.input_sockets(node, dna).into_iter().find(|&s| self.socket_name(s, dna) == name);
-        sock.and_then(|s| graph.input_or_default(s, 0)).map_or(default, |v| v.value())
+        self.socket_named(node, name, dna).and_then(|s| graph.input_or_default(s, 0)).map_or(default, |v| v.value())
     }
 
     fn color(&self, graph: &BGraph, node: &BlendBlock, name: &str, dna: &DnaType, default: [f32; 4]) -> [f32; 4] {
-        let sock = self.input_sockets(node, dna).into_iter().find(|&s| self.socket_name(s, dna) == name);
-        sock.and_then(|s| graph.input_or_default(s, 0)).map_or(default, |v| v.rgba)
+        self.socket_named(node, name, dna).and_then(|s| graph.input_or_default(s, 0)).map_or(default, |v| v.rgba)
     }
 
     fn closure(&self, ma: &BlendBlock, nodes: &[&BlendBlock], links: &[BLink], graph: &BGraph, node: &BlendBlock, dna: &DnaType, depth: u32) -> Option<BlendBsdf> {

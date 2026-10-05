@@ -11,6 +11,8 @@ pub(crate) mod eval;
 pub(crate) mod links;
 pub(crate) mod maps;
 pub(crate) mod principled;
+pub mod procedural;
+pub(crate) mod texnode;
 pub(crate) mod scalar;
 pub(crate) mod slots;
 pub mod surface;

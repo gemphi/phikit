@@ -3,11 +3,16 @@
 //! metallic / emission maps and the normal map — or, for a Mix Shader
 //! (`SceneMaterial::mix`), the first lobe's, with the second lobe its own
 //! material in the scene (`Tri::with_second`). The textures belong to the
-//! lobe that holds the Principled they were read from.
+//! lobe that holds the Principled they were read from, and so do the
+//! procedural textures (`SceneMaterial::procedural`): a Noise / Voronoi on
+//! the base colour and a Bump on the normal go with the Principled, one on
+//! the Mix Shader's factor with the first lobe, which the tracer reads the
+//! weight from. A colour ramp is one 256 × 1 image in the atlas.
 
 use super::scene::TEXTURE_LIMIT;
 use crate::phiphx::scene::{SceneBsdf, SceneMaterial, SceneTexture};
 use crate::v2::scene::BShading;
+use super::slot::BProcSlot;
 use phiray::{NO_TEX, Scene, Tri};
 
 /// What a face's material build needs of its surroundings.
@@ -23,7 +28,7 @@ pub(super) struct BSurface<'a> {
 }
 
 /// Atlas ids for the textures added so far, by their pixel buffer.
-pub(super) type BAtlasIds = std::collections::HashMap<*const Vec<u8>, u32>;
+pub(crate) type BAtlasIds = std::collections::HashMap<*const Vec<u8>, u32>;
 
 impl BSurface<'_> {
     /// Workbench (Solid / Wireframe) shades from the material's viewport
@@ -97,6 +102,35 @@ impl BSurface<'_> {
         tri
     }
 
+    /// The material under a shading mode that evaluates its nodes
+    /// (Material Preview, Rendered); Workbench reads none of them.
+    fn shaded(&self) -> Option<&SceneMaterial> {
+        self.slot.filter(|_| !self.shading.uses_viewport_color())
+    }
+
+    /// The Principled's procedural textures onto its lobe: the base
+    /// colour's and the Bump's.
+    fn procedural(&self, tri: Tri, out: &mut Scene, ids: &mut BAtlasIds) -> Tri {
+        let Some(m) = self.shaded() else { return tri };
+        let base = m.procedural.base.as_ref().map(|p| p.slot(1, out, ids));
+        let bump = m.procedural.bump.as_ref().map(|b| b.height.slot(0, out, ids).bump(b.strength, b.distance));
+        tri.with_procs(base.or(Some(tri.color_proc)), bump)
+    }
+
+    /// The Mix Shader's factor onto the first lobe. One slot holds the
+    /// colour texture: the same texture on both drives both; two different
+    /// ones leave the weight at its folded constant.
+    fn mixed(&self, mix: &crate::phiphx::blend::shade::surface::BlendMix, tri: Tri, out: &mut Scene, ids: &mut BAtlasIds) -> Tri {
+        let Some(m) = self.shaded() else { return tri };
+        let Some(fac) = m.procedural.mix.as_ref() else { return tri };
+        let target = match (&m.procedural.base, mix.principled) {
+            (Some(base), Some(0)) if base == fac => 3,
+            (Some(_), Some(0)) => return tri,
+            _ => 2,
+        };
+        tri.with_procs(Some(fac.slot(target, out, ids)), Some(tri.bump_proc))
+    }
+
     /// The face's material: the surface as one lobe, or a Mix Shader's two
     /// — the second added to the scene as a material of its own, the
     /// textures on the lobe with the Principled they came from. Workbench
@@ -108,69 +142,17 @@ impl BSurface<'_> {
             Some(mix) => {
                 let (first, second) = (self.lobe(mix.first.base, Some(&mix.first), self.pbr(Some(&mix.first))), self.lobe(mix.second.base, Some(&mix.second), self.pbr(Some(&mix.second))));
                 let (first, second) = match mix.principled {
-                    Some(1) => (first, self.textured(second, out, ids)),
-                    _ => (self.textured(first, out, ids), second),
+                    Some(1) => (first, self.procedural(self.textured(second, out, ids), out, ids)),
+                    _ => (self.procedural(self.textured(first, out, ids), out, ids), second),
                 };
+                let first = self.mixed(mix, first, out, ids);
                 let other = out.material(second.mat());
                 first.with_second(other, mix.fac)
             }
             None => {
                 let bsdf = self.slot.map(|m| &m.bsdf);
-                self.textured(self.lobe(self.color, bsdf, self.pbr(bsdf)), out, ids)
+                self.procedural(self.textured(self.lobe(self.color, bsdf, self.pbr(bsdf)), out, ids), out, ids)
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::phiphx::blend::shade::surface::BlendMix;
-    use crate::phiphx::scene::{SceneBsdf, SceneCorners, SceneMaterial, SceneMesh, SceneNormals};
-    use crate::v2::scene::{BObject3D, BShading};
-    use gpui::white;
-
-    fn card(material: SceneMaterial) -> BObject3D {
-        BObject3D::Loaded {
-            name: "Card".into(),
-            mesh: std::sync::Arc::new(SceneMesh {
-                vertices: vec![[0.0; 3], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
-                indices: vec![0, 1, 2],
-                normals: SceneNormals::PerFace(vec![[0.0, 0.0, 1.0]]),
-                corners: SceneCorners::default(),
-            }),
-            location: [0.0; 3],
-            scale: [1.0; 3],
-            matrix_world: [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]],
-            materials: vec![material],
-            material_indices: Default::default(),
-            uvs: Default::default(),
-            color: [1.0; 4],
-            shadow: Default::default(),
-        }
-    }
-
-    /// A Mix Shader of a red diffuse and a white mirror: two materials in
-    /// the scene, the face's the first with the second named at the weight;
-    /// Workbench shades the viewport colour alone.
-    #[test]
-    fn a_mix_shader_is_two_materials_and_a_weight() {
-        let red = SceneBsdf { base: [0.8, 0.1, 0.1, 1.0], roughness: 1.0, ..Default::default() };
-        let mirror = SceneBsdf { base: [1.0; 4], roughness: 0.0, metallic: 1.0, ..Default::default() };
-        let mut material = SceneMaterial::neutral();
-        material.bsdf = red.mixed(&mirror, 0.3);
-        material.mix = Some(BlendMix { first: red, second: mirror, fac: 0.3, principled: Some(0) });
-        let grey = white();
-        let palette = |shading| super::super::super::mesh::BMeshPalette { shading, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false };
-        let scene = super::super::scene::build(&[card(material.clone())], &palette(BShading::Rendered));
-        assert_eq!(scene.mats.len(), 2, "both lobes are materials");
-        let face = &scene.mats[(scene.faces[0][3] & 0xffff) as usize];
-        assert_eq!((face.color, face.metal), ([0.8, 0.1, 0.1, 1.0], 0.0), "the face's own is the first lobe");
-        assert_eq!(face.mix, 0.3);
-        let other = &scene.mats[face.second as usize];
-        assert_eq!((other.metal, other.rough, other.second), (1.0, 0.02, phiray::NO_MAT), "the mirror, at `with_pbr`'s floor");
-        // Workbench: the viewport colour, one lobe, the mix left out.
-        let solid = super::super::scene::build(&[card(material)], &palette(BShading::Solid));
-        assert_eq!(solid.mats.len(), 1);
-        assert_eq!(solid.mats[0].second, phiray::NO_MAT);
     }
 }

@@ -38,7 +38,9 @@ pub struct SceneLight {
     pub kind: String,
     /// Spot cone angle in radians (`Light.spotsize`).
     pub spot_size: f32,
-    /// Point / spot radius, or area edge length.
+    /// The light's shape, which decides how soft its shadow is: a point's
+    /// or spot's radius, an area light's edge, or a sun's angular diameter
+    /// in radians (`Light.sun_angle`).
     pub size: f32,
 }
 

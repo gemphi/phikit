@@ -98,6 +98,7 @@ impl BlendFile {
                         base_color_texture: tex,
                         bsdf,
                         mix: self.surface_mix(ma, dna),
+                        procedural: self.surface_procedural(ma, dna),
                         normal_map: self.normal_map(ma, dna),
                         maps: self.shade_maps(ma, dna),
                     });
@@ -117,6 +118,7 @@ impl BlendFile {
                 base_color_texture: None,
                 bsdf: Default::default(),
                 mix: None,
+                procedural: Default::default(),
                 // The fallback material is the object's own colour, not a tree.
                 graph: Default::default(),
                 normal_map: None,
