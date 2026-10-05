@@ -113,6 +113,7 @@ All of these are read from the file, drive the render, and save with Ctrl S
 | The other texture nodes: Checker, Brick, Gradient, Magic, Wave; every Noise type; every Voronoi feature and metric | works (batch 143) | each node's settings read from the file and evaluated per pixel as Cycles' SVM does |
 | Material Preview's soft shadows | works (batch 144) | the shadow ray aimed over the light's shape as EEVEE does — a disk of the Radius, an area light's square, a sun's Angle cone; eight taps in one pass where EEVEE averages one ray over its samples |
 | A light's shape read from the file: Radius, Area Size, a Sun's Angle | works (batch 145) | `Light.sun_angle` is radians where the others are metres, and was not read at all — every sun drew at Blender's default 0.526° |
+| An area light's shape: Square, Rectangle, Disk, Ellipse, with Size Y and the object's scale | works (batch 146) | the taps spread over that shape in the light's own plane, so a strip light blurs along itself and not across |
 
 **What limits "Blender quality" today is not the sampler** — a 512-sample
 frame here converges like Cycles' (`rendering.md` §7, §18) — but what the

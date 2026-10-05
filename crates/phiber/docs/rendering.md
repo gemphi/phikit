@@ -2045,8 +2045,9 @@ path tracer gives them (`rig_visible`).
 
 An Area light's taps spread over a square of its edge: `Light::size` is
 the edge length for an area light and a radius for the rest
-(`scene/extras.rs`), and Blender's Size Y is not read, so a non-square
-area light is sampled as a square one.
+(`scene/extras.rs`). Blender's Size Y and the light's own shape are not
+read here, so every area light is sampled as a square one — §46 reads
+both and spreads the taps over the real shape.
 
 The cost is eight shadow rays where there was one, per lamp, per pixel —
 but only where the lamp has a shape. Measured on this container's software
@@ -2117,7 +2118,58 @@ not the Watts its UI shows. Blender keeps 4/π of it — the script's 500 W
 reads back as 636.6 — so passing the stored number straight through, as
 the reader does, is right. The test asserts the scaled value and says why.
 
-Not read still: an area light's Size Y (`area_sizey`) and its shape, so a
-rectangular or elliptical area light is sampled as a square one (§44);
-and the `.phx` round trip carries no light shape at all — `PhxLight` has
+An area light's Size Y and its shape are read as of §46. Not read still:
+the `.phx` round trip carries no light shape at all — `PhxLight` has
 only the spot angle and area size, and its import populates no lights.
+
+## 46. An area light's shape (batch 146, 2026-10-05)
+
+§45 gave every lamp the shape the file keeps for it, but an area light's
+shape is two numbers and a form, and only the first number was read. The
+taps spread over a square of `Light::size` in an arbitrary direction in
+the light's plane (§44 said as much), so a strip light — the softbox a
+studio scene is lit with — blurred its shadow equally both ways, where
+Blender blurs it along the strip and barely across it.
+
+Blender keeps an area light's form in `Light.area_shape`: Square (0),
+Rectangle (1), Disk (4) or Ellipse (5), and its edges in `area_size` and
+`area_sizey`. EEVEE reads the second edge only for the two irregular
+shapes — `is_irregular = ELEM(area_shape, LA_AREA_RECT, LA_AREA_ELLIPSE)`
+— so a Square and a Disk take one size both ways however `area_sizey`
+happens to be set, and it then scales both by the object's
+(`eevee_light.cc`: `l_area.size *= scale.xy() / 2`).
+
+All of that is now carried. The light record grew a row: `right` (the
+light's own X axis, normalized), `size_y` (its edge across that) and
+`shape`; 80 bytes a light, so the camera's light table went from 768 to
+1280 bytes. `shadow.wgsl` spreads the taps over that shape in that plane
+— straight across for a Rectangle, through `sample_disk` for a Disk or an
+Ellipse, which is what `shadow_ray_generate_punctual` does for
+`LIGHT_RECT` against the rounded shapes — with `right` across `size` and
+`cross(dir, right)` across `size_y`.
+
+The axes and the scale come out of the same place: the object's matrix.
+`m.x_axis` normalized is `right`, and its length is the object's scale in
+X, so the edges are `size * |m.x_axis|` and `size_y * |m.y_axis|` — one
+read, both facts.
+
+The conversion from a file's light to the record moved out of `world.rs`
+into `rendered/lamp.rs` as a trait on `SceneLight` (`BLamp`: `kind`,
+`shape`, `record`), the same shape as §43's `BProcSlot` for a texture
+node, so the behaviour sits on the type rather than in a function beside
+it.
+
+Tests: phiphx `tests/light_truth.rs` — the fixture gained a Rectangle
+3 × 0.5 on an object scaled 2 in X, a Disk at 1.5 whose Size Y is left at
+the default and must still read 1.5 both ways, and an Ellipse 2 × 0.75;
+phiber `tests/light_shapes_reach_the_tracer.rs` — the shapes, the
+normalized axis and the scaled edge (the Rectangle's X edge reads 6.0),
+and that the kinds without a plane leave the area fields at zero; phiray
+`tests/preview.rs` — `an_area_lights_penumbra_follows_its_own_shape`: the
+scan across the shadow's edge is horizontal, so a strip 1.2 along X
+softens it and the same strip turned into the plane's other axis leaves it
+a step. That last one is the test that would have caught §44's square.
+
+Not read still: an area light's `spotblend` equivalent has no meaning
+here, but the `.phx` round trip carries no light shape at all — `PhxLight`
+has only the spot angle and area size, and its import populates no lights.

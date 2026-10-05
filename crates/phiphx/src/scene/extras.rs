@@ -42,6 +42,12 @@ pub struct SceneLight {
     /// or spot's radius, an area light's edge, or a sun's angular diameter
     /// in radians (`Light.sun_angle`).
     pub size: f32,
+    /// An area light's edge across its own Y; equal to `size` for the
+    /// shapes Blender gives one size (Square, Disk).
+    pub size_y: f32,
+    /// An area light's shape: `"SQUARE"`, `"RECTANGLE"`, `"DISK"`,
+    /// `"ELLIPSE"` (`Light.area_shape`).
+    pub shape: String,
 }
 
 /// An empty — Blender `Object.empty_drawtype` / `empty_drawsize`.

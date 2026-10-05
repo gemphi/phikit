@@ -77,6 +77,8 @@ fn moving_scene() -> SceneModel {
             kind: "POINT".into(),
             spot_size: 0.0,
             size: 0.1,
+            size_y: 0.1,
+            shape: "SQUARE".into(),
         }],
         cameras: vec![SceneCamera {
             name: "Camera".into(),

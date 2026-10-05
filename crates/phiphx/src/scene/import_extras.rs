@@ -41,6 +41,8 @@ pub(super) fn light_from_blend(obj: &BlendSceneObject) -> SceneLight {
         kind: "POINT".into(),
         spot_size: std::f32::consts::FRAC_PI_4,
         size: 0.1,
+        size_y: 0.1,
+        shape: "SQUARE".into(),
     };
     if let BlendObjectData::Light(l) = obj.data {
         light.kind = match l.kind {
@@ -61,6 +63,17 @@ pub(super) fn light_from_blend(obj: &BlendSceneObject) -> SceneLight {
             4 => l.area_size,
             _ => l.radius,
         };
+        // Blender reads Size Y only for the two irregular shapes; a Square
+        // and a Disk take one size both ways (`eevee_light.cc`).
+        light.shape = match l.area_shape {
+            1 => "RECTANGLE",
+            4 => "DISK",
+            5 => "ELLIPSE",
+            _ => "SQUARE",
+        }
+        .into();
+        let irregular = matches!(l.area_shape, 1 | 5);
+        light.size_y = if irregular { l.area_sizey } else { light.size };
     }
     light
 }

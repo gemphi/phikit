@@ -29,6 +29,7 @@
 //! it to nothing, so the behaviour matches at small sizes and diverges in the
 //! middle, where Blender's text is scaled and phiber's is not.
 
+pub mod add;
 pub mod drag;
 pub mod frame;
 pub mod link;
@@ -129,9 +130,14 @@ pub(super) fn title_ink(node: &BlendNode, ctx: &BRenderCtx) -> BColor {
 }
 
 impl BNode {
-    /// The graph of the active object's first material, when a file is loaded.
+    /// The graph of the active object's first material, when a file is loaded,
+    /// with this host's added nodes merged in (`add::BNodeAdditions`). The
+    /// overlay is empty until the Add menu writes it, so this is the file's own
+    /// tree until then.
     pub(super) fn graph(ctx: &BRenderCtx) -> Option<BlendNodeGraph> {
-        Self::graph_of(ctx.state)
+        let mut graph = Self::graph_of(ctx.state)?;
+        graph.nodes = add::additions_of(ctx.state, ctx.host).apply(&graph.nodes);
+        Some(graph)
     }
 
     /// The same, from the store alone — what a rule has (`view/op.rs`).

@@ -100,6 +100,13 @@ pub fn bindings(over: Option<BHostType>) -> Vec<BBinding> {
     if over == Some(BHostType::Nla) {
         fixed(&mut out, "Shift A", "nla.actionclip_add", |_| BAction::Toggle(crate::v2::state::MenuKey::Top(crate::v2::host::nla::SLUG, "Add").path()));
     }
+    // The shader node editor's Shift A opens the live Add menu — Blender's
+    // `node.add_search`. phiber opens it from the header like its other menus,
+    // so the key toggles that same panel (`MenuKey::Panel`, the kind a `panel`
+    // menu uses) rather than a cursor popover.
+    if over == Some(BHostType::Shader) {
+        fixed(&mut out, "Shift A", "node.add_search", |_| BAction::Toggle(crate::v2::state::MenuKey::Panel(crate::v2::host::shader::SLUG, "Add").path()));
+    }
     // The keys Blender binds in `Screen` / `Frames` / `Window`, not in a menu.
     let step = |intent: &'static str| move |_: &BState| BAction::Set(CtxKey::FrameStep.path(), intent.to_string());
     fixed(&mut out, "Space", "screen.animation_play", |state| {

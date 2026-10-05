@@ -28,6 +28,12 @@ pub struct BlendLightData {
     pub spot_size: f32,
     pub radius: f32,
     pub area_size: f32,
+    /// `Light.area_sizey`: an area light's edge across its own Y. Blender
+    /// reads it only for a Rectangle and an Ellipse (`eevee_light.cc`).
+    pub area_sizey: f32,
+    /// `Light.area_shape` (`eLightAreaShape`): 0 square, 1 rectangle,
+    /// 4 disk, 5 ellipse.
+    pub area_shape: u8,
     /// `Light.sun_angle`: a sun's angular diameter in radians. Blender's
     /// default is the real sun's, 0.526°.
     pub sun_angle: f32,
@@ -111,6 +117,8 @@ impl BlendFile {
                         spot_size: f("spotsize", std::f32::consts::FRAC_PI_4),
                         radius: f("radius", 0.1),
                         area_size: f("area_size", 0.25),
+                        area_sizey: f("area_sizey", 0.25),
+                        area_shape: self.uint_field(la, st, "area_shape", dna).unwrap_or(0) as u8,
                         sun_angle: f("sun_angle", SUN_ANGLE),
                     })
                 }

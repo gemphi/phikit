@@ -81,6 +81,17 @@ pub enum NodeKey {
     /// default, which is what makes the editor open framed on the graph rather
     /// than on a remembered window that may belong to another file.
     View(BHostType),
+    /// `ctx.<host>.node.added` — the nodes the user has ADDED, over the ones the
+    /// file carries.
+    ///
+    /// The file is read-only, so a new node is an overlay like a made link or a
+    /// drag displacement: `canvas/node/add/` merges these over the file's node
+    /// list on every frame, and nothing is written back until `phiphx` grows a
+    /// node-tree writer. One key holds the whole list — adding a node is one
+    /// store write and one undo step — and it stores each node's type, name and
+    /// place, with the sockets looked up from the catalog at apply time so the
+    /// value stays small and the type stays the one source of a node's shape.
+    Added(BHostType),
 }
 
 impl BKey for NodeKey {
@@ -92,6 +103,7 @@ impl BKey for NodeKey {
             Self::Linking(host) => BPath::owned(vec![host.slug(), "node", "linking"]),
             Self::Boxing(host) => BPath::owned(vec![host.slug(), "node", "boxing"]),
             Self::View(host) => BPath::owned(vec![host.slug(), "node", "view"]),
+            Self::Added(host) => BPath::owned(vec![host.slug(), "node", "added"]),
         }
     }
 }

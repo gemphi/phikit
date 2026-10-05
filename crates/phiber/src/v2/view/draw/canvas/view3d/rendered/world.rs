@@ -7,7 +7,6 @@
 //! finish their camera through `lit`.
 
 use crate::phiphx::scene::SceneLight;
-use glam::Mat4;
 use gpui::Hsla;
 use phiray::{Camera, LIGHTS, Light};
 
@@ -86,33 +85,9 @@ pub fn view_words(s: &crate::v2::state::BState) -> [f32; 4] {
     crate::v2::scene::source::with_loaded(|m| crate::v2::scene::render_set::BColorManagement::now(s, m).words())
 }
 
-/// One Blender light in phiray terms.
-pub fn light(l: &SceneLight) -> Light {
-    let m = Mat4::from_cols_array_2d(&l.matrix_world);
-    let dir = (-m.z_axis.truncate()).normalize_or_zero().to_array();
-    let e = l.energy.max(0.0);
-    let (kind, size, cone) = match l.kind.as_str() {
-        // A sun's shape is its Angle (`Light.sun_angle`), which the
-        // shadow taps spread over (`phiray`'s `shadow.wgsl`); it was fixed
-        // at Blender's default here until the file's own was read.
-        "SUN" => (0, l.size, 0.0),
-        "SPOT" => (2, l.size, (l.spot_size * 0.5).cos()),
-        "AREA" => (3, l.size, 0.0),
-        _ => (1, l.size, 0.0),
-    };
-    Light { pos: m.w_axis.truncate().to_array(), kind, color: l.color.map(|c| c * e), size, dir, cone }
-}
-
-/// The world and lights a camera carries, whatever its framing.
-///
-/// A final render looks through the file's camera rather than the viewport's
-/// orbit (`scene/render_job.rs`), but it stands in the same world — so the
-/// two share this rather than each assembling the sky, the environment image
-/// and the lamps for themselves. A camera that skips it renders the scene in
-/// the dark, lit only by the studio rig.
 pub fn lit(cam: &mut Camera, look: &BRayLook) {
     let mut lights = [Light::default(); LIGHTS];
-    let usable: Vec<Light> = look.lights.iter().map(light).filter(|l| l.color.iter().any(|c| *c > 0.0)).take(LIGHTS).collect();
+    let usable: Vec<Light> = look.lights.iter().map(super::lamp::BLamp::record).filter(|l| l.color.iter().any(|c| *c > 0.0)).take(LIGHTS).collect();
     lights[..usable.len()].copy_from_slice(&usable);
     // Blender's default world (0.05) is near black; keep a floor so studio
     // renders still read, and show the world colour as the background. The

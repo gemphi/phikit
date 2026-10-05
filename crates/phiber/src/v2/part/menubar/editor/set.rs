@@ -146,7 +146,16 @@ pub static NODE: &[BMenuSpec] = &[
 pub static CONSOLE: &[BMenuSpec] = &[m("View", NIL), m("Console", NIL)];
 pub static UV: &[BMenuSpec] = super::image::UV;
 pub static COMPOSITOR: &[BMenuSpec] = NODE;
-pub static SHADER: &[BMenuSpec] = NODE;
+/// The shader editor's menus are the node ones, but its Add menu is live: a
+/// panel built from the shader-node catalog that actually adds a node, rather
+/// than the placeholder categories `NODE_ADD` still shows the other node
+/// editors (`canvas/node/add/menu::body`).
+pub static SHADER: &[BMenuSpec] = &[
+    m("View", EDITOR_VIEW),
+    m("Select", SELECT_ITEMS),
+    panel("Add", crate::v2::view::draw::canvas::node::add::menu::body),
+    m("Node", NODE_ITEMS),
+];
 pub static GEONODE: &[BMenuSpec] = NODE;
 pub static CLIP: &[BMenuSpec] = &[
     m("View", NIL),

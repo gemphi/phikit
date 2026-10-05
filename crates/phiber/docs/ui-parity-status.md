@@ -1,6 +1,6 @@
 # Phiber UI — status
 
-**Suite: 1272 passing, 14 failing** (phiber, on the tree as it stands on the
+**Suite: 1273 passing, 14 failing** (phiber, on the tree as it stands on the
 machine, the other agent's node-editor / Timeline / swatch work included —
 all fourteen are theirs in progress: a region's host corners, the overlay
 family key test, the Preferences palette override and its rows' actions,
@@ -9,8 +9,8 @@ lines, the Dope Sheet's G-grab under its new expandable rows, the Timeline
 wheel zoom, two renderer-ownership rules, the Properties rail tab's paint
 layer, a popover's checkbox widths, and `level_structure` over three of
 their files past 240 lines — `state/key/op.rs`, `time/gesture.rs`,
-`time/row/mod.rs`). phiphx 213
-passing, 6 known asset-dependent; phiray 95 passing. Batches 17–145 are
+`time/row/mod.rs`). phiphx 214
+passing, 6 known asset-dependent; phiray 96 passing. Batches 17–146 are
 extracted on the machine; every item below is covered by a test. The
 Animation and Rendering workspaces have a full audit of their own in
 `animation-rendering-status.md`.
@@ -798,6 +798,28 @@ Blender's own choices.
   and Graph headers, which Blender leaves out of the Timeline.
 - Truth: `tests/marker_box_and_transport_popovers.rs`, `scene/grab.rs`,
   `part/playback/settings.rs`.
+
+## Batch 146 — an area light's shape
+
+- **Blender** keeps an area light's form in `Light.area_shape` (Square,
+  Rectangle, Disk, Ellipse) and its edges in `area_size` / `area_sizey`,
+  reading the second only for the irregular two, then scales both by the
+  object's (`eevee_light.cc`). Only the first edge was read, so a strip
+  light blurred its shadow equally both ways.
+- phiray: the light record gained `right`, `size_y` and `shape` (80 bytes
+  a light); `shadow.wgsl` spreads the taps over that shape in the light's
+  own plane — straight for a rectangle, through `sample_disk` for a disk
+  or ellipse. `rendering.md` §46.
+- phiphx: `area_shape` and `area_sizey` read; a Square and a Disk take one
+  size both ways, as EEVEE does.
+- phiber: `rendered/lamp.rs` — the file's light as the record, a `BLamp`
+  trait on `SceneLight` (out of `world.rs`, the shape of §43's
+  `BProcSlot`); the axes and the object's scale both out of its matrix.
+- Tests: phiphx `tests/light_truth.rs`, phiber
+  `tests/light_shapes_reach_the_tracer.rs`, phiray `tests/preview.rs`
+  (a strip softens the scan it lies across, not the one along it).
+- **Suites:** see the head of this file.
+- **Not yet:** the `.phx` round trip carries no light shape.
 
 ## Batch 145 — a light's shape comes from the file
 

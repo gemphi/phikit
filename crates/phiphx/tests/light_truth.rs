@@ -40,4 +40,25 @@ fn every_kind_carries_the_shape_the_file_gives_it() {
     let cone = of("Cone");
     assert_eq!((cone.kind.as_str(), cone.size), ("SPOT", 0.2));
     assert!((cone.spot_size - 60.0_f32.to_radians()).abs() < 1e-6, "{}", cone.spot_size);
+    assert_eq!((panel.shape.as_str(), panel.size_y), ("SQUARE", 2.5), "a square's Size Y is its size");
+}
+
+/// An area light's shape and its second edge (`Light.area_shape`,
+/// `area_sizey`). Blender reads Size Y only for a Rectangle and an
+/// Ellipse, so a Disk's stays at the default and must read back as its
+/// one size both ways (`eevee_light.cc`).
+#[test]
+fn an_area_lights_shape_and_its_second_edge() {
+    let lights = lights();
+    let of = |name: &str| lights.iter().find(|l| l.name == name).unwrap_or_else(|| panic!("{name}")).clone();
+
+    let strip = of("Strip");
+    assert_eq!((strip.kind.as_str(), strip.shape.as_str()), ("AREA", "RECTANGLE"));
+    assert_eq!((strip.size, strip.size_y), (3.0, 0.5), "the file's two edges, before the object's scale");
+
+    let round = of("Round");
+    assert_eq!((round.shape.as_str(), round.size, round.size_y), ("DISK", 1.5, 1.5), "a disk takes one size both ways");
+
+    let oval = of("Oval");
+    assert_eq!((oval.shape.as_str(), oval.size, oval.size_y), ("ELLIPSE", 2.0, 0.75));
 }
