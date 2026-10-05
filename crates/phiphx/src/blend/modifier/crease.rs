@@ -109,11 +109,6 @@ impl BCreaseLevel {
         Self { edge: self.edge.iter().map(|&(a, b, c, s)| (a, b, c, keep(s))).collect(), vert }
     }
 
-    /// The file's creases on the refined mesh's edges — Blender copies an
-    /// edge's crease to both its halves.
-    pub fn creases(&self) -> Vec<(u32, u32, f32)> {
-        self.edge.iter().map(|&(a, b, c, _)| (a, b, c)).collect()
-    }
 }
 
 impl BSharpness {

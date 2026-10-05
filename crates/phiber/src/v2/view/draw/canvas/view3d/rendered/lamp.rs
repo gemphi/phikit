@@ -49,7 +49,18 @@ impl BLamp for SceneLight {
         let kind = self.kind();
         // A sun's shape is its Angle (`Light.sun_angle`) and a point's or
         // spot's its Radius; both are the file's as of §45.
-        let cone = if kind == SPOT { (self.spot_size * 0.5).cos() } else { 0.0 };
+        //
+        // A spot's cone is the cosine of its half angle, and its Blend is
+        // how much of that cone fades, which EEVEE turns into a width in
+        // cosine on the CPU (`eevee_light.cc`: `spot_blend =
+        // (1 - spot_size) * spotblend`) so the kernels only smoothstep.
+        let (cone, blend) = match kind == SPOT {
+            true => {
+                let cone = (self.spot_size * 0.5).cos();
+                (cone, ((1.0 - cone) * self.spot_blend).max(1e-8))
+            }
+            false => (0.0, 0.0),
+        };
         // An area light's shape lies in its own plane, so its axes are the
         // object's and its edges carry the object's scale, as EEVEE's do
         // (`eevee_light.cc`: `size *= scale.xy()`). The other kinds have no
@@ -70,10 +81,11 @@ impl BLamp for SceneLight {
             size,
             dir: (-m.z_axis.truncate()).normalize_or_zero().to_array(),
             cone,
+            blend,
             right,
             size_y,
             shape: if area { self.shape() } else { AREA_SQUARE },
-            _pad: [0; 3],
+            _pad: [0; 2],
         }
     }
 }

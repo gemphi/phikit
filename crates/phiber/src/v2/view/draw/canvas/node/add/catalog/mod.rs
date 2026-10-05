@@ -42,6 +42,20 @@ pub enum BAddCategory {
     Converter,
 }
 
+impl BAddCategory {
+    /// The submenu's heading, as the Add menu labels it.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Input => "Input",
+            Self::Output => "Output",
+            Self::Shader => "Shader",
+            Self::Color => "Color",
+            Self::Vector => "Vector",
+            Self::Converter => "Converter",
+        }
+    }
+}
+
 /// One socket a fresh node is declared with.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BAddSocket {
@@ -159,6 +173,45 @@ pub fn find(idname: &str) -> Option<&'static dyn BShaderNode> {
 pub fn search(query: &str) -> Vec<&'static dyn BShaderNode> {
     let q = query.trim().to_lowercase();
     CATALOG.iter().copied().filter(|t| q.is_empty() || t.label().to_lowercase().contains(&q)).collect()
+}
+
+/// Whether a fresh node of this type has any socket on `side` — whether it could
+/// receive a link dropped on empty canvas.
+pub fn offers(ty: &dyn BShaderNode, side: crate::v2::view::draw::canvas::node::socket::BSocketSide) -> bool {
+    use crate::v2::view::draw::canvas::node::socket::BSocketSide;
+    let decl = ty.sockets();
+    match side {
+        BSocketSide::Input => !decl.inputs.is_empty(),
+        BSocketSide::Output => !decl.outputs.is_empty(),
+    }
+}
+
+/// The types the link-drag search offers: those matching `query` AND carrying a
+/// socket on `side` to take the dragged end.
+///
+/// A link dropped from an OUTPUT needs a node with an INPUT to receive it (pass
+/// `side = Input`), and a link from an input needs a node with an output. There
+/// is no type check — any socket on the right side qualifies (`link/mod.rs`) —
+/// so this only drops the pure sources (no input) or the pure sink (no output),
+/// which is what `link_drag_search` does: it never offers a node the dragged
+/// link could not reach.
+pub fn search_offering(query: &str, side: crate::v2::view::draw::canvas::node::socket::BSocketSide) -> Vec<&'static dyn BShaderNode> {
+    search(query).into_iter().filter(|t| offers(*t, side)).collect()
+}
+
+/// The catalog grouped into its Add-menu submenus, each category in the order it
+/// first appears in `CATALOG`. This is the plain (Shift-A) menu's shape —
+/// Blender groups the Add menu into submenus; the link-drag search stays a flat
+/// ranked list (`node_add_menu` vs `link_drag_search`).
+pub fn by_category() -> Vec<(BAddCategory, Vec<&'static dyn BShaderNode>)> {
+    let mut out: Vec<(BAddCategory, Vec<&'static dyn BShaderNode>)> = Vec::new();
+    for ty in CATALOG.iter().copied() {
+        match out.iter_mut().find(|(c, _)| *c == ty.category()) {
+            Some((_, v)) => v.push(ty),
+            None => out.push((ty.category(), vec![ty])),
+        }
+    }
+    out
 }
 
 #[cfg(test)]

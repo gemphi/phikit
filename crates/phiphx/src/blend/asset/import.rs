@@ -29,7 +29,7 @@ impl BlendImporter {
                 match crate::import::phx::PhxImporter::import(&phx_path, progress) {
                     Ok(mut r) => {
                         // Keep the original .blend path as the reference.
-                        r.mesh_path = clean.clone();
+                        r.mesh_path = clean;
                         return Ok(r);
                     }
                     Err(e) => {

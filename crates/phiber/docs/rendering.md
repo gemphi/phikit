@@ -2173,3 +2173,97 @@ a step. That last one is the test that would have caught §44's square.
 Not read still: an area light's `spotblend` equivalent has no meaning
 here, but the `.phx` round trip carries no light shape at all — `PhxLight`
 has only the spot angle and area size, and its import populates no lights.
+
+## 47. A spot's Blend (batch 147, 2026-10-05)
+
+The same mistake as §45's sun, found by looking rather than reasoning. Both
+kernels faded a spot's cone with
+
+```wgsl
+e *= smoothstep(li.cone, mix(li.cone, 1.0, 0.15), dot(-l, li.dir));
+```
+
+and 0.15 is `Light.spotblend`'s **default** (`DNA_light_types.h`). The
+field was never read, so every spot in every file drew with Blender's
+default blend: a spot set to a hard edge still had a soft one, and a spot
+set to fade across its whole cone faded across a seventh of it.
+
+The shape of the expression was right. EEVEE's
+`light_spot_attenuation` is `smoothstep(0, 1, cos · spot_mul + spot_bias)`
+with `spot_mul = 1 / spot_blend` and `spot_bias = −spot_size · spot_mul`
+(`eevee_light.cc`), which is `smoothstep(spot_size, spot_size +
+spot_blend, cos)` — a smoothstep in cosine from the cone's edge inwards,
+exactly what was there — and `spot_blend = (1 − spot_size) × spotblend`,
+which is the `mix(cone, 1, …)` with the file's number in place of the
+constant.
+
+So `Light` carries `blend`, that width in cosine, computed where EEVEE
+computes it — on the CPU, in `rendered/lamp.rs`, "to avoid differences
+between platforms" as EEVEE's comment puts it about the neighbouring
+cosine — and both kernels read `smoothstep(li.cone, li.cone + li.blend,
+cos)`. It took one of §46's pad words, so the record did not grow.
+
+Tests: phiphx `tests/light_truth.rs` — the fixture's spot now carries
+Blend 0.6 and a second spot (`Sharp`) carries 0, neither of them the
+default; phiber `tests/light_shapes_reach_the_tracer.rs` — the width in
+cosine against `(1 − cone) × 0.6`, and that a lamp with no cone carries
+none; phiray `tests/preview.rs` —
+`a_spots_blend_fades_the_edge_of_its_cone`: a 6° spot's pool of light on a
+card, counting the pixels across its edge that are neither the pool nor
+the dark — Blend 0 gives at most two, and the count grows with Blend.
+
+The cone has to be narrow for that test because the frame sees about a
+twentieth of the card at that distance (§44's note): a 25° spot lights the
+whole frame and has no visible edge at all, which is how the first attempt
+failed.
+
+Not yet: a spot on an object with a non-uniform scale is an *ellipse* in
+EEVEE (`spot_size_inv = scale.z / scale.xy`, used in
+`light_spot_attenuation`'s `ellipse` term); here the cone stays round.
+
+## 48. Clippy's dead code, and what it turned out to be (batch 148, 2026-10-05)
+
+A cleanup batch, and worth recording because the obvious reading of the
+warnings was wrong.
+
+`cargo clippy -p phiphx` named seven items as never used: `basis_at`,
+`EASE_IN_OUT`, `BChannel`, `pose_channels`, `bases_at`, `poses_at`,
+`Topology::is_boundary` and `BCreaseLevel::creases`. Deleting them looked
+like the fix. Five of them are *used by the Blender-truth tests* —
+`anim/tests.rs` calls `bases_at`, `poses_at`, `pose_channels` and
+`basis_at` to check our pose maths against the matrices Blender itself
+printed, and `easing.rs`'s own tests use `EASE_IN_OUT`. Clippy reports
+them because it lints the plain library build too, where `#[cfg(test)]`
+code is absent; `--all-targets` does not change that.
+
+So the fix is to say what they are rather than to remove them: `basis_at`
+and `EASE_IN_OUT` are `#[cfg(test)]`, and `anim/pose.rs` is a
+`#[cfg(test)] pub mod` in full — the whole module is a pose oracle
+(`BChannel`, `bases_at`, `poses_at` recompute a rig the way
+`BKE_pchan_to_mat4` does, for the truth test to compare against), and the
+app poses through `rig/` and `follow.rs`. A release build no longer
+carries it, and the warnings are gone with nothing lost.
+
+The two that really were dead are gone: `Topology::is_boundary` returned
+`edge_nfaces[e] != 2`, which `BSharpness::of` computes inline anyway, and
+`BCreaseLevel::creases` rebuilt a vector nothing read.
+
+**What the warnings were hiding.** `redundant_clone` is `deny` for the
+whole workspace (`Cargo.toml`), and earlier passes over phiphx had been
+grepped for "never used" alone, so four denials went unseen and
+`cargo clippy -p phiphx` was failing: a `clean.clone()` whose branch
+returns, a `dflt.path.clone()` at the end of its value's life, a
+`had.clone()` and a `solid_shade.clone()` in a test. All four are plain
+moves. phiphx and phiray are now clean under
+`cargo clippy --all-targets`.
+
+**Still failing: phiber.** 42 more `redundant_clone` denials, nearly all
+`move || id.clone()` in `view/draw/` (`modal/`, `pane.rs`, `tab/`,
+`zone/`, `space/`, `track/`, `tree/`, `region/`, `split.rs`, `sort.rs`,
+`toggle.rs`, `card.rs`, `ctrl/number.rs`), and three uses of a disallowed
+method — `std::process::Command::output` in `scene/video/mod.rs` (twice)
+and `scene/mixdown.rs`, which the workspace forbids because it blocks the
+calling thread for an unknown time and wants `smol::process::Command`
+instead. Those live in files the other agent is editing, and a
+forty-file mechanical sweep across them would collide with work in
+flight, so they are left for a batch of their own.

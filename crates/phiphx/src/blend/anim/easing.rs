@@ -22,6 +22,9 @@ pub const IPO_SINE: u8 = 12;
 pub const EASE_AUTO: u8 = 0;
 pub const EASE_IN: u8 = 1;
 pub const EASE_OUT: u8 = 2;
+/// Blender writes this easing but no F-curve here is read with it yet;
+/// `easing.rs`'s own tests cover the maths.
+#[cfg(test)]
 pub const EASE_IN_OUT: u8 = 3;
 
 /// `fcurve_eval_keyframes_interpolate`'s easing branch: the value of a

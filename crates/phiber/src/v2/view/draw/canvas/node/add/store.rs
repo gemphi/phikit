@@ -11,13 +11,17 @@
 //! node's name can. An entry that does not parse is dropped rather than guessed
 //! at — a half-read node would draw sockets to nowhere.
 
-use super::BNodeAddition;
+use super::{BNodeAddition, BPendingLink};
 
 const FIELD: char = '/';
 const NEXT: char = ';';
 const COMMA: char = ',';
+/// Separates the parts of an induced link inside the optional fourth field:
+/// `node~socket~out`, where `out` is `1` when the dragged socket is an output.
+const PEND: char = '~';
 
-/// `idname/name/x,y;…` — every added node, in order.
+/// `idname/name/x,y;…`, with a fourth field `node~socket~out` on an addition
+/// that carries an induced link. Every added node, in order.
 pub fn encode(adds: &[BNodeAddition]) -> String {
     let mut out = String::new();
     for a in adds {
@@ -31,15 +35,32 @@ pub fn encode(adds: &[BNodeAddition]) -> String {
         out.push_str(&a.at.0.to_string());
         out.push(COMMA);
         out.push_str(&a.at.1.to_string());
+        if let Some(p) = &a.link {
+            out.push(FIELD);
+            out.push_str(&encode_pending(p));
+        }
     }
     out
 }
 
-/// The added nodes back out of the store.
+/// `node~socket~out` — a standalone pending link, the value of `NodeKey::AddLink`
+/// and the induced-link field of an addition.
+pub fn encode_pending(p: &BPendingLink) -> String {
+    let mut out = String::new();
+    out.push_str(&p.node);
+    out.push(PEND);
+    out.push_str(&p.socket);
+    out.push(PEND);
+    out.push(if p.from_output { '1' } else { '0' });
+    out
+}
+
+/// The added nodes back out of the store. A malformed induced-link field drops
+/// the whole entry rather than adding a node wired to nowhere.
 pub fn decode(text: &str) -> Vec<BNodeAddition> {
     let mut out = Vec::new();
     for entry in text.split(NEXT).filter(|e| !e.is_empty()) {
-        let mut parts = entry.splitn(3, FIELD);
+        let mut parts = entry.splitn(4, FIELD);
         let (Some(idname), Some(name), Some(pos)) = (parts.next(), parts.next(), parts.next()) else {
             continue;
         };
@@ -48,9 +69,38 @@ pub fn decode(text: &str) -> Vec<BNodeAddition> {
         if idname.is_empty() || name.is_empty() {
             continue;
         }
-        out.push(BNodeAddition { idname: idname.into(), name: name.into(), at: (x, y) });
+        let link = match parts.next() {
+            None => None,
+            Some(raw) => match decode_pending(raw) {
+                Some(p) => Some(p),
+                None => continue,
+            },
+        };
+        out.push(BNodeAddition { idname: idname.into(), name: name.into(), at: (x, y), link });
     }
     out
+}
+
+/// `node~socket~out` back into a pending link, or `None` if it does not parse.
+pub fn decode_pending(raw: &str) -> Option<BPendingLink> {
+    let mut p = raw.splitn(3, PEND);
+    let (node, socket, out) = (p.next()?, p.next()?, p.next()?);
+    if node.is_empty() || socket.is_empty() {
+        return None;
+    }
+    let from_output = match out {
+        "1" => true,
+        "0" => false,
+        _ => return None,
+    };
+    Some(BPendingLink { node: node.into(), socket: socket.into(), from_output })
+}
+
+/// This host's pending link-drag source, if the Add menu was opened by dropping
+/// a link on empty canvas (`NodeKey::AddLink`).
+pub fn pending_of(state: &crate::v2::state::BState, host: crate::v2::host::BHostType) -> Option<BPendingLink> {
+    use crate::v2::state::{BKey as _, NodeKey};
+    state.get(&NodeKey::AddLink(host).path()).and_then(decode_pending)
 }
 
 /// This host's added nodes, out of the store.
@@ -65,8 +115,8 @@ mod tests {
 
     fn adds() -> Vec<BNodeAddition> {
         vec![
-            BNodeAddition { idname: "ShaderNodeEmission".into(), name: "Emission".into(), at: (1.5, -2.0) },
-            BNodeAddition { idname: "ShaderNodeMath".into(), name: "Math.001".into(), at: (0.0, 40.0) },
+            BNodeAddition { idname: "ShaderNodeEmission".into(), name: "Emission".into(), at: (1.5, -2.0), link: None },
+            BNodeAddition { idname: "ShaderNodeMath".into(), name: "Math.001".into(), at: (0.0, 40.0), link: None },
         ]
     }
 
@@ -95,5 +145,20 @@ mod tests {
     fn a_position_with_a_negative_and_a_decimal_survives() {
         let round = decode(&encode(&adds()));
         assert_eq!(round[0].at, (1.5, -2.0));
+    }
+
+    #[test]
+    fn an_induced_link_survives_the_round_trip() {
+        let linked = vec![BNodeAddition {
+            idname: "ShaderNodeOutputMaterial".into(),
+            name: "Material Output".into(),
+            at: (0.0, 0.0),
+            link: Some(BPendingLink { node: "Principled BSDF".into(), socket: "BSDF".into(), from_output: true }),
+        }];
+        assert_eq!(decode(&encode(&linked)), linked);
+        // A malformed link field drops the whole entry rather than adding a node
+        // wired to nowhere.
+        assert_eq!(decode("ShaderNodeValue/Value/0,0/node~sock~9"), Vec::new(), "bad direction flag");
+        assert_eq!(decode("ShaderNodeValue/Value/0,0/node~sock"), Vec::new(), "missing direction");
     }
 }

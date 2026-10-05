@@ -15,7 +15,7 @@
 
 use super::super::super::color::to_hsla;
 use super::super::super::ctx::BRenderCtx;
-use super::{BNode, drag, draw_order, frame, header_color, link, paint, reroute, select, title_ink, wire};
+use super::{BNode, add, drag, draw_order, frame, header_color, link, paint, reroute, select, title_ink, wire};
 use super::plan::{BCardFraction, BCardSize, positions};
 use super::view::store as view_store;
 
@@ -113,10 +113,9 @@ fn card(
 pub fn render(ctx: &BRenderCtx) -> AnyElement {
     let selection = select::selection_of(ctx.state, ctx.host);
     let grid = ctx.style.node_grid_stroke();
-    // The canvas, with the theme's sweep when it has one.
+    // The canvas with the theme's sweep; the grid at fractions of it.
     let bg = super::super::super::color::resolved_gradient(ctx.style.viewport_gradient());
     let mut canvas_div = super::super::base(ctx).bg(bg);
-    // Fractions are canvas coordinates, not design-system spacing.
     for fraction in [0.125_f32, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875] {
         canvas_div = canvas_div
             .child(
@@ -171,6 +170,8 @@ pub fn render(ctx: &BRenderCtx) -> AnyElement {
     let edits = link::edits_of(ctx.state, ctx.host);
     let carrying = link::linking_of(ctx.state, ctx.host);
     let mut wired = edits.apply(&graph.links);
+    // A link-drag search's wire rides on its added node (`add::induced_links`).
+    wired.extend(add::additions_of(ctx.state, ctx.host).induced_links(&graph.nodes));
     // A link being carried is drawn following the cursor, so its settled
     // version must not also be drawn — otherwise the old wire stays put while
     // its copy moves.
@@ -209,9 +210,8 @@ pub fn render(ctx: &BRenderCtx) -> AnyElement {
         if node.frame() { continue; }
         let Some((_, at)) = placed.iter().find(|(n, _)| *n == node.name) else { continue };
         let from = offsets.iter().find(|(n, _)| *n == node.name).map(|(_, o)| *o).unwrap_or((0.0, 0.0));
-        // The editor's own selection wins; the file's `NODE_SELECT` is what it
-        // opens on. A reroute is no card — just the dot the socket pass paints
-        // and a square to grab it by; every other node is a card.
+        // The editor's selection wins; the file's `NODE_SELECT` is what it opens
+        // on. A reroute is no card — just a dot and a square to grab it by.
         let is = select::rank(node, &selection) > 0;
         let el = if node.reroute() {
             reroute::handle(node, *at, size, &view, from, is, ctx)

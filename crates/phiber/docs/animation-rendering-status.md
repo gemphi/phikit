@@ -289,7 +289,9 @@ Checker, Brick, Gradient, Magic, Wave (§43). **Batch 144:** Material
 Preview's shadows as soft as the light, EEVEE's shapes and sampling
 (§44). **Batch 145:** a light's shape — a sun's Angle included — read
 from the file (§45). **Batch 146:** an area light's shape — Rectangle,
-Disk and Ellipse with Size Y and the object's scale (§46). **Next:** Material Preview's screen-space
+Disk and Ellipse with Size Y and the object's scale (§46). **Batch 147:**
+a spot's Blend, read from the file instead of its default (§47).
+**Next:** Material Preview's screen-space
 reflections and ambient occlusion, which EEVEE itself leaves off until
 Raytracing is turned on.
 

@@ -227,7 +227,7 @@ impl BlendFile {
                 String::from_utf8_lossy(&b[..n]).replace('\\', "/")
             })
             .filter(|p| !p.is_empty())
-            .unwrap_or(dflt.path.clone());
+            .unwrap_or(dflt.path);
         let format = BlendImageFormat::of(byte(imf("imtype"), 17) as i8);
         // One-of-many flag, not a count: 1<<1 is 8 bits, 1<<4 is 16, 1<<6 is 32.
         let depth = match byte(imf("depth"), 1 << 1) {

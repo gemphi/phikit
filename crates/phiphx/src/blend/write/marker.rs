@@ -24,7 +24,7 @@ impl BlendFile {
         let had = self.marker_blocks(scene);
         // Pair every wanted marker with a block: the one that already holds
         // its frame and name, else its frame, else a spare, else a new one.
-        let mut free: Vec<usize> = had.clone();
+        let mut free: Vec<usize> = had;
         let mut chosen: Vec<usize> = Vec::with_capacity(markers.len());
         let mut added = 0;
         let reads = |file: &Self, index: usize| -> (i32, String) {

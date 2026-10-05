@@ -58,6 +58,9 @@ impl BlendFile {
 }
 
 /// `BKE_pchan_to_mat4` / `BKE_object_to_mat4` at this frame.
+/// Only the Blender-truth tests call this: a release build composes a
+/// basis through `follow.rs` instead (`BObjectWork::basis_at`).
+#[cfg(test)]
 pub(crate) fn basis_at<'a>(mut raw: ObjectTransformRaw, curves: impl Iterator<Item = &'a BFCurve>, frame: f32) -> glam::Mat4 {
     apply(&mut raw, curves, frame);
     glam::Mat4::from_cols_array_2d(&object_to_mat4(&raw))

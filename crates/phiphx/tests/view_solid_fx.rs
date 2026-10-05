@@ -36,7 +36,7 @@ fn the_startup_viewport_outlines_its_objects_and_has_no_cavity() {
     // The matcap is whatever the file names — this startup was saved with
     // a user's own (a `.jpg` from their config), which phiber's set lacks
     // and so falls back from.
-    let shade = view.solid_shade.clone().expect("the shading");
+    let shade = view.solid_shade.expect("the shading");
     assert!(shade.matcap.ends_with(".jpg"), "{}", shade.matcap);
     assert_eq!(shade, SceneSolidShade { light: "STUDIO", color_type: "MATERIAL", matcap: shade.matcap.clone(), matcap_flip_x: false, single_color: [0.8; 3], background_type: "THEME", background_color: [0.05; 3] });
 }

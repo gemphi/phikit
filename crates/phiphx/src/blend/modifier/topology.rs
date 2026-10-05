@@ -110,7 +110,4 @@ impl Topology {
         self.v_edge_off.len() - 1
     }
 
-    pub(crate) fn is_boundary(&self, e: u32) -> bool {
-        self.edge_nfaces[e as usize] != 2
-    }
 }

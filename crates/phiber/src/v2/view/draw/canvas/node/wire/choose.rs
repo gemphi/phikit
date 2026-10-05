@@ -16,6 +16,29 @@ use crate::v2::view::prim::BAction;
 use gpui::{App, Pixels, Point, Window};
 
 impl BWire {
+    /// Open the Add search wired to a fresh link's dragged end — the link-drag
+    /// search a link dropped on empty canvas launches (`wire::up`). Scoped to the
+    /// shader editor, whose Add menu is the live one (`add::menu`).
+    pub(super) fn open_add_search(
+        &self,
+        drag: &crate::v2::view::draw::canvas::node::link::BLinking,
+        window: &mut Window,
+        app: &mut App,
+    ) {
+        if self.host != crate::v2::host::BHostType::Shader {
+            return;
+        }
+        let acts = crate::v2::view::draw::canvas::node::add::menu::open_actions(
+            self.host,
+            &drag.anchor.node,
+            &drag.anchor.socket,
+            drag.from_output,
+        );
+        for a in acts {
+            (self.handler)(&a, window, app);
+        }
+    }
+
     /// A press that hit no socket: select the card under it, or begin a box.
     pub(super) fn press_on_canvas(
         &self,

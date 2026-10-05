@@ -10,7 +10,7 @@ wheel zoom, two renderer-ownership rules, the Properties rail tab's paint
 layer, a popover's checkbox widths, and `level_structure` over three of
 their files past 240 lines — `state/key/op.rs`, `time/gesture.rs`,
 `time/row/mod.rs`). phiphx 214
-passing, 6 known asset-dependent; phiray 96 passing. Batches 17–146 are
+passing, 6 known asset-dependent; phiray 97 passing. Batches 17–148 are
 extracted on the machine; every item below is covered by a test. The
 Animation and Rendering workspaces have a full audit of their own in
 `animation-rendering-status.md`.
@@ -798,6 +798,44 @@ Blender's own choices.
   and Graph headers, which Blender leaves out of the Timeline.
 - Truth: `tests/marker_box_and_transport_popovers.rs`, `scene/grab.rs`,
   `part/playback/settings.rs`.
+
+## Batch 148 — clippy's dead code
+
+- Seven items clippy called never used: five are used by the
+  Blender-truth tests (`anim/tests.rs`'s pose oracle, `easing.rs`'s own
+  tests) — clippy lints the plain library build, where `#[cfg(test)]`
+  code is absent. They are marked `#[cfg(test)]` now, `anim/pose.rs`
+  as a whole module, so a release build does not carry them.
+- Two were really dead and are gone: `Topology::is_boundary` (which
+  `BSharpness::of` computes inline) and `BCreaseLevel::creases`.
+- Four `redundant_clone` denials in phiphx, unseen because earlier passes
+  grepped for "never used" alone — `cargo clippy -p phiphx` was failing.
+  All plain moves. phiphx and phiray are clean under `--all-targets`.
+- **Still failing: phiber** — 42 `redundant_clone` (nearly all
+  `move || id.clone()` in `view/draw/`) and three `Command::output`
+  calls the workspace forbids (`scene/video/mod.rs`, `scene/mixdown.rs`:
+  they block the thread; `smol::process::Command` is the replacement).
+  In the other agent's files, so left for their own batch.
+- `rendering.md` §48.
+
+## Batch 147 — a spot's Blend
+
+- **Blender** fades a spot's cone over `Light.spotblend` of it. Both
+  kernels hard-coded `0.15` — that field's *default* — so a spot set to a
+  hard edge still drew a soft one. The same mistake as §45's sun angle.
+- phiray: `Light::blend`, the fade's width in cosine (into one of §46's
+  pad words, so the record did not grow); `light.wgsl` and `preview.wgsl`
+  smoothstep `cone ..= cone + blend`, which is what EEVEE's
+  `light_spot_attenuation` comes to. `rendering.md` §47.
+- phiphx: `Light.spotblend` read into `SceneLight::spot_blend`.
+- phiber: `rendered/lamp.rs` computes the width as EEVEE does on the CPU
+  (`(1 − cone) × spotblend`).
+- Tests: phiphx `tests/light_truth.rs` (a spot at Blend 0.6 and one at 0),
+  phiber `tests/light_shapes_reach_the_tracer.rs`, phiray
+  `tests/preview.rs` (Blend 0 is a hard edge; the edge widens with Blend).
+- **Suites:** see the head of this file.
+- **Not yet:** a non-uniformly scaled spot is an ellipse in EEVEE; here the
+  cone stays round.
 
 ## Batch 146 — an area light's shape
 

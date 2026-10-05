@@ -26,6 +26,9 @@ pub struct BlendLightData {
     pub color: [f32; 3],
     pub energy: f32,
     pub spot_size: f32,
+    /// `Light.spotblend`: how much of the cone fades, 0 ..= 1. Blender's
+    /// default is 0.15, which both kernels had hard-coded before it was read.
+    pub spot_blend: f32,
     pub radius: f32,
     pub area_size: f32,
     /// `Light.area_sizey`: an area light's edge across its own Y. Blender
@@ -115,6 +118,7 @@ impl BlendFile {
                         color: [f("r", 1.0), f("g", 1.0), f("b", 1.0)],
                         energy: f("energy", 10.0),
                         spot_size: f("spotsize", std::f32::consts::FRAC_PI_4),
+                        spot_blend: f("spotblend", 0.15),
                         radius: f("radius", 0.1),
                         area_size: f("area_size", 0.25),
                         area_sizey: f("area_sizey", 0.25),

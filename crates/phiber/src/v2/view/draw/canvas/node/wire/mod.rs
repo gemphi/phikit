@@ -98,9 +98,8 @@ impl BWire {
     /// A press: if it lands on a socket, start carrying a link.
     ///
     /// Blender searches for an OUTPUT first and an input only if that misses
-    /// (`node_link_init` calls `node_find_indicated_socket` with `SOCK_OUT`
-    /// and then `SOCK_IN`), so a cursor near both grabs the output. That order
-    /// is the whole reason the two searches are separate calls here too.
+    /// (`node_link_init`), so a cursor near both grabs the output — which is why
+    /// the two searches are separate calls here too.
     pub fn down(&self, event: &gpui::MouseDownEvent, window: &mut Window, app: &mut App) {
         let Some((cursor, size)) = self.locate(event.position) else { return };
         let cards = self.cards(size);
@@ -111,13 +110,10 @@ impl BWire {
                 pick::socket_at(&cards, cursor, Some(BSocketSide::Input), scale)
                     .map(|hit| (hit, false))
             });
-        // No socket: the press is a selection, or the start of a box.
-        //
-        // `node_box_select_invoke` is bound to CLICK_DRAG with
-        // `tweak=True`, and returns `OPERATOR_PASS_THROUGH` when the event is
-        // over a node or a socket — which is how one drag means three things
-        // in Blender: a link off a socket, a move off a card, a box off the
-        // canvas. The same three-way split, in the same order.
+        // No socket: the press is a selection, or the start of a box. One drag
+        // means three things in Blender (`node_box_select_invoke` passes through
+        // over a node or socket): a link off a socket, a move off a card, a box
+        // off the canvas — the same three-way split, in the same order.
         let Some(((index, row), output)) = found else {
             return self.press_on_canvas(cursor, size, event, window, app);
         };
@@ -165,6 +161,11 @@ impl BWire {
             link::commit(&self.graph, &self.wired, drag, target.as_ref(), &self.edits)
         {
             self.write(NodeKey::Wired(self.host), link::encode(&next), window, app);
+        }
+        // A fresh link (not one dragged off to delete) dropped on empty canvas
+        // opens the Add search wired to its end (`link_drag_search`).
+        if target.is_none() && drag.moving.is_none() {
+            self.open_add_search(drag, window, app);
         }
         // `Reset` rather than an empty `Adjust`: an absent key is the honest
         // spelling of "no drag", and it leaves nothing behind in the store.

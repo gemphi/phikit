@@ -16,7 +16,7 @@ fn an_added_node_joins_the_file_with_the_sockets_of_its_type() {
     // The whole point of the catalog: the overlay stores only type/name/place,
     // and `apply` gives the node the sockets its type declares.
     let adds = BNodeAdditions {
-        added: vec![BNodeAddition { idname: "ShaderNodeEmission".into(), name: "Emission".into(), at: (3.0, 5.0) }],
+        added: vec![BNodeAddition { idname: "ShaderNodeEmission".into(), name: "Emission".into(), at: (3.0, 5.0), link: None }],
     };
     let merged = adds.apply(&file());
     assert_eq!(merged.len(), 3, "the two file nodes plus the one added");
@@ -32,7 +32,7 @@ fn an_added_node_joins_the_file_with_the_sockets_of_its_type() {
 fn the_file_is_never_touched_by_the_overlay() {
     let file = file();
     let adds = BNodeAdditions {
-        added: vec![BNodeAddition { idname: "ShaderNodeValue".into(), name: "Value".into(), at: (0.0, 0.0) }],
+        added: vec![BNodeAddition { idname: "ShaderNodeValue".into(), name: "Value".into(), at: (0.0, 0.0), link: None }],
     };
     let _ = adds.apply(&file);
     assert_eq!(file.len(), 2, "the file list is unchanged — the overlay clones it");
@@ -44,8 +44,8 @@ fn an_addition_of_an_unknown_type_is_dropped_not_drawn_blank() {
     // added — a socketless typeless box is worse than nothing.
     let adds = BNodeAdditions {
         added: vec![
-            BNodeAddition { idname: "ShaderNodeFromTheFuture".into(), name: "X".into(), at: (0.0, 0.0) },
-            BNodeAddition { idname: "ShaderNodeValue".into(), name: "Value".into(), at: (0.0, 0.0) },
+            BNodeAddition { idname: "ShaderNodeFromTheFuture".into(), name: "X".into(), at: (0.0, 0.0), link: None },
+            BNodeAddition { idname: "ShaderNodeValue".into(), name: "Value".into(), at: (0.0, 0.0), link: None },
         ],
     };
     let merged = adds.apply(&file());
@@ -79,6 +79,49 @@ fn place_appends_one_uniquely_named_node() {
     // And applying it over a file that has the original "Value" gives two nodes.
     let f = vec![BlendNode { name: "Value".into(), idname: "ShaderNodeValue".into(), ..Default::default() }];
     assert_eq!(next.apply(&f).len(), 2);
+}
+
+#[test]
+fn a_dragged_output_induces_a_wire_into_the_new_nodes_first_input() {
+    // Dropped a link from "Principled BSDF"'s "BSDF" output and picked Material
+    // Output: the induced wire feeds Material Output's first input, Surface.
+    let adds = BNodeAdditions {
+        added: vec![BNodeAddition {
+            idname: "ShaderNodeOutputMaterial".into(),
+            name: "Material Output".into(),
+            at: (0.0, 0.0),
+            link: Some(BPendingLink { node: "Principled BSDF".into(), socket: "BSDF".into(), from_output: true }),
+        }],
+    };
+    let links = adds.induced_links(&adds.apply(&[]));
+    assert_eq!(links.len(), 1);
+    assert_eq!((links[0].from.as_str(), links[0].from_socket.as_str()), ("Principled BSDF", "BSDF"));
+    assert_eq!((links[0].to.as_str(), links[0].to_socket.as_str()), ("Material Output", "Surface"));
+}
+
+#[test]
+fn a_dragged_input_is_fed_by_the_new_nodes_first_output() {
+    // The other orientation: dropped from an input, the new node's output feeds it.
+    let adds = BNodeAdditions {
+        added: vec![BNodeAddition {
+            idname: "ShaderNodeRGB".into(),
+            name: "Color".into(),
+            at: (0.0, 0.0),
+            link: Some(BPendingLink { node: "Principled BSDF".into(), socket: "Base Color".into(), from_output: false }),
+        }],
+    };
+    let links = adds.induced_links(&adds.apply(&[]));
+    assert_eq!(links.len(), 1);
+    assert_eq!((links[0].from.as_str(), links[0].from_socket.as_str()), ("Color", "Color"));
+    assert_eq!((links[0].to.as_str(), links[0].to_socket.as_str()), ("Principled BSDF", "Base Color"));
+}
+
+#[test]
+fn an_addition_with_no_pending_link_induces_nothing() {
+    let adds = BNodeAdditions {
+        added: vec![BNodeAddition { idname: "ShaderNodeValue".into(), name: "Value".into(), at: (0.0, 0.0), link: None }],
+    };
+    assert!(adds.induced_links(&adds.apply(&[])).is_empty());
 }
 
 #[test]

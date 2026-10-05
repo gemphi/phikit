@@ -59,6 +59,50 @@ fn a_socket_whose_identifier_differs_from_its_name_keeps_both() {
 }
 
 #[test]
+fn the_link_drag_search_offers_only_types_that_can_take_the_dragged_end() {
+    use crate::v2::view::draw::canvas::node::socket::BSocketSide;
+    // Dropping a link from an OUTPUT needs a node with an INPUT. Every type has
+    // one except the pure sources — RGB, Value, Texture Coordinate — so those
+    // are the ones the search must NOT offer.
+    let takes_input = search_offering("", BSocketSide::Input);
+    let idn: Vec<&str> = takes_input.iter().map(|t| t.idname()).collect();
+    assert!(!idn.contains(&"ShaderNodeRGB"), "a node with no input cannot receive a dropped output");
+    assert!(!idn.contains(&"ShaderNodeValue"));
+    assert!(!idn.contains(&"ShaderNodeTexCoord"));
+    assert!(idn.contains(&"ShaderNodeBsdfDiffuse"), "a node with inputs is offered");
+
+    // Dropping a link from an INPUT needs a node with an OUTPUT. Everything has
+    // one except the sink, Material Output.
+    let gives_output = search_offering("", BSocketSide::Output);
+    let idn2: Vec<&str> = gives_output.iter().map(|t| t.idname()).collect();
+    assert!(!idn2.contains(&"ShaderNodeOutputMaterial"), "the sink has no output to offer");
+    assert!(idn2.contains(&"ShaderNodeRGB"), "a pure source is offered to an input");
+
+    // The query still narrows: "emission" and takes-input keeps just Emission.
+    assert_eq!(
+        search_offering("emission", BSocketSide::Input).iter().map(|t| t.idname()).collect::<Vec<_>>(),
+        ["ShaderNodeEmission"],
+    );
+}
+
+#[test]
+fn the_catalog_groups_into_add_menu_submenus() {
+    let groups = by_category();
+    // Every type lands in exactly one group, and the groups cover the catalog.
+    let total: usize = groups.iter().map(|(_, v)| v.len()).sum();
+    assert_eq!(total, CATALOG.len(), "every type is grouped once");
+    // The categories are distinct (no category split across two groups).
+    for (i, (c, _)) in groups.iter().enumerate() {
+        assert!(!groups[i + 1..].iter().any(|(d, _)| d == c), "category {c:?} appears twice");
+    }
+    // A known type is under the heading it declares.
+    let shader = groups.iter().find(|(c, _)| *c == BAddCategory::Shader).unwrap();
+    assert_eq!(shader.0.label(), "Shader");
+    assert!(shader.1.iter().any(|t| t.idname() == "ShaderNodeEmission"));
+    assert!(groups.iter().find(|(c, _)| *c == BAddCategory::Output).unwrap().1.iter().any(|t| t.idname() == "ShaderNodeOutputMaterial"));
+}
+
+#[test]
 fn every_seed_type_is_well_formed() {
     assert!(!CATALOG.is_empty());
     for ty in CATALOG {

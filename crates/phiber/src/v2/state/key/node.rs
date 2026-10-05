@@ -92,6 +92,16 @@ pub enum NodeKey {
     /// place, with the sockets looked up from the catalog at apply time so the
     /// value stays small and the type stays the one source of a node's shape.
     Added(BHostType),
+    /// `ctx.<host>.node.addlink` — the socket a link-drag search was launched
+    /// from, while its Add menu is open.
+    ///
+    /// Set when a carried link is released on empty canvas (`link_drag_search`):
+    /// it turns the Add menu into a link-drag menu — only the types that can
+    /// take the dragged end, and each pick wired to it — and is cleared once a
+    /// node is picked or the menu closes. Separate from `Linking` because that
+    /// one is the wire following the cursor, which ends at the release; this is
+    /// the end the about-to-be-added node will join.
+    AddLink(BHostType),
 }
 
 impl BKey for NodeKey {
@@ -104,6 +114,7 @@ impl BKey for NodeKey {
             Self::Boxing(host) => BPath::owned(vec![host.slug(), "node", "boxing"]),
             Self::View(host) => BPath::owned(vec![host.slug(), "node", "view"]),
             Self::Added(host) => BPath::owned(vec![host.slug(), "node", "added"]),
+            Self::AddLink(host) => BPath::owned(vec![host.slug(), "node", "addlink"]),
         }
     }
 }

@@ -40,6 +40,7 @@ pub(super) fn light_from_blend(obj: &BlendSceneObject) -> SceneLight {
         energy: 1000.0,
         kind: "POINT".into(),
         spot_size: std::f32::consts::FRAC_PI_4,
+        spot_blend: 0.15,
         size: 0.1,
         size_y: 0.1,
         shape: "SQUARE".into(),
@@ -55,6 +56,7 @@ pub(super) fn light_from_blend(obj: &BlendSceneObject) -> SceneLight {
         light.color = l.color;
         light.energy = l.energy;
         light.spot_size = l.spot_size;
+        light.spot_blend = l.spot_blend;
         // A sun's shape is an angle, not a length: `Light.radius` is not
         // what Blender's Angle writes, and a sun left on `radius` drew a
         // crisp shadow where Blender's is soft.

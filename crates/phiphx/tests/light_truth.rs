@@ -40,6 +40,9 @@ fn every_kind_carries_the_shape_the_file_gives_it() {
     let cone = of("Cone");
     assert_eq!((cone.kind.as_str(), cone.size), ("SPOT", 0.2));
     assert!((cone.spot_size - 60.0_f32.to_radians()).abs() < 1e-6, "{}", cone.spot_size);
+    // Spot Blend, whose default 0.15 both kernels had hard-coded.
+    assert_eq!(cone.spot_blend, 0.6);
+    assert_eq!(of("Sharp").spot_blend, 0.0, "a hard-edged cone");
     assert_eq!((panel.shape.as_str(), panel.size_y), ("SQUARE", 2.5), "a square's Size Y is its size");
 }
 
