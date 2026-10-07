@@ -19,6 +19,7 @@
 
 pub mod blend;
 pub mod cloud;
+pub mod comp;
 pub mod error;
 pub mod export;
 pub mod format;
@@ -29,7 +30,9 @@ pub mod phx;
 mod phx_tests;
 pub mod project;
 pub mod scene;
+pub mod sky;
 pub mod spatial;
+pub mod uv;
 
 pub use cloud::PointCloud;
 pub use cloud::config::{MeshToCloudConfig, SamplingMethod};

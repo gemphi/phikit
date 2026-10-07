@@ -78,6 +78,20 @@ pub struct BlendSceneProps {
     pub drivers: Vec<crate::blend::anim::drivers::BlendDrivers>,
     /// Every object's transform over time, in object order (`anim/motion.rs`).
     pub motion: crate::blend::anim::motion::BlendMotionList,
+    /// Every material that carries a driver, by material name
+    /// (`shade/driver.rs`). Applied per frame over the materials the
+    /// objects were read with, after the objects' own driver pass.
+    pub material_drivers: Vec<crate::blend::shade::driver::BMaterialDrivers>,
+    /// Every light that carries a driver, by `Light` name
+    /// (`object/light_driver.rs`).
+    pub light_drivers: Vec<crate::blend::object::light_driver::BLightDrivers>,
+    /// Every world that carries a driver, over its own `color` and its
+    /// Background node's sockets (`shade/world_driver.rs`).
+    pub world_drivers: Vec<crate::blend::shade::world_driver::BWorldDrivers>,
+    /// Every object that carries a driver on one of its modifiers'
+    /// settings (`modifier/driver.rs`). Read, typed and clamped; not yet
+    /// written into the evaluation stack — see that module's header.
+    pub modifier_drivers: Vec<crate::blend::modifier::driver::BModifierDrivers>,
     /// The timeline markers (`scene/marker.rs`).
     pub markers: Vec<crate::blend::scene::marker::BlendMarker>,
     /// The Playback popover's settings (`scene/playback.rs`).
@@ -86,11 +100,17 @@ pub struct BlendSceneProps {
     pub rigs: crate::blend::rig::BlendRigs,
     /// The 3D cursor (`scene/cursor.rs`).
     pub cursor: crate::blend::BlendCursor,
+    /// The scene's compositor tree (`comp/read.rs`), read whichever of the
+    /// two DNA spellings the file was saved with. `None` when the file has
+    /// no tree at all; a tree that is switched off still comes through, so
+    /// the editor can draw it.
+    pub compositor: Option<crate::comp::BCompTree>,
 }
 
 impl Default for BlendSceneProps {
     fn default() -> Self {
         Self {
+            compositor: None,
             frame_current: 1,
             frame_start: 1,
             frame_end: 250,
@@ -125,6 +145,10 @@ impl Default for BlendSceneProps {
             nla: Vec::new(),
             drivers: Vec::new(),
             motion: Default::default(),
+            material_drivers: Vec::new(),
+            light_drivers: Vec::new(),
+            world_drivers: Vec::new(),
+            modifier_drivers: Vec::new(),
             markers: Vec::new(),
             playback: Default::default(),
             rigs: Default::default(),
@@ -217,6 +241,9 @@ impl BlendFile {
             _ => Default::default(),
         };
         BlendSceneProps {
+            // Read from the Scene block in `read.rs`, which has the DNA to
+            // hand; the props reader does not reach the node tree.
+            compositor: None,
             frame_current: self.sp_i32(d, self.rd_off("cfra", dna), 1),
             frame_start: self.sp_i32(d, self.rd_off("sfra", dna), 1),
             frame_end: self.sp_i32(d, self.rd_off("efra", dna), 250),
@@ -256,6 +283,10 @@ impl BlendFile {
             nla: Vec::new(),
             drivers: Vec::new(),
             motion: Default::default(),
+            material_drivers: Vec::new(),
+            light_drivers: Vec::new(),
+            world_drivers: Vec::new(),
+            modifier_drivers: Vec::new(),
             markers: self.markers(sc, dna),
             playback: self.extract_playback(sc, dna),
             rigs: Default::default(),

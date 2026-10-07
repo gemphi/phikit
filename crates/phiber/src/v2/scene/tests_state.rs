@@ -49,10 +49,24 @@ fn zoom_step_clamps_both_ends() {
 
 #[test]
 fn mesh_type_maps_primitives() {
-    use crate::phiphx::spatial::PhiQuiMeshType;
+    use crate::phiphx::spatial::{PhiQuiMeshType, SpatialObject3D};
     assert_eq!(BShape::Cube.mesh_type(), PhiQuiMeshType::Cube);
     assert_eq!(BShape::Sphere.mesh_type(), PhiQuiMeshType::Sphere);
     assert_eq!(BShape::Gem.mesh_type(), PhiQuiMeshType::Icosahedron);
+    // Every shape the Add menu offers has a distinct slug that reads back,
+    // a label, and a mesh with triangles in it — a shape that maps to an
+    // empty buffer is a menu entry that adds nothing.
+    let mut slugs: Vec<&str> = BShape::ALL.iter().map(|s| s.slug()).collect();
+    slugs.sort_unstable();
+    let count = slugs.len();
+    slugs.dedup();
+    assert_eq!(slugs.len(), count, "the slugs are distinct");
+    for shape in BShape::ALL {
+        assert_eq!(BShape::of(shape.slug()), Some(shape), "{:?} reads back", shape);
+        assert!(!shape.label().is_empty());
+        let (v, i, n) = SpatialObject3D::buffers(shape.mesh_type());
+        assert!(!v.is_empty() && i.len() >= 3 && n.len() == v.len(), "{:?} has a mesh", shape);
+    }
 }
 
 #[test]

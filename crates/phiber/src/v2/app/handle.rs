@@ -31,21 +31,105 @@ impl BPhiberApp {
             self.handle_action_in(&action, window, cx);
             return true;
         };
-        let outcome = crate::v2::state::edit::key(&mut self.state, key, typed);
-        if outcome == BEdit::Ignored {
-            return false;
-        }
-        // Return commits: run the value back through the normal action path so
-        // everything that watches the key still fires (a typed folder path
-        // navigates, a picked file imports).
-        if outcome == BEdit::Confirmed {
-            if let Some(path) = crate::v2::state::edit::field_path(&target) {
-                let value = self.state.get_encoded(&target).unwrap_or("").to_string();
-                self.handle_action(&BAction::Set(path, value), cx);
+        match stroke {
+            // A real window is behind the pass: the platform's text-input
+            // handler (`app::input`) owns printable text and IME; the caret
+            // model owns the navigation, selection and delete keys.
+            Some((ks, _window)) => {
+                let handled = self.caret_key(key, &ks, &target, cx);
+                if handled {
+                    cx.notify();
+                }
+                handled
+            }
+            // No window (headless renders and tests): the original append/pop
+            // path, so typing a value and Return/Escape work without the
+            // platform text system.
+            None => {
+                let outcome = crate::v2::state::edit::key(&mut self.state, key, typed);
+                if outcome == BEdit::Ignored {
+                    return false;
+                }
+                if outcome == BEdit::Confirmed {
+                    self.commit_edit(&target, cx);
+                }
+                cx.notify();
+                true
             }
         }
-        cx.notify();
-        true
+    }
+
+    /// One editing key against the caret model, for a window-backed pass.
+    /// Returns whether it was consumed; a printable key is left unconsumed so
+    /// the text-input handler inserts it (and IME composes it).
+    fn caret_key(
+        &mut self,
+        key: &str,
+        ks: &super::keymap::BKeystroke,
+        target: &str,
+        cx: &mut Context<Self>,
+    ) -> bool {
+        use crate::v2::state::edit::BEdit;
+        match key {
+            "escape" | "enter" | "return" => {
+                match crate::v2::state::edit::key(&mut self.state, key, None) {
+                    BEdit::Confirmed => {
+                        self.commit_edit(target, cx);
+                        true
+                    }
+                    BEdit::Cancelled => true,
+                    _ => false,
+                }
+            }
+            "left" if ks.shift => {
+                self.caret_select_left();
+                true
+            }
+            "left" => {
+                self.caret_left();
+                true
+            }
+            "right" if ks.shift => {
+                self.caret_select_right();
+                true
+            }
+            "right" => {
+                self.caret_right();
+                true
+            }
+            "home" => {
+                self.caret_home();
+                true
+            }
+            "end" => {
+                self.caret_end();
+                true
+            }
+            "a" if ks.control => {
+                self.caret_select_all();
+                true
+            }
+            "backspace" => {
+                self.caret_backspace();
+                true
+            }
+            "delete" => {
+                self.caret_delete();
+                true
+            }
+            // Printable: the text-input handler inserts it.
+            _ => false,
+        }
+    }
+
+    /// Return on a typed field re-applies its value through the normal action
+    /// path so everything watching the key still fires (a typed folder path
+    /// navigates, a picked file imports).
+    fn commit_edit(&mut self, target: &str, cx: &mut Context<Self>) {
+        if let Some(path) = crate::v2::state::edit::field_path(target) {
+            let value = self.state.get_encoded(target).unwrap_or("").to_string();
+            self.handle_action(&BAction::Set(path, value), cx);
+        }
     }
 
     /// An action from the window itself: the window's own operators (quit,
@@ -66,6 +150,16 @@ impl BPhiberApp {
     }
 
     pub fn handle_action(&mut self, action: &BAction, cx: &mut Context<Self>) {
+        // A field taking the caret opens with the caret after all its text
+        // (`AppKey::Edit = <field key>`), so the first keystroke appends and
+        // the arrow keys have somewhere to move from.
+        if let BAction::Set(path, field) = action
+            && *path == crate::v2::state::AppKey::Edit.path()
+            && !field.is_empty()
+        {
+            let content = self.state.get_encoded(field).unwrap_or("").to_string();
+            self.input.caret = crate::v2::state::text_edit::BCaret::at_end(&content);
+        }
         // 0. `ctx.link = <url>` is Blender's `wm.url_open`: hand the URL to
         //    the system browser, then let the action run its course so the
         //    menu closes and the status bar says what was opened; the key
@@ -113,6 +207,9 @@ impl BPhiberApp {
         let before = self.state.clone();
         let document = super::undo::snapshot(&self.state);
         apply_action(&mut self.state, action);
+        // Share this edit with any connected peers (a no-op offline, and the
+        // local-only keys — caret, camera, workspace — are filtered out).
+        super::collab::BCollab::broadcast(action);
         let name = crate::v2::state::log::record(action, &before, &self.state).unwrap_or_else(|| "Edit".to_string());
         if self.history.record_held(document, &super::undo::snapshot(&self.state), &name, super::undo::holding(&self.state)) {
             super::op::close::tag_modified(&mut self.state);

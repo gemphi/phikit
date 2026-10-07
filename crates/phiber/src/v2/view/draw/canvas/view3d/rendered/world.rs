@@ -89,16 +89,25 @@ pub fn lit(cam: &mut Camera, look: &BRayLook) {
     let mut lights = [Light::default(); LIGHTS];
     let usable: Vec<Light> = look.lights.iter().map(super::lamp::BLamp::record).filter(|l| l.color.iter().any(|c| *c > 0.0)).take(LIGHTS).collect();
     lights[..usable.len()].copy_from_slice(&usable);
-    // Blender's default world (0.05) is near black; keep a floor so studio
-    // renders still read, and show the world colour as the background. The
-    // sky's alpha is not opacity: it is the theme's sweep — how much lighter
-    // the left edge is (`BRayLook::sky.a`, `sky_at` in the kernels) — and a
-    // file's world has none.
+    // The file's world lights the scene as it stands — no floor. There used
+    // to be one (0.25 a channel, when a scene had no usable lamp) so that a
+    // studio render "still read", and it did two wrong things: it lifted any
+    // scene whose lamps were all dark, and because it clamped per channel it
+    // *re-tinted* a coloured world — a magenta dome came out pink
+    // (`rendering.md` §53). Blender has no such floor; a scene with no lamps
+    // and a near-black world renders near black. Material Preview is lit by
+    // the studio HDRI below, which is where "still reads" belongs.
+    //
+    // The sky's alpha is not opacity: it is the theme's sweep — how much
+    // lighter the left edge is (`BRayLook::sky.a`, `sky_at` in the kernels)
+    // — and a file's world has none.
     let (sky, env) = match look.world {
         Some(w) => {
             let shown = w.map(|c| c.max(0.0).powf(1.0 / 2.2));
-            ([shown[0], shown[1], shown[2], 0.0], w.map(|c| c.max(if usable.is_empty() { 0.25 } else { 0.0 })))
+            ([shown[0], shown[1], shown[2], 0.0], w.map(|c| c.max(0.0)))
         }
+        // No world at all: the viewport's own canvas colour is all there is
+        // to light with, so it keeps its floor.
         None => (rgba(look.sky), linear(look.sky)[..3].try_into().unwrap_or([0.25; 3]).map(|c: f32| c.max(0.25))),
     };
     // Wireframe hands the wire colour through `env` (see `BRayLook::wire`).

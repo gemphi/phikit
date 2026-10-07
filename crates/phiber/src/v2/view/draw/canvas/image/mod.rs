@@ -7,8 +7,10 @@
 //! ([`BImage`]) with its zoom and pan gestures. What is painted is `set.rs`.
 
 pub mod border;
+mod place;
 pub mod set;
 pub mod uv;
+mod uv_pick;
 pub mod zoom;
 
 use super::super::ctx::BRenderCtx;
@@ -20,7 +22,7 @@ use crate::v2::state::{BKey as _, BState, ImageKey};
 use crate::v2::theme::BAnimColors;
 use crate::v2::view::prim::BAction;
 use gpui::prelude::*;
-use gpui::{AnyElement, Bounds, Pixels, Point, ScrollDelta, ScrollWheelEvent, SharedString, canvas, point, px, size};
+use gpui::{AnyElement, Bounds, Pixels, Point, ScrollDelta, ScrollWheelEvent, SharedString, canvas};
 use std::cell::Cell;
 use std::rc::Rc;
 
@@ -106,36 +108,6 @@ impl BImageView {
         Some((status.w, status.h))
     }
 
-    /// `image_view_all`: a picture that fits shows at 1:1; a larger one at
-    /// the largest power-of-two fraction that fits the window.
-    pub fn view_all(w: f32, h: f32, winx: f32, winy: f32) -> f32 {
-        if w <= winx && h <= winy {
-            return 1.0;
-        }
-        let fit = (winx / w.max(1.0)).min(winy / h.max(1.0));
-        1.0 / (1.0 / fit).log2().ceil().exp2()
-    }
-
-    /// The zoom in effect for a `w × h` image in a `winx × winy` window.
-    pub fn zoom_for(&self, w: f32, h: f32, winx: f32, winy: f32) -> f32 {
-        self.zoom.unwrap_or_else(|| Self::view_all(w, h, winx, winy)).clamp(ZOOM_MIN, ZOOM_MAX)
-    }
-
-    /// The UV editor's 0..1 square in the window `at`: a `UV_TILE` image at
-    /// the view's zoom (1 when fitting), centred and moved by the offset.
-    pub fn uv_square(&self, at: Bounds<Pixels>) -> Bounds<Pixels> {
-        Self { status: None, zoom: Some(self.zoom.unwrap_or(1.0)), ..self.clone() }.rect(UV_TILE, UV_TILE, at)
-    }
-
-    /// `image_main_region_set_view2d`: the image centred, then moved by the
-    /// offset, in the window `at`.
-    pub fn rect(&self, w: f32, h: f32, at: Bounds<Pixels>) -> Bounds<Pixels> {
-        let (winx, winy) = (f32::from(at.size.width), f32::from(at.size.height));
-        let zoom = self.zoom_for(w, h, winx, winy);
-        let x = (winx - zoom * w) / 2.0 - zoom * self.pan.0;
-        let y = (winy - zoom * h) / 2.0 + zoom * self.pan.1;
-        Bounds::new(point(at.origin.x + px(x.round()), at.origin.y + px(y.round())), size(px((zoom * w).round()), px((zoom * h).round())))
-    }
 }
 
 /// The Image editor's window, or the UV editor's.
@@ -146,7 +118,7 @@ impl BImage {
         let view = BImageView::now(ctx.state);
         let colors = ctx.style.anim();
         let uv_colors = ctx.style.uv();
-        let shown = if self.0 { crate::v2::part::image::uv::BUvShown::now(ctx.state) } else { Default::default() };
+        let shown = Rc::new(if self.0 { crate::v2::part::image::uv::BUvShown::now(ctx.state) } else { Default::default() });
         let checker = ctx.style.image_checker_colors();
         let text = ctx.style.colors.text;
         let dim = ctx.style.colors.bg_modal_dim;
@@ -159,11 +131,19 @@ impl BImage {
         let dragged = ctx.state.get(ImageKey::BorderRect).and_then(crate::v2::scene::boxsel::dragged_of);
         let ink = crate::v2::view::draw::color::to_hsla(ctx.style.view_overlay());
         let back = crate::v2::view::draw::color::to_hsla(ctx.style.viewport_surface());
+        // The 0..1 square the gesture picks over, set by the painter: it is
+        // the painter that knows where the square landed this frame.
+        let square: Rc<Cell<Option<Bounds<Pixels>>>> = Rc::new(Cell::new(None));
+        let uv_gesture = uv_pick::BUvGesture::of(ctx, Rc::clone(&shown), Rc::clone(&square));
+        let uv_edit = uv_gesture.edit.clone();
+        let painted_shown = Rc::clone(&shown);
         let painter = canvas(|_, _, _| (), move |b, (), window, cx| {
             seen.set(Some(b));
             if uv {
                 painted.paint_uv_grid(&colors, b, window);
-                uv::BUvPaint { shown: &shown, colors: uv_colors, square: painted.uv_square(b) }.paint(window);
+                let on = painted.uv_square(b);
+                square.set(Some(on));
+                uv::BUvPaint { shown: &painted_shown, colors: uv_colors, square: on, edit: &uv_edit }.paint(window);
             } else {
                 painted.paint_image(checker, b, window);
                 painted.paint_info(&scene, &frame, text, dim, b, window, cx);
@@ -183,8 +163,8 @@ impl BImage {
         let pan_handler = ctx.handler.clone();
         let border = border::BBorderGesture::of(ctx, Rc::clone(&bounds), view.clone());
         let window_el = super::base(ctx).id(SharedString::from("image-window")).debug_selector(|| "image-window".to_string());
-        border
-            .attach(window_el)
+        uv_gesture
+            .attach(border.attach(window_el))
             .child(window.div(ctx).child(BFlex::column().place(BPlace::Overlay).styled(painter, ctx)))
             // `image.view_zoom`: a wheel step scales by 1.25 about the view.
             .on_scroll_wheel(move |event: &ScrollWheelEvent, window, app| {
@@ -228,3 +208,7 @@ impl BImage {
 #[cfg(test)]
 #[path = "view_tests.rs"]
 mod view_tests;
+
+#[cfg(test)]
+#[path = "uv_pick_tests.rs"]
+mod uv_pick_tests;

@@ -42,21 +42,49 @@ pub enum BSocketWidget {
     /// transform phiber cannot check against Blender's colour management would be
     /// inventing one, so the honest swatch is the stored value, noted.
     Swatch([f32; 4]),
+    /// A column of number fields, one per component — Blender's non-compact
+    /// vector (`std_node_socket_draw` puts a name row above `column->prop`, which
+    /// draws a field per component). Unlike the others this is TALLER than one
+    /// row, so it changes the socket's height, which is why the layout asks
+    /// [`rows_tall`] for the count and only an unlinked input ever gets it.
+    Fields(Vec<String>),
+}
+
+impl BSocketWidget {
+    /// How many rows this widget's socket occupies. Every widget but [`Fields`]
+    /// sits inside the socket's own name row, so the socket is one row tall; a
+    /// `Fields` column adds one row per component below the name
+    /// (`BSocketWidget::Fields`).
+    pub fn rows_tall(&self) -> f32 {
+        match self {
+            Self::Fields(f) => 1.0 + f.len() as f32,
+            Self::Text(_) | Self::Check(_) | Self::Swatch(_) => 1.0,
+        }
+    }
+}
+
+/// How many rows `side`'s socket occupies, given its link state — one, unless it
+/// is an unlinked input drawing a vector's field column (`BSocketWidget::Fields`).
+/// Kept apart from [`widget`] so the layout can ask the height without formatting
+/// the numbers, which only the painter needs.
+pub fn rows_tall(side: BSocketSide, linked: bool, default: Option<&BSocketDefault>) -> f32 {
+    if !shows_value(side, linked, default) {
+        return 1.0;
+    }
+    match default {
+        // One name row plus a field per component.
+        Some(BSocketDefault::Vector(v)) => 1.0 + v.len() as f32,
+        _ => 1.0,
+    }
 }
 
 /// The widget `side`'s socket draws for `default`, or `None` when it draws
 /// nothing: an output, a linked input, a socket with no default, or a vector.
 ///
-/// A vector is `None` NOT because it has no value but because Blender draws an
-/// unconnected non-compact vector (`SOCK_VECTOR`, `std_node_socket_draw`) as a
-/// name row above a stacked column of one field per component — a socket row
-/// several units tall, and only when the socket is unlinked. phiber lays every
-/// socket out at one row today, and the card's height (`socket::body_height`)
-/// is computed without per-socket link state, so a value widget that changes a
-/// socket's height can't be placed faithfully yet. Drawing the vector's three
-/// numbers on the single existing row would be inventing a one-line form Blender
-/// does not use; the honest state is to draw nothing until link state is threaded
-/// into the height calculation, which is the vector widget's real prerequisite.
+/// A vector becomes a `Fields` column of one number per component — Blender's
+/// non-compact vector. Each component reads to three decimals, the same
+/// simplification as a float; Blender labels the fields X/Y/Z, which phiber does
+/// not draw yet (the numbers alone, right-aligned like a scalar).
 pub fn widget(side: BSocketSide, linked: bool, default: Option<&BSocketDefault>) -> Option<BSocketWidget> {
     if !shows_value(side, linked, default) {
         return None;
@@ -66,7 +94,7 @@ pub fn widget(side: BSocketSide, linked: bool, default: Option<&BSocketDefault>)
         BSocketDefault::Int(v) => Some(BSocketWidget::Text(v.to_string())),
         BSocketDefault::Bool(v) => Some(BSocketWidget::Check(*v)),
         BSocketDefault::Color(rgba) => Some(BSocketWidget::Swatch(*rgba)),
-        BSocketDefault::Vector(_) => None,
+        BSocketDefault::Vector(v) => Some(BSocketWidget::Fields(v.iter().map(|c| format!("{c:.3}")).collect())),
     }
 }
 
@@ -84,8 +112,7 @@ mod tests {
     }
 
     /// A scalar reads as Blender formats it; a bool is a checkbox; a colour is a
-    /// swatch of its stored RGBA; a vector draws nothing until its taller row is
-    /// threaded through the height calculation.
+    /// swatch of its stored RGBA; a vector is a field per component.
     #[test]
     fn each_default_resolves_to_the_widget_the_painter_draws() {
         let w = |d| widget(BSocketSide::Input, false, Some(&d));
@@ -95,7 +122,23 @@ mod tests {
         assert_eq!(w(BSocketDefault::Bool(true)), Some(BSocketWidget::Check(true)), "a bool is a checkbox, not On/Off text");
         assert_eq!(w(BSocketDefault::Bool(false)), Some(BSocketWidget::Check(false)));
         assert_eq!(w(BSocketDefault::Color([0.8, 0.1, 0.2, 1.0])), Some(BSocketWidget::Swatch([0.8, 0.1, 0.2, 1.0])));
-        assert_eq!(w(BSocketDefault::Vector([0.0, 0.0, 1.0])), None, "a vector needs a taller row, not yet laid out");
+        assert_eq!(
+            w(BSocketDefault::Vector([0.0, 0.5, 1.0])),
+            Some(BSocketWidget::Fields(vec!["0.000".into(), "0.500".into(), "1.000".into()])),
+            "a vector is a field per component",
+        );
+    }
+
+    /// Only an unlinked vector input is taller than one row; everything else —
+    /// a scalar, a swatch, a linked or output socket — is a single row.
+    #[test]
+    fn a_vector_input_is_the_only_socket_taller_than_one_row() {
+        let vec = BSocketDefault::Vector([0.0, 0.0, 1.0]);
+        assert_eq!(rows_tall(BSocketSide::Input, false, Some(&vec)), 4.0, "name row plus three fields");
+        assert_eq!(rows_tall(BSocketSide::Input, true, Some(&vec)), 1.0, "a linked vector collapses to one row");
+        assert_eq!(rows_tall(BSocketSide::Output, false, Some(&vec)), 1.0, "an output is one row");
+        assert_eq!(rows_tall(BSocketSide::Input, false, Some(&BSocketDefault::Float(0.5))), 1.0, "a scalar fits its row");
+        assert_eq!(rows_tall(BSocketSide::Input, false, None), 1.0, "no default, one row");
     }
 
     #[test]

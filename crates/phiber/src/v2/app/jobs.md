@@ -2,20 +2,23 @@
 
 | State | Open | Done |
 |---|---|---|
-| 🟡 in progress | 5 | 3 |
+| 🟢 clear | 0 | 10 |
 
 ## Todo
 
-- [ ] Loading window: while a file loads the status zone expands to a full-width panel (progress bar across the whole bottom edge, current stage, running log with timings, Cancel) and collapses back into the status bar when done
-- [ ] Resume the last session: persist `BState` (minus transient keys) on change, restore on launch, reopen the last file with Load UI off
-- [ ] Text input entity (`EntityInputHandler`) for search and text fields
-- [ ] Swap in evaluated meshes when `Phx` finishes modifiers (progressive open)
-- [ ] Collaboration service: writes `collab.*`, applies remote `BAction`s through `apply_action`
+_(nothing open)_
 
 ## Done
 
 - [x] Open through `Phx::open_with` off the UI thread with progress and Cancel
 - [x] Read report → Info log and status bar; Load UI (workspace, view, lens, shading)
 - [x] Playback ticker at the file's fps; window opens with a self-drawn, themed title bar
+- [x] Loading panel: while a file opens the status zone grows into a full-width panel — the file, a running log of the stages with timings, Cancel, and a bar across the foot — then collapses to the segment bar when the scene settles. Replaces the screen-taking Opening-File modal; the viewport stays visible. (tests/progress_screen.rs)
+- [x] Resume the last session: the durable part of `BState` (workspace, panels, shading, overlays, the browser's folder/prefs, the last file) is written to `phiber-session.json` on change — rapid families (camera, clock, drags) and transient keys left out, so an orbit never touches disk — and read back at launch (`app::run`), reopening the last file with Load UI off. (`v2::app::session` + tests/resume_session.rs) — camera/playhead now resumed too (see below)
+- [x] Resume the camera, timeline view and playhead: the viewport camera (`view3d`), the timeline editors' view pan/zoom (`time_view`) and the playhead (`frame`) join the resumable session, but on a throttle (`app::session`) — a durable change still writes at once, while an orbit or a playing clock rewrites the file at most once a second, and the quit path flushes (`BSession::flush`) so the resting camera is never lost to the throttle tail. On reopen the resumed playhead wins over the file's saved frame (the session is newer than the last save), stashed through `session::RESUME_FRAME` and applied — clamped into the scene's range — in `settle_import`; the session reopens paused (`playing` stays volatile). The scene's frame range and fps remain the file's. (`v2::app::session` tests + `import::settle_tests`) — deliberate divergence from Blender, which stores the current frame per-scene and always loads the file's
+- [x] Text input (`EntityInputHandler`) for search and text fields: a real caret and selection (`state::text_edit`), mid-string insert/delete, ←/→/Home/End, Shift-select, Ctrl-A, IME marked text, click/shift-click to place, and pixel caret/IME geometry via the field's captured shaped line (`app::input` + `draw::text_input`, wired through `BRenderCtx`). The window entity implements the handler; `handle_key` routes navigation/delete to the caret while the platform inserts text; the headless (window-less) path keeps the old append/pop so tests still type. (`state::text_edit` + `app::input` tests; `file_browser_typing` paints the field in a window) — ported from gpui `examples/input.rs`; boundaries are now grapheme-aware (`unicode-segmentation`), so ←/→, Backspace and Delete step whole clusters — combining marks, ZWJ emoji, regional-indicator flags
+- [x] Progressive open: `Phx::open_progressive` returns the base meshes immediately and defers the modifier apply (phiphx splits `evaluate_modifiers` into cheap job capture on the read thread + the heavy parallel apply, carried as `DeferredModifiers`). `app::load` shows the base scene, finishes the modifiers on a worker thread, and swaps the evaluated objects in (`SceneModel::apply_deferred`, reusing each base object's resolved materials), re-warming pick trees. A subdivided/arrayed/armature-deformed character paints its base mesh without waiting on eval. (phiphx `scene::progressive` + tests/progressive_open.rs proves base+finish == eager, object for object) — read-report counts now follow the evaluated meshes (see below)
+- [x] Read-report follows the evaluated meshes: `SceneModel::apply_deferred` recomputes the read report's `verts`/`tris` (`SceneModel::refresh_report`) from the swapped-in evaluated objects, so the status bar and the open summary report the geometry actually shown once the modifier stack has landed — the same figures an eager open prints (phiphx `scene::progressive` + tests/progressive_open.rs asserts base counts are pre-modifier and match eager after `apply_deferred`). `app::load` logs the evaluated `vertices`/`tris` when the modifiers settle. `faces` stays the file's stored polygon count (as in the eager report); a rig's deform moves vertices without adding any, so only the generative modifiers change these counts — deliberate, recorded
+- [x] Collaboration service (`app::collab`): a `BCollabTransport` trait with an offline default. `drain` (each frame) applies inbound remote `BAction`s through `apply_action` and writes presence into `collab.*` (status, server, peers, channels — the keys the Activity panel and Collaboration modal already read); `broadcast` (from `handle_action`) sends local edits to peers, with the document kept on the wire and local-only keys (caret, camera, workspace, file browser, presence itself) filtered out. Remote edits apply directly, never echoed. No wire protocol ships — the transport is the drop-in; unarmed the session is offline and the service inert. (`app::collab` tests with an in-memory transport)
 
 Format: one line per job, `- [ ]` open / `- [x]` done; move a line from Todo to Done when it lands, with its test.

@@ -15,7 +15,7 @@ use super::links::BLink;
 use super::principled::BSocket;
 use crate::blend::file::types::*;
 
-pub use super::texnode::{BlendProc, BlendProcCoord, BlendProcKind};
+pub use super::texnode::{BlendMapping, BlendMath, BlendProc, BlendProcCoord, BlendProcKind};
 
 /// A Bump node on the Principled's Normal, its Height a texture.
 #[derive(Clone, Debug, PartialEq)]
@@ -101,11 +101,15 @@ impl BProcFinder<'_> {
         }
     }
 
-    /// The texture feeding `node`'s input `name`: through reroutes and one
-    /// Color Ramp, to a texture node `texnode.rs` reads.
+    /// The texture feeding `node`'s input `name`: through reroutes, one
+    /// Color Ramp and one Math node, to a texture node `texnode.rs` reads.
+    /// Before the Math node was walked, a texture behind one was lost
+    /// altogether — the walk broke on a node `texture` has no reader for
+    /// and the material came out with no procedural at all.
     fn at(&self, node: &BlendBlock, name: &str) -> Option<BlendProc> {
         let (mut from, mut link) = self.link_into(node, name)?;
         let mut ramp = None;
+        let mut math = None;
         for _ in 0..16 {
             let kind = self.kind(from);
             if kind.contains("NodeReroute") {
@@ -113,25 +117,31 @@ impl BProcFinder<'_> {
             } else if kind.contains("ValToRGB") && ramp.is_none() {
                 ramp = Some(self.bake(from)?);
                 (from, link) = self.link_into(from, "Fac")?;
+            } else if kind.contains("ShaderNodeMath") && math.is_none() {
+                math = Some(self.math(from));
+                (from, link) = self.link_into(from, "Value")?;
             } else {
                 break;
             }
         }
         let output = self.f.socket_name(link.from_sock, self.dna);
-        let (coords, location, scale3) = self.coordinates(from);
-        Some(BlendProc { coords, location, scale3, ramp, ..self.texture(from, &output)? })
+        let map = self.coordinates(from);
+        Some(BlendProc { ramp, math, ..self.texture(from, &output)?.mapped(map) })
     }
 
     /// The texture's `Vector`: unlinked is Generated; a Mapping node gives
-    /// its Location and Scale and is looked through to the coordinate.
-    fn coordinates(&self, tex: &BlendBlock) -> (BlendProcCoord, [f32; 3], [f32; 3]) {
-        let (mut location, mut scale3) = ([0.0; 3], [1.0; 3]);
-        let Some((mut from, mut link)) = self.link_into(tex, "Vector") else { return (BlendProcCoord::Generated, location, scale3) };
+    /// its Location, Rotation, Scale and Type, and is looked through to
+    /// the coordinate.
+    fn coordinates(&self, tex: &BlendBlock) -> BlendMapping {
+        let mut map = BlendMapping::default();
+        let Some((mut from, mut link)) = self.link_into(tex, "Vector") else { return map };
         for _ in 0..8 {
             let kind = self.kind(from);
             let next = if kind.contains("Mapping") {
-                location = self.vec3(from, "Location", location);
-                scale3 = self.vec3(from, "Scale", scale3);
+                map.location = self.vec3(from, "Location", map.location);
+                map.rotation = self.vec3(from, "Rotation", map.rotation);
+                map.scale3 = self.vec3(from, "Scale", map.scale3);
+                map.mapping = self.mapping_type(from);
                 self.link_into(from, "Vector")
             } else if kind.contains("NodeReroute") {
                 self.rerouted(from)
@@ -142,12 +152,17 @@ impl BProcFinder<'_> {
             (from, link) = n;
         }
         let kind = self.kind(from);
-        let coords = match (kind.contains("UVMap"), self.f.socket_name(link.from_sock, self.dna).as_str()) {
+        map.coords = match (kind.contains("UVMap"), self.f.socket_name(link.from_sock, self.dna).as_str()) {
             (true, _) | (_, "UV") => BlendProcCoord::Uv,
             (_, "Object") => BlendProcCoord::Object,
             _ => BlendProcCoord::Generated,
         };
-        (coords, location, scale3)
+        map
+    }
+
+    /// The Mapping node's Type, `bNode.custom1` (`NodeMappingType`).
+    fn mapping_type(&self, node: &BlendBlock) -> u32 {
+        self.custom1(node).unwrap_or(0)
     }
 
     /// Principled `Normal` ← Bump: its Strength and Distance, and the

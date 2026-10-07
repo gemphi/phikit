@@ -6,6 +6,7 @@
 
 pub mod action;
 pub mod edit;
+pub mod text_edit;
 pub mod key;
 pub use key::{
     ActivityKey, AppKey, AreaKey, BKey, ButsKey, CtxKey, FileKey, MenuKey, ModalKey, OutlinerKey,

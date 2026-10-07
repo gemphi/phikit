@@ -15,17 +15,21 @@ use super::import::{ImportOutcome, settle_import};
 use crate::phiphx::scene::{
     SceneLoadError, SceneModel,
 };
-use crate::v2::scene::{load_cancel_key, load_progress_key, load_stage_key, loaded_path_key, loading_key};
+use crate::v2::scene::{LoadStage, load_cancel_key, load_progress_key, load_stage_key, loaded_path_key, loading_key};
 use gpui::{AppContext, Context};
 
 /// How often the UI thread drains reader progress into state. Blender's job
 /// progress redraws on its timer at a similar cadence.
 const PROGRESS_POLL_MS: u64 = 33;
 
+/// The reader's result: the base scene, and the modifier work still to finish
+/// (progressive open), or a load error.
+type ImportResult = Result<(SceneModel, Option<crate::phiphx::scene::DeferredModifiers>), SceneLoadError>;
+
 /// Messages from the reader thread to the UI poll loop.
 enum ImportMsg {
     Progress(f32, String),
-    Done(Result<SceneModel, SceneLoadError>),
+    Done(ImportResult),
 }
 
 impl BPhiberApp {
@@ -41,6 +45,9 @@ impl BPhiberApp {
         self.state.remove(&load_cancel_key());
 
         cx.spawn(async move |this, cx| {
+            // Kept for the deferred-modifier swap below (the import consumes
+            // `path` when it settles).
+            let loaded = path.clone();
             let (tx, rx) = mpsc::channel::<ImportMsg>();
             let cancel = Arc::new(AtomicBool::new(false));
 
@@ -57,8 +64,9 @@ impl BPhiberApp {
                         }
                         !cancel.load(Ordering::Relaxed)
                     };
-                    let result =
-                        Phx::open_with(Path::new(&load_path), &sink);
+                    // Progressive: the base scene comes back now; its modifier
+                    // work is finished off this thread and swapped in after.
+                    let result = Phx::open_progressive(Path::new(&load_path), &sink);
                     if let Ok(tx) = tx.lock() {
                         let _ = tx.send(ImportMsg::Done(result));
                     }
@@ -69,9 +77,14 @@ impl BPhiberApp {
             // UI-side poll loop (~30 Hz): forward the latest progress into
             // state, mirror the Cancel key into the reader's flag, stop
             // when the reader reports Done.
-            let outcome = loop {
+            //
+            // The coarse phase a tick falls in drives the loading panel's
+            // running log: one timed line per phase, pushed when the phase
+            // changes — never the per-tick detail that would flood it.
+            let mut last_phase: Option<LoadStage> = None;
+            let (outcome, deferred) = loop {
                 let mut latest: Option<(f32, String)> = None;
-                let mut done: Option<Result<SceneModel, SceneLoadError>> = None;
+                let mut done: Option<ImportResult> = None;
                 loop {
                     match rx.try_recv() {
                         Ok(ImportMsg::Progress(f, s)) => latest = Some((f, s)),
@@ -94,6 +107,14 @@ impl BPhiberApp {
                         if this.state.get(&load_stage_key()) != Some(stage.as_str()) {
                             super::journal::BJournal::note(format!("Reading: {stage}"));
                         }
+                        // A phase line in the action log when the phase turns
+                        // over — the loading panel reads these back, each with
+                        // the time since the one before it.
+                        let phase = LoadStage::for_fraction(f);
+                        if last_phase != Some(phase) {
+                            crate::v2::state::log::push(phase.label());
+                            last_phase = Some(phase);
+                        }
                         this.state
                             .set(&load_progress_key(), format!("{:.3}", f.clamp(0.0, 1.0)));
                         this.state.set(&load_stage_key(), stage);
@@ -105,8 +126,8 @@ impl BPhiberApp {
                 });
                 if let Some(result) = done {
                     break match result {
-                        Ok(model) => ImportOutcome::Loaded(model),
-                        Err(err) => ImportOutcome::Failed(err),
+                        Ok((model, deferred)) => (ImportOutcome::Loaded(model), deferred),
+                        Err(err) => (ImportOutcome::Failed(err), None),
                     };
                 }
                 cx.background_executor()
@@ -155,6 +176,39 @@ impl BPhiberApp {
                 cx.notify();
             })
             .ok();
+
+            // Progressive open, stage two: the modifiers were captured, not
+            // applied. Finish them off the UI thread and swap the evaluated
+            // meshes into the cached scene — a heavy subdivision or array no
+            // longer holds the first paint of the base meshes.
+            if let Some(deferred) = deferred.filter(|d| !d.is_empty()) {
+                let swaps = cx.background_spawn(async move { deferred.finish() }).await;
+                this.update(cx, |this, cx| {
+                    let Some((key, model)) = this.scene_cache.take() else { return };
+                    // Only swap when the same file is still shown (the user may
+                    // have opened another while this evaluated).
+                    if key != loaded {
+                        this.scene_cache = Some((key, model));
+                        return;
+                    }
+                    let mut scene = std::sync::Arc::try_unwrap(model).unwrap_or_else(|a| (*a).clone());
+                    scene.apply_deferred(swaps); // refreshes report.verts/tris to the evaluated meshes
+                    // The read summary counted the base meshes; now that the
+                    // modifiers have landed, report the evaluated geometry the
+                    // viewport and status bar actually show.
+                    crate::v2::state::log::push(format!(
+                        "Modifiers evaluated: {} vertices, {} tris",
+                        scene.report.verts, scene.report.tris
+                    ));
+                    let scene = std::sync::Arc::new(scene);
+                    // Rebuild pick trees and outline points for the new meshes.
+                    crate::v2::scene::warm::BWarm::of(&scene).start();
+                    this.scene_cache = Some((key, scene));
+                    this.render_on_entry();
+                    cx.notify();
+                })
+                .ok();
+            }
         })
         .detach();
     }

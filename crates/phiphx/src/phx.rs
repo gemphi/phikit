@@ -30,6 +30,20 @@ impl Phx {
         blend(path, progress)
     }
 
+    /// Open a file progressively: the base scene now, the modifier work
+    /// deferred. Returns the base [`SceneModel`] plus a [`DeferredModifiers`]
+    /// (when any object carries a modifier) for the host to finish on a worker
+    /// thread and swap in — base meshes reach the viewport without waiting on
+    /// subdivision, arrays or armature deform. Blender's depsgraph does the
+    /// same: the file opens, then the evaluated meshes arrive.
+    pub fn open_progressive(
+        path: &Path,
+        progress: Progress,
+    ) -> Result<(SceneModel, Option<crate::scene::DeferredModifiers>), PhxError> {
+        crate::blend::set_image_source(path);
+        crate::blend::with_progressive_open(|| blend_progressive(path, progress))
+    }
+
     /// Install the batch skinner used for Armature deform while opening files
     /// (Phiber installs a GPU one; `None` restores the built-in CPU path).
     pub fn use_skinner(skinner: Option<std::sync::Arc<dyn Skinner>>) {
@@ -100,6 +114,43 @@ pub(super) fn blend(path: &Path, progress: Progress) -> Result<SceneModel, Scene
     model.report.duration_ms = started.elapsed().as_millis() as u64;
     progress(1.0, "Done");
     Ok(model)
+}
+
+/// Like [`blend`], but the modifier work is captured rather than applied:
+/// returns the base [`SceneModel`] and the [`DeferredModifiers`] to finish
+/// later. Must run inside `with_progressive_open` (so the reader defers);
+/// [`Phx::open_progressive`] arranges that.
+pub(super) fn blend_progressive(
+    path: &Path,
+    progress: Progress,
+) -> Result<(SceneModel, Option<crate::scene::DeferredModifiers>), SceneLoadError> {
+    let source_path = path.to_string_lossy().into_owned();
+    let started = std::time::Instant::now();
+
+    if let Err(e) = std::fs::metadata(path) {
+        return Err(SceneLoadError::Inaccessible(e.to_string()));
+    }
+
+    let parsed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        BlendImporter::import_blend_native_with_progress(path, progress)
+    }));
+    let scene = match parsed {
+        Ok(Ok(scene)) => scene,
+        Ok(Err(err)) => return Err(classify_native_error(err)),
+        Err(_panic) => {
+            return Err(SceneLoadError::Malformed(
+                "parser panicked while reading blend structure".to_string(),
+            ));
+        }
+    };
+
+    if !progress(0.97, "Building scene") {
+        return Err(SceneLoadError::Cancelled);
+    }
+    let (mut model, deferred) = SceneModel::from_blend_progressive(scene, &source_path);
+    model.report.duration_ms = started.elapsed().as_millis() as u64;
+    progress(1.0, "Done");
+    Ok((model, deferred))
 }
 
 /// Test-only hook exposing the private [`classify_native_error`] so the

@@ -67,7 +67,7 @@ impl BlendMotionList {
     /// with `all_rigs`. A cycle is cut where it closes, as in
     /// [`solve_world`](super::motion::solve_world).
     pub fn solve(&self, frame: f32, rigs: &[Arc<BlendRigSource>], all_rigs: bool) -> BMotionAt {
-        let raw: Vec<_> = self.list.iter().map(|m| m.raw_at(frame)).collect();
+        let raw = self.raw_at(frame);
         let local: Vec<Mat4> = raw.iter().map(|r| Mat4::from_cols_array_2d(&object_to_mat4(r))).collect();
         let n = local.len();
         let mut f = BFollow {

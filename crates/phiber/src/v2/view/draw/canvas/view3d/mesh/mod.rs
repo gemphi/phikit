@@ -85,10 +85,12 @@ impl BMesh {
         active: bool,
     ) -> Self {
         let (vertices, indices, normals) = SpatialObject3D::buffers(shape.mesh_type());
+        // The palette carries three shades, from when there were three
+        // primitives; the rest take the one their silhouette is nearest.
         let base = match shape {
-            BShape::Cube => palette.cube,
-            BShape::Sphere => palette.sphere,
-            BShape::Gem => palette.gem,
+            BShape::Sphere | BShape::IcoSphere | BShape::Metaball => palette.sphere,
+            BShape::Gem | BShape::Cone | BShape::Torus => palette.gem,
+            _ => palette.cube,
         };
         let mut triangles = Vec::with_capacity(indices.len() / 3);
         for triangle in indices.chunks_exact(3) {

@@ -249,11 +249,14 @@ pub enum BView {
         camera: crate::v2::scene::camera_view::BCameraSlot,
     },
     /// Determinate progress bar with a leading status label. `fraction` is
-    /// clamped to `0.0..=1.0` by the renderer. Used by the statusbar to show
-    /// blend-import progress (Blender's `WM_progress`).
+    /// clamped to `0.0..=1.0` by the renderer. `wide` is the full-width shape
+    /// (bar over its label, the loading panel's bar across the bottom edge);
+    /// the narrow shape boxes the bar to a fixed width so its label can change
+    /// every tick without sliding it (the render job's inline status-bar bar).
     ProgressBar {
         fraction: f32,
         label: String,
+        wide: bool,
     },
     /// The action log (`state::log`): its newest line when folded, every
     /// line in a scroller when `open`, with the control that folds it.

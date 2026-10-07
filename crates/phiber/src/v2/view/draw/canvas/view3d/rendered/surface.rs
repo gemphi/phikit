@@ -13,6 +13,7 @@ use super::scene::TEXTURE_LIMIT;
 use crate::phiphx::scene::{SceneBsdf, SceneMaterial, SceneTexture};
 use crate::v2::scene::BShading;
 use super::slot::BProcSlot;
+use super::stand::BMatOverride;
 use phiray::{NO_TEX, Scene, Tri};
 
 /// What a face's material build needs of its surroundings.
@@ -137,6 +138,9 @@ impl BSurface<'_> {
     /// keeps the viewport colour as the first lobe's, since Solid reads only
     /// that.
     pub fn tri(&self, out: &mut Scene, ids: &mut BAtlasIds) -> Tri {
+        if let Some(stand) = self.overridden() {
+            return stand;
+        }
         let viewport = self.shading.uses_viewport_color();
         match self.slot.and_then(|m| m.mix.as_ref()).filter(|_| !viewport) {
             Some(mix) => {

@@ -12,36 +12,26 @@
 //! | `NODE_ITEM_SPACING_Y` | `0.1 * U.widget_unit` | [`SPACING`] |
 //! | `NODE_SOCKSIZE` | `0.25 * U.widget_unit` | [`DOT`] — the socket's radius |
 //!
-//! Everything here is in widget units, and the renderer multiplies by the
-//! theme's `row_height` — which is phiber's `U.widget_unit`: the height of one
-//! control row, which is exactly what `NODE_DY` is in Blender.
+//! Everything here is in widget units; the renderer multiplies by the theme's
+//! `row_height`, phiber's `U.widget_unit` — exactly what `NODE_DY` is in Blender.
 //!
-//! The layout, in the order Blender does it:
+//! The layout, in Blender's order: a quarter unit under the header
+//! (`NODE_DYS / 2`); the **outputs** top-down on the card's RIGHT edge, each at
+//! its row's middle; a quarter unit after them (`NODE_DY / 4`); the **inputs**
+//! on the LEFT edge; a quarter unit of padding if there were any. Outputs above
+//! inputs is what makes a chain of nodes read as a descending staircase, the
+//! opposite of a usual dataflow diagram.
 //!
-//! 1. a quarter unit of space under the header (`NODE_DYS / 2`);
-//! 2. the **outputs**, top-down, each taking a full row, the socket itself at the
-//!    row's middle, on the card's RIGHT edge;
-//! 3. a quarter unit (`NODE_DY / 4`) if there were any outputs;
-//! 4. the node's buttons — phiber draws none yet, so nothing is reserved;
-//! 5. the **inputs**, each a full row, on the card's LEFT edge;
-//! 6. a quarter unit of padding if there were any inputs.
-//!
-//! Outputs above inputs is the fact worth stating, because it is the opposite of
-//! what a dataflow diagram usually does and it is what makes a Blender graph
-//! readable: a node's result leaves from the top right and arrives at the next
-//! node's top left, so a chain of nodes reads as a descending staircase.
+//! A socket is NOT always one row: an unconnected vector input draws a field
+//! column and is several rows tall (`value::rows_tall`), so the height is a
+//! question about the wiring — which is why `rows`/`body_height` take the
+//! linked inputs. A multi-input socket's extra height is still NOT here
+//! (`NODE_MULTI_INPUT_LINK_GAP`, a Geometry Nodes thing absent from shaders).
 //!
 //! One Blender quirk is ported rather than tidied: the gap after an output is
-//! added only when the next output is available, but after an input whenever
-//! there is a next socket at all (`socket->next && is_available()` against a
-//! bare `socket->next`). So a node whose last input is followed by a disabled
-//! one is a tenth of a unit taller than it looks — but it is what Blender draws,
-//! and a shorter card would put every link below it a hair out.
-//!
-//! What is NOT here: a multi-input socket's extra height (`max(total_inputs - 2,
-//! 0) * NODE_MULTI_INPUT_LINK_GAP`, a runtime link count). No shader node has a
-//! multi-input socket — they are a Geometry Nodes thing — so the shader editor
-//! is unaffected; a geometry graph will need the link count threaded in.
+//! added only before an AVAILABLE next socket, but after an input before any
+//! next socket at all. So a node whose last input is followed by a disabled one
+//! is a tenth of a unit taller than it looks — but it is what Blender draws.
 
 use crate::phiphx::blend::shade::graph::BlendNode;
 use crate::phiphx::blend::shade::socket::{BSocketDefault, BlendSocket};
@@ -82,25 +72,30 @@ pub struct BSocketRow {
     pub side: BSocketSide,
     /// Units below the bottom of the header, at the socket's own centre.
     pub y: f32,
-    /// `bNodeSocket.default_value`, carried so the painter can draw it on an
-    /// unconnected input (`value::widget`). `None` for an output, a reroute or
-    /// collapsed row, or a socket with no stored default.
+    /// `bNodeSocket.default_value`, so the painter can draw it on an unconnected
+    /// input (`value::widget`). `None` for an output, a reroute/collapsed row, or
+    /// a socket with no stored default.
     pub default: Option<BSocketDefault>,
-    /// Whether a drawn wire arrives here — the overlay-applied truth, not the
-    /// file's `SOCK_IS_LINKED` (a link made or broken is an overlay). Layout
-    /// leaves it `false`; `BNodeCard::mark_linked` sets it from the wire set.
+    /// Whether a drawn wire arrives here — the overlay's truth, not the file's
+    /// `SOCK_IS_LINKED`. Set by `place` from the `linked` identifiers, since the
+    /// flag also decides the row's height (a linked vector collapses).
     pub linked: bool,
 }
 
 /// Lay out one list, advancing `y` (which counts DOWN from the header in units).
 ///
 /// `gap_needs_available` is Blender's asymmetry: `true` for the outputs, which
-/// only space when the next socket is available, `false` for the inputs, which
-/// space whenever there is a next socket.
+/// only space before an available next socket, `false` for the inputs, which
+/// space before any next socket.
+///
+/// `linked` is the identifiers of the inputs a drawn wire arrives at — it sets
+/// each socket's `linked` flag and, through `value::rows_tall`, its height (an
+/// unconnected vector input is taller).
 fn place(
     sockets: &[BlendSocket],
     side: BSocketSide,
     gap_needs_available: bool,
+    linked: &[&str],
     y: &mut f32,
     out: &mut Vec<BSocketRow>,
 ) -> bool {
@@ -112,17 +107,22 @@ fn place(
             continue;
         }
         let top = *y;
+        let is_linked = linked.contains(&socket.identifier.as_str());
+        // Only an input's default is ever shown (`value::widget`).
+        let default = if side == BSocketSide::Input { socket.default.clone() } else { None };
         out.push(BSocketRow {
             identifier: socket.identifier.clone(),
             name: socket.name.clone(),
             kind: socket.kind,
             side,
+            // `locy - NODE_DYS` from the block's top, so the dot stays level with
+            // the name row even on a tall vector.
             y: top + HALF,
-            // Only an input's default is ever shown (`value::widget`).
-            default: if side == BSocketSide::Input { socket.default.clone() } else { None },
-            linked: false,
+            default: default.clone(),
+            linked: is_linked,
         });
-        *y = top + ROW;
+        // A vector input adds a field row per component; everything else is one.
+        *y = top + value::rows_tall(side, is_linked, default.as_ref());
         any = true;
         let next = sockets.get(i + 1);
         let gap = match (gap_needs_available, next) {
@@ -140,16 +140,13 @@ fn place(
 /// A reroute's two sockets, both at the dot's centre.
 ///
 /// `reroute_node_prepare_for_draw` puts a reroute's one input and one output at
-/// the SAME point — the node's location — so the single dot drawn stands for
-/// both ends. Here that is `y = 0`: every node's card is placed with its
-/// top-left at the location, the socket sits at that point, and the painter's
-/// dot (a circle of `DOT` radius) comes out centred on the location, which is
-/// exactly what a reroute is.
+/// the SAME point — the node's location — so the single dot stands for both.
+/// Here that is `y = 0`, the card's top-left, so the painter's dot comes out
+/// centred on the location, which is exactly what a reroute is.
 ///
-/// The names are blanked: a reroute paints no socket labels, so a row carrying
-/// "Input"/"Output" would paint those words beside the dot. Both rows are kept
-/// though they coincide, because a link leaving the output still resolves by
-/// `identifier`.
+/// The names are blanked — a reroute paints no socket labels — but both rows
+/// are kept though they coincide, because a link leaving the output still
+/// resolves by `identifier`.
 pub fn reroute_rows(node: &BlendNode) -> Vec<BSocketRow> {
     let mut out = Vec::new();
     for (sockets, side) in [(&node.outputs, BSocketSide::Output), (&node.inputs, BSocketSide::Input)] {
@@ -169,7 +166,11 @@ pub fn reroute_rows(node: &BlendNode) -> Vec<BSocketRow> {
 }
 
 /// Every socket of `node`, placed, outputs first — which is also top first.
-pub fn rows(node: &BlendNode) -> Vec<BSocketRow> {
+///
+/// `linked` names the inputs a wire arrives at: it sets each input's `linked`
+/// flag and, through it, whether a vector input draws its taller field column
+/// (`place`). A caller with no wiring in hand passes `&[]`.
+pub fn rows(node: &BlendNode, linked: &[&str]) -> Vec<BSocketRow> {
     if node.reroute() {
         return reroute_rows(node);
     }
@@ -178,11 +179,11 @@ pub fn rows(node: &BlendNode) -> Vec<BSocketRow> {
     }
     let mut out = Vec::new();
     let mut y = PAD;
-    let had_outputs = place(&node.outputs, BSocketSide::Output, true, &mut y, &mut out);
+    let had_outputs = place(&node.outputs, BSocketSide::Output, true, linked, &mut y, &mut out);
     if had_outputs {
         y += AFTER_OUTPUTS;
     }
-    place(&node.inputs, BSocketSide::Input, false, &mut y, &mut out);
+    place(&node.inputs, BSocketSide::Input, false, linked, &mut y, &mut out);
     out
 }
 
@@ -191,9 +192,8 @@ pub fn rows(node: &BlendNode) -> Vec<BSocketRow> {
 /// This is `node_update_basis`'s own answer: the layout walk IS the height
 /// calculation in Blender, which is why the two are one function here too. A
 /// card sized any other way would have its sockets inside it by luck.
-pub fn body_height(node: &BlendNode) -> f32 {
-    // A reroute has no body: the whole node is one painted dot, its box size set
-    // apart (`plan::BCardSize::height_of`, `loc ± NODE_SOCKSIZE`).
+pub fn body_height(node: &BlendNode, linked: &[&str]) -> f32 {
+    // A reroute has no body: the whole node is one painted dot (`height_of`).
     if node.reroute() {
         return 0.0;
     }
@@ -202,11 +202,11 @@ pub fn body_height(node: &BlendNode) -> f32 {
         return collapsed_height(node);
     }
     let mut y = PAD;
-    let had_outputs = place(&node.outputs, BSocketSide::Output, true, &mut y, &mut Vec::new());
+    let had_outputs = place(&node.outputs, BSocketSide::Output, true, linked, &mut y, &mut Vec::new());
     if had_outputs {
         y += AFTER_OUTPUTS;
     }
-    let had_inputs = place(&node.inputs, BSocketSide::Input, false, &mut y, &mut Vec::new());
+    let had_inputs = place(&node.inputs, BSocketSide::Input, false, linked, &mut y, &mut Vec::new());
     if had_inputs || had_outputs {
         y += PAD;
     }
@@ -216,10 +216,10 @@ pub fn body_height(node: &BlendNode) -> f32 {
 /// Where one named socket of `node` sits, if it has one.
 ///
 /// A link names its ends by `identifier`, so this is the lookup that turns a
-/// link into two points. `None` for a socket that is not drawn, which is what
-/// makes a link to a hidden socket skippable rather than drawn to the origin.
-pub fn row_of(node: &BlendNode, identifier: &str) -> Option<BSocketRow> {
-    rows(node).into_iter().find(|r| r.identifier == identifier)
+/// link into two points. `None` for a socket that is not drawn. `linked` matters
+/// because a vector input above a socket makes those below it sit lower.
+pub fn row_of(node: &BlendNode, identifier: &str, linked: &[&str]) -> Option<BSocketRow> {
+    rows(node, linked).into_iter().find(|r| r.identifier == identifier)
 }
 
 /// One row of an already laid-out card, by identifier — the same lookup as

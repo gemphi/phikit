@@ -15,14 +15,19 @@ use super::raster::BFrame;
 use gpui::{Bounds, PathBuilder, Pixels, Point, RenderImage, Window, point, px};
 use std::sync::Arc;
 
-/// Rasterise at this multiple of the canvas size, then average down. Triangle
-/// fills are not antialiased, so the extra resolution is what keeps a
-/// silhouette from stepping.
-const SUPERSAMPLE: usize = 2;
-
+/// Triangle fills are not antialiased (this is a CPU rasteriser, `raster::BFrame`,
+/// not the GPU — the GPU only drives Rendered shading), so the frame is
+/// oversampled and averaged down. The factor is the Viewport AA preference's,
+/// passed in by the caller (`BViewportAa::supersample`) rather than hardcoded,
+/// so the preference finally reaches Solid and Wireframe; a GPU viewport is the
+/// proper fix and a separate, larger job.
+///
 /// Ceiling on the rasterised buffer, in pixels, so a large canvas on a
-/// high-density display cannot turn into an unbounded allocation.
-const MAX_PIXELS: usize = 8_000_000;
+/// high-density display cannot turn into an unbounded allocation. High enough
+/// that `frame_for` holds the full `SUPERSAMPLE` at an ordinary viewport size
+/// rather than collapsing toward 1x — at 8M a 1080p-sized viewport fell all
+/// the way back to no supersampling, which was most of the soft edges.
+const MAX_PIXELS: usize = 24_000_000;
 
 thread_local! {
     /// The image painted last frame. GPUI keeps every `RenderImage` it is
@@ -68,12 +73,14 @@ pub(super) fn meshes(
     // (the tracer's image). The outlines below still draw — they are the
     // selection, not the surface.
     fill: bool,
+    // The oversample factor the Viewport AA preference asks for (`BViewportAa`).
+    supersample: usize,
     window: &mut Window,
 ) {
     if wire {
         strokes(bounds, meshes, outline_width, yaw, pitch, window);
     } else if fill {
-        fills(bounds, meshes, yaw, pitch, corners, window);
+        fills(bounds, meshes, yaw, pitch, corners, supersample, window);
     } else {
         release_shown(window);
     }
@@ -103,6 +110,7 @@ fn fills(
     yaw: f32,
     pitch: f32,
     corners: gpui::Corners<Pixels>,
+    supersample: usize,
     window: &mut Window,
 ) {
     // Nothing to fill — the GPU is drawing, or the scene is empty. This used
@@ -116,7 +124,7 @@ fn fills(
         release_shown(window);
         return;
     }
-    let Some((mut frame, scale)) = frame_for(bounds) else { return };
+    let Some((mut frame, scale)) = frame_for(bounds, supersample) else { return };
     RASTERISED.with(|n| n.set(n.get() + 1));
     for mesh in meshes {
         for triangle in &mesh.triangles {
@@ -160,10 +168,10 @@ fn fills(
 /// at `SUPERSAMPLE` regardless, so a canvas over the budget drew *nothing*
 /// instead of dropping to 1x. Returning the factor is what makes the fallback
 /// a fallback.
-fn frame_for(bounds: Bounds<Pixels>) -> Option<(BFrame, usize)> {
+fn frame_for(bounds: Bounds<Pixels>, supersample: usize) -> Option<(BFrame, usize)> {
     let width = f32::from(bounds.size.width).floor().max(1.0) as usize;
     let height = f32::from(bounds.size.height).floor().max(1.0) as usize;
-    let mut scale = SUPERSAMPLE;
+    let mut scale = supersample.max(1);
     while scale > 1 && width * height * scale * scale > MAX_PIXELS {
         scale -= 1;
     }

@@ -38,6 +38,10 @@ pub struct BRenderSet {
     /// Output ▸ Format's Render Region and Crop to Render Region with the
     /// rectangle set (`scene::render_border`).
     pub border: crate::phiphx::blend::BlendRenderBorder,
+    /// Render ▸ Engine as the panel holds it, the file's when the panel has
+    /// never held one (`scene::render_engine`). Workbench rasterizes; every
+    /// other engine, `PHIRAY` among them, path-traces.
+    pub engine: super::render_engine::BRenderEngine,
 }
 
 impl Default for BRenderSet {
@@ -54,6 +58,7 @@ impl Default for BRenderSet {
             resolution: BResolution::default(),
             film_transparent: false,
             border: Default::default(),
+            engine: Default::default(),
         }
     }
 }
@@ -78,6 +83,16 @@ fn bool_at(s: &BState, key: &'static str, fallback: bool) -> bool {
     }
 }
 
+/// Render ▸ Engine: the panel's row, and the file's engine only until the
+/// panel holds one — which is how every other row here reads.
+fn engine_at(s: &BState) -> super::render_engine::BRenderEngine {
+    use super::render_engine::BRenderEngine;
+    match s.get(ButsKey::Value("engine")).filter(|e| !e.is_empty()) {
+        Some(chosen) => BRenderEngine::of(chosen),
+        None => super::source::with_loaded(|m| m.map_or_else(BRenderEngine::default, |m| BRenderEngine::of(&m.render.engine))),
+    }
+}
+
 /// Read the Render panel.
 pub fn render_set(s: &BState) -> BRenderSet {
     let d = BRenderSet::default();
@@ -91,6 +106,9 @@ pub fn render_set(s: &BState) -> BRenderSet {
         resolution: BResolution::now(s),
         film_transparent: bool_at(s, "render.film_transparent", d.film_transparent),
         border: super::render_border::BRenderBorder::now(s, super::source::with_loaded(|m| m.map(|m| m.render.border).unwrap_or_default())),
+        // The panel's row, and the file's engine only until the panel holds
+        // one — which is how every other row in this struct reads.
+        engine: engine_at(s),
     }
 }
 

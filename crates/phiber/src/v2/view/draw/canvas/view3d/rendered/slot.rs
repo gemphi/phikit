@@ -1,6 +1,7 @@
 //! A file's texture node as the tracer takes it: one [`BlendProc`]
 //! (`phiphx`'s `shade/texnode.rs`) mapped onto a `phiray::Proc` slot — the
-//! node's kind and output, its coordinates, and its colour ramp uploaded to
+//! node's kind and output, its coordinates through the Mapping node, the
+//! Math node after it, and its colour ramp uploaded to
 //! the atlas as a 256 × 1 image. The two sides keep their own vocabularies,
 //! so this is where they meet.
 
@@ -36,6 +37,11 @@ impl BProcSlot for BlendProc {
             BlendProcKind::MagicFac => PROC_MAGIC_FAC,
             BlendProcKind::MagicColor => PROC_MAGIC_COLOR,
             BlendProcKind::Wave => PROC_WAVE,
+            BlendProcKind::WhiteNoiseFac => PROC_WHITE_NOISE_FAC,
+            BlendProcKind::WhiteNoiseColor => PROC_WHITE_NOISE_COLOR,
+            BlendProcKind::GaborValue => PROC_GABOR_VALUE,
+            BlendProcKind::GaborPhase => PROC_GABOR_PHASE,
+            BlendProcKind::GaborIntensity => PROC_GABOR_INTENSITY,
         }
     }
 
@@ -50,13 +56,16 @@ impl BProcSlot for BlendProc {
     fn slot(&self, target: u32, out: &mut Scene, ids: &mut BAtlasIds) -> Proc {
         let ramp = self.ramp.as_ref().map_or(NO_TEX, |r| *ids.entry(r as *const Vec<u8>).or_insert_with(|| out.atlas.add(256, 1, r)));
         let kind = self.kind();
+        let math = self.math.unwrap_or_default();
         Proc {
             kind: if self.normalize { kind | PROC_NORMALIZE } else { kind },
             coords: self.coords(),
             ramp,
             target,
             location: self.location,
+            rotation: self.rotation,
             scale3: self.scale3,
+            mapping: self.mapping,
             scale: self.scale,
             detail: self.detail,
             roughness: self.roughness,
@@ -73,6 +82,10 @@ impl BProcSlot for BlendProc {
             bias: self.bias,
             width: self.width,
             height: self.height,
+            math: self.math.map_or(MATH_NONE, |_| math.op),
+            math_b: math.b,
+            math_c: math.c,
+            math_clamp: u32::from(math.clamp),
             color1: self.colors[0],
             color2: self.colors[1],
             color3: self.colors[2],

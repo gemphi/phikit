@@ -13,6 +13,21 @@ use std::io::Write;
 use std::sync::Mutex;
 use std::time::Instant;
 
+/// Forwards `log` crate records into the journal (`BJournal::bridge_log`), at
+/// Info and above so the GPU adapter line is kept without the debug/trace flood.
+struct BLogBridge;
+impl ::log::Log for BLogBridge {
+    fn enabled(&self, meta: &::log::Metadata) -> bool {
+        meta.level() <= ::log::Level::Info
+    }
+    fn log(&self, record: &::log::Record) {
+        if self.enabled(record.metadata()) {
+            BJournal::note(format!("[{}] {}: {}", record.level(), record.target(), record.args()));
+        }
+    }
+    fn flush(&self) {}
+}
+
 /// The open journal.
 struct BOpen {
     file: std::fs::File,
@@ -73,6 +88,19 @@ impl BJournal {
             }
             previous(info);
         }));
+    }
+
+    /// Route the `log` crate — wgpu, gpui and the rest of the vendored stack —
+    /// into the journal, so a diagnostic like the chosen GPU adapter and
+    /// backend lands on disk (phiber installs no other logger, so these records
+    /// were dropped before). Best effort: if a logger is already set, it is
+    /// left in place. `::log` is the crate; `log` in this file is the in-app
+    /// one (`state::log`).
+    pub fn bridge_log() {
+        static LOGGER: BLogBridge = BLogBridge;
+        if ::log::set_logger(&LOGGER).is_ok() {
+            ::log::set_max_level(::log::LevelFilter::Info);
+        }
     }
 
     /// A line of its own — a slow frame, a frame summary, the tracer

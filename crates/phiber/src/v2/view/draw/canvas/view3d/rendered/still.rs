@@ -59,6 +59,7 @@ pub fn still(objects: &[BObject3D], look: BStillLook, cam: phiray::Camera, w: u3
     if denoise {
         tracer.denoise(&gpu);
     }
+    composite(&gpu, &mut tracer);
     Some((tracer.pixels(&gpu), tracer.samples()))
 }
 
@@ -150,6 +151,9 @@ pub fn still_stepwise(
                 if denoise && done {
                     tracer.denoise(&gpu);
                 }
+                if done {
+                    composite(&gpu, &mut tracer);
+                }
                 drawn.lay(&BStill::read(&tracer, &gpu), *y0 as usize, *rows as usize, over as usize, rw as usize);
                 if !go_on {
                     step(bands.progress(k, taken + 1, tracer.samples()), Some(region.framed(drawn, w, h, reach)));
@@ -161,6 +165,24 @@ pub fn still_stepwise(
     }
     step(tracer.samples(), Some(region.framed(drawn, w, h, reach)));
     Some(tracer.samples())
+}
+
+/// The scene's compositor over the finished render, as Blender's render
+/// pipeline runs it: on the scene-linear pixels, before the view transform
+/// (`scene/composite.rs`). Nothing happens when the file has no tree, it is
+/// switched off, or nothing reaches its output. A band renders as its own
+/// image, so each band is composited on its own — which is sound only
+/// because every node that runs is per-pixel; a node that read a
+/// neighbourhood would see a seam, and those are exactly the ones
+/// `BCompTree::declined` refuses.
+fn composite(gpu: &phiray::Gpu, tracer: &mut phiray::Tracer) {
+    use crate::v2::scene::composite::BComposite;
+    if let Some(tree) = crate::v2::scene::composite::tree() {
+        let run = tracer.composite(gpu, &tree);
+        if run.any() {
+            crate::v2::app::journal::BJournal::note(run.line());
+        }
+    }
 }
 
 /// Material Preview is lit by the studio image `scene::build` puts in the

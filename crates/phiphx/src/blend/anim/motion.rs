@@ -47,6 +47,10 @@ pub struct BlendMotion {
     pub track: [i16; 2],
     /// A curve object's path, which its children ride.
     pub path: Option<Arc<BlendMotionPath>>,
+    /// The drivers it carries over its own transform channels and custom
+    /// properties, with those properties as saved (`anim::driver`) — run
+    /// after the actions as Blender's depsgraph runs them.
+    pub drivers: super::driver::BlendDriverSet,
 }
 
 /// A curve's path and its evaluation time over the frames.
@@ -95,12 +99,16 @@ impl BlendMotion {
             parent_bone: String::new(),
             track: [1, 2],
             path: None,
+            drivers: Default::default(),
         }
     }
 
     /// Does anything key this object — or, for a path, its evaluation time?
+    /// A driver counts: it moves the object over the frames even with no
+    /// key on it at all, which is why a driven object has to be re-solved
+    /// per frame rather than placed once.
     pub fn animated(&self) -> bool {
-        if self.path.as_ref().is_some_and(|p| p.animated()) {
+        if self.path.as_ref().is_some_and(|p| p.animated()) || !self.drivers.is_empty() {
             return true;
         }
         let clips = self.nla.iter().filter(|t| t.flag & super::nla::TRACK_MUTED == 0).flat_map(|t| &t.clips);
@@ -163,6 +171,14 @@ impl BlendMotionList {
         let m = &self.list[i];
         let on_path = m.transform.partype & 15 == 0 && m.parent.is_some_and(|p| self.list[p].path.as_ref().is_some_and(|p| p.path.flag & CU_PATH != 0));
         !m.constraints.is_empty() || m.transform.partype & 15 == super::follow::PARBONE || on_path
+    }
+
+    /// Every object's channels at `frame`: the actions and NLA first, then
+    /// the drivers over them — Blender's own order, since the depsgraph
+    /// evaluates the animation system for a property and its driver after
+    /// (`anim::driver`). A driver on a channel wins over a key on it.
+    pub fn raw_at(&self, frame: f32) -> Vec<ObjectTransformRaw> {
+        self.driver_state_at(frame).raw
     }
 
     /// The motion named `name`.
@@ -251,7 +267,8 @@ impl BlendFile {
                 let parent_bone = block.and_then(|block| self.off("Object", "parsubstr[64]", dna).map(|o| name64(&block.data, o))).unwrap_or_default();
                 let track = block.map_or([1, 2], |block| ["trackflag", "upflag"].map(|f| self.int_field(block, "Object", f, dna) as i16));
                 let path = block.filter(|_| object.object_type == "CURVE").and_then(|block| self.motion_path(block, actions, dna)).map(Arc::new);
-                BlendMotion { name: object.name.clone(), transform, curves, parent, nla, solo, address: object.block_address, constraints, parent_bone, track, path }
+                let drivers = block.map(|block| self.object_driver_set(block, dna)).unwrap_or_default();
+                BlendMotion { name: object.name.clone(), transform, curves, parent, nla, solo, address: object.block_address, constraints, parent_bone, track, path, drivers }
             })
             .collect();
         BlendMotionList { list }

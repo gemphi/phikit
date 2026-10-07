@@ -57,6 +57,20 @@ pub struct BlendNode {
     /// a frame has to know which nodes name it as their parent; the address is
     /// what a child carries and the frame's own `address` is what it matches.
     pub parent: Option<u64>,
+    /// `bNode.custom1` and `custom2` — the node type's own small enums, where
+    /// Blender keeps a choice too simple to deserve a `storage` struct: a Mix
+    /// node's blend type, an Invert node's channels, an Alpha Over mode. 5.x
+    /// is moving these to menu *sockets* one node at a time, so a reader has
+    /// to try the socket first and fall back here — which is why both are
+    /// carried rather than one being read on demand.
+    pub custom1: i32,
+    pub custom2: i32,
+    /// `bNode.*storage` — the address of the node type's own settings
+    /// struct, where a choice too big for `custom1` lives (`NodeShaderMix`'s
+    /// `blend_type`, a `CurveMapping`, a `NodeTexSky`). The address rather
+    /// than the contents, because what the struct *is* depends on the node
+    /// type: the reader that wants it knows which struct to read.
+    pub storage: u64,
     /// `bNode.inputs` and `bNode.outputs`, in the file's own order — which is
     /// the order Blender lays the rows out in, so it is not sorted. Where each
     /// one SITS is not in the file (`socket.rs`); phiber lays that out.
@@ -210,6 +224,10 @@ impl BlendFile {
         let height_off = Self::struct_field_offset_exact("bNode", "height", dna, ps);
         let flag_off = Self::struct_field_offset_exact("bNode", "flag", dna, ps);
         let parent_off = Self::struct_field_offset_exact("bNode", "*parent", dna, ps);
+        // `custom1` / `custom2` are `short` in every version that has them.
+        let custom1_off = Self::struct_field_offset_exact("bNode", "custom1", dna, ps);
+        let custom2_off = Self::struct_field_offset_exact("bNode", "custom2", dna, ps);
+        let storage_off = Self::struct_field_offset_exact("bNode", "*storage", dna, ps);
 
         let mut nodes = Vec::new();
         let mut addr = Self::read_ptr(&nt.data, nodes_off, ps, le);
@@ -232,6 +250,9 @@ impl BlendFile {
                 height: f32_at(height_off),
                 flag: flag_off.and_then(|o| node.data.get(o..o + 4)).map_or(0, |b| self.read_i32(b)),
                 address: addr,
+                custom1: custom1_off.and_then(|o| node.data.get(o..o + 2)).map_or(0, |b| i32::from(self.read_u16(b) as i16)),
+                custom2: custom2_off.and_then(|o| node.data.get(o..o + 2)).map_or(0, |b| i32::from(self.read_u16(b) as i16)),
+                storage: storage_off.map_or(0, |o| Self::read_ptr(&node.data, o, ps, le)),
                 parent: parent_off
                     .map(|o| Self::read_ptr(&node.data, o, ps, le))
                     .filter(|&p| p != 0),

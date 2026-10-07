@@ -90,8 +90,11 @@ impl BOutlinerItem {
     /// row's right edge and stops it shrinking, so the toggles stay in a
     /// clean column however long the object names get.
     ///
-    /// Only the columns Blender actually shows are drawn — the eye and the
-    /// camera by default — with the rest opt-in via `ctx.outliner.col.<flag>`.
+    /// The whole cluster is shown by default (`BOutlineToggleSpec::default_on`,
+    /// a recorded divergence from Blender's eye-and-camera-only default); a
+    /// column is dropped only when the Filter popover turns it off
+    /// (`ctx.outliner.col.<flag>` = false), and the two View-Layer-only columns
+    /// appear only in View Layer mode.
     fn restrictions(s: &BState, object: &str, view_layer: bool) -> Vec<BView> {
         let mut out = Vec::new();
         for t in TOGGLES {

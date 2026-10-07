@@ -3,7 +3,9 @@
 
 use super::super::mesh::BMeshPalette;
 use crate::v2::scene::BObject3D;
+use phiray::trace::Outline;
 use phiray::{Camera, Mode};
+use std::sync::Arc;
 
 pub(super) enum BRayJob {
     /// The scene's identity and its shape (`BRayKey`), and the scene.
@@ -13,7 +15,7 @@ pub(super) enum BRayJob {
 
 /// One frame to trace: the camera and size, which kernel draws it, and what
 /// the Render panel asked for.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub(super) struct BRayShot {
     pub cam: Camera,
     pub w: u32,
@@ -27,6 +29,10 @@ pub(super) struct BRayShot {
     /// Viewport Denoising: the sample the shown frame is filtered from
     /// (`Tracer::denoise_shown`), or none.
     pub denoise_from: Option<u32>,
+    /// The selection outline's class an object (`Tracer::outline`), in the
+    /// scene's order. Outside `Camera`, so a new selection leaves the
+    /// samples already traced standing.
+    pub outline: Arc<[Outline]>,
 }
 
 /// A published image (BGRA8, row 0 at the top).

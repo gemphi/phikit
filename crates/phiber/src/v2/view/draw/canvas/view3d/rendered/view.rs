@@ -4,9 +4,10 @@ use super::world;
 use crate::v2::scene::camera::BViewSetup;
 use crate::v2::view::draw::ctx::BRenderCtx;
 use gpui::Hsla;
+use std::sync::Arc;
 
 /// What the painter needs this frame.
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub(in crate::v2::view::draw::canvas::view3d) struct BRayView {
     pub yaw: f32,
     pub pitch: f32,
@@ -51,6 +52,16 @@ pub(in crate::v2::view::draw::canvas::view3d) struct BRayView {
     /// Viewport Anti-Aliasing's count (`scene::viewport_aa`): the jittered
     /// samples Solid and Wireframe draw, 0 none, 1 a single pass.
     pub aa: u32,
+    /// The selection outline (`Camera::outline_fx`, `::outline_pick`,
+    /// `::outline_active`, `::outline_move`; `phiray::trace::outline`).
+    pub outline_fx: [f32; 4],
+    pub outline_pick: [f32; 4],
+    pub outline_active: [f32; 4],
+    pub outline_move: [f32; 4],
+    /// Which class each object of the scene is in, in the order
+    /// `rendered::scene::build` instances them: what the tracer's own
+    /// overlay pass draws around (`Tracer::outline`).
+    pub outline_class: Arc<[phiray::trace::Outline]>,
 }
 
 impl BRayView {
@@ -81,7 +92,24 @@ impl BRayView {
                 .map_or(sky, |[r, g, b]| gpui::Rgba { r, g, b, a: 0.0 }.into()),
             _ => sky,
         };
-        Self { yaw, pitch, pan, zoom, setup, sky, grid, studio, wire, mode, set, see_through, grid_hide, view, fx, outline, cavity, ssao, shadow, shadow_fade, shade: solid_fx.shade_words(shade.shade_words()), matcap: shade.matcap_words(), single: shade.single_words(), dof, border: None, aa }
+        // The selection outline's colours: Blender's `TH_SELECT` and the
+        // active object's `TH_ACTIVE` a step lighter, as the CPU painter
+        // drew them. Nothing is marked as being transformed here yet, so
+        // the transform colour is the selected one — a class the host
+        // never sets.
+        let pick = super::scene::rgba(crate::v2::view::draw::color::to_hsla(ctx.style.colors.accent));
+        let lit = super::scene::rgba(crate::v2::view::draw::color::to_hsla(ctx.style.step(ctx.style.colors.accent, 2)));
+        Self { yaw, pitch, pan, zoom, setup, sky, grid, studio, wire, mode, set, see_through, grid_hide, view, fx, outline, cavity, ssao, shadow, shadow_fade, shade: solid_fx.shade_words(shade.shade_words()), matcap: shade.matcap_words(), single: shade.single_words(), dof, border: None, aa, outline_fx: [0.0, 0.0, 0.35, 1.0], outline_pick: pick, outline_active: lit, outline_move: pick, outline_class: Arc::from([]) }
+    }
+
+    /// With the objects the overlay outlines (`BGuide::outlined`), one
+    /// class an object in the scene's order: the tracer draws the line
+    /// itself, so the CPU projects no hull (`cache::BCpuDraw`). An empty
+    /// list, or one of nothing but `None`, leaves the pass out of the
+    /// frame.
+    pub(in crate::v2::view::draw::canvas::view3d) fn outlining(self, outline_class: Arc<[phiray::trace::Outline]>) -> Self {
+        let any = outline_class.iter().any(|c| *c != phiray::trace::Outline::None);
+        Self { outline_fx: [f32::from(u8::from(any)), self.outline_fx[1], self.outline_fx[2], self.outline_fx[3]], outline_class, ..self }
     }
 
     /// With the viewport's own region, for a traced mode: Workbench and

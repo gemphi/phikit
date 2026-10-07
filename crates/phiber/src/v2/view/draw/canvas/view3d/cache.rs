@@ -28,6 +28,33 @@ use std::rc::Rc;
 /// How many viewports can be memoised at once.
 const ENTRIES: usize = 4;
 
+/// What the CPU painter draws over the GPU's image.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum BCpuDraw {
+    /// Everything: there is no GPU image to draw over (`cpu_can_draw`).
+    Whole,
+    /// The selected objects' hulls alone — the tracer drew the surfaces but
+    /// keeps no one instance a pixel to outline, which is X-ray
+    /// (`solid.wgsl`).
+    Hull,
+    /// Nothing: the tracer drew the surfaces and the outline over them
+    /// (`phiray::trace::outline`).
+    Nothing,
+}
+
+impl BCpuDraw {
+    /// What is left to the CPU: everything where it is the painter, the
+    /// hulls alone where the tracer drew the surfaces but can name no
+    /// instance a pixel to outline (X-ray), nothing otherwise.
+    pub(super) fn of(cpu_draws: bool, see_through: bool) -> Self {
+        match (cpu_draws, see_through) {
+            (true, _) => Self::Whole,
+            (false, true) => Self::Hull,
+            (false, false) => Self::Nothing,
+        }
+    }
+}
+
 thread_local! {
     static BUILT: RefCell<Vec<(u64, Rc<Vec<BMesh>>)>> = const { RefCell::new(Vec::new()) };
 }
@@ -94,11 +121,12 @@ fn fingerprint(
 
 /// The projected meshes for this frame: the memo's whole public surface.
 ///
-/// `camera` is `(yaw, pitch, pan, zoom)`. With `cpu_draws` false the GPU is
-/// drawing the surfaces, and only the active object's outline is projected —
-/// so a pick shows in the viewport, whichever painter is at work.
+/// `camera` is `(yaw, pitch, pan, zoom)`. `draw` says how much of the
+/// viewport is the CPU's this frame (`BCpuDraw`) — projecting every vertex
+/// is the most expensive thing a frame does, so a frame the tracer draws
+/// whole projects nothing at all.
 pub(super) fn meshes(
-    cpu_draws: bool,
+    draw: BCpuDraw,
     scene: &Rc<Vec<BObject3D>>,
     camera: (f32, f32, (f32, f32), f32),
     palette: BMeshPalette,
@@ -106,7 +134,7 @@ pub(super) fn meshes(
     active: &str,
 ) -> Rc<Vec<BMesh>> {
     let (yaw, pitch, pan, zoom) = camera;
-    let key = fingerprint(scene, yaw, pitch, pan, zoom, &palette, selected, active) ^ (cpu_draws as u64);
+    let key = fingerprint(scene, yaw, pitch, pan, zoom, &palette, selected, active) ^ (draw as u64);
     // The active object's outline is a step lighter than the others'
     // (Blender's `TH_ACTIVE` over `TH_SELECT`).
     let lit = |mut mesh: BMesh, object: &BObject3D| {
@@ -115,7 +143,10 @@ pub(super) fn meshes(
         }
         mesh
     };
-    if !cpu_draws {
+    if draw == BCpuDraw::Nothing {
+        return get_or_build(key, Vec::new);
+    }
+    if draw == BCpuDraw::Hull {
         return get_or_build(key, || {
             scene
                 .iter()
@@ -163,42 +194,5 @@ pub fn clear() {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_repeat_key_does_not_rebuild() {
-        clear();
-        let mut built = 0;
-        for _ in 0..5 {
-            let _ = get_or_build(7, || {
-                built += 1;
-                Vec::new()
-            });
-        }
-        assert_eq!(built, 1, "the same camera and scene must build once");
-        let _ = get_or_build(8, || {
-            built += 1;
-            Vec::new()
-        });
-        assert_eq!(built, 2, "a new camera must rebuild");
-        clear();
-    }
-
-    #[test]
-    fn several_viewports_keep_their_own_entry() {
-        clear();
-        let mut built = 0;
-        // Two viewports alternate frames; neither may evict the other.
-        for _ in 0..4 {
-            for key in [1u64, 2] {
-                let _ = get_or_build(key, || {
-                    built += 1;
-                    Vec::new()
-                });
-            }
-        }
-        assert_eq!(built, 2, "alternating viewports must not thrash the memo");
-        clear();
-    }
-}
+#[path = "cache_tests.rs"]
+mod tests;

@@ -31,12 +31,12 @@
 
 mod constraint;
 pub mod display;
-mod driver;
+pub mod driver;
 mod ik;
 pub(crate) mod math;
 mod quat;
 pub(crate) mod read;
-mod solve;
+pub mod solve;
 mod source;
 mod space;
 mod view;

@@ -265,6 +265,108 @@ needs a denoiser or more samples for a still), studio HDRI lighting (Phiber
 lights Material Preview with a flat grey environment and a view sun), and the
 two hair materials built from nodes current Blender also does not recognise.
 
+### 2.6 An animation, measured against Blender frame by frame (2026-10-05, batch 152)
+
+§2.4 and §2.5 compare a **still** — one front view of one pose. A still
+cannot see three things an animation can: whether the rig poses at the
+right frame, whether the camera's own animation is read, and whether the
+picture is steady over time. This is the moving comparison.
+
+**The file.** `crates/phiphx/tests/fixtures/THYMUS-BOLDROID-WAVE-003.blend`
+— 273 objects, a 328-bone rig, `rigAction` keyed over frames 1–140 with 530
+curves, camera `Camera.001`, Cycles at 1440 × 1440, Filmic. It is the file
+to use for anything moving; `Female-01` is a pose file.
+
+**To run it yourself** (PowerShell, from the workspace root):
+
+```powershell
+$f = "crates\phiphx\tests\fixtures\THYMUS-BOLDROID-WAVE-003.blend"
+
+# 1. Blender: one PNG per frame, through the scene's own camera, at a
+#    quarter resolution and 16 samples. Frames 1, 21, 41 … 121.
+blender -b -P crates\phiphx\tests\truth\blender_animation.py -- $f out\blender 1 140 20 cycles 16 4
+
+# 2. Phiber: the same frames, the same camera, the same samples.
+$env:PHIBER_SCALE=4
+cargo run --release -p phiber --example animation_render -- $f out\phiber 1 140 20 16
+
+# 3. Frame by frame, and over time. The last argument writes a contact
+#    sheet with Blender on top and Phiber below.
+cargo run --release -p phiber --example animation_compare -- out\blender out\phiber contact.png
+```
+
+Drop the `4` / `PHIBER_SCALE` for full resolution, and the `20` step for
+every frame. Both sides write a `times.txt` of
+`frame posed_ms render_ms samples`, so the two compare on speed too.
+
+**What `animation_compare` prints.** Per frame: the pixels both agree are
+figure, the mean absolute difference over them, each render's mean
+brightness, and **how far the frame moved from the one before** in each
+sequence. That last column is the one a still has no version of — a rig
+that does not pose, or poses at the wrong frame, matches well on frame 1
+and then has near-zero motion, which a per-frame difference reports as a
+small constant error rather than as the whole animation missing.
+
+**What matched on the first run.** Pose for pose and frame for frame: the
+silhouette, the limb positions, the hand's gesture and the camera's framing
+agree at all seven frames. That is the rig, the constraints, the drivers,
+the modifier stack and the camera's own animation all agreeing at seven
+points across 120 frames.
+
+Posing is **three times faster**: 29 ms a frame against Blender's 83 ms,
+and that is a fair comparison because both run on the CPU.
+
+Rendering here is **not** a fair comparison and should not be quoted as
+one. The test container has no GPU, so phiray runs on lavapipe — a software
+Vulkan device — while Cycles runs its own mature CPU kernel on the same two
+cores. 20.7 s a frame against 4.7 s measures software rasterization, not
+the tracer.
+
+**Two real bugs the comparison found, both fixed.**
+
+1. **A missing environment image lit the whole scene white.** The first run
+   came out at a mean difference of 35.2 / 255, Phiber's background white
+   where Blender's was black and its figure *olive* where Blender's was
+   *magenta*. The materials in this file really are olive; Blender's torso
+   pixel was `(76, 5, 37)` and Phiber's `(78, 72, 38)` — red and blue
+   within two levels, green 67 apart. Olive × magenta light is
+   `(0.254, 0, 0.078)`: Blender was lighting the scene with a magenta dome
+   and Phiber with a white one. The world's Background Color is linked to
+   an Environment Texture whose file is not shipped, and `shade/world.rs`
+   set `color = [1,1,1]` whenever such a node existed, present or not.
+   Blender folds a missing image to magenta, which `eval.rs` already did
+   for a material's — the world was the one place that did not.
+   **35.2 → 13.0 / 255.**
+
+2. **Film ▸ Transparent never reached a render driven from an example.**
+   The flag is read correctly and the kernels honour it, but
+   `render.film_transparent` is seeded by `seed_output_props`, and
+   `camera_render.rs`, `color_render.rs` and `animation_render.rs` called
+   only `seed_render_props`. The app calls both, so F12 in the window has
+   always been right — but **every number in §2.4 and §2.5 was measured
+   with a background Blender had left out.** All three examples seed both
+   now.
+
+**Where it stands.**
+
+| | Blender (Cycles, 16 spp) | Phiber |
+|---|---|---|
+| pose / camera / framing | — | the same at all seven frames |
+| mean \|difference\| on the figure | — | **15.6 / 255** |
+| mean figure brightness | 43.1 | 33.2 |
+| motion per frame | 5.05 | 3.48 |
+| posing | 83 ms | **29 ms** |
+| rendering (software GPU here) | 4.7 s | 20.7 s |
+
+**Still open, in order.** Phiber reads about a quarter darker on the
+figure, and Blender's highlights on the shoulders and chest are brighter
+and tighter — level and specular are what is left to close. The motion
+ratio of 0.69 is the same story from the other side: much of Blender's
+frame-to-frame change at 16 samples is its own Monte-Carlo noise, which
+Phiber's denoiser removes. The next measurement is with the denoiser off
+and a white material override (`PHIBER_OVERRIDE=1` on the Blender side), so
+the light is measured on its own rather than through the materials.
+
 ## 3. Where the quality is lost, in order of how much it costs
 
 1. ~~**No depth buffer.**~~ Fixed (§0).

@@ -1,5 +1,8 @@
 //! The modal list — reads `ctx.modal`: the one dialog that is up, or none.
-//! Reading a file takes the screen whatever else was open.
+//!
+//! Opening a file no longer takes the screen: its progress lives in the
+//! status zone, which grows into the loading panel (`part::statusbar`) so the
+//! viewport stays visible while the scene loads.
 
 use super::{BModalItem, BModalType};
 use crate::v2::state::{BState, ModalKey};
@@ -14,11 +17,6 @@ impl BModalList {
     }
 
     fn active(s: &BState) -> Option<BModalType> {
-        // Reading a file takes the screen: whatever else was open, the user
-        // wants to see what is happening (and be able to cancel).
-        if crate::v2::scene::view_load_progress(s).is_some() {
-            return Some(BModalType::Progress);
-        }
         s.get(ModalKey::Open).and_then(BModalType::from_slug)
     }
 }

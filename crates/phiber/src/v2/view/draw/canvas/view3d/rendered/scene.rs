@@ -11,7 +11,7 @@ use gpui::Hsla;
 use super::world::{BRayLook, lit};
 use phiray::{Camera, Instance, Scene, Tri};
 
-fn rgba(c: Hsla) -> [f32; 4] {
+pub(super) fn rgba(c: Hsla) -> [f32; 4] {
     let c = c.to_rgb();
     [c.r, c.g, c.b, c.a]
 }
@@ -78,9 +78,9 @@ fn build_with(scene: &[BObject3D], palette: &BMeshPalette, images: bool) -> Scen
             BObject3D::Primitive { shape, .. } => {
                 let (v, idx, n) = SpatialObject3D::buffers(shape.mesh_type());
                 let base = match shape {
-                    crate::v2::scene::BShape::Cube => palette.cube,
-                    crate::v2::scene::BShape::Sphere => palette.sphere,
-                    crate::v2::scene::BShape::Gem => palette.gem,
+                    crate::v2::scene::BShape::Sphere | crate::v2::scene::BShape::IcoSphere | crate::v2::scene::BShape::Metaball => palette.sphere,
+                    crate::v2::scene::BShape::Gem | crate::v2::scene::BShape::Cone | crate::v2::scene::BShape::Torus => palette.gem,
+                    _ => palette.cube,
                 };
                 let p = |i: u32| v.get(i as usize).map(|v| [v.0, v.2, v.1]).unwrap_or_default();
                 let nn = |i: u32| n.get(i as usize).map(|n| [n.0, n.2, n.1]).unwrap_or_default();

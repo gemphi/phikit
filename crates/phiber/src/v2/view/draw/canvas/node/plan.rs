@@ -12,7 +12,7 @@
 //! (`pick/`), and the cards themselves.
 
 use super::view::BNodeView;
-use super::{paint, socket};
+use super::{link, paint, socket};
 use crate::phiphx::blend::shade::graph::{BlendNode, BlendNodeGraph, BlendNodeLink};
 
 /// A card's size in view units — the theme's pixels, read as node space.
@@ -36,7 +36,10 @@ impl BCardSize {
 
     /// One node's card height — Blender's socket layout, which IS the height
     /// calculation (`node_update_basis`), in whatever units `self` is in.
-    pub fn height_of(self, node: &BlendNode) -> f32 {
+    /// `linked` is the node's own wired inputs — an unconnected vector input is
+    /// taller than a connected one, so the height is a question about the wiring
+    /// (`socket::body_height`). A caller with no wiring in hand passes `&[]`.
+    pub fn height_of(self, node: &BlendNode, linked: &[&str]) -> f32 {
         // A reroute is `loc ± NODE_SOCKSIZE`: a square the size of its dot, with
         // no header and no body (`reroute_node_prepare_for_draw`). The side is
         // twice the socket radius, which is what `node_bounds` halves back to
@@ -47,9 +50,9 @@ impl BCardSize {
         // A collapsed node is one pill with no header band, so there is no
         // header to add — `body_height` answers with the whole thing.
         if node.collapsed() {
-            return socket::body_height(node) * self.unit;
+            return socket::body_height(node, linked) * self.unit;
         }
-        self.header + socket::body_height(node) * self.unit
+        self.header + socket::body_height(node, linked) * self.unit
     }
 }
 
@@ -66,11 +69,11 @@ pub struct BCardFraction {
 }
 
 impl BCardFraction {
-    pub fn of(size: BCardSize, view: &BNodeView, node: &BlendNode) -> Self {
+    pub fn of(size: BCardSize, view: &BNodeView, node: &BlendNode, linked: &[&str]) -> Self {
         Self {
             width: size.width / view.width(),
             header: size.header / view.height(),
-            body: socket::body_height(node) * size.unit / view.height(),
+            body: socket::body_height(node, linked) * size.unit / view.height(),
         }
     }
 }
@@ -97,8 +100,11 @@ pub fn plan(
         .nodes
         .iter()
         .filter_map(|node| {
+            // The node's wired inputs decide both which inputs show a value and
+            // how tall each socket is (a linked vector collapses).
+            let linked = link::linked_inputs(wired, &node.name);
             let (fx, fy) = at(&node.name)?;
-            let mut card = paint::BNodeCard {
+            Some(paint::BNodeCard {
                 name: node.name.clone(),
                 x: fx * width,
                 y: fy * height,
@@ -114,12 +120,9 @@ pub fn plan(
                 // The card's own height, which is Blender's socket layout — the
                 // same number the body div is given, so the painted sockets and
                 // the drawn card cannot disagree.
-                height: on_screen.height_of(node),
-                sockets: socket::rows(node),
-            };
-            // An input with a wire arriving shows the wire, not its value.
-            card.mark_linked(wired);
-            Some(card)
+                height: on_screen.height_of(node, &linked),
+                sockets: socket::rows(node, &linked),
+            })
         })
         .collect();
     // A link joins two SOCKETS, so each end is looked up by its identifier;
@@ -127,12 +130,13 @@ pub fn plan(
     let point_of = |node_name: &str, identifier: &str, side_fallback| {
         let node = graph.nodes.iter().find(|n| n.name == node_name)?;
         let card = cards.iter().zip(graph.nodes.iter()).find(|(_, n)| n.name == node_name)?.0;
-        let row = socket::row_of(node, identifier)
+        let linked = link::linked_inputs(wired, node_name);
+        let row = socket::row_of(node, identifier, &linked)
             // An older file, or a link whose socket identifier did not
             // resolve: fall back to the first socket on the side the link
             // needs, which is where a two-node shader graph's one link goes
             // anyway.
-            .or_else(|| socket::rows(node).into_iter().find(|r| r.side == side_fallback))?;
+            .or_else(|| socket::rows(node, &linked).into_iter().find(|r| r.side == side_fallback))?;
         Some(card.socket_at(&row))
     };
     let links = wired
@@ -161,10 +165,10 @@ mod tests {
         // reader that did the same to a reroute would give it a title bar's
         // worth of empty height above a dot.
         let reroute = BlendNode { idname: "NodeReroute".into(), ..Default::default() };
-        assert_eq!(size().height_of(&reroute), socket::DOT * 2.0 * 36.0, "the dot, no header");
+        assert_eq!(size().height_of(&reroute, &[]), socket::DOT * 2.0 * 36.0, "the dot, no header");
         // The header IS added for an ordinary node of the same (empty) sockets.
         let ordinary = BlendNode::default();
-        assert_eq!(size().height_of(&ordinary), 30.0 + socket::body_height(&ordinary) * 36.0);
+        assert_eq!(size().height_of(&ordinary, &[]), 30.0 + socket::body_height(&ordinary, &[]) * 36.0);
     }
 }
 

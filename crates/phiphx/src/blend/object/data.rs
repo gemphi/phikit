@@ -42,6 +42,17 @@ pub struct BlendLightData {
     pub sun_angle: f32,
 }
 
+impl BlendFile {
+    /// The DNA name of a light's datablock. RNA renamed `Lamp` to `Light`
+    /// in 2.80 and **the DNA struct kept the old name** — Blender 5.0.1
+    /// still writes `Lamp` — so the modern spelling is checked first only
+    /// in case that ever changes, and `Lamp` is what every file in hand
+    /// actually uses.
+    pub(crate) fn lamp_struct(dna: &DnaType) -> &'static str {
+        if dna.types.iter().any(|t| t == "Light") { "Light" } else { "Lamp" }
+    }
+}
+
 /// `Light.sun_angle`'s default: the real sun's angular diameter, 0.526°.
 pub const SUN_ANGLE: f32 = 0.009180432;
 
@@ -110,8 +121,7 @@ impl BlendFile {
             },
             "LIGHT" => match self.block_at_code(data, "LA") {
                 Some(la) => {
-                    // Blender ≤ 3.x files still name the DNA struct `Lamp`.
-                    let st = if dna.types.iter().any(|t| t == "Light") { "Light" } else { "Lamp" };
+                    let st = Self::lamp_struct(dna);
                     let f = |n: &str, d: f32| self.float_field(la, st, n, dna, d);
                     BlendObjectData::Light(BlendLightData {
                         kind: self.uint_field(la, st, "type", dna).unwrap_or(0) as u8,

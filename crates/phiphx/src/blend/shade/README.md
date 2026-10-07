@@ -8,6 +8,9 @@ Callers enter through [`phx::Phx`](../../phx/README.md); this folder is one of i
 
 | File | What it is |
 |---|---|
+| `driver.rs` | What a driver on a material writes — a `Material` property or a shader socket's `default_value` — and the clamp each write path takes (the three disagree). |
+| `driver_read.rs` | Reading those drivers out of the file: `Material.adt` for the material's own properties, `Material.nodetree->adt` for the sockets, pathed `nodes["…"].inputs[i].default_value`. |
+| `world_driver.rs` | Drivers on the world — `World.color` on the ID, and the Background node's `Strength` and `Color` on its tree. |
 | `image.rs` | Image datablocks (#26): the key a material uses to name its texture and the bytes of images packed into the `.blend`. |
 | `material.rs` | Per-object material extraction: resolves the object's first `Material` (`MA`) block and reads its diffuse colour + PBR roughness/metallic. |
 | `mod.rs` | Materials. |

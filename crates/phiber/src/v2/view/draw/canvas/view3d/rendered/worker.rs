@@ -95,7 +95,7 @@ fn run(gpu: Gpu, rx: Receiver<BRayJob>, out: Arc<Mutex<Option<BRayFrame>>>, refu
     let mut coarse = BCoarse::start(Mode::Solid);
     let mut slicer = BSlicer::new();
     let mut tally = BTally::new();
-    let mut warmed = false;
+    let mut warmed = super::compile::BWarmed::new();
     // The scene the tracer holds (its key, objects and palette), and when
     // it was last posed with its trees refitted rather than built.
     let mut held: Option<(u64, Vec<BObject3D>, BMeshPalette)> = None;
@@ -163,12 +163,14 @@ fn run(gpu: Gpu, rx: Receiver<BRayJob>, out: Arc<Mutex<Option<BRayFrame>>>, refu
         if done {
             continue;
         }
-        let (Some(t), Some((key, shot))) = (tracer.as_mut(), view) else { continue };
-        let BRayShot { cam, w: full_w, h: full_h, mode, samples, aa, denoise_from } = shot;
+        let (Some(t), Some((key, shot))) = (tracer.as_mut(), view.clone()) else { continue };
+        let BRayShot { cam, w: full_w, h: full_h, mode, samples, aa, denoise_from, outline } = shot;
         let (w, h) = coarse.pixels(full_w, full_h);
         let cam = phiray::Camera { tile: coarse.tile(cam.tile), ..cam };
         t.set_samples(samples);
         t.set_aa_samples(aa);
+        // Which objects the overlay outlines (`Tracer::outline`).
+        t.outline(&gpu, &outline);
         // Workbench and the tracer are different kernels over the same scene;
         // switching re-records the pass, which is why the mode rides with the
         // view rather than the scene.
@@ -225,16 +227,7 @@ fn run(gpu: Gpu, rx: Receiver<BRayJob>, out: Arc<Mutex<Option<BRayFrame>>>, refu
         }
         super::wake::FRESH.store(true, std::sync::atomic::Ordering::Release);
         // The first image is up: the other kernels compile meanwhile, on a
-        // thread of their own, so a change of shading does not wait for its
-        // kernel (`Tracer::warm`).
-        if !warmed {
-            warmed = true;
-            let gpu = gpu.clone();
-            let _ = std::thread::Builder::new().name("phiray.warm".into()).spawn(move || {
-                let at = Instant::now();
-                let each: Vec<String> = Tracer::warm(&gpu).into_iter().map(|(name, ms)| format!("{name} {ms:.0}")).collect();
-                crate::v2::app::journal::BJournal::note(format!("Tracer: kernels compiled in {:.0}ms ({})", at.elapsed().as_secs_f64() * 1000.0, each.join(", ")));
-            });
-        }
+        // thread of their own (`compile.rs`).
+        warmed.once(&gpu);
     }
 }

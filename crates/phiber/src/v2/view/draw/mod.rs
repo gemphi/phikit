@@ -42,6 +42,7 @@ pub mod resize;
 pub mod row;
 pub mod scroller;
 pub mod search;
+pub mod text_input;
 pub mod sidebar;
 pub mod sort;
 pub mod split;
@@ -129,7 +130,7 @@ pub(crate) fn walk(v: &BView, ctx: &BRenderCtx) -> AnyElement {
         BView::Thumbnail(t) => thumb::view(t, ctx),
         BView::Grid { list } => thumb::grid(list, ctx),
         BView::Canvas { host, camera } => atom::canvas(*host, camera, ctx),
-        BView::ProgressBar { fraction, label } => progress::view(*fraction, label, ctx),
+        BView::ProgressBar { fraction, label, wide } => progress::view(*fraction, label, *wide, ctx),
         BView::Log { open, toggle } => log::view(*open, toggle, ctx),
         BView::Avatar { path, size } => avatar::view(path, *size, ctx),
         BView::Badge { icon, count } => badge::view(icon, *count, ctx),

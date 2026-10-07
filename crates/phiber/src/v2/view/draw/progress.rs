@@ -7,47 +7,48 @@
 
 use super::ctx::BRenderCtx;
 use super::flex::{BAlign, BDim, BFill, BFlex, BFlexed, BInk, BLen, BOverflow, BRadius, BSpace, BType};
-use crate::v2::host::BHostType;
 use crate::v2::theme::{BStyleRole, BSurfaceTone};
 use gpui::prelude::*;
 use gpui::{AnyElement, SharedString};
 
 /// Render a `[====      ] label` progress row. `fraction` is clamped to
-/// `0.0..=1.0`. The bar is a fixed-width track whose accent fill grows with
-/// `fraction`; `relative(fraction)` lets the fill track the resolved track
-/// width without a hardcoded pixel span.
+/// `0.0..=1.0`. The bar is a track whose accent fill grows with `fraction`;
+/// `Share(fraction)` lets the fill track the resolved track width without a
+/// hardcoded pixel span.
 ///
-/// In the **status bar** the bar comes first and the stage label sits in a
-/// fixed-width box after it. A stage label changes on every tick — "Reading
-/// file", then "Reading objects 431/2104 Cube.003" — so a label that sized
-/// itself dragged the bar sideways with every object read. There the bar
-/// holds one position for the whole load and only the text inside the box
+/// The **boxed** shape (`wide == false`) boxes the bar to a fixed width and
+/// sits the stage label in a fixed-width box after it — the render job's
+/// inline bar in the status bar. A stage label changes on every tick —
+/// "Reading file", then "Reading objects 431/2104 Cube.003" — so a label that
+/// sized itself dragged the bar sideways with every object read; boxed, the
+/// bar holds one position for the whole job and only the text inside the box
 /// changes.
 ///
-/// Anywhere else — the Opening-File modal — the row has a width of its own to
-/// fill, so the bar spans it and the label sits on its own line beneath,
-/// also full width. Nothing is boxed to a borrowed dimension there, and the
-/// label still ellipsises rather than reflowing the card as the stage changes.
-pub fn view(fraction: f32, label: &str, ctx: &BRenderCtx) -> AnyElement {
+/// The **wide** shape (`wide == true`) gives the row a width of its own to
+/// fill, so the bar spans it and the label sits on its own line beneath, also
+/// full width — the loading panel's bar across the bottom edge. Nothing is
+/// boxed to a borrowed dimension, and the label still ellipsises rather than
+/// reflowing as the stage changes, so the bar does not move there either.
+pub fn view(fraction: f32, label: &str, wide: bool, ctx: &BRenderCtx) -> AnyElement {
     let frac = fraction.clamp(0.0, 1.0);
-    let in_statusbar = ctx.host == BHostType::Statusbar;
+    let boxed = !wide;
 
-    let track_id = if in_statusbar { "statusbar-progress-track" } else { "modal-progress-track" };
-    let track = BProgressPart::Track { boxed: in_statusbar }
+    let track_id = if wide { "load-progress-track" } else { "statusbar-progress-track" };
+    let track = BProgressPart::Track { boxed }
         .flex(ctx)
         .div(ctx)
         .id(track_id)
         .debug_selector(move || track_id.to_string())
         .child(BProgressPart::Fill(frac).flex(ctx).div(ctx));
 
-    let stage = BProgressPart::Stage { boxed: in_statusbar }
+    let stage = BProgressPart::Stage { boxed }
         .flex(ctx)
         .div(ctx)
         .whitespace_nowrap()
         .text_ellipsis()
         .child(SharedString::from(label.to_string()));
 
-    BProgressPart::Row { boxed: in_statusbar }
+    BProgressPart::Row { boxed }
         .flex(ctx)
         .div(ctx)
         .child(track)

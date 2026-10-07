@@ -2,6 +2,9 @@
 
 use super::*;
 use crate::v2::part::image::header::set::COMBINED;
+// The geometry moved to `place.rs`, so these come from gpui rather than
+// from `mod.rs`'s own imports (batch 164).
+use gpui::{point, px, size};
 
 #[test]
 fn view_all_shows_a_fitting_image_at_one_and_a_larger_one_at_a_power_of_two() {

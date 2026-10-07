@@ -14,6 +14,18 @@ pub enum PhiQuiMeshType {
     Circle,
     /// Closed right-cone: apex + base rim + centre — `Add ▸ Mesh ▸ Cone`.
     Cone,
+    /// `Add ▸ Mesh ▸ Ico Sphere`: the icosahedron subdivided onto the
+    /// sphere, so the triangles stay even where a UV sphere's crowd at the
+    /// poles.
+    IcoSphere,
+    /// `Add ▸ Mesh ▸ Grid`.
+    Grid,
+    /// `Add ▸ Text`: the string as a solid, extruded from the glyphs'
+    /// own outlines (`spatial/text.rs`).
+    Text,
+    /// `Add ▸ Metaball ▸ Ball`: an implicit surface over blobs that fuse
+    /// (`spatial/implicit.rs`).
+    Metaball,
 }
 
 impl PhiQuiMeshType {
@@ -28,6 +40,10 @@ impl PhiQuiMeshType {
             Self::Plane => "Plane Mesh",
             Self::Circle => "Circle Mesh",
             Self::Cone => "Cone Mesh",
+            Self::IcoSphere => "Ico Sphere Mesh",
+            Self::Grid => "Grid Mesh",
+            Self::Metaball => "Metaball",
+            Self::Text => "Text",
         }
     }
 
@@ -44,6 +60,10 @@ impl PhiQuiMeshType {
             Self::Plane => 4,
             Self::Circle => 33,
             Self::Cone => 50,
+            Self::IcoSphere => 162,
+            Self::Grid => 121,
+            Self::Metaball => 4096,
+            Self::Text => 2048,
         }
     }
 

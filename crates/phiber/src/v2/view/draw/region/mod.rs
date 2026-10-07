@@ -67,6 +67,16 @@ fn ruled_header(kind: BRegionType, host: BHostType) -> bool {
     matches!(kind, BRegionType::Header | BRegionType::ToolHeader) && !host.pins_header_cells()
 }
 
+/// True when this is the status bar's header while a file opens: it then
+/// holds the loading panel, so the region content-sizes (at least one bar
+/// tall, growing to the panel) instead of clipping to one line or scrolling
+/// sideways in its strip. See `part::statusbar` and `region::BRegionItem`.
+fn header_loads(kind: BRegionType, ctx: &BRenderCtx) -> bool {
+    kind == BRegionType::Header
+        && ctx.host == BHostType::Statusbar
+        && crate::v2::scene::view_load_progress(ctx.state).is_some()
+}
+
 /// True when a region's content is a vertical rail. Rails are laid out the
 /// same way wherever they appear — the Activity bar, the tool strip, the
 /// Properties navbar and the editor side rail are one element, not four.
@@ -94,6 +104,10 @@ impl BFlexed for BRegionFrame {
         // not wrap — Blender clips and scrolls it — so an area's chrome
         // keeps its height whatever its width.
         let wraps = kind == BRegionType::Header && ctx.host.pins_header_cells() && crate::v2::part::filter::topbar_wraps(ctx.state);
+        // The status bar's header, while a file opens, grows to its loading
+        // panel the way a wrapping header grows to its lines — content-sized
+        // with a one-bar floor — but keeps its ordinary single-line row flex.
+        let grows = wraps || header_loads(kind, ctx);
         let flex = match (axis, kind.placement()) {
             // Header rows: the three panes sit at the start, the centre and
             // the end. `Between` states that directly rather than relying on
@@ -237,11 +251,11 @@ impl BFlexed for BRegionFrame {
         let flex = match (fixed, axis) {
             // A wrapping header is at least one line tall and grows a line
             // per wrap.
-            (Some(_), BAxis::Row) if ruled && wraps => {
+            (Some(_), BAxis::Row) if ruled && grows => {
                 flex.min_height(BLen::Measured(ruled_height)).width(BLen::Full).keeps_size()
             }
             (Some(_), BAxis::Row) if ruled => flex.height(BLen::Measured(ruled_height)).width(BLen::Full),
-            (Some(dim), BAxis::Row) if wraps => flex.min_height(BLen::Dim(dim)).width(BLen::Full).keeps_size(),
+            (Some(dim), BAxis::Row) if grows => flex.min_height(BLen::Dim(dim)).width(BLen::Full).keeps_size(),
             (Some(dim), BAxis::Row) => flex.height(BLen::Dim(dim)).width(BLen::Full),
             (Some(dim), BAxis::Column)
                 if matches!(kind, BRegionType::NavBar | BRegionType::Tools) =>
@@ -315,8 +329,14 @@ pub fn view(kind: BRegionType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
     // second line (`BRegionFrame`).
     let strip = matches!(kind, BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute);
     let wraps = kind == BRegionType::Header && ctx.host.pins_header_cells() && crate::v2::part::filter::topbar_wraps(ctx.state);
-    let element = if strip && !wraps { pan::BStripPan::of(&format!("{dbg}-{:?}", ctx.area)).attach(frame.strip_scroller(id, ctx), ctx) } else { frame.div(ctx).id(id) };
-    let mut element = element.debug_selector(move || dbg);
+    // The loading panel is taller than one line, so it is not a sideways-
+    // scrolling strip: let the region grow around it (like a wrapping header).
+    let element = if strip && !wraps && !header_loads(kind, ctx) {
+        pan::BStripPan::of(&format!("{dbg}-{:?}", ctx.area)).attach(frame.strip_scroller(id, ctx), ctx)
+    } else {
+        frame.div(ctx).id(id)
+    };
+    let mut element = element.debug_selector(move || dbg.clone());
     // Tag the context with this region kind so pane children can distinguish
     // a header pane (content hugs, Left/Center/Right tri-cell) from a
     // content-region Center pane (stretches to fill).

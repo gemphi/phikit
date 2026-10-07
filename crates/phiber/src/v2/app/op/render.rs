@@ -32,6 +32,9 @@ impl BPhiberApp {
         };
         // The camera toggle decides a render, not the eye.
         let hidden = crate::v2::part::outliner::key::BHidden::for_render(&self.state);
+        // Which engine drew it, so the report says what the panel asked for
+        // — Blender's render status line names the engine too.
+        crate::v2::state::log::push(format!("Rendering with {}", set.engine.label()));
         let objects: Vec<_> = scene
             .into_iter()
             .filter(|o| !matches!(o, crate::v2::scene::BObject3D::Loaded { name, .. } if hidden.hides(&self.state, name)))

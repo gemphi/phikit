@@ -57,6 +57,15 @@ impl BLinkEnd {
     }
 }
 
+/// The identifiers of `node`'s input sockets a drawn wire arrives at — what the
+/// socket layout needs to know which inputs are connected (and so how tall each
+/// is, and whether it draws its value). Read off `wired`, the file's links with
+/// this host's edits applied, so it is the overlay's truth rather than the
+/// file's stale `SOCK_IS_LINKED`.
+pub fn linked_inputs<'a>(wired: &'a [BlendNodeLink], node: &str) -> Vec<&'a str> {
+    wired.iter().filter(|l| l.to == node).map(|l| l.to_socket.as_str()).collect()
+}
+
 /// Whether a link from `from` to `to` is one Blender would let you make.
 ///
 /// `graph` is consulted for the two rules that depend on what is already there.

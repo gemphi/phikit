@@ -125,43 +125,7 @@ pub fn load_progress_key() -> BPath {
     SceneKey::LoadProgress.path()
 }
 
-/// The ordered import stages surfaced to the user. Each carries its label and
-/// the progress fraction the bar reaches when that stage begins. Mirrors
-/// Blender's file-read job phases (read → parse geometry → build materials →
-/// done).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LoadStage {
-    /// Opening the file / decoding the container (sidecar or SDNA header).
-    Reading,
-    /// Walking blocks and triangulating mesh geometry.
-    ParsingMeshes,
-    /// Resolving material slots and texture references.
-    BuildingMaterials,
-    /// Import settled — bar full, about to clear.
-    Done,
-}
-
-impl LoadStage {
-    /// Human-readable status label shown next to the progress bar.
-    pub fn label(self) -> &'static str {
-        match self {
-            LoadStage::Reading => "Reading file",
-            LoadStage::ParsingMeshes => "Parsing meshes",
-            LoadStage::BuildingMaterials => "Building materials",
-            LoadStage::Done => "Done",
-        }
-    }
-
-    /// Progress fraction (0..=1) the bar reaches when this stage begins.
-    pub fn progress(self) -> f32 {
-        match self {
-            LoadStage::Reading => 0.15,
-            LoadStage::ParsingMeshes => 0.5,
-            LoadStage::BuildingMaterials => 0.85,
-            LoadStage::Done => 1.0,
-        }
-    }
-}
+pub use super::load_stage::LoadStage;
 
 /// Read the current import progress fraction (0..=1), or `None` when no import
 /// is running. Clamped so a corrupt value can never overflow the bar.

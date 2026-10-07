@@ -50,6 +50,7 @@ use super::*;
             selected: Vec::new(),
             hidden: Vec::new(),
             props: Default::default(),
+            deferred: None,
         }
     }
 

@@ -36,6 +36,11 @@ impl AssetSource for PhiberAssets {
 
 /// Launch the Phiber GPUI application.
 pub fn run() {
+    // Journal first, with the `log` crate bridged into it, so the GPU adapter
+    // and backend each context picks is on disk from the very first line —
+    // before phiray's skinning context and before the window's GPU context.
+    crate::v2::app::journal::BJournal::arm();
+    crate::v2::app::journal::BJournal::bridge_log();
     // Armature deform of opened files runs on the GPU (phiray) when available.
     crate::v2::scene::RaySkin::install();
     std::thread::Builder::new()
@@ -67,16 +72,23 @@ pub fn run() {
                     |_, cx| cx.new(|_cx| crate::v2::app::BPhiberApp::new()),
                 )
                 .unwrap();
+                // Persist the durable session from here on (a no-op until
+                // now, so nothing a test did was written), and resume the last
+                // one: the window opens where it was left and reopens the last
+                // file with Load UI off.
+                crate::v2::app::session::BSession::arm();
                 // Closing the window asks about unsaved changes as File ▸
                 // Quit does (`op::close::may_close`).
-                let _ = window.update(cx, |_, w, cx| {
+                let _ = window.update(cx, |view, w, cx| {
                     let app = cx.entity();
                     w.on_window_should_close(cx, move |window, cx| app.update(cx, |app, cx| app.may_close(window, cx)));
+                    view.restore_session(cx);
                 });
                 // The session journal, then the Info log's first lines:
                 // the build, where the journal is, and the render device
                 // once phiray has it.
                 crate::v2::app::journal::BJournal::arm();
+                crate::v2::app::journal::BJournal::bridge_log();
                 crate::v2::app::health::BHealth::arm();
 
                 cx.activate(true);

@@ -3,6 +3,7 @@
 //! that calls back into `handle_action` to mutate state.
 
 pub mod handle;
+pub mod input;
 pub mod keymap;
 mod op;
 pub mod trace;
@@ -13,6 +14,8 @@ mod playback;
 pub mod load_ui;
 pub mod health;
 pub mod journal;
+pub mod session;
+pub mod collab;
 pub mod seed;
 
 use crate::v2::state::BKey as _;
@@ -36,6 +39,9 @@ pub struct BPhiberApp {
     /// Keyboard focus for the whole window: typing goes to whichever field
     /// holds the caret (`state::edit`).
     pub(crate) focus: Option<gpui::FocusHandle>,
+    /// The caret, selection and IME state for the field being typed into, plus
+    /// the geometry the text system needs (`input.rs`, `draw::text_input`).
+    pub(crate) input: input::BInput,
     /// The most recent successfully-imported scene, keyed by the `.blend`
     /// path it was loaded from (`loaded_path`). The Scene_Source
     /// (`v2::scene::current_scene`) reads this so the Viewport and Outliner
@@ -72,6 +78,7 @@ impl BPhiberApp {
         Self {
             state,
             focus: None,
+            input: input::BInput::default(),
             scene_cache: None,
             playing_ticker: false,
             ray_ticker: false,
@@ -125,6 +132,38 @@ impl BPhiberApp {
                 _ => return,
             }
         }
+    }
+
+    /// Launch-time: read the persisted session (if any), restore its layout,
+    /// and reopen the file it named. Called from `app::run`, never from a test
+    /// window — the session file is only written by an armed, running app.
+    pub(crate) fn restore_session(&mut self, cx: &mut Context<Self>) {
+        if let Some(text) = session::BSession::restore_text() {
+            if let Some(path) = self.apply_session(&text) {
+                self.start_import(path, cx);
+            }
+            cx.notify();
+        }
+    }
+
+    /// Apply a session snapshot's durable layout and, if it named a file that
+    /// still exists, arm the reopen with Load UI off (so the file's own saved
+    /// workspace and view do not overwrite the restored layout) and return the
+    /// path to reopen. The reopen itself is the caller's `start_import`; split
+    /// out so the resume decision is testable without a background load.
+    pub fn apply_session(&mut self, text: &str) -> Option<String> {
+        session::apply(&mut self.state, text);
+        let path = session::last_file(text)
+            .filter(|p| crate::v2::scene::is_blend_path(p) && std::path::Path::new(p).exists())?;
+        self.state.set(FileKey::LoadUi, "false");
+        self.state.set(&crate::v2::scene::selected_key(), path.clone());
+        // The reopen seeds the file's saved frame; stash the resumed playhead
+        // so `settle_import` lands on where we actually were (the session
+        // outlives the save). The camera survives on its own — Load UI is off.
+        if let Some(frame) = self.state.get(crate::v2::state::CtxKey::Frame).map(str::to_string) {
+            self.state.set_encoded(session::RESUME_FRAME, frame);
+        }
+        Some(path)
     }
 }
 
@@ -210,7 +249,12 @@ impl Render for BPhiberApp {
         // first click, and so did every refined frame.
         self.ensure_ray_ticker(cx);
         crate::v2::view::draw::canvas::view3d::rendered::drawing();
-        let (rendered, draw_at) = trace::timed(|| BGpuiRenderer::new(handler, resize).render(&root, &self.state));
+        // The window entity and its focus thread into the renderer so the field
+        // that holds the caret can register the text-input handler for the
+        // right focus and draw its caret (`draw::text_input`, `input.rs`).
+        let focus = self.focus.get_or_insert_with(|| cx.focus_handle()).clone();
+        let input_wiring = (cx.entity(), focus.clone());
+        let (rendered, draw_at) = trace::timed(|| BGpuiRenderer::new(handler, resize, Some(input_wiring)).render(&root, &self.state));
         crate::v2::part::outliner::key::BHidden::end_pass();
         // A rig still posing the shown frame on its thread: draw again until it lands.
         if crate::v2::scene::pose::BPoser::waiting() {
@@ -218,6 +262,14 @@ impl Render for BPhiberApp {
         }
         health::BHealth::each_frame();
         journal::BJournal::each_frame();
+        // Persist the durable session when it changes (a no-op unless the
+        // running app armed it, and when only a rapid family moved).
+        session::BSession::persist(&self.state);
+        // Apply any collaboration traffic — remote edits and presence (a no-op
+        // unless a transport is connected); re-render when it changed something.
+        if collab::BCollab::drain(&mut self.state) {
+            cx.notify();
+        }
         // Every frame is counted (`trace::tick`: the journal's summaries);
         // the scene walk for a frame's own line only when it was slow or
         // the stderr stream is on, so a fast frame pays nothing for it.
@@ -319,8 +371,8 @@ impl Render for BPhiberApp {
 
         // Typing: the root holds focus and feeds keys to the edited field
         // (Blender's `ui_textedit_*`: one text button is active at a time).
-        let focus = self.focus.get_or_insert_with(|| cx.focus_handle()).clone();
-        // Keep the window focused on the root so typing always lands here.
+        // The handle was made above for the renderer; keep the window on it so
+        // typing and IME always land here.
         w.focus(&focus, cx);
         let keys = cx.listener(|this, e: &gpui::KeyDownEvent, w: &mut Window, cx: &mut Context<Self>| {
             let k = &e.keystroke;

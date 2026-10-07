@@ -234,6 +234,18 @@ mod tests {
 /// could not be found (Blender logs these as missing images).
 /// The world's environment image, decoded the way surface textures are.
 pub(super) fn environment(p: &crate::blend::BlendSceneProps, source_path: &str) -> Option<SceneEnvironment> {
+    // A Sky Texture is an environment image too: Blender bakes it rather
+    // than evaluating it per ray (`node_shader_tex_sky.cc`), so baking it
+    // here hands the sky to the one path that already carries a dome
+    // correctly — the CDF, the prefiltered chain and the MIS weight
+    // (`rendering.md` §59, §62).
+    if let Some(sky) = p.world.sky {
+        return Some(SceneEnvironment {
+            width: crate::sky::SKY_WIDTH,
+            height: crate::sky::SKY_HEIGHT,
+            rgb: std::sync::Arc::new(sky.bake()),
+        });
+    }
     let key = p.world.texture.as_ref()?;
     let blend = Path::new(source_path);
     let bytes = match p.packed_images.iter().find(|(k, _)| k == key) {

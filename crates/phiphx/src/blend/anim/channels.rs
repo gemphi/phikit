@@ -7,7 +7,6 @@
 
 use super::fcurve::BFCurve;
 use crate::blend::file::types::*;
-use crate::blend::object::rotation::object_to_mat4;
 use crate::blend::object::transform::ObjectTransformRaw;
 
 /// The transform value a curve of `property` / `index` drives, if any.
@@ -63,5 +62,5 @@ impl BlendFile {
 #[cfg(test)]
 pub(crate) fn basis_at<'a>(mut raw: ObjectTransformRaw, curves: impl Iterator<Item = &'a BFCurve>, frame: f32) -> glam::Mat4 {
     apply(&mut raw, curves, frame);
-    glam::Mat4::from_cols_array_2d(&object_to_mat4(&raw))
+    glam::Mat4::from_cols_array_2d(&crate::blend::object::rotation::object_to_mat4(&raw))
 }

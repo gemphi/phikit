@@ -37,6 +37,7 @@ pub static SET: &[BPartSpec] = &[
     BPartSpec { kind: BPartType::PathBar },
     BPartSpec { kind: BPartType::TypeFilter },
     BPartSpec { kind: BPartType::SourceList },
+    BPartSpec { kind: BPartType::Dataset },
     BPartSpec { kind: BPartType::AssetShelf },
     BPartSpec { kind: BPartType::AssetShelfHeader },
     BPartSpec { kind: BPartType::ToolProps },

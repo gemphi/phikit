@@ -23,6 +23,15 @@ pub struct BUvColors {
     pub face: BColor,
     /// `vertex`: a vertex in Edit Mode.
     pub vertex: BColor,
+    /// `vertex_select`: a selected one. The accent, which in this theme is
+    /// off the shade ladder because it means something
+    /// (`ui-parity-status.md`'s ladder).
+    pub selected: BColor,
+    /// `TH_UV_OTHERS` is not it: Blender draws a **pinned** UV in its own
+    /// colour (`TH_PIN`, red by default) because a pin is a different
+    /// thing from a selection — it is what an unwrap solves around, and
+    /// it holds whether or not the corner is selected.
+    pub pinned: BColor,
 }
 
 impl BResolvedUiStyle {
@@ -34,6 +43,13 @@ impl BResolvedUiStyle {
             shadow: colors.text_dim,
             face: (colors.text.0, colors.text.1, colors.text.2, FACE_ALPHA),
             vertex: colors.bg_app,
+            selected: colors.accent,
+            // `TH_PIN` is a flat red in every Blender theme, light and
+            // dark alike, and is not derived from the UI palette — a pin
+            // has to read as a pin whatever the editor is wearing. This
+            // palette carries no red at all, so it is written out here
+            // rather than bent out of the accent.
+            pinned: (0.87, 0.21, 0.21, 1.0),
         }
     }
 }
@@ -50,5 +66,7 @@ mod tests {
         assert_eq!(uv.edge, style.colors.text);
         assert!(uv.shadow.2 < uv.edge.2 && uv.outline.2 < uv.shadow.2, "Object Mode's UVs are dimmer than Edit Mode's, the outline darker still");
         assert!(uv.face.3 < 0.1, "a face is a wash");
+        assert_eq!(uv.selected, style.colors.accent, "a selected corner is the accent");
+        assert_ne!(uv.selected, uv.vertex, "and tells itself from an unselected one");
     }
 }

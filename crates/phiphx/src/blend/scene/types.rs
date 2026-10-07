@@ -93,10 +93,6 @@ pub struct BlendMaterial {
     /// The surface as a Mix Shader's two lobes, when it is one
     /// (`shade/surface.rs`); `bsdf` is then the two folded together.
     pub mix: Option<crate::blend::shade::surface::BlendMix>,
-    /// The Noise / Voronoi textures the surface reads per pixel — on the
-    /// base colour, the Mix Shader's factor, a Bump on the normal
-    /// (`shade/procedural.rs`).
-    pub procedural: crate::blend::shade::procedural::BlendProcedural,
     /// The material's node tree as the Shader editor draws it — every node with
     /// its type, name, position and size, and the links between them
     /// (`shade/graph.rs`). Empty for a material with no tree.
@@ -105,6 +101,9 @@ pub struct BlendMaterial {
     pub normal_map: Option<crate::blend::shade::links::BlendNormalMap>,
     /// Images linked to Roughness / Metallic / Emission Color.
     pub maps: crate::blend::shade::maps::BlendMaps,
+    /// The procedural textures the surface reads per pixel
+    /// (`shade/procedural.rs`) — what the colour fold can only average.
+    pub procedural: crate::blend::shade::procedural::BlendProcedural,
 }
 
 pub use super::bsdf::BlendBsdf;
@@ -188,6 +187,13 @@ pub struct BlendScene {
     pub hidden: Vec<usize>,
     /// Frame range / fps / resolution / engine / world colour.
     pub props: crate::blend::scene::props::BlendSceneProps,
+    /// Progressive open only: the modifier work captured but not yet applied,
+    /// so the base meshes show first and the evaluated ones swap in when the
+    /// apply finishes (`SceneModel::from_blend_progressive`). `None` on an
+    /// eager open (`props.evaluated` carries the result instead). Behind an
+    /// `Arc` so `BlendScene` stays `Clone`; crate-private because its payload
+    /// (modifier trait objects) is.
+    pub(crate) deferred: Option<std::sync::Arc<crate::blend::modifier::DeferredRaw>>,
 }
 
 impl BlendScene {

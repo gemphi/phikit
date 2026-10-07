@@ -108,18 +108,6 @@ pub static SET: &[BModalSpec] = &[
         shape: BModalShape::Card,
         areas: &[],
     },
-    BModalSpec {
-        kind: BModalType::Progress,
-        label: "Opening File",
-        icon: "folder_open",
-        // Twice the old 420: the bar and its stage label both run the full
-        // card width now, and a stage line ("Reading objects 431/2104
-        // Cube.003") needs the room before it ellipsises.
-        width: 840.0,
-        height: 200.0,
-        shape: BModalShape::Card,
-        areas: &[],
-    },
     // A page to read: half the window wide, the whole height, so a manual
     // page or the release notes read at a column width instead of a
     // browser's.

@@ -140,6 +140,28 @@ use super::*;
     }
 
     #[test]
+    fn a_resumed_playhead_overrides_the_file_frame_and_is_clamped() {
+        use crate::v2::state::CtxKey;
+        // The file lands on frame 1 (model_at's default timeline: 1..=250).
+        let mut s = BState::new();
+        settle_import(&mut s, ImportOutcome::Loaded(model_at("/dir/a.blend")));
+        assert_eq!(s.get(CtxKey::Frame), Some("1"), "with no resume, the file's frame");
+
+        // A stashed resume frame in range wins over the file's.
+        let mut s = BState::new();
+        s.set_encoded(crate::v2::app::session::RESUME_FRAME, "42");
+        settle_import(&mut s, ImportOutcome::Loaded(model_at("/dir/b.blend")));
+        assert_eq!(s.get(CtxKey::Frame), Some("42"), "the session's playhead wins");
+        assert_eq!(s.get_encoded(crate::v2::app::session::RESUME_FRAME), None, "the stash is consumed");
+
+        // A resume frame past the file's end is clamped into range.
+        let mut s = BState::new();
+        s.set_encoded(crate::v2::app::session::RESUME_FRAME, "999");
+        settle_import(&mut s, ImportOutcome::Loaded(model_at("/dir/c.blend")));
+        assert_eq!(s.get(CtxKey::Frame), Some("250"), "clamped to the scene's end");
+    }
+
+    #[test]
     fn settle_clears_the_staged_progress_readout() {
         // An in-flight import has seeded the stage label + progress fraction;
         // settling (in every outcome) must clear both so the statusbar bar

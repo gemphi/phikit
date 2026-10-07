@@ -53,8 +53,11 @@ impl BRule for BNodeViewRule {
             // framed for the view as it stands. `view_all` refuses an empty
             // tree, so a material with no nodes leaves the view alone.
             "all" => {
-                let cur = store::view_of(s, host, &graph.nodes, |n| size.height_of(n), size.width);
-                let bounds = frame::graph_bounds(&graph.nodes, |n| size.height_of(n), size.width);
+                // Each node sized by its real, link-dependent height, so a graph
+                // with unconnected vector inputs frames to its true extent.
+                let wired = super::super::link::edits_of(s, host).apply(&graph.links);
+                let cur = store::view_of(s, host, &graph.nodes, |n| size.height_of(n, &super::super::link::linked_inputs(&wired, &n.name)), size.width);
+                let bounds = frame::graph_bounds(&graph.nodes, |n| size.height_of(n, &super::super::link::linked_inputs(&wired, &n.name)), size.width);
                 frame::view_all(bounds, &cur, graph.nodes.len() == 1)
             }
             _ => return,

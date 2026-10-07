@@ -102,6 +102,25 @@ pub enum NodeKey {
     /// one is the wire following the cursor, which ends at the release; this is
     /// the end the about-to-be-added node will join.
     AddLink(BHostType),
+    /// `ctx.<host>.node.values` — the socket values the user has changed, over
+    /// the defaults the file carries.
+    ///
+    /// The file is read-only, so a changed socket value is an overlay like a
+    /// made link or a dragged node: `canvas/node/edit/` overrides the matching
+    /// input socket's default on every frame, and nothing is written back until
+    /// `phiphx` grows a node-tree writer. One key holds the whole list — one
+    /// store write, one undo step — keyed `node/socket/value` by the same
+    /// `(name, identifier)` a link resolves its ends by.
+    Values(BHostType),
+    /// `ctx.<host>.node.picking` — the colour socket whose picker is open, as
+    /// `node/socket`, or absent when none is.
+    ///
+    /// Blender opens a colour picker popover on a click of the swatch; phiber
+    /// has no popover in the painted canvas, so the picker is an inline column
+    /// of channel steppers (`edit/hit.rs`) shown while this names the socket. A
+    /// second click on the swatch clears it. One at a time per host, like a
+    /// popover.
+    Picking(BHostType),
 }
 
 impl BKey for NodeKey {
@@ -115,6 +134,8 @@ impl BKey for NodeKey {
             Self::View(host) => BPath::owned(vec![host.slug(), "node", "view"]),
             Self::Added(host) => BPath::owned(vec![host.slug(), "node", "added"]),
             Self::AddLink(host) => BPath::owned(vec![host.slug(), "node", "addlink"]),
+            Self::Values(host) => BPath::owned(vec![host.slug(), "node", "values"]),
+            Self::Picking(host) => BPath::owned(vec![host.slug(), "node", "picking"]),
         }
     }
 }

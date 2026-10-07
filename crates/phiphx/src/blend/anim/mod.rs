@@ -16,6 +16,7 @@
 //! (`tests/truth/thymus_anim.txt`, made by `truth/blender_anim.py`).
 
 pub mod channels;
+pub mod driver;
 pub mod drivers;
 pub mod easing;
 pub mod fcurve;

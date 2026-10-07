@@ -115,6 +115,12 @@ impl BIdGroup {
         self.order.is_empty()
     }
 
+    /// Write a child, keeping its place in the file order — what a driver
+    /// on a custom property leaves behind (`anim::driver::pass`).
+    pub fn set(&mut self, name: &str, value: BIdValue) {
+        self.insert(name.to_string(), value);
+    }
+
     fn insert(&mut self, name: String, value: BIdValue) {
         if !self.values.contains_key(&name) {
             self.order.push(name.clone());

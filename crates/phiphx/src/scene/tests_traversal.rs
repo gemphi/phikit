@@ -58,6 +58,7 @@ fn blend_scene(objects: Vec<BlendSceneObject>) -> BlendScene {
         selected: Vec::new(),
         hidden: Vec::new(),
         props: Default::default(),
+        deferred: None,
     }
 }
 

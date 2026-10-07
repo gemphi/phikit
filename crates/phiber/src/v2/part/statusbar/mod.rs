@@ -1,14 +1,26 @@
 //! Statusbar (part) — horizontal segments: scene • frame • stats • mem • version.
+//!
+//! While a file is opening the whole bar gives way to a loading panel (see
+//! [`loading_panel`]): the status zone grows to hold it and collapses back to
+//! the one-bar segments when the scene settles. Blender shows only a thin bar
+//! in the status bar during a read; Phiber opens the zone into a panel so the
+//! viewport is never covered and the stages are legible with their timings —
+//! a deliberate divergence, recorded here.
 
 pub mod set;
 
+use std::time::Duration;
+
 use crate::v2::host::BHostType;
 use crate::v2::scene::load_cancel_key;
+use crate::v2::scene::loaded_path_key;
+use crate::v2::scene::selected_key;
 use crate::v2::scene::view_load_progress;
 use crate::v2::scene::view_load_stage;
 use crate::v2::state::BKey as _;
 use crate::v2::state::BPath;
 use crate::v2::state::BState;
+use crate::v2::state::log;
 use crate::v2::state::val::V_TRUE;
 use crate::v2::view::BView;
 use crate::v2::view::BViewItem;
@@ -81,10 +93,11 @@ impl BViewItem for BStatusbarItem {
 
 // `BStatusbarList` — iterates `set::SEGMENTS` and delegates each segment's
 // rendering (including runtime value resolution) to `BStatusbarItem`.
-// 
-// While a blend import is running, a leading progress bar + stage label is
-// prepended (Blender's `WM_progress` in the status bar), then a flexible
-// spacer pushes the ordinary segments to the far end.
+//
+// A render under way prepends its progress bar + Cancel, then a spacer pushes
+// the ordinary segments to the far end. A file *import* is not shown here —
+// it takes the whole bar as the loading panel ([`loading_panel`]), so this
+// list is only ever built when no import is in flight.
 
 #[derive(Clone, Copy, Debug, Default)]
 pub struct BStatusbarList;
@@ -99,20 +112,6 @@ impl BViewList for BStatusbarList {
     fn items(&self, s: &BState) -> Vec<BView> {
         let mut out: Vec<BView> = Vec::new();
 
-        // Import-progress readout, when an import is in flight. The progress
-        // fraction gate is what decides visibility: absent => no import.
-        if let Some(fraction) = view_load_progress(s) {
-            let stage = view_load_stage(s).unwrap_or("Loading");
-            out.push(BView::progress_bar(fraction, stage));
-            // Blender's job progress has an "X" to cancel (`WM_jobs_stop`).
-            out.push(BView::Button(
-                BControl::new()
-                    .with_icon("x")
-                    .with_tooltip("Cancel")
-                    .with_action(BAction::Set(load_cancel_key(), V_TRUE.to_string())),
-            ));
-            out.push(BView::spacer());
-        }
         // A render under way is a job too (`render_view_cancel`): its
         // progress, and the same X — Esc in the render window is the other.
         if crate::v2::scene::render_job::rendering()
@@ -150,6 +149,85 @@ impl BStatusbar {
 
 impl BViewItem for BStatusbar {
     fn build(&self, s: &BState) -> BView {
-        BView::row(BStatusbarList::new().items(s))
+        // A file in flight takes the whole bar: the zone grows to hold the
+        // loading panel (the status area is content-sized), then collapses
+        // back to the segment row when the scene settles and the progress
+        // key is cleared. The progress-fraction gate is what decides it:
+        // present => an import is running.
+        match view_load_progress(s) {
+            Some(fraction) => loading_panel(s, fraction),
+            None => BView::row(BStatusbarList::new().items(s)),
+        }
+    }
+}
+
+/// How many of the newest action-log lines the loading panel shows as its
+/// running log. Enough for the four load phases and a line or two before them.
+const LOG_LINES: usize = 6;
+
+/// The loading panel that fills the status zone while a file opens: the file
+/// being read and a Cancel, the running log with the time each step took, and
+/// a full-width progress bar across the bottom edge.
+fn loading_panel(s: &BState, fraction: f32) -> BView {
+    // Header: what is opening, and the Cancel (Blender's job "X"), pushed to
+    // the far end by a spacer.
+    let header = BView::row(vec![
+        BView::icon("folder_open"),
+        BView::label(opening(s)),
+        BView::spacer(),
+        BView::Button(
+            BControl::new()
+                .with_label("Cancel")
+                .with_action(BAction::Set(load_cancel_key(), V_TRUE.to_string())),
+        ),
+    ]);
+
+    let mut body = vec![header];
+    body.extend(running_log());
+    // The bar last, so it sits across the bottom edge. Its label is the live
+    // (detailed) stage — "Reading objects 431/2104 Cube.003" — on its own
+    // line beneath the full-width bar, so a changing stage never moves it.
+    let stage = view_load_stage(s).unwrap_or("Opening").to_string();
+    body.push(BView::progress_bar_wide(fraction, stage));
+    BView::column(body)
+}
+
+/// The file being opened, by its name alone (the selection that triggered the
+/// read, else the path the scene is settling to).
+fn opening(s: &BState) -> String {
+    let path = s
+        .get(&selected_key())
+        .filter(|p| !p.is_empty())
+        .or_else(|| s.get(&loaded_path_key()))
+        .unwrap_or("");
+    path.rsplit(['/', '\\']).next().unwrap_or(path).to_string()
+}
+
+/// The newest action-log lines, each with the time since the line before it —
+/// the panel's running log. The log already carries the load's phase lines
+/// (`app::load` pushes one per phase); reading it back keeps the panel and the
+/// session journal telling the same story.
+fn running_log() -> Vec<BView> {
+    let entries = log::entries();
+    let shown = entries.len().min(LOG_LINES);
+    (0..shown)
+        .map(|i| {
+            let timing = match entries.get(i + 1) {
+                Some(prev) => BView::label(elapsed(entries[i].at.saturating_duration_since(prev.at))),
+                None => BView::empty(),
+            };
+            BView::row(vec![BView::label(entries[i].text.clone()), BView::spacer(), timing])
+        })
+        .collect()
+}
+
+/// A step's elapsed time, as the journal writes gaps: milliseconds under a
+/// second, seconds above it.
+fn elapsed(d: Duration) -> String {
+    let ms = d.as_secs_f64() * 1000.0;
+    if ms < 1000.0 {
+        format!("+{ms:.0} ms")
+    } else {
+        format!("+{:.1} s", ms / 1000.0)
     }
 }

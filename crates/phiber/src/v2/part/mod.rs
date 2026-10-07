@@ -108,6 +108,9 @@ pub enum BPartType {
     /// system folders, bookmarks, recent (the asset browser's libraries and
     /// catalogs).
     SourceList,
+    /// The Spreadsheet's dataset region: the object's geometry as a tree,
+    /// one row per domain, the chosen one active.
+    Dataset,
     AssetShelf,
     AssetShelfHeader,
     ToolProps,
@@ -163,6 +166,7 @@ impl BPartType {
         Self::PathBar,
         Self::TypeFilter,
         Self::SourceList,
+        Self::Dataset,
         Self::AssetShelf,
         Self::AssetShelfHeader,
         Self::ToolProps,
@@ -204,6 +208,7 @@ impl BPartType {
             BPartType::FileRefresh => "Refresh",
             BPartType::PathBar => "File Path",
             BPartType::SourceList => "Source List",
+            BPartType::Dataset => "Dataset",
             BPartType::TypeFilter => "Type Filter",
             BPartType::AssetShelf => "Asset Shelf",
             BPartType::AssetShelfHeader => "Asset Shelf Header",
@@ -321,6 +326,7 @@ impl BPartItem {
             BPartType::FileRefresh => crate::v2::part::file::nav::BFileRefresh::new(h).build(s),
             BPartType::PathBar => crate::v2::part::file::path_bar::BPathBar::new(h).build(s),
             BPartType::SourceList => crate::v2::part::file::sidebar::BSourceList::new(h).build(s),
+            BPartType::Dataset => crate::v2::part::spreadsheet::dataset::BDataset::new().build(s),
             BPartType::TypeFilter => crate::v2::part::file::path_bar::BTypeFilter::new(h).build(s),
             BPartType::AssetShelf => BAssetShelf::new(h).build(s),
             BPartType::AssetShelfHeader => {

@@ -21,6 +21,8 @@ pub trait BLamp {
     fn kind(&self) -> u32;
     /// `Light::shape`, an area light's `Light.area_shape`.
     fn shape(&self) -> u32;
+    /// A spot's `Light::spot_scale`, `scale.z / scale.xy` of the object.
+    fn spot_scale(&self, m: &Mat4) -> [f32; 2];
     /// The record the kernels read.
     fn record(&self) -> Light;
 }
@@ -44,6 +46,14 @@ impl BLamp for SceneLight {
         }
     }
 
+    /// EEVEE's `spot_size_inv` (`eevee_light.cc`): the object's Z scale
+    /// over its X and Y, which turns the cone's cross-section into an
+    /// ellipse. An unscaled spot gives `[1, 1]` and stays round.
+    fn spot_scale(&self, m: &Mat4) -> [f32; 2] {
+        let z = m.z_axis.truncate().length();
+        [m.x_axis, m.y_axis].map(|axis| z / axis.truncate().length().max(1e-8))
+    }
+
     fn record(&self) -> Light {
         let m = Mat4::from_cols_array_2d(&self.matrix_world);
         let kind = self.kind();
@@ -54,25 +64,30 @@ impl BLamp for SceneLight {
         // how much of that cone fades, which EEVEE turns into a width in
         // cosine on the CPU (`eevee_light.cc`: `spot_blend =
         // (1 - spot_size) * spotblend`) so the kernels only smoothstep.
-        let (cone, blend) = match kind == SPOT {
+        //
+        // Its cone follows the object's scale, so a spot squashed in one
+        // axis lights an ellipse rather than a circle (`spot_scale`).
+        let (cone, blend, spot_scale) = match kind == SPOT {
             true => {
                 let cone = (self.spot_size * 0.5).cos();
-                (cone, ((1.0 - cone) * self.spot_blend).max(1e-8))
+                (cone, ((1.0 - cone) * self.spot_blend).max(1e-8), self.spot_scale(&m))
             }
-            false => (0.0, 0.0),
+            false => (0.0, 0.0, [0.0; 2]),
         };
         // An area light's shape lies in its own plane, so its axes are the
         // object's and its edges carry the object's scale, as EEVEE's do
-        // (`eevee_light.cc`: `size *= scale.xy()`). The other kinds have no
-        // plane and leave `right` and `size_y` at zero.
+        // (`eevee_light.cc`: `size *= scale.xy()`). A spot has no plane but
+        // needs the same axes, for the ellipse; a sun and a point need
+        // neither and leave `right` and `size_y` at zero.
         let area = kind == AREA;
-        let (right, size, size_y) = match area {
-            true => (
+        let (right, size, size_y) = match (area, kind == SPOT) {
+            (true, _) => (
                 m.x_axis.truncate().normalize_or_zero().to_array(),
                 self.size * m.x_axis.truncate().length(),
                 self.size_y * m.y_axis.truncate().length(),
             ),
-            false => ([0.0; 3], self.size, 0.0),
+            (_, true) => (m.x_axis.truncate().normalize_or_zero().to_array(), self.size, 0.0),
+            _ => ([0.0; 3], self.size, 0.0),
         };
         Light {
             pos: m.w_axis.truncate().to_array(),
@@ -85,7 +100,7 @@ impl BLamp for SceneLight {
             right,
             size_y,
             shape: if area { self.shape() } else { AREA_SQUARE },
-            _pad: [0; 2],
+            spot_scale,
         }
     }
 }

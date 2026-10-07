@@ -320,7 +320,12 @@ Raytracing is turned on.
 5. The Key menu over a selection: Copy / Paste, Interpolation, Handle Type,
    Easing, Snap, Mirror (needs 1). Medium.
 6. F-curve modifiers: Cycles first, then Noise, Limits, Stepped. Medium.
-7. Drivers beyond rigs, and the other variable types. Large.
+7. ~~Drivers beyond rigs, and the other variable types~~ — batches 165
+   and 171: every variable kind but Context Property, all three target
+   spaces, and the custom-property chain, measured against Blender's own
+   depsgraph to under 1e-6 (`docs/driver-parity.md`). Still: drivers whose
+   *target* is a material, a modifier or a shape key, and
+   driver-against-driver ordering. Medium.
 8. Shape-key animation and the Shape Key editor. Large.
 9. NLA tweak mode and strip dragging. Large.
 10. Spline IK and Shrinkwrap. Large.

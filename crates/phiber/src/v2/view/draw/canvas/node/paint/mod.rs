@@ -53,7 +53,6 @@
 //! links drawn over each other, and a muted link's `0.65` inner alpha.
 
 use super::socket::{BSocketRow, BSocketSide};
-use crate::phiphx::blend::shade::graph::BlendNodeLink;
 use crate::v2::theme::palette::BColor;
 use gpui::{App, Bounds, PathBuilder, Pixels, Window, point, px};
 
@@ -121,23 +120,6 @@ impl BNodeCard {
             BSocketSide::Output => self.x + self.width,
         };
         (x, self.y + self.header + row.y * self.unit)
-    }
-
-    /// Mark each input row linked when a drawn wire arrives at it, so the
-    /// painter shows the value only on the inputs nothing is plugged into
-    /// (`value::shows_value`).
-    ///
-    /// The wire set is the overlay-applied truth — the file's links with this
-    /// host's edits — so an input the file called linked but whose link an edit
-    /// broke reads as unlinked here, and gets its value back. That is why this
-    /// is marked from the wires rather than from `bNodeSocket.SOCK_IS_LINKED`:
-    /// the flag is the file's, and the file is read-only under the overlay.
-    pub fn mark_linked(&mut self, wired: &[BlendNodeLink]) {
-        for row in &mut self.sockets {
-            if row.side == BSocketSide::Input {
-                row.linked = wired.iter().any(|l| l.to == self.name && l.to_socket == row.identifier);
-            }
-        }
     }
 }
 

@@ -74,7 +74,13 @@ fn child_bounds(node: &BlendNode, nodes: &[BlendNode], size: BCardSize, offsets:
         return bounds_of(node, nodes, size, offsets, depth + 1);
     }
     let (ox, oy) = shift(offsets, &node.name);
-    let b = node_bounds(node, size.height_of(node), size.width);
+    // A frame need only CONTAIN its children, so each is sized at its tallest —
+    // `&[]` treats every input as unconnected, which expands a vector input to
+    // its field column. A child with a linked vector is then a touch shorter
+    // than the box reserved, never taller, so the frame never clips it. Sizing
+    // frames exactly would mean threading the wire set through this recursion
+    // for a backdrop whose snugness no interaction depends on.
+    let b = node_bounds(node, size.height_of(node, &[]), size.width);
     Some((b.0 + ox, b.1 + oy, b.2 + ox, b.3 + oy))
 }
 

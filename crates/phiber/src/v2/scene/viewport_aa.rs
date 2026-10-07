@@ -46,6 +46,22 @@ impl BViewportAa {
         Self::ITEMS.iter().find(|(id, ..)| *id == chosen).map_or(8, |(.., n)| *n)
     }
 
+    /// The CPU rasteriser's supersample factor for the chosen AA — the Solid
+    /// and Wireframe views have no MSAA, so they oversample the whole frame and
+    /// average it down (`view3d::mesh::paint`). Blender's jittered sample COUNTS
+    /// map onto a supersample grid (f² samples a pixel): OFF and the single FXAA
+    /// pass draw at 1x (the CPU path has no SMAA post to stand in for FXAA),
+    /// then 2x, 3x, 4x. 4x (sixteen samples) is the ceiling, so 32 does not turn
+    /// one frame into a thousand-sample CPU rasterise.
+    pub fn supersample(s: &BState) -> usize {
+        match Self::samples(s) {
+            0 | 1 => 1,
+            5 => 2,
+            8 | 11 => 3,
+            _ => 4,
+        }
+    }
+
     /// The Quality card's select over the preference.
     pub fn control(open: BPath, s: &BState) -> BCtrl {
         let options = Self::ITEMS.iter().map(|(id, label, _)| BOption { key: id.to_string(), label: label.to_string(), icon: String::new() });
@@ -73,5 +89,15 @@ mod tests {
         assert_eq!(ctrl.options.len(), 7);
         assert_eq!(ctrl.options[1].label, "Single Pass Anti-Aliasing");
         assert_eq!(BViewportAa::key().encode(), "ctx.pref.viewport_aa");
+    }
+
+    #[test]
+    fn the_cpu_rasteriser_supersamples_by_the_chosen_aa() {
+        let mut s = BState::new();
+        assert_eq!(BViewportAa::supersample(&s), 3, "default (8 samples) oversamples 3x");
+        for (id, want) in [("OFF", 1), ("FXAA", 1), ("5", 2), ("8", 3), ("11", 3), ("16", 4), ("32", 4)] {
+            s.set(AppKey::ViewportAa, id);
+            assert_eq!(BViewportAa::supersample(&s), want, "{id} → {want}x");
+        }
     }
 }

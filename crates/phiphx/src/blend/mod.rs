@@ -30,11 +30,44 @@ pub use file::types::{
 pub use modifier::BlendEvalMesh;
 pub use modifier::skin::{CpuSkin, SKIN_MIN, SkinJob, SkinPair, Skinner, set_skinner};
 pub(crate) use modifier::supported_modifiers;
+pub(crate) use modifier::{DeferredRaw, apply_eval_jobs};
+
+thread_local! {
+    /// Set while a progressive open parses, so the reader captures modifier
+    /// jobs for a deferred apply instead of applying them inline (`scene::read`,
+    /// `Phx::open_progressive`). Thread-local because a reader runs on one
+    /// thread and concurrent opens must not see each other's mode.
+    static PROGRESSIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Run `f` with progressive-open mode on, restoring the previous mode after —
+/// even on panic — so a reader on this thread defers modifier evaluation.
+pub(crate) fn with_progressive_open<R>(f: impl FnOnce() -> R) -> R {
+    struct Guard(bool);
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            PROGRESSIVE.with(|p| p.set(self.0));
+        }
+    }
+    let _guard = PROGRESSIVE.with(|p| Guard(p.replace(true)));
+    f()
+}
+
+/// Whether the current read should defer modifier evaluation.
+pub(crate) fn progressive_open() -> bool {
+    PROGRESSIVE.with(std::cell::Cell::get)
+}
 pub use object::kind::ObjectKind;
 pub use object::data::{BlendCameraData, BlendEmptyData, BlendLightData, BlendObjectData};
 pub use object::dof::BlendDof;
 pub use anim::fcurve::{BFCurve, BKey, COLOR_AUTO_RAINBOW, COLOR_AUTO_RGB, COLOR_AUTO_YRGB, COLOR_CUSTOM, FLAG_ACTIVE, FLAG_MUTED, FLAG_PROTECTED, FLAG_SELECTED, HANDLE_ALIGN, HANDLE_AUTO, HANDLE_AUTO_ANIM, HANDLE_FREE, HANDLE_VECT, IPO_BEZ};
 pub use anim::drivers::BlendDrivers;
+pub use anim::driver::chan::{MAX_TRANSCHAN, ROTMODE_AUTO, ROTMODE_QUATERNION, ROTMODE_SWING_TWIST_X, TRANSCHAN_ROTW, TRANSCHAN_ROTX, TRANSCHAN_SCALEX, TRANSCHAN_SCALE_AVG};
+pub use anim::driver::space::BDriverSpace;
+pub use modifier::driver::{BModDriver, BModKind, BModValue, BModWrite, BModifierDrivers};
+pub use object::light_driver::{AREA_ENERGY_SCALE, BLightDriver, BLightDrivers, BLightProp, LA_AREA, SPOT_SIZE_MIN};
+pub use shade::world_driver::{BWorldDriver, BWorldDrivers, BWorldWrite};
+pub use anim::driver::{BDriverRun, BDriverState, BlendDriver, BlendDriverEnd, BlendDriverRead, BlendDriverScene, BlendDriverSet, BlendDriverVar, BlendObjectDriver, BlendPropDriver};
 pub use anim::nla_eval::{BMotionClip, BMotionTrack};
 pub use anim::nla_edit::{BNlaAt, BNlaPick, BNlaStacks, NEW_TRACK};
 pub use anim::nla_stack::{BNlaPlaced, STASH_TRACK};

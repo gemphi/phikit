@@ -92,26 +92,19 @@ fn paint_value(
     let inner_right = x + card.width - r * 2.0;
     let to_hsla = crate::v2::view::draw::color::to_hsla;
     match value::widget(row.side, row.linked, row.default.as_ref()) {
+        // A scalar: one right-aligned number on the socket's own row.
         Some(value::BSocketWidget::Text(text)) => {
-            let run = TextRun {
-                len: text.len(),
-                font: window.text_style().font(),
-                color: to_hsla(ink.label),
-                background_color: None,
-                underline: None,
-                strikethrough: None,
-            };
-            let size_px = px(card.unit * 0.55);
-            let line = window.text_system().shape_line(SharedString::from(text), size_px, &[run], None);
-            let line_height = size_px * 1.3;
-            let _ = line.paint(
-                point(at.origin.x + px(inner_right) - line.width(), at.origin.y + px(y) - line_height / 2.0),
-                line_height,
-                gpui::TextAlign::Left,
-                None,
-                window,
-                cx,
-            );
+            paint_number(&text, card.unit, inner_right, y, ink, at, window, cx);
+        }
+        // A vector: a number per component, stacked one row apart below the
+        // name — the field column `std_node_socket_draw` draws. The socket's
+        // row was laid out this many units taller (`value::rows_tall`), so the
+        // fields land inside the card, not over the socket below.
+        Some(value::BSocketWidget::Fields(parts)) => {
+            for (i, part) in parts.iter().enumerate() {
+                let row_y = y + (i as f32 + 1.0) * card.unit;
+                paint_number(part, card.unit, inner_right, row_y, ink, at, window, cx);
+            }
         }
         Some(value::BSocketWidget::Check(on)) => {
             // A square box at the row's inner edge, filled when checked — the
@@ -155,4 +148,39 @@ fn paint_value(
         }
         None => {}
     }
+}
+
+/// One right-aligned number, its right edge at `inner_right` and its middle at
+/// `y` — the shared body of a scalar value and of each component of a vector's
+/// field column.
+#[allow(clippy::too_many_arguments)]
+fn paint_number(
+    text: &str,
+    unit: f32,
+    inner_right: f32,
+    y: f32,
+    ink: &BNodeInk,
+    at: Bounds<Pixels>,
+    window: &mut Window,
+    cx: &mut App,
+) {
+    let run = TextRun {
+        len: text.len(),
+        font: window.text_style().font(),
+        color: crate::v2::view::draw::color::to_hsla(ink.label),
+        background_color: None,
+        underline: None,
+        strikethrough: None,
+    };
+    let size_px = px(unit * 0.55);
+    let line = window.text_system().shape_line(SharedString::from(text.to_string()), size_px, &[run], None);
+    let line_height = size_px * 1.3;
+    let _ = line.paint(
+        point(at.origin.x + px(inner_right) - line.width(), at.origin.y + px(y) - line_height / 2.0),
+        line_height,
+        gpui::TextAlign::Left,
+        None,
+        window,
+        cx,
+    );
 }

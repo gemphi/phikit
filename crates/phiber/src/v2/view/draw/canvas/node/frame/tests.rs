@@ -23,7 +23,7 @@ fn a_frame_bounds_its_child_padded_by_the_margins() {
     let c = child(1, 99, 0.0, 0.0);
     let f = frame(99, "");
     let nodes = vec![f.clone(), c.clone()];
-    let cb = node_bounds(&c, size().height_of(&c), size().width);
+    let cb = node_bounds(&c, size().height_of(&c, &[]), size().width);
     let m = MARGIN * 10.0;
     assert_eq!(
         bounds_of(&f, &nodes, size(), &[], 0),
@@ -43,7 +43,7 @@ fn a_label_makes_the_top_margin_taller_than_the_sides() {
     let c = child(1, 99, 0.0, 0.0);
     let f = frame(99, "Group");
     let nodes = vec![f.clone(), c.clone()];
-    let cb = node_bounds(&c, size().height_of(&c), size().width);
+    let cb = node_bounds(&c, size().height_of(&c, &[]), size().width);
     let got = bounds_of(&f, &nodes, size(), &[], 0).unwrap();
     // Y up: the top (`ymax`) carries the taller top margin, the other three the side.
     assert_eq!(got.3, cb.3 + top * 10.0, "top edge uses the top margin");

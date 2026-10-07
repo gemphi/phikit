@@ -110,7 +110,7 @@ mod tests {
     }
 
     fn body_height(node: &BlendNode) -> f32 {
-        super::super::body_height(node)
+        super::super::body_height(node, &[])
     }
 
     // ── collapsed nodes (`node_update_collapsed`) ───────────────────────────────
@@ -159,7 +159,7 @@ mod tests {
         // One input and three outputs: the input sits level with the MIDDLE
         // output, because each list is centred on its own count.
         let n = folded(socks(1), socks(3));
-        let rows = rows(&n);
+        let rows = rows(&n, &[]);
         let outs: Vec<f32> = rows.iter().filter(|r| r.side == BSocketSide::Output).map(|r| r.y).collect();
         let ins: Vec<f32> = rows.iter().filter(|r| r.side == BSocketSide::Input).map(|r| r.y).collect();
         assert_eq!(outs.len(), 3);
@@ -173,7 +173,7 @@ mod tests {
 
     #[test]
     fn a_folded_nodes_sockets_are_on_the_pills_two_edges() {
-        let rows = rows(&folded(socks(1), socks(1)));
+        let rows = rows(&folded(socks(1), socks(1)), &[]);
         assert_eq!(rows.iter().filter(|r| r.side == BSocketSide::Input).count(), 1);
         assert_eq!(rows.iter().filter(|r| r.side == BSocketSide::Output).count(), 1);
         // Every row sits inside the pill, which is what makes `socket_at` land on it.
@@ -193,7 +193,7 @@ mod tests {
         outputs[2].flag = SOCK_UNAVAIL;
         let n = folded(Vec::new(), outputs);
         assert_eq!(collapsed_height(&n), HALF * 2.0 + COLLAPSED_RAD * 2.0, "two shown, so the floor");
-        assert_eq!(rows(&n).len(), 2, "and only the two shown are placed");
+        assert_eq!(rows(&n, &[]).len(), 2, "and only the two shown are placed");
     }
 
     #[test]
@@ -204,6 +204,6 @@ mod tests {
         let shut = folded(socks(3), socks(3));
         assert_ne!(body_height(&open), body_height(&shut));
         assert_eq!(body_height(&shut), collapsed_height(&shut), "no header, no body: the pill is the height");
-        assert_eq!(rows(&shut), collapsed_rows(&shut));
+        assert_eq!(rows(&shut, &[]), collapsed_rows(&shut));
     }
 }

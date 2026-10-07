@@ -25,6 +25,9 @@ impl BPhiberApp {
         match OpKey::of(path) {
             Some(OpKey::Quit) => {
                 self.closing = true;
+                // Flush the session now so the camera and playhead as they rest
+                // at exit survive the throttle (`app::session`).
+                super::session::BSession::flush(&self.state);
                 window.remove_window();
             }
             Some(OpKey::Fullscreen) => {

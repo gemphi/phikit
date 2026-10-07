@@ -13,6 +13,7 @@ use crate::v2::state::BState;
 pub mod skin;
 pub use skin::RaySkin;
 
+pub mod composite;
 pub mod source;
 pub use source::{
     clear_loaded_scene, clear_scene_objects, scene_actions, scene_cameras, scene_lights,
@@ -22,6 +23,7 @@ pub use source::{
 
 pub mod keep;
 pub mod key;
+pub mod load_stage;
 #[cfg(test)]
 mod keys_tests;
 pub use key::{
@@ -40,7 +42,7 @@ pub mod render_slot;
 pub mod render_job;
 pub mod render_fit;
 pub mod render_status;
-pub use render_job::{BRenderPlan, active_camera, camera_of, plan as render_plan, render_size};
+pub use render_job::{BRenderPlan, active_camera, camera_of, plan as render_plan, plan_at, render_size};
 pub mod output_set;
 pub use output_set::{output_set, pass_set, pass_state};
 pub mod render_save;
@@ -57,6 +59,7 @@ pub mod color;
 pub mod keyframe;
 pub use keyframe::BShownKeys;
 pub mod edit;
+pub mod uv_edit;
 pub mod export;
 pub mod extra;
 pub mod image_gen;
@@ -110,39 +113,8 @@ mod tests_state;
 
 // ── Default scene: shapes, static objects, and the runtime scene source ──
 
-/// A primitive shape an object can take. Drives both its viewport silhouette
-/// and its outliner icon.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum BShape {
-    Cube,
-    Sphere,
-    Gem,
-}
-
-impl BShape {
-    pub fn icon(self) -> &'static str {
-        match self {
-            BShape::Cube => "cube",
-            BShape::Sphere => "sphere",
-            BShape::Gem => "diamond",
-        }
-    }
-    pub fn label(self) -> &'static str {
-        match self {
-            BShape::Cube => "Cube",
-            BShape::Sphere => "Sphere",
-            BShape::Gem => "Gem",
-        }
-    }
-    pub fn mesh_type(self) -> crate::phiphx::spatial::PhiQuiMeshType {
-        use crate::phiphx::spatial::PhiQuiMeshType;
-        match self {
-            BShape::Cube => PhiQuiMeshType::Cube,
-            BShape::Sphere => PhiQuiMeshType::Sphere,
-            BShape::Gem => PhiQuiMeshType::Icosahedron,
-        }
-    }
-}
+pub mod shape;
+pub use shape::BShape;
 
 /// One scene object. Position is in an abstract world space centred on the
 /// origin; the viewport projects `(x, y)` to screen using the current yaw.

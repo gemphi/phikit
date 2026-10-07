@@ -17,6 +17,12 @@ pub use super::surface::BCorners;
 
 pub type BActionHandler = Rc<dyn Fn(&BAction, &mut Window, &mut App) + 'static>;
 
+/// What a text field needs to wire real input: the window entity (which
+/// implements `EntityInputHandler`) and the window's focus handle. Threaded
+/// from `BPhiberApp::render` so the editing field can register the input
+/// handler and draw its caret (`draw::text_input`).
+pub type BInputWiring = (gpui::Entity<crate::v2::app::BPhiberApp>, gpui::FocusHandle);
+
 /// Area-resize drag callback: `(space, zone, boundary_index, dpx, zone_extent)`.
 /// The app applies `area::size::apply_delta` and re-renders. This is a
 /// dedicated seam because one drag writes two fraction keys atomically.
@@ -61,6 +67,10 @@ pub struct BRenderCtx<'a> {
     /// The area being drawn, set by the area walker: what tells two areas
     /// holding the same host apart (a header's pan, `region::pan`).
     pub area: Option<crate::v2::area::BAreaType>,
+    /// The window entity + focus for wiring text input, when this pass was
+    /// started with them (`BPhiberApp::render`). `None` in tests and anywhere
+    /// the renderer is driven without an entity.
+    pub input: Option<BInputWiring>,
 }
 
 impl<'a> BRenderCtx<'a> {
@@ -82,7 +92,14 @@ impl<'a> BRenderCtx<'a> {
             floating: false,
             fill: false,
             area: None,
+            input: None,
         }
+    }
+
+    /// Carry the text-input wiring for this pass (set once, at the root).
+    pub fn with_input(mut self, wiring: Option<BInputWiring>) -> Self {
+        self.input = wiring;
+        self
     }
 
     /// Derive a context inside area `area`.
@@ -108,6 +125,7 @@ impl<'a> BRenderCtx<'a> {
             floating: self.floating,
             fill: self.fill,
             area: self.area,
+            input: self.input.clone(),
         }
     }
 
@@ -126,6 +144,7 @@ impl<'a> BRenderCtx<'a> {
             floating: self.floating,
             fill: self.fill,
             area: self.area,
+            input: self.input.clone(),
         }
     }
 
@@ -170,6 +189,7 @@ impl<'a> BRenderCtx<'a> {
             floating: self.floating,
             fill: self.fill,
             area: self.area,
+            input: self.input.clone(),
         }
     }
 }

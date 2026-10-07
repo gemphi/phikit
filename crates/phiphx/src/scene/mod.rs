@@ -195,6 +195,12 @@ pub struct SceneModel {
     pub uv_maps: Vec<std::sync::Arc<SceneUvMap>>,
     /// The 3D cursor, as the file left it.
     pub cursor: crate::blend::BlendCursor,
+    /// The scene's compositor tree (`comp/`), as the file has it: `None`
+    /// when there is none. A render goes through it
+    /// (`BCompTree::plan`); the viewport does not, which is Blender's own
+    /// split — compositing is part of the render pipeline, not of the
+    /// viewport's shading.
+    pub compositor: Option<crate::comp::BCompTree>,
 }
 
 impl SceneModel {
@@ -216,12 +222,13 @@ pub mod relation;
 pub use relation::SceneRelation;
 pub mod uv;
 pub use uv::SceneUvMap;
+pub mod progressive;
+pub use progressive::DeferredModifiers;
 mod error;
 mod extras;
 mod geometry;
 mod import;
 mod import_extras;
-mod import_phx;
 mod material;
 mod object;
 pub(crate) mod polyfill;

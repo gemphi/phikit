@@ -3,6 +3,8 @@
 
 pub(crate) mod collection;
 pub mod data;
+pub mod light_driver;
+pub(crate) mod light_driver_read;
 pub mod dof;
 pub(crate) mod dna;
 pub(crate) mod kind;

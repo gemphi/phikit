@@ -10,6 +10,7 @@
 //! Static data lives ONLY in `set.rs` files. No inline arrays/tuples in any
 //! `list.rs` or `item.rs`.
 
+pub mod level;
 pub mod spec;
 pub mod state;
 pub mod theme;
@@ -27,6 +28,7 @@ pub mod zone;
 
 pub mod app;
 
+pub use level::BLevelType;
 pub use spec::{BSpec, BSpecKind};
 pub use state::{BPath, BState};
 pub use theme::{

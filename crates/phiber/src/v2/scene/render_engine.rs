@@ -1,13 +1,64 @@
 //! Which engine a final render draws with (`Scene.r.engine`): the path
-//! tracer for EEVEE and Cycles, or — `BLENDER_WORKBENCH` — Solid /
+//! tracer for EEVEE, Cycles and Phiray, or — `BLENDER_WORKBENCH` — Solid /
 //! Wireframe with `Scene.display.shading`, as Blender's Workbench render
 //! engine draws F12 (`workbench_render.cc`: the scene's display shading,
 //! not the viewport's, and `render_aa` for the samples).
+//!
+//! The engine is the **panel's**, not the file's. Properties ▸ Render ▸
+//! Engine was a dropdown a render never read: a file saved with Workbench
+//! rendered Workbench, and changing the row changed nothing — least of all
+//! `PHIRAY`, which no `.blend` can name and which could therefore only ever
+//! be chosen there. `BRenderSet` carries it now, so the row behaves like
+//! every other row in that panel.
 
 use super::BRenderSet;
 use crate::phiphx::scene::SceneModel;
 use crate::v2::view::draw::canvas::view3d::rendered::BStillLook;
 use phiray::Camera;
+
+/// Properties ▸ Render ▸ Engine (`part/props/render.rs`'s `ENGINE`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum BRenderEngine {
+    /// `BLENDER_EEVEE_NEXT`, the engine a fresh Blender scene names.
+    #[default]
+    Eevee,
+    /// `BLENDER_WORKBENCH`.
+    Workbench,
+    /// `CYCLES`.
+    Cycles,
+    /// `PHIRAY` — phiber's own tracer, named as itself rather than as
+    /// Cycles. No `.blend` carries it.
+    Phiray,
+}
+
+impl BRenderEngine {
+    /// The enum's identifier as the state and the file both spell it; an
+    /// unknown name is EEVEE, as Blender falls back on a missing engine.
+    pub fn of(name: &str) -> Self {
+        match name {
+            "BLENDER_WORKBENCH" => Self::Workbench,
+            "CYCLES" => Self::Cycles,
+            "PHIRAY" => Self::Phiray,
+            _ => Self::Eevee,
+        }
+    }
+
+    /// The name shown in the Info report and the Engine row.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Eevee => "EEVEE",
+            Self::Workbench => "Workbench",
+            Self::Cycles => "Cycles",
+            Self::Phiray => "Phiray",
+        }
+    }
+
+    /// Whether a final render path-traces: every engine but Workbench,
+    /// which rasterizes `Scene.display.shading` instead.
+    pub fn traces(self) -> bool {
+        self != Self::Workbench
+    }
+}
 
 impl BStillLook {
     /// `BLENDER_WORKBENCH`'s render: `Scene.display.shading` on the camera's
@@ -16,7 +67,7 @@ impl BStillLook {
     /// `render_aa` as the sample count, and no denoise; every
     /// other engine renders through the path tracer at the panel's settings.
     pub fn for_engine(model: &SceneModel, set: BRenderSet, lens: super::BCameraLens, camera: &mut Camera, plain: gpui::Hsla) -> (Self, u32, bool) {
-        if model.render.engine != "BLENDER_WORKBENCH" {
+        if set.engine.traces() {
             return (Self::new(crate::v2::scene::BShading::Rendered, plain), set.samples.max(1), set.denoise);
         }
         let d = &model.render.display;

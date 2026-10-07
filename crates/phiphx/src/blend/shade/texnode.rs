@@ -3,7 +3,9 @@
 //! and its settings from the node's storage — `NodeTexNoise` (type,
 //! normalize), `NodeTexVoronoi` (feature, distance, normalize),
 //! `NodeTexGradient`, `NodeTexMagic` (depth), `NodeTexWave` (type,
-//! directions, profile), `NodeTexBrick` (offset and squash) — with each
+//! directions, profile), `NodeTexBrick` (offset and squash),
+//! `NodeTexGabor` (type) and a White Noise's dimensions in
+//! `bNode.custom1` — with each
 //! socket's default from `node_shader_tex_*.cc` when the file lacks it.
 
 use super::procedural::BProcFinder;
@@ -29,6 +31,24 @@ pub enum BlendProcKind {
     MagicColor,
     /// Wave ▸ Fac or Color (the same grey).
     Wave,
+    WhiteNoiseFac,
+    WhiteNoiseColor,
+    /// Gabor ▸ Value, Phase and Intensity — one phasor, three outputs.
+    GaborValue,
+    GaborPhase,
+    GaborIntensity,
+}
+
+/// A Math node between a texture and the socket it drives: the operation
+/// (`bNode.custom1`, `NodeMathOperation`), its second and third `Value`
+/// sockets, and Clamp (`bNode.custom2 & SHD_MATH_CLAMP`). Cycles evaluates
+/// it in `svm_math`; the tracer carries it in the slot's tail.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct BlendMath {
+    pub op: u32,
+    pub b: f32,
+    pub c: f32,
+    pub clamp: bool,
 }
 
 /// The coordinate the texture samples (`ShaderNodeTexCoord`'s outputs).
@@ -40,6 +60,29 @@ pub enum BlendProcCoord {
     Uv,
 }
 
+/// What a Mapping node between a Texture Coordinate and a texture node
+/// amounts to: the coordinate it starts from and the node's own four
+/// settings (`node_shader_mapping.cc`, `svm_mapping` in
+/// `mapping_util.h`). The default is the identity — Generated, no offset,
+/// no rotation, unit scale, Point — which is what a texture with its
+/// `Vector` unlinked gets.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct BlendMapping {
+    pub coords: BlendProcCoord,
+    pub location: [f32; 3],
+    pub rotation: [f32; 3],
+    pub scale3: [f32; 3],
+    /// `bNode.custom1`, `NodeMappingType`: 0 Point, 1 Texture, 2 Vector,
+    /// 3 Normal.
+    pub mapping: u32,
+}
+
+impl Default for BlendMapping {
+    fn default() -> Self {
+        Self { coords: BlendProcCoord::Generated, location: [0.0; 3], rotation: [0.0; 3], scale3: [1.0; 3], mapping: 0 }
+    }
+}
+
 /// One procedural texture as a material socket reads it. The fields
 /// past `distortion` are the ones a node type has (the tracer's `Proc`
 /// words, `procedural.wgsl`'s head); the rest stay at their default.
@@ -47,9 +90,14 @@ pub enum BlendProcCoord {
 pub struct BlendProc {
     pub kind: BlendProcKind,
     pub coords: BlendProcCoord,
-    /// Mapping ▸ Location and Scale (Point), the identity without one.
+    /// Mapping ▸ Location, Rotation (Euler XYZ, radians) and Scale, with
+    /// the node's own Type (`bNode.custom1`, `NodeMappingType`: 0 Point,
+    /// 1 Texture, 2 Vector, 3 Normal). The identity without a Mapping
+    /// node: no offset, no rotation, unit scale, Point.
     pub location: [f32; 3],
+    pub rotation: [f32; 3],
     pub scale3: [f32; 3],
+    pub mapping: u32,
     pub scale: f32,
     pub detail: f32,
     pub roughness: f32,
@@ -87,12 +135,17 @@ pub struct BlendProc {
     /// The Color Ramp between the texture and the socket, as 256 RGBA
     /// bytes of linear colour, `None` for the texture's own output.
     pub ramp: Option<Vec<u8>>,
+    /// The Math node between the texture and the socket, `None` for none.
+    pub math: Option<BlendMath>,
 }
 
 /// `SHD_NOISE_FBM`, the type of every Noise before Blender 4.1.
 const NOISE_FBM: u32 = 1;
 /// `SHD_VORONOI_N_SPHERE_RADIUS`.
 const VORONOI_N_SPHERE_RADIUS: u32 = 4;
+/// White Noise's dimensions on a new node
+/// (`node_shader_init_tex_white_noise`), and the 1 ..= 4 it is read into.
+const WHITE_NOISE_3D: u32 = 3;
 
 impl BProcFinder<'_> {
     /// `node`'s storage field `field` of struct `st`, `len` bytes wide
@@ -101,6 +154,49 @@ impl BProcFinder<'_> {
         let storage = self.f.block_at(self.f.ptr(node, self.f.off("bNode", "*storage", self.dna)))?;
         let bytes = storage.data.get(self.f.off(st, field, self.dna)?..)?.get(..len)?;
         Some(if len == 1 { bytes[0] as u32 } else { self.f.read_i32(bytes) as u32 })
+    }
+
+    /// A setting a node keeps outside its storage struct: a Mapping's
+    /// Type and a White Noise's dimensions in `custom1`, a Math node's
+    /// Clamp (`SHD_MATH_CLAMP`) in `custom2`.
+    fn custom(&self, node: &BlendBlock, field: &str) -> Option<u32> {
+        let at = self.f.off("bNode", field, self.dna)?;
+        node.data.get(at..at + 2).map(|b| u32::from(self.f.read_u16(b)))
+    }
+
+    pub(super) fn custom1(&self, node: &BlendBlock) -> Option<u32> {
+        self.custom(node, "custom1")
+    }
+
+    /// `node`'s vector input `name` as stored, found by the socket's
+    /// *identifier* — a Gabor has two sockets both named `Orientation`,
+    /// and only `Orientation 2D` / `Orientation 3D` tell them apart.
+    /// `bNodeSocketValueVector` keeps its three floats after the subtype.
+    fn vector(&self, node: &BlendBlock, name: &str, default: [f32; 3]) -> [f32; 3] {
+        let value = self
+            .f
+            .socket_named(node, name, self.dna)
+            .and_then(|s| self.f.block_at(s))
+            .and_then(|s| self.f.block_at(self.f.ptr(s, self.f.off("bNodeSocket", "*default_value", self.dna))));
+        let Some(v) = value else { return default };
+        let at = |i: usize| v.data.get(4 + i * 4..8 + i * 4).map(|b| self.f.read_f32(b));
+        match (at(0), at(1), at(2)) {
+            (Some(x), Some(y), Some(z)) => [x, y, z],
+            _ => default,
+        }
+    }
+
+    /// The Math node `node` as the tracer takes it: its operation from
+    /// `custom1`, its other two `Value` sockets by identifier (all three
+    /// are named `Value`, so only `Value_001` and `Value_002` tell them
+    /// apart), and Clamp from `custom2`.
+    pub(super) fn math(&self, node: &BlendBlock) -> BlendMath {
+        BlendMath {
+            op: self.custom1(node).unwrap_or(0),
+            b: self.float(node, "Value_001", 0.5),
+            c: self.float(node, "Value_002", 0.5),
+            clamp: self.custom(node, "custom2").is_some_and(|c| c != 0),
+        }
     }
 
     /// The node `from`, read at its output `output`; `None` for a node or
@@ -184,7 +280,38 @@ impl BProcFinder<'_> {
                 smoothness: self.float(from, "Phase Offset", 0.0),
                 ..base
             },
+            "WhiteNoise" => BlendProc {
+                kind: if color { BlendProcKind::WhiteNoiseColor } else { BlendProcKind::WhiteNoiseFac },
+                // The node has no Scale socket: the coordinate is hashed as
+                // it arrives, so the slot's own scale stays at one.
+                scale: 1.0,
+                variant: self.custom1(from).filter(|d| (1..=4).contains(d)).unwrap_or(WHITE_NOISE_3D),
+                offset: self.float(from, "W", 0.0),
+                ..base
+            },
+            "Gabor" => BlendProc {
+                kind: match output {
+                    "Phase" => BlendProcKind::GaborPhase,
+                    "Intensity" => BlendProcKind::GaborIntensity,
+                    _ => BlendProcKind::GaborValue,
+                },
+                variant: self.stored(from, "NodeTexGabor", "type", 1).unwrap_or(0),
+                detail: self.float(from, "Frequency", 2.0),
+                roughness: self.float(from, "Anisotropy", 1.0),
+                lacunarity: self.float(from, "Orientation 2D", std::f32::consts::FRAC_PI_4),
+                colors: [self.vector(from, "Orientation 3D", [std::f32::consts::SQRT_2, std::f32::consts::SQRT_2, 0.0]), [0.0; 3], [0.0; 3]],
+                ..base
+            },
             _ => return None,
         })
+    }
+}
+
+impl BlendProc {
+    /// This texture read through `map` — the Mapping node and the
+    /// coordinate ahead of it (`BProcFinder::coordinates`).
+    pub(super) fn mapped(self, map: BlendMapping) -> Self {
+        let BlendMapping { coords, location, rotation, scale3, mapping } = map;
+        Self { coords, location, rotation, scale3, mapping, ..self }
     }
 }

@@ -31,8 +31,10 @@
 
 pub mod add;
 pub mod drag;
+pub mod edit;
 pub mod frame;
 pub mod link;
+pub mod overlay;
 pub mod paint;
 pub mod pick;
 pub mod plan;
@@ -137,6 +139,9 @@ impl BNode {
     pub(super) fn graph(ctx: &BRenderCtx) -> Option<BlendNodeGraph> {
         let mut graph = Self::graph_of(ctx.state)?;
         graph.nodes = add::additions_of(ctx.state, ctx.host).apply(&graph.nodes);
+        // Then the user's own socket-value edits, over both the file's nodes
+        // and the added ones (`edit/`).
+        edit::edits_of(ctx.state, ctx.host).apply(&mut graph.nodes);
         Some(graph)
     }
 

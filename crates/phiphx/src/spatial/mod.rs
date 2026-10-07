@@ -1,5 +1,8 @@
 //! PhiQui — Native Rust GPUI 3D Spatial UI & Mesh Engine
 
+pub mod glyph;
+pub mod implicit;
+pub mod text;
 pub mod mesh_converter;
 pub mod spatial_animator;
 #[cfg(feature = "bui")]

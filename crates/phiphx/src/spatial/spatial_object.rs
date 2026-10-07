@@ -84,6 +84,12 @@ impl SpatialObject3D {
             PhiQuiMeshType::Plane => Self::build_plane_mesh(),
             PhiQuiMeshType::Circle => Self::build_circle_mesh(),
             PhiQuiMeshType::Cone => Self::build_cone_mesh(),
+            PhiQuiMeshType::IcoSphere => Self::build_ico_sphere_mesh(),
+            PhiQuiMeshType::Grid => Self::build_grid_mesh(),
+            PhiQuiMeshType::Metaball => Self::build_metaball_mesh(),
+            // Blender's new Text object reads "Text", extruded by 0 — a
+            // flat face. A visible depth is more use as a primitive.
+            PhiQuiMeshType::Text => crate::spatial::text::mesh("Text", 0.22),
         }
     }
 
@@ -139,8 +145,11 @@ impl SpatialObject3D {
     }
 
     fn build_sphere_mesh() -> (Vec<(f32, f32, f32)>, Vec<u32>, Vec<(f32, f32, f32)>) {
-        const STACKS: usize = 12;
-        const SLICES: usize = 16;
+        // Blender's `Add ▸ Mesh ▸ UV Sphere` default: 32 segments, 16
+        // rings. At 12 x 16 the silhouette showed its stacks even with
+        // smooth normals — a smooth *shading* cannot hide a coarse edge.
+        const STACKS: usize = 16;
+        const SLICES: usize = 32;
         let mut verts = Vec::with_capacity((STACKS + 1) * (SLICES + 1));
         for i in 0..=STACKS {
             let v = i as f32 / STACKS as f32;
@@ -398,8 +407,28 @@ impl SpatialObject3D {
         (verts, idx, norms)
     }
 
+    /// A real icosahedron: the twelve vertices of (0, ±1, ±φ) and its
+    /// permutations, and the **twenty** faces that actually join them,
+    /// wound outward.
+    ///
+    /// What was here before was neither. Of its twenty triangles,
+    /// eighteen were wrong: most joined three vertices that are not
+    /// mutually adjacent — not faces of the solid at all — and all but
+    /// three were wound inward. On screen that is not a gem with a bad
+    /// normal somewhere; it is a shattered mess of interpenetrating
+    /// shards, which is exactly what it looked like. The faces are
+    /// derived rather than typed: a triple is a face precisely when its
+    /// three edges are all the solid's own edge length, and it is wound
+    /// so its normal points away from the centre.
     fn build_icosahedron_mesh() -> (Vec<(f32, f32, f32)>, Vec<u32>, Vec<(f32, f32, f32)>) {
-        // 12 vertices of a unit icosahedron: (0, ±1, ±φ), (±1, ±φ, 0), (±φ, 0, ±1).
+        let (verts, idx) = Self::icosahedron();
+        // Smooth: on a unit sphere the vertex normal *is* the position.
+        let norms = verts.clone();
+        (verts, idx, norms)
+    }
+
+    /// The twelve vertices and twenty outward faces of a unit icosahedron.
+    fn icosahedron() -> (Vec<(f32, f32, f32)>, Vec<u32>) {
         let phi: f32 = (1.0 + 5.0f32.sqrt()) / 2.0;
         let inv = 1.0 / (1.0 + phi * phi).sqrt();
         let (a, b) = (inv, phi * inv);
@@ -418,11 +447,82 @@ impl SpatialObject3D {
             (-b, 0.0, -a),
         ];
         let idx: Vec<u32> = vec![
-            0, 6, 1, 0, 11, 6, 1, 4, 0, 1, 8, 4, 1, 10, 8, 2, 5, 3, 2, 8, 5, 2, 10, 11, 3, 7, 6, 3,
-            9, 7, 4, 10, 5, 4, 8, 0, 5, 8, 2, 6, 7, 1, 9, 11, 7, 9, 3, 6, 10, 11, 2, 10, 0, 8, 11,
-            3, 6, 5, 4, 9,
+            0, 2, 8, 0, 9, 2, 0, 4, 6, 0, 8, 4, 0, 6, 9, 1, 10, 3, 1, 3, 11, 1, 6, 4, 1, 4, 10, 1,
+            11, 6, 2, 7, 5, 2, 5, 8, 2, 9, 7, 3, 5, 7, 3, 10, 5, 3, 7, 11, 4, 8, 10, 5, 10, 8, 6,
+            11, 9, 7, 9, 11,
         ];
-        let norms = verts.clone(); // unit sphere ⇒ vertex normal == position
+        (verts, idx)
+    }
+
+    /// Blender's `Add ▸ Mesh ▸ Ico Sphere`: the icosahedron subdivided
+    /// `subdivisions` times with every new vertex pushed back onto the
+    /// sphere, so the triangles stay near-equilateral where a UV sphere's
+    /// crowd at the poles. Blender's default is 2 subdivisions.
+    fn build_ico_sphere_mesh() -> (Vec<(f32, f32, f32)>, Vec<u32>, Vec<(f32, f32, f32)>) {
+        let (mut verts, mut idx) = Self::icosahedron();
+        for _ in 0..2 {
+            let mut out = Vec::with_capacity(idx.len() * 4);
+            // Each edge's midpoint is made once and shared, or the sphere
+            // comes apart into unwelded triangles at every seam.
+            let mut mid: std::collections::HashMap<(u32, u32), u32> = std::collections::HashMap::new();
+            let mut midpoint = |verts: &mut Vec<(f32, f32, f32)>, p: u32, q: u32| -> u32 {
+                let key = if p < q { (p, q) } else { (q, p) };
+                if let Some(&k) = mid.get(&key) {
+                    return k;
+                }
+                let (u, v) = (verts[p as usize], verts[q as usize]);
+                let m = (u.0 + v.0, u.1 + v.1, u.2 + v.2);
+                let len = (m.0 * m.0 + m.1 * m.1 + m.2 * m.2).sqrt().max(1e-9);
+                verts.push((m.0 / len, m.1 / len, m.2 / len));
+                let k = verts.len() as u32 - 1;
+                mid.insert(key, k);
+                k
+            };
+            for t in idx.chunks_exact(3) {
+                let (a, b, c) = (t[0], t[1], t[2]);
+                let (ab, bc, ca) = (midpoint(&mut verts, a, b), midpoint(&mut verts, b, c), midpoint(&mut verts, c, a));
+                out.extend_from_slice(&[a, ab, ca, b, bc, ab, c, ca, bc, ab, bc, ca]);
+            }
+            idx = out;
+        }
+        let norms = verts.clone();
+        (verts, idx, norms)
+    }
+
+    /// Blender's `Add ▸ Metaball ▸ Ball`: three blobs that fuse into one
+    /// surface, polygonised at display time like Blender's own
+    /// (`spatial/implicit.rs`).
+    fn build_metaball_mesh() -> (Vec<(f32, f32, f32)>, Vec<u32>, Vec<(f32, f32, f32)>) {
+        use crate::spatial::implicit::{Blob, polygonise};
+        let blobs = [
+            Blob { at: [0.0, 0.0, 0.0], radius: 0.58 },
+            Blob { at: [0.62, 0.42, 0.0], radius: 0.40 },
+            Blob { at: [-0.58, -0.34, 0.26], radius: 0.36 },
+        ];
+        polygonise(&blobs, 1.0, 1.6, 30)
+    }
+
+    /// Blender's `Add ▸ Mesh ▸ Grid`: a flat `N x N` quad grid on the
+    /// ground plane, where Plane is the same thing at one quad.
+    fn build_grid_mesh() -> (Vec<(f32, f32, f32)>, Vec<u32>, Vec<(f32, f32, f32)>) {
+        const N: usize = 10;
+        let mut verts = Vec::with_capacity((N + 1) * (N + 1));
+        for i in 0..=N {
+            let z = i as f32 / N as f32 * 2.0 - 1.0;
+            for j in 0..=N {
+                let x = j as f32 / N as f32 * 2.0 - 1.0;
+                verts.push((x, 0.0, z));
+            }
+        }
+        let stride = (N + 1) as u32;
+        let mut idx = Vec::with_capacity(N * N * 6);
+        for i in 0..N as u32 {
+            for j in 0..N as u32 {
+                let a = i * stride + j;
+                idx.extend_from_slice(&[a, a + stride, a + 1, a + 1, a + stride, a + stride + 1]);
+            }
+        }
+        let norms = vec![(0.0, 1.0, 0.0); verts.len()];
         (verts, idx, norms)
     }
 }
@@ -443,8 +543,8 @@ mod tests {
     #[test]
     fn sphere_is_uv_grid() {
         let (v, i, n) = SpatialObject3D::buffers(PhiQuiMeshType::Sphere);
-        assert_eq!(v.len(), 13 * 17);
-        assert_eq!(i.len(), 12 * 16 * 6);
+        assert_eq!(v.len(), 17 * 33);
+        assert_eq!(i.len(), 16 * 32 * 6);
         assert_eq!(n.len(), v.len());
     }
 
@@ -491,6 +591,79 @@ mod tests {
         for &(x, y, z) in &v {
             let len = (x * x + y * y + z * z).sqrt();
             assert!((len - 1.0).abs() < 1e-5);
+        }
+    }
+
+    /// Counting the triangles is not the test. The old gem had exactly
+    /// twelve vertices, exactly twenty triangles and every vertex on the
+    /// unit sphere — and eighteen of its twenty triangles were not faces of
+    /// the solid at all, so it drew as a shattered mess. What a solid has
+    /// to satisfy: every triangle's three edges are the solid's own edge
+    /// length, every triangle faces away from the centre, and every edge is
+    /// shared by exactly two triangles.
+    #[test]
+    fn the_gem_is_a_solid_and_not_a_pile_of_shards() {
+        let (v, i, _) = SpatialObject3D::buffers(PhiQuiMeshType::Icosahedron);
+        let dist = |a: usize, b: usize| {
+            let (p, q) = (v[a], v[b]);
+            ((p.0 - q.0).powi(2) + (p.1 - q.1).powi(2) + (p.2 - q.2).powi(2)).sqrt()
+        };
+        // The solid's own edge: the shortest distance between any two of
+        // its vertices.
+        let mut edge = f32::MAX;
+        for a in 0..v.len() {
+            for b in a + 1..v.len() {
+                edge = edge.min(dist(a, b));
+            }
+        }
+        let mut seen: std::collections::HashMap<(u32, u32), usize> = std::collections::HashMap::new();
+        for t in i.chunks_exact(3) {
+            let (a, b, c) = (t[0] as usize, t[1] as usize, t[2] as usize);
+            for (p, q) in [(a, b), (b, c), (c, a)] {
+                assert!((dist(p, q) - edge).abs() < 1e-4, "{p}-{q} is an edge of the solid, not a chord across it");
+                *seen.entry((p.min(q) as u32, p.max(q) as u32)).or_default() += 1;
+            }
+            // Outward: the face normal agrees with the direction from the
+            // centre to the face.
+            let (pa, pb, pc) = (v[a], v[b], v[c]);
+            let u = (pb.0 - pa.0, pb.1 - pa.1, pb.2 - pa.2);
+            let w = (pc.0 - pa.0, pc.1 - pa.1, pc.2 - pa.2);
+            let nrm = (u.1 * w.2 - u.2 * w.1, u.2 * w.0 - u.0 * w.2, u.0 * w.1 - u.1 * w.0);
+            let mid = ((pa.0 + pb.0 + pc.0) / 3.0, (pa.1 + pb.1 + pc.1) / 3.0, (pa.2 + pb.2 + pc.2) / 3.0);
+            assert!(nrm.0 * mid.0 + nrm.1 * mid.1 + nrm.2 * mid.2 > 0.0, "the face {a},{b},{c} is wound outward");
+        }
+        assert_eq!(seen.len(), 30, "an icosahedron has thirty edges");
+        assert!(seen.values().all(|&n| n == 2), "every edge is shared by exactly two faces");
+    }
+
+    /// The Ico Sphere is the gem subdivided onto the sphere: every vertex
+    /// on the unit sphere, four times the triangles per subdivision, and
+    /// the midpoints shared rather than duplicated — an unwelded sphere
+    /// would have 4x the vertices and split shading at every seam.
+    #[test]
+    fn the_ico_sphere_is_welded_and_round() {
+        let (v, i, n) = SpatialObject3D::buffers(PhiQuiMeshType::IcoSphere);
+        assert_eq!(i.len() / 3, 20 * 4 * 4, "two subdivisions");
+        // Euler: V - E + F = 2 with F = 320 and E = 3F/2 gives V = 162.
+        assert_eq!(v.len(), 162, "the midpoints are shared");
+        assert_eq!(n.len(), v.len());
+        for &(x, y, z) in &v {
+            assert!(((x * x + y * y + z * z).sqrt() - 1.0).abs() < 1e-5);
+        }
+    }
+
+    /// A metaball is a surface, not a cloud: it has triangles, they are
+    /// all within the sampled box, and nothing is degenerate.
+    #[test]
+    fn the_metaball_is_a_closed_surface() {
+        let (v, i, n) = SpatialObject3D::buffers(PhiQuiMeshType::Metaball);
+        assert!(i.len() >= 300 && i.len() % 3 == 0, "{} indices", i.len());
+        assert_eq!(n.len(), v.len());
+        for &(x, y, z) in &v {
+            assert!(x.abs() <= 1.7 && y.abs() <= 1.7 && z.abs() <= 1.7, "inside the sampled box");
+        }
+        for &(nx, ny, nz) in &n {
+            assert!(((nx * nx + ny * ny + nz * nz).sqrt() - 1.0).abs() < 1e-3, "unit normals");
         }
     }
 }

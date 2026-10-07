@@ -14,6 +14,7 @@ mod guide;
 mod hit;
 mod identity;
 pub mod mesh;
+mod outline;
 mod orbit;
 mod render_border;
 mod shown;
@@ -137,6 +138,7 @@ impl BView3d<'_> {
         let own_border = through.is_none().then(|| crate::v2::scene::view_border::BViewBorder::now(ctx.state)).filter(|b| b.on);
         let engine = ctx.state.get(crate::v2::state::ButsKey::Value("engine")).unwrap_or("");
         let filled = own_border.and_then(|_| crate::v2::scene::view_border::BViewBorder::filled_by(ctx.state, engine)).filter(|_| !studio);
+        let active = ctx.state.get(CtxKey::Object).unwrap_or("").to_string();
         let ray_view = self::rendered::BRayView::of(
             (yaw, pitch, pan, zoom),
             setup,
@@ -147,23 +149,23 @@ impl BView3d<'_> {
             self::frame::dof_words(ctx.state, through.as_ref()),
             ctx,
         )
-        .bordered(filled);
-        // Projecting every vertex is the most expensive thing a frame does
-        // and depends only on the camera, the palette and the scene, so
-        // `cache` memoises it.
-        let active = ctx.state.get(CtxKey::Object).unwrap_or("").to_string();
-        // With the GPU drawing, only the selection's outlines are projected
-        // here. The CPU painter stands in for a frame the tracer has not
-        // delivered (`tests/the_viewport_always_draws_something.rs`), so
-        // its triangles are projected *then* — in the paint, the moment it
-        // turns out there is no image — not on every frame it could be
-        // needed: that projected every vertex of every scene under its
-        // ceiling on every orbit frame, with the image already on screen.
+        .bordered(filled)
+        // The objects the tracer's own overlay pass outlines (`outline.rs`).
+        .outlining(self::outline::BOutlined::outline_class(&scene[..], &selected, &active));
+        // Projecting every vertex is the most expensive thing a frame does,
+        // so `cache` memoises it and the GPU path projects nothing at all
+        // (`BCpuDraw`). The CPU painter stands in for a frame the tracer
+        // has not delivered (`tests/the_viewport_always_draws_something.
+        // rs`), so its triangles are projected *then* — in the paint, the
+        // moment it turns out there is no image — not on every frame it
+        // could be needed, which projected every scene on every orbit
+        // frame with the image already on screen.
         let can_fall_back = self::draw::cpu_can_draw(crate::v2::scene::scene_metrics(&scene).2);
-        let meshes = self::cache::meshes(cpu_draws, &scene, (yaw, pitch, pan, zoom), palette, &selected, &active);
+        let draws = self::cache::BCpuDraw::of(cpu_draws, ray_view.see_through > 0.0);
+        let meshes = self::cache::meshes(draws, &scene, (yaw, pitch, pan, zoom), palette, &selected, &active);
         let fall_back = {
-            let (scene, selected, active) = (Rc::clone(&scene), selected.clone(), active);
-            move || self::cache::meshes(true, &scene, (yaw, pitch, pan, zoom), palette, &selected, &active)
+            let (scene, selected) = (Rc::clone(&scene), selected.clone());
+            move || self::cache::meshes(self::cache::BCpuDraw::Whole, &scene, (yaw, pitch, pan, zoom), palette, &selected, &active)
         };
         // No sort: one number per object cannot say which of two interleaved
         // surfaces is nearer at a pixel. The depth buffer answers per pixel,
@@ -181,6 +183,8 @@ impl BView3d<'_> {
         let corners = super::surface::corners(ctx);
         let seen = Rc::clone(&bounds);
         let gestures = self::gesture::BGestureInk::now(ctx.state, to_hsla(ctx.style.viewport_surface()), frame_palette.overlay, crate::v2::scene::pick::BPickView { yaw, pitch, pan, zoom, setup, aspect: setup.aspect });
+        // The Solid/Wireframe rasteriser oversamples by the Viewport AA preference.
+        let supersample = crate::v2::scene::viewport_aa::BViewportAa::supersample(ctx.state);
         element = element.child(
             canvas(
                 |_, _, _| {},
@@ -197,7 +201,7 @@ impl BView3d<'_> {
                         guide.paint_floor(bounds, window);
                     }
                     let shown = if traced || cpu_draws || !can_fall_back { Rc::clone(&meshes) } else { fall_back() };
-                    BMesh::paint(bounds, &shown, outline_width, wire, yaw, pitch, corners, !traced, window);
+                    BMesh::paint(bounds, &shown, outline_width, wire, yaw, pitch, corners, !traced, supersample, window);
                     guide.paint_over(bounds, outline_width * 0.5, window);
                     if let Some(view) = &through {
                         self::frame::paint(bounds, view, frame_palette, window);

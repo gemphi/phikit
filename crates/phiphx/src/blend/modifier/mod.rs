@@ -6,6 +6,8 @@
 //! order on an [`BlendEvalMesh`]; unknown or disabled modifiers are skipped
 //! (and listed in the read report by the caller).
 
+pub mod driver;
+pub(crate) mod driver_read;
 pub(crate) mod armature;
 pub(crate) mod bbone;
 mod array;
@@ -183,12 +185,24 @@ impl BlendFile {
 
     /// Evaluated meshes for every mesh object whose stack changes it, keyed
     /// by index into `objects`. Objects without modifiers are left out.
+    ///
+    /// The read (sequential, pointer-scoped) and the apply (parallel) are
+    /// split so a progressive open can run the apply off the read thread:
+    /// [`Self::modifier_jobs`] captures the work here, [`apply_eval_jobs`]
+    /// performs it anywhere.
     pub(crate) fn evaluate_modifiers(&self, objects: &[BlendSceneObject], dna: &DnaType) -> HashMap<usize, BlendEvalMesh> {
+        apply_eval_jobs(self.modifier_jobs(objects, dna))
+    }
+
+    /// Capture every mesh object's modifier work as owned, `Send` jobs — the
+    /// base mesh, the stack and the world matrices — without applying it. This
+    /// is the part that must read the file (pointer scoping), so it stays on
+    /// the read thread; the heavy apply ([`apply_eval_jobs`]) can wait.
+    pub(crate) fn modifier_jobs(&self, objects: &[BlendSceneObject], dna: &DnaType) -> DeferredRaw {
         let worlds: HashMap<u64, Mat4> = objects
             .iter()
             .map(|o| (o.block_address, Mat4::from_cols_array_2d(&o.matrix_world)))
             .collect();
-        // Reading stays sequential (pointer scoping); evaluation is parallel.
         let mut jobs = Vec::new();
         for (i, o) in objects.iter().enumerate() {
             if o.object_type != "MESH" || o.vertices.is_empty() {
@@ -211,37 +225,20 @@ impl BlendFile {
                 _ => Vec::new(),
             };
             let creases = me.map(|me| self.mesh_creases(me, dna, o.vertices.len())).unwrap_or_default();
-            jobs.push((i, o, stack, dverts, creases));
+            let mesh = BlendEvalMesh {
+                vertices: o.vertices.clone(),
+                faces: o.faces.clone(),
+                loop_uvs: o.loop_uvs.clone(),
+                loop_colors: o.loop_colors.clone(),
+                face_materials: o.face_materials.clone(),
+                face_smooth: o.face_smooth.clone(),
+                dverts,
+                edge_creases: creases.edge,
+                vert_creases: creases.vert,
+            };
+            jobs.push(BEvalJob { index: i, mesh, stack, world: Mat4::from_cols_array_2d(&o.matrix_world) });
         }
-        use rayon::prelude::*;
-        let batch = skin::skinner();
-        let evaluated: Vec<(usize, BlendEvalMesh, Option<skin::SkinJob>)> = jobs
-            .into_par_iter()
-            .map(|(i, o, stack, dverts, creases)| {
-                let mut mesh = BlendEvalMesh {
-                    vertices: o.vertices.clone(),
-                    faces: o.faces.clone(),
-                    loop_uvs: o.loop_uvs.clone(),
-                    loop_colors: o.loop_colors.clone(),
-                    face_materials: o.face_materials.clone(),
-                    face_smooth: o.face_smooth.clone(),
-                    dverts,
-                    edge_creases: creases.edge,
-                    vert_creases: creases.vert,
-                };
-                let ctx = EvalCtx { world: Mat4::from_cols_array_2d(&o.matrix_world), worlds: &worlds };
-                let (last, head) = stack.split_last().expect("non-empty stack");
-                for m in head {
-                    m.apply(&mut mesh, &ctx);
-                }
-                let job = batch.as_ref().and_then(|_| last.skin_job(&mesh, &ctx));
-                if job.is_none() {
-                    last.apply(&mut mesh, &ctx);
-                }
-                (i, mesh, job)
-            })
-            .collect();
-        Self::finish_skins(evaluated, batch.as_deref())
+        DeferredRaw { jobs, worlds }
     }
 
     /// Every mesh object an Armature modifier deforms (the first one in its
@@ -318,4 +315,63 @@ impl BlendFile {
             })
             .collect()
     }
+}
+
+/// One mesh object's modifier work, captured so the apply can run off the read
+/// thread (progressive open). Owned and `Send` — the base mesh, the stack and
+/// the object's world matrix.
+pub(crate) struct BEvalJob {
+    /// Index into the read scene's `objects` (the `evaluated` map's key).
+    pub index: usize,
+    pub mesh: BlendEvalMesh,
+    pub stack: Vec<Box<dyn BModifier>>,
+    pub world: Mat4,
+}
+
+/// Every object's captured modifier jobs plus the shared world matrices — all
+/// the deferred apply needs, and nothing that borrows the file.
+pub(crate) struct DeferredRaw {
+    pub jobs: Vec<BEvalJob>,
+    pub worlds: HashMap<u64, Mat4>,
+}
+
+impl DeferredRaw {
+    pub fn is_empty(&self) -> bool {
+        self.jobs.is_empty()
+    }
+}
+
+// The jobs hold modifier trait objects, which are not `Debug`; `BlendScene`
+// derives `Debug`, so report the shape rather than the contents.
+impl std::fmt::Debug for DeferredRaw {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "DeferredRaw {{ jobs: {} }}", self.jobs.len())
+    }
+}
+
+/// Apply captured modifier jobs, in parallel, to their evaluated meshes —
+/// keyed by object index, exactly as [`BlendFile::evaluate_modifiers`] would.
+/// Takes no reader, so a progressive open can call it on a worker thread after
+/// the base scene is already on screen.
+pub(crate) fn apply_eval_jobs(raw: DeferredRaw) -> HashMap<usize, BlendEvalMesh> {
+    use rayon::prelude::*;
+    let DeferredRaw { jobs, worlds } = raw;
+    let batch = skin::skinner();
+    let evaluated: Vec<(usize, BlendEvalMesh, Option<skin::SkinJob>)> = jobs
+        .into_par_iter()
+        .map(|job| {
+            let BEvalJob { index, mut mesh, stack, world } = job;
+            let ctx = EvalCtx { world, worlds: &worlds };
+            let (last, head) = stack.split_last().expect("non-empty stack");
+            for m in head {
+                m.apply(&mut mesh, &ctx);
+            }
+            let skinjob = batch.as_ref().and_then(|_| last.skin_job(&mesh, &ctx));
+            if skinjob.is_none() {
+                last.apply(&mut mesh, &ctx);
+            }
+            (index, mesh, skinjob)
+        })
+        .collect();
+    BlendFile::finish_skins(evaluated, batch.as_deref())
 }

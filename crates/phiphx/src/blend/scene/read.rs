@@ -27,6 +27,7 @@ impl BlendFile {
             selected: Vec::new(),
             hidden: Vec::new(),
             props: Default::default(),
+            deferred: None,
         };
 
         let dna = match &self.dna {
@@ -121,6 +122,7 @@ impl BlendFile {
             }
             scene.props.ui = self.extract_ui_state(Some(sc), dna);
             scene.props.packed_images = self.packed_images(dna);
+            scene.props.compositor = self.compositor();
             // Everything below used to run after a single `progress(1.0, …)`,
             // with no further report and no cancel check — modifier
             // evaluation (which may skin on the GPU), actions, motion, NLA
@@ -130,7 +132,15 @@ impl BlendFile {
             if !progress(0.90, "Evaluating modifiers") {
                 return Err(crate::PointCloudError::Cancelled);
             }
-            scene.props.evaluated = self.evaluate_modifiers(&scene.objects, dna);
+            // Progressive open: capture the modifier work but do not apply it
+            // now — the base meshes show first and the apply runs off the read
+            // thread (`SceneModel::from_blend_progressive`). Eager open applies
+            // it here as before.
+            if crate::blend::progressive_open() {
+                scene.deferred = Some(std::sync::Arc::new(self.modifier_jobs(&scene.objects, dna)));
+            } else {
+                scene.props.evaluated = self.evaluate_modifiers(&scene.objects, dna);
+            }
             if !progress(0.94, "Reading actions") {
                 return Err(crate::PointCloudError::Cancelled);
             }
@@ -140,6 +150,10 @@ impl BlendFile {
                 return Err(crate::PointCloudError::Cancelled);
             }
             scene.props.motion = self.motion_list(&scene.objects, &actions, dna);
+            scene.props.material_drivers = self.material_drivers(dna).into_iter().map(|(_, set)| set).collect();
+            scene.props.light_drivers = self.light_drivers(dna);
+            scene.props.world_drivers = self.world_drivers(dna);
+            scene.props.modifier_drivers = self.modifier_drivers(&scene.objects, dna);
             scene.props.rigs = self.rigs(&scene.objects, dna, &actions);
             // Objects that follow others — by a constraint or a bone parent
             // — stand where their targets put them at the saved frame

@@ -31,7 +31,6 @@ Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its 
 | `geometry.rs` | Pure geometry helpers shared by the blend and phx mappers: per-vertex UVs from per-corner UVs, and normal selection / synthesis. |
 | `import.rs` | Blend → scene conversion helpers. |
 | `import_extras.rs` | Camera / light / empty objects → `SceneCamera` / `SceneLight` / `SceneEmpty`, from the DNA read by `importer::blend::object_data`. |
-| `import_phx.rs` | `.phx` scene → [`SceneModel`] (asset pipeline / collaboration sidecars). |
 | `material.rs` | Material slot data shared by the viewport and the Properties panel (Principled inputs, normal map). |
 | `object.rs` | One read object → renderable `SceneObject` (triangulation, normals, UVs, slots). |
 | `mod.rs` | Kit-agnostic runtime scene data + the single blend→scene traversal. |

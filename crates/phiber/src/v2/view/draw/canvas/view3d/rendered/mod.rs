@@ -9,6 +9,7 @@ mod atlas;
 mod bands;
 mod build;
 mod clock;
+mod compile;
 mod job;
 mod coarse;
 mod key;
@@ -28,6 +29,8 @@ mod wake;
 mod worker;
 mod lamp;
 mod slot;
+mod stand;
+mod state;
 mod surface;
 mod world;
 pub use self::region::BStillRegion;
@@ -35,6 +38,7 @@ pub(in crate::v2::view::draw::canvas) use self::prepare::BRayDeclined;
 pub(in crate::v2::view::draw::canvas::view3d) use self::prepare::prepare;
 pub use self::still::{BStill, BStillLook, still, still_stepwise};
 pub use self::lamp::BLamp;
+pub use self::stand::BMatStand;
 pub use self::world::{BRayLook, ENV_CDF_SLOT, ENV_IRRADIANCE_SLOT, ENV_PREFILTERED_SLOT, ENV_SLOT, environment, lit, studio_lighting, view_words};
 #[cfg(test)]
 mod paint_tests;
@@ -46,55 +50,15 @@ mod surface_tests;
 mod tests;
 
 use gpui::{Bounds, Corners, Pixels, RenderImage, Window};
-use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
 use self::reframe::BShotView;
+use self::state::{MAX_SIDE, POSTED, STATE};
+pub use self::state::{shown_image, views_posted};
 use self::worker::{BRayJob, BRayShot, BRayWorker};
 pub(in crate::v2::view::draw::canvas::view3d) use self::view::BRayView;
 pub use self::wake::{drawing, landed, refining, set_ticking, take_fresh, ticking};
 pub(super) use self::wake::REFINING;
-
-/// Longest rendered side in device pixels (keeps frames interactive).
-const MAX_SIDE: f32 = 1600.0;
-
-#[derive(Default)]
-struct BRayState {
-    worker: Option<Option<BRayWorker>>,
-    scene: u64,
-    view: u64,
-    /// Shown image: (frame seq, view key, finished, image).
-    image: Option<(u64, u64, bool, Arc<RenderImage>)>,
-    /// Holds the traced size still while the viewport is being dragged.
-    settle: self::settle::BSettle,
-    /// What each view posted lately was framed for (`reframe.rs`).
-    shots: self::reframe::BShotLog,
-    /// How long the posted view takes to arrive (`clock.rs`).
-    clock: self::clock::BViewClock,
-}
-
-thread_local! {
-    static STATE: RefCell<BRayState> = RefCell::new(BRayState::default());
-    /// How many views have been posted to the tracer — each one restarts it.
-    static POSTED: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
-}
-
-/// How many times the tracer has been restarted with a new view. A window
-/// drag should add at most a couple, however many frames it lasts.
-pub fn views_posted() -> usize {
-    POSTED.with(std::cell::Cell::get)
-}
-
-/// The traced image on show, its size in device pixels and whether it is
-/// of the view asked for last — a bordered view's is the region's pixels.
-pub fn shown_image() -> Option<((u32, u32), bool)> {
-    STATE.with(|s| {
-        let s = s.borrow();
-        let (_, v, _, img) = s.image.as_ref()?;
-        let size = img.size(0);
-        Some(((size.width.0 as u32, size.height.0 as u32), *v == s.view))
-    })
-}
 
 
 /// Paint the traced frame. Answers whether an image actually landed: the
@@ -159,6 +123,10 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
         shadow: view.shadow,
         shadow_fade: view.shadow_fade,
         matcap: view.matcap,
+        outline_fx: view.outline_fx,
+        outline_pick: view.outline_pick,
+        outline_active: view.outline_active,
+        outline_move: view.outline_move,
         outline: view.outline,
         shade: view.shade,
         single: view.single,
@@ -172,7 +140,9 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
         // The sample target and the denoise flag are not part of `Camera`,
         // so they join the key by hand — changing either has to restart the
         // refinement, not carry on with the old one.
-        (s.scene, w, h, view.mode as u32, bytemuck::bytes_of(&cam), view.set.preview_samples, view.aa, view.set.preview_denoise, view.set.preview_denoise_from)
+        // The selection rides outside `Camera` — so that changing it does
+        // not restart the refinement — and so joins the key by hand.
+        (s.scene, w, h, view.mode as u32, bytemuck::bytes_of(&cam), view.set.preview_samples, view.aa, view.set.preview_denoise, view.set.preview_denoise_from, &*view.outline_class)
             .hash(&mut hasher);
         let key = hasher.finish();
         let Some(Some(worker)) = s.worker.as_ref() else { return (None, true) };
@@ -189,7 +159,7 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
             POSTED.with(|n| n.set(n.get() + 1));
             worker.send(BRayJob::View(
                 key,
-                BRayShot { cam, w: tw, h: th, mode: view.mode, samples: view.set.preview_samples, aa: view.aa, denoise_from: view.set.preview_denoise.then_some(view.set.preview_denoise_from) },
+                BRayShot { cam, w: tw, h: th, mode: view.mode, samples: view.set.preview_samples, aa: view.aa, denoise_from: view.set.preview_denoise.then_some(view.set.preview_denoise_from), outline: Arc::clone(&view.outline_class) },
             ));
         }
         let seq = s.image.as_ref().map_or(0, |i| i.0);

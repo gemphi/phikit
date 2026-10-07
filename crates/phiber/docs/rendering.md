@@ -2482,5 +2482,2204 @@ as many words — and the asset pipeline reaches a sidecar through
 `pub` in a library. So the queue's old "the `.phx` round trip carries no
 light shape" item is not a parity gap: nothing writes a light into a
 `.phx` and nothing reads a scene back out of one. It is dead code to
-remove, and that is a batch of its own because `import_phx.rs` goes
-whole.
+remove — done in batch 151 (§51), `import_phx.rs` whole.
+
+## 51. The Mapping node, whole (batch 151, 2026-10-05)
+
+Since batch 142 a texture's coordinate has gone through a Mapping node,
+but only two of its four settings: Location and Scale. Rotation was read
+as nothing, and the node's **Type** — Point, Texture, Vector, Normal —
+was not read at all, so every Mapping drew as a Point one. A material
+whose texture is turned 45° drew it straight.
+
+Cycles does all four in one function (`svm_mapping`, `mapping_util.h`;
+EEVEE's `gpu_shader_material_mapping.glsl` is the same four lines):
+
+```c
+const Transform rotationTransform = euler_to_transform(rotation);
+switch (type) {
+  case NODE_MAPPING_TYPE_POINT:
+    return transform_direction(&rotationTransform, (vector * scale)) + location;
+  case NODE_MAPPING_TYPE_TEXTURE:
+    return safe_divide(transform_direction_transposed(&rotationTransform, (vector - location)), scale);
+  case NODE_MAPPING_TYPE_VECTOR:
+    return transform_direction(&rotationTransform, (vector * scale));
+  case NODE_MAPPING_TYPE_NORMAL:
+    return safe_normalize(transform_direction(&rotationTransform, safe_divide(vector, scale)));
+}
+```
+
+Texture is Point's inverse — move, unrotate, unscale — which is what a
+*texture's* own transform means as against a point's. Vector drops the
+Location because a direction has no position. Normal scales the other way
+and renormalizes.
+
+**The Euler matrix, and the one thing to get right.** Cycles'
+`euler_to_transform` builds an XYZ Euler as a `Transform`, whose `t.x`,
+`t.y`, `t.z` are its **rows**. WGSL's `mat3x3` constructor takes
+**columns**. So `euler_xyz` in `procedural.wgsl` is that function
+transposed into column order, and then `rot * v` is
+`transform_direction` and `transpose(rot) * v` is
+`transform_direction_transposed`, exactly as `svm_mapping` spends them.
+Getting this backwards would rotate the right amount the wrong way, which
+a 45° test would still catch but a symmetric one would not.
+
+`safe_divide` and `safe_normalize` came over too (`safe_div`,
+`normalize_or_zero`): zero where the divisor is, the vector itself where
+it has no length. The old code's `max(size, 1e-6)` was a different thing
+— a clamp, not a guard — and only ever applied to the bounding box.
+
+**Where it sits.** The `Proc` slot had exactly four spare words (`_pad` at
+27 and `_pad3` at 37–39), which is what Rotation (three) and the Type
+(one) need, so the slot is still 40 words and §42's budget holds.
+phiphx's reader grew a `BlendMapping` — the coordinate plus the node's
+four settings, with the identity as its `Default` — and `BlendProc::mapped`
+takes one, so `coordinates()` returns a value rather than a widening
+tuple. The Type is `bNode.custom1`, read as a `u16` the way `MixRGB`'s
+blend mode and `Math`'s operation already are.
+
+**A coincidence worth recording.** The first kernel test compared a Point
+mapping at Location `[0.3, 0.2]` against a Texture one and found the two
+frames identical, which looked like the Type not being read. It was
+arithmetic: Point moves the coordinate by `+location` and Texture by
+`−location`, so they are `2 × location` apart — and at Scale 40 that is
+24 and 16 whole checker cells, which a periodic pattern cannot show. At
+`[0.01, 0.005]` it is a fraction of a cell and the frames differ over
+hundreds of channels. A pattern's own period is a trap for any test that
+measures a shift.
+
+The fixture grew a plane for it: `Turned`, a Checker through a
+Texture-type Mapping at Location `[0.1, 0, 0]`, Rotation 45° about Z and
+Scale `[2, 2, 1]` (`fixtures/make_procedural.py`). The planes with no
+Mapping, and `Ramped`'s Point one, are asserted to read the identity and
+Point, so the old behaviour stays pinned.
+
+**Dead code removed.** §50 found that `SceneModel::from_phx` and
+`PhxScene::add_light` have no callers; both are gone, and
+`scene/import_phx.rs` with them. The `.phx` sidecar fast path they served
+was retired when the pointer remap became a hash lookup, and the asset
+pipeline reaches a sidecar through `PhxImporter::import` instead.
+`PhxLight` itself stays — it is part of the serialized format, not an
+unused function. Clippy could not see any of this, because `pub` items in
+a library are never dead to it; it took reading the callers.
+
+Also gone: a test-only `use` in `anim/channels.rs` that batch 148's
+`#[cfg(test)]` work left unused in the library build (the call now names
+its path in full). The one warning left in the three crates is an unused
+`BKey as _` in `tests/the_time_axis_zooms_under_the_wheel.rs`, which is
+the other agent's file in flight.
+
+## 52. The same animation in both, frame by frame (batch 152, 2026-10-05)
+
+Every comparison so far has been a **still** (§2.4, §2.5 of
+`render-parity.md`): one front view of one pose. A still cannot see whether
+the rig poses at the right frame, whether the camera's own animation is
+read, or whether the picture is steady over time — so this batch renders a
+*range* in both and measures the three things a still cannot.
+
+The file is `THYMUS-BOLDROID-WAVE-003.blend`: 273 objects, a 328-bone rig,
+`rigAction` over frames 1–140 at 24 fps, camera `Camera.001`, Cycles at
+1440 × 1440, Filmic. Frames 1, 21, 41 … 121 at a quarter resolution and 16
+samples, both sides.
+
+### The recipe
+
+```powershell
+$f = "crates\phiphx\tests\fixtures\THYMUS-BOLDROID-WAVE-003.blend"
+# Blender: one PNG per frame through the scene's own camera
+blender -b -P crates\phiphx\tests\truth\blender_animation.py -- $f out\blender 1 140 20 cycles 16 4
+# Phiber: the same frames, the same camera, the same samples
+$env:PHIBER_SCALE=4
+cargo run --release -p phiber --example animation_render -- $f out\phiber 1 140 20 16
+# Side by side, frame by frame
+cargo run --release -p phiber --example animation_compare -- out\blender out\phiber contact.png
+```
+
+Both write `fNNNN.png` and a `times.txt` of `frame posed_ms render_ms
+samples`, so the two can be compared on speed as well as on pixels.
+
+### What `animation_compare` measures that a still cannot
+
+- **Motion.** The mean absolute change from one frame to the next, in each
+  sequence. A rig that does not pose, or poses at the wrong frame, matches
+  well on frame 1 and has near-zero motion after it — which a per-frame
+  difference alone reports as a small constant error rather than as the
+  whole animation missing.
+- **Steadiness.** A path tracer's noise changes every frame even when the
+  subject does not, so motion where Blender's is near zero is this render's
+  own flicker.
+- **Posing time**, separately from rendering time, on both sides.
+
+### What matched, first run
+
+Pose for pose and frame for frame. The silhouette, the limb positions, the
+hand's gesture and the camera's framing are the same in all seven frames
+(the contact sheet). That is the rig, the constraints, the drivers, the
+modifier stack and the camera's own animation all agreeing at seven points
+across 120 frames — the thing this test existed to check.
+
+**Posing is three times faster here**: 29 ms a frame against Blender's
+83 ms, and that is a fair comparison because both run on the CPU.
+
+Rendering is **not** a fair comparison in this container and should not be
+quoted as one: there is no GPU, so phiray runs on lavapipe (a software
+Vulkan device) while Cycles runs its own mature CPU kernel on the same two
+cores. 20.7 s a frame against 4.7 s says what software rasterization costs,
+not what the tracer costs.
+
+### What did not match, and why — two real bugs
+
+**1. A missing environment image lit the whole scene white.** The first run
+came out at a mean difference of **35.2 / 255**, with Phiber's background
+pure white where Blender's was black, and Phiber's figure *olive* where
+Blender's was *magenta*.
+
+The olive was the giveaway. The materials' base colours in this file really
+are olive (`mat_panel_…` is `[0.254, 0.216, 0.078]`), and Blender's torso
+pixel was `(76, 5, 37)` against Phiber's `(78, 72, 38)` — red and blue
+within two levels, green 67 apart. Olive × magenta light is
+`(0.254, 0, 0.078)`, which is exactly Blender's pixel. So Blender was
+lighting the scene with a **magenta dome** and Phiber with a white one.
+
+The world's Background Color is linked to an Environment Texture whose
+file is not shipped with the `.blend`. `shade/world.rs` set
+`world.color = [1.0; 3]` whenever an Environment Texture node existed —
+present or not — so a missing HDRI became a full-white dome. Blender folds
+a missing image to magenta (`IMB`'s "invalid" colour), which `eval.rs`
+already did for a material's `ShaderNodeTexImage`; the world was the one
+place that did not. It does now, and `world.texture` is `None` for a file
+Blender would not find, so the renderer lights from `color` instead of
+hunting for it.
+
+That one change took the mean difference from **35.2 to 13.0 / 255**.
+
+Worth knowing for any test of it: whether an image is present is answered
+against the `.blend`'s own folder, and that folder is recorded by
+`Phx::open` alone (`blend::set_image_source` writes a global). A test that
+reads a file with `BlendFile::parse_bytes` leaves it unset, and
+`image_present` then answers *true* for everything — which is why
+`tests/world_truth.rs` opens through `Phx`, and why it passed against the
+old behaviour until it did.
+
+**2. Film ▸ Transparent never reached a render driven from an example.**
+Phiber's background was then magenta where Blender's was transparent. The
+flag was read correctly (`Scene.r.alphamode`, `film_transparent: true` in
+the model) and the kernels honour it (`shade.wgsl`'s `p.film.x`) — but
+`render.film_transparent` is seeded by **`seed_output_props`**, and
+`camera_render.rs`, `color_render.rs` and the new `animation_render.rs`
+all called only `seed_render_props`. `render_set` then fell back to its
+default `false`.
+
+The app is fine — `app/import.rs` calls both seeds, so F12 in the window
+has always honoured it. What this means is narrower and worth recording:
+**every comparison in §2.4 and §2.5 was measured with a background Blender
+had left out.** All three examples seed both now, and the alpha comes back
+0 on the background and 255 on the figure.
+
+### Where it stands
+
+| | Blender (Cycles, 16 spp) | Phiber |
+|---|---|---|
+| pose / camera / framing | — | the same at all seven frames |
+| mean \|difference\| on the figure | — | **15.6 / 255** |
+| mean figure brightness | 43.1 | 33.2 |
+| motion per frame | 5.05 | 3.48 |
+| posing | 83 ms | **29 ms** |
+| rendering (software GPU here) | 4.7 s | 20.7 s |
+
+What is left to close is **level and specular**: Phiber reads about a
+quarter darker on the figure, and Blender's highlights on the shoulders and
+chest are brighter and tighter. The motion ratio of 0.69 is the same story
+— much of Blender's frame-to-frame change at 16 samples is its own
+Monte-Carlo noise, which Phiber's denoiser removes. Those are the next
+measurements to take, with the denoiser off and a white material override,
+so the light is measured on its own.
+
+## 53. Where the missing light was (batch 153, 2026-10-05)
+
+§52 left one number open: Phiber's figure read about a quarter darker than
+Blender's, and "level and specular" was as precise as it got. A whole-scene
+difference says nothing about *which* term is short, so this batch splits
+the light in two and measures each.
+
+### The isolation
+
+`truth/blender_animation.py` and `examples/animation_render.rs` take three
+switches of the same names, so the same scene can be rendered three ways on
+both sides:
+
+| | |
+|---|---|
+| `PHIBER_NO_WORLD=1` | the world contributes nothing — the lamps alone |
+| `PHIBER_NO_LIGHTS=1` | every lamp is dropped — the world alone |
+| `PHIBER_VIEW=Standard\|Filmic\|AgX` | overrides the file's view transform |
+
+THYMUS frame 41, a quarter resolution, 16 samples, Cycles against the path
+tracer, measured over the figure (alpha, and not the transparent black):
+
+| | Blender | Phiber | Phiber / Blender |
+|---|---|---|---|
+| both | 38.0 | 30.1 | 0.79 |
+| lamps only | 35.5 | 21.4 | **0.60** |
+| world only | 18.0 | 23.0 | **1.28** |
+
+So the single "a quarter darker" was two errors in opposite directions,
+partly cancelling: **the four lamps give 40 % less light than Blender's**,
+and **the world dome gives 28 % more**. Neither is visible in a figure that
+mixes them, which is why five batches of still comparisons never named it.
+
+(The lamp row is what the rest of this section is about. After the fix
+below it reads 1.10, and the whole figure 1.18 — the table at the end has
+the numbers as they stand.)
+
+### The floor, found on the way
+
+The first run of the isolation produced an impossible number: Phiber's
+*world only* came out at 38.8, **brighter than the same scene with the
+lamps on as well** (30.1). Light is additive; removing a term cannot add
+one.
+
+`rendered/world.rs`'s `lit()` had this:
+
+```rust
+w.map(|c| c.max(if usable.is_empty() { 0.25 } else { 0.0 }))
+```
+
+— a floor of 0.25 a channel on the world's radiance, applied only when the
+scene has no usable lamp, so that "studio renders still read". Two things
+are wrong with it. It lifts any scene whose lamps are all dark, which
+Blender does not do. And because it clamps **per channel** it re-tints a
+coloured world: this file's dome is magenta `[1, 0, 1]`, and the floor
+turned it into `[1, 0.25, 1]` — pink. The world-only mean RGB was
+`(67.8, 29.7, 43.7)` against Blender's `(69.2, 0.1, 45.3)`: red and blue
+within 2 %, green thirty times too high.
+
+The floor is gone for a file that has a world. Material Preview still
+reads, because it is lit by the studio HDRI through `studio_lighting`,
+which is where "still reads" belongs; and a view with no world at all keeps
+its fallback, because the canvas colour is then the only thing there is to
+light with. With it gone, world-only falls to 23.0 and its green to 7.7 —
+the honest number above.
+
+That is the last of the hand-set constants §3.8 of `render-parity.md` was
+tracking in the shading path.
+
+### What the two ratios are not
+
+Worth ruling out before the next batch chases them:
+
+- **Not the view transform.** Both sides render the file's own Filmic, and
+  the per-channel ratios under lamps-only are 0.64 / 0.60 / 0.56 — close to
+  uniform. A tone curve mismatch would not scale the channels together.
+- **Not the light count.** The file has four lamps and the kernel takes up
+  to four per sample before it starts picking at random, so all four are in
+  every sample.
+- **Not the missing HDRI.** That was §52's bug and it is fixed; the world
+  term is now 28 % high rather than 2× high and magenta rather than white.
+
+The file's lamps are two 1500 W spots (25°, Blend 0.15, Radius 0.25), one
+939 W point (Radius 0.1) and an 11.8 W square area light — so the shortfall
+is mostly in the spot and point terms, where the kernel spends
+`color × energy / (4π²d²)`. Whether that constant is right cannot be
+settled on a 273-object scene with four lamps and a coloured dome.
+
+### The lamp-power truth test, and the π it found
+
+A controlled measurement settles in one run what a 273-object scene cannot:
+`phiphx/tests/truth/blender_lamp_power.py` builds a scene rather than
+loading one — a 20 m plane at albedo 0.8, a black world, an orthographic
+camera straight above, one lamp 2 m up — renders it in Cycles to **OpenEXR
+at the Standard view transform**, and prints the centre pixel's
+*scene-linear radiance*. No tone curve, no film, nothing to argue about.
+
+```
+point  1000 W at 2 m   5.046
+spot   1000 W, 60°     5.048     (a spot's power is a point's, masked)
+sun       5 W/m²       1.271     (irradiance already; distance does not enter)
+area    100 W, 1 m²    1.862
+```
+
+The point number is the textbook one. Irradiance under a lamp of power `P`
+at distance `d` is `P / (4π d²)`, and a Lambertian surface of albedo `a`
+turns that into radiance `a E / π`:
+
+    0.8 × 1000 / (4π² × 4) = 5.066   against Cycles' 5.046
+
+`phiray/tests/lamp_power.rs` sets up the same scene and reads
+`Tracer::radiance`. It came out at **1.802** — a factor of **2.80** short.
+
+The cause is one π, counted twice. `light.wgsl` had
+
+```wgsl
+var e = li.color / (4.0 * PI * PI * d2);
+```
+
+and `brdf_w` divides the diffuse albedo by π itself, as a BSDF should. So
+the kernel was dividing by π in the light *and* in the surface: `e` must be
+**irradiance**, `P / (4π d²)`, and it was radiance-after-Lambert instead.
+`preview.wgsl` carried the same expression. Both are `4.0 * PI * d2` now,
+and the point lamp lands at 5.661 against Cycles' 5.046.
+
+That residual 12 % is two modelling differences, not a constant: the tracer
+carries a GGX lobe at `f0 = 0.04` over its Lambert, and the two count an
+indirect bounce off a 20 m plane slightly differently. The test's tolerance
+is 15 % and says so — it exists to catch a factor, and a factor of π is
+214 %.
+
+**What this was costing.** Every lamp in every render was π times too dim,
+in both the path tracer and Material Preview, since the kernels were
+written. It never showed as "the lights are wrong" because the world term
+and the studio rig were not affected, so a lit scene came out somewhat flat
+rather than obviously dark — §52's "a quarter darker" was this, diluted by
+a world dome that was itself too bright.
+
+### Where the three terms stand now
+
+The same isolation, re-run on the fixed tracer:
+
+| | Blender | Phiber | Phiber / Blender |
+|---|---|---|---|
+| both | 38.0 | 44.8 | 1.18 |
+| lamps only | 35.5 | 39.2 | **1.10** (was 0.60) |
+| world only | 18.0 | 23.0 | **1.28** (unchanged — the π was in the lamp term) |
+
+The lamp term went from 40 % short to 10 % over, and what is left of it is
+in the same places the controlled test leaves 12 %: a GGX lobe the
+reference does not carry, an area light the kernel approximates with
+`max(dot(-l, dir), 0) × 2`, and shadow rays that do not agree pixel for
+pixel.
+
+**The world is now the largest single error**, at 28 % high, and it is the
+next thing to measure the same way — a known dome over a known albedo,
+against Cycles' own number, the way `blender_lamp_power.py` does for lamps.
+
+A note on reading these: `both` is not `lamps + world`, because a figure's
+pixels are not a linear sum of two renders once shadowing and indirect
+bounces are in play. The three rows are three measurements, not an
+equation.
+
+## 54. The world, measured the same way (batch 154, 2026-10-05)
+
+§53 left the world term at **1.28×** Blender's and said to measure it the
+way the lamps were measured. The world turns out to be the easiest thing in
+the renderer to check, because its law has no constant in it at all:
+
+> A uniform dome of radiance `L` puts irradiance `πL` on a surface — the
+> hemisphere — and a Lambertian albedo `a` turns that back into radiance
+> `aE/π = aL`.
+
+No distance, no geometry, no `4π`. `blender_lamp_power.py` now renders the
+world cases on the same plane, and Cycles agrees to four figures:
+
+```
+world  radiance 1,   albedo 0.8   ->  0.800055
+world  radiance 0.5, albedo 0.8   ->  0.400027
+world  magenta,      albedo 0.8   ->  (0.789885, 0.000004, 0.796692)
+```
+
+phiray's answer was not a scale factor but an **affine** one:
+
+```
+L = 0     ->  0.0680
+L = 0.25  ->  0.2744
+L = 0.5   ->  0.4808
+L = 1     ->  0.8936
+L = 2     ->  1.7191        i.e.  0.8255 L + 0.068
+```
+
+A surface lit by a *black* world was sending back 0.068. Two separate
+causes, and the intercept is the one that matters.
+
+### The rig fired on top of the world
+
+```wgsl
+if (p.count == 0u && p.envmap != 0u) { return c; }
+if (p.count == 0u) { /* three-point studio rig: key 2.0, fill 0.45, rim 0.9 */ }
+```
+
+The path tracer falls back to a three-point rig for a scene with no light,
+and the guard above it tested for an environment **image**. A world that is
+a flat *colour* — which is every file whose Background node has no texture,
+and every scene in the viewport's default world — has `envmap == 0`, so the
+rig fired *on top of* it. The constant 0.068 is the rig, arriving whatever
+the world does.
+
+The same mistake had already been found once for images: the comment above
+that line says adding the rig on top of a world "made every lamp-less HDRI
+scene about a fifth too bright", and the fix then was to exclude the image
+case alone. The guard is now what it should have been — a world is a light,
+image or no image:
+
+```wgsl
+let world_lit = p.envmap != 0u || dot(p.env.rgb, p.env.rgb) > 0.0;
+if (p.count == 0u && world_lit) { return c; }
+```
+
+The rig remains for a scene with no light of *any* kind, which is the only
+case it was ever for.
+
+### And the flat world was not flat
+
+`env_at` returned, for a world with no image,
+
+```wgsl
+p.env.rgb * mix(0.35, 1.15, clamp(d.z * 0.5 + 0.5, 0.0, 1.0))
+```
+
+— a dome brighter above the horizon than below. That looks like a sky, but
+a Background node with no texture is **uniform in every direction**, which
+is what Blender lights with. Cosine-weighted over the upper hemisphere the
+gradient averages 1.017, so an upward-facing surface got 2 % too much and a
+downward-facing one a good deal too little. It returns `p.env.rgb` now.
+
+(The *background* the camera sees is a separate term — `sky_at`, the
+theme's canvas colour and its sweep — and is untouched. This is the
+lighting.)
+
+### Where it lands
+
+```
+L = 0.25  ->  0.2031
+L = 0.5   ->  0.4062
+L = 1     ->  0.8123
+L = 2     ->  1.6246        i.e.  0.8123 L, no intercept
+```
+
+Exactly linear, and 1.5 % over Blender's 0.800 — the residual being one
+indirect bounce the reference caps at 1 and the tracer does not.
+`lamp_power.rs` asserts the level at 5 % and the linearity at 2 %, which is
+tighter than the lamps' 15 % because this law has no constant to allow for.
+
+### The three terms, end to end
+
+| | Blender | Phiber, batch 52 | batch 53 (π) | batch 54 (world) |
+|---|---|---|---|---|
+| lamps only | 35.5 | 21.4 (0.60) | 39.2 (1.10) | 39.2 (1.10) |
+| world only | 18.0 | 23.0 (1.28) | 23.0 (1.28) | measured at 1.015 on the controlled scene |
+| whole figure | 38.0 | 30.1 (0.79) | 44.8 (1.18) | — |
+
+Three batches ago the figure was a quarter dark for reasons nobody could
+name. What is left is the lamp term's 10 %, and that is the GGX lobe, the
+area light's `max(dot(-l, dir), 0) × 2` stand-in, and shadow rays — all
+things the controlled test can now be extended to measure one at a time.
+
+## 55. The area light was half a light (batch 155, 2026-10-05)
+
+§54 left the lamp term 10 % over and named three things in it: a GGX lobe
+the reference does not carry, shadow rays, and the area light's stand-in
+factor. The last of those turns out not to be a 10 % effect at all.
+
+The kernel had, for `kind == 3`:
+
+```wgsl
+e *= max(dot(-l, li.dir), 0.0) * 2.0;
+```
+
+on top of `e = color / (4π d²)`, so an area light delivered
+`P·cos / (2π d²)`.
+
+EEVEE says what it should be. `eevee_light.cc`'s `shape_radiance_get`
+converts a lamp's radiant flux to the radiance its surface emits:
+
+```c
+case LIGHT_RECT:
+case LIGHT_ELLIPSE: {
+  float area = this->area().size.x * this->area().size.y * 4.0f;   /* size is the half-extent */
+  if (this->type == LIGHT_ELLIPSE) { area *= M_PI / 4.0f; }
+  return float(M_1_PI) / area;                                      /* L = P / (π A) */
+}
+```
+
+So the emitted radiance is `P / (π A)` over the **full** rectangle, and
+what lands on a surface straight below is `L · A · cos / d²` —
+`P·cos / (π d²)`. **The area cancels**, which is exactly what the comment
+above that switch means by "make illumination power constant": grow a
+Blender area light and it does not get brighter, it spreads the same watts
+over more surface. So the kernel is right to ignore `size` here, and wrong
+only in its constant: with `e` already carrying `1/(4π d²)`, the factor is
+**4**, not 2.
+
+Measured on the controlled scene — a 100 W square metre 2 m above an albedo
+of 0.8:
+
+| | |
+|---|---|
+| Cycles | 1.862 |
+| phiray, factor 2 | 1.035 — **44 % out** |
+| phiray, factor 4 | ~2.07 — 11 % over |
+| the far-field limit, `0.8 · P / (π² d²)` | 2.026 |
+
+The remaining 11 % is not a constant: it is the source's *finite size*. A
+1 m light 2 m away subtends enough solid angle that the point
+approximation over-counts, and Cycles integrates the real rectangle. EEVEE
+carries a fitted correction for the same reason (`point_radiance_get`'s
+`mrp_scaling`, "the fit was found by reducing the average error compared to
+cycles"). Porting that is a separate, bounded job; the factor of two was
+the bug.
+
+**What it was costing.** Every area light in every render was half as
+bright as Blender's, in both kernels, and an area light is the most common
+lamp in an interior or a product shot. It did not show on THYMUS because
+that file's area light is 11.8 W against two 1500 W spots — which is the
+case for a controlled test rather than a scene: a 44 % error on one term
+can hide entirely behind the arithmetic of a real file.
+
+`lamp_power.rs` now covers a point, a spot, a sun, an area light and a
+uniform world — five absolute numbers, all against Cycles' own.
+
+## 56. A flat world never bounced (batch 156, 2026-10-05)
+
+The scoreboard's first open item was bounce depth: several residuals looked
+like one-bounce differences, and the shadows under the figure's arms read
+lighter here than in Blender. Measuring it needed a scene with a shadow in
+it, which the lamp-power plane has not got.
+
+`blender_lamp_power.py` grew one. Two walls a metre high and a metre apart
+make a trench along Y; the camera looks straight down into it and the
+centre pixel is the floor between them, which can see only the strip of sky
+the trench leaves open. Cycles, by diffuse-bounce count:
+
+```
+open plane          0.800
+trench, 1 bounce    0.462
+trench, 4 bounces   0.584      <- Blender's default
+trench, 12 bounces  0.605
+```
+
+(The first attempt at this put a *lid* over the plane, which the
+orthographic camera above simply photographed instead: 0.800, unshadowed.
+A trench is the shape that puts the shadow where the camera can see it.)
+
+phiray gave **0.504 at one bounce and 0.504 at four** — the same number,
+because `Camera::bounces` was doing nothing at all.
+
+### Why
+
+```wgsl
+fn indirect(pos, n, seed) {
+    let lit = p.envmap != 0u;
+    if (p.glow == 0u && !lit) {
+        let dir = cosine_dir(n, seed);
+        return env_at(dir) * mix(0.25, 1.0, visible(pos, dir, p.ao));
+    }
+    …the real path…
+```
+
+A scene with no glowing meshes and **no environment image** never reached
+the bounce path: it got one occlusion ray with a floor of 0.25. A world
+that is a flat *colour* has `envmap == 0`, so that is every file whose
+Background node has no texture — the same guard, in the same shape, as
+batch 154's studio rig and batch 153's ambient floor. Three places tested
+for an image where they meant *a world*.
+
+The predicate is the one the other two now use:
+
+```wgsl
+let lit = p.envmap != 0u || dot(p.env.rgb, p.env.rgb) > 0.0;
+```
+
+### And then the tail
+
+Routing a flat world into the path made `bounces` mean something — and made
+one bounce *worse*: 0.661 against Cycles' 0.462. The path closes with
+
+```wgsl
+if (!escaped && !sampled) { acc += thr * env_at(nrm) * 0.8; }
+```
+
+— a truncated path gets the world added as if nothing were in the way, so
+that it does not go black. That is a reasonable stand-in for an
+environment *image* that has no sampling table, where a cosine ray rarely
+finds the bright part by chance. For a **uniform** world it is pure
+over-count: a cosine ray finds a uniform dome with exactly the probability
+the surface is open to it, so the path is already unbiased. The tail now
+applies to an image only.
+
+### Where it lands
+
+| | Cycles | phiray before | after |
+|---|---|---|---|
+| open plane | 0.800 | 0.812 | 0.812 |
+| trench, 1 bounce | 0.462 | 0.504 | 0.397 |
+| trench, **4 bounces** | **0.584** | 0.504 (ignored) | **0.584** |
+
+Exact at four, which is the number that matters because four is what
+Blender ships as Max Bounces → Diffuse. One is left loose in the test on
+purpose: Cycles counts a bounce from the camera hit and this path counts
+from the surface, so the two differ by a step at the shallowest depth and
+agree once there is room to converge. What the test does assert at one
+bounce is the *shape* — a trench floor much darker than open ground, and
+climbing with depth, as Cycles' own 0.462 → 0.584 → 0.605 does.
+
+Two more hand-set constants are gone from the uniform-world case: the 0.25
+occlusion floor and the 0.8 tail. And Light Paths → Max Bounces → Diffuse
+now does something for an ordinary file, which it did not before.
+
+## 57. An area light is not a point (batch 157, 2026-10-05)
+
+§55 fixed the area light's constant and left it 11 % over Cycles, with the
+residual named as the source's finite size and the fix named as EEVEE's
+`mrp_scaling` fit. The fit turns out to be the wrong thing to port, and the
+right thing is shorter.
+
+**Why not the fit.** `point_radiance_get`'s `mrp_scaling` is under a comment
+that says what it is for — *"Volume light is evaluated as point lights"*.
+It is EEVEE's correction for lighting a *volume* with an area light, not a
+surface; EEVEE shades surfaces with a real linearly-transformed-cosine
+integration of the rectangle. Applied to our surface term it gives
+
+```
+tmp = (π/2) / (π/2 + √A) = 0.6111
+mrp = tmp + (1 − tmp)/π   = 0.7349        ->  radiance 1.489
+```
+
+against Cycles' 1.862 — 20 % *under*, worse than the 11 % over it was meant
+to fix. Porting a fit without its context is how that happens.
+
+**What the geometry says.** A disk of area `A` and radiance `L`, seen
+head-on from distance `d`, puts
+
+```
+E = L · π r² / (r² + d²)        with  r² = A/π
+```
+
+on a surface — the standard form factor. With `L = P / (πA)` that comes to
+
+```
+E = P / (π (d² + A/π))
+```
+
+so the whole of the correction is **`d²` becoming `d² + A/π`**, and the
+far-field form (§55) is its `d² ≫ A` limit. No fit, no constant.
+
+In the kernel, where `e` already carries `1/(4π d²)`:
+
+```wgsl
+let shape = li.shape == AREA_DISK || li.shape == AREA_ELLIPSE;
+let a = max(li.size * li.size_y, 0.0) * select(1.0, 0.25 * PI, shape);
+e *= max(dot(-l, li.dir), 0.0) * 4.0 * d2 / (d2 + a / PI);
+```
+
+A disk or an ellipse takes `πab/4` for its area, as `shape_radiance_get`
+does. The constants moved from `shadow.wgsl` to `camera.wgsl` on the way:
+`shadow.wgsl` is included only by Material Preview's kernel, and the path
+tracer needs them now too.
+
+**Measured.**
+
+| | Cycles | far field (§55) | with the form factor |
+|---|---|---|---|
+| 100 W, 1 m², at 2 m | 1.862 | 2.07 (11 % over) | **1.909 (2.6 % over)** |
+| the same at 8 m | — | 0.1267 | 0.1301 (2.7 % over) |
+
+The second row is the check that matters: it is a *shape* correction, not a
+scale. Four times further away the source is a point again and the two
+forms agree, which a fitted factor would not do.
+
+The area light has gone 0.56× → 1.11× → **1.026×** over three batches. What
+is left is the same ~2 % every term carries — the GGX lobe at `f0 = 0.04`
+the reference's Principled puts almost none of into this geometry — and
+that is item 3 on the scoreboard, not an area-light problem.
+
+## 58. The specular lobe, and a flaw in the measuring stick (batch 158, 2026-10-05)
+
+Item 3 on the scoreboard was specular: Blender's highlights on the
+shoulders and chest read tighter and brighter than ours in every frame of
+the contact sheet. A highlight has two properties and they fail
+differently — how much light it sends back, and how wide it is — so both
+want measuring.
+
+`blender_lamp_power.py` grew a specular case: the same plane with **Base
+Color black**, so the diffuse term is zero and only the microfacet lobe
+answers, lit by the same 1000 W point lamp, with lamp and camera both
+straight overhead — which puts the half-vector on the normal, the lobe's
+peak, where its normalization shows most. Roughness swept:
+
+```
+roughness 0.1   142.403
+roughness 0.3     7.450
+roughness 0.6     0.4936
+roughness 1.0     0.06865
+```
+
+**The peak.** phiray against those: ×1.007, ×1.110, ×1.093, ×1.021 — right
+at the extremes and about a tenth high in the middle. Not a constant, and
+small next to everything this campaign has found.
+
+**The width, and the trap.** Measured across the middle row at roughness
+0.3, Blender's lobe is 8 pixels wide at half maximum and phiray's was
+**14** — 75 % broader, which is exactly what the contact sheet shows.
+
+It was not the kernel. Comparing the kernel's own output against the GGX
+formula it implements showed the measured lobe wider than its own
+prediction at *every* roughness, and increasingly so as the lobe narrowed —
+which is the signature of a blur, not of a wrong roughness. The blur was
+in the test: `overhead()` built its camera with `scale: 1.0`, and the
+kernel's orthographic extent is `1 / (aspect × scale)`, so the frame
+spanned **one metre** where the reference's `ortho_scale = 2.0` spans two.
+Every profile came out twice as wide in pixels.
+
+With the frame matched:
+
+| roughness 0.3, middle row | 4 px out | 3 | 2 | centre | half-max |
+|---|---|---|---|---|---|
+| Cycles | 0.550 | 0.725 | 0.892 | 1.000 | 8 px |
+| phiray | 0.517 | 0.700 | 0.877 | 1.000 | **8 px** |
+| the GGX formula | 0.538 | 0.711 | 0.878 | 0.985 | — |
+
+All three agree within about 3 %. **The lobe's shape is Cycles' shape**,
+and the broad highlights in the contact sheet are the figure's overall
++19 % brightness, not a smeared specular.
+
+Worth being precise about what the harness flaw did and did not touch:
+every number in §53–57 is a *flat field* read at the centre of the frame,
+and the centre of a flat field is the centre whatever the frame spans — so
+the lamp, world, area and trench measurements are all unaffected. What it
+ruined was any measurement of *shape*, which is why the first one came out
+75 % wrong. A measuring stick needs checking against the thing it measures
+before its readings are trusted, and the check here was the kernel against
+its own formula.
+
+Both are tests now: the peak across the roughness sweep, and the lobe's
+profile and half-max width against Cycles'. `lamp_power.rs` holds seven
+absolute comparisons — a point, a spot, a sun, an area light near and far,
+a uniform world, indirect light in shadow, and the specular lobe.
+
+## 59. The HDRI path, and two clean negatives (batch 159, 2026-10-06)
+
+Items 4 and 5 on the scoreboard. Item 4 was phrased as a fixture problem —
+THYMUS' environment image is not shipped, so both renderers fall back to
+magenta, and every number measured on that file is a measurement of a
+fallback. The deeper question underneath it is whether the **environment
+image path** is right at all: on our side it is entirely different code
+from a flat world. An image is sampled through a CDF for next-event
+estimation, carries a prefiltered chain, is weighted against the cosine ray
+by MIS, and gets the tail that §56 left in place for exactly this case. Any
+of those can hold a normalization error a flat colour would never show.
+
+Two measurements, in order of strength.
+
+### A uniform image must equal a uniform colour
+
+The strongest invariant available, because it needs no reference at all: a
+dome of radiance 1 is a dome of radiance 1 however it is stored.
+
+```
+flat colour  0.8121
+image        0.8043          (Cycles 0.8001)
+```
+
+0.96 % apart, and both within 1.5 % of Cycles. The image path's
+normalization is sound.
+
+### A banded sky, against Cycles
+
+A uniform image cannot catch a *sampling* error, because every direction
+gives the same answer. So `blender_lamp_power.py` now writes a real
+equirectangular EXR — radiance 4 above 50° elevation, 0.1 elsewhere — loads
+it as the world's Environment Texture, and renders the plane through it.
+
+```
+Cycles   1.2910
+phiray   1.3417        ×1.039
+```
+
+4 % over, which is the band every other term sits in. The test builds the
+same sky from the same rule rather than reading the EXR, so the comparison
+cannot drift on an image loader; the file (`truth/sky.exr`) is there for
+Blender's side and for anyone who wants to look at it.
+
+**The orientation is the part worth writing down.** phiray's rows run
+**zenith first** — `env_at` maps `v = 0.5 − atan2(z, |xy|)/π`, so `v = 0`
+is straight up — where Blender's image buffer starts at the nadir. The two
+skies are each other's rows reversed. Get that backwards and a sky lights
+from below, which on a flat plane looks merely *dim* rather than wrong, and
+would have been read as a sampling error.
+
+### What this means for the scoreboard
+
+Both are **negative results**, and they are worth as much as the four bugs
+before them: the environment-image path is right, so the remaining gap on
+THYMUS is not hiding there. Item 4 is what it looked like at the start — a
+missing fixture, not a defect. Five of the seven terms in `lamp_power.rs`
+now have no known error above 4 %.
+
+### Item 5, in passing
+
+`animation_render` takes `PHIRAY_DENOISE=0`. The denoiser smooths
+frame-to-frame noise, so `animation_compare`'s motion column reads low with
+it on; a measurement of how much an animation moves wants it off. The
+switch is the same one `color_render` has had.
+
+## §60 — The last two texture nodes, and a material override to measure light with (batch 160)
+
+Two separate pieces of work, both of them things the status table called
+**partial**.
+
+### The texture nodes: White Noise and Gabor
+
+`space-status.md`'s reading table has carried one `partial` for materials:
+*"Sky / Gabor / White Noise and a Math node between a texture and its
+socket not yet"*. Two of those four are now in, ported from Cycles.
+
+**White Noise** (`svm/white_noise.h`) is the cheap one and was overdue: it
+is Jenkins' lookup3 over the coordinate, with no interpolation between
+cells at all, and `noise.wgsl` already had `rot`, `jenkins_final` and
+`hash_uint2/3` because Perlin needs them. What was missing was the
+four-argument mixer and the float-shaped wrappers, which are now
+`hash.wgsl` — `hash_uint`, `hash_uint4`, and the nine
+`hash_floatN_to_floatM` forms the two new nodes spend.
+
+The node's dimension setting is the whole of its behaviour and it lives in
+`bNode.custom1`, not a storage struct — the same place a Mapping node keeps
+its Type, so `texnode.rs` grew a `custom1` reader and `procedural.rs`'s
+`mapping_type` now calls it instead of keeping its own copy. **1D hashes W
+alone**, which means the entire surface comes out one flat value; no other
+texture node in the set can do that, so it is what the test turns on.
+
+**Gabor** (`svm/gabor.h`) is 146 lines of WGSL and the most mathematical
+node in the set: sparse Gabor convolution (Lagae 2009) with Tavernier's
+stratified sampling and normalization (2019), evaluated as Tricard's
+complex phasor (2019) so that **Value, Phase and Intensity all fall out of
+one sum**. Eight impulses a cell over a 3 × 3 (2D) or 3 × 3 × 3 (3D)
+neighbourhood — 72 or 216 windowed Gaussians a pixel.
+
+Two places Cycles divides by a zero and reads NaN are guarded here, and
+said so in the comments: an Orientation straight up the Z axis has no
+azimuth, and a file that zeroed the Orientation vector would normalize to
+NaN.
+
+Three words were already free in the slot for them. A Gabor keeps its
+Frequency in `detail`, its Anisotropy in `roughness`, its Orientation 2D in
+`lacunarity` and its Orientation 3D in `color1`; a White Noise keeps its
+dimensions in `variant` and its W in `offset`. No record grew.
+
+**A trap worth recording.** A Gabor has **two input sockets both named
+`Orientation`** — Blender tells them apart by identifier (`Orientation 2D`,
+`Orientation 3D`) and hides whichever the type does not use. `socket_values`
+keys by *name*, so reading the 3D one that way returns the 2D float's
+bytes; the first run read `[0.333, 0.333, 0.333]` where the fixture had set
+`(0, 1, 0)`. `texnode.rs` now has a `vector` reader that goes through
+`socket_named`, which tries the identifier first.
+
+The fixture is regenerated: `make_procedural.py` has two more planes,
+`Hashed` (White Noise ▸ Value, 4D, W 1.5) and `Gabored` (Gabor ▸ Value, 3D,
+Scale 12, Frequency 4, Anisotropy 0.25, Orientation (0, 1, 0)), and
+`PROCEDURAL.blend` was rebuilt against Blender 5.0.1. `bpy` is a pip wheel,
+so the fixture can be rebuilt in the test container without a Blender
+install — worth knowing for every fixture after this one.
+
+Still open on that row: **Sky** (the Nishita model, which needs a
+precomputed table, and is the larger of the four) and a **Math node between
+a texture and its socket**.
+
+### The material override
+
+§2.6 of `render-parity.md` ended with a measurement to make next: *"with the
+denoiser off and a white material override, so the light is measured on its
+own rather than through the materials."* Batch 159 did the denoiser. This is
+the override.
+
+Blender has it already — **View Layer ▸ Override ▸ Material**
+(`ViewLayer.mat_override`), which EEVEE reads at `eevee_material.cc:446`
+before a single node is evaluated:
+
+```cpp
+blender_mat = (material_override) ? material_override : <the slot's>
+```
+
+`rendered/stand.rs` is that, as `BMatStand`: one grey Lambertian surface —
+albedo as asked, fully rough, dielectric — standing in for every material.
+`BSurface::tri` consults it first and returns the stand-in, so the slot is
+not read at all; a mix's second lobe is never even added to the scene. An
+override that kept the slot's textures would not be an override.
+
+Specular is deliberately *not* switched off: Blender's Principled keeps its
+0.5 IOR level under an override too, and a measurement that removed it
+would not be measuring what Blender renders.
+
+Both sides take the same switch, as the others do:
+
+```powershell
+$env:PHIBER_OVERRIDE=1    # phiber: BMatStand::grey(1.0)
+PHIBER_OVERRIDE=1         # blender_animation.py: view_layer.material_override
+```
+
+What it is *for*: a level difference between two renderers is either the
+light arriving at a surface or what the surface does with it, and those two
+cannot be told apart while every face carries its own albedo, roughness,
+texture and mix weight. THYMUS reads 15.2 / 255 apart with its own
+materials. With this on, the same comparison measures the light alone — and
+whatever is left after that is the materials.
+
+### The Math node, and four more words in the slot
+
+The third of the four gaps, and the one that was not a missing *feature* but
+a **loss**: `procedural.rs`'s walk from a material socket back to its
+texture went through reroutes and one Color Ramp, and broke on anything
+else. A Math node in that position therefore left `texture()` looking at a
+Math node, which it has no reader for — so the whole procedural was dropped
+and the material came out flat. A Noise behind a `Multiply` was not *wrong*;
+it was **gone**.
+
+`svm_math` is ported whole — all 41 of `NodeMathOperation` — as
+`math.wgsl`, with its guards from `util/math_base.h`: `safe_divide`,
+`safe_powf` over `compatible_powf` (a negative base with a fractional
+exponent has no real answer; `x^0` is 1 including `0^0`; a negative base
+with a whole exponent keeps its sign), `safe_logf`, the two modulos,
+`wrapf`, `pingpongf`, `smoothminf`, `compatible_signf`, `compatible_atan2`.
+Each returns zero where the operation has no answer, which is what Cycles
+does rather than carry a NaN through the shade.
+
+The slot had no room for it, so **the procedural slot grew from 40 words to
+44** — the operation, its second and third Value sockets, and Clamp — and a
+material from 112 to 120. Four words were *not* stolen from a node type
+that does not use them: `bias`, `width`, `height` and the two spare colours
+are all live for Brick and Checker, and a Brick behind a Math node would
+have collided. The growth moved `bump_proc` from `m + 72` to `m + 76` and
+reset the data table's floor in `trace.rs` from 1068 bytes to 1132 — that
+test counts bytes exactly, on purpose, and is the reason the layout cannot
+drift silently.
+
+In the kernel the Math node runs **after** the texture and after any ramp,
+on the scalar, and then paints the colour grey from it — which is what
+Blender does when a Math node feeds a colour socket. Clamp is applied last.
+
+**Another two-sockets-one-name trap**, the same shape as the Gabor's: a Math
+node's three inputs are **all named `Value`**. Only the identifiers
+`Value_001` and `Value_002` tell the operands apart, which is why
+`texnode.rs` reads them through `socket_named`.
+
+Reading it is pinned by `Mathed` in the fixture (a Noise ▸ Fac through
+Multiply 2.5 with Clamp on); the kernel by
+`a_math_node_after_a_texture_maps_its_value`, which reads each operation off
+a **Linear Gradient** rather than a noise — the Gradient's Fac is a known
+ramp from 0 to 1 across the frame, so `× 0` must flatten it, `> 0.5` must
+cut it into exactly two halves with one step between, and Clamp on `× 4`
+must flatten the bright end that the unclamped version keeps climbing.
+Predictable, not merely different.
+
+That leaves **Sky** alone on the materials row.
+
+### The engine row, which nothing read
+
+Third partial of the batch, from the Rendering workspace's row rather than
+the materials one: *"the engine enum (`PHIRAY`) is selectable with nothing
+behind it."*
+
+The honest description of the old behaviour is worse than "PHIRAY does
+nothing": **Properties ▸ Render ▸ Engine was a dropdown no render ever
+read.** `BStillLook::for_engine` asked `model.render.engine` — the engine
+the *file was saved with*. So a `.blend` saved under Workbench rendered
+Workbench, and changing the row to anything, Workbench included, changed
+nothing. `PHIRAY` was the visible symptom because no `.blend` can name it,
+so it could only ever be chosen there, where nothing was listening.
+
+`BRenderSet` carries it now, as `BRenderEngine` — the panel's value first,
+the file's only until the panel holds one, which is exactly how every other
+row in that struct already read. `for_engine` branches on
+`set.engine.traces()` instead of a string compare against the file:
+Workbench rasterizes `Scene.display.shading`, every other engine —
+`PHIRAY` among them — path-traces. An engine the build does not know (an
+add-on's) falls back to EEVEE rather than refusing to render, as Blender
+does with a missing engine.
+
+What `PHIRAY` *means*, stated plainly: the same tracer EEVEE and Cycles
+render through here, named as itself rather than borrowing Cycles' name.
+F12 now reports which engine drew the frame, as Blender's status line does.
+
+Pinned by `tests/render_engine_row.rs`.
+
+
+## §61 — The Spreadsheet's domains (batch 161)
+
+Item 4 of the queue: *"the Spreadsheet lays out; no attribute data."* That
+was half true. It did show a table — one row per **vertex** with
+`position x/y/z` — and nothing else: no other domain, no other attribute,
+and the left region held the **generic Toolbar**, which is wrong on its own
+terms because Blender's Spreadsheet has no tools. That region is the
+**dataset region** (`spreadsheet_dataset_draw.cc`): the object's geometry as
+a tree, one row per domain, the chosen one active.
+
+So the batch is a new part, `BPartType::Dataset`, and the table reading from
+whichever domain it names.
+
+**The domains and what each carries.** Blender lists the attributes the
+geometry *has*, hiding any whose name begins with a dot
+(`allow_procedural_attribute_access`) — which is why `.corner_vert` and
+`.select_vert` are not columns, and why a mesh with no corner attribute
+shows a Face Corner table of indices and nothing else **in Blender too**.
+Here, what the reader carries decides the rest:
+
+| domain | elements | columns |
+|---|---|---|
+| Vertex | `vertices.len()` | `position x/y/z`, and `UVMap u/v` when the mesh has a UV layer |
+| Face | `indices.len() / 3` | `material_index`, when the faces were assigned per face |
+| Face Corner | `indices.len()` | `Color r/g/b`, when the corners carry a colour attribute |
+
+**Edge is deliberately not offered.** The reader triangulates, so
+`SceneMesh` carries `indices` and no edge list — and the edges of a
+triangulated mesh are *not* the file's edges, because a quad's diagonal is
+not one. A count derived from the triangles would be **wrong rather than
+missing**, which is worse. `.edge_verts` is read already, for creases
+(`phiphx`'s `mesh/crease.rs`), but it does not reach the scene; that is the
+one change the Edge domain needs. Asking for `EDGE` falls back to the
+Vertex domain a fresh Spreadsheet opens on.
+
+**One difference worth stating rather than hiding:** `SceneObject::uvs` is
+**per vertex** (`len == vertices.len()`), where Blender's UV layer is per
+corner. So `UVMap` sits on the Vertex domain here and on Face Corner in
+Blender. It is a reader simplification, not an editor bug, and the column
+comment says so.
+
+A blank cell is not a zero: an index past the end of its array prints
+nothing, because a blank says *no value here* and `0.000` says *zero*.
+
+The split follows Blender's own files — `column.rs` for which columns a
+domain has (`spreadsheet_column.cc`), `row.rs` for one element's values
+(`spreadsheet_layout.cc`), `dataset.rs` for the region
+(`spreadsheet_dataset_draw.cc`), `set.rs` for the domain itself.
+
+Still open on that row: the Filter panel's row filters, pinning, and
+Blender's other geometry components (curves, point clouds, instances,
+Grease Pencil) — the Spreadsheet here reads meshes.
+
+### A merge, and why the failure count was a lie
+
+While landing batch 161 the mirror of the machine was checked file by file
+for the first time in a while, and **103 source files had drifted** — all of
+them the other agent's: the node editor's whole `add/`, `edit/`, `drag/`,
+`pick/` and `wire/` trees, `canvas/time/` restructured (`gesture.rs` became
+`gesture/mod.rs` + `gesture/drag.rs`, `row/` gained its own tests), plus
+`state/key/op.rs`, `part/pref/`, `part/props/pref/control/`, and
+`phiphx`'s `shade/graph.rs` and `shade/socket.rs`. Thirty-nine of the
+103 were files that did not exist here at all.
+
+Two consequences worth naming:
+
+**Every "13 failing, all theirs" count in the last few batches was measured
+against a tree three weeks behind theirs.** Their fixes were not in it — the
+three `level_structure` files they had already brought under 240 lines still
+read as over, and the layout golden read 4092 lines stale because their
+Animation gizmo rows had moved and this tree had the old rows. None of that
+was a real failure; it was a stale working copy reporting on work that had
+already been done.
+
+**The drift check missed `Cargo.toml`.** The mirror compared `*.rs` only, so
+the merge compiled against a manifest without the `log` dependency the other
+agent had added for `app/journal.rs` — seven `cannot find \`log\` in the
+crate root` errors from a file that is correct. The check covers the
+manifests and `clippy.toml` now.
+
+The lesson, written down because it will come up again: **a shared tree with
+two agents in it needs the mirror verified at the start of a batch, not
+only at the end.** Verifying after extraction proves the batch landed; it
+says nothing about what arrived from the other side in between.
+
+### What the merge actually found, and one file of ours in it
+
+With the trees in step, the phiber suite reads **10 failing, and all ten are
+the other agent's** — their key-budget test over their own
+`state/key/op_tests.rs`, two renderer-style budgets, the activity bar's
+treatment, the Outliner's guide lines, two NLA editor tests, the timeline
+wheel zoom and their layout golden. The three `level_structure` files and
+several others that had been counted against us for batches were **already
+fixed on their side**; this tree had simply never seen the fix.
+
+Two things in the shared tree are mid-refactor and are **not** to be
+"fixed" from here, which `STALE.md` now says in as many words:
+
+- `crates/phiber/tests/chrome_wiring.rs` **does not compile**:
+  `part/activity/option.rs` turned `options_for` into a method on the group
+  type and the test still calls it as a free function.
+- Two `redundant_clone` denies in `canvas/node/frame/tests.rs`, so
+  `cargo clippy -p phiber --all-targets` fails on the shared tree. Removing
+  the clone the lint points at does not compile — the value is used after
+  it — so it is theirs to resolve. A batch gates its own clippy on its own
+  targets while that stands.
+
+**One failure was ours**, and worth recording as the cost of a
+two-line addition: `rendered/mod.rs` reached **243 lines** when `stand.rs`
+was declared and exported in it, over the 240-line read limit. The fix is
+not a squeeze — the thread-local render state (`BRayState`, `STATE`,
+`POSTED`, `MAX_SIDE`, `views_posted`, `shown_image`) moved into
+`rendered/state.rs`, which is where it belonged next to `wake.rs`,
+`clock.rs` and `settle.rs`, each of which already keeps its own. `mod.rs`
+is 204 lines and declares modules rather than holding state.
+
+
+## §62 — The Sky Texture, and the last thing on the materials row (batch 163)
+
+`space-status.md`'s reading table has carried one `partial` on materials
+since the table existed. Batch 160 closed three of its four gaps; **Sky was
+the one left**, and it is closed here — for the two models that are an
+atmosphere.
+
+### The shape of the thing
+
+Blender has **four** sky models, and the first thing to get right is which
+is which, because `NodeSkyType` numbers them in the order you would not
+guess: **Preetham 0, Hosek/Wilkie 1, single scattering 2, multiple
+scattering 3** — the two analytic models first. Reading `0..=1` as "the
+atmosphere ones" is a one-character mistake that silently reads every sky as
+the wrong model, and it is the mistake this batch made first.
+
+Preetham and Hosek/Wilkie are **not** this atmosphere. They are analytic
+models over a precomputed coefficient dataset — `sky_hosek_data.h` is 3821
+lines of it — and a world naming either is **declined**: it keeps the
+Background colour it folded to rather than being handed the wrong sky.
+
+The other two are Nishita's, and the important fact about them is that
+**Blender does not evaluate them per ray either**.
+`node_shader_tex_sky.cc` precomputes a 512 × 256 table on the CPU and the
+kernel samples it, through a non-linear latitude mapping that concentrates
+rows near the horizon:
+
+```c
+y = copysign(sqrt(fabs(dir_elevation) * M_2_PI_F), dir_elevation) * 0.5 + 0.5
+```
+
+So a sky is an image here too — which means the whole path that already
+carries one carries it: the CDF for next-event estimation, the prefiltered
+chain, the MIS weight against the cosine ray. **§59 measured that path
+against Cycles and found it sound**, which is why this batch could be a
+reader and a bake with **no kernel change at all**.
+
+### What was ported
+
+`sky_single_scattering.cpp`, whole, as `phiphx::sky`:
+
+- `spectrum.rs` — 21 wavelengths from 380 to 780 nm; the sun's irradiance
+  at the top of the atmosphere, the Rayleigh and ozone coefficients at each,
+  the CIE XYZ colour matching functions, and the 8-node Gauss–Laguerre
+  quadrature Blender uses for optical depth (its own comment gives the
+  sympy that produced the nodes).
+- `atmosphere.rs` — the densities (Rayleigh and Mie exponential, ozone a
+  layer around 25 km), the two phase functions, the earth and atmosphere
+  intersections, `ray_optical_depth` by that quadrature rather than ray
+  marching, and `single_scattering`: 32 segments along the ray, each one's
+  in-scattering from the sun attenuated by the depth there and back.
+  Blender's one shortcut is kept — the density of each scattering type has
+  the same spectrum everywhere, so only a scalar per type travels along the
+  ray instead of a full spectrum.
+- `mod.rs` — the bake, **straight into an equirectangular image** in
+  `env_at`'s own layout rather than into Blender's non-linear table. The
+  cost is more samples near the poles and fewer near the horizon for the
+  same pixel count; the gain is that nothing downstream has to know the sky
+  is a sky. The sky is symmetric about the sun's azimuth, so half the
+  columns are integrated and the other half mirrored, as Blender does.
+
+### Measured against Cycles
+
+`truth/blender_sky.py` renders the same sky with an **equirectangular
+camera**, so the frame *is* the environment image Cycles samples — no
+geometry, no lighting, nothing between the model and the measurement.
+
+**Above the horizon, every row is within 1.6% of Cycles.** The profile, row
+by row from the horizon to the zenith:
+
+```
+elev    ours    Cycles   ratio
+ 2.8°   8.901   8.842    1.007
+ 8.4°   7.124   7.146    0.997
+14.1°   5.497   5.522    0.995
+25.3°   3.081   3.123    0.987
+47.8°   1.357   1.372    0.989
+70.3°   0.922   0.926    0.997
+87.2°   0.831   0.818    1.016
+```
+
+That is the atmosphere model confirmed — it is where the sky is physics.
+
+**Below the horizon they do not agree, and the numbers are recorded rather
+than tuned away.** The model has no ground in it: a ray pointing down goes
+through the Earth, so Blender fills those rows by fading its horizon row
+out, `(1 - 2.5 sin θ)³` over the first 23.6° of depression. This does the
+same from the same formula, and comes out **×1.35 just under the horizon
+rising to ×1.69 at 20° down**. The formula and the mapping both check out on
+paper — Blender's non-linear table rows cancel *exactly* against the
+kernel's `sqrt` lookup, so the stored fade at a given elevation really is
+`(1 - 2.5 sin θ)³` — so something in Cycles' own sky path attenuates that
+band further than the GPU path this was read from. It is a few degrees of
+fake ground rather than sky; what is pinned is its shape: present, falling
+with depression, black past the cut.
+
+### The sliders, by the sign of what they do
+
+Each one is a consequence of a table being right, so each is asserted by
+its direction, measured first rather than assumed:
+
+| | zenith | horizon | red-to-blue at the horizon |
+|---|---|---|---|
+| default | 0.831 | 8.901 | 1.90 |
+| **Air ×2** | 1.270 | 6.397 | 6.56 |
+| **Dust ×4** | 0.851 | 6.201 | 2.66 |
+| **Ozone ×4** | 0.647 | 6.572 | **1.19** |
+
+More air brightens the zenith and *dims* the horizon while reddening it
+hard — on a long path extinction wins and blue is what is lost. The one
+worth keeping is ozone: it dims everything and turns the sky **bluer**,
+because the Chappuis band absorbs in the middle of the spectrum. That is
+what makes a twilight sky blue, and it is the sign that catches a mistyped
+`OZONE_COEFF` — get the band's shape wrong and the sky reddens instead.
+
+### The sun disc
+
+The disc is not in the sky image: it is one small, very bright solid angle,
+and a 64-wide equirect frame cannot hold it without blowing out a pixel. It
+is a radiance of its own (`SKY_single_scattering_precompute_sun`), and what
+is checked is that it is far brighter than any sky, **reddens as the sun
+sets** (blue scatters out of the long path first), is black below the
+horizon or with the disc off, and takes Sun Intensity as a plain multiplier.
+
+### Two traps this batch walked into
+
+1. **`aerosol_density` is `dust_density` in the file.** Blender's source
+   calls the field `aerosol_density`; the DNA name in a 5.0 file is
+   `dust_density` — the struct was renamed and the DNA name kept. Reading
+   only the source's name lost the slider *silently*: every other field read,
+   so a sky with heavy dust came out as a sky with none. Both names are
+   tried now and the file decides.
+2. **A fixture script wrote the `.blend` over itself.** `make_sky.py`
+   derived its output path with `__file__.replace("make_sky_fixture.py",
+   "SKY.blend")` after the file had been renamed, so the replace matched
+   nothing, the path stayed `make_sky.py`, and Blender saved a `.blend`
+   where the script had been. Derive a fixture's output from its own name
+   and the rename cannot do that.
+
+### What is still open
+
+**Multiple scattering is read as single scattering** — the same atmosphere
+with the inter-scattering term left out, so a sky asking for it comes out
+darker and less blue in its shadowed parts than Blender's. That is the
+honest thing to say until `sky_multiple_scattering.cpp` (401 lines) is
+ported too. And the two analytic models remain declined rather than
+approximated.
+
+
+## §63 — Editing UVs, and where a drag's anchor has to live (batch 164)
+
+Item 7: *"the UV editor draws; no UV editing — select, move, unwrap, pin."*
+This is **select and move**. Unwrap and pin are named at the end as still
+open, because they are a different kind of work.
+
+### The shape
+
+Blender keeps UV selection on the mesh's loops and a move writes the loop's
+`uv` outright. Here both are **session state** over a loaded model that
+stays what the file said — `ctx.uv.selected` and `ctx.uv.moved`, the same
+shape `scene::edit` uses for objects added and renamed, so Undo is a state
+step and a reload a clean slate with no copy of the mesh to keep in step.
+
+A corner is `(map, corner)`: which of the shown maps and which entry of its
+`uvs`. `scene/uv_edit.rs` holds the two lists and the four operations over
+them — `picked` (a plain pick replaces, Shift adds, Shift on a selected
+corner drops it, as `uv_select_pick`'s toggle does), `nudged` (every
+selected corner moved a further step, **folded into** the offset already
+there so a second drag continues the first), `holds` and `uv_of`.
+
+`canvas/image/uv_pick.rs` is the gesture: the nearest corner within 12 px,
+measured against the UVs **as they now stand** so a moved corner is picked
+where it is drawn rather than where the file put it. A click where nothing
+is within the radius picks *nothing* — it does not fall back to the least
+far corner on the square, because then a stray click anywhere would arm a
+drag on something.
+
+The painter walks corners by **index** now rather than by value, because a
+face has to be drawn with its moved corners where they were moved to; a
+selected corner is the accent and two pixels bigger, as Blender draws
+`TH_VERTEX_SELECT` larger than an unselected vertex.
+
+### The bug worth the whole section
+
+The gesture first kept the drag's anchor in an `Rc<Cell<Option<Point>>>` on
+itself, copying `border.rs`, which keeps the render region's box that way.
+Clicking worked. **Dragging did nothing at all**, and the reason is worth
+writing down:
+
+`BUvGesture::of` runs every frame. The press writes the selection; that
+write re-renders; the re-render builds a *new* gesture with a *new* cell;
+and the mouse-move handler now attached is the new one, whose cell is
+`None`. The anchor was thrown away between the press and the first move.
+
+`border.rs` gets away with a cell because **it writes nothing until the
+drag ends** — its press only sets the anchor. A gesture that writes on the
+press cannot use one. So `UvKey::Drag` is a state key, read fresh each
+frame, and the move folds the step into the offsets and advances the anchor.
+
+The general rule, since it will come up again: **a cell on a per-frame
+element survives only as long as nothing is written.** The moment a handler
+writes state, everything it was holding is gone, and the next handler in
+the same gesture is a different closure over a different cell.
+
+### Two files over the line
+
+Declaring one module pushed `canvas/image/mod.rs` to 243 lines, the same way
+`stand.rs` pushed `rendered/mod.rs` there in batch 162. Again the fix is
+structural rather than a squeeze: the Image and UV editors' geometry —
+`view_all`, `zoom_for`, `uv_square`, `rect` — moved into
+`canvas/image/place.rs`, where it is one concern instead of four methods
+wedged between the view's state and its window. `mod.rs` is 214 lines.
+
+Twice in five batches is a pattern: **a `mod.rs` in this tree sits a line or
+two under the limit, so adding a module to one means moving something out of
+it.** Worth expecting rather than rediscovering.
+
+### Still open on that row
+
+**Unwrap** is an algorithm (angle-based flattening, `uvedit_unwrap_ops.cc`
+over `slim` or the ABF solver) and belongs in a batch of its own. **Pin**
+needs a flag per corner that survives into the file, which is a writer
+change rather than an editor one. Box select, island select and the sticky
+modes are each a day's work on top of the picking that is now there.
+
+
+## §64 — Object drivers, evaluated (batch 165)
+
+Item 9: *"Drivers editor — partial, rig drivers only."* The reader has
+listed every driven object's driver F-curves for the editor since batch 143;
+what it had never done is **run** the ones that are not a rig's. A driver on
+an object's own `location`, `rotation_euler` or `scale` was read, drawn as a
+channel in the Drivers editor, and then ignored — the object stood where its
+keys put it.
+
+### Where it hooks
+
+`BlendMotionList::solve` built each object's channels as
+`self.list.iter().map(|m| m.raw_at(frame))` — the actions and the NLA.
+**Blender's order is the animation system, then the drivers over it**: the
+depsgraph evaluates a property's animation and its driver after, so a driver
+wins over a key on the same channel. So the pass goes exactly there, and
+`raw_at` is now a list-level method — the channels with the drivers run —
+with `solve` calling it.
+
+A driver's variables read a **snapshot** of what the actions left, taken
+before any driver writes. That is deliberate: the order the objects are
+driven in then cannot change the answer.
+
+### What it is
+
+`blend/anim/driver/` beside `blend/anim/drivers.rs` (which reads the list
+the editor shows). The evaluation is the rig's, reused rather than
+rewritten: `rig::driver`'s `DRIVER_TYPE_*`, its expression parser, and the
+same two steps — `evaluate_driver` over the variables, then the driver's own
+**F-curve over that value** rather than over the frame. Average, Sum, Min,
+Max and a simple Python expression all behave as the rig's do, because they
+are the same code.
+
+A variable is read when it is a **Single Property** whose path is one of the
+object's transform channels; the target is resolved by its block address
+against the objects in the scene. Everything else — a custom property, a
+material or modifier setting, a Transform Channel or Rotational Difference
+variable — reads **0**, as a file whose scripts do not run does. A driver
+nobody can evaluate is better than a driver evaluated from a guess.
+
+### Measured against Blender
+
+`fixtures/OBJDRIVERS.blend` (`make_obj_drivers.py`) is a cube keyed moving
+in X from 0 to 10 over frames 1–21, and three objects driven from it:
+
+| object | channel | driver |
+|---|---|---|
+| **Wheel** | `rotation_euler[2]` | Average of one variable, through a Generator of `0.5 + 2x` |
+| **Scaled** | `scale[0]` | the Python expression `1 + x / 10` |
+| **Summed** | `location[2]` | the Sum of the driver's X and Y |
+| **Still** | — | nothing, so the list carries an undriven object too |
+
+`truth/blender_object_drivers.py` takes each object's matrix from the
+**evaluated** depsgraph copy at five frames — which is where a driver's
+result lands — and decomposes it. Every channel of every object at every
+frame agrees to better than **2 × 10⁻⁴**.
+
+### Two things the fixture taught
+
+**`driver_add` leaves two keyframes on the curve.** The F-curve a new driver
+gets is a 1:1 ramp, and a Generator modifier sits *over* those keys rather
+than instead of them (`evaluate_fcurve_ex` runs the modifiers after the
+keys). An assertion that a driver curve has no keys is simply wrong, and the
+useful assertion is the value the two come to together: the Wheel's angle is
+`0.5 + 2x`, not the ramp's `x`.
+
+**A matrix decomposition wraps an angle and hides the mapping.** Reading the
+Wheel's rotation back out of its world matrix gives −0.783 at frame 6, not
+5.5 — the same angle, wrapped into (−π, π] by the quaternion. It matched
+Blender because Blender's `decompose()` wraps identically, but it says
+nothing about whether the Generator ran. Reading the **channel** through
+`raw_at` says 5.5, and that is the assertion worth having.
+
+### What is still open
+
+A driver chained off another driver's output reads the keyed value
+underneath it: this pass is single and unordered where Blender's depsgraph
+orders driver against driver. And drivers on **materials**, **modifiers**,
+**shape keys** and **custom properties** are still read-and-listed only —
+each needs the thing it drives to be evaluated per frame, which is a
+different piece of work in each case.
+
+## §65 — The selection outline on the GPU (batch 166)
+
+Queue item 11 read "the overlay pass on the GPU — grid, outlines, gizmos
+and extras still draw on the CPU over the GPU image". Reading the code
+first, as the batch is supposed to, the item turned out to overstate the
+problem in one place and understate it in another.
+
+**The grid is already on the GPU.** `grid_over` lives in `util.wgsl` and is
+called by `shade.wgsl`, `preview.wgsl`, `solid.wgsl` and `wire.wgsl` — every
+kernel — and accumulated per sample as a premultiplied overlay in words
+20n..24n, composited onto the tone-mapped mean in `emit`. `BGuide::
+paint_floor` on the CPU only runs as a stand-in for a frame the tracer has
+not delivered. The same holds for `paint_over`: the light, camera and empty
+wireframes, the origin dots and the 3D cursor are a few dozen line
+segments, and painting them costs nothing worth measuring.
+
+**The selection outline was the whole of the cost.** `view3d/mod.rs` said
+so itself:
+
+> With the GPU drawing, only the selection's outlines are projected here.
+
+`cache::meshes(false, …)` projected, for every selected object, either every
+vertex or — for a large mesh — its precomputed extreme points
+(`mesh/extreme.rs`), took the convex hull of them (`mesh/hull.rs`) and
+stroked that over the image, on **every frame**, memoised against a
+fingerprint that the selection and the camera are both part of. So every
+orbit frame with something selected re-projected and re-hulled it. And a
+convex hull is not Blender's outline: Blender outlines the object's
+silhouette, concavities and holes included, so a selected torus got a ring
+drawn round it rather than round it and its hole.
+
+### Blender's two passes
+
+`overlay_outline.hh` runs a prepass and a screen pass.
+
+The prepass (`overlay_outline_prepass_vert.glsl`) rasterizes the **selected
+objects alone** into a 16-bit id buffer. Each pixel holds a colour class in
+the top two bits and the object below it:
+
+```c
+static inline uint outline_id_pack(uint outline_id, uint object_id)
+{
+  /* Replace top 2 bits (of the 16bit output) by outline_id.
+   * This leaves 16K different IDs to create outlines between objects. */
+  return (outline_id << 14u) | ((object_id << 18u) >> 18u);
+}
+```
+
+The class is 0 for an object being transformed, 3 for the active object and
+1 for the rest of the selection (`outline_colorid_get`), and the object part
+is `resource_id + 1`, so **0 is the background** and needs no flag of its
+own.
+
+Which objects get into the prepass at all is one line in
+`overlay_instance.cc`:
+
+```c
+if (object_is_selected(ob_ref) && !in_edit_paint_mode) {
+  outline.object_sync(manager, ob_ref, resources, state);
+}
+```
+
+Selected objects, active or not — so an **active object that is not
+selected takes no outline**. The first version of `outline_class` here read
+the active name first and outlined it whatever the selection said, which
+meant turning Outline Selected off still left a line round the active
+object. Its own test caught it, and reading that line settled what the
+right answer was rather than leaving it to taste.
+
+The screen pass (`overlay_outline_detect_frag.glsl`) reads the pixel's id
+and its four neighbours, a pixel out and — with `do_thick_outlines` — two:
+
+```c
+bool has_edge(uint id, float2 uv, uint ref, uint &ref_col, float2 &depth_uv)
+{
+  if (ref_col == 0u) {
+    /* Make outline bleed on the background. */
+    ref_col = id;
+    depth_uv = uv;
+  }
+  return (id != ref);
+}
+```
+
+Two details in nine lines. A pixel holding **nothing** takes its colour
+from the first non-zero neighbour, which is how the line lands *outside* the
+object rather than eating a pixel of it. And a pixel whose four neighbours
+all differ, or none differ, is discarded (`edge_case == ALL || edge_case ==
+NONE`) — so the inside of an object and a one-pixel gap both draw nothing.
+
+### What phiray does
+
+The prepass is already paid for: each kernel knows which instance its
+primary ray met. `util.wgsl` keeps it, one word a pixel, in the image
+buffer's new words 25n..26n (`PX_WORDS` 25 → 26):
+
+```wgsl
+fn outline_store(i: u32, id: u32) {
+    px[25u * p.n + i] = id;
+}
+```
+
+`solid.wgsl`, `wire.wgsl`, `shade.wgsl` and `preview.wgsl` call it with
+`(face(h.tri).w >> 16u) + 1u` at the primary hit and `0u` where the ray met
+nothing — the same convention `fx_store` already used for Workbench's object
+id.
+
+**The class is deliberately *not* on the instance.** That was the first
+design, and it is wrong: the instance table lives in `data`, and changing it
+means `Tracer::reinstance`, which sets `last = None` and `frame = 0` — a
+click that selects an object would have thrown away every sample traced so
+far. Blender's selection outline costs the render nothing, and so must this
+one. So the class is a small array of its own, one word an instance,
+uploaded by a setter that touches neither the camera nor the samples:
+
+```rust
+pub fn outline(&mut self, gpu: &Gpu, classes: &[Outline]) -> bool {
+    let mut words = vec![0u32; self.classes.len()];
+    for (word, class) in words.iter_mut().zip(classes) {
+        *word = class.word();
+    }
+    if words == self.classes {
+        return true;
+    }
+    self.classes = words;
+    self.reshow = true;
+    self.class.write_front(gpu, &self.classes)
+}
+```
+
+`Outline` (`trace/outline.rs`) is the class as a type — `None`,
+`Transform`, `Select`, `Active` — carrying Blender's `color_id` (0, 1, 3),
+the table word (`color_id + 1`, so 0 means "no outline" and a zeroed table
+outlines nothing) and `packed`, the id the prepass would have left.
+
+`outline.wgsl` is then the detect pass over the two together, as one more
+dispatch in `Tracer::tail` — **after** the gather and SMAA, because
+Blender's overlay engine runs after the shading and its anti-aliasing. It
+composites into the display pixel (`px[i]`) alone, so `Tracer::display` and
+a saved render carry none of it, which is also what Blender's own render
+does.
+
+### `reshow`: the one more sample a settled image owes
+
+`sample_in` returns early when the camera has not moved and the image has
+refined:
+
+```rust
+if same && self.frame + 1 >= self.samples() {
+    return Some((self.frame, true));
+}
+```
+
+A new selection does not change the camera, so a settled viewport would
+never have drawn the new line. The fix is one flag: `outline` sets
+`reshow`, the early return tests it, and the flag is cleared as the sample
+goes out. The sample is not thrown away — `frame` goes up, not back to
+zero — so selecting an object in a refined Rendered view costs one extra
+sample and keeps the other thirty-one.
+
+### What is not ported, and said plainly
+
+* **The anti-aliased line.** Blender's detect pass can emit a line's two
+  endpoints (`pack_line_data`) for its own resolve pass to anti-alias. There
+  is no such pass here, so this is Blender's `do_anti_aliasing == false`
+  branch: a one-pixel, hard-edged line, which is exactly what Blender draws
+  with Preferences ▸ Viewport ▸ Overlay Smooth Wires off.
+* **The occlusion fade.** `alpha_occlu` draws a selected object's outline at
+  35% where another object hides it, which needs the selected objects'
+  depth *independently of the scene's* — a prepass that traces them alone.
+  phiray has one visibility answer a pixel, so a selected object entirely
+  behind another takes no outline here. The `Camera::outline_fx` word for it
+  is carried and unread, so wiring a prepass later changes no interface.
+* **X-ray.** `xray` walks every surface along the ray and keeps no one
+  instance, so there is no id to outline. The CPU hull is still the painter
+  there, and `cache::BCpuDraw` now names that state rather than leaving it
+  to a `bool`:
+
+```rust
+pub(super) enum BCpuDraw {
+    /// Everything: there is no GPU image to draw over (`cpu_can_draw`).
+    Whole,
+    /// The selected objects' hulls alone — the tracer drew the surfaces but
+    /// keeps no one instance a pixel to outline, which is X-ray.
+    Hull,
+    /// Nothing: the tracer drew the surfaces and the outline over them.
+    Nothing,
+}
+```
+
+So in Solid, Material Preview, Rendered and Wireframe the CPU now projects
+**nothing at all** for a frame the tracer delivered, where it used to
+project and hull every selected object every frame.
+
+### Two traps
+
+**`class` is a reserved keyword in WGSL.** A local named `class` in
+`outline_color` failed at `create_shader_module` with `name 'class' is a
+reserved keyword` — not at compile time, and not in the Rust tests that
+never create a device. The list is longer than it looks (WGSL reserves most
+of C++ and Rust's keywords against future use); a shader that only ever
+runs behind a GPU check can carry one of them for a long time unnoticed.
+
+**A `view.take()` in the render thread stopped refinement dead.**
+`BRayShot` had to stop being `Copy` to carry the class list, and the
+destructure `let Some((key, shot)) = view` became `view.take()` by reflex.
+It compiles, it draws the first sample of every view correctly, and it
+never draws a second: the loop refines by coming back to the same `view`
+on the next turn. Two tests caught it — `render_thread_refines_latest_view`
+and `a_moved_object_draws_as_a_scene_built_there` — and `view.clone()` is
+the answer. `Copy` is load-bearing in a loop that reads the same value
+every turn, and nothing says so at the call site.
+
+### Tests
+
+`crates/phiray/tests/outline.rs`: two walls, each its own instance, in
+Solid.
+
+* nothing selected draws no line of any of the three colours — the pass is
+  left out of the frame altogether (`outlined()`);
+* the right wall marked `Active` draws a magenta ring whose box is as wide
+  and as tall as the wall, in the right half of the image, and the wall's
+  **middle pixel is unchanged** from the unoutlined render: the line is at
+  the edge and nowhere else;
+* then, with no new scene and no new camera, the selection moves to the
+  left wall as `Select`: the magenta ring is gone and a green one is in the
+  left half. That is `reshow` working on a settled image;
+* each of the three classes draws in its own theme colour, and a class
+  named for an instance the scene does not have is ignored rather than read
+  past the table.
+
+`view3d/cache.rs`'s `the_cpu_projects_only_what_the_gpu_leaves_it`: the
+three `BCpuDraw` states project nothing, the selected object's hull alone,
+and every object's surfaces — and key apart in the memo, so toggling X-ray
+cannot hand back the wrong projection.
+
+## §66 — The compositor, evaluated (batch 167)
+
+Queue item 12 read "compositor evaluation — nodes draw, nothing runs".
+phiber has drawn the compositor's nodes since batch 142 and run none of
+them, so a file whose look came out of the compositor — a grade, an
+exposure trim, an alpha-over — rendered here as the ungraded render. That
+does not look like a missing feature; it looks like a lighting bug, which
+is the worst kind of gap to leave.
+
+### Where the tree is, and the first trap
+
+Blender's compositor is one node tree per scene over the render's pixels,
+and the tree is a `bNodeTree` exactly like a material's — so
+`shade::graph`'s `node_graph_at` reads its nodes, sockets and links
+unchanged. What is *not* like a material's is where the pointer to it
+lives, and that moved in 5.0:
+
+```c
+/* DNA_scene_types.h:2829 */
+DNA_DEPRECATED char use_nodes = 0;
+DNA_DEPRECATED struct bNodeTree *nodetree = nullptr;
+struct bNodeTree *compositing_node_group = nullptr;
+```
+
+Three fields side by side, two of them deprecated and still written. 5.x
+points the scene at a node **group**; everything before it embedded the
+tree and used `use_nodes` as the switch. A reader that takes only the new
+spelling finds no compositor in any file made before 5.0, and one that
+takes only the old finds none in a file made after. Both are tried against
+the file's own DNA — the same shape as `bNode.location` versus
+`locx_legacy` (§?, batch 142).
+
+And **there is no Composite node in 5.x**. The truth script found that the
+hard way:
+
+```
+RuntimeError: Error: Node type CompositorNodeComposite undefined
+```
+
+A 5.x tree ends at the group's own output, `NodeGroupOutput`, whose input
+socket is *identified* `Socket_1` and merely *named* "Image". So the
+output node is found by looking for a group output as well as a Composite
+and a Viewer, and what feeds it is found by walking its sockets rather than
+by asking for one called "Image".
+
+### The second trap: a blend mode that is not in `custom1`
+
+A compositor Mix used to be `CompositorNodeMixRGB`, with the blend mode in
+`bNode.custom1` and Clamp Result in `custom2`. In 5.x it is
+`ShaderNodeMix`, shared with the shader trees, and the mode is in the
+node's `storage`:
+
+```c
+/* DNA_node_types.h:3816 */
+struct NodeShaderMix {
+  eNodeSocketDatatype data_type;
+  NodeShaderMixMode factor_mode;
+  int8_t clamp_factor;
+  int8_t clamp_result;
+  int8_t blend_type;
+};
+```
+
+Reading `custom1` gives 0 — plain Mix — for every `ShaderNodeMix` in every
+file, so a Screen or a Multiply composites as a straight lerp. The symptom
+is a wrong *number*, not a missing node, which is exactly the kind of thing
+a drawing-only reader never notices. `BlendNode` now carries
+`bNode.*storage` as an address (the struct it points at depends on the node
+type, so the reader that wants it is the one that knows which struct to
+read), and `comp::read`'s `settings_of` digs the mode out while it still
+has the file and the DNA.
+
+Its sockets moved too: `ShaderNodeMix` carries an A/B pair per data type —
+`A_Float`, `A_Vector`, `A_Color`, `A_Rotation` — and marks the ones its
+`data_type` does not use `SOCK_UNAVAIL`. So `node.rs`'s socket lookups take
+a *list* of spellings (`sock::IMAGE` is `["Image", "Color", "A_Color"]`),
+match on identifier first and name second, and skip unavailable sockets.
+
+### What runs
+
+Everything whose output at a pixel depends on its inputs at that same
+pixel. That is the line the whole design sits on: a per-pixel tree is a
+straight-line program, and `eval.rs` resolves the graph's names to indices
+**once** and then runs a few dozen floats per pixel. Resolving by name per
+pixel — the first version — turned a 1080p frame into minutes.
+
+Ported, each from its own `node_build_multi_function` in
+`source/blender/nodes/composite/nodes/`: Brightness/Contrast, Exposure,
+Gamma, Invert Color, Hue Saturation Value, Posterize, RGB to BW, Set Alpha,
+Alpha Convert, Alpha Over (plain, disjoint and conjoint), Mix in all
+nineteen `MA_RAMP_*` modes, RGB and Value constants, Render Layers, Image,
+Composite, Viewer, Group Output and Reroute. A muted node is a wire, as
+`NODE_MUTED` means.
+
+`ramp_blend` (`blenkernel/intern/material.cc:1891`) is now ported **whole**
+rather than in part, which fixed two modes the material path had had wrong
+since it was written:
+
+* **Linear Light** was `x + fac (2y − 1)`, which is only Blender's
+  `col <= 0.5` branch. Above a half Blender adds `2 (col − 0.5)`, so every
+  highlight through a Linear Light mix was short.
+* **Exclusion** was missing its `max(…, 0)`.
+
+and added the seven that were silently falling through to plain Mix: Color
+Dodge, Color Burn, Hue, Saturation, Value, Color and Soft Light. A
+material's Mix keeps the first colour's alpha and the compositor's does
+too — `shade::blend::mix` is the one implementation, with `ramp_blend`
+under it.
+
+### What does not run, named rather than skipped
+
+`BCompTree::declined` lists, by `idname`, every node that reaches the
+output and is not run, so a panel can say so. Those are the neighbourhood
+filters (Blur, Glare, Defocus, Denoise, Dilate/Erode, Kuwahara,
+Despeckle), the transforms (Translate, Scale, Rotate, Transform, Crop,
+Flip, Lens Distortion), the keyers, the curve and balance nodes that want a
+`CurveMapping`, and anything reading a second datablock (Mask, Movie Clip,
+Cryptomatte). A declined node passes its image through rather than
+vanishing, so a tree with a Blur in the middle still grades correctly and
+simply is not blurred — and says which node it left out.
+
+### Measured against Blender's own compositor
+
+`truth/blender_composite.py` renders a 4 × 4 image of sixteen deliberately
+awkward pixels — black, white, over-white (2.0), a negative channel,
+saturated primaries, and alphas of 0, 0.25, 0.5, 0.75 and 1 — through one
+node at a time, in Blender, through `bpy.ops.render.render`, and records the
+output. Thirty-two cases. `tests/composite_truth.rs` runs the same
+operations through `comp::pixel` and compares.
+
+The input every case is compared against is the **passthrough** case, not
+the input written: Blender writes its EXR in half precision whatever
+`color_depth` says, so the pixels the nodes actually saw are a few parts in
+10⁵ off the ones asked for. Taking the passthrough as the input keeps the
+file format out of the measurement, and the tolerance is then 2 × 10⁻⁴ for
+everything.
+
+Every node and all nineteen mix modes agree. Three of them disagreed
+first, and all three were *my* reading of a default rather than the
+arithmetic:
+
+* **Mix's alpha.** `ramp_blend`'s `MA_RAMP_BLEND` arm mixes `r_col[3]`
+  along with the colour, so the first version blended the alpha. Blender's
+  own render of a Mix over a pixel of alpha 0.5 comes back at **0.5**, not
+  at the blend of 0.5 and 1: the node takes the first input's alpha through
+  every mode. So the compositor's Mix is the material's Mix after all, and
+  the two share one implementation rather than two.
+* **Invert's alpha.** A new Invert node sets `custom1 = CMP_CHAN_RGB` and
+  leaves `CMP_CHAN_A` clear, so the alpha is untouched until asked for.
+  Defaulting both channels on gave an alpha of 0.25 against Blender's 1.0.
+* **Alpha Over's Straight Alpha.** Off is the default, and off means the
+  foreground is taken as **already premultiplied** and goes over as it is.
+  Premultiplying by default put a foreground over black at 0.6 of itself —
+  0.12 where Blender gives 0.2.
+
+Each of those is a one-line difference that the arithmetic cannot tell you
+about. They are the whole argument for rendering the reference rather than
+reading the source and calling it done.
+
+`tests/composite_tree.rs` then measures the other half: `COMPOSITE.blend`
+carries one chained tree — Image → Brightness/Contrast → Hue Saturation
+Value → Mix (Screen) → the group's output — and the truth file carries
+Blender's render of exactly that tree over exactly those pixels. The reader
+reads the tree out of the file, plans it and runs it, and comes to Blender's
+pixels within the same 2 × 10⁻⁴. That exercises the DNA spellings, the node
+kinds, the socket identifiers, the storage settings and the evaluation
+order end to end, not just the maths.
+
+### What is left: the seam into phiber
+
+The evaluator is done and measured; it is **not wired into the viewport or
+a render yet**, and the reason is worth stating rather than hiding.
+
+Blender composites the render's **scene-linear** pixels and applies the view
+transform afterwards. phiber's linear image is `Tracer::radiance`, and the
+view transform lives only in `view.wgsl` — there is no CPU port of
+`view_transform_of`, so compositing the linear buffer leaves nothing able
+to turn the result back into the displayed image. Compositing the
+*display-space* pixels instead would be cheap and wrong: a grade applied
+after AgX is not the grade Blender applied before it, and it would be wrong
+in a way that looks plausible.
+
+So the next step is one of two things, and the second is the better design:
+
+1. port `view_transform_of` (Standard, Filmic, AgX) to Rust, composite
+   `radiance()` and re-transform; or
+2. give the tracer an entry point that takes a composited linear image back
+   and re-runs its own display step over it — one small kernel, no second
+   implementation of the transform, and the same code path a saved PNG and
+   the viewport both already go through.
+
+Until then, `BCompTree` is read and reportable: a panel can say the tree
+runs, how many nodes it runs, and which it declines.
+
+## §67 — The composite into a render (batch 168)
+
+§66 left the compositor evaluated and unwired, and said why: Blender
+composites the render's **scene-linear** pixels and applies the view
+transform afterwards, and phiber's view transform lives only in
+`view.wgsl`. Two ways out were named. The second is the one taken.
+
+### The way back in
+
+Rather than port `view_transform_of` (Standard, Filmic, AgX) to Rust and
+have two implementations of it to keep in step, phiray gained a kernel that
+is **the tail of `emit` and nothing else**:
+
+```wgsl
+let k = f32(p.frame + 1u);
+let l = three(p.n + 3u * i);
+let gs = three(20u * p.n + 3u * i);
+let cov = bitcast<f32>(px[23u * p.n + i]);
+let film = bitcast<f32>(px[24u * p.n + i]);
+let shown = view_transform_of(l / k, p.view) * (1.0 - cov / k) + gs / k;
+```
+
+and `Tracer::show(gpu, linear)` puts a host's changed radiance back in the
+sums and runs it. After that `pixels()`, `display()` and `radiance()` all
+come back agreeing with what was handed in — one transform, one grid
+composite, one place.
+
+**The trap, and the test that caught it in one run.** `self.last` keeps the
+camera as it was *compared* — and the frame is deliberately not part of what
+makes two views the same, so `last.frame` is 0. Taking the camera straight
+from it gave `k = 1` in the kernel against a buffer holding 32 samples' worth
+of sums: an image **32 times too bright**. `show` sets `frame: self.frame`
+by hand, and `showing_the_image_its_own_radiance_changes_nothing` — show the
+image its own radiance and nothing may move, under each of the three view
+transforms — found it immediately. A round-trip test is worth more than
+three assertions about the arithmetic here, because the arithmetic was never
+the risk; the bookkeeping was.
+
+The second test is the argument for the whole design:
+
+```rust
+let ratio = after[lit[0]][0] / before[lit[0]][0].max(1e-6);
+assert!(ratio > 0.5, "{view:?}: the transform is concave, so the drop is less than half: {ratio}");
+```
+
+Halving the *light* is not halving the *display* — not under Standard's
+gamma encoding and much less under Filmic or AgX. So a grade applied to the
+displayed pixels is not the grade Blender applied before the transform, and
+would have been wrong in a way that looks entirely plausible on screen.
+
+### Where it runs, and where it deliberately does not
+
+Blender runs the compositor as part of the **render pipeline**: F12 renders,
+the result goes through the scene's tree, and the Image editor shows the
+composite's output. The Rendered *viewport* shows the raw render. So
+`still.rs`'s `composite` runs after the samples settle and after the
+denoiser, for `still` and `still_stepwise` alike, and the viewport's worker
+is left alone. That is parity, not a shortcut.
+
+A frame larger than one binding renders in horizontal bands, and each band
+is composited as its own image. That is sound *only* because every node
+that runs is per-pixel — a node reading a neighbourhood would see a seam at
+each band edge, and those are exactly the nodes `BCompTree::declined`
+refuses to run. The comment at the seam says so, because the next person to
+add a Blur node to the evaluator needs to know that the band loop is
+counting on it.
+
+### The reporting
+
+`BComposite::composite` answers a `BCompositeRun { ran, declined }`, and the
+journal gets one line:
+
+```
+Compositor: 4 nodes over the render; 1 not run (CompositorNodeBlur)
+```
+
+A declined node passes its image through rather than vanishing, so a tree
+with a Blur in the middle still grades correctly, simply is not blurred, and
+*says* which node it left out. Silence there would be the worst of the three
+options.
+
+### The chain, read from the file
+
+`SceneModel.compositor` carries the tree from load (`BlendSceneProps.
+compositor`, filled in `scene/read.rs` where the DNA is to hand), so
+`composite::tree()` is a clone and a `runs()` filter rather than a reparse.
+
+### Tests
+
+`phiray/tests/show.rs` — the round trip under each view transform, and the
+concavity argument above.
+
+`phiber/tests/composite_over_a_render.rs` — the glue, with the tree built by
+hand so it says exactly what it is: a Render Layers → Exposure(−1) →
+Composite tree halves every lit pixel's radiance and changes the displayed
+bytes; the same tree with `on: false` does neither; and the same tree with a
+Blur spliced in before the Composite names the Blur, keeps the grade before
+it, and passes the image on.
+
+Together with §66's two phiphx tests that is the whole path measured:
+the arithmetic against Blender's own compositor, the tree against Blender's
+render of that tree, the display step against itself, and the glue against
+what it is supposed to do.
+
+## §68 — The base primitives, and a gem that was never a solid (batch 168)
+
+Rendering the primitives side by side — a rainbow row in a rough dielectric
+and a second row in polished silver, which is where a bad normal shows at
+once — turned up three things at once.
+
+### The gem was not an icosahedron
+
+`build_icosahedron_mesh` had the twelve right vertices, exactly twenty
+triangles, and every vertex on the unit sphere. It passed its test. And
+**eighteen of its twenty triangles were wrong**: most joined three vertices
+that are not mutually adjacent — chords across the solid rather than its
+faces — and all but three were wound inward. On screen that is not a gem
+with a shading bug; it is a pile of interpenetrating shards.
+
+The faces are derived now rather than typed: a triple is a face precisely
+when its three edges are all the solid's own edge length, and it is wound
+so its normal points away from the centre. The test was rewritten to check
+*that*, because counting triangles is what let the old one through:
+
+```rust
+assert!((dist(p, q) - edge).abs() < 1e-4, "{p}-{q} is an edge of the solid, not a chord across it");
+…
+assert!(nrm.0 * mid.0 + nrm.1 * mid.1 + nrm.2 * mid.2 > 0.0, "the face {a},{b},{c} is wound outward");
+…
+assert_eq!(seen.len(), 30, "an icosahedron has thirty edges");
+assert!(seen.values().all(|&n| n == 2), "every edge is shared by exactly two faces");
+```
+
+A count is not a shape. Three assertions about *adjacency, winding and
+manifoldness* are, and they are cheap enough to put on every primitive.
+
+### A material per triangle fills the material table
+
+The first sheet drew black cards floating where the gem and the metaball
+should have been. The meshes were sound — vertices in range, no zero
+normals, sane bounds. The example was asking for one material **per
+triangle**, and the metaball alone is 13,668 of them; every face past the
+end of the table read a material that is not there, which draws as a black
+card. One material per primitive, and the cards are gone. Worth knowing
+before building a scene from a mesh: `Scene::material` is a slot, not a
+value, and the slots are finite.
+
+### Black squares that moved between runs
+
+Two of the black cards moved from frame to frame, which no mesh or material
+bug can do. At 1600 × 760 on a software adapter the path trace was losing
+whole workgroups — a GPU timeout, dropping tiles. At 1200 × 640 they are
+gone. A rendering artifact that *moves* is a dispatch problem, not a data
+one, and that one bit of evidence separates the two in a second.
+
+### What was added
+
+* **Ico Sphere** — the icosahedron subdivided twice onto the sphere, with
+  every edge midpoint made once and shared. An unwelded subdivision has
+  four times the vertices and splits the shading at every seam; the test
+  checks Euler's count, 162 vertices for 320 faces, which only holds when
+  they are shared.
+* **Grid** — the flat `N × N` quad grid Plane is one quad of.
+* **Metaball** (`spatial/implicit.rs`) — Blender's `Add ▸ Metaball ▸ Ball`
+  is not a mesh in the file either: it is blobs and a threshold, tessellated
+  at display time (`BKE_mball_polygonize`). The field is Blender's own
+  `MB_BALL` falloff, `Σ rad² / dist²`, and the surface is polygonised with
+  **marching tetrahedra** rather than marching cubes — six tetrahedra to a
+  cell, sixteen sign patterns against 256, no ambiguous-face holes, and a
+  table short enough to read. Normals come from the field's own gradient, so
+  the surface shades as the smooth thing it is, and each triangle is wound
+  against that gradient because the tetrahedron's edge order does not say
+  which way is out.
+* The **UV Sphere** went from 12 × 16 to Blender's own 32 × 16. Smooth
+  normals cannot hide a coarse silhouette, and at 12 stacks the edge showed
+  its stairs.
+
+## §69 — Text, and the rest of the Add menu (batch 169)
+
+### A Text object is a font curve
+
+Blender's `Add ▸ Text` is not a mesh in the file: it is a **font curve**.
+The glyphs' outlines *are* the curve, and `Curve.ext1` — Geometry ▸ Extrude
+— gives it depth. So a Text object needs three things, and only the first
+is about fonts:
+
+1. the glyph outlines;
+2. each glyph's contours filled, with the inner ones cut out — the counter
+   of an `o`, both of a `B`;
+3. a front, a back and a wall between them.
+
+Reading a TTF at run time would mean a font parser in the crate. The
+outlines are **baked** instead (`tooling/bake_font.py` → `spatial/glyph.rs`):
+DejaVu Sans, ASCII 32–126, curves flattened at 0.012 em, in em units with
+the baseline at y = 0. 95 glyphs, 9,178 points. It is the same geometry
+with none of the parser, and the geometry is what the mesh wants.
+
+### Which contour is a hole is nesting, not size
+
+The filling is ear clipping with the holes **bridged** into the outer
+contour first: the rightmost point of a hole is joined to the outer edge to
+its right by a pair of coincident edges, which turns a
+contour-with-holes into one simple polygon ear clipping can take.
+
+The first version picked the largest contour as the outline and treated
+the rest as holes. That is right for an `o` and wrong for a `%`, which is
+**three separate pieces** — a slash and two rings — so two of its three
+outlines were being cut out of the third and the glyph came out with a
+*negative* area. The rule is parity: a contour inside an odd number of
+others is a hole, and an outline takes the holes that sit inside it. The
+test that found it is the one that sweeps the whole font:
+
+```rust
+for c in 33u8..127 {
+    …
+    assert!(total > 0.0, "{ch:?} has a positive area: {total}");
+}
+```
+
+Ninety-five glyphs is a cheap sweep and it is the only thing that would
+have caught `%` in particular rather than whichever letter happened to be
+in the render.
+
+One more thing the walls taught: the wall is built over the glyph's **own
+contours**, not over the bridged polygon. A bridge is a pair of coincident
+edges; walling it puts a blade through the middle of the letter.
+
+### The rest of the Add menu
+
+`BShape` had three variants — Cube, Sphere, Gem — from when the viewport
+had three primitives. It has thirteen now, in Blender's own order: Plane,
+Cube, Circle, UV Sphere, Ico Sphere, Cylinder, Cone, Torus, Grid, Monkey,
+Metaball, Text, and the Gem kept because files and tests from before name
+it. Each has a slug that reads back (`BShape::of`), a label, and — the
+assertion that matters — a mesh with triangles in it:
+
+```rust
+let (v, i, n) = SpatialObject3D::buffers(shape.mesh_type());
+assert!(!v.is_empty() && i.len() >= 3 && n.len() == v.len(), "{:?} has a mesh", shape);
+```
+
+A menu entry that adds nothing is worse than a missing menu entry, and
+that one line is what keeps the two in step.
+
+The palette the CPU painter and the tracer colour primitives from still
+carries three shades, so the ten new shapes take the one their silhouette
+is nearest rather than each needing a theme colour of its own.
+
+## §70 — Unwrapping, and what a pin is for (batch 170)
+
+Queue item 7's remainder: the UV editor could pick and move corners since
+batch 164, but unwrap was "an algorithm of its own" and pin "a writer
+change". Both are here.
+
+### The algorithm
+
+`phiphx::uv::lscm` is least-squares conformal maps — Lévy et al.'s
+formulation, which is Blender's Unwrap ▸ Conformal and the second half of
+its Angle Based. Flatten each triangle into its own plane and ask of the
+map `u = U + iV` that its complex derivative be the same in both
+directions. Per triangle that is one complex equation,
+
+```text
+W₁ u₁ + W₂ u₂ + W₃ u₃ = 0,   Wⱼ = (x_{j+2} − x_{j+1}) + i (y_{j+2} − y_{j+1})
+```
+
+and over the mesh a tall real system in `2V` unknowns, solved in the least
+squares sense by conjugate gradients on the normal equations — with `AᵀA`
+never formed, so each iteration is one pass over the triangles each way and
+the memory is the mesh.
+
+### A pin is not decoration
+
+The system **has no unique answer on its own**. A conformal map composed
+with any similarity is still conformal, so its null space is four
+dimensional and at least two vertices must be fixed. Those are the pins.
+That is the whole reason Blender has them, and it is why "pin" could not
+be done as a drawing change: a pinned UV is a *boundary condition*.
+
+`BUvEdit` carries `pinned` beside `selected` and `moved`, `pinning(clear)`
+is P and Alt P, and `unwrapped(...)` hands the solver each pinned corner at
+the UV it is **showing** — the file's, moved — so a pin holds its place
+through an unwrap. With fewer than two pins the solver picks the island's
+two furthest-apart vertices itself and lays them along U at their own
+distance, which is what Blender does and what makes an unwrapped island
+come out at roughly its own scale rather than wherever the null space
+landed.
+
+The packer respects it too: an island holding a pin is left exactly where
+the solver put it. A packer that then slid it elsewhere would undo the pin,
+which is the sort of thing that looks like the solver ignoring pins.
+
+### Measured against Blender, on three meshes chosen for what they prove
+
+`truth/blender_unwrap.py` runs Blender's own `uv.unwrap(method='CONFORMAL')`
+and records the **distortion** — for every triangle corner, the angle the
+mesh makes there against the angle its UVs make. Comparing UVs number for
+number would say nothing, because of exactly the similarity freedom above.
+
+| mesh | ours worst | ours mean | Blender worst | Blender mean |
+|---|---|---|---|---|
+| **Tube** (open cylinder, *developable*) | 0.001° | 0.000° | 0.000° | 0.000° |
+| **Band** (sphere between two latitudes) | **4.29°** | **1.363°** | 4.68° | 1.377° |
+| **Dome** (spherical cap, with a pole) | 83.6° | **2.362°** | 34.1° | 2.642° |
+
+The Tube is developable: it unrolls with no distortion at all and a solver
+that cannot find zero there has a real error — the figure is not a matter
+of taste. The Band is not developable and has no degenerate triangle in it,
+and there ours is better than Blender's on **both** figures; that is the
+case that says the solver is sound.
+
+The Dome is the interesting one. Its top row is a pole — thirteen
+coincident vertices and a ring of degenerate quads — and both solvers leave
+their worst error there, ours more of it. The *mean* over the whole cap is
+better than Blender's, so the difference is the pole and not the solver.
+That is recorded in the test rather than tuned around, and the Band exists
+precisely so the pole cannot hide a real regression.
+
+### Two things the packer taught
+
+An island wider than the square never fits however the shelves are
+arranged. The first shelf packer only checked whether a box fitted *on the
+current row*, so an over-wide island wrapped to a fresh row and was laid
+past the edge — a whole unwrapped cylinder outside 0..1. The check belongs
+on the box, not on the row, and then the scale loop shrinks until it fits.
+
+And one scale for every island, not one each: scaling islands
+independently changes their relative texel density, which is the thing a UV
+layout is for.
+
+### Projections
+
+`uv.cube_project`, `cylinder_project`, `sphere_project` and
+`project_from_view` are in `uv::project`. Cube projection picks its plane
+**per face** from the face's own normal — that is what makes it a cube
+projection rather than one flat one — and the test is that each of a cube's
+six faces comes back as the same unit square, because each is seen head on.

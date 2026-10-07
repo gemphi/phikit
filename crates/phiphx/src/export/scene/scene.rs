@@ -1,7 +1,7 @@
 //! `PhxScene` construction and conversion methods.
 
 use super::types::{
-    PhxCamera, PhxCollection, PhxInstance, PhxLight, PhxMaterial, PhxMesh, PhxScene,
+    PhxCamera, PhxCollection, PhxInstance, PhxMaterial, PhxMesh, PhxScene,
 };
 use crate::{PointCloud, Vertex};
 
@@ -26,11 +26,6 @@ impl PhxScene {
     pub fn with_camera(mut self, camera: PhxCamera) -> Self {
         self.camera = Some(camera);
         self
-    }
-
-    /// Add a light to the scene
-    pub fn add_light(&mut self, light: PhxLight) {
-        self.lights.push(light);
     }
 
     /// Add a mesh to the scene

@@ -15,7 +15,7 @@
 
 use super::super::super::color::to_hsla;
 use super::super::super::ctx::BRenderCtx;
-use super::{BNode, add, drag, draw_order, frame, header_color, link, paint, reroute, select, title_ink, wire};
+use super::{BNode, add, drag, draw_order, edit, frame, header_color, link, paint, reroute, select, title_ink, wire};
 use super::plan::{BCardFraction, BCardSize, positions};
 use super::view::store as view_store;
 
@@ -150,26 +150,26 @@ pub fn render(ctx: &BRenderCtx) -> AnyElement {
         unit: ctx.style.dimensions.row_height,
         width: ctx.style.dimensions.channels_width,
     };
-    let view = view_store::view_of(ctx.state, ctx.host, &graph.nodes, |n| size.height_of(n), size.width);
-    // Where every node sits: the file's own location, what it has been dragged
-    // by, and the two added and framed by the view (`plan::positions`).
+    // The file's links with this host's edits applied — a made or broken link
+    // is an overlay, not a change to the file (`link/mod.rs`). Computed before
+    // the view so the fit sizes each card by its real, link-dependent height
+    // (an unconnected vector input is taller than a connected one).
+    let edits = link::edits_of(ctx.state, ctx.host);
+    let carrying = link::linking_of(ctx.state, ctx.host);
+    let mut wired = edits.apply(&graph.links);
+    let view = view_store::view_of(ctx.state, ctx.host, &graph.nodes, |n| size.height_of(n, &link::linked_inputs(&wired, &n.name)), size.width);
+    // Where every node sits: file location, drag offset, and the fraction of the
+    // canvas it is drawn at (`plan::positions`).
     let (located, offsets, placed) = positions(&graph, &view, ctx.state, ctx.host);
-    // The sockets and the links, painted under the cards: a socket straddles a
-    // card's border, so the card's own fill has to go over it.
+    // A socket straddles a card's border, so the card's fill goes over it.
+    // `TH_WIRE` is the editor's own `back`, so the canvas shade is the outline.
     let ink = paint::BNodeInk {
         wire: ctx.style.colors.text_dim,
-        // `TH_WIRE` is the node editor's own `back` in Blender's factory
-        // theme, so the canvas shade is the faithful outline here.
         wire_shadow: ctx.style.colors.bg_viewport,
         label: ctx.style.colors.text_dim,
         outline: ctx.style.colors.border,
         ring: ctx.style.strokes.border,
     };
-    // The file's links with this host's edits applied — a made or broken link
-    // is an overlay, not a change to the file (`link/mod.rs`).
-    let edits = link::edits_of(ctx.state, ctx.host);
-    let carrying = link::linking_of(ctx.state, ctx.host);
-    let mut wired = edits.apply(&graph.links);
     // A link-drag search's wire rides on its added node (`add::induced_links`).
     wired.extend(add::additions_of(ctx.state, ctx.host).induced_links(&graph.nodes));
     // A link being carried is drawn following the cursor, so its settled
@@ -204,22 +204,22 @@ pub fn render(ctx: &BRenderCtx) -> AnyElement {
         canvas_div.child(BFlex::column().place(BPlace::Overlay).styled(painter, ctx));
 
     // Selected last, so the one being dragged is over its neighbours
-    // (`draw_order`, Blender's `compare_node_depth`). A frame is not in this
-    // pass at all: it was drawn first, behind the links (`frame::layer`).
+    // (`draw_order`, Blender's `compare_node_depth`); a frame was drawn first.
     for node in draw_order(&graph.nodes, &selection) {
         if node.frame() { continue; }
         let Some((_, at)) = placed.iter().find(|(n, _)| *n == node.name) else { continue };
         let from = offsets.iter().find(|(n, _)| *n == node.name).map(|(_, o)| *o).unwrap_or((0.0, 0.0));
-        // The editor's selection wins; the file's `NODE_SELECT` is what it opens
-        // on. A reroute is no card — just a dot and a square to grab it by.
+        // The editor's selection wins; a reroute is no card, just a grab square.
         let is = select::rank(node, &selection) > 0;
         let el = if node.reroute() {
             reroute::handle(node, *at, size, &view, from, is, ctx)
         } else {
-            card(node, *at, BCardFraction::of(size, &view, node), from, is, ctx)
+            card(node, *at, BCardFraction::of(size, &view, node, &link::linked_inputs(&wired, &node.name)), from, is, ctx)
         };
         canvas_div = canvas_div.child(el);
     }
+    // Over the cards: a click on a socket's value widget edits it (toggle a bool, step a number) instead of selecting the node (`edit::hit`).
+    canvas_div = canvas_div.children(edit::layer::value_layer(&graph.nodes, &placed, &view, size, &wired, &edit::edits_of(ctx.state, ctx.host), ctx));
     let (wire, moving) = wire::for_frame(
         wire::BFrame {
             graph: &graph,

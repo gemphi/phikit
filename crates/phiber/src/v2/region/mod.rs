@@ -184,6 +184,23 @@ impl BViewItem for BRegionItem {
         if self.region.panes.is_empty() {
             return BView::empty();
         }
+        // While a file opens, the status bar's header gives way to the loading
+        // panel: one pane across the whole foot of the window. A lone Center
+        // pane fills the region, so the panel spans edge to edge; the panel is
+        // tall, so the content-sized status zone grows to hold it and collapses
+        // back to the segment row when the load settles. The Statusbar part
+        // builds the panel from the same progress gate. A deliberate divergence
+        // from Blender's thin status-bar bar, recorded in `part::statusbar`.
+        if self.host == BHostType::Statusbar
+            && self.region.kind == BRegionType::Header
+            && crate::v2::scene::view_load_progress(state).is_some()
+        {
+            let panel = BPartItem::new(self.host, BPartType::Statusbar).build(state);
+            return BView::Region {
+                kind: self.region.kind,
+                list: vec![BView::Pane { kind: BPaneType::Center, list: vec![panel] }],
+            };
+        }
         let mut list = BPaneList::new(self.host, self.region.panes).items(state);
         if self.region.kind == BRegionType::Header {
             self.complete_header(&mut list, state);

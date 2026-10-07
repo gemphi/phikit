@@ -192,7 +192,7 @@ impl BAsciiRenderer {
             BView::Log { open, .. } => o.push_str(&format!("{p}Log(open={open})\n")),
             BView::Avatar { path, size } => o.push_str(&format!("{p}Avatar({path:?}, {size})\n")),
             BView::Badge { icon, count } => o.push_str(&format!("{p}Badge({icon}, {count})\n")),
-            BView::ProgressBar { fraction, label } => {
+            BView::ProgressBar { fraction, label, .. } => {
                 o.push_str(&format!("{p}ProgressBar({label:?}, {fraction:.2})\n"))
             }
             BView::Empty => o.push_str(&format!("{p}Empty\n")),

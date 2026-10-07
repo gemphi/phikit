@@ -1,5 +1,5 @@
 //! The world's shader graph (`World.*nodetree`): the Background node that
-//! lights every render, and the Environment Texture behind it.
+//! lights every render, and the Environment or Sky Texture behind it.
 //!
 //! Blender ref (`node_shader_background.cc`, `node_shader_tex_environment.cc`,
 //! `background.h`): the World Output's Surface input takes a Background node
@@ -11,23 +11,37 @@
 use super::nodes::read_cstr;
 use crate::blend::file::types::*;
 
+/// `NodeSkyType`: the two models this atmosphere is (`sky_single_scattering
+/// .cpp`). Preetham (0) and Hosek/Wilkie (1) are a different model with
+/// their own precomputed coefficient dataset and are declined.
+const SKY_SINGLE_SCATTERING: i32 = 2;
+const SKY_MULTIPLE_SCATTERING: i32 = 3;
+
 /// The world as it lights the scene.
 #[derive(Clone, Debug, PartialEq)]
 pub struct BlendWorld {
-    /// Background `Color`, folded (white when an image feeds it).
+    /// Background `Color`, folded: white when an image feeds it, and
+    /// Blender's missing-image magenta when that image is not there.
     pub color: [f32; 3],
     /// Background `Strength`.
     pub strength: f32,
-    /// Environment Texture image key (see `image.rs`), when one feeds `Color`.
+    /// Environment Texture image key (see `image.rs`), when one feeds
+    /// `Color` *and* Blender would find it; `None` for a missing file, so
+    /// the renderer lights with `color` rather than hunting for it.
     pub texture: Option<String>,
     /// Mapping node `Rotation` around Z, in radians (the usual HDRI spin).
     pub rotation: f32,
+    /// A Sky Texture on `Color` instead of an image, with its own settings
+    /// (`crate::sky`). The sky is not evaluated per ray in Blender either —
+    /// it is baked and sampled as an image — so this is what the renderer
+    /// bakes and uses as the environment.
+    pub sky: Option<crate::sky::BSky>,
 }
 
 impl Default for BlendWorld {
     fn default() -> Self {
         // Blender's default world: a near-black grey at full strength.
-        Self { color: [0.05; 3], strength: 1.0, texture: None, rotation: 0.0 }
+        Self { color: [0.05; 3], strength: 1.0, texture: None, rotation: 0.0, sky: None }
     }
 }
 
@@ -61,17 +75,79 @@ impl BlendFile {
         }
         let env = nodes.iter().copied().find(|n| named(n) == "ShaderNodeTexEnvironment");
         if let Some(env) = env {
-            world.texture = self
-                .block_at(self.ptr(env, self.off("bNode", "*id", dna)))
-                .map(|im| self.image_key(im, dna));
+            let im = self.block_at(self.ptr(env, self.off("bNode", "*id", dna)));
+            let present = im.is_none_or(|im| self.image_present(im, dna));
             // An image replaces the socket, so Color is the tint it is
-            // multiplied by — the fold already reports white for images.
-            world.color = [1.0; 3];
+            // multiplied by — white. A file Blender cannot find is magenta,
+            // the same `IMB` "invalid" colour every other missing image
+            // takes (`eval.rs`'s `ShaderNodeTexImage`), and it lights the
+            // whole scene that colour because the world is a dome. Reading
+            // it as white instead made a scene with a missing HDRI about
+            // twice as bright as Blender's and dropped its magenta cast.
+            world.texture = im.filter(|_| present).map(|im| self.image_key(im, dna));
+            world.color = if present { [1.0; 3] } else { [1.0, 0.0, 1.0] };
+        }
+        // A Sky Texture takes the same place as an Environment Texture: it
+        // replaces `Color`, so the socket's value becomes the white tint it
+        // is multiplied by. Blender does not evaluate it per ray either —
+        // `node_shader_tex_sky.cc` bakes it and the kernel samples the bake.
+        if let Some(node) = nodes.iter().copied().find(|n| named(n) == "ShaderNodeTexSky") {
+            world.sky = self.sky(node, dna);
+            if world.sky.is_some() {
+                world.color = [1.0; 3];
+            }
         }
         if let Some(map) = nodes.iter().copied().find(|n| named(n) == "ShaderNodeMapping") {
             world.rotation = self.mapping_spin(map, dna);
         }
         world
+    }
+
+    /// A Sky Texture node's settings (`NodeTexSky`). `None` for the two
+    /// analytic models — Preetham and Hosek/Wilkie — which are a different
+    /// model with a precomputed coefficient dataset behind them, not this
+    /// one; a file naming either keeps the Background colour it folded to
+    /// rather than being given the wrong sky.
+    fn sky(&self, node: &BlendBlock, dna: &DnaType) -> Option<crate::sky::BSky> {
+        let st = self.block_at(self.ptr(node, self.off("bNode", "*storage", dna)))?;
+        let at = |field: &str| -> Option<f32> {
+            let o = self.off("NodeTexSky", field, dna)?;
+            st.data.get(o..o + 4).map(|b| self.read_f32(b))
+        };
+        // The Dust slider's DNA field is `dust_density` in the file even
+        // though Blender's own source calls it `aerosol_density` — the
+        // struct was renamed and the DNA name kept, so both are tried and
+        // the file decides. Reading only the source's name lost the slider
+        // silently: every other field read, so a sky with heavy dust came
+        // out as a sky with none.
+        let dust = || at("dust_density").or_else(|| at("aerosol_density"));
+        let model = self.off("NodeTexSky", "sky_model", dna).and_then(|o| st.data.get(o..o + 4)).map(|b| self.read_i32(b))?;
+        // `NodeSkyType` (`DNA_node_types.h`): Preetham 0, Hosek 1, single
+        // scattering 2, multiple scattering 3 — the analytic pair first,
+        // which is the order to read twice before trusting.
+        //
+        // The multiple-scattering model is read as the single-scattering
+        // one: the same atmosphere with the inter-scattering term left out,
+        // so a sky asking for it comes out darker and less blue in the
+        // shadowed parts than Blender's. That is the honest thing to say
+        // until that term is ported too.
+        if !(SKY_SINGLE_SCATTERING..=SKY_MULTIPLE_SCATTERING).contains(&model) {
+            return None;
+        }
+        let disc = self.off("NodeTexSky", "sun_disc", dna).and_then(|o| st.data.get(o)).is_none_or(|b| *b != 0);
+        Some(crate::sky::BSky {
+            elevation: at("sun_elevation")?,
+            rotation: at("sun_rotation")?,
+            altitude: at("altitude")?,
+            air: crate::sky::atmosphere::BSkyAir {
+                air: at("air_density")?,
+                aerosol: dust()?,
+                ozone: at("ozone_density")?,
+            },
+            disc,
+            size: at("sun_size")?,
+            intensity: at("sun_intensity")?,
+        })
     }
 
     /// A Mapping node's `Rotation` around Z, in radians.

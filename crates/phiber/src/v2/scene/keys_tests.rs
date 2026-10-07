@@ -33,6 +33,24 @@ fn load_stages_have_monotonic_increasing_progress() {
 }
 
 #[test]
+fn for_fraction_maps_each_fraction_to_its_coarse_phase() {
+    // A tick's fraction reads back as the phase whose begin threshold it has
+    // reached — the loading panel's running log turns over on these, not on
+    // the per-tick detail.
+    assert_eq!(LoadStage::for_fraction(0.0), LoadStage::Reading);
+    assert_eq!(LoadStage::for_fraction(0.15), LoadStage::Reading);
+    assert_eq!(LoadStage::for_fraction(0.49), LoadStage::Reading);
+    assert_eq!(LoadStage::for_fraction(0.5), LoadStage::ParsingMeshes);
+    assert_eq!(LoadStage::for_fraction(0.84), LoadStage::ParsingMeshes);
+    assert_eq!(LoadStage::for_fraction(0.85), LoadStage::BuildingMaterials);
+    assert_eq!(LoadStage::for_fraction(0.99), LoadStage::BuildingMaterials);
+    assert_eq!(LoadStage::for_fraction(1.0), LoadStage::Done);
+    // Out-of-range is clamped, never a panic or a phantom phase.
+    assert_eq!(LoadStage::for_fraction(-1.0), LoadStage::Reading);
+    assert_eq!(LoadStage::for_fraction(2.0), LoadStage::Done);
+}
+
+#[test]
 fn view_load_progress_reads_and_clamps() {
     let mut s = BState::new();
     // Absent => no import in flight.

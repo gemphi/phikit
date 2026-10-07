@@ -11,7 +11,6 @@ pub mod file_close;
 pub mod revert;
 pub mod help;
 pub mod profile;
-pub mod progress;
 pub mod reader;
 pub mod new_image;
 pub mod rename;
@@ -52,8 +51,6 @@ pub enum BModalType {
     Spaces,
     /// Collaboration: chat / stream sessions (Activity ▸ Chat, Stream).
     Collab,
-    /// Reading a file: what is being opened and how far it has got.
-    Progress,
     /// Reading a document from the store: the manual, the release notes.
     Reader,
     /// F2: the active object's name (`TOPBAR_PT_name`).
@@ -78,7 +75,6 @@ impl BModalType {
         Self::Render,
         Self::Spaces,
         Self::Collab,
-        Self::Progress,
         Self::Reader,
         Self::Rename,
         Self::FileClose,
@@ -98,7 +94,6 @@ impl BModalType {
             Self::Render => "render",
             Self::Spaces => "spaces",
             Self::Collab => "collab",
-            Self::Progress => "progress",
             Self::Reader => "reader",
             Self::Rename => "rename",
             Self::FileClose => "file_close",
@@ -219,7 +214,6 @@ impl BViewItem for BModalItem {
             BModalType::About => about::BAboutModal.build(s),
             BModalType::Render => render::BRenderModal.build(s),
             BModalType::Spaces => workspace::BSpacesModal.build(s),
-            BModalType::Progress => progress::BProgressModal.build(s),
             BModalType::Reader => reader::BReaderModal.build(s),
             BModalType::Rename => rename::BRenameModal.build(s),
             BModalType::FileClose => file_close::BFileCloseModal.build(s),

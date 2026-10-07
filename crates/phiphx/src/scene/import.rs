@@ -213,6 +213,7 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
         extra_locals,
         uv_maps,
         cursor: p.cursor,
+        compositor: p.compositor.clone(),
     }
 }
 

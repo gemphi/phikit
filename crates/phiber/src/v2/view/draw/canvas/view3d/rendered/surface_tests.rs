@@ -108,7 +108,30 @@ fn a_bricks_settings_reach_its_slot() {
     let palette = super::super::mesh::BMeshPalette { shading: BShading::Material, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false };
     let scene = super::scene::build(&[card(material)], &palette);
     let p = scene.mats[(scene.faces[0][3] & 0xffff) as usize].color_proc;
-    let words: [u32; 40] = bytemuck::cast(p);
+    let words: [u32; 44] = bytemuck::cast(p);
     assert_eq!((words[0], words[3], words[17], words[18]), (phiray::proc::PROC_BRICK_COLOR, 1, 3, 4), "kind, target, offset and squash frequencies");
     assert_eq!([20, 21, 22, 23, 25, 26, 34].map(|k| f32::from_bits(words[k])), [0.3, 0.8, 0.05, 0.1, 0.5, 0.25, 0.1], "offset, squash, mortar size and smooth, width, height, mortar red");
+}
+
+/// View Layer ▸ Override ▸ Material: one grey Lambertian surface in place of
+/// the Mix Shader above — one material in the scene, not two, at the albedo
+/// asked for, fully rough, dielectric, no second lobe and no texture. The
+/// stand-in is cleared again so the rest of the suite reads the file's own.
+#[test]
+fn a_material_override_stands_in_for_every_slot() {
+    let red = SceneBsdf { base: [0.8, 0.1, 0.1, 1.0], roughness: 0.2, ..Default::default() };
+    let mirror = SceneBsdf { base: [1.0; 4], roughness: 0.0, metallic: 1.0, ..Default::default() };
+    let mut material = SceneMaterial::neutral();
+    material.bsdf = red.mixed(&mirror, 0.3);
+    material.mix = Some(BlendMix { first: red, second: mirror, fac: 0.3, principled: Some(0) });
+    let grey = white();
+    let palette = super::super::mesh::BMeshPalette { shading: BShading::Rendered, cube: grey, sphere: grey, gem: grey, loaded: grey, accent: grey, accent_active: grey, matcap: None, texture: false };
+    super::BMatStand::set(Some(super::BMatStand::grey(0.5)));
+    let scene = super::scene::build(&[card(material)], &palette);
+    super::BMatStand::set(None);
+    assert_eq!(scene.mats.len(), 1, "the override is the only material");
+    let face = &scene.mats[(scene.faces[0][3] & 0xffff) as usize];
+    assert_eq!(face.color, [0.5, 0.5, 0.5, 1.0]);
+    assert_eq!((face.rough, face.metal), (1.0, 0.0));
+    assert_eq!((face.second, face.tex), (phiray::NO_MAT, phiray::NO_TEX));
 }
