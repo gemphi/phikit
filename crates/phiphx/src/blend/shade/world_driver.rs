@@ -103,6 +103,7 @@ impl BWorldDrivers {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::blend::anim::driver::BDriverState;
 
     fn sockets(linked: bool) -> Vec<(String, Vec<BDriverSocket>)> {
         vec![(
@@ -132,8 +133,8 @@ mod tests {
         }
     }
 
-    fn scene() -> (Vec<crate::blend::object::transform::ObjectTransformRaw>, Vec<[[f32; 4]; 4]>, crate::blend::anim::driver::BDriverProps, std::collections::HashMap<u64, usize>) {
-        (Vec::new(), Vec::new(), Default::default(), Default::default())
+    fn state() -> crate::blend::anim::driver::BDriverState {
+        BDriverState::default()
     }
 
     #[test]
@@ -150,8 +151,8 @@ mod tests {
             ],
             ..Default::default()
         };
-        let (raw, world_m, prop, index) = scene();
-        let ds = BlendDriverScene { raw: &raw, world: &world_m, prop: &prop, index: &index };
+        let st = state();
+        let ds = st.scene();
         assert_eq!(set.values(&ds, 1.0).len(), 4, "all four are read");
 
         let mut world = BlendWorld::default();
@@ -167,8 +168,8 @@ mod tests {
             drivers: vec![BWorldDriver { write: sock(BG_COLOR, 0), driver: constant(0.9) }],
             ..Default::default()
         };
-        let (raw, world_m, prop, index) = scene();
-        let ds = BlendDriverScene { raw: &raw, world: &world_m, prop: &prop, index: &index };
+        let st = state();
+        let ds = st.scene();
         let mut world = BlendWorld::default();
         set.apply(&mut world, &ds, 1.0);
         assert_eq!(world.color, [0.05; 3], "an Environment Texture feeds Color, not the driver");

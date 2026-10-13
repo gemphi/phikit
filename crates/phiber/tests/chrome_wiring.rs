@@ -26,7 +26,7 @@ fn every_primary_opens_its_panel_and_its_rows_raise_the_dialogs() {
     s.set(phiber::v2::state::AppKey::CollabChannel("0"), "renders\tann");
     apply_action(&mut s, &BAction::Set(ActivityKey::Tab.path(), "Chat".into()));
     let chat = option::open_group(&s).unwrap();
-    assert_eq!(option::options_for(chat, &s)[0].label.as_deref(), Some("renders"));
+    assert_eq!(chat.options_for(&s)[0].label.as_deref(), Some("renders"));
     apply_action(&mut s, &BAction::Set(ActivityKey::Pick.path(), "Chat:renders".into()));
     assert_eq!(s.get(ModalKey::Open), Some("collab"));
 }
@@ -42,7 +42,7 @@ fn a_grouping_entry_opens_its_secondary_strip_instead_of_a_dialog() {
         assert_ne!(s.get(ModalKey::Open), Some("spaces"), "{label} raises no dialog");
         let entry = option::open_group(&s).expect("a group is open");
         assert!(
-            !option::options_for(entry, &s).is_empty(),
+            !entry.options_for(&s).is_empty(),
             "{label} must carry options"
         );
         // Clicking the same icon again puts it away.

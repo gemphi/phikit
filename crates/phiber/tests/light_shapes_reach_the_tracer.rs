@@ -57,3 +57,29 @@ fn an_area_lights_shape_axes_and_scale_reach_the_record() {
     let sun = of("Sun");
     assert_eq!((sun.shape, sun.size_y, sun.right), (phiray::AREA_SQUARE, 0.0, [0.0; 3]));
 }
+
+/// A spot's cone follows its object's scale, so the record carries
+/// `scale.z / scale.xy` and its own axes — EEVEE's `spot_size_inv`
+/// (`eevee_light.cc`), which makes the cone's cross-section an ellipse
+/// (`spot_mask` in `light.wgsl`, `rendering.md` §50). `Squashed` is a spot
+/// whose object is 1.5× in Y.
+#[test]
+fn a_scaled_spots_cone_reaches_the_record_as_an_ellipse() {
+    let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../phiphx/tests/fixtures/LIGHTS.blend");
+    let model = Phx::open(std::path::Path::new(path)).expect("fixture loads");
+    let of = |name: &str| model.lights.iter().find(|l| l.name == name).unwrap_or_else(|| panic!("{name}")).record();
+
+    let squashed = of("Squashed");
+    assert_eq!(squashed.kind, 2);
+    let [sx, sy] = squashed.spot_scale;
+    assert!((sx - 1.0).abs() < 1e-6 && (sy - 1.0 / 1.5).abs() < 1e-6, "scale.z over scale.xy: {sx} {sy}");
+    // The ellipse needs the light's own axes, so a spot shares `right`
+    // with an area light even though it has no plane of its own.
+    assert!((squashed.right[0].abs() - 1.0).abs() < 1e-6, "its own X axis, normalized: {:?}", squashed.right);
+
+    // An unscaled spot is round — `[1, 1]` is what leaves `spot_mask` at
+    // batch 147's plain smoothstep.
+    assert_eq!(of("Cone").spot_scale, [1.0, 1.0], "an unscaled cone stays round");
+    // The kinds with no cone carry none of it.
+    assert_eq!((of("Sun").spot_scale, of("Bulb").spot_scale, of("Panel").spot_scale), ([0.0; 2], [0.0; 2], [0.0; 2]));
+}

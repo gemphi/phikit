@@ -52,12 +52,14 @@ fn the_canvas_falls_back_when_it_did_not() {
     );
     assert!(canvas.contains("if !traced {"), "and draws the floor when it did not");
     // The meshes must exist for the fallback to have anything to paint:
-    // `cpu_draws` alone is false whenever the GPU was asked. They are
-    // projected in the paint, when the tracer turns out to have no image
-    // (batch 105) — projecting them on every frame the CPU *could* need
-    // them cost every orbit frame of a small scene the whole projection.
+    // a frame the tracer delivered projects nothing at all (batch 166,
+    // `BCpuDraw::Nothing` — the tracer draws the selection outline too).
+    // They are projected in the paint, when the tracer turns out to have
+    // no image (batch 105) — projecting them on every frame the CPU
+    // *could* need them cost every orbit frame of a small scene the whole
+    // projection.
     assert!(
-        canvas.contains("else { fall_back() }") && canvas.contains("cache::meshes(true, &scene"),
+        canvas.contains("else { fall_back() }") && canvas.contains("cache::meshes(self::cache::BCpuDraw::Whole, &scene"),
         "the triangles are projected the moment the fallback is needed"
     );
     // And the fill is skipped when the tracer's image is already there, or

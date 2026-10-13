@@ -17,6 +17,8 @@ fn main() {
     let mut s = BState::new();
     seed_view_layer(&mut s, &model);
     seed_render_props(&mut s, &model);
+    // Film ▸ Transparent lives in the output seed (`rendering.md` §52).
+    phiber::v2::app::seed::seed_output_props(&mut s, &model);
     set_loaded_scene(Some(model.clone()));
     let hidden = BHidden::now(&s);
     let objects: Vec<_> = current_scene(&s, Some(&model))

@@ -5,7 +5,7 @@
 use gpui::{Modifiers, Point, ScrollDelta, ScrollWheelEvent, TestAppContext, px, size};
 use phiber::v2::app::BPhiberApp;
 use phiber::v2::host::BHostType;
-use phiber::v2::state::{BKey as _, TimeViewKey};
+use phiber::v2::state::TimeViewKey;
 
 fn stored(app: &gpui::Entity<BPhiberApp>, cx: &mut gpui::VisualTestContext, host: BHostType) -> Option<(f32, f32)> {
     app.read_with(cx, |a, _| {

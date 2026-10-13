@@ -32,7 +32,11 @@ pub struct SceneLight {
     pub location: [f32; 3],
     pub matrix_world: [[f32; 4]; 4],
     pub color: [f32; 3],
-    /// Blender's `Light.energy`. Watts for POINT/SPOT/AREA, unitless for SUN.
+    /// Blender's `Light.energy`, **as the file stores it**: watts for
+    /// POINT/SPOT, unitless irradiance for SUN, and 4/pi of the watts the
+    /// UI shows for AREA (`AREA_ENERGY_SCALE`, `blend/object/light_driver.rs`).
+    /// The tracer's record converts an area light's back to watts
+    /// (`view3d/rendered/lamp.rs`), which is the boundary the two units meet at.
     pub energy: f32,
     /// `"POINT"`, `"SUN"`, `"SPOT"`, `"AREA"`.
     pub kind: String,

@@ -4683,3 +4683,57 @@ layout is for.
 **per face** from the face's own normal — that is what makes it a cube
 projection rather than one flat one — and the test is that each of a cube's
 six faces comes back as the same unit square, because each is seen head on.
+
+## §71 — An area light's power, read from a file (batch 175)
+
+The open question batch 173 recorded rather than answered: `Lamp.energy`
+in the DNA is 4/π of the watts the UI shows — Blender keeps it
+pre-multiplied so its own radiance comes out of `energy / (4 A)` — while
+the kernel wants watts, which `lamp_power.rs` had established by feeding it
+100 W by hand and matching Cycles (§54, §55). So what a *file's* area
+light reached the kernel was 4/π of what Cycles rendered from the same
+file — but that was a chain of two measurements, and the fix is "a visible
+change to every render with an area light", so it waited for a render of
+its own.
+
+### The render
+
+`fixtures/AREALIGHT.blend` (`fixtures/make_arealight.py`) is the §54
+measuring rig saved as a file: a 20 × 20 m plane of albedo 0.8, a black
+world, an orthographic camera straight down over a 2 m frame, and one
+100 W SQUARE area light, 1 m on a side, 2 m up. `truth/blender_area_light.py`
+renders **that file** in Cycles and puts the number in
+`truth/area_light.txt`: **1.861612** at the centre — against the
+**1.861637** the hand-fed 100 W lamp gave under 5.0.1. The file-read path
+and the hand-fed one agree across Blender's own versions to 2.5 × 10⁻⁵,
+which says two things at once: Cycles reading the file lights it at the
+watts the UI shows, and the stored 4/π is exactly what batch 173 measured
+it to be.
+
+The same file through `Phx::open` → `BLamp::record` → the kernel measured
+**2.430** — 31% over: the 27.3% the stored 4/π carries, plus the lobe
+difference every §54 number carries. The record was handing the kernel
+127.324 where it wants 100.
+
+### The fix, and where it lives
+
+`BLamp::record` divides an area light's energy by `AREA_ENERGY_SCALE` —
+the *same* constant `BLightDrivers::apply` multiplies a driven value by on
+its way in. That placement is the whole point: `BlendLightData::energy`
+keeps meaning one thing (what the file stores) on both sides of the
+boundary — batch 173's design, which the driver pass depends on — and the
+record is where the two vocabularies meet, which is what its own header
+says it is for. Converting in the reader instead would have moved the
+watts into the field and undone that.
+
+Every path inherits it, because the viewport's Rendered mode and an F12
+both build their lights through `rendered::world::lit` → `record`. After
+the conversion the fixture measures **1.908** against Cycles' 1.862 —
+2.5% out, the same few percent the hand-fed lamp is held to.
+`tests/a_files_area_light_reaches_the_kernel_at_its_watts.rs` pins both
+halves separately as well as together: the file stores 127.324 (4/π of
+the UI's 100 W), the record carries 100, and the plane comes back at
+Cycles' number.
+
+Point, spot and sun lights store the watts — the irradiance, for a sun —
+directly and take no conversion.

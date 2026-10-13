@@ -147,7 +147,11 @@ fn a_workbench_file_plans_a_solid_render_from_the_displays_shading() {
     let plain = gpui::hsla(0.0, 0.0, 0.8, 1.0);
     let cycles = render_plan(&model, set, &look, plain).expect("a camera");
     assert_eq!((cycles.look.shading, cycles.samples, cycles.denoise), (BShading::Rendered, 64, true));
+    // The engine is the *panel's* now (`scene::render_engine`), and the
+    // file's only until the panel holds one — so a plan asked for Workbench
+    // is asked for on the set, not by editing the model.
     model.render.engine = "BLENDER_WORKBENCH".into();
+    let set = BRenderSet { engine: phiber::v2::scene::render_engine::BRenderEngine::Workbench, ..set };
     let mut display = SceneDisplayShading::default();
     display.solid_fx.shadow = true;
     display.solid_fx.cavity = true;

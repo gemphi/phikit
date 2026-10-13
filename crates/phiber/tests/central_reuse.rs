@@ -400,8 +400,9 @@ async fn the_progress_bar_holds_its_place_as_the_stage_changes(cx: &mut TestAppC
     let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
     cx.simulate_resize(size(px(1280.0), px(800.0)));
     let mut seen = Vec::new();
-    // Stage labels change on every tick while a file is read; a bar that sat
-    // after its label slid sideways with every object.
+    // Stage labels change on every tick while a file is read; the loading
+    // panel's bar runs full width with its label on the line beneath, so the
+    // bar never slides as the label changes.
     for (fraction, stage) in [
         ("0.1", "Reading file"),
         ("0.4", "Reading objects 431/2104 Cube.003"),
@@ -415,7 +416,7 @@ async fn the_progress_bar_holds_its_place_as_the_stage_changes(cx: &mut TestAppC
             cx.notify();
         });
         cx.run_until_parked();
-        seen.push(bounds(cx, "statusbar-progress-track"));
+        seen.push(bounds(cx, "load-progress-track"));
     }
     for b in &seen {
         assert_eq!(

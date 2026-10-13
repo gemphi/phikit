@@ -23,9 +23,11 @@ dirs = { workspace = true }
 smallvec = { workspace = true }
 gpui = { workspace = true }
 gpui_platform = { workspace = true }
+log = { workspace = true }
 theme = { workspace = true }
 glam = "0.29"
 byteorder = "1.5"
+unicode-segmentation = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

@@ -2,16 +2,16 @@
 
 | State | Open | Done |
 |---|---|---|
-| 🟡 in progress | 3 | 12 |
+| 🟡 in progress | 2 | 13 |
 
 ## Todo
 
-- [ ] **An area light's energy through the renderer** (found in batch 173). `BlendLightData::energy` holds the file's stored value, which for an area light is 4/π of the UI watts (measured: exactly 4/π, independent of shape and size, across all four area shapes). `view3d/rendered/lamp.rs` passes it straight to the kernel, while `phiray/tests/lamp_power.rs` matched Cycles by feeding the kernel 100 **W** by hand — so an area light read from a file may reach the kernel 27% too bright. One Cycles render of a file-read area light against phiray's settles it; a one-line reader change if it is confirmed
 - [ ] Sky / Gabor / White Noise textures, 4D (W) textures, Mapping's Rotation and Texture / Vector / Normal types, Generated / Object / UV only (no Normal, Camera, Window, Reflection), one texture per socket (a Mix node between texture and socket folds to its mean); B-spline / cardinal / HSV colour ramps
 - [ ] Image colour space and UDIM tiles
 
 ## Done
 
+- [x] **An area light's energy through the renderer** (batch 175; found in batch 173). `BlendLightData::energy` holds the file's stored value — 4/π of the UI watts for an area light — and `view3d/rendered/lamp.rs` passed it straight to a kernel that wants watts (`phiray/tests/lamp_power.rs` fed it 100 W by hand and matched Cycles). Settled with a Cycles render of a file (`fixtures/AREALIGHT.blend`, `truth/blender_area_light.py`): Cycles **1.861612**, ours **2.430 — 31% too bright**. The record now divides by `AREA_ENERGY_SCALE`, the same constant the driver pass multiplies by, so the field keeps meaning the stored value on both sides of the boundary; after it, **1.908** against Cycles' 1.862 — the same 2.5% the hand-fed lamp carries (`phiber/tests/a_files_area_light_reaches_the_kernel_at_its_watts.rs`, `rendering.md` §71). Point, spot and sun store the watts — the irradiance, for a sun — directly and take no conversion
 - [x] World drivers (`world_driver.rs`): `World.adt` for its own `color` (hard 0..∞) and `World.nodetree->adt` for the Background node's `Strength` (a float socket, unclamped) and `Color` (RGBA, clamped at 0) — the same split and the same socket reader a material uses (`anim/driver/socket.rs`), measured with the lights (`tests/light_driver_truth.rs`, LIGHTDRIVERS fixture)
 - [x] Material drivers (`driver.rs`, `driver_read.rs`): `AnimData.drivers` on the `Material` ID (`roughness`, `metallic`, `specular_intensity`, `diffuse_color`) and on its node tree (`nodes["…"].inputs[i].default_value` by socket **index**, component in `array_index`), evaluated through the same `BlendDriver` the object drivers use and over the same frame state, so a socket driven off a driven custom property resolves in one frame. Blender's three clamp rules ported as measured, not assumed: a float or vector socket takes the value unclamped even where RNA says 0..1, an RGBA socket's component clamps at 0 below and is free above 1, and a `Material` float property clamps to its RNA hard range at both ends. A driver on a **linked** socket is written and never folded into the surface, as Blender's link feeds the shader instead; a muted driver writes nothing. 195 values across 5 frames within 5.4×10⁻⁷ of Blender's evaluated materials (`tests/mat_driver_truth.rs`, MATDRIVERS fixture)
 - [x] Every other texture node (`texnode.rs`): Noise's five types with Offset / Gain and Normalize, Voronoi's features (F1, F2, Smooth F1, Distance to Edge, N-Sphere Radius) and metrics, Checker, Brick (offset / squash and frequencies), Gradient's types, Magic's depth, Wave's type / directions / profile — sockets and storage with `node_shader_tex_*.cc`'s defaults (`tests/texture_nodes_truth.rs`)

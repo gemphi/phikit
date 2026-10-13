@@ -1,0 +1,37 @@
+# `} else if` per file under src/v2, as of the day this was recorded.
+# A file may never exceed its number; a file not listed has a budget of
+# zero. Lowering one is always allowed — raising one is the thing this
+# guard exists to refuse. Written by `tests/branch_budget.rs` on its
+# first run, so the baseline is this tree's own.
+7 app/keymap/set.rs
+1 part/file/listing.rs
+1 part/file/op.rs
+2 part/outliner/mod.rs
+1 part/time/step.rs
+1 scene/action/keys.rs
+1 scene/action/retime.rs
+2 scene/edit/mod.rs
+2 scene/edit/rule.rs
+1 scene/links/tree.rs
+2 scene/load_stage.rs
+1 scene/matcap.rs
+1 scene/pose/worker.rs
+1 scene/video/mod.rs
+4 theme/palette/shade/mod.rs
+3 view/draw/button.rs
+1 view/draw/canvas/image/uv.rs
+1 view/draw/canvas/time/curve/set.rs
+2 view/draw/canvas/time/grid/set.rs
+2 view/draw/canvas/time/set.rs
+1 view/draw/canvas/time/sheet.rs
+1 view/draw/canvas/time/strip/set.rs
+2 view/draw/canvas/view3d/mesh/kernel.rs
+1 view/draw/canvas/view3d/mesh/paint.rs
+1 view/draw/canvas/view3d/mod.rs
+1 view/draw/canvas/view3d/rendered/mod.rs
+1 view/draw/ctrl/mod.rs
+1 view/draw/modal/part.rs
+5 view/draw/pane.rs
+6 view/draw/region/mod.rs
+2 view/draw/row.rs
+2 view/draw/tab/mod.rs

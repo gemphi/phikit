@@ -433,7 +433,9 @@ use phiber::v2::state::{BState};
 
 const GOLDEN: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden/layout_fingerprint.txt");
 const SIZES: &[(f32, f32)] = &[(1600.0, 900.0), (1100.0, 700.0)];
-const MODALS: &[&str] = &["settings", "file_browser", "splash", "about", "render", "spaces", "collab", "profile", "command", "help", "progress", "reader"];
+// No "progress": opening a file is no longer a modal — its progress lives in
+// the status zone's loading panel (see tests/progress_screen.rs).
+const MODALS: &[&str] = &["settings", "file_browser", "splash", "about", "render", "spaces", "collab", "profile", "command", "help", "reader"];
 
 fn frame(cx: &mut gpui::VisualTestContext, label: &str, out: &mut String) {
     // Sorted, and without `image` lines: the viewport's traced frame arrives
@@ -480,12 +482,6 @@ async fn the_whole_window_lands_where_the_golden_says(cx: &mut TestAppContext) {
                 app.state = BState::new();
                 app.state.set(CtxKey::Space, BSpaceType::Layout.slug());
                 app.state.set(ModalKey::Open, *modal);
-                if *modal == "progress" {
-                    // The progress screen is only up while a file is loading;
-                    // without a load in flight it dismisses itself mid-capture.
-                    app.state.set(&phiber::v2::scene::load_progress_key(), "0.4");
-                    app.state.set(&phiber::v2::scene::load_stage_key(), "Reading objects 431/2104");
-                }
                 cx.notify();
             });
             cx.run_until_parked();

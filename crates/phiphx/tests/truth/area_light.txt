@@ -1,0 +1,1 @@
+area_file AREA square size=1 power=100.0W (RNA: the watts the UI shows, 4/pi of what the DNA field stores) height=2.0 albedo=0.8 radiance=1.861612

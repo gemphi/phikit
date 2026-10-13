@@ -233,15 +233,20 @@ nothing else, which keeps the field meaning one thing whether or not a
 driver touched it. Measured across all four area shapes: the factor is
 exactly 4/π and independent of shape and size.
 
-**Open question, recorded not answered.** The renderer consumes the stored
-number (`view3d/rendered/lamp.rs` multiplies colour by `energy`), while
-`phiray`'s own `lamp_power.rs` measured the kernel against Cycles by
-feeding it **100 W** by hand and matching. If the kernel wants watts, an
-area light read from a file reaches it 4/π — 27% — too bright. That is a
-one-line change in the reader and a visible change to every render with an
-area light, so it belongs in a batch of its own with a Cycles render
-through the full path, not folded into a driver batch. Flagged in
-`shade/jobs.md`.
+**Answered — batch 175, with the render the question asked for.** The
+renderer consumed the stored number (`view3d/rendered/lamp.rs` multiplied
+colour by `energy`), while the kernel wants watts — `phiray`'s own
+`lamp_power.rs` had measured it against Cycles by feeding it **100 W** by
+hand and matching — so an area light read from a file reached it 4/π —
+27% — too bright. `fixtures/AREALIGHT.blend` is the §54 measuring rig with
+one such lamp saved as a file; Cycles renders it at **1.861612**
+(`truth/blender_area_light.py`) and ours came out **2.430**. `BLamp::record`
+now divides an area light's energy by `AREA_ENERGY_SCALE` — the same
+constant `BLightDrivers::apply` multiplies a driven value by, so the field
+keeps meaning the stored value on both sides of the boundary — and the
+same file then measures **1.908**, the same 2.5% the hand-fed lamp carries
+(`phiber/tests/a_files_area_light_reaches_the_kernel_at_its_watts.rs`,
+`rendering.md` §71).
 
 ### Measured
 
@@ -347,14 +352,11 @@ truncation entirely.
 1. **Write driven modifier settings into the stack.** The read is done and
    measured; see "What this does not do" above for the two parts and why it
    is queued rather than started.
-2. **An area light's energy through the renderer.** Not a driver job — see
-   batch 173's open question. Needs one Cycles render of an area light read
-   from a file, compared with `phiray`'s.
-3. **Shape-key drivers.** `Key.adt`, `key_blocks["Name"].value`. Blocked on
+2. **Shape-key drivers.** `Key.adt`, `key_blocks["Name"].value`. Blocked on
    shape keys themselves, which phiphx does not read yet.
-4. **Context Property variables.** `DTAR_CONTEXT_PROPERTY_ACTIVE_SCENE` and
+3. **Context Property variables.** `DTAR_CONTEXT_PROPERTY_ACTIVE_SCENE` and
    `ACTIVE_VIEW_LAYER`; small, once there is a scene context to resolve
    against.
-5. **Driver-against-driver ordering.** A dependency sort over the channel
+4. **Driver-against-driver ordering.** A dependency sort over the channel
    drivers would close the one limit stated above. Worth doing only on a
    file that needs it.

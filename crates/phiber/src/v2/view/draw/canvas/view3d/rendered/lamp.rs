@@ -5,6 +5,7 @@
 //! its shape in a different quantity, so this is where the two
 //! vocabularies meet.
 
+use crate::phiphx::blend::AREA_ENERGY_SCALE;
 use crate::phiphx::scene::SceneLight;
 use glam::Mat4;
 use phiray::{AREA_DISK, AREA_ELLIPSE, AREA_RECT, AREA_SQUARE, Light};
@@ -89,10 +90,22 @@ impl BLamp for SceneLight {
             (_, true) => (m.x_axis.truncate().normalize_or_zero().to_array(), self.size, 0.0),
             _ => ([0.0; 3], self.size, 0.0),
         };
+        // An area light's `energy` is the value the **file stores** — 4/pi
+        // of the watts the UI shows, pre-multiplied so Blender's own
+        // radiance comes out of `energy / (4 A)` — while the kernel wants
+        // watts (`phiray/tests/lamp_power.rs` fed it 100 W by hand and
+        // matched Cycles). Dividing by the same constant the driver pass
+        // multiplies by on its way in (`BLightDrivers::apply`) keeps the
+        // field meaning one thing on both sides of this boundary; anything
+        // else a file's area light reaches the kernel 27% too bright, which
+        // is what it did — 2.430 against Cycles' 1.862 — before this
+        // (`tests/a_files_area_light_reaches_the_kernel_at_its_watts.rs`,
+        // `rendering.md` §71).
+        let energy = if area { self.energy / AREA_ENERGY_SCALE } else { self.energy };
         Light {
             pos: m.w_axis.truncate().to_array(),
             kind,
-            color: self.color.map(|c| c * self.energy.max(0.0)),
+            color: self.color.map(|c| c * energy.max(0.0)),
             size,
             dir: (-m.z_axis.truncate()).normalize_or_zero().to_array(),
             cone,
