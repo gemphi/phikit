@@ -32,7 +32,7 @@ pub use place::BOverflow;
 pub use token::{
     BSelf,
     BAlign, BBasis, BDim, BEdge, BInk, BJustify, BLen, BPlace, BRadius, BSide,
-    BSpace, BType,
+    BSpace, BType, PROSE_HEADING_SCALE, PROSE_SCALE, PROSE_TITLE_SCALE,
 };
 
 use super::ctx::BRenderCtx;

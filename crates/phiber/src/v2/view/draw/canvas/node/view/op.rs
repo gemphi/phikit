@@ -1,9 +1,11 @@
 //! The node editor's view operators, as one rule on `OpKey::NodeView`.
 //!
-//! One so far: `<editor>:all` is `NODE_OT_view_all` (Home) — the whole graph
-//! framed in the window. The maths is `frame::view_all`, ported and tested
-//! there; what lives here is the operator, which is the thing that had been
-//! missing. The framing existed and nothing could ask for it.
+//! Two verbs: `<editor>:all` is `NODE_OT_view_all` (Home) — the whole graph
+//! framed in the window — and `<editor>:selected` is `NODE_OT_view_selected`
+//! (Numpad .), the same framing over the selected nodes alone. The maths is
+//! `frame::view_all`, ported and tested there; what lives here is the
+//! operator, which is the thing that had been missing. The framing existed
+//! and nothing could ask for it.
 //!
 //! Pan and zoom are NOT here. They are gestures — a held middle button and the
 //! wheel — and a gesture writes `NodeKey::View` straight from the canvas, where
@@ -59,6 +61,20 @@ impl BRule for BNodeViewRule {
                 let cur = store::view_of(s, host, &graph.nodes, |n| size.height_of(n, &super::super::link::linked_inputs(&wired, &n.name)), size.width);
                 let bounds = frame::graph_bounds(&graph.nodes, |n| size.height_of(n, &super::super::link::linked_inputs(&wired, &n.name)), size.width);
                 frame::view_all(bounds, &cur, graph.nodes.len() == 1)
+            }
+            // `NODE_OT_view_selected`: the same framing over the selected nodes
+            // alone. Nothing selected leaves the view where it is, as Blender's
+            // reports "No nodes to view" rather than moving.
+            "selected" => {
+                let sel = super::super::select::selection_of(s, host);
+                let chosen: Vec<_> = graph.nodes.iter().filter(|n| sel.holds(&n.name)).cloned().collect();
+                if chosen.is_empty() {
+                    return;
+                }
+                let wired = super::super::link::edits_of(s, host).apply(&graph.links);
+                let cur = store::view_of(s, host, &graph.nodes, |n| size.height_of(n, &super::super::link::linked_inputs(&wired, &n.name)), size.width);
+                let bounds = frame::graph_bounds(&chosen, |n| size.height_of(n, &super::super::link::linked_inputs(&wired, &n.name)), size.width);
+                frame::view_all(bounds, &cur, chosen.len() == 1)
             }
             _ => return,
         };
@@ -150,6 +166,86 @@ mod tests {
         }
         // And the op is consumed, so it does not re-fire on the next write.
         assert_eq!(s.get(&OpKey::NodeView.path()), None, "the op is spent");
+
+        crate::v2::scene::source::set_loaded_shared(None);
+    }
+
+    #[test]
+    fn view_selected_frames_the_selected_nodes_alone() {
+        // `NODE_OT_view_selected`: the framing follows the selection, so the
+        // selected node lands inside and the unselected one need not.
+        use crate::phiphx::blend::shade::graph::{BlendNode, BlendNodeGraph};
+        use crate::phiphx::scene::{SceneCorners, SceneMaterial, SceneMesh, SceneModel, SceneNormals, SceneObject};
+        use crate::v2::state::{CtxKey, NodeKey};
+        use crate::v2::view::draw::canvas::node::select;
+
+        let at = |x: f32, y: f32| BlendNode { name: format!("n{x}"), x, y, width: 140.0, ..Default::default() };
+        let near = at(-3000.0, -2000.0);
+        let far = at(4000.0, 2500.0);
+        let nodes = vec![near.clone(), far.clone()];
+        let mut material = SceneMaterial::neutral();
+        material.graph = BlendNodeGraph { nodes: nodes.clone(), links: Vec::new() };
+        let mesh = SceneMesh {
+            vertices: vec![[0.0; 3]],
+            indices: Vec::new(),
+            normals: SceneNormals::PerFace(Vec::new()),
+            corners: SceneCorners::default(),
+        };
+        let mut object = SceneObject::identity("Cube", mesh);
+        object.materials = vec![material];
+        let model = SceneModel { objects: vec![object], ..Default::default() };
+        crate::v2::scene::source::set_loaded_shared(Some(std::sync::Arc::new(model)));
+
+        let mut s = BState::default();
+        s.set(CtxKey::Object, "Cube");
+        s.set(NodeKey::Selected(BHostType::Shader), &select::encode(&select::BNodeSelection::of(&[near.name.as_str()])));
+        BNodeViewRule.after(&OpKey::NodeView.path(), "shader:selected", &mut s);
+
+        let written = s.get(&NodeKey::View(BHostType::Shader).path()).expect("Frame Selected writes a view").to_string();
+        let framed = store::decode(&written).expect("a readable one");
+        let seen = framed.to_fraction((near.x, near.y));
+        assert!(
+            (0.0..=1.0).contains(&seen.0) && (0.0..=1.0).contains(&seen.1),
+            "the selected node {:?} is inside its framing {framed:?}",
+            seen,
+        );
+        // The unselected node is well outside: framing one node cannot also
+        // frame one 7000 units away.
+        let other = framed.to_fraction((far.x, far.y));
+        assert!(other.0 > 1.0 || other.1 > 1.0, "the unselected node {other:?} is not framed");
+
+        crate::v2::scene::source::set_loaded_shared(None);
+    }
+
+    #[test]
+    fn view_selected_with_nothing_selected_leaves_the_view_alone() {
+        // Blender reports "No nodes to view" rather than moving.
+        use crate::phiphx::blend::shade::graph::{BlendNode, BlendNodeGraph};
+        use crate::phiphx::scene::{SceneCorners, SceneMaterial, SceneMesh, SceneModel, SceneNormals, SceneObject};
+        use crate::v2::state::{CtxKey, NodeKey};
+
+        let mut material = SceneMaterial::neutral();
+        material.graph = BlendNodeGraph {
+            nodes: vec![BlendNode { name: "n".into(), x: 10.0, y: 10.0, width: 140.0, ..Default::default() }],
+            links: Vec::new(),
+        };
+        let mesh = SceneMesh {
+            vertices: vec![[0.0; 3]],
+            indices: Vec::new(),
+            normals: SceneNormals::PerFace(Vec::new()),
+            corners: SceneCorners::default(),
+        };
+        let mut object = SceneObject::identity("Cube", mesh);
+        object.materials = vec![material];
+        let model = SceneModel { objects: vec![object], ..Default::default() };
+        crate::v2::scene::source::set_loaded_shared(Some(std::sync::Arc::new(model)));
+
+        let mut s = BState::default();
+        s.set(CtxKey::Object, "Cube");
+        let before = store::encode(&BNodeView::default());
+        s.set(NodeKey::View(BHostType::Shader), &before);
+        BNodeViewRule.after(&OpKey::NodeView.path(), "shader:selected", &mut s);
+        assert_eq!(s.get(&NodeKey::View(BHostType::Shader).path()), Some(before.as_str()), "the view is left where it was");
 
         crate::v2::scene::source::set_loaded_shared(None);
     }

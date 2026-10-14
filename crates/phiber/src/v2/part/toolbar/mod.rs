@@ -19,6 +19,36 @@ use crate::v2::view::prim::BRailView;
 use self::set::tools_for;
 pub use set::BToolSpec;
 
+/// Whether an editor's tool region is shown — Blender's
+/// `SpaceView3D.show_region_toolbar`, toggled by T (View ▸ Toolbar). Shown by
+/// default, as Blender's startup file has the tool column open; the same
+/// show/hide family as the sidebar (`sidebar::show`, N), so an editor hides
+/// its own tool rail. Resumed with the session like the sidebar.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BToolbarShown(pub BHostType);
+
+impl BToolbarShown {
+    /// `<host>.show.toolbar`.
+    pub fn key(self) -> BPath {
+        BPath::owned(vec![self.0.slug(), "show", "toolbar"])
+    }
+
+    /// The 3D Viewport's key, for a plain View ▸ Toolbar entry.
+    pub fn view3d_key() -> BPath {
+        Self(BHostType::View3D).key()
+    }
+
+    /// `host`'s key, for a shared View ▸ Toolbar (T) table (`tog_host`).
+    pub fn key_for(host: BHostType) -> BPath {
+        Self(host).key()
+    }
+
+    /// Shown unless turned off — on by default (`BFlipRule`'s `!` sense).
+    pub fn on(self, s: &BState) -> bool {
+        s.get(&self.key()) != Some(crate::v2::state::val::V_FALSE)
+    }
+}
+
 // `BToolbarList` — reads `tools_for(host)` + `host.<h>.tool` and emits ONE
 // `BView::Rail` (the shared vertical strip element) with a fixed bottom
 // expand/paging cluster.
@@ -89,6 +119,12 @@ impl BToolbar {
 
 impl BViewItem for BToolbar {
     fn build(&self, s: &BState) -> BView {
+        // T hides the whole tool rail (`BToolbarShown`), as Blender's
+        // `show_region_toolbar` hides the region; the floating pane draws
+        // nothing when its parts are empty (`view::draw::pane`).
+        if !BToolbarShown(self.host).on(s) {
+            return BView::empty();
+        }
         BToolbarList::new(self.host).rail(s)
     }
 }

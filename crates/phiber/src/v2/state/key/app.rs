@@ -17,6 +17,10 @@ pub enum AppKey {
     Theme,
     /// The theme's mode: `dark` or `light` (`BThemeMode`).
     ThemeMode,
+    /// The dimensional coat's scope: `auto`, `flat` or `spatial`
+    /// (`BFlavourScope`, `theme/style/flavour`). One setting over the whole
+    /// window — flat, or the spatial virtual-world look.
+    Flavour,
     UseGradients,
     /// A URL to hand to the system browser (`wm.url_open`); side effect only.
     Link,
@@ -58,6 +62,7 @@ impl BKey for AppKey {
             Self::WindowHeight => BPath::owned(vec!["window", "height"]),
             Self::Theme => BPath::owned(vec!["theme"]),
             Self::ThemeMode => BPath::owned(vec!["theme_mode"]),
+            Self::Flavour => BPath::owned(vec!["flavour"]),
             Self::UseGradients => BPath::owned(vec!["use_gradients"]),
             Self::Link => BPath::owned(vec!["link"]),
             Self::Edit => BPath::owned(vec!["edit"]),

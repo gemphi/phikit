@@ -54,6 +54,10 @@ pub struct BDimensions {
     pub header_height: f32,
     pub footer_height: f32,
     pub row_height: f32,
+    /// A tree's row — the Outliner's: Blender's `UI_UNIT_Y` (20 px) at the
+    /// 1.5× the module implies, a step under a control row so a tree reads
+    /// as a list rather than a stack of buttons.
+    pub tree_row_height: f32,
     pub button_height: f32,
     pub scrubbing_height: f32,
     pub asset_shelf_height: f32,
@@ -113,6 +117,7 @@ pub const DEFAULT_DIMENSIONS: BDimensions = BDimensions {
     footer_height: MODULE,
     // A row is a control plus its room: one answer (`a_row_is_one_height`).
     row_height: MODULE,
+    tree_row_height: 30.0,
     button_height: BUTTON_HEIGHT,
     scrubbing_height: 24.0,
     asset_shelf_height: 120.0,

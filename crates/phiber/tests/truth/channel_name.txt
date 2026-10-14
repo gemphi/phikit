@@ -1,0 +1,687 @@
+Con:ACTION	action_slot_handle	Action Slot Handle		0
+Con:ACTION	active	Active		0
+Con:ARMATURE	active	Active		0
+Con:CAMERA_SOLVER	active	Active		0
+Con:CHILD_OF	active	Active		0
+Con:CLAMP_TO	active	Active		0
+Con:COPY_LOCATION	active	Active		0
+Con:COPY_ROTATION	active	Active		0
+Con:COPY_SCALE	active	Active		0
+Con:COPY_TRANSFORMS	active	Active		0
+Con:DAMPED_TRACK	active	Active		0
+Con:FLOOR	active	Active		0
+Con:FOLLOW_PATH	active	Active		0
+Con:FOLLOW_TRACK	active	Active		0
+Con:GEOMETRY_ATTRIBUTE	active	Active		0
+Con:IK	active	Active		0
+Con:LIMIT_DISTANCE	active	Active		0
+Con:LIMIT_LOCATION	active	Active		0
+Con:LIMIT_ROTATION	active	Active		0
+Con:LIMIT_SCALE	active	Active		0
+Con:LOCKED_TRACK	active	Active		0
+Con:MAINTAIN_VOLUME	active	Active		0
+Con:OBJECT_SOLVER	active	Active		0
+Con:PIVOT	active	Active		0
+Con:SHRINKWRAP	active	Active		0
+Con:SPLINE_IK	active	Active		0
+Con:STRETCH_TO	active	Active		0
+Con:TRACK_TO	active	Active		0
+Con:TRANSFORM	active	Active		0
+Con:TRANSFORM_CACHE	active	Active		0
+Object	active_material_index	Active Material Index		0
+Object	active_selection_set	Active Selection Set		0
+Object	active_shape_key_index	Active Shape Key Index		0
+Mod:SUBSURF	adaptive_object_edge_length	Edge Length		0
+Mod:SUBSURF	adaptive_pixel_size	Pixel Size		0
+Object	add_rest_position_attribute	Add Rest Position		0
+Material	alpha_threshold	Clip Threshold		0
+Light	angle	Angle		0
+Con:GEOMETRY_ATTRIBUTE	apply_target_transform	Target Transform		0
+PoseBone	bbone_curveinx	In X		0
+PoseBone	bbone_curveinz	In Z		0
+PoseBone	bbone_curveoutx	Out X		0
+PoseBone	bbone_curveoutz	Out Z		0
+PoseBone	bbone_easein	Ease In		0
+PoseBone	bbone_easeout	Ease Out		0
+PoseBone	bbone_rollin	Roll In		0
+PoseBone	bbone_rollout	Roll Out		0
+PoseBone	bbone_scalein	Scale In	XYZW	3
+PoseBone	bbone_scaleout	Scale Out	XYZW	3
+Mod:SOLIDIFY	bevel_convex	Bevel Convex		0
+Mod:MIRROR	bisect_threshold	Bisect Distance		0
+Con:SPLINE_IK	bulge	Volume Variation		0
+Con:STRETCH_TO	bulge	Volume Variation		0
+Con:SPLINE_IK	bulge_max	Volume Variation Maximum		0
+Con:STRETCH_TO	bulge_max	Volume Variation Maximum		0
+Con:SPLINE_IK	bulge_min	Volume Variation Minimum		0
+Con:STRETCH_TO	bulge_min	Volume Variation Minimum		0
+Con:SPLINE_IK	bulge_smooth	Volume Variation Smoothness		0
+Con:STRETCH_TO	bulge_smooth	Volume Variation Smoothness		0
+Con:IK	chain_count	Chain Length		0
+Con:SPLINE_IK	chain_count	Chain Length		0
+Light	color	Color	RGBA	3
+Object	color	Color	RGBA	4
+World	color	Color	RGBA	3
+Mod:ARRAY	constant_offset_displace	Constant Offset Displacement	XYZW	3
+Mod:ARRAY	count	Count		0
+PoseBone	custom_shape_rotation_euler	Custom Shape Rotation	XYZW	3
+PoseBone	custom_shape_scale_xyz	Custom Shape Scale	XYZW	3
+PoseBone	custom_shape_translation	Custom Shape Translation	XYZW	3
+PoseBone	custom_shape_wire_width	Wire Width		0
+Light	cutoff_distance	Cutoff Distance		0
+Object	delta_location	Delta Location	XYZW	3
+Object	delta_rotation_euler	Delta Rotation (Euler)	XYZW	3
+Object	delta_rotation_quaternion	Delta Rotation (Quaternion)	WXYZ	4
+Object	delta_scale	Delta Scale	XYZW	3
+Material	diffuse_color	Diffuse Color	RGBA	4
+Light	diffuse_factor	Diffuse Factor		0
+Object	dimensions	Dimensions	XYZW	3
+Con:IK	distance	Distance		0
+Con:LIMIT_DISTANCE	distance	Distance		0
+Con:SHRINKWRAP	distance	Distance		0
+Mod:SOLIDIFY	edge_crease_inner	Inner Crease		0
+Mod:SOLIDIFY	edge_crease_outer	Outer Crease		0
+Mod:SOLIDIFY	edge_crease_rim	Rim Crease		0
+Object	empty_display_size	Empty Display Size		0
+Object	empty_image_offset	Origin Offset		2
+Con:ACTION	enabled	Enabled		0
+Con:ARMATURE	enabled	Enabled		0
+Con:CAMERA_SOLVER	enabled	Enabled		0
+Con:CHILD_OF	enabled	Enabled		0
+Con:CLAMP_TO	enabled	Enabled		0
+Con:COPY_LOCATION	enabled	Enabled		0
+Con:COPY_ROTATION	enabled	Enabled		0
+Con:COPY_SCALE	enabled	Enabled		0
+Con:COPY_TRANSFORMS	enabled	Enabled		0
+Con:DAMPED_TRACK	enabled	Enabled		0
+Con:FLOOR	enabled	Enabled		0
+Con:FOLLOW_PATH	enabled	Enabled		0
+Con:FOLLOW_TRACK	enabled	Enabled		0
+Con:GEOMETRY_ATTRIBUTE	enabled	Enabled		0
+Con:IK	enabled	Enabled		0
+Con:LIMIT_DISTANCE	enabled	Enabled		0
+Con:LIMIT_LOCATION	enabled	Enabled		0
+Con:LIMIT_ROTATION	enabled	Enabled		0
+Con:LIMIT_SCALE	enabled	Enabled		0
+Con:LOCKED_TRACK	enabled	Enabled		0
+Con:MAINTAIN_VOLUME	enabled	Enabled		0
+Con:OBJECT_SOLVER	enabled	Enabled		0
+Con:PIVOT	enabled	Enabled		0
+Con:SHRINKWRAP	enabled	Enabled		0
+Con:SPLINE_IK	enabled	Enabled		0
+Con:STRETCH_TO	enabled	Enabled		0
+Con:TRACK_TO	enabled	Enabled		0
+Con:TRANSFORM	enabled	Enabled		0
+Con:TRANSFORM_CACHE	enabled	Enabled		0
+Light	energy	Power		0
+Con:ACTION	eval_time	Evaluation Time		0
+Light	exposure	Exposure		0
+Mod:ARRAY	fit_length	Length		0
+Con:ACTION	frame_end	End Frame		0
+Con:ACTION	frame_start	Start Frame		0
+Con:TRANSFORM	from_max_x	From Maximum X		0
+Con:TRANSFORM	from_max_x_rot	From Maximum X		0
+Con:TRANSFORM	from_max_x_scale	From Maximum X		0
+Con:TRANSFORM	from_max_y	From Maximum Y		0
+Con:TRANSFORM	from_max_y_rot	From Maximum Y		0
+Con:TRANSFORM	from_max_y_scale	From Maximum Y		0
+Con:TRANSFORM	from_max_z	From Maximum Z		0
+Con:TRANSFORM	from_max_z_rot	From Maximum Z		0
+Con:TRANSFORM	from_max_z_scale	From Maximum Z		0
+Con:TRANSFORM	from_min_x	From Minimum X		0
+Con:TRANSFORM	from_min_x_rot	From Minimum X		0
+Con:TRANSFORM	from_min_x_scale	From Minimum X		0
+Con:TRANSFORM	from_min_y	From Minimum Y		0
+Con:TRANSFORM	from_min_y_rot	From Minimum Y		0
+Con:TRANSFORM	from_min_y_scale	From Minimum Y		0
+Con:TRANSFORM	from_min_z	From Minimum Z		0
+Con:TRANSFORM	from_min_z_rot	From Minimum Z		0
+Con:TRANSFORM	from_min_z_scale	From Minimum Z		0
+Con:COPY_LOCATION	head_tail	Head/Tail		0
+Con:COPY_TRANSFORMS	head_tail	Head/Tail		0
+Con:DAMPED_TRACK	head_tail	Head/Tail		0
+Con:LIMIT_DISTANCE	head_tail	Head/Tail		0
+Con:LOCKED_TRACK	head_tail	Head/Tail		0
+Con:PIVOT	head_tail	Head/Tail		0
+Con:STRETCH_TO	head_tail	Head/Tail		0
+Con:TRACK_TO	head_tail	Head/Tail		0
+PoseBone	hide	Hide		0
+Object	hide_probe_plane	Disable in Planar Light Probes		0
+Object	hide_probe_sphere	Disable in Spherical Light Probes		0
+Object	hide_probe_volume	Disable in Volume Probes		0
+Object	hide_render	Disable in Renders		0
+Object	hide_select	Disable Selection		0
+Object	hide_surface_pick	Disable in Surface Picking		0
+Object	hide_viewport	Disable in Viewports		0
+PoseBone	ik_linear_weight	IK Lin Weight		0
+PoseBone	ik_max_x	IK X Maximum		0
+PoseBone	ik_max_y	IK Y Maximum		0
+PoseBone	ik_max_z	IK Z Maximum		0
+PoseBone	ik_min_x	IK X Minimum		0
+PoseBone	ik_min_y	IK Y Minimum		0
+PoseBone	ik_min_z	IK Z Minimum		0
+PoseBone	ik_rotation_weight	IK Rotation Weight		0
+PoseBone	ik_stiffness_x	IK X Stiffness		0
+PoseBone	ik_stiffness_y	IK Y Stiffness		0
+PoseBone	ik_stiffness_z	IK Z Stiffness		0
+PoseBone	ik_stretch	IK Stretch		0
+Con:ACTION	influence	Influence		0
+Con:ARMATURE	influence	Influence		0
+Con:CAMERA_SOLVER	influence	Influence		0
+Con:CHILD_OF	influence	Influence		0
+Con:CLAMP_TO	influence	Influence		0
+Con:COPY_LOCATION	influence	Influence		0
+Con:COPY_ROTATION	influence	Influence		0
+Con:COPY_SCALE	influence	Influence		0
+Con:COPY_TRANSFORMS	influence	Influence		0
+Con:DAMPED_TRACK	influence	Influence		0
+Con:FLOOR	influence	Influence		0
+Con:FOLLOW_PATH	influence	Influence		0
+Con:FOLLOW_TRACK	influence	Influence		0
+Con:GEOMETRY_ATTRIBUTE	influence	Influence		0
+Con:IK	influence	Influence		0
+Con:LIMIT_DISTANCE	influence	Influence		0
+Con:LIMIT_LOCATION	influence	Influence		0
+Con:LIMIT_ROTATION	influence	Influence		0
+Con:LIMIT_SCALE	influence	Influence		0
+Con:LOCKED_TRACK	influence	Influence		0
+Con:MAINTAIN_VOLUME	influence	Influence		0
+Con:OBJECT_SOLVER	influence	Influence		0
+Con:PIVOT	influence	Influence		0
+Con:SHRINKWRAP	influence	Influence		0
+Con:SPLINE_IK	influence	Influence		0
+Con:STRETCH_TO	influence	Influence		0
+Con:TRACK_TO	influence	Influence		0
+Con:TRANSFORM	influence	Influence		0
+Con:TRANSFORM_CACHE	influence	Influence		0
+Object	instance_faces_scale	Instance Faces Scale		0
+Con:CHILD_OF	inverse_matrix	Inverse Matrix		16
+Mod:DISPLACE	invert_vertex_group	Invert		0
+Mod:LATTICE	invert_vertex_group	Invert		0
+Mod:SOLIDIFY	invert_vertex_group	Vertex Group Invert		0
+Mod:WELD	invert_vertex_group	Invert		0
+Con:COPY_LOCATION	invert_x	Invert X		0
+Con:COPY_ROTATION	invert_x	Invert X		0
+Con:COPY_LOCATION	invert_y	Invert Y		0
+Con:COPY_ROTATION	invert_y	Invert Y		0
+Con:COPY_LOCATION	invert_z	Invert Z		0
+Con:COPY_ROTATION	invert_z	Invert Z		0
+Mod:ARRAY	is_active	Active		0
+Mod:DISPLACE	is_active	Active		0
+Mod:LATTICE	is_active	Active		0
+Mod:MIRROR	is_active	Active		0
+Mod:SOLIDIFY	is_active	Active		0
+Mod:SUBSURF	is_active	Active		0
+Mod:TRIANGULATE	is_active	Active		0
+Mod:WELD	is_active	Active		0
+Object	is_holdout	Holdout		0
+Light	is_runtime_data	Runtime Data		0
+Material	is_runtime_data	Runtime Data		0
+Object	is_runtime_data	Runtime Data		0
+World	is_runtime_data	Runtime Data		0
+Object	is_shadow_catcher	Shadow Catcher		0
+Con:IK	iterations	Iterations		0
+Con:SPLINE_IK	joint_bindings	Joint Bindings		32
+Mod:TRIANGULATE	keep_custom_normals	Keep Normals		0
+Mod:SUBSURF	levels	Levels		0
+Material	line_color	Line Color	RGBA	4
+Material	line_priority	Line Priority		0
+Object	location	Location	XYZW	3
+PoseBone	location	Location	XYZW	3
+PoseBone	lock_ik_x	IK X Lock		0
+PoseBone	lock_ik_y	IK Y Lock		0
+PoseBone	lock_ik_z	IK Z Lock		0
+Object	lock_location	Lock Location		3
+PoseBone	lock_location	Lock Location		3
+Con:IK	lock_location_x	Lock X Pos		0
+Con:IK	lock_location_y	Lock Y Pos		0
+Con:IK	lock_location_z	Lock Z Pos		0
+Object	lock_rotation	Lock Rotation		3
+PoseBone	lock_rotation	Lock Rotation		3
+Object	lock_rotation_w	Lock Rotation (4D Angle)		0
+PoseBone	lock_rotation_w	Lock Rotation (4D Angle)		0
+Con:IK	lock_rotation_x	Lock X Rotation		0
+Con:IK	lock_rotation_y	Lock Y Rotation		0
+Con:IK	lock_rotation_z	Lock Z Rotation		0
+Object	lock_rotations_4d	Lock Rotations (4D)		0
+PoseBone	lock_rotations_4d	Lock Rotations (4D)		0
+Object	lock_scale	Lock Scale		3
+PoseBone	lock_scale	Lock Scale		3
+ShapeKey	lock_shape	Lock Shape		0
+Mod:WELD	loose_edges	Only Loose Edges		0
+Mod:SOLIDIFY	material_offset	Material Offset		0
+Mod:SOLIDIFY	material_offset_rim	Rim Material Offset		0
+PoseBone	matrix	Pose Matrix		16
+Object	matrix_basis	Input Matrix		16
+PoseBone	matrix_basis	Basis Matrix		16
+Object	matrix_local	Local Matrix		16
+Object	matrix_parent_inverse	Parent Inverse Matrix		16
+Object	matrix_world	Matrix World		16
+Con:ACTION	max	Maximum		0
+Material	max_vertex_displacement	Max Vertex Displacement		0
+Con:LIMIT_LOCATION	max_x	Maximum X		0
+Con:LIMIT_ROTATION	max_x	Maximum X		0
+Con:LIMIT_SCALE	max_x	Maximum X		0
+Con:LIMIT_LOCATION	max_y	Maximum Y		0
+Con:LIMIT_ROTATION	max_y	Maximum Y		0
+Con:LIMIT_SCALE	max_y	Maximum Y		0
+Con:LIMIT_LOCATION	max_z	Maximum Z		0
+Con:LIMIT_ROTATION	max_z	Maximum Z		0
+Con:LIMIT_SCALE	max_z	Maximum Z		0
+Mod:ARRAY	merge_threshold	Merge Distance		0
+Mod:MIRROR	merge_threshold	Merge Distance		0
+Mod:WELD	merge_threshold	Merge Distance		0
+Material	metallic	Metallic		0
+Mod:DISPLACE	mid_level	Midlevel		0
+Con:ACTION	min	Minimum		0
+Mod:TRIANGULATE	min_vertices	Minimum Vertices		0
+Con:LIMIT_LOCATION	min_x	Minimum X		0
+Con:LIMIT_ROTATION	min_x	Minimum X		0
+Con:LIMIT_SCALE	min_x	Minimum X		0
+Con:LIMIT_LOCATION	min_y	Minimum Y		0
+Con:LIMIT_ROTATION	min_y	Minimum Y		0
+Con:LIMIT_SCALE	min_y	Minimum Y		0
+Con:LIMIT_LOCATION	min_z	Minimum Z		0
+Con:LIMIT_ROTATION	min_z	Minimum Z		0
+Con:LIMIT_SCALE	min_z	Minimum Z		0
+Mod:MIRROR	mirror_offset_u	Flip U Offset		0
+Mod:MIRROR	mirror_offset_v	Flip V Offset		0
+Con:GEOMETRY_ATTRIBUTE	mix_loc	Mix Location		0
+Con:GEOMETRY_ATTRIBUTE	mix_rot	Mix Rotation		0
+Con:GEOMETRY_ATTRIBUTE	mix_scl	Mix Scale		0
+Con:ACTION	mute	Disable		0
+Con:ARMATURE	mute	Disable		0
+Con:CAMERA_SOLVER	mute	Disable		0
+Con:CHILD_OF	mute	Disable		0
+Con:CLAMP_TO	mute	Disable		0
+Con:COPY_LOCATION	mute	Disable		0
+Con:COPY_ROTATION	mute	Disable		0
+Con:COPY_SCALE	mute	Disable		0
+Con:COPY_TRANSFORMS	mute	Disable		0
+Con:DAMPED_TRACK	mute	Disable		0
+Con:FLOOR	mute	Disable		0
+Con:FOLLOW_PATH	mute	Disable		0
+Con:FOLLOW_TRACK	mute	Disable		0
+Con:GEOMETRY_ATTRIBUTE	mute	Disable		0
+Con:IK	mute	Disable		0
+Con:LIMIT_DISTANCE	mute	Disable		0
+Con:LIMIT_LOCATION	mute	Disable		0
+Con:LIMIT_ROTATION	mute	Disable		0
+Con:LIMIT_SCALE	mute	Disable		0
+Con:LOCKED_TRACK	mute	Disable		0
+Con:MAINTAIN_VOLUME	mute	Disable		0
+Con:OBJECT_SOLVER	mute	Disable		0
+Con:PIVOT	mute	Disable		0
+Con:SHRINKWRAP	mute	Disable		0
+Con:SPLINE_IK	mute	Disable		0
+Con:STRETCH_TO	mute	Disable		0
+Con:TRACK_TO	mute	Disable		0
+Con:TRANSFORM	mute	Disable		0
+Con:TRANSFORM_CACHE	mute	Disable		0
+ShapeKey	mute	Mute		0
+Mod:SOLIDIFY	nonmanifold_merge_threshold	Merge Threshold		0
+Light	normalize	Normalize		0
+Con:FLOOR	offset	Offset		0
+Con:FOLLOW_PATH	offset	Offset		0
+Con:PIVOT	offset	Offset	XYZW	3
+Mod:SOLIDIFY	offset	Offset		0
+Con:FOLLOW_PATH	offset_factor	Offset Factor		0
+Mod:ARRAY	offset_u	U Offset		0
+Mod:MIRROR	offset_u	U Offset		0
+Mod:ARRAY	offset_v	V Offset		0
+Mod:MIRROR	offset_v	V Offset		0
+Con:IK	orient_weight	Orientation Weight		0
+Material	paint_active_slot	Active Paint Texture Index		0
+Material	paint_clone_slot	Clone Paint Texture Index		0
+Object	parent_vertices	Parent Vertices		3
+Material	pass_index	Pass Index		0
+Object	pass_index	Pass Index		0
+Con:IK	pole_angle	Pole Angle		0
+Con:COPY_SCALE	power	Power		0
+Con:SHRINKWRAP	project_limit	Project Distance		0
+Mod:SUBSURF	quality	Quality		0
+Material	refraction_depth	Refraction Depth		0
+Mod:ARRAY	relative_offset_displace	Relative Offset Displacement	XYZW	3
+Con:COPY_TRANSFORMS	remove_target_shear	Remove Target Shear		0
+Mod:SUBSURF	render_levels	Render Levels		0
+Con:STRETCH_TO	rest_length	Original Length		0
+Object	rotation_axis_angle	Axis-Angle Rotation	WXYZ	4
+PoseBone	rotation_axis_angle	Axis-Angle Rotation	WXYZ	4
+Object	rotation_euler	Euler Rotation	XYZW	3
+PoseBone	rotation_euler	Euler Rotation	XYZW	3
+Object	rotation_quaternion	Quaternion Rotation	WXYZ	4
+PoseBone	rotation_quaternion	Quaternion Rotation	WXYZ	4
+Material	roughness	Roughness		0
+Con:GEOMETRY_ATTRIBUTE	sample_index	Sample Index		0
+Object	scale	Scale	XYZW	3
+PoseBone	scale	Scale	XYZW	3
+PoseBone	select	Select		0
+Con:CHILD_OF	set_inverse_pending	Set Inverse Pending		0
+Con:OBJECT_SOLVER	set_inverse_pending	Set Inverse Pending		0
+Light	shadow_buffer_clip_start	Shadow Buffer Clip Start		0
+Light	shadow_cascade_count	Cascade Count		0
+Light	shadow_cascade_exponent	Exponential Distribution		0
+Light	shadow_cascade_fade	Cascade Fade		0
+Light	shadow_cascade_max_distance	Cascade Max Distance		0
+Light	shadow_filter_radius	Shadow Filter Radius		0
+Light	shadow_jitter_overblur	Shadow Jitter Overblur		0
+Light	shadow_maximum_resolution	Shadows Resolution Limit		0
+Light	shadow_soft_size	Shadow Soft Size		0
+Object	shadow_terminator_geometry_offset	Shadow Terminator Geometry Offset		0
+Object	shadow_terminator_normal_offset	Shadow Terminator Normal Offset		0
+Object	shadow_terminator_shading_offset	Shadow Terminator Shading Offset		0
+Object	show_all_edges	Display All Edges		0
+Object	show_axis	Display Axes		0
+Object	show_bounds	Display Bounds		0
+Light	show_cone	Show Cone		0
+Object	show_empty_image_only_axis_aligned	Display Only Axis Aligned		0
+Object	show_empty_image_orthographic	Display in Orthographic Mode		0
+Object	show_empty_image_perspective	Display in Perspective Mode		0
+Con:ACTION	show_expanded	Expanded		0
+Con:ARMATURE	show_expanded	Expanded		0
+Con:CAMERA_SOLVER	show_expanded	Expanded		0
+Con:CHILD_OF	show_expanded	Expanded		0
+Con:CLAMP_TO	show_expanded	Expanded		0
+Con:COPY_LOCATION	show_expanded	Expanded		0
+Con:COPY_ROTATION	show_expanded	Expanded		0
+Con:COPY_SCALE	show_expanded	Expanded		0
+Con:COPY_TRANSFORMS	show_expanded	Expanded		0
+Con:DAMPED_TRACK	show_expanded	Expanded		0
+Con:FLOOR	show_expanded	Expanded		0
+Con:FOLLOW_PATH	show_expanded	Expanded		0
+Con:FOLLOW_TRACK	show_expanded	Expanded		0
+Con:GEOMETRY_ATTRIBUTE	show_expanded	Expanded		0
+Con:IK	show_expanded	Expanded		0
+Con:LIMIT_DISTANCE	show_expanded	Expanded		0
+Con:LIMIT_LOCATION	show_expanded	Expanded		0
+Con:LIMIT_ROTATION	show_expanded	Expanded		0
+Con:LIMIT_SCALE	show_expanded	Expanded		0
+Con:LOCKED_TRACK	show_expanded	Expanded		0
+Con:MAINTAIN_VOLUME	show_expanded	Expanded		0
+Con:OBJECT_SOLVER	show_expanded	Expanded		0
+Con:PIVOT	show_expanded	Expanded		0
+Con:SHRINKWRAP	show_expanded	Expanded		0
+Con:SPLINE_IK	show_expanded	Expanded		0
+Con:STRETCH_TO	show_expanded	Expanded		0
+Con:TRACK_TO	show_expanded	Expanded		0
+Con:TRANSFORM	show_expanded	Expanded		0
+Con:TRANSFORM_CACHE	show_expanded	Expanded		0
+Mod:ARRAY	show_expanded	Expanded		0
+Mod:DISPLACE	show_expanded	Expanded		0
+Mod:LATTICE	show_expanded	Expanded		0
+Mod:MIRROR	show_expanded	Expanded		0
+Mod:SOLIDIFY	show_expanded	Expanded		0
+Mod:SUBSURF	show_expanded	Expanded		0
+Mod:TRIANGULATE	show_expanded	Expanded		0
+Mod:WELD	show_expanded	Expanded		0
+Mod:ARRAY	show_in_editmode	Edit Mode		0
+Mod:DISPLACE	show_in_editmode	Edit Mode		0
+Mod:LATTICE	show_in_editmode	Edit Mode		0
+Mod:MIRROR	show_in_editmode	Edit Mode		0
+Mod:SOLIDIFY	show_in_editmode	Edit Mode		0
+Mod:SUBSURF	show_in_editmode	Edit Mode		0
+Mod:TRIANGULATE	show_in_editmode	Edit Mode		0
+Mod:WELD	show_in_editmode	Edit Mode		0
+Object	show_in_front	In Front		0
+Object	show_instancer_for_render	Render Instancer		0
+Object	show_instancer_for_viewport	Display Instancer		0
+Object	show_name	Display Name		0
+Mod:ARRAY	show_on_cage	On Cage		0
+Mod:DISPLACE	show_on_cage	On Cage		0
+Mod:LATTICE	show_on_cage	On Cage		0
+Mod:MIRROR	show_on_cage	On Cage		0
+Mod:SOLIDIFY	show_on_cage	On Cage		0
+Mod:SUBSURF	show_on_cage	On Cage		0
+Mod:TRIANGULATE	show_on_cage	On Cage		0
+Mod:WELD	show_on_cage	On Cage		0
+Mod:SUBSURF	show_only_control_edges	Optimal Display		0
+Object	show_only_shape_key	Solo Active Shape Key		0
+Mod:ARRAY	show_render	Render		0
+Mod:DISPLACE	show_render	Render		0
+Mod:LATTICE	show_render	Render		0
+Mod:MIRROR	show_render	Render		0
+Mod:SOLIDIFY	show_render	Render		0
+Mod:SUBSURF	show_render	Render		0
+Mod:TRIANGULATE	show_render	Render		0
+Mod:WELD	show_render	Render		0
+Object	show_texture_space	Display Texture Space		0
+Object	show_transparent	Display Transparent		0
+Material	show_transparent_back	Show Backface		0
+Mod:ARRAY	show_viewport	Realtime		0
+Mod:DISPLACE	show_viewport	Realtime		0
+Mod:LATTICE	show_viewport	Realtime		0
+Mod:MIRROR	show_viewport	Realtime		0
+Mod:SOLIDIFY	show_viewport	Realtime		0
+Mod:SUBSURF	show_viewport	Realtime		0
+Mod:TRIANGULATE	show_viewport	Realtime		0
+Mod:WELD	show_viewport	Realtime		0
+Object	show_wire	Display Wire		0
+Light	size	Size		0
+Light	size_y	Size Y		0
+ShapeKey	slider_max	Slider Max		0
+ShapeKey	slider_min	Slider Min		0
+Material	specular_color	Specular Color	RGBA	3
+Light	specular_factor	Specular Factor		0
+Material	specular_intensity	Specular		0
+Light	spot_blend	Spot Blend		0
+Light	spot_size	Beam Angle		0
+Light	spread	Spread		0
+Mod:DISPLACE	strength	Strength		0
+Mod:LATTICE	strength	Strength		0
+World	sun_angle	Sun Angle		0
+World	sun_shadow_filter_radius	Shadow Filter Radius		0
+World	sun_shadow_jitter_overblur	Shadow Jitter Overblur		0
+World	sun_shadow_maximum_resolution	Shadows Resolution Limit		0
+World	sun_threshold	Sun Threshold		0
+Light	tag	Tag		0
+Material	tag	Tag		0
+Object	tag	Tag		0
+World	tag	Tag		0
+Light	temperature	Temperature		0
+Mod:SOLIDIFY	thickness	Thickness		0
+Mod:SOLIDIFY	thickness_clamp	Clamp		0
+Mod:SOLIDIFY	thickness_vertex_group	Vertex Group Factor		0
+Con:TRANSFORM	to_max_x	To Maximum X		0
+Con:TRANSFORM	to_max_x_rot	To Maximum X		0
+Con:TRANSFORM	to_max_x_scale	To Maximum X		0
+Con:TRANSFORM	to_max_y	To Maximum Y		0
+Con:TRANSFORM	to_max_y_rot	To Maximum Y		0
+Con:TRANSFORM	to_max_y_scale	To Maximum Y		0
+Con:TRANSFORM	to_max_z	To Maximum Z		0
+Con:TRANSFORM	to_max_z_rot	To Maximum Z		0
+Con:TRANSFORM	to_max_z_scale	To Maximum Z		0
+Con:TRANSFORM	to_min_x	To Minimum X		0
+Con:TRANSFORM	to_min_x_rot	To Minimum X		0
+Con:TRANSFORM	to_min_x_scale	To Minimum X		0
+Con:TRANSFORM	to_min_y	To Minimum Y		0
+Con:TRANSFORM	to_min_y_rot	To Minimum Y		0
+Con:TRANSFORM	to_min_y_scale	To Minimum Y		0
+Con:TRANSFORM	to_min_z	To Minimum Z		0
+Con:TRANSFORM	to_min_z_rot	To Minimum Z		0
+Con:TRANSFORM	to_min_z_scale	To Minimum Z		0
+Light	transmission_factor	Transmission Factor		0
+Con:FOLLOW_TRACK	use_3d_position	3D Position		0
+Light	use_absolute_resolution	Absolute Resolution Limit		0
+Con:CAMERA_SOLVER	use_active_clip	Active Clip		0
+Con:FOLLOW_TRACK	use_active_clip	Active Clip		0
+Con:OBJECT_SOLVER	use_active_clip	Active Clip		0
+Mod:SUBSURF	use_adaptive_subdivision	Use Adaptive Subdivision		0
+Con:COPY_SCALE	use_add	Additive		0
+Mod:ARRAY	use_apply_on_spline	Apply on Spline		0
+Mod:DISPLACE	use_apply_on_spline	Apply on Spline		0
+Mod:LATTICE	use_apply_on_spline	Apply on Spline		0
+Mod:MIRROR	use_apply_on_spline	Apply on Spline		0
+Mod:SOLIDIFY	use_apply_on_spline	Apply on Spline		0
+Mod:SUBSURF	use_apply_on_spline	Apply on Spline		0
+Mod:TRIANGULATE	use_apply_on_spline	Apply on Spline		0
+Mod:WELD	use_apply_on_spline	Apply on Spline		0
+Mod:MIRROR	use_axis	Mirror Axis		3
+Material	use_backface_culling	Backface Culling		0
+Material	use_backface_culling_lightprobe_volume	Light Probe Volume Backface Culling		0
+Material	use_backface_culling_shadow	Shadow Backface Culling		0
+Con:COPY_LOCATION	use_bbone_shape	Follow B-Bone		0
+Con:COPY_TRANSFORMS	use_bbone_shape	Follow B-Bone		0
+Con:DAMPED_TRACK	use_bbone_shape	Follow B-Bone		0
+Con:LIMIT_DISTANCE	use_bbone_shape	Follow B-Bone		0
+Con:LOCKED_TRACK	use_bbone_shape	Follow B-Bone		0
+Con:PIVOT	use_bbone_shape	Follow B-Bone		0
+Con:STRETCH_TO	use_bbone_shape	Follow B-Bone		0
+Con:TRACK_TO	use_bbone_shape	Follow B-Bone		0
+Mod:MIRROR	use_bisect_axis	Bisect Axis		3
+Mod:MIRROR	use_bisect_flip_axis	Bisect Flip Axis		3
+Con:ARMATURE	use_bone_envelopes	Use Envelopes		0
+Con:ACTION	use_bone_object_action	Object Action		0
+Con:SPLINE_IK	use_bulge_max	Use Volume Variation Maximum		0
+Con:STRETCH_TO	use_bulge_max	Use Volume Variation Maximum		0
+Con:SPLINE_IK	use_bulge_min	Use Volume Variation Minimum		0
+Con:STRETCH_TO	use_bulge_min	Use Volume Variation Minimum		0
+Object	use_camera_lock_parent	Camera Parent Lock		0
+Con:SPLINE_IK	use_chain_offset	Chain Offset		0
+Mod:MIRROR	use_clip	Clip		0
+Mod:ARRAY	use_constant_offset	Constant Offset		0
+Mod:SUBSURF	use_creases	Use Creases		0
+Con:ARMATURE	use_current_location	Use Current Location		0
+Con:FOLLOW_PATH	use_curve_follow	Follow Curve		0
+Con:FOLLOW_PATH	use_curve_radius	Curve Radius		0
+Con:SPLINE_IK	use_curve_radius	Use Curve Radius		0
+Light	use_custom_distance	Custom Attenuation		0
+Mod:SUBSURF	use_custom_normals	Use Custom Normals		0
+PoseBone	use_custom_shape_bone_size	Scale to Bone Length		0
+Con:CLAMP_TO	use_cyclic	Cyclic		0
+Con:ARMATURE	use_deform_preserve_volume	Preserve Volume		0
+World	use_eevee_finite_volume	Finite Volume		0
+Object	use_empty_image_alpha	Use Alpha		0
+Con:ACTION	use_eval_time	Use Evaluation Time		0
+Con:SPLINE_IK	use_even_divisions	Even Divisions		0
+Mod:SOLIDIFY	use_even_offset	Even Thickness		0
+Light	use_extra_user	Extra User		0
+Material	use_extra_user	Extra User		0
+Object	use_extra_user	Extra User		0
+World	use_extra_user	Extra User		0
+Light	use_fake_user	Fake User		0
+Material	use_fake_user	Fake User		0
+Object	use_fake_user	Fake User		0
+World	use_fake_user	Fake User		0
+Con:FOLLOW_PATH	use_fixed_location	Fixed Position		0
+Mod:SOLIDIFY	use_flat_faces	Flat Faces		0
+Mod:SOLIDIFY	use_flip_normals	Flip Normals		0
+Object	use_grease_pencil_lights	Use Lights		0
+PoseBone	use_ik_limit_x	IK X Limit		0
+PoseBone	use_ik_limit_y	IK Y Limit		0
+PoseBone	use_ik_limit_z	IK Z Limit		0
+PoseBone	use_ik_linear_control	IK Linear Control		0
+PoseBone	use_ik_rotation_control	IK Rotation Control		0
+Object	use_instance_faces_scale	Scale to Face Sizes		0
+Object	use_instance_vertices_rotation	Orient with Normals		0
+Con:SHRINKWRAP	use_invert_cull	Invert Cull		0
+Con:LIMIT_ROTATION	use_legacy_behavior	Legacy Behavior		0
+Mod:SUBSURF	use_limit_surface	Use Limit Surface		0
+Con:LIMIT_ROTATION	use_limit_x	Limit X		0
+Con:LIMIT_ROTATION	use_limit_y	Limit Y		0
+Con:LIMIT_ROTATION	use_limit_z	Limit Z		0
+Con:IK	use_location	Position		0
+Con:CHILD_OF	use_location_x	Location X		0
+Con:CHILD_OF	use_location_y	Location Y		0
+Con:CHILD_OF	use_location_z	Location Z		0
+Con:COPY_SCALE	use_make_uniform	Make Uniform		0
+Con:LIMIT_LOCATION	use_max_x	Maximum X		0
+Con:LIMIT_SCALE	use_max_x	Maximum X		0
+Con:LIMIT_LOCATION	use_max_y	Maximum Y		0
+Con:LIMIT_SCALE	use_max_y	Maximum Y		0
+Con:LIMIT_LOCATION	use_max_z	Maximum Z		0
+Con:LIMIT_SCALE	use_max_z	Maximum Z		0
+Mod:ARRAY	use_merge_vertices	Merge Vertices		0
+Mod:ARRAY	use_merge_vertices_cap	Merge End Vertices		0
+Object	use_mesh_mirror_x	X		0
+Object	use_mesh_mirror_y	Y		0
+Object	use_mesh_mirror_z	Z		0
+Con:LIMIT_LOCATION	use_min_x	Minimum X		0
+Con:LIMIT_SCALE	use_min_x	Minimum X		0
+Con:LIMIT_LOCATION	use_min_y	Minimum Y		0
+Con:LIMIT_SCALE	use_min_y	Minimum Y		0
+Con:LIMIT_LOCATION	use_min_z	Minimum Z		0
+Con:LIMIT_SCALE	use_min_z	Minimum Z		0
+Mod:MIRROR	use_mirror_merge	Merge Vertices		0
+Mod:MIRROR	use_mirror_u	Mirror U		0
+Mod:MIRROR	use_mirror_udim	Mirror UDIM		0
+Mod:MIRROR	use_mirror_v	Mirror V		0
+Mod:MIRROR	use_mirror_vertex_groups	Mirror Vertex Groups		0
+Con:TRANSFORM	use_motion_extrapolate	Extrapolate Motion		0
+Light	use_nodes	Use Nodes		0
+Material	use_nodes	Use Nodes		0
+World	use_nodes	Use Nodes		0
+Mod:ARRAY	use_object_offset	Object Offset		0
+Con:COPY_LOCATION	use_offset	Offset		0
+Con:COPY_ROTATION	use_offset	Offset		0
+Con:COPY_SCALE	use_offset	Offset		0
+Con:SPLINE_IK	use_original_scale	Use Original Scale		0
+Object	use_parent_final_indices	Use Final Indices		0
+Mod:ARRAY	use_pin_to_last	Pin to Last		0
+Mod:DISPLACE	use_pin_to_last	Pin to Last		0
+Mod:LATTICE	use_pin_to_last	Pin to Last		0
+Mod:MIRROR	use_pin_to_last	Pin to Last		0
+Mod:SOLIDIFY	use_pin_to_last	Pin to Last		0
+Mod:SUBSURF	use_pin_to_last	Pin to Last		0
+Mod:TRIANGULATE	use_pin_to_last	Pin to Last		0
+Mod:WELD	use_pin_to_last	Pin to Last		0
+Material	use_preview_world	Preview World		0
+Con:SHRINKWRAP	use_project_opposite	Project Opposite		0
+Mod:SOLIDIFY	use_quality_normals	High Quality Normals		0
+Material	use_raytrace_refraction	Raytrace Transmission		0
+Con:PIVOT	use_relative_location	Use Relative Offset		0
+Mod:ARRAY	use_relative_offset	Relative Offset		0
+Mod:SOLIDIFY	use_rim	Fill Rim		0
+Mod:SOLIDIFY	use_rim_only	Only Rim		0
+Con:FLOOR	use_rotation	Use Rotation		0
+Con:IK	use_rotation	Rotation		0
+Con:CHILD_OF	use_rotation_x	Rotation X		0
+Con:CHILD_OF	use_rotation_y	Rotation Y		0
+Con:CHILD_OF	use_rotation_z	Rotation Z		0
+Con:CHILD_OF	use_scale_x	Scale X		0
+Con:CHILD_OF	use_scale_y	Scale Y		0
+Con:CHILD_OF	use_scale_z	Scale Z		0
+Material	use_screen_refraction	Raytrace Transmission		0
+Light	use_shadow_jitter	Shadow Jitter		0
+Object	use_shape_key_edit_mode	Shape Key Edit Mode		0
+Object	use_simulation_cache	Use Simulation Cache		0
+Light	use_soft_falloff	Soft Falloff		0
+Light	use_square	Square		0
+Material	use_sss_translucency	Subsurface Translucency		0
+Con:IK	use_stretch	Stretch		0
+World	use_sun_shadow	Use Shadow		0
+World	use_sun_shadow_jitter	Shadow Jitter		0
+Con:IK	use_tail	Use Tail		0
+Con:TRACK_TO	use_target_z	Target Z		0
+Light	use_temperature	Use Temperature		0
+Mod:SOLIDIFY	use_thickness_angle_clamp	Angle Clamp		0
+Material	use_thickness_from_shadow	Thickness From Shadow		0
+Con:SHRINKWRAP	use_track_normal	Align Axis To Normal		0
+PoseBone	use_transform_around_custom_shape	Use As Pivot		0
+PoseBone	use_transform_at_custom_shape	Affect Gizmo		0
+Con:LIMIT_DISTANCE	use_transform_limit	Affect Transform		0
+Con:LIMIT_LOCATION	use_transform_limit	Affect Transform		0
+Con:LIMIT_ROTATION	use_transform_limit	Affect Transform		0
+Con:LIMIT_SCALE	use_transform_limit	Affect Transform		0
+Material	use_transparency_overlap	Use Transparency Overlap		0
+Material	use_transparent_shadow	Transparent Shadows		0
+Con:FOLLOW_TRACK	use_undistorted_position	Undistort		0
+Con:COPY_LOCATION	use_x	Copy X		0
+Con:COPY_ROTATION	use_x	Copy X		0
+Con:COPY_SCALE	use_x	Copy X		0
+Con:COPY_LOCATION	use_y	Copy Y		0
+Con:COPY_ROTATION	use_y	Copy Y		0
+Con:COPY_SCALE	use_y	Copy Y		0
+Con:COPY_LOCATION	use_z	Copy Z		0
+Con:COPY_ROTATION	use_z	Copy Z		0
+Con:COPY_SCALE	use_z	Copy Z		0
+ShapeKey	value	Value		0
+Object	visible_camera	Camera Visibility		0
+Object	visible_diffuse	Diffuse Visibility		0
+Object	visible_glossy	Glossy Visibility		0
+Object	visible_shadow	Shadow Visibility		0
+Object	visible_transmission	Transmission Visibility		0
+Object	visible_volume_scatter	Volume Scatter Visibility		0
+Con:MAINTAIN_VOLUME	volume	Volume		0
+Light	volume_factor	Volume Factor		0
+Con:IK	weight	Weight		0
+ConstraintTargetBone	weight	Blend Weight		0

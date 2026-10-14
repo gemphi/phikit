@@ -50,6 +50,27 @@ impl BStillRegion {
         frame.lay_at(&cut, x as usize, y as usize, rw as usize, rh as usize, w as usize);
         frame
     }
+
+    /// `framed` for the bytes alone (a `BStill::peek`).
+    pub(super) fn framed_rgba(&self, drawn: Vec<u8>, w: u32, h: u32, margin: u32) -> Vec<u8> {
+        let Some((x, y, rw, rh)) = self.pixels else { return drawn };
+        let (dx, dy, dw, _) = self.drawn(w, h, margin);
+        let (x, y, rw, rh, dw, w, h) = (x as usize, y as usize, rw as usize, rh as usize, dw as usize, w as usize, h as usize);
+        let mut cut = vec![0u8; rw * rh * 4];
+        for row in 0..rh {
+            let (at, from) = (row * rw, (y - dy as usize + row) * dw + (x - dx as usize));
+            cut[at * 4..(at + rw) * 4].copy_from_slice(&drawn[from * 4..(from + rw) * 4]);
+        }
+        if self.crop {
+            return cut;
+        }
+        let mut frame = vec![0u8; w * h * 4];
+        for row in 0..rh {
+            let (at, from) = ((y + row) * w + x, row * rw);
+            frame[at * 4..(at + rw) * 4].copy_from_slice(&cut[from * 4..(from + rw) * 4]);
+        }
+        frame
+    }
 }
 
 
@@ -100,8 +121,8 @@ mod tests {
         let cam = super::super::scene::camera(20.0, 30.0, (0.0, 0.0), 1.0, setup, 1.0, &look);
         let render = |region: BStillRegion| {
             let mut out = None;
-            super::super::still_stepwise(&objects, super::super::BStillLook::new(BShading::Solid, gpui::white()), cam, 40, 40, 1, false, region, |_, done| {
-                out = out.take().or(done);
+            super::super::still_stepwise(&objects, super::super::BStillLook::new(BShading::Solid, gpui::white()), cam, 40, 40, 1, false, region, |_, at| {
+                if out.is_none() && at.settled() { out = at.image(); }
                 true
             });
             out.expect("a still")

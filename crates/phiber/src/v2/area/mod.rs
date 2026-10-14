@@ -3,6 +3,7 @@
 pub mod set;
 
 pub mod current;
+pub mod maximize;
 pub mod size;
 
 use crate::v2::host::BHostItem;

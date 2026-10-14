@@ -161,8 +161,8 @@ async fn a_card_on_a_surface_keeps_its_sweep(cx: &mut TestAppContext) {
 fn the_rule_names_the_one_place_it_applies_to() {
     let src = include_str!("../src/v2/view/draw/card.rs");
     assert!(src.contains("fn panel_fill("), "one function answers it");
-    assert!(src.contains("BFill::Flat(BSurfaceTone::Card)"), "and a flat answer");
-    assert!(src.contains("BFill::Tone(BSurfaceTone::Card)"), "and the swept one for everywhere else");
+    assert!(src.contains("BFill::Floating"), "the floating bar's material — the sidebar's shade");
+    assert!(src.contains("BFill::Tone(BSurfaceTone::Card)"), "and the swept card for everywhere else");
     assert!(src.contains("BHostType::Activity"), "scoped to the activity bar");
     assert!(!src.contains("fn panel_tone("), "one function, not a tone and a fill: card.rs is on its line cap");
 }

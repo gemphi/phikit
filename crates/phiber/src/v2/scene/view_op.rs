@@ -114,6 +114,31 @@ impl BRule for BView3dOpRule {
                     (true, false) => "X-Ray on",
                 })
             }
+            // `view3d.view_camera` (Numpad 0): into the scene camera's view,
+            // or back out to the orbit, for the viewport under the pointer
+            // (`BViewSlot::current`, the one the keys act on). Blender's
+            // poll wants a camera; without one it does nothing, so say so.
+            "view_camera" => {
+                let has_camera = super::source::with_loaded(|m| m.is_some_and(|m| !m.cameras.is_empty()));
+                match super::view_slot::BViewSlot::current() {
+                    _ if !has_camera => Some("No camera found in scene"),
+                    Some(slot) => {
+                        let key = View3dKey::Camera(slot.scope, slot.slot).path();
+                        // Unset, the area looks as its workspace opens it
+                        // (`opens_in_camera_view`: the Animation left viewport).
+                        let through = match state.get(&key) {
+                            Some(V_TRUE) => true,
+                            Some(V_FALSE) => false,
+                            _ => crate::v2::space::BSpaceType::from_slug(slot.scope)
+                                .zip(crate::v2::area::BAreaType::from_label(slot.slot))
+                                .is_some_and(|(space, kind)| space.opens_in_camera_view(kind)),
+                        };
+                        state.set(&key, if through { V_FALSE } else { V_TRUE });
+                        Some(if through { "View: orbit" } else { "View: camera" })
+                    }
+                    None => Some("No 3D Viewport under the pointer"),
+                }
+            }
             "persportho" => {
                 let persp = super::is_perspective(state);
                 state.set(&super::perspective_key(), if persp { V_FALSE } else { V_TRUE });
@@ -191,5 +216,21 @@ mod tests {
         assert!(super::super::is_perspective(&state));
         op(&mut state, "persportho");
         assert!(!super::super::is_perspective(&state));
+    }
+
+    #[test]
+    fn the_camera_view_needs_a_camera_and_a_viewport() {
+        crate::v2::scene::source::clear_loaded_scene();
+        let mut state = BState::new();
+        let slot = super::super::view_slot::BViewSlot::new("layout", "Center");
+        slot.hover();
+        // No file loaded: no camera, so Numpad 0 says so and flips nothing.
+        op(&mut state, "view_camera");
+        assert_eq!(state.get(View3dKey::Camera("layout", "Center")), None);
+        assert!(state.get(OpKey::View3d).is_none(), "the op is consumed either way");
+        super::super::view_slot::BViewSlot::forget_hover();
+        // The key carries the area's label, and the label finds the kind back.
+        assert_eq!(crate::v2::area::BAreaType::from_label("Left"), Some(crate::v2::area::BAreaType::Left));
+        assert_eq!(crate::v2::area::BAreaType::from_label("Middle"), None);
     }
 }

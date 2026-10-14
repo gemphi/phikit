@@ -84,12 +84,46 @@ pub struct BStill {
     pub depth: Vec<f32>,
 }
 
+/// What a step of [`still_stepwise`] carries besides its sample count.
+pub enum BStillAt {
+    /// The count alone: nothing was read back this sample.
+    Counting,
+    /// The frame as it stands mid-render — its bytes only, the float passes
+    /// empty (`BStill::peek`) — so the Rendering space can show the render
+    /// as it happens rather than a bar over nothing. Blender's
+    /// `RE_display_update_cb` hands the viewer its tiles the same way.
+    Peek(BStill),
+    /// The settled frame, every pass read.
+    Settled(BStill),
+}
+
+impl BStillAt {
+    /// The image, if this step carries one.
+    pub fn image(self) -> Option<BStill> {
+        match self {
+            Self::Counting => None,
+            Self::Peek(s) | Self::Settled(s) => Some(s),
+        }
+    }
+
+    pub fn settled(&self) -> bool {
+        matches!(self, Self::Settled(_))
+    }
+}
+
+/// How often a running render's bytes are read back for the viewer: a peek
+/// a few times a second is what the eye needs, and reading the picture back
+/// is the slow part of a sample, so it is not done every one.
+pub const PEEK_EVERY: std::time::Duration = std::time::Duration::from_millis(350);
+
 /// The same render, one sample at a time: `step` is called after each with
-/// the samples taken so far and, once the frame has settled, the finished
-/// image. Returning `false` from it stops the render early, which is how a
-/// job is cancelled: the image as far as it got — the bands finished and
-/// the one under way at its samples so far — is handed to `step` as the
-/// finished one, as Blender keeps a cancelled render's tiles.
+/// the samples taken so far and what was read back (`BStillAt`): usually
+/// nothing, every `PEEK_EVERY` the bytes as they stand, and once the frame
+/// has settled the finished image. Returning `false` from it stops the
+/// render early, which is how a job is cancelled: the image as far as it got
+/// — the bands finished and the one under way at its samples so far — is
+/// handed to `step` as the finished one, as Blender keeps a cancelled
+/// render's tiles.
 ///
 /// A frame with more pixels than the device binds as one image
 /// (`Tracer::max_pixels`) is rendered in horizontal bands, each a tile of
@@ -108,7 +142,7 @@ pub fn still_stepwise(
     samples: u32,
     denoise: bool,
     region: super::region::BStillRegion,
-    mut step: impl FnMut(u32, Option<BStill>) -> bool,
+    mut step: impl FnMut(u32, BStillAt) -> bool,
 ) -> Option<u32> {
     use crate::v2::scene::BShading;
     let gpu = phiray::Ray::gpu()?;
@@ -138,6 +172,8 @@ pub fn still_stepwise(
     let (rx, ry, rw, rh) = region.drawn(w, h, reach);
     let bands = BBandList::of(rw, rh, BBandList::most(&gpu), reach);
     let mut drawn = BStill::empty(rw, rh);
+    // The first sample is shown at once, then one every `PEEK_EVERY`.
+    let mut peeked = std::time::Instant::now() - PEEK_EVERY;
     for (k, (y0, rows)) in bands.list.iter().enumerate() {
         let (over, under) = (reach.min(*y0), reach.min(rh - y0 - rows));
         let tiled = bands.list.len() > 1 || region.pixels.is_some();
@@ -145,8 +181,19 @@ pub fn still_stepwise(
         loop {
             let (taken, done) = tracer.sample(&gpu, band, rw, rows + over + under);
             // Reading the image back is the slow part, so progress carries a
-            // count and the picture only at the end.
-            let go_on = done || step(bands.progress(k, taken + 1, tracer.samples()), None);
+            // count, the bytes now and then (`PEEK_EVERY`), and the whole
+            // picture only at the end.
+            let go_on = done || {
+                let at = if peeked.elapsed() >= PEEK_EVERY {
+                    peeked = std::time::Instant::now();
+                    let mut peek = drawn.rgba.clone();
+                    BStill::lay_rgba(&mut peek, &tracer.pixels(&gpu), *y0 as usize, *rows as usize, over as usize, rw as usize);
+                    BStillAt::Peek(BStill::peek(region.framed_rgba(peek, w, h, reach)))
+                } else {
+                    BStillAt::Counting
+                };
+                step(bands.progress(k, taken + 1, tracer.samples()), at)
+            };
             if done || !go_on {
                 if denoise && done {
                     tracer.denoise(&gpu);
@@ -156,14 +203,14 @@ pub fn still_stepwise(
                 }
                 drawn.lay(&BStill::read(&tracer, &gpu), *y0 as usize, *rows as usize, over as usize, rw as usize);
                 if !go_on {
-                    step(bands.progress(k, taken + 1, tracer.samples()), Some(region.framed(drawn, w, h, reach)));
+                    step(bands.progress(k, taken + 1, tracer.samples()), BStillAt::Settled(region.framed(drawn, w, h, reach)));
                     return Some(taken + 1);
                 }
                 break;
             }
         }
     }
-    step(tracer.samples(), Some(region.framed(drawn, w, h, reach)));
+    step(tracer.samples(), BStillAt::Settled(region.framed(drawn, w, h, reach)));
     Some(tracer.samples())
 }
 
@@ -200,6 +247,17 @@ impl BStill {
     /// The tracer's image as it stands, in every form.
     fn read(tracer: &phiray::Tracer, gpu: &phiray::Gpu) -> Self {
         Self { rgba: tracer.pixels(gpu), display: tracer.display(gpu), linear: tracer.radiance(gpu), albedo: tracer.albedo(gpu), normal: tracer.normal(gpu), depth: tracer.depth(gpu) }
+    }
+
+    /// The bytes alone, for a look at a render under way.
+    pub(super) fn peek(rgba: Vec<u8>) -> Self {
+        Self { rgba, display: Vec::new(), linear: Vec::new(), albedo: Vec::new(), normal: Vec::new(), depth: Vec::new() }
+    }
+
+    /// `lay` for the bytes alone.
+    pub(super) fn lay_rgba(into: &mut [u8], piece: &[u8], y0: usize, rows: usize, skip: usize, w: usize) {
+        let (at, from, n) = (y0 * w, skip * w, rows * w);
+        into[at * 4..(at + n) * 4].copy_from_slice(&piece[from * 4..(from + n) * 4]);
     }
 
     pub(super) fn empty(w: u32, h: u32) -> Self {

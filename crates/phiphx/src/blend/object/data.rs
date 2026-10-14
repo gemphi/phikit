@@ -40,6 +40,14 @@ pub struct BlendLightData {
     /// `Light.sun_angle`: a sun's angular diameter in radians. Blender's
     /// default is the real sun's, 0.526°.
     pub sun_angle: f32,
+    /// The `Light` datablock's saved address (`BlendBlock.old_address`).
+    ///
+    /// Which light datablock this came from, so a driver set read off the
+    /// same datablock can be matched to it (`anim/driver/wire.rs`). The
+    /// address rather than the name because this struct is `Copy` — a
+    /// `String` would take that away from every caller — and because an
+    /// address cannot collide where two datablocks share a name.
+    pub address: u64,
 }
 
 impl BlendFile {
@@ -134,6 +142,7 @@ impl BlendFile {
                         area_sizey: f("area_sizey", 0.25),
                         area_shape: self.uint_field(la, st, "area_shape", dna).unwrap_or(0) as u8,
                         sun_angle: f("sun_angle", SUN_ANGLE),
+                        address: la.old_address,
                     })
                 }
                 None => BlendObjectData::None,

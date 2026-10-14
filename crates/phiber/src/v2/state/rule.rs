@@ -65,6 +65,7 @@ fn table() -> &'static [&'static dyn BRule] {
         &crate::v2::scene::xform::BTransformOpRule,
         &fold::BPropsFoldRule,
         &space::BSpaceStepRule,
+        &crate::v2::area::maximize::BAreaMaximizeRule,
         &menu::BReportRule,
         &menu::BFlipRule,
         &crate::v2::modal::command::palette::BPaletteDismissRule,

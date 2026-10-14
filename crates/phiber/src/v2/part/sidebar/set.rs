@@ -87,6 +87,8 @@ static IMAGE_UV: &[BSidebarTabSpec] = &[
     t("image", "Image").with(BSidebarBody::Props(super::image::IMAGE)),
     t("tool", "Tool").with(BSidebarBody::Props(VIEW3D_TOOL)),
     t("view_layer", "View").with(BSidebarBody::Props(super::image::VIEW)),
+    // Phiber's own: the render's settings beside the render (`image::RENDER`).
+    t("render", "Render").with(BSidebarBody::Props(super::image::RENDER)),
 ];
 /// The four node editors are one space with a different tree in it, and
 /// Blender registers most of the N panel once for all of them

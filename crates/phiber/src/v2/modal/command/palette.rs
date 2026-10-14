@@ -27,7 +27,7 @@ fn walk(trail: &mut Vec<&'static str>, items: &'static [BMenuItem], out: &mut Ve
                 trail.pop();
             }
             BMenuKind::Recent | BMenuKind::History | BMenuKind::Live(_) => {}
-            BMenuKind::Op | BMenuKind::Toggle(..) | BMenuKind::Act(_) | BMenuKind::Fire(..) => {
+            BMenuKind::Op | BMenuKind::Toggle(..) | BMenuKind::HostToggle(..) | BMenuKind::Act(_) | BMenuKind::Fire(..) | BMenuKind::HostFire(..) => {
                 // The same action the menu fires; an operator closes the
                 // palette as it runs (`BPaletteDismissRule`).
                 let action = leaf_action(BHostType::Topbar.slug(), trail, it);

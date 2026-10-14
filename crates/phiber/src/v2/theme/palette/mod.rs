@@ -16,7 +16,7 @@ pub use theme::{palette_for, palette_in};
 /// radius scale, gradients, shadow and seam gap, in a dark and a light mode
 /// (`BThemeMode`). Sphere, Graphite and Tokyo are phiber's own; Moss, Ember
 /// and Plum its three warm ones; Onyx and Grey are black and grey (Grey's
-/// light mode the silver); Silver is that silver as a theme of its own;
+/// light mode the silver); Silver is the show's blue-grey with its dark blue;
 /// Apple is macOS's window greys with its blue, and Apple Dark its dark grey
 /// on both sides; the last five are the `phi` appkit's variants.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]

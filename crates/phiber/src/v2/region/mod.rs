@@ -151,6 +151,7 @@ impl BRegionItem {
         }
         if crate::v2::part::search::search_key(self.host).is_some()
             && !self.host.searches_in_tool_header()
+            && !header_too_narrow_for_search(self.host)
         {
             Self::ensure_part(panes, BPaneType::Center, BPartType::Search, self.host, state);
         }
@@ -162,6 +163,20 @@ impl BRegionItem {
         }
         Self::ensure_first_part(panes, BPaneType::Left, BPartType::Switcher, self.host, state);
     }
+}
+
+/// A header with no room for a usable inline search field: the Outliner in a
+/// side zone (Left/Right), where the switcher, the mode dropdown and the View
+/// menu already fill the strip, so an inline search crushes to a bordered
+/// sliver (the clipped box at the Outliner header's right end). Its search
+/// lives in the Filter popover instead (`outliner::filter::popover`, which
+/// carries the field as `OUTLINER_PT_filter` does); a maximized Outliner in
+/// the Center zone keeps the inline field. Only the Outliner: the Properties
+/// editor's left group is short enough for its field to fit a side panel.
+fn header_too_narrow_for_search(host: BHostType) -> bool {
+    host == BHostType::Outliner
+        && crate::v2::area::current::current_area()
+            .is_some_and(|area| matches!(area.zone, crate::v2::zone::BZoneType::Left | crate::v2::zone::BZoneType::Right))
 }
 
 /// A pane with no parts, or only parts whose body is empty.

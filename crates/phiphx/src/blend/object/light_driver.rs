@@ -99,6 +99,11 @@ pub struct BLightDrivers {
     /// The `Light` datablock's name, which is how a caller matches it to
     /// the light it read.
     pub light: String,
+    /// That datablock's saved address — the match a caller should actually
+    /// use. The name is for reporting; two datablocks can carry the same
+    /// one, and a light OBJECT's name is a different name again
+    /// (`anim/driver/wire.rs`).
+    pub address: u64,
     pub drivers: Vec<BLightDriver>,
 }
 

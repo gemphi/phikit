@@ -178,7 +178,15 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     // `active && !muted`, which dropped the fill entirely — the X-ray button in
     // Material Preview is on, and it painted exactly like one that is off
     // (`part/modebar/shading.rs`, `tests/a_muted_control_still_shows_its_state.rs`).
-    let mut element = chrome::paint_state(element, ctl.active, ctl.muted, ctx).on_click(
+    // An icon-only button in a strip — a header's, a footer's, a tool
+    // header's — is a TILE: the control shade behind it at rest, as a
+    // floating strip's buttons have, not the half-weight wash a docked
+    // control takes. At half weight on a header the tile vanished, so the
+    // transport read as loose glyphs beside one lit square; every square
+    // button now shows its square by default (`tests/a_strip_icon_is_a_tile`).
+    let tile = label.is_none() && chrome::in_strip(ctx);
+    let paint_ctx = if tile { BRenderCtx { floating: true, ..ctx.clone() } } else { ctx.clone() };
+    let mut element = chrome::paint_state(element, ctl.active, ctl.muted, &paint_ctx).on_click(
         move |_event: &ClickEvent, window, app| {
             (Rc::clone(&handler))(&action_copy, window, app);
         },

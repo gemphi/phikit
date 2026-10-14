@@ -26,7 +26,13 @@ type Cx<'a> = &'a mut gpui::VisualTestContext;
 const CHANNEL_WIDTH: f32 = 200.0;
 const ROW: f32 = 24.0;
 const SKIP: f32 = 2.0;
-const SCRUB: f32 = 23.0;
+/// The frame-number strip's height. Blender's `UI_TIME_SCRUB_MARGIN_Y` is
+/// 23 at scale 1, but the strip reads as a header for the window below it,
+/// so the renderer fills it from the theme's `header_height` instead
+/// (`the_scrub_strip_is_as_tall_as_a_header`). This constant followed that
+/// change; at 23 every row below the strip was 13 px out and every row
+/// assertion here missed.
+const SCRUB: f32 = 36.0;
 
 /// Where frame `frame` of row `row` is on screen (the view is 1 − 10 ..
 /// 250 + 10, `nla_create`).

@@ -39,10 +39,30 @@ fn both_editors_share_one_tab_set() {
     assert_eq!(tabs_for(BHostType::Image), tabs_for(BHostType::Uv));
     assert_eq!(
         tabs_for(BHostType::Image).iter().map(|t| t.label).collect::<Vec<_>>(),
-        vec!["Image", "Tool", "View"],
-        "Blender's `bl_category` names"
+        vec!["Image", "Tool", "View", "Render"],
+        "Blender's `bl_category` names, then Phiber's Render tab"
     );
 }
+
+#[test]
+fn the_render_tab_is_the_properties_rows_not_a_copy_of_them() {
+    // The sidebar's Render tab draws the same tables Properties ▸ Render and
+    // ▸ Output draw, so the two can never hold different keys for one setting.
+    use phiber::v2::part::props;
+    let render = tabs_for(BHostType::Image).iter().find(|t| t.label == "Render").unwrap();
+    let BSidebarBody::Props(sections) = render.body else { panic!("a props body") };
+    let keys = |rows: &[props::prop::BPropSpec]| rows.iter().map(|p| p.key).collect::<Vec<_>>();
+    let section = |title: &str| sections.iter().find(|s| s.title == title).unwrap_or_else(|| panic!("{title}"));
+    assert!(keys(section("Sampling").props).contains(&"cycles.samples"), "the samples F12 renders to");
+    assert!(keys(section("Format").props).contains(&"resolution_percentage"));
+    assert!(keys(section("Format").props).contains(&"fps"));
+    assert!(keys(section("Output").props).contains(&"image_settings.color_mode"), "RGBA for a transparent PNG");
+    assert!(section("Film").header.iter().any(|p| p.key == "render.film_transparent"), "Film ▸ Transparent, the switch a PNG with alpha needs");
+    // The same rows Properties shows, key for key.
+    let output_format = props::output::SECTIONS.iter().find(|s| s.title == "Format").unwrap();
+    assert_eq!(keys(output_format.props), keys(section("Format").props));
+}
+
 
 #[test]
 fn no_tab_opens_nothing_any_more() {

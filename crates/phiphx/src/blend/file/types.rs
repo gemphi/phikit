@@ -105,6 +105,17 @@ pub struct BlendFile {
     /// Set when a progress callback asked to cancel; the recursive
     /// collection walk checks it so a cancel unwinds promptly.
     pub(crate) cancel_requested: std::sync::atomic::AtomicBool,
+    /// An armature's deform matrices by its block address, read once rather
+    /// than once per Armature modifier pointing at it
+    /// (`modifier/deform.rs`, which says why).
+    pub(crate) deform_memo: std::sync::Mutex<
+        std::collections::HashMap<u64, std::sync::Arc<crate::blend::modifier::deform::BDeformMats>>,
+    >,
+    /// Meshes a stack has reached just before its Armature, left by whichever
+    /// of the two consumers applied the prefix for the other to take
+    /// (`modifier/prefix.rs`). An `Arc` because a progressive open's deferred
+    /// apply reaches it from a worker thread through `DeferredRaw`.
+    pub(crate) prefix_box: std::sync::Arc<crate::blend::modifier::prefix::BPrefixBox>,
 }
 
 pub use crate::blend::scene::types::*;

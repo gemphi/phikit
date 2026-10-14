@@ -92,6 +92,41 @@ pub const fn tog_keyed(label: &'static str, shortcut: &'static str, key: fn() ->
         url: "",
     }
 }
+
+/// A checkable key binding whose key is the showing editor's — View ▸
+/// Sidebar (N) in a table several editors share: `key` is given the host
+/// when the row is drawn and when it is picked, so each editor flips its
+/// own region. Checked while that key is `true`.
+pub const fn tog_host(
+    label: &'static str,
+    shortcut: &'static str,
+    key: fn(crate::v2::host::BHostType) -> crate::v2::state::BPath,
+) -> BMenuItem {
+    BMenuItem {
+        label,
+        shortcut,
+        kind: BMenuKind::HostToggle(key, false),
+        modal: "",
+        purpose: "",
+        url: "",
+    }
+}
+/// `tog_host`, on by default: checked unless the showing editor's key is
+/// `false` — View ▸ Toolbar (T), which Blender shows until you hide it.
+pub const fn tog_host_on(
+    label: &'static str,
+    shortcut: &'static str,
+    key: fn(crate::v2::host::BHostType) -> crate::v2::state::BPath,
+) -> BMenuItem {
+    BMenuItem {
+        label,
+        shortcut,
+        kind: BMenuKind::HostToggle(key, true),
+        modal: "",
+        purpose: "",
+        url: "",
+    }
+}
 /// A checkable entry flipping `key`, on by default: checked unless the key
 /// is `false` — a zone's "Show …".
 pub const fn tog_shown(label: &'static str, key: fn() -> crate::v2::state::BPath) -> BMenuItem {
@@ -110,6 +145,20 @@ pub const fn fire(label: &'static str, shortcut: &'static str, key: crate::v2::s
         label,
         shortcut,
         kind: BMenuKind::Fire(key, value),
+        modal: "",
+        purpose: "",
+        url: "",
+    }
+}
+/// An operator fired as one intent whose value names the showing editor —
+/// the host's slug plus `suffix`. In a table several editors share
+/// (`EDITOR_VIEW` for the node editors), Frame All (Home) fires
+/// `node_view` with `<host>:all`, so each editor frames its own graph.
+pub const fn fire_host(label: &'static str, shortcut: &'static str, key: crate::v2::state::OpKey, suffix: &'static str) -> BMenuItem {
+    BMenuItem {
+        label,
+        shortcut,
+        kind: BMenuKind::HostFire(key, suffix),
         modal: "",
         purpose: "",
         url: "",

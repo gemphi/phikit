@@ -1,5 +1,6 @@
 //! View3D canvas composition; interaction and mesh painting live in focused helpers.
 
+pub mod navigate;
 mod boxsel;
 mod circlesel;
 mod gesture;
@@ -29,11 +30,9 @@ use self::mesh::{BMesh, BMeshPalette};
 use self::orbit::BOrbit;
 use super::super::color::to_hsla;
 use super::super::ctx::BRenderCtx;
-use crate::v2::scene::{view_zoom, zoom_key, zoom_step};
-use crate::v2::view::prim::BAction;
 use gpui::prelude::*;
 use gpui::{
-    AnyElement, Bounds, Pixels, ScrollDelta, ScrollWheelEvent, SharedString, canvas, div,
+    AnyElement, Bounds, Pixels, SharedString, canvas, div,
 };
 use std::cell::Cell;
 use std::rc::Rc;
@@ -54,12 +53,10 @@ impl BView3d<'_> {
         // (`tests/viewport_lightness_regression.rs`).
         let mut vp = to_hsla(ctx.style.viewport_surface());
         vp.a = ctx.style.viewport_sweep_lift();
-        let zoom_handler = ctx.handler.clone();
-        let current_zoom = view_zoom(ctx.state);
         // This viewport's own keys (`scene::view_slot`): the wheel zooms it,
         // and the pointer over it is what the view keys and menus act on.
-        let (zoom, slot) = (zoom_key(), crate::v2::scene::view_slot::BViewSlot::current());
-        let mut element = div()
+        let slot = crate::v2::scene::view_slot::BViewSlot::current();
+        let element = div()
             .id(SharedString::from("view3d-canvas"))
             .debug_selector(|| "view3d-canvas".to_string())
             .flex_1()
@@ -68,24 +65,8 @@ impl BView3d<'_> {
             .relative()
             .overflow_hidden()
             .bg(super::super::color::resolved_gradient(ctx.style.viewport_gradient()))
-            .on_mouse_move(move |_, _, _| slot.into_iter().for_each(|slot| slot.hover()))
-            .on_scroll_wheel(move |event: &ScrollWheelEvent, window, app| {
-                // Wheel thresholds and factors are input mechanics, not UI design.
-                let delta = match event.delta {
-                    ScrollDelta::Pixels(point) => f32::from(point.y),
-                    ScrollDelta::Lines(point) => point.y * 20.0,
-                };
-                if delta.abs() < 0.5 {
-                    return;
-                }
-                let factor = if delta > 0.0 { 1.1 } else { 1.0 / 1.1 };
-                let next = zoom_step(current_zoom, factor);
-                (Rc::clone(&zoom_handler))(
-                    &BAction::Set(zoom.clone(), next.to_string()),
-                    window,
-                    app,
-                );
-            });
+            .on_mouse_move(move |_, _, _| slot.into_iter().for_each(|slot| slot.hover()));
+        let mut element = navigate::BViewWrite::now(ctx.state).attach(element, ctx.handler.clone());
 
         // An orbit while looking through the camera leaves the camera view
         // and carries its view over (`BCameraView::leave`).

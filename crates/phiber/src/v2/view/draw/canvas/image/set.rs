@@ -35,15 +35,53 @@ fn byte(value: f32) -> u8 {
     (value.clamp(0.0, 1.0) * 255.0 + 0.5) as u8
 }
 
+/// A depth the Depth pass writes where a ray met nothing (`BStill::depth`).
+const NO_HIT: f32 = 1e9;
+/// The byte a data pass shows where the ray met nothing: a mid grey, so the
+/// background reads as the editor's own field rather than as data, and
+/// clear, so with Color & Alpha the checker shows through it as it does
+/// behind a transparent Combined.
+const MISS: [u8; 4] = [128, 128, 128, 0];
+
 /// The shot's pixels as the pass and channels ask for them, BGRA rows.
+///
+/// Combined is the bytes as rendered. The data passes are read for the eye,
+/// not raw: Blender shows a raw Depth clipped to white past one unit, which
+/// is every pixel of a scene more than a metre from the camera, so Depth is
+/// spread from the nearest hit (black) to the farthest (white), as
+/// `draw_image_buffer`'s z-buffer path scaled it by the camera's clip range;
+/// Normal and Diffuse Color are as rendered where a ray hit and `MISS`
+/// where it did not, since the buffers hold whatever the kernel left there
+/// behind the scene — deliberate, recorded.
 pub fn pixels(shot: &BRenderShot, pass: &str, channels: BChannels) -> Vec<u8> {
     let count = (shot.w * shot.h) as usize;
-    let grey = |values: &[f32]| -> Vec<u8> { (0..count).flat_map(|i| { let v = byte(values.get(i).copied().unwrap_or(0.0)); [v, v, v, 255] }).collect() };
+    let missed = |i: usize| shot.depth.get(i).is_some_and(|d| *d >= NO_HIT);
     let rgb = |values: &[[f32; 3]]| -> Vec<u8> {
-        (0..count).flat_map(|i| { let c = values.get(i).copied().unwrap_or([0.0; 3]); [byte(c[2]), byte(c[1]), byte(c[0]), 255] }).collect()
+        (0..count)
+            .flat_map(|i| {
+                if missed(i) {
+                    return MISS;
+                }
+                let c = values.get(i).copied().unwrap_or([0.0; 3]);
+                [byte(c[2]), byte(c[1]), byte(c[0]), 255]
+            })
+            .collect()
     };
     let mut out = match pass {
-        DEPTH if !shot.depth.is_empty() => grey(&shot.depth),
+        DEPTH if !shot.depth.is_empty() => {
+            let hits = shot.depth.iter().copied().filter(|d| *d < NO_HIT);
+            let (near, far) = hits.fold((f32::INFINITY, f32::NEG_INFINITY), |(lo, hi), d| (lo.min(d), hi.max(d)));
+            let span = (far - near).max(1e-6);
+            (0..count)
+                .flat_map(|i| {
+                    if missed(i) {
+                        return MISS;
+                    }
+                    let v = byte((shot.depth[i] - near) / span);
+                    [v, v, v, 255]
+                })
+                .collect()
+        }
         NORMAL if !shot.normal.is_empty() => rgb(&shot.normal),
         DIFFUSE_COLOR if !shot.albedo.is_empty() => rgb(&shot.albedo),
         _ => shot.bgra.clone(),
@@ -123,7 +161,13 @@ impl BImageView {
             let view = self;
         let status = view.status?;
         let time = render_status::timecode(render_status::elapsed());
-        let progress = if status.done { "Finished".to_string() } else { format!("Sample {}/{}", status.taken, status.target) };
+        let progress = if status.done {
+            "Finished".to_string()
+        } else if crate::v2::scene::render_job::paused() {
+            format!("Paused at sample {}/{}", status.taken, status.target)
+        } else {
+            format!("Sample {}/{}", status.taken, status.target)
+        };
         Some(format!("Frame:{frame} | Time:{time} | Mem:{m}M, Peak: {m}M | {}, {} | {progress}", scene.0, scene.1, m = status.megabytes()))
     }
 
@@ -172,10 +216,33 @@ mod tests {
         assert_eq!(pixels(&shot, "Combined", BChannels::ColorAlpha), vec![10, 20, 30, 128]);
         assert_eq!(pixels(&shot, "Combined", BChannels::Alpha), vec![128, 128, 128, 255]);
         assert_eq!(pixels(&shot, "Combined", BChannels::Red), vec![30, 30, 30, 255]);
-        assert_eq!(pixels(&shot, DEPTH, BChannels::Color), vec![128, 128, 128, 255], "depth is grey, raw and clipped");
+        assert_eq!(pixels(&shot, DEPTH, BChannels::Color), vec![0, 0, 0, 255], "one hit is the nearest, so black");
         assert_eq!(pixels(&shot, NORMAL, BChannels::Color), vec![0, 0, 255, 255], "a negative component clips to black");
         assert_eq!(pixels(&shot, DIFFUSE_COLOR, BChannels::Green), vec![255, 255, 255, 255]);
     }
+
+    #[test]
+    fn the_data_passes_are_read_for_the_eye() {
+        // Three pixels: near, far, and a miss.
+        let shot = BRenderShot {
+            w: 3,
+            h: 1,
+            bgra: vec![0; 12],
+            depth: vec![2.0, 6.0, 1e10],
+            normal: vec![[0.0, 1.0, 0.0], [0.0, 1.0, 0.0], [0.7, 0.0, 0.3]],
+            albedo: vec![[1.0, 0.0, 0.0]; 3],
+            ..Default::default()
+        };
+        let depth = pixels(&shot, DEPTH, BChannels::ColorAlpha);
+        assert_eq!(&depth[0..4], &[0, 0, 0, 255], "the nearest hit is black");
+        assert_eq!(&depth[4..8], &[255, 255, 255, 255], "the farthest is white, not clipped past a metre");
+        assert_eq!(&depth[8..12], &MISS, "and nothing hit is the field, clear");
+        let normal = pixels(&shot, NORMAL, BChannels::Color);
+        assert_eq!(&normal[0..4], &[0, 255, 0, 255]);
+        assert_eq!(&normal[8..12], &[128, 128, 128, 255], "the kernel's leftover behind the scene is not shown as a normal");
+        assert_eq!(&pixels(&shot, DIFFUSE_COLOR, BChannels::Color)[8..12], &[128, 128, 128, 255]);
+    }
+
 
     #[test]
     fn the_info_bar_reads_as_blenders() {

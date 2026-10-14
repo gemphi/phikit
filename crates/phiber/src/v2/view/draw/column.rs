@@ -47,7 +47,7 @@ impl BColumn<'_> {
             .min_w_0()
             .overflow_y_scroll()
             .gap(px(gap));
-        let Some(depth) = deepest else {
+        let Some(_depth) = deepest else {
             for child in self.0 {
                 element = element.child(walk(child, ctx));
             }
@@ -60,8 +60,7 @@ impl BColumn<'_> {
         element = element
             .track_scroll(&window.handle)
             .on_hover(move |over, _, _| hovered.set(*over))
-            .relative()
-            .child(super::tree::guides_backdrop(depth, window.rows_height(), ctx));
+            .relative();
         let spacer = |height: f32| BFlex::cell().width(BLen::Full).height(BLen::Measured(height)).keeps_size().div(ctx).into_any_element();
         element = element.children(window.above().map(spacer));
         for child in &self.0[window.first..window.last] {

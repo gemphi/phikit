@@ -16,4 +16,10 @@ impl BAreaType {
             BAreaType::Bottom => "Bottom",
         }
     }
+
+    /// The kind `label` names, for a key that carries the label
+    /// (`View3dKey::Camera(scope, slot)`).
+    pub fn from_label(label: &str) -> Option<Self> {
+        [Self::Top, Self::Left, Self::Center, Self::Right, Self::Bottom].into_iter().find(|k| k.label() == label)
+    }
 }

@@ -65,6 +65,20 @@ pub fn save(shot: &BRenderShot, output: &BlendOutput, pass: BlendPassSet, blend_
     Ok(file)
 }
 
+/// The file a turnaround view lands in: the still's name with `_<view>`
+/// before the extension, any frame `#` run dropped — `render_front.png`.
+pub fn view_file(output: &BlendOutput, blend_folder: &Path, view: &str) -> PathBuf {
+    let still = output.file_of(blend_folder);
+    let name = still.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "Untitled".into());
+    let (stem, ext) = match name.rfind('.') {
+        Some(dot) => (name[..dot].to_string(), name[dot..].to_string()),
+        None => (name.clone(), String::new()),
+    };
+    let stem: String = stem.chars().filter(|c| *c != '#').collect();
+    let stem = stem.trim_end_matches(['_', '-', ' ']).to_string();
+    still.with_file_name(format!("{}_{view}{ext}", if stem.is_empty() { "render" } else { &stem }))
+}
+
 /// The file frame `frame` of an animation lands in (`BLI_path_frame`): a
 /// run of `#` in the name takes the zero-padded frame, else four digits go
 /// before the extension — `render_0001.png`.
@@ -88,11 +102,15 @@ pub fn frame_file(output: &BlendOutput, blend_folder: &Path, frame: i32) -> Path
 /// The same write to a path chosen by the caller — what Image → Save As does,
 /// and what a test uses.
 ///
-/// Refuses a render that has not settled: a partial frame has a sample count
-/// but no pixels, and writing one would produce a black file.
+/// Refuses a render that has not settled: a frame under way has the bytes
+/// the viewer shows (`BRenderShot::peek`) but not the floats a file is
+/// written from, and one that never drew has nothing at all.
 pub fn save_to(shot: &BRenderShot, output: &BlendOutput, pass: BlendPassSet, file: &Path) -> Result<(), String> {
     if !shot.has_image() {
         return Err("the render has no image yet".to_string());
+    }
+    if !shot.settled() {
+        return Err("the render is still running — wait for it to finish, or cancel it, to save what it has".to_string());
     }
     if let Some(folder) = file.parent().filter(|folder| !folder.as_os_str().is_empty()) {
         std::fs::create_dir_all(folder).map_err(|err| format!("{}: {err}", folder.display()))?;
@@ -281,6 +299,15 @@ mod frame_tests {
     use super::*;
 
     #[test]
+    fn a_render_under_way_is_refused_by_the_writer() {
+        let peek = BRenderShot { w: 2, h: 2, bgra: vec![255; 16], taken: 1, target: 8, ..Default::default() };
+        let dir = std::env::temp_dir().join("phiber_peek_save");
+        let err = save_to(&peek, &BlendOutput::default(), BlendPassSet::default(), &dir.join("peek.png")).unwrap_err();
+        assert!(err.contains("still running"), "{err}");
+        assert!(!dir.join("peek.png").exists());
+    }
+
+    #[test]
     fn frames_are_numbered_like_blender_numbers_them() {
         let mut output = BlendOutput::default();
         output.path = "//render/shot_".into();
@@ -289,5 +316,17 @@ mod frame_tests {
         output.path = "//render/shot_##".into();
         let file = frame_file(&output, Path::new("/tmp/proj"), 7);
         assert!(file.to_string_lossy().replace('\\', "/").ends_with("render/shot_07.png"), "{}", file.display());
+    }
+
+    #[test]
+    fn a_turnaround_view_takes_the_stills_name_with_its_view_before_the_extension() {
+        let mut output = BlendOutput::default();
+        output.path = "//render/shot_".into();
+        let file = view_file(&output, Path::new("/tmp/proj"), "front");
+        assert!(file.to_string_lossy().replace('\\', "/").ends_with("render/shot_front.png"), "{}", file.display());
+        // A frame `#` run is an animation's, not a view's: dropped.
+        output.path = "//render/shot_####".into();
+        let file = view_file(&output, Path::new("/tmp/proj"), "top");
+        assert!(file.to_string_lossy().replace('\\', "/").ends_with("render/shot_top.png"), "{}", file.display());
     }
 }

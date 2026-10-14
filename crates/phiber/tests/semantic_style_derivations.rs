@@ -116,28 +116,15 @@ fn every_host_shares_the_panel_shade_and_the_chrome_its_own() {
     assert_eq!(style.host_background(BHostType::Activity), style.colors.bg_panel, "the activity bar is an area like any other: no darker shade");
     assert_eq!(style.host_body_surface(BHostType::Activity), style.host_body_surface(BHostType::View3D));
     assert_eq!(style.host_header_surface(BHostType::Topbar).bottom, style.colors.bg_top, "the top bar is its own chrome");
-    // The active Properties tab is EXACTLY the surface of the region beside
-    // it, flat. It used to sweep in from one step over the panel, which is a
-    // gradient across the join between the tab and the panel it selects —
-    // and a gradient on one side of that join makes the two read as two
-    // things rather than as a hole cut in the strip
+    // The active Properties tab is the accordion heading beside it — the
+    // panels' own head surface — and the strip it sits in is the body, which
+    // is `bg_panel` like every editor's: no step under the strip any more
     // (`tests/the_properties_strip_is_a_strip.rs`).
-    //
-    // The panel it lands on is NOT `bg_panel` any more: the Properties body
-    // takes the one step that an unselected tab used to draw as a chip, so the
-    // strip is flat and the selected tab is the one carrying a shade. The claim
-    // here is unchanged by that and is stated against the body rather than
-    // against a token the body no longer equals.
     let tab = style.tab_active_gradient(BHostType::Buts);
     let panel = style.host_body_surface(BHostType::Buts);
-    assert_eq!(tab.bottom, panel.bottom, "the active Properties tab lands on the panel");
-    assert_eq!(tab.top, tab.bottom, "and is flat, so the join has no edge");
-    assert_eq!(tab, panel, "it is the panel's own surface");
-    assert_eq!(
-        panel.bottom,
-        style.step(style.colors.bg_panel, -1),
-        "and the panel is the step under the strip, which is `bg_panel`",
-    );
+    assert_eq!(tab, style.heading_surface(BSurfaceTone::Card), "the active Properties tab is a panel head");
+    assert_eq!(panel.bottom, style.colors.bg_panel, "the Properties body is the panel shade like every editor");
+    assert_eq!(style.rail_surface(BHostType::Buts), panel, "and its strip is that body");
     let viewport = style.viewport_gradient();
     assert!(viewport.bottom == style.viewport_surface() && viewport.bottom.3 == 1.0);
     let node_grid = style.node_grid_stroke();

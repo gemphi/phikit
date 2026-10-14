@@ -36,12 +36,17 @@ pub struct BlendWorld {
     /// it is baked and sampled as an image — so this is what the renderer
     /// bakes and uses as the environment.
     pub sky: Option<crate::sky::BSky>,
+    /// The `World` datablock's saved address, or 0 for the default world
+    /// of a file that has none. A file may hold several worlds while the
+    /// scene uses one, so this is what says which driver set is the
+    /// scene's (`anim/driver/wire.rs`).
+    pub address: u64,
 }
 
 impl Default for BlendWorld {
     fn default() -> Self {
         // Blender's default world: a near-black grey at full strength.
-        Self { color: [0.05; 3], strength: 1.0, texture: None, rotation: 0.0, sky: None }
+        Self { color: [0.05; 3], strength: 1.0, texture: None, rotation: 0.0, sky: None, address: 0 }
     }
 }
 
@@ -60,7 +65,7 @@ impl BlendFile {
         let named = |n: &BlendBlock| {
             self.off("bNode", "idname", dna).map(|o| read_cstr(&n.data, o, 64)).unwrap_or_default()
         };
-        let mut world = BlendWorld::default();
+        let mut world = BlendWorld { address: wo.old_address, ..Default::default() };
         let Some(bg) = nodes.iter().copied().find(|n| named(n) == "ShaderNodeBackground") else {
             return world;
         };

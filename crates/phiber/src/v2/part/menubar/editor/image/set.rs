@@ -4,8 +4,8 @@
 //! the view (`image.view_zoom_ratio`, `image.view_all`); Save and Save As
 //! open the file browser; the rest are Blender's operators by name.
 
-use super::super::super::item::{BMenuItem, set::{SEP, act, fire, op, op_file, op_modal, sub}};
-use crate::v2::state::{BKey as _, ImageKey, val::V_MODAL_NEW_IMAGE};
+use super::super::super::item::{BMenuItem, set::{SEP, act, fire, op, op_file, op_modal, sub, tog_host, tog_host_on}};
+use crate::v2::state::{BKey as _, ImageKey, OpKey, val::V_MODAL_NEW_IMAGE};
 use crate::v2::view::prim::BAction;
 
 /// `image.view_all`: written as `fit` and resolved against the window by the
@@ -109,8 +109,8 @@ pub static VIEW_ZOOM: &[BMenuItem] = &[
 
 /// `IMAGE_MT_view`.
 pub static VIEW: &[BMenuItem] = &[
-    op("Toolbar", "T"),
-    op("Sidebar", "N"),
+    tog_host_on("Toolbar", "T", crate::v2::part::toolbar::BToolbarShown::key_for),
+    tog_host("Sidebar", "N", crate::v2::part::sidebar::show::BSidebarShown::key_for),
     op("Tool Settings", ""),
     op("Asset Shelf", ""),
     op("Adjust Last Operation", ""),
@@ -130,7 +130,7 @@ pub static VIEW: &[BMenuItem] = &[
     act("Render Slot Cycle Previous", "Alt J", slot_previous),
     SEP,
     op("Show Same Material", ""),
-    op("Toggle Maximize Area", "Ctrl Space"),
+    fire("Toggle Maximize Area", "Ctrl Space", OpKey::AreaMaximize, ""),
 ];
 
 /// `IMAGE_MT_image`. A Render Result has no file of its own, so Save opens

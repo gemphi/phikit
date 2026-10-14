@@ -117,7 +117,7 @@ impl BViewList for BStatusbarList {
         if crate::v2::scene::render_job::rendering()
             && let Some(shot) = crate::v2::scene::render_job::shot().0
         {
-            out.push(BView::progress_bar(shot.fraction(), "Rendering"));
+            out.push(BView::progress_bar(shot.fraction(), if crate::v2::scene::render_job::paused() { "Paused" } else { "Rendering" }));
             out.push(BView::Button(
                 BControl::new()
                     .with_icon("x")

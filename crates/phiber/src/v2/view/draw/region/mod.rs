@@ -46,12 +46,11 @@ fn region_fill(kind: BRegionType) -> BFill {
         // with the header strips over it.
         BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute => BFill::HostHeader,
         // Every vertical strip — the Properties navbar, the tool rail, the
-        // editor side rail — takes the strip shade, the same one the
-        // horizontal strips under a header take. Painting nothing left the
-        // strip and the panel beside it one flat field, so the active tab
-        // had no edge to be cut out of and the strip read as part of the
-        // content. The tab's own fill is the panel's surface, which is what
-        // makes it a hole in the strip onto the region it selects.
+        // editor side rail — takes the rail surface, which is the body of
+        // the area it sits in (`rail_surface`): the strip has no colour of
+        // its own, it shares the column's. What marks the Properties strip
+        // is its selected tab, painted as the accordion heading beside it
+        // (`tab_active_gradient`), not a shade behind the whole strip.
         BRegionType::NavBar | BRegionType::Tools => BFill::HostRail,
         // A content region paints nothing: the area's body under it is its
         // surface.

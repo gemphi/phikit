@@ -83,6 +83,20 @@ impl BPhiberApp {
                 log::push(text.clone());
                 info::push(&mut self.state, BReportLevel::Warning, text);
             }
+            // The still was written by the browser's rule
+            // (`part::file::save_image`) before this ran. A saved Render
+            // Result brings its set — the six axis views, and the animation
+            // when the scene has one (`render_turnaround`) — so one Save
+            // leaves every angle and the movie beside the still; a save that
+            // could not write (no settled render) brings nothing. Not
+            // Blender's `image.save_as`, which writes one file — deliberate,
+            // recorded.
+            BFilePurpose::SaveImage => {
+                if render_set_follows(&self.state, crate::v2::scene::render_job::shot().0.as_ref(), crate::v2::scene::render_job::rendering()) {
+                    log::push("Saved render: rendering its six views and animation".to_string());
+                    self.render_turnaround(cx);
+                }
+            }
             _ => {}
         }
     }
@@ -177,5 +191,38 @@ fn with_blend_extension(path: &str) -> std::path::PathBuf {
     match path.extension() {
         Some(_) => path,
         None => path.with_extension("blend"),
+    }
+}
+
+/// Whether the image save that just ran wrote the Render Result — it is the
+/// image shown and its render has settled, which is what the writer
+/// requires — and so its set should follow. Nothing follows a plain image's
+/// save, a render still running, or a render that never drew.
+pub(crate) fn render_set_follows(state: &crate::v2::state::BState, shot: Option<&crate::v2::scene::render_job::BRenderShot>, rendering: bool) -> bool {
+    use crate::v2::part::image::shown::BShownImage;
+    BShownImage::now(state) == BShownImage::RenderResult && shot.is_some_and(|shot| shot.settled()) && !rendering
+}
+
+#[cfg(test)]
+mod render_set_tests {
+    use super::render_set_follows;
+    use crate::v2::scene::render_job::BRenderShot;
+    use crate::v2::state::{BState, ImageKey};
+
+    fn settled() -> BRenderShot {
+        BRenderShot { w: 1, h: 1, bgra: vec![0; 4], display: vec![[0.0; 3]], linear: vec![[0.0; 3]], taken: 1, target: 1, done: true, ..Default::default() }
+    }
+
+    #[test]
+    fn a_saved_render_result_brings_its_set_and_nothing_else_does() {
+        let mut s = BState::new();
+        s.set(ImageKey::Shown, crate::v2::part::image::shown::RENDER_RESULT);
+        assert!(render_set_follows(&s, Some(&settled()), false));
+        assert!(!render_set_follows(&s, Some(&settled()), true), "not while a render runs");
+        let peek = BRenderShot { done: false, display: Vec::new(), ..settled() };
+        assert!(!render_set_follows(&s, Some(&peek), false), "a running render's save was refused, so nothing follows");
+        assert!(!render_set_follows(&s, None, false));
+        s.set(ImageKey::Shown, "Untitled.001");
+        assert!(!render_set_follows(&s, Some(&settled()), false), "a plain image's save is one file");
     }
 }

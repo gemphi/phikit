@@ -68,7 +68,7 @@ static SAMPLING_VIEWPORT: &[BPropSpec] = &[i("cycles.preview_samples", "Max Samp
 static VIEWPORT_DENOISE_HEADER: &[BPropSpec] = &[b("cycles.use_preview_denoising", "Denoise").on()];
 static VIEWPORT_DENOISE: &[BPropSpec] = &[i("cycles.preview_denoising_start_sample", "Start Sample", 0, 1 << 24).at(1)];
 static SAMPLING_VIEWPORT_SUBS: &[BSectionSpec] = &[sec("Denoise", VIEWPORT_DENOISE).closed().header(VIEWPORT_DENOISE_HEADER)];
-static SAMPLING_RENDER: &[BPropSpec] = &[
+pub(crate) static SAMPLING_RENDER: &[BPropSpec] = &[
     b("cycles.use_adaptive_sampling", "Adaptive Sampling"),
     f("cycles.adaptive_threshold", "Noise Threshold", BUnit::None),
     i("cycles.samples", "Max Samples", 0, 100000).at(4096),
@@ -76,7 +76,7 @@ static SAMPLING_RENDER: &[BPropSpec] = &[
     f("cycles.time_limit", "Time Limit", BUnit::Time),
 ];
 // `CYCLES_RENDER_PT_sampling_render_denoise`: the toggle is its header.
-static DENOISE_HEADER: &[BPropSpec] = &[b("cycles.use_denoising", "Denoise").on()];
+pub(crate) static DENOISE_HEADER: &[BPropSpec] = &[b("cycles.use_denoising", "Denoise").on()];
 static DENOISE: &[BPropSpec] = &[e("cycles.denoiser", "Denoiser", DENOISER).picked("OPENIMAGEDENOISE")];
 static SAMPLING_RENDER_SUBS: &[BSectionSpec] = &[sec("Denoise", DENOISE).closed().header(DENOISE_HEADER)];
 static SAMPLING_SUBS: &[BSectionSpec] = &[
@@ -119,7 +119,7 @@ static MOTION_BLUR: &[BPropSpec] = &[
 
 // `CYCLES_RENDER_PT_film` and its sub-panels: Transparent is enabled from its
 // header; Pixel Filter holds the type and width.
-static FILM_TRANSPARENT_HEADER: &[BPropSpec] = &[b("render.film_transparent", "Transparent")];
+pub(crate) static FILM_TRANSPARENT_HEADER: &[BPropSpec] = &[b("render.film_transparent", "Transparent")];
 static PIXEL_FILTER_ROWS: &[BPropSpec] = &[
     e("cycles.pixel_filter_type", "Type", PIXEL_FILTER).picked("BLACKMAN_HARRIS"),
     f("render.filter_size", "Width", BUnit::None),

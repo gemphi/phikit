@@ -1,0 +1,71 @@
+TOPBAR_MT_file	0	menu	TOPBAR_MT_file_new	New		
+TOPBAR_MT_file	1	op	wm.open_mainfile	Open...		Ctrl O
+TOPBAR_MT_file	2	menu	TOPBAR_MT_file_open_recent	Open Recent		
+TOPBAR_MT_file	3	op	wm.revert_mainfile	Revert		
+TOPBAR_MT_file	4	menu	TOPBAR_MT_file_recover	Recover		
+TOPBAR_MT_file	5	sep				
+TOPBAR_MT_file	6	op	wm.save_mainfile	Save		Ctrl S
+TOPBAR_MT_file	7	op	wm.save_as_mainfile	Save As...		Shift Ctrl S
+TOPBAR_MT_file	8	op	wm.save_as_mainfile	Save Copy...	copy=True	
+TOPBAR_MT_file	9	op	wm.save_mainfile	Save Incremental	incremental=True	Ctrl Alt S
+TOPBAR_MT_file	10	sep				
+TOPBAR_MT_file	11	op	wm.link	Link...		
+TOPBAR_MT_file	12	op	wm.append	Append...		
+TOPBAR_MT_file	13	menu	TOPBAR_MT_file_previews	Data Previews		
+TOPBAR_MT_file	14	sep				
+TOPBAR_MT_file	15	menu	TOPBAR_MT_file_import	Import		
+TOPBAR_MT_file	16	menu	TOPBAR_MT_file_export	Export		
+TOPBAR_MT_file	17	op	wm.collection_export_all	Export All Collections		
+TOPBAR_MT_file	18	sep				
+TOPBAR_MT_file	19	menu	TOPBAR_MT_file_external_data	External Data		
+TOPBAR_MT_file	20	menu	TOPBAR_MT_file_cleanup	Clean Up		
+TOPBAR_MT_file	21	sep				
+TOPBAR_MT_file	22	menu	TOPBAR_MT_file_defaults	Defaults		
+TOPBAR_MT_file	23	sep				
+TOPBAR_MT_file	24	op	wm.quit_blender	Quit		Ctrl Q
+TOPBAR_MT_edit	0	op	ed.undo	Undo		Ctrl Z
+TOPBAR_MT_edit	1	op	ed.redo	Redo		Shift Ctrl Z
+TOPBAR_MT_edit	2	menu	TOPBAR_MT_undo_history	Undo History		
+TOPBAR_MT_edit	3	sep				
+TOPBAR_MT_edit	4	op	screen.redo_last	Adjust Last Operation...		F9
+TOPBAR_MT_edit	5	op	screen.repeat_last	Repeat Last		Shift R
+TOPBAR_MT_edit	6	op	screen.repeat_history	Repeat History...		
+TOPBAR_MT_edit	7	sep				
+TOPBAR_MT_edit	8	op	wm.search_menu	Menu Search...		F3
+TOPBAR_MT_edit	9	sep				
+TOPBAR_MT_edit	10	op	wm.call_panel	Rename Active Item...	keep_open=False,name=TOPBAR_PT_name	F2
+TOPBAR_MT_edit	11	op	wm.batch_rename	Batch Rename...		Ctrl F2
+TOPBAR_MT_edit	12	sep				
+TOPBAR_MT_edit	13	prop	lock_object_mode	Lock Object Modes		
+TOPBAR_MT_edit	14	sep				
+TOPBAR_MT_edit	15	op	screen.userpref_show	Preferences...		Ctrl ,
+TOPBAR_MT_render	0	op	render.render	Render Image	use_viewport=True	F12
+TOPBAR_MT_render	1	op	render.render	Render Animation	animation=True,use_viewport=True	Ctrl F12
+TOPBAR_MT_render	2	sep				
+TOPBAR_MT_render	3	op	sound.mixdown	Render Audio...		
+TOPBAR_MT_render	4	sep				
+TOPBAR_MT_render	5	op	render.view_show	View Render		F11
+TOPBAR_MT_render	6	op	render.play_rendered_anim	View Animation		Ctrl F11
+TOPBAR_MT_render	7	sep				
+TOPBAR_MT_render	8	prop	use_lock_interface	Lock Interface		
+TOPBAR_MT_window	0	op	wm.window_new	New Window		
+TOPBAR_MT_window	1	op	wm.window_new_main	New Main Window		
+TOPBAR_MT_window	2	sep				
+TOPBAR_MT_window	3	op	wm.window_fullscreen_toggle	Toggle Window Fullscreen		
+TOPBAR_MT_window	4	sep				
+TOPBAR_MT_window	5	op	screen.workspace_cycle	Next Workspace	direction=NEXT	Ctrl Page Down
+TOPBAR_MT_window	6	op	screen.workspace_cycle	Previous Workspace	direction=PREV	Ctrl Page Up
+TOPBAR_MT_window	7	sep				
+TOPBAR_MT_window	8	prop	show_statusbar	Show Status Bar		
+TOPBAR_MT_window	9	sep				
+TOPBAR_MT_window	10	op	screen.screenshot	Save Screenshot		
+TOPBAR_MT_window	11	op	screen.screenshot_area	Save Screenshot (Editor)		
+TOPBAR_MT_help	0	op	wm.url_open_preset	Manual	type=MANUAL	
+TOPBAR_MT_help	1	op	wm.url_open	Support	url=https://www.blender.org/support	
+TOPBAR_MT_help	2	op	wm.url_open	User Communities	url=https://www.blender.org/community/	
+TOPBAR_MT_help	3	op	wm.url_open	Get Involved	url=https://www.blender.org/get-involved/	
+TOPBAR_MT_help	4	op	wm.url_open_preset	Release Notes	type=RELEASE_NOTES	
+TOPBAR_MT_help	5	sep				
+TOPBAR_MT_help	6	sep				
+TOPBAR_MT_help	7	op	wm.url_open_preset	Report a Bug	type=BUG	
+TOPBAR_MT_help	8	op	wm.sysinfo	Save System Info		

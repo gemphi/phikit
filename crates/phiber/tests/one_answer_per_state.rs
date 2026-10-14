@@ -47,7 +47,7 @@ fn sources(dir: &Path, out: &mut Vec<PathBuf>) {
 const ACTIVE_FILLS: &[(&str, &str)] = &[
     ("host_item_active_gradient", "a strip control: swept, because it lies on the strip's surface"),
     ("control_fill", "a free control: the accent, because it lies on nothing in particular"),
-    ("tab_active_gradient", "a tab: the body's shade, because a tab is a hole cut onto the region it selects"),
+    ("tab_active_gradient", "a tab: the accordion heading's surface, because a Properties tab wears the colour of the panel it opens"),
     ("ControlActive", "a sorted heading: flat, because the heading IS its row, edge to edge"),
 ];
 

@@ -175,9 +175,13 @@ mod tests {
         // whose saturation is now a tenth of what it was.
         assert!((SPHERE_LIGHT.color(SEED_STEP).0 - SPHERE.color(SEED_STEP).0).abs() < 8.0, "the hue survives the lift: {} vs {}", SPHERE_LIGHT.color(SEED_STEP).0, SPHERE.color(SEED_STEP).0);
         assert!(SPHERE_LIGHT.color(2).2 > 90.0 && SPHERE_LIGHT.color(16).2 < 30.0);
-        // Silver is born light: its dark seed is the silver lowered as far
-        // toward black as a dark seed is lifted toward white, a gunmetal.
-        assert_eq!(lowered(SILVER_LIGHT_SEED), [0x31, 0x32, 0x32]);
-        assert!(SILVER.color(SEED_STEP).2 < 20.0 && SILVER_LIGHT.color(2).2 > 90.0);
+        // A theme born light would seed its dark mode by lowering the light
+        // seed as far toward black as a dark seed is lifted toward white.
+        assert_eq!(lowered(GREY_LIGHT_SEED), [0x31, 0x32, 0x32]);
+        // Silver is the show's blue-grey: a blue hue at the seed, a step
+        // under mid lightness, and its light mode the same hue near white.
+        assert!((SILVER.color(SEED_STEP).0 - 235.0).abs() < 2.0, "{:?}", SILVER.color(SEED_STEP));
+        assert!(SILVER.color(SEED_STEP).1 > 15.0 && SILVER.color(SEED_STEP).2 > 30.0 && SILVER.color(SEED_STEP).2 < 45.0);
+        assert!(SILVER_LIGHT.color(2).2 > 90.0 && (SILVER_LIGHT.color(SEED_STEP).0 - 235.0).abs() < 8.0);
     }
 }

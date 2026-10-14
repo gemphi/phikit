@@ -24,7 +24,8 @@ impl BlendFile {
             .filter(|block| block.code_str == "LA")
             .filter_map(|la| {
                 self.scoped(la, || {
-                    let mut set = BLightDrivers { light: self.id_name(la, dna), drivers: Vec::new() };
+                    let mut set =
+                        BLightDrivers { light: self.id_name(la, dna), address: la.old_address, drivers: Vec::new() };
                     for fc in self.adt_driver_curves(la, Self::lamp_struct(dna), dna) {
                         let Some(curve) = self.fcurve(fc, dna) else { continue };
                         let Some(prop) = BLightProp::of(&curve.path, curve.index as usize) else { continue };
@@ -44,7 +45,8 @@ impl BlendFile {
             .filter(|block| block.code_str == "WO")
             .filter_map(|wo| {
                 self.scoped(wo, || {
-                    let mut set = BWorldDrivers { world: self.id_name(wo, dna), ..Default::default() };
+                    let mut set =
+                        BWorldDrivers { world: self.id_name(wo, dna), address: wo.old_address, ..Default::default() };
                     // `World.color` on the ID itself.
                     for fc in self.adt_driver_curves(wo, "World", dna) {
                         let Some(curve) = self.fcurve(fc, dna) else { continue };

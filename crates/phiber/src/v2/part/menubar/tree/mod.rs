@@ -18,12 +18,32 @@ use crate::v2::view::prim::{BAction, BControl, BPopoverSide};
 /// reports itself as not available yet (`menubar/op.rs`), so no entry is
 /// ever silent. This reads the item's declarative intent — there is no
 /// per-`(menu, label)` routing table.
-pub fn leaf_action(_host: &'static str, labels: &[&'static str], it: &BMenuItem) -> BAction {
+pub fn leaf_action(host: &'static str, labels: &[&'static str], it: &BMenuItem) -> BAction {
     match it.kind {
         BMenuKind::Act(act) => return act(),
         // A `!` marks a key that is on by default (`menubar/op.rs`).
         BMenuKind::Toggle(key, on_by_default) => {
             return BAction::Set(OpKey::Flip.path(), format!("{}{}", if on_by_default { "!" } else { "" }, key().encode()));
+        }
+        // The showing editor's own key (a shared table): a host the slug does
+        // not name — the palette walks every table as the top bar — reports
+        // the entry instead of flipping a stranger's region.
+        BMenuKind::HostToggle(key, on_by_default) => {
+            if let Some(h) = crate::v2::host::BHostType::from_slug(host) {
+                return BAction::Set(OpKey::Flip.path(), format!("{}{}", if on_by_default { "!" } else { "" }, key(h).encode()));
+            }
+        }
+        // Ctrl Space carries the editor whose menu fired it, so the rule can
+        // grow that editor's area (`area::maximize`) — a shared table cannot
+        // write a host into a static value.
+        BMenuKind::Fire(OpKey::AreaMaximize, _) => return BAction::Set(OpKey::AreaMaximize.path(), host.to_string()),
+        // The showing editor's slug in the value: `node_view` with
+        // `<host>:all`. A host the slug does not name (the palette) falls
+        // through to the report, as `HostToggle` does.
+        BMenuKind::HostFire(key, suffix) => {
+            if let Some(h) = crate::v2::host::BHostType::from_slug(host) {
+                return BAction::Set(key.path(), format!("{}{suffix}", h.slug()));
+            }
         }
         // An export names its format and opens the browser for the path;
         // the format rides the purpose until the path is picked (`file::op`).
@@ -162,11 +182,101 @@ pub fn item_view(host: &'static str, labels: &[&'static str], it: &BMenuItem, s:
                     .with_action(leaf_action(host, labels, it)),
             )
         }
+        // Checked against the showing editor's own key (a shared table).
+        BMenuKind::HostToggle(key, on_by_default) => {
+            let on = crate::v2::host::BHostType::from_slug(host).is_some_and(|h| {
+                let k = key(h);
+                if on_by_default { s.get(&k) != Some(V_FALSE) } else { s.get(&k) == Some(V_TRUE) }
+            });
+            BView::MenuItem(
+                BControl::new()
+                    .with_icon(if on { "check" } else { "" })
+                    .with_label(it.label)
+                    .with_shortcut(it.shortcut)
+                    .with_active(on)
+                    .with_action(leaf_action(host, labels, it)),
+            )
+        }
         _ => BView::MenuItem(
             BControl::new()
                 .with_label(it.label)
                 .with_shortcut(it.shortcut)
                 .with_action(leaf_action(host, labels, it)),
         ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::v2::host::BHostType;
+    use crate::v2::part::menubar::editor::image::set::VIEW as IMAGE_VIEW;
+    use crate::v2::part::sidebar::show::BSidebarShown;
+    use crate::v2::state::action::apply_action;
+
+    fn sidebar_item() -> &'static BMenuItem {
+        IMAGE_VIEW.iter().find(|it| it.label == "Sidebar").expect("View ▸ Sidebar in the shared image table")
+    }
+
+    #[test]
+    fn a_shared_table_s_sidebar_flips_the_showing_editor_s_own_region() {
+        // One `image::VIEW` table serves two editors: picked in each, the
+        // same row flips that editor's key — never the other's.
+        let it = sidebar_item();
+        for host in [BHostType::Image, BHostType::Uv] {
+            let mut s = BState::new();
+            apply_action(&mut s, &leaf_action(host.slug(), &["View"], it));
+            assert_eq!(s.get(&BSidebarShown(host).key()), Some(V_TRUE), "{host:?}'s sidebar opened");
+            let other = if host == BHostType::Image { BHostType::Uv } else { BHostType::Image };
+            assert_eq!(s.get(&BSidebarShown(other).key()), None, "{other:?}'s was left alone");
+            // Picked again, it puts the region away.
+            apply_action(&mut s, &leaf_action(host.slug(), &["View"], it));
+            assert_eq!(s.get(&BSidebarShown(host).key()), Some(V_FALSE));
+        }
+    }
+
+    #[test]
+    fn a_shared_table_s_sidebar_is_checked_against_the_showing_editor() {
+        let it = sidebar_item();
+        let mut s = BState::new();
+        s.set(&BSidebarShown(BHostType::Uv).key(), V_TRUE);
+        let checked = |host: BHostType| match item_view(host.slug(), &["View"], it, &s) {
+            BView::MenuItem(ctl) => ctl.icon.as_deref() == Some("check"),
+            other => panic!("a menu row, got {other:?}"),
+        };
+        assert!(checked(BHostType::Uv), "the UV editor's row shows its open sidebar");
+        assert!(!checked(BHostType::Image), "the Image editor's row shows its closed one");
+    }
+
+    #[test]
+    fn a_host_the_slug_does_not_name_reports_rather_than_flipping() {
+        // The command palette walks every table as the top bar.
+        let it = sidebar_item();
+        let action = leaf_action("no-such-editor", &["View"], it);
+        assert_eq!(action, BAction::Set(OpKey::Report.path(), "View ▸ Sidebar".to_string()));
+    }
+
+    fn frame_all_item() -> &'static BMenuItem {
+        use crate::v2::part::menubar::editor::view3d::EDITOR_VIEW;
+        EDITOR_VIEW.iter().find(|it| it.label == "Frame All").expect("Frame All in the shared node-editor View table")
+    }
+
+    #[test]
+    fn frame_all_frames_the_showing_node_editor_s_own_graph() {
+        // One `EDITOR_VIEW` table serves the node editors: Home names the
+        // editor it was picked in, so `BNodeViewRule` frames that graph.
+        let it = frame_all_item();
+        for host in [BHostType::Compositor, BHostType::Shader, BHostType::GeoNode] {
+            let action = leaf_action(host.slug(), &["View"], it);
+            assert_eq!(action, BAction::Set(OpKey::NodeView.path(), format!("{}:all", host.slug())), "{host:?}");
+        }
+    }
+
+    #[test]
+    fn frame_all_in_a_stranger_s_table_reports_rather_than_firing() {
+        // The palette walks the table with no editor behind it.
+        let it = frame_all_item();
+        let action = leaf_action("no-such-editor", &["View"], it);
+        assert_eq!(action, BAction::Set(OpKey::Report.path(), "View ▸ Frame All".to_string()));
     }
 }

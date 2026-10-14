@@ -25,7 +25,7 @@ impl BAnimMenu {
 
 /// `NLA_MT_view`.
 pub static VIEW: &[BMenuItem] = &[
-    op("Sidebar", "N"),
+    tog_host("Sidebar", "N", crate::v2::part::sidebar::show::BSidebarShown::key_for),
     op("Adjust Last Operation", ""),
     op("Channels", ""),
     op("Playback Controls", ""),
@@ -86,7 +86,7 @@ pub static SNAP: &[BMenuItem] = &[
     op("Selection to Nearest Marker", ""),
 ];
 /// `NLA_MT_strips_transform`.
-pub static TRANSFORM: &[BMenuItem] = &[op("Move", "G"), op("Extend", "E"), op("Scale", "S"), SEP, op("Swap", "Alt F"), SEP, op("Move Up", "PageUp"), op("Move Down", "PageDown")];
+pub static TRANSFORM: &[BMenuItem] = &[op("Move", "G"), op("Extend", "E"), op("Scale", "S"), SEP, op("Swap", "Alt F"), SEP, op("Move Up", "Page Up"), op("Move Down", "Page Down")];
 /// `NLA_MT_strips`, outside tweak mode.
 pub static STRIPS: &[BMenuItem] = &[
     sub("Transform", TRANSFORM),

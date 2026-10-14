@@ -61,18 +61,14 @@ impl BResolvedUiStyle {
     /// vertical strip takes the surface of the area it sits in, no darker
     /// shade of its own.
     ///
-    /// The Properties editor is the exception, and its tab strip is why. The
-    /// body takes the one step that an unselected tab used to draw as a chip of
-    /// its own (`wcol_tab.inner` against `TH_BACK`). That turned the strip the
-    /// right way round: it was chips-on-flat, where the selection was the one
-    /// tab with NO mark on it, so the chips were the loudest thing in the editor
-    /// and the thing they point at was the quietest. Now a resting tab is strip
-    /// and the selected tab takes the body's shade, sinking into the panel it
-    /// opens — the paper-tab continuation `view/draw/tab/` is built for.
+    /// The Properties editor used to be the exception: its body took one step
+    /// under its background so the strip beside it read as a strip and the
+    /// selected tab, painted in the body's shade, as a hole cut onto the
+    /// panel. That put a colour behind the strip that the column beside it
+    /// did not have. The strip is the column's own surface now, and the
+    /// selected tab carries the accordions' shade instead
+    /// (`tab_active_gradient`), so the step is gone.
     pub fn host_body_surface(&self, host: BHostType) -> BGradientColors {
-        if host == BHostType::Buts {
-            return Self::flat(self.step(self.host_background(host), -1));
-        }
         Self::flat(self.host_background(host))
     }
 
@@ -97,9 +93,10 @@ impl BResolvedUiStyle {
     /// with the roles swapped: the dark belonged on the resting tab
     /// (`rail_tab_resting`) and the strip belonged level. A darkened strip reads
     /// as a separate panel bolted to the side of the editor rather than as part
-    /// of it.
+    /// of it. It is the body's own surface (`host_body_surface`) — the one
+    /// colour the strip and the column beside it share.
     pub fn rail_surface(&self, host: BHostType) -> BGradientColors {
-        Self::flat(self.host_background(host))
+        self.host_body_surface(host)
     }
 
     /// A rail tab at rest: one step under the strip it sits on — Blender's
@@ -209,9 +206,16 @@ impl BResolvedUiStyle {
     /// the region beside it (`host_body_surface`) — flat, not a sheen: the
     /// tab is a hole cut in the strip onto the panel it selects, and a
     /// gradient on one side of that join makes the two read as two things.
+    /// The selected tab's fill. A Properties tab is the accordion heading
+    /// beside it — the same `heading_surface(Card)` the panels' heads are
+    /// painted in, lit edge and all — so the selected tab and the first
+    /// accordion, which sit level (`rail_lead`), read as one row of the same
+    /// material: the tab names the panel it opens by wearing its colour. It
+    /// is not the body (`host_body_surface`) any more: the strip is the body
+    /// now, and a tab in the strip's own colour would mark nothing.
     pub fn tab_active_gradient(&self, host: BHostType) -> BGradientColors {
         if host == BHostType::Buts {
-            return self.host_body_surface(host);
+            return self.heading_surface(BSurfaceTone::Card);
         }
         self.host_item_active_gradient(host)
     }

@@ -70,6 +70,8 @@ pub enum BDim {
     FooterHeight,
     ButtonHeight,
     RowHeight,
+    /// A tree's row (`tree_row_height`).
+    TreeRow,
     /// A menu-popover row: compact, below the module (`menu_row_height`).
     MenuRow,
     ScrubbingHeight,
@@ -94,6 +96,7 @@ impl BDim {
             Self::FooterHeight => d.footer_height,
             Self::ButtonHeight => d.button_height,
             Self::RowHeight => d.row_height,
+            Self::TreeRow => d.tree_row_height,
             Self::MenuRow => crate::v2::theme::style::metric::MENU_ROW,
             Self::ScrubbingHeight => d.scrubbing_height,
             Self::AssetShelfHeight => d.asset_shelf_height,
@@ -232,4 +235,21 @@ pub enum BType {
     Body,
     Header,
     Caption,
+    /// Reading text — a modal's prose (`draw::prose`): the body size scaled
+    /// up for a paragraph, since 11 px is a label's size, not a page's.
+    Prose,
+    /// A heading over reading text.
+    ProseHeading,
+    /// The title of a page of reading text.
+    ProseTitle,
 }
+
+/// How far reading text is set over the chrome's sizes: a paragraph at a
+/// quarter over the body, a heading at a third over the header, a title at
+/// a half over it — so the hierarchy reads at a glance and every size still
+/// follows the Typography preferences. Before this a paragraph had NO size
+/// and took the element default (16 px) while its title took the 12 px
+/// header, so the title was the smallest text on the page.
+pub const PROSE_SCALE: f32 = 1.25;
+pub const PROSE_HEADING_SCALE: f32 = 1.35;
+pub const PROSE_TITLE_SCALE: f32 = 1.6;

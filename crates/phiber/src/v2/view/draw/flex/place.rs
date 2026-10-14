@@ -30,6 +30,9 @@ impl BFlex {
             Some(BType::Body) => element = element.text_size(px(ctx.style.typography.body)),
             Some(BType::Header) => element = element.text_size(px(ctx.style.typography.header)),
             Some(BType::Caption) => element = element.text_size(px(ctx.style.typography.caption)),
+            Some(BType::Prose) => element = element.text_size(px(ctx.style.typography.body * super::token::PROSE_SCALE)),
+            Some(BType::ProseHeading) => element = element.text_size(px(ctx.style.typography.header * super::token::PROSE_HEADING_SCALE)),
+            Some(BType::ProseTitle) => element = element.text_size(px(ctx.style.typography.header * super::token::PROSE_TITLE_SCALE)),
             None => {}
         }
         element = match self.place {

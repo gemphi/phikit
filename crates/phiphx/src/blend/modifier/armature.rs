@@ -99,9 +99,13 @@ impl BDeformBone {
 }
 
 /// A read Armature modifier: pose matrices, vertex groups and weights.
+///
+/// `mats` is shared rather than owned: every mesh an armature deforms
+/// carries one of these, and they all point at the same rig
+/// (`deform.rs`).
 struct BArmatureDeform {
     armature: u64,
-    mats: HashMap<String, BDeformBone>,
+    mats: std::sync::Arc<super::deform::BDeformMats>,
     groups: Vec<String>,
 }
 
@@ -111,7 +115,7 @@ pub(super) fn read(f: &BlendFile, md: &BlendBlock, ob: &BlendBlock, dna: &DnaTyp
     let me = f.mesh_block_of(ob, dna)?;
     Some(Box::new(BArmatureDeform {
         armature,
-        mats: f.pose_deform_mats(arm_ob, dna),
+        mats: f.deform_mats(arm_ob, dna),
         groups: f.vertex_group_names(ob, me, dna),
     }))
 }

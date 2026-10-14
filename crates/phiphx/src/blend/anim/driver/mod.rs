@@ -29,8 +29,9 @@ pub mod space;
 pub mod state;
 mod target;
 mod var;
+mod wire;
 
-pub use pass::{BDriverRun, BlendDriverSet, BlendPropDriver};
+pub use pass::{BDriverProps, BDriverRun, BlendDriverSet, BlendPropDriver};
 pub use socket::{BDriverSocket, socket_clamp, socket_path};
 pub use state::BDriverState;
 pub use var::{BDriverValue, BlendDriverEnd, BlendDriverRead, BlendDriverScene};

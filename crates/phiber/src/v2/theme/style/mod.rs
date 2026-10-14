@@ -18,6 +18,7 @@ pub mod anim;
 pub mod color;
 pub mod effect;
 pub mod elevation;
+pub mod flavour;
 pub mod font;
 pub mod metric;
 pub mod node;
@@ -36,6 +37,7 @@ pub use effect::{
     SILVER_EFFECTS, SPHERE_EFFECTS, SWIFT_EFFECTS, TOKYO_EFFECTS,
 };
 pub use elevation::BElevation;
+pub use flavour::{BFlavour, BFlavourScope};
 pub use font::BFontFamily;
 pub use metric::{
     BDimensions, BResizeStyle, BSpacing, BStrokes, BTypography, DEFAULT_DIMENSIONS,

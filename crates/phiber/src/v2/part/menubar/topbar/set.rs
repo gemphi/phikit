@@ -166,13 +166,14 @@ static EDIT_ITEMS: &[BMenuItem] = &[
     SEP,
     tog("Lock Object Modes", k_lock_modes),
     SEP,
-    op_modal("Preferences...", "Ctrl Comma", V_MODAL_SETTINGS),
+    op_modal("Preferences...", "Ctrl ,", V_MODAL_SETTINGS),
 ];
 
 // Blender ref: `TOPBAR_MT_render` in `bl_ui/space_topbar.py`.
 static RENDER_ITEMS: &[BMenuItem] = &[
     fire("Render Image", "F12", OpKey::Render, "image"),
     fire("Render Animation", "Ctrl F12", OpKey::Render, "animation"),
+    fire("Render Turnaround", "", OpKey::Render, "turnaround"),
     SEP,
     op_file("Render Audio...", "", "mixdown"),
     SEP,
@@ -189,8 +190,8 @@ static WINDOW_ITEMS: &[BMenuItem] = &[
     SEP,
     fire("Toggle Window Fullscreen", "", OpKey::Fullscreen, ""),
     SEP,
-    fire("Next Workspace", "Ctrl PageDown", OpKey::SpaceStep, "+1"),
-    fire("Previous Workspace", "Ctrl PageUp", OpKey::SpaceStep, "-1"),
+    fire("Next Workspace", "Ctrl Page Down", OpKey::SpaceStep, "+1"),
+    fire("Previous Workspace", "Ctrl Page Up", OpKey::SpaceStep, "-1"),
     SEP,
     tog_shown("Show Status Bar", k_status_bar),
     SEP,

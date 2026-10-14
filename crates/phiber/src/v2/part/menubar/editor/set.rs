@@ -18,7 +18,7 @@ pub static PROPERTIES_VIEW: &[BMenuItem] = &[
     fire("Expand All", "", OpKey::Props, "expand"),
     fire("Collapse All", "", OpKey::Props, "collapse"),
     SEP,
-    op("Toggle Maximize Area", "Ctrl Space"),
+    fire("Toggle Maximize Area", "Ctrl Space", OpKey::AreaMaximize, ""),
 ];
 // Blender ref: `FILEBROWSER_MT_view` / `FILEBROWSER_MT_select`
 // (`bl_ui/space_filebrowser.py:500-535`).
@@ -30,7 +30,7 @@ pub static FILE_VIEW: &[BMenuItem] = &[
     op("Display Size", ""),
     op("Recursion Level", ""),
     SEP,
-    op("Toggle Maximize Area", "Ctrl Space"),
+    fire("Toggle Maximize Area", "Ctrl Space", OpKey::AreaMaximize, ""),
 ];
 pub static FILE_SELECT: &[BMenuItem] = &[
     op("All", "A"),
@@ -48,7 +48,7 @@ pub static ASSET_VIEW: &[BMenuItem] = &[
     SEP,
     op("Display Size", ""),
     SEP,
-    op("Toggle Maximize Area", "Ctrl Space"),
+    fire("Toggle Maximize Area", "Ctrl Space", OpKey::AreaMaximize, ""),
 ];
 fn refresh() -> BAction {
     BAction::Set(FileKey::Nav.path(), "file.refresh".to_string())
@@ -82,7 +82,7 @@ fn frame_start() -> BAction {
     BAction::Set(CtxKey::FrameStep.path(), "start".to_string())
 }
 pub static TIME_VIEW: &[BMenuItem] = &[
-    op("Sidebar", "N"),
+    tog_host("Sidebar", "N", crate::v2::part::sidebar::show::BSidebarShown::key_for),
     op("Channels", ""),
     SEP,
     fire("Frame All", "Home", OpKey::TimeView, "time:all"),
@@ -96,7 +96,7 @@ pub static TIME_VIEW: &[BMenuItem] = &[
     op("Only Keyframes from Selected Channels", ""),
     op("Only Show Errors", ""),
     SEP,
-    op("Toggle Maximize Area", "Ctrl Space"),
+    fire("Toggle Maximize Area", "Ctrl Space", OpKey::AreaMaximize, ""),
 ];
 pub static TIME_MARKER: &[BMenuItem] = &[
     op("Lock Markers", ""),
@@ -178,7 +178,7 @@ pub static IPO: &[BMenuSpec] = super::anim::IPO;
 fn k_auto_save_prefs() -> BPath {
     ScreenKey::AutoSavePrefs.path()
 }
-pub static PREFS_VIEW: &[BMenuItem] = &[op("Sidebar", ""), SEP, op("Toggle Maximize Area", "Ctrl Space")];
+pub static PREFS_VIEW: &[BMenuItem] = &[op("Sidebar", ""), SEP, fire("Toggle Maximize Area", "Ctrl Space", OpKey::AreaMaximize, "")];
 pub static PREFS_SAVE_LOAD: &[BMenuItem] = &[
     tog("Auto-Save Preferences", k_auto_save_prefs),
     SEP,

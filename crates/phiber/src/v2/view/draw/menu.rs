@@ -135,7 +135,16 @@ enum BMenuPart {
     /// floating inside a popover meets nothing, so the two square corners
     /// that rule gave it had no edge to sit against.
     Cap(f32),
-    /// A hairline divider: the stroke width is the thinnest a row can be.
+    /// A divider between groups: one hairline rule, in the border shade.
+    ///
+    /// This has been three things. It began as a hairline in `colors.sep`,
+    /// which sits near the dark end of the ladder — that was the dark line
+    /// running through every menu. It was then made a bare gap, which left
+    /// the grouping to whitespace alone and read as nothing at all once a
+    /// row's resting fill went away. It is now a rule in `colors.border`,
+    /// the same shade every other border uses and a step **lighter** than
+    /// the surface it sits on, so a group boundary is a line you can see
+    /// rather than a change of shade you can only find by hovering.
     Separator,
 }
 
@@ -190,12 +199,10 @@ impl BFlexed for BMenuPart {
                 .keeps_size()
                 .radius(BRadius::All(*radius))
                 .overflow(BOverflow::Clip),
-            // A gap, not a rule: the space between groups is the grouping.
-            // The hairline this used to paint was the dark line running
-            // through every menu.
             Self::Separator => BFlex::row()
                 .width(BLen::Full)
                 .height(BLen::Measured(ctx.style.strokes.hairline))
+                .fill(BFill::MenuDivider)
                 .margin_y(BSpace::GapXs),
         }
     }

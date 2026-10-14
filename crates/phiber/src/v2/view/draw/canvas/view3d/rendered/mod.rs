@@ -36,7 +36,7 @@ mod world;
 pub use self::region::BStillRegion;
 pub(in crate::v2::view::draw::canvas) use self::prepare::BRayDeclined;
 pub(in crate::v2::view::draw::canvas::view3d) use self::prepare::prepare;
-pub use self::still::{BStill, BStillLook, still, still_stepwise};
+pub use self::still::{BStill, BStillAt, BStillLook, PEEK_EVERY, still, still_stepwise};
 pub use self::lamp::BLamp;
 pub use self::stand::BMatStand;
 pub use self::world::{BRayLook, ENV_CDF_SLOT, ENV_IRRADIANCE_SLOT, ENV_PREFILTERED_SLOT, ENV_SLOT, environment, lit, studio_lighting, view_words};

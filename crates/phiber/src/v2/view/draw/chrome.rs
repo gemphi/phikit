@@ -8,6 +8,7 @@
 
 use super::color::{resolved_gradient, to_hsla};
 use super::ctx::BRenderCtx;
+use crate::v2::host::BHostType;
 use crate::v2::theme::BControlState;
 use gpui::prelude::*;
 use gpui::{Div, Stateful};
@@ -18,13 +19,29 @@ pub fn in_strip(ctx: &BRenderCtx) -> bool {
     ctx.strip
 }
 
+/// Whether a control carries a **resting** fill — a visible ground when it
+/// is neither hovered nor on.
+///
+/// Only the activity bar does. Its entries are the app's primary
+/// navigation and read as a set of places, so each one keeps a ground to
+/// sit on. Everywhere else — menu rows, sidebar entries, header controls,
+/// the floating toolbar — a control is invisible until the pointer finds
+/// it: a resting fill on each one turns a menu into a column of pills and
+/// a sidebar into a stack of chips, which is what made the chrome look
+/// like several unrelated widget sets.
+///
+/// Hover and active are unaffected: a control still lifts under the
+/// pointer and still fills when it is on, in every surface.
+pub fn rests(ctx: &BRenderCtx) -> bool {
+    ctx.host == BHostType::Activity
+}
+
 /// Paint one control: the accent at the opacity for its state.
 ///
 /// Rest, hover and active are one hue at three strengths
-/// (`style.control_fill`). Docked chrome paints nothing at rest — a resting
-/// fill turns a header into a row of pills — while floating chrome rests on
-/// the faintest step so it stays legible over the canvas. A menu cap that is
-/// open keeps its filled gradient, which is what marks it as the open one.
+/// (`style.control_fill`), and [`rests`] decides whether the resting step
+/// is painted at all — only the activity bar's is. A menu cap that is open
+/// keeps its filled gradient, which is what marks it as the open one.
 pub fn paint(element: Stateful<Div>, active: bool, ctx: &BRenderCtx) -> Stateful<Div> {
     paint_state(element, active, false, ctx)
 }
@@ -46,7 +63,7 @@ pub fn paint_state(element: Stateful<Div>, active: bool, muted: bool, ctx: &BRen
         return element.bg(on);
     }
     let hover = fill(BControlState::Hover).unwrap_or_else(|| faded(to_hsla(ctx.style.colors.bg_hover)));
-    match fill(BControlState::Rest) {
+    match fill(BControlState::Rest).filter(|_| rests(ctx)) {
         Some(rest) => element.bg(rest).hover(move |s| s.bg(hover)),
         None => element.hover(move |s| s.bg(hover)),
     }

@@ -14,6 +14,11 @@ pub const RENDER_RESULT: &str = super::super::shown::RENDER_RESULT;
 /// The header while a render runs: its bar's label and the button that stops it.
 pub const RENDERING: &str = "Rendering";
 pub const CANCEL: &str = "Cancel";
+/// The bar's word while the render is held, and the button that holds it
+/// or lets it go.
+pub const PAUSED: &str = "Paused";
+pub const PAUSE: &str = "Pause";
+pub const RESUME: &str = "Resume";
 pub const NEW: &str = "New";
 pub const OPEN: &str = "Open";
 /// `RE_SLOT_COUNT`-style render slots, named as Blender names them.

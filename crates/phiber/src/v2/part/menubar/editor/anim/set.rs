@@ -56,7 +56,7 @@ pub static AREA: &[BMenuItem] = &[
 pub static LASSO: &[BMenuItem] = &[op("Set", ""), op("Extend", ""), op("Subtract", "")];
 /// `anim.channels_setting_toggle / _enable / _disable`'s `type`.
 pub static CHANNEL_SETTING: &[BMenuItem] = &[op("Protect", ""), op("Mute", "")];
-pub static MOVE: &[BMenuItem] = &[op("To Top", "Shift PageUp"), op("Up", "PageUp"), op("Down", "PageDown"), op("To Bottom", "Shift PageDown")];
+pub static MOVE: &[BMenuItem] = &[op("To Top", "Shift Page Up"), op("Up", "Page Up"), op("Down", "Page Down"), op("To Bottom", "Shift Page Down")];
 pub static EXTRAPOLATION: &[BMenuItem] = &[
     op("Constant Extrapolation", ""),
     op("Linear Extrapolation", ""),

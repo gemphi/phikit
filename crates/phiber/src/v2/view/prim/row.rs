@@ -50,6 +50,17 @@ impl BRowShade {
         }
     }
 
+    /// The other zebra band: the colour a tree row's hierarchy lines take, so
+    /// a line on a flat row is the alternate row's shade and on an alternate
+    /// row the flat row's — subtle against its own, and never a third colour.
+    /// A selected or active row takes the flat band's.
+    pub fn opposite_band(self) -> Self {
+        match self {
+            Self::Flat => Self::Alt,
+            Self::Alt | Self::Selected | Self::Active => Self::Flat,
+        }
+    }
+
     /// What it paints under the pointer. A row that already carries a fill
     /// lightens by one step off *that* fill, so the pointer reads on a
     /// selected row as clearly as on an empty one; a row with no fill of its

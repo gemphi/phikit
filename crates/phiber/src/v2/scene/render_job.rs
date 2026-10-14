@@ -185,8 +185,9 @@ use std::sync::{Arc, Mutex, OnceLock};
 pub struct BRenderShot {
     pub w: u32,
     pub h: u32,
-    /// The finished image, BGRA8 with row 0 at the top — what GPUI paints.
-    /// Empty until the render settles.
+    /// The image, BGRA8 with row 0 at the top — what GPUI paints. Empty
+    /// until the first sample is read back (`rendered::PEEK_EVERY`), then
+    /// the render as it stands, then the finished frame.
     pub bgra: Vec<u8>,
     /// The same image as display-space floats, and the scene-linear radiance
     /// behind it. Both empty until the render settles; a save reads whichever
@@ -216,6 +217,18 @@ impl BRenderShot {
     pub fn has_image(&self) -> bool {
         !self.bgra.is_empty() && self.w > 0 && self.h > 0
     }
+
+    /// Whether this is a finished frame with its float passes — what a save
+    /// writes — rather than a look at one under way (`BStillAt::Peek`), which
+    /// has bytes for the screen and nothing else.
+    pub fn settled(&self) -> bool {
+        self.done && self.has_image() && !self.display.is_empty()
+    }
+
+    /// Whether this is a look at a render under way: bytes, no floats.
+    pub fn peek(&self) -> bool {
+        self.has_image() && !self.done
+    }
 }
 
 #[derive(Default)]
@@ -228,6 +241,9 @@ pub(crate) struct BJob {
     pub(crate) last: AtomicU32,
     pub(crate) running: AtomicBool,
     cancel: AtomicBool,
+    /// Set by [`pause`]: the worker finishes the sample in hand and then
+    /// waits, holding the GPU idle, until [`resume`] or [`cancel`].
+    paused: AtomicBool,
     /// Bumped whenever a slot changes or another is shown, so a painter can
     /// tell a new frame from the one it already drew.
     pub(crate) seq: AtomicU32,
@@ -290,6 +306,33 @@ pub fn cancelled() -> bool {
     job().cancel.load(Ordering::Relaxed)
 }
 
+/// Hold the running render after its current sample: the image stays up as
+/// it stands and the sample count stops, until [`resume`] or [`cancel`].
+/// Blender's render job has no pause (`WM_jobs` stop or nothing); a long
+/// render that must yield the GPU for a while here can — deliberate.
+pub fn pause() {
+    job().paused.store(true, Ordering::Relaxed);
+}
+
+/// Let a paused render go on.
+pub fn resume() {
+    job().paused.store(false, Ordering::Relaxed);
+}
+
+/// Whether the running render is held (`pause`). False once nothing runs.
+pub fn paused() -> bool {
+    let j = job();
+    j.running.load(Ordering::Relaxed) && j.paused.load(Ordering::Relaxed)
+}
+
+/// Flip between held and running: the header's one button.
+pub fn toggle_pause() {
+    if paused() { resume() } else { pause() }
+}
+
+/// How long a held worker sleeps between looks at the flags.
+const PAUSE_TICK: std::time::Duration = std::time::Duration::from_millis(50);
+
 /// Put `shot` up as the image shown — a rendered frame played back
 /// (`scene::render_play`) — in place of the Render Result, which the
 /// player puts back when it stops. Refused while a render is under way.
@@ -328,6 +371,7 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
         return;
     }
     j.cancel.store(false, Ordering::Relaxed);
+    j.paused.store(false, Ordering::Relaxed);
     if let Ok(mut started) = j.started.lock() {
         *started = Some(std::time::Instant::now());
     }
@@ -357,6 +401,7 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
         let _running = super::render_fit::BRunning(j.clone());
         let began = std::time::Instant::now();
         let (w, h) = plan.region.size(plan.w, plan.h);
+        let mut kept: (Vec<u8>, Vec<[f32; 3]>, Vec<[f32; 3]>, Vec<[f32; 3]>, Vec<[f32; 3]>, Vec<f32>) = Default::default();
         let out = still_stepwise(
             &objects,
             plan.look,
@@ -366,32 +411,38 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
             plan.samples,
             plan.denoise,
             plan.region,
-            |taken, still| {
-                let done = still.is_some();
-                let still = still.unwrap_or(crate::v2::view::draw::canvas::view3d::rendered::BStill {
-                    rgba: Vec::new(),
-                    display: Vec::new(),
-                    linear: Vec::new(),
-                    albedo: Vec::new(),
-                    normal: Vec::new(),
-                    depth: Vec::new(),
-                });
-                let mut bgra = still.rgba;
-                // GPUI paints blue first; phiray hands back RGBA.
-                bgra.chunks_exact_mut(4).for_each(|p| p.swap(0, 2));
+            // The image KEPT between readbacks: most steps carry only a
+            // count (`BStillAt::Counting`), and publishing those with empty
+            // bytes wiped the peek published a moment before — the picture
+            // flashed on at each readback and off at the next sample, which
+            // is a blank canvas to a glance and a flicker to a stare.
+            |taken, at| {
+                let done = at.settled();
+                let kept = &mut kept;
+                if let Some(still) = at.image() {
+                    let mut bgra = still.rgba;
+                    // GPUI paints blue first; phiray hands back RGBA.
+                    bgra.chunks_exact_mut(4).for_each(|p| p.swap(0, 2));
+                    *kept = (bgra, still.display, still.linear, still.albedo, still.normal, still.depth);
+                }
                 publish(BRenderShot {
                     w,
                     h,
-                    bgra,
-                    display: still.display,
-                    linear: still.linear,
-                    albedo: still.albedo,
-                    normal: still.normal,
-                    depth: still.depth,
+                    bgra: kept.0.clone(),
+                    display: kept.1.clone(),
+                    linear: kept.2.clone(),
+                    albedo: kept.3.clone(),
+                    normal: kept.4.clone(),
+                    depth: kept.5.clone(),
                     taken,
                     target: plan.samples,
                     done,
                 });
+                // Held: the sample in hand is up; wait here, where the GPU
+                // is idle, until let go or stopped.
+                while j.paused.load(Ordering::Relaxed) && !j.cancel.load(Ordering::Relaxed) {
+                    std::thread::sleep(PAUSE_TICK);
+                }
                 !j.cancel.load(Ordering::Relaxed)
             },
         );
@@ -422,4 +473,43 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
             ));
         }
     });
+}
+
+#[cfg(test)]
+mod shot_tests {
+    use super::*;
+
+    fn bytes(n: usize) -> Vec<u8> {
+        vec![255; n * 4]
+    }
+
+    #[test]
+    fn a_look_at_a_running_render_has_an_image_but_is_not_settled() {
+        let peek = BRenderShot { w: 2, h: 2, bgra: bytes(4), taken: 3, target: 20, ..Default::default() };
+        assert!(peek.has_image(), "the viewer paints it");
+        assert!(peek.peek());
+        assert!(!peek.settled(), "a save has no floats to write");
+        assert!((peek.fraction() - 0.15).abs() < 1e-6);
+    }
+
+    #[test]
+    fn a_finished_render_with_its_floats_is_settled() {
+        let done = BRenderShot { w: 2, h: 2, bgra: bytes(4), display: vec![[1.0; 3]; 4], linear: vec![[1.0; 3]; 4], taken: 20, target: 20, done: true, ..Default::default() };
+        assert!(done.settled() && !done.peek());
+        // A frame that ended without ever drawing (no adapter) is done and empty.
+        let blank = BRenderShot { w: 2, h: 2, target: 20, done: true, ..Default::default() };
+        assert!(!blank.has_image() && !blank.settled() && !blank.peek());
+    }
+
+    #[test]
+    fn pause_is_read_only_while_a_render_runs() {
+        // The flags of a job that is not running: `paused()` stays false
+        // however the flag is set, so a stale pause cannot show in a header
+        // after the render ends; `start` clears it for the next.
+        let j = BJob::default();
+        j.paused.store(true, Ordering::Relaxed);
+        assert!(!(j.running.load(Ordering::Relaxed) && j.paused.load(Ordering::Relaxed)));
+        j.running.store(true, Ordering::Relaxed);
+        assert!(j.running.load(Ordering::Relaxed) && j.paused.load(Ordering::Relaxed));
+    }
 }

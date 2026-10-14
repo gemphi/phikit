@@ -10,6 +10,7 @@
 //! Static data lives ONLY in `set.rs` files. No inline arrays/tuples in any
 //! `list.rs` or `item.rs`.
 
+pub mod cli;
 pub mod level;
 pub mod spec;
 pub mod state;

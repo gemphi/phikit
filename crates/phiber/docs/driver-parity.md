@@ -186,6 +186,85 @@ driver whose own F-curve has keys (so the driver's value is the curve's X,
 not the frame), a Sum over two Transform Channel variables, a second
 material slot, and the custom-property chain.
 
+## Reaching the scene (batch 185)
+
+Everything above measures what a driver *comes to*. For three batches
+nothing asked: the sets were read into `BlendScene::props` and left there,
+and `BMaterialDrivers::apply`, `BLightDrivers::apply` and
+`BWorldDrivers::apply` had **no caller anywhere** in phiphx or phiber.
+`BlendMotionList::driver_state_at` — written, as `state.rs` says, so that "a
+driver on something that is *not* an object reads the same scene the object
+drivers read" — was called once, by `raw_at`, which takes `.raw` and discards
+the `props`, `world` and `index` that the non-object passes need.
+
+So a file whose material roughness is driven to 0.9 opened showing the 0.2
+saved in it. The values were right and invisible. `anim/driver/wire.rs` is
+the call, and `scene/read.rs` makes it once per open, over the state the
+object pass leaves — which is the ordering the chain needs.
+
+### What is wired
+
+**Materials, lamps and the world** (batch 185 the first, 186 the other two),
+each matched to its target by the datablock's **saved address** rather than
+its name. A material is the one kind where a name would do; for the other two
+a name is actively wrong, which is why they waited:
+
+| kind | why a name does not identify it |
+| --- | --- |
+| a **lamp** | a light object called `Lamp` may use light data called `Light.001`, so the object's name says nothing about which set applies |
+| the **world** | `world_drivers` returns a set per world datablock in the file while the scene uses one of them, so "apply the one set" is right until a file has two worlds and then silently wrong |
+
+So `BlendLightData` and `BlendWorld` each carry the address they were read
+from (`BlendBlock.old_address`), and each set carries the address it was read
+off. `BlendLightData` is `Copy`, so it takes the address and not a `String`,
+which would have taken `Copy` away from every caller. A set whose address
+matches nothing in the scene is left alone — it belongs to a datablock this
+scene does not use.
+
+A material's name still keys its match, since `BlendMaterial` carries one and
+the address would only be tidier.
+A datablock on twelve objects is twelve slots and each is driven to the same
+value. The object's own `base_color` / `roughness` / `metallic` are slot
+zero's, copied when the object was read, so a driven first slot moves those
+too — otherwise the value is right in the slot and stale on screen.
+
+Verified by `tests/driven_open.rs`, which is deliberately *not* another value
+test: it opens the fixture through `Phx::open` — what the app calls — and
+compares the materials the viewport draws from against the same
+`truth/mat_driver.txt` rows. With the call removed, two of its four tests
+fail and name the saved value standing where the driven one belongs. That is
+the check `mat_driver_truth.rs` could not make, because it drives the pass
+directly and so passed throughout.
+
+### Two conversions the tests assert rather than absorb
+
+* **An area light's energy.** Blender's RNA reports watts; the field stores
+  4/π of them, and `SceneLight::energy` is deliberately the stored number. So
+  `driven_lights.rs` converts back to watts before comparing — 53.476063
+  stored against Blender's 42 W — instead of widening a tolerance until both
+  fit.
+* **`BlendWorld::color` is the Background node's colour**, not the `World`
+  ID's own `color`. The dump prints both; the last three columns are the
+  comparison and the first three are not.
+
+### Where the call goes, which is not where it first went
+
+After **all three** sets are read. The first attempt sat one line below the
+materials and silently drove nothing for the lamps and the world, whose sets
+`read.rs` had not yet assigned — the material tests passed and the other two
+were applying empty lists. It is a one-line ordering mistake that a value test
+could never have caught, and the reason `driven_lights.rs` asserts against
+Blender's dump through `Phx::open` rather than against the pass.
+
+### What is still not wired
+
+A **modifier**'s values, and the reason is ordering rather than identity:
+`scene/read.rs` evaluates geometry at 0.90 and reads the animation at 0.94+,
+so when the modifier stack is applied the driven settings do not exist yet.
+Blender's depsgraph runs animation first and geometry after, precisely because
+geometry depends on driven settings. The fix is to move the modifier
+evaluation after the motion read — not to thread values backwards.
+
 ## Light and world drivers (batch 173)
 
 A light keeps every driver on the `Light` ID; it has no node tree, so there
@@ -307,11 +386,15 @@ Float settings are mostly unbounded both ways (`Displace.strength`,
 
 The values are read, typed, clamped and measured. They are **not** written
 into the modifier stack, so an evaluated mesh does not yet reflect them.
-That is a separate change for two reasons: `modifier_jobs` /
+That is a separate change for three reasons now. `modifier_jobs` /
 `evaluate_modifiers` would have to carry the frame's overrides into each
-reader, and a mesh is currently evaluated **once at open** rather than per
+reader; a mesh is currently evaluated **once at open** rather than per
 frame, so a driven modifier would still not animate without a
-re-evaluation path. The semantics being settled makes that change
+re-evaluation path; and — found in batch 185 — the stack is applied
+*before* the animation is read, so at that moment the driven values do not
+exist yet. Blender's depsgraph runs animation then geometry for exactly
+this reason, so the fix is to evaluate the modifiers after the motion read
+rather than to thread the values backwards. The semantics being settled makes that change
 mechanical — but it lands in `modifier/mod.rs`, where another agent is
 active, so it is queued rather than started. Filed in
 `blend/modifier/jobs.md`.
@@ -336,6 +419,7 @@ truncation entirely.
 | `anim/driver/space.rs` | the three target spaces, and the world matrices over a snapshot |
 | `anim/driver/pass.rs` | the frame's two-step pass |
 | `anim/driver/state.rs` | `BDriverState` — a frame's pass kept rather than dropped, so a driver on something that is not an object reads the same scene, after the objects |
+| `anim/driver/wire.rs` | the call that puts a non-object driver's value on the scene, how a set is matched to its target, and what is not wired yet |
 | `shade/driver.rs` | what a material driver writes, and the clamp each write path takes |
 | `shade/driver_read.rs` | `Material.adt` and `Material.nodetree->adt` → `BMaterialDrivers` |
 | `anim/driver/socket.rs` | the socket path and socket list every datablock with a node tree shares — material, world, and whatever comes next |
@@ -349,14 +433,18 @@ truncation entirely.
 
 ## Next
 
-1. **Write driven modifier settings into the stack.** The read is done and
-   measured; see "What this does not do" above for the two parts and why it
-   is queued rather than started.
-2. **Shape-key drivers.** `Key.adt`, `key_blocks["Name"].value`. Blocked on
+1. **Evaluate the modifier stack after the motion read**, Blender's own
+   depsgraph order, which is what driven modifier settings need before any
+   of batch 174's measured values can reach a mesh. See "What this does not
+   do" under modifier drivers.
+2. **An area light's energy through the renderer.** Not a driver job — see
+   batch 173's open question. Needs one Cycles render of an area light read
+   from a file, compared with `phiray`'s.
+3. **Shape-key drivers.** `Key.adt`, `key_blocks["Name"].value`. Blocked on
    shape keys themselves, which phiphx does not read yet.
-3. **Context Property variables.** `DTAR_CONTEXT_PROPERTY_ACTIVE_SCENE` and
+4. **Context Property variables.** `DTAR_CONTEXT_PROPERTY_ACTIVE_SCENE` and
    `ACTIVE_VIEW_LAYER`; small, once there is a scene context to resolve
    against.
-4. **Driver-against-driver ordering.** A dependency sort over the channel
+5. **Driver-against-driver ordering.** A dependency sort over the channel
    drivers would close the one limit stated above. Worth doing only on a
    file that needs it.

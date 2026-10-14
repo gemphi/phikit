@@ -174,6 +174,14 @@ impl<'a> BZoneList<'a> {
 
 impl<'a> BViewList for BZoneList<'a> {
     fn items(&self, state: &BState) -> Vec<BView> {
+        // Ctrl Space: one area fills the workspace (`area::maximize`) — it is
+        // drawn alone, in the zone that fills, whichever zone declared it.
+        if let Some(label) = crate::v2::area::current::current_space()
+            .and_then(|space| crate::v2::area::maximize::maximized_in(state, space))
+            && let Some(area) = self.areas.iter().find(|a| a.kind.label() == label)
+        {
+            return vec![BZoneItem::new(BZoneType::Center, std::slice::from_ref(area)).build(state)];
+        }
         // Zones in screen order, left to right across the middle band: the
         // rail leads. (`ALL` is discriminant order, which the spec table is
         // indexed by, so the rail sits at its end there.)

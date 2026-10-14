@@ -44,6 +44,13 @@ impl BShadowStyle {
         if by >= rung { Self::None } else { Self::at_rung(rung - by) }
     }
 
+    /// This rung or `floor`, whichever is harder — a shadow floor. The
+    /// spatial coat casts at least this far without pulling a theme that
+    /// already casts further down to it (`style/flavour`).
+    pub const fn at_least(self, floor: Self) -> Self {
+        if self.rung() >= floor.rung() { self } else { floor }
+    }
+
     /// The value a preference stores.
     pub const fn slug(self) -> &'static str {
         match self {
@@ -88,8 +95,10 @@ pub struct BEffects {
     pub tab_top_lift: f32,
     pub viewport_lightness_delta: f32,
     /// How opaque floating chrome is over a canvas — the toolbar, the
-    /// sidebar and the viewport gizmos. They sit on top of the scene, so they
-    /// let some of it through rather than reading as solid panels.
+    /// sidebar and the viewport gizmos. Near solid: a strip reads as a panel
+    /// laid over the scene, with just a hint of it through. It was 0.36,
+    /// which left the strips as bare buttons on the canvas with no bar
+    /// behind them.
     pub floating_alpha: f32,
     /// A control's fill is the accent at an opacity, and only the opacity
     /// changes with state: resting (floating chrome only), hovered, active.
@@ -136,7 +145,7 @@ const fn effects(gradients: bool, gradient_lift: f32, surface_shadow: BShadowSty
         // it washed the floor grid and the axes out, and the separation that
         // lift was buying is better bought with `viewport_grid_alpha`.
         viewport_lightness_delta: 0.0,
-        floating_alpha: 0.36,
+        floating_alpha: 0.96,
         // Half: a resting control's ground is half the weight of the shade
         // it is cut from, so a row reads as a row and not as a second panel.
         control_rest_alpha: 0.5,

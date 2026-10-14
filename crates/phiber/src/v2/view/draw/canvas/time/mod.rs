@@ -66,9 +66,18 @@ impl BTime {
         let seen = Rc::clone(&bounds);
         let painted = view.clone();
         let playing = crate::v2::part::playback::set::BTransportButton::playing(ctx.state);
-        let grabbing = crate::v2::scene::grab::BMarkerGrab::active(ctx.state);
+        // A grab is live while either a marker or a key is being moved.
+        // `BTimeGesture::grab_move` and `grab_cancel` both branch on
+        // `view.key_grab` and then fall through to the marker — but the
+        // pointer handlers below were attached only when a **marker** grab
+        // was active, so in a key grab nothing ever delivered the move and
+        // G left the key where it was (`dope_sheet_edits_keys`: "G: the key
+        // follows the pointer").
+        let grabbing = crate::v2::scene::grab::BMarkerGrab::active(ctx.state) || view.key_grab;
         let gesture = Rc::new(gesture::BTimeGesture { view, handler: ctx.handler.clone(), bounds, grabbing, snap: (crate::v2::part::playback::snap::BPlayheadSnap::now(ctx.state), crate::v2::part::playback::snap::BSnapTargets::now(ctx.state)) });
-        let (down, moved, dragged, up, cancel) = (gesture.clone(), gesture.clone(), gesture.clone(), gesture.clone(), gesture);
+        let (down, moved, dragged, up, cancel, wheeled) =
+            (gesture.clone(), gesture.clone(), gesture.clone(), gesture.clone(), gesture.clone(), gesture);
+        let host = self.0;
         // The window covers the host edge to edge (`BPlace::Overlay`) in
         // the theme's `TH_BACK`, and the canvas covers the window.
         let window = BFlex::column().place(BPlace::Overlay).fill(BFill::Swatch(crate::v2::theme::BAnimColors::rgba(colors.back)));
@@ -86,6 +95,12 @@ impl BTime {
             .id(SharedString::from("time-window"))
             .debug_selector(|| "time-window".to_string())
             .child(window.div(ctx).child(BFlex::column().place(BPlace::Overlay).styled(painter, ctx)))
+            // The `View2D` keymap over the time axis: a notch zooms, Ctrl
+            // scrolls. `BTimeGesture::wheel` and the `wheel_op` behind it
+            // were written and unit-tested, and nothing ever called them —
+            // every other canvas (view3d, image, the node wire) wires its
+            // own, so the animation editors alone did not answer the wheel.
+            .on_scroll_wheel(move |event: &gpui::ScrollWheelEvent, window, app| wheeled.wheel(host, event, window, app))
             .on_mouse_down(gpui::MouseButton::Left, move |event, window, app| down.down(event, window, app))
             .on_mouse_up(gpui::MouseButton::Left, { let up = up.clone(); move |_, window, app| up.up(window, app) })
             .on_mouse_up_out(gpui::MouseButton::Left, move |_, window, app| up.up(window, app))

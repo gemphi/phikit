@@ -66,7 +66,7 @@ pub fn sort_header(
 
 /// Render-pass-aware indent used by the BView dispatcher.
 pub(super) fn indent_resolved(level: u16, ctx: &BRenderCtx) -> AnyElement {
-    super::tree::BTreeIndent(level).render(ctx)
+    super::tree::BTreeIndent { depth: level, shade: crate::v2::view::prim::BRowShade::Flat }.render(ctx)
 }
 
 /// Outliner tree row with guides, disclosure, icon, name, and trail.

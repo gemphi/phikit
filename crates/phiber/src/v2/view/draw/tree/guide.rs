@@ -1,61 +1,32 @@
-//! The hierarchy lines behind a tree.
+//! The hierarchy lines in a tree row: one per indent unit of the row's depth,
+//! before its arrow slot, in the colour of the *other* zebra band.
+//!
+//! Each row draws its own run (`BTreePart::Indent`), so a line exists only
+//! where a row is nested — a root row has none, a child one, a grandchild
+//! two — and ends with the row it belongs to. The lines used to be one
+//! backdrop of the deepest row's depth behind the whole column, in the accent
+//! and the text tone, which put the same loud columns through every row and
+//! told nothing about any one of them.
+//!
+//! The colour is the opposite band composited over the editor's body — the
+//! alternate row's background on a flat row, the flat row's on an alternate
+//! one — so a line is subtle against the row it crosses and is never a third
+//! colour in the list.
 
 use super::super::color::to_hsla;
 use super::super::ctx::BRenderCtx;
-use crate::v2::theme::{BColor, BResolvedUiStyle};
-use gpui::prelude::*;
-use gpui::{AnyElement, div, px};
+use super::super::flex::BFill;
+use crate::v2::view::prim::BRowShade;
 
-/// How strongly a hierarchy line reads. `text_dim` on its own was too faint to
-/// see; at this alpha the accent and the bright text that colour the levels
-/// both stand out against the rows they cross.
-const GUIDE_ALPHA: f32 = 0.55;
-
-/// The colour of the hierarchy line at indent `level`. Adjacent levels differ
-/// — the accent on even levels, the bright text tone on odd ones — so a deep
-/// row's run of lines reads as distinct columns rather than one grey smear,
-/// and each is visible against both zebra bands.
-pub(super) fn guide_color(style: &BResolvedUiStyle, level: u16) -> BColor {
-    let (h, s, l, _) = if level % 2 == 0 {
-        style.colors.accent
-    } else {
-        style.colors.text
-    };
-    (h, s, l, GUIDE_ALPHA)
-}
-
-/// The hierarchy lines behind a tree, one per indent unit of the deepest row,
-/// as tall as the rows they belong to. Each level takes its own colour
-/// (`guide_color`) so the nesting is legible and visible.
-///
-/// `rows` is that height. They used to span the whole column — `inset_0` in a
-/// scroller is the scroller's height, not its content's — so on any tree
-/// shorter than its pane the lines carried on down past the last row into
-/// empty space, which is a hierarchy drawn for rows that are not there. A
-/// guide belongs to the rows it guides.
-pub fn guides_backdrop(depth: u16, rows: f32, ctx: &BRenderCtx) -> AnyElement {
-    let unit = ctx.style.dimensions.indent_unit;
-    let stroke = ctx.style.strokes.hairline;
-    let mut backdrop = div().absolute().top_0().left_0().h(px(rows)).flex().flex_row();
-    for level in 0..depth {
-        backdrop = backdrop.child(
-            div()
-                .flex_shrink_0()
-                .relative()
-                .w(px(unit))
-                .h_full()
-                .child(
-                    div()
-                        .absolute()
-                        .top_0()
-                        .bottom_0()
-                        .left(px((unit - stroke) / 2.0))
-                        .w(px(stroke))
-                        .bg(to_hsla(guide_color(ctx.style, level))),
-                ),
-        );
-    }
-    backdrop.into_any_element()
+/// The fill of the hierarchy lines in a row of `shade`: the opposite band's
+/// tint over the editor's body, as that band's rows actually paint.
+pub(super) fn guide_fill(shade: BRowShade, ctx: &BRenderCtx) -> BFill {
+    let body = to_hsla(ctx.style.host_body_surface(ctx.host).top).to_rgb();
+    let Some(band) = shade.opposite_band().fill(ctx.style) else { return BFill::Clear };
+    let tint = to_hsla(band).to_rgb();
+    let a = band.3;
+    let over = |b: f32, t: f32| b * (1.0 - a) + t * a;
+    BFill::Swatch([over(body.r, tint.r), over(body.g, tint.g), over(body.b, tint.b), 1.0])
 }
 
 #[cfg(test)]
@@ -63,17 +34,45 @@ mod tests {
     use super::*;
     use crate::v2::state::BState;
     use crate::v2::theme::{BPaletteName, BThemeMode, resolve_ui_style, ui_style_defaults_in};
+    use crate::v2::host::BHostType;
+    use crate::v2::view::draw::ctx::{BActionHandler, BRenderCtx, BResizeHandler};
+    use std::rc::Rc;
+
+    fn ctx<R>(f: impl FnOnce(&BRenderCtx) -> R) -> R {
+        let style = resolve_ui_style(ui_style_defaults_in(BPaletteName::Sphere, BThemeMode::Dark), &BState::new());
+        let s = BState::new();
+        let handler: BActionHandler = Rc::new(|_, _, _| {});
+        let resize: BResizeHandler = Rc::new(|_, _, _, _, _, _, _| {});
+        f(&BRenderCtx::new(&style, &s, handler, resize).with_host(BHostType::Outliner))
+    }
+
+    fn rgb(fill: BFill) -> [f32; 3] {
+        match fill {
+            BFill::Swatch([r, g, b, _]) => [r, g, b],
+            other => panic!("a swatch, got {other:?}"),
+        }
+    }
 
     #[test]
-    fn adjacent_levels_take_different_visible_colours() {
-        let style = resolve_ui_style(
-            ui_style_defaults_in(BPaletteName::Sphere, BThemeMode::Dark),
-            &BState::new(),
-        );
-        let even = guide_color(&style, 0);
-        let odd = guide_color(&style, 1);
-        assert_ne!((even.0, even.1, even.2), (odd.0, odd.1, odd.2), "levels differ in colour");
-        assert_eq!(guide_color(&style, 2), even, "the colours alternate by level");
-        assert!(even.3 >= 0.5 && odd.3 >= 0.5, "both are strong enough to see");
+    fn a_rows_lines_are_the_other_bands_colour_and_differ_from_its_own() {
+        ctx(|c| {
+            let on_flat = rgb(guide_fill(BRowShade::Flat, c));
+            let on_alt = rgb(guide_fill(BRowShade::Alt, c));
+            assert_ne!(on_flat, on_alt, "the two bands' lines differ");
+            // The line on a flat row IS the alternate row's painted colour, and
+            // vice versa: no third colour.
+            let body = to_hsla(c.style.host_body_surface(c.host).top).to_rgb();
+            let painted = |shade: BRowShade| {
+                let band = shade.fill(c.style).unwrap();
+                let t = to_hsla(band).to_rgb();
+                let a = band.3;
+                [body.r * (1.0 - a) + t.r * a, body.g * (1.0 - a) + t.g * a, body.b * (1.0 - a) + t.b * a]
+            };
+            let close = |x: [f32; 3], y: [f32; 3]| x.iter().zip(y).all(|(p, q)| (p - q).abs() < 1e-4);
+            assert!(close(on_flat, painted(BRowShade::Alt)));
+            assert!(close(on_alt, painted(BRowShade::Flat)));
+            // Selection keeps the flat band's line.
+            assert!(close(rgb(guide_fill(BRowShade::Selected, c)), painted(BRowShade::Flat)));
+        });
     }
 }

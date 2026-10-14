@@ -19,9 +19,11 @@ impl BView {
         Self::split(vec![Self::label(heading), Self::ctrl(ctrl)])
     }
 
-    /// A checkbox row: the box and its text in the value column.
+    /// A boolean row: its text and a switch in the value column
+    /// (`BCtrlKind::Switch`) — one row wide whatever the text, so the rows of
+    /// a panel or popover line up.
     pub fn check_row(s: &BState, heading: &str, key: BPath, default: bool, label: &str) -> Self {
-        Self::prop_row(heading, BCtrl::read(BCtrlKind::Check, key, BValue::Bool(default), s).with_label(label))
+        Self::prop_row(heading, BCtrl::read(BCtrlKind::Switch, key, BValue::Bool(default), s).with_label(label))
     }
 
     /// A dropdown row over `(value, label)` pairs; its menu is keyed by `rna`.

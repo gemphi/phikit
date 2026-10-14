@@ -42,6 +42,10 @@ pub struct BWorldDriver {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct BWorldDrivers {
     pub world: String,
+    /// The `World` datablock's saved address. A file may hold several
+    /// worlds while the scene uses one, so the address is what says which
+    /// set belongs to the scene's own world (`anim/driver/wire.rs`).
+    pub address: u64,
     pub drivers: Vec<BWorldDriver>,
     /// The input sockets of each node a driver writes, in storage order.
     pub inputs: Vec<(String, Vec<BDriverSocket>)>,

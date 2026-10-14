@@ -8,7 +8,7 @@ use crate::v2::state::OpKey;
 
 /// `GRAPH_MT_view` in F-Curves mode.
 pub static VIEW: &[BMenuItem] = &[
-    op("Sidebar", "N"),
+    tog_host("Sidebar", "N", crate::v2::part::sidebar::show::BSidebarShown::key_for),
     op("Adjust Last Operation", ""),
     op("Channels", ""),
     op("Playback Controls", ""),
@@ -42,7 +42,7 @@ pub static VIEW: &[BMenuItem] = &[
 ];
 /// `GRAPH_MT_view` in Drivers mode.
 pub static DRIVERS_VIEW: &[BMenuItem] = &[
-    op("Sidebar", "N"),
+    tog_host("Sidebar", "N", crate::v2::part::sidebar::show::BSidebarShown::key_for),
     op("Adjust Last Operation", ""),
     op("Channels", ""),
     SEP,

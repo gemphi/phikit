@@ -107,7 +107,13 @@ pub fn is_transient(encoded: &str) -> bool {
     if FILE_EPHEMERAL.contains(&encoded) {
         return true;
     }
-    matches!(encoded, "ctx.modal" | "ctx.selected")
+    // The Image editor's shown name points into the session's image list,
+    // which does not persist: resumed, it would dangle and paint nothing.
+    matches!(encoded, "ctx.modal" | "ctx.selected" | "ctx.image.shown" | "ctx.area.maximized")
+        // A toolbar's expansion (`ctx.<host>.tool.expanded`): Blender's
+        // toolbar opens icon-only — labels only once it is dragged wide — so
+        // the squares come back at launch whatever was left (`part::strip`).
+        || encoded.ends_with(".tool.expanded")
         || encoded.starts_with("ctx.menu.")
         || encoded.starts_with("ctx.header.")
         || encoded.starts_with("ctx.area_resize.")
@@ -288,6 +294,9 @@ mod tests {
         assert!(is_transient("ctx.scene.loading"), "nor the import machinery");
         assert!(is_transient("ctx.scene.unsaved"), "nor a dirty flag");
         assert!(is_transient(RESUME_FRAME), "nor the resume stash");
+        assert!(is_transient("ctx.image.shown"), "nor the Image editor's shown name — its list is per-session");
+        assert!(is_transient("ctx.image.tool.expanded"), "nor a toolbar's expansion — it opens icon-only, as Blender's does");
+        assert!(!is_transient("ctx.prefs.navbar.expanded"), "other strips keep theirs");
         assert!(is_transient("ctx.modal"), "nor an open dialog");
         assert!(is_transient("ctx.menu.view3d.View"), "nor an open menu");
         assert!(is_transient("ctx.file.selected"), "nor a mid-browse selection");

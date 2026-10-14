@@ -12,7 +12,7 @@ mod picker;
 mod swatch;
 
 use self::swatch::BCtrlSwatch;
-use super::flex::{BAlign, BEdge, BFill, BFlex, BFlexed, BLen, BRadius, BSpace};
+use super::flex::{BAlign, BEdge, BFill, BFlex, BFlexed, BJustify, BLen, BRadius, BSpace, BType};
 use super::ctx::BRenderCtx;
 use super::{walk, button, search, tab, track};
 use super::track::BTrack;
@@ -29,12 +29,51 @@ enum BCtrlPart {
     /// A colour's swatch, filled with the value — in whichever spelling the
     /// control carries it (`BCtrlSwatch`).
     Swatch(BCtrlSwatch),
+    /// A switch's row: the label, then the track at the end.
+    SwitchRow,
+    /// The switch's label, taking the slack so the track sits at the end.
+    SwitchLabel,
+    /// The pill track, `true` while on: accent-filled with the knob at the
+    /// end, else the card tone with the knob at the start.
+    Track(bool),
+    /// The knob: a white disc with a hairline, so it reads on either fill.
+    Knob,
 }
+
+/// The switch's track and knob, in pixels — `UISwitch`'s proportions at the
+/// row's scale: a track a little wider than two knobs, the knob inset by the
+/// track's padding either side.
+const SWITCH_TRACK: (f32, f32) = (34.0, 20.0);
+const SWITCH_KNOB: f32 = 16.0;
 
 impl BFlexed for BCtrlPart {
     fn flex(&self, _c: &BRenderCtx) -> BFlex {
         match self {
             Self::Row => BFlex::row().align(BAlign::Center).gap(BSpace::GapXs).min_width(BLen::Zero),
+            Self::SwitchRow => BFlex::row()
+                .width(BLen::Full)
+                .height(BLen::Dim(super::flex::BDim::ButtonHeight))
+                .keeps_size()
+                .align(BAlign::Center)
+                .gap(BSpace::GapSm)
+                .min_width(BLen::Zero),
+            Self::SwitchLabel => BFlex::row().fills().min_width(BLen::Zero).ink().type_size(BType::Body),
+            Self::Track(on) => BFlex::row()
+                .width(BLen::Measured(SWITCH_TRACK.0))
+                .height(BLen::Measured(SWITCH_TRACK.1))
+                .keeps_size()
+                .radius(BRadius::All(SWITCH_TRACK.1 / 2.0))
+                .align(BAlign::Center)
+                .justify(if *on { BJustify::End } else { BJustify::Start })
+                .pad_x(BSpace::GapXs)
+                .fill(if *on { BFill::SwatchHsl(_c.style.colors.accent) } else { BFill::Tone(crate::v2::theme::BSurfaceTone::Card) }),
+            Self::Knob => BFlex::cell()
+                .width(BLen::Measured(SWITCH_KNOB))
+                .height(BLen::Measured(SWITCH_KNOB))
+                .keeps_size()
+                .radius(BRadius::All(SWITCH_KNOB / 2.0))
+                .fill(BFill::Swatch([1.0, 1.0, 1.0, 0.95]))
+                .border(BEdge::All),
             Self::Swatch(value) => BFlex::cell()
                 .width(BLen::Dim(super::flex::BDim::ButtonHeight))
                 .height(BLen::Dim(super::flex::BDim::ButtonHeight))
@@ -63,6 +102,7 @@ impl BCtrlView<'_> {
     pub fn render(&self, ctx: &BRenderCtx) -> AnyElement {
         match self.0.kind {
             BCtrlKind::Check => self.flag(Some("check_square"), Some("square"), ctx),
+            BCtrlKind::Switch => self.switch(ctx),
             BCtrlKind::Toggle => self.flag(None, None, ctx),
             BCtrlKind::Radio => self.radio(ctx),
             BCtrlKind::Select => self.select(ctx),
@@ -89,6 +129,33 @@ impl BCtrlView<'_> {
             // No glyph: the fill is the state, which is what a tab says.
             None => tab::view(&ctl, ctx),
         }
+    }
+
+    /// A switch (`UISwitch`): the label fills the row and the pill track sits
+    /// at its end; the knob is justified to the end it is on, so no offset
+    /// is computed — on, the track takes the accent, off, the card tone.
+    /// Full-width by construction, which the box-button it replaces, hugging
+    /// its text, never was: a column of these lines up.
+    fn switch(&self, ctx: &BRenderCtx) -> AnyElement {
+        let ctrl = self.0;
+        let on = matches!(ctrl.value, BValue::Bool(true));
+        let label = ctrl.label.clone().unwrap_or_default();
+        let knob = BCtrlPart::Knob.flex(ctx).div(ctx);
+        let track = BCtrlPart::Track(on).flex(ctx).div(ctx).child(knob);
+        let row = BCtrlPart::SwitchRow
+            .flex(ctx)
+            .div(ctx)
+            .child(BCtrlPart::SwitchLabel.flex(ctx).div(ctx).child(gpui::SharedString::from(label)))
+            .child(track);
+        let id = gpui::SharedString::from(format!("switch-{}", ctrl.key.encode()));
+        let (handler, action) = (ctx.handler.clone(), ctrl.flip());
+        row.id(id.clone())
+            .debug_selector(move || id.to_string())
+            .cursor_pointer()
+            .on_click(move |_e: &gpui::ClickEvent, w: &mut gpui::Window, cx: &mut gpui::App| {
+                (std::rc::Rc::clone(&handler))(&action, w, cx);
+            })
+            .into_any_element()
     }
 
     /// One option per tab, the chosen one filled.

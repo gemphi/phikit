@@ -47,6 +47,7 @@ impl BViewItem for BPrefsItem {
         // colour below it, so it belongs above the values it governs.
         if category.kind == BSettingsCategory::Appearance {
             cards.push(palette_card(state));
+            cards.push(dimension_card(state));
         }
         if category.kind == BSettingsCategory::System {
             cards.push(device::BRenderDevices::view(state));
@@ -116,6 +117,41 @@ fn palette_card(state: &BState) -> BView {
         ])
     });
     BCard::panel("Theme").preset(switch).fold(key, true).body(rows.collect()).into()
+}
+
+/// The dimensional coat — a *Dimension* section beside Theme, folding the
+/// same way. One switch over the whole window: `Auto` keeps each theme's own
+/// depth, `Flat` is Blender's flat chrome everywhere, `Spatial` is the
+/// virtual-world look where surfaces sweep and lifted things cast. Blender has
+/// no equivalent; this is phiber's own axis (`theme/style/flavour`).
+fn dimension_card(state: &BState) -> BView {
+    use crate::v2::theme::BFlavourScope;
+    use crate::v2::view::prim::{BAction, BControl};
+
+    let scope = state
+        .get(AppKey::Flavour)
+        .and_then(BFlavourScope::from_slug)
+        .unwrap_or_default();
+    let switch: Vec<BView> = BFlavourScope::ALL
+        .into_iter()
+        .map(|choice| {
+            BView::Button(
+                BControl::new()
+                    .with_label(choice.label())
+                    .with_active(choice == scope)
+                    .with_action(BAction::Set(AppKey::Flavour.path(), choice.slug().to_string())),
+            )
+        })
+        .collect();
+    let key = BPanelItem::expand_key(BHostType::Prefs, "Appearance", "Dimension");
+    let open = state.get(&key) != Some(V_FALSE);
+    if !open {
+        return BCard::panel("Dimension").preset(switch).fold(key, false).into();
+    }
+    let note = BView::split(vec![BView::label(
+        "The coat the whole window wears — flat, or the spatial virtual-world look.",
+    )]);
+    BCard::panel("Dimension").preset(switch).fold(key, true).body(vec![note]).into()
 }
 
 /// The category the Preferences nav bar is showing.
@@ -225,9 +261,13 @@ mod tests {
                 assert_eq!(list.len(), 1, "{}", category.label);
                 continue;
             }
-            // Themes carries the palette picker above the values it governs;
-            // Viewport its Quality panel (`quality.rs`).
-            let extra = usize::from(matches!(category.kind, BSettingsCategory::Appearance | BSettingsCategory::Viewport));
+            // Themes carries the palette picker and the Dimension switch above
+            // the values they govern; Viewport its Quality panel (`quality.rs`).
+            let extra = match category.kind {
+                BSettingsCategory::Appearance => 2,
+                BSettingsCategory::Viewport => 1,
+                _ => 0,
+            };
             assert_eq!(
                 list.len(),
                 category.sections.len() + extra,

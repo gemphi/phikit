@@ -63,6 +63,36 @@ fn the_snap_menu_moves_the_cursor_and_the_selection() {
 }
 
 #[test]
+fn snap_to_grid_and_to_active_move_the_cursor_and_the_selection() {
+    let model = fixture();
+    crate::v2::scene::source::set_loaded_scene(Some(model.clone()));
+    let mut s = BState::new();
+    crate::v2::scene::select::BSelection { list: vec!["Child".into(), "Track".into()] }.write(&mut s);
+    s.set(CtxKey::Object, "Child");
+
+    // Cursor to Grid: the cursor rounded to the nearest unit.
+    BCursor { location: Vec3::new(1.4, -2.6, 0.3), rotation: Quat::IDENTITY }.write(&mut s);
+    op(&mut s, OpKey::Cursor, "cursor_to_grid");
+    assert!(near(BCursor::now(&s).location, Vec3::new(1.0, -3.0, 0.0)), "{:?}", BCursor::now(&s).location);
+
+    // Selection to Grid: every selected object's world origin lands on an
+    // integer grid point (the exact point depends on where each started).
+    op(&mut s, OpKey::Cursor, "selection_to_grid");
+    let after = worlds(&s, Some(&model));
+    for name in ["Child", "Track"] {
+        let at = after[name].w_axis.truncate();
+        assert!(near(at, at.round()), "{name} snapped to the grid: {at:?}");
+    }
+
+    // Selection to Active: every selected object onto Child (the active).
+    op(&mut s, OpKey::Cursor, "selection_to_active");
+    let after = worlds(&s, Some(&model));
+    // Child is already at the grid point it was snapped to; Track joins it.
+    assert!(near(after["Track"].w_axis.truncate(), after["Child"].w_axis.truncate()), "Track joins the active: {:?} vs {:?}", after["Track"].w_axis, after["Child"].w_axis);
+    crate::v2::scene::source::set_loaded_scene(None);
+}
+
+#[test]
 fn an_added_object_lands_at_the_cursor_and_shift_c_puts_it_back() {
     crate::v2::scene::source::set_loaded_scene(Some(fixture()));
     let mut s = BState::new();

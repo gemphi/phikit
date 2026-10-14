@@ -11,7 +11,8 @@
 //!
 //! The tabs were on the strip already and opened nothing. What is new here
 //! is only the content — the tab set in `set.rs` is unchanged apart from
-//! naming these.
+//! naming these — and a fourth tab, Render, that Blender's Image editor
+//! does not have (`RENDER`).
 //!
 //! RNA names are `Image` (`rna_image.cc`), `SpaceImageEditor` and
 //! `SpaceUVEditor` (`rna_space.cc`). `IMAGE_PT_image_properties` draws
@@ -106,3 +107,19 @@ mod tests {
         assert!(!IMAGE[0].closed, "the image itself opens");
     }
 }
+
+/// Phiber's own Render tab, beside the three Blender gives the Image editor:
+/// the rows a render is customised by — samples and denoise, the film's
+/// transparency, the frame's size and rate, the output path and format —
+/// over the SAME tables Properties ▸ Render and ▸ Output draw
+/// (`props::render`, `props::output`), so a value typed here is the one
+/// F12 reads and the one the Properties panel shows. In the Rendering
+/// workspace the Properties editor is a tab away; this keeps what a render
+/// needs beside the render — deliberate, recorded.
+pub static RENDER: &[BSectionSpec] = &[
+    sec("Sampling", crate::v2::part::props::render::SAMPLING_RENDER),
+    sec("Denoise", &[]).header(crate::v2::part::props::render::DENOISE_HEADER),
+    sec("Film", &[]).header(crate::v2::part::props::render::FILM_TRANSPARENT_HEADER),
+    sec("Format", crate::v2::part::props::output::FORMAT),
+    sec("Output", crate::v2::part::props::output::OUTPUT),
+];

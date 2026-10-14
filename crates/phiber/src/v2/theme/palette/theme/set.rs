@@ -7,7 +7,8 @@
 //! Accents are (hue, saturation, lightness). Sources: Sphere's `#478AD1`
 //! and Blender's orange; Tokyo Night's `#7AA2F7`; straw, teal and emerald
 //! for Moss, Ember and Plum; the concept car's magenta for Onyx; Boldland's
-//! orange for Grey and Tesla's UI blue for its light mode and for Silver;
+//! orange for Grey and Tesla's UI blue for its light mode; the show's dark
+//! blue for Silver;
 //! Apple's system blue (`#0A84FF` dark, `#007AFF` light); the `phi`
 //! appkit's variants (`appkit/src/theme/variants/*.rs`) for Swift, Barbie,
 //! Fenty, Cyberpunk and Chanel.
@@ -53,10 +54,13 @@ pub static ONYX_LIGHT: BPalette = BPalette::accented(BPaletteName::Onyx, shade::
 pub static GREY: BPalette = BPalette::accented(BPaletteName::Grey, shade::GREY, (32.4, 80.4, 53.9));
 pub static GREY_LIGHT: BPalette = BPalette::accented(BPaletteName::Grey, shade::GREY_LIGHT, (223.8, 73.1, 56.3));
 
-/// Silver: the silver ladder with Tesla's UI blue, `#3E6AE1`, in both
-/// modes; its dark mode is the silver lowered to a gunmetal.
-pub static SILVER: BPalette = BPalette::accented(BPaletteName::Silver, shade::SILVER, (223.8, 73.1, 56.3));
-pub static SILVER_LIGHT: BPalette = BPalette::accented(BPaletteName::Silver, shade::SILVER_LIGHT, (223.8, 73.1, 56.3));
+/// Silver: the show's blue-grey ladder (`shade::SILVER_SEED`, the costume's
+/// `#484C74`) with its dark blue as the highlight — the strap's `#060750`
+/// brought up to `#0F12BD`, the lightness an accent needs to read on the
+/// blue-grey and still be that blue — in both modes. It was the Tesla
+/// silver with Tesla's UI blue.
+pub static SILVER: BPalette = BPalette::accented(BPaletteName::Silver, shade::SILVER, (239.0, 85.0, 40.0));
+pub static SILVER_LIGHT: BPalette = BPalette::accented(BPaletteName::Silver, shade::SILVER_LIGHT, (239.0, 85.0, 40.0));
 
 /// Apple: macOS's dark window grey with its dark-mode blue, `#0A84FF`; its
 /// light mode the light window grey with the system blue, `#007AFF`.

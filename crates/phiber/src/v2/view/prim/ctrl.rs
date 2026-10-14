@@ -30,6 +30,11 @@ pub struct BOption {
 pub enum BCtrlKind {
     /// A checkbox: a box and the label — `Bool`.
     Check,
+    /// A switch, as Apple draws one: the label fills the row and a pill track
+    /// sits at its end, the knob slid to the side it is on — `Bool`. The
+    /// properties' and popovers' rows (`BView::check_row`), so a column of
+    /// them lines up whatever each label says.
+    Switch,
     /// A toggle button: lit when on — `Bool`.
     Toggle,
     /// One button per option, the chosen one lit — `Enum`.
@@ -56,7 +61,7 @@ impl BCtrlKind {
     /// The category of value each widget edits.
     pub const fn value_kind(self) -> BValueKind {
         match self {
-            Self::Check | Self::Toggle => BValueKind::Bool,
+            Self::Check | Self::Switch | Self::Toggle => BValueKind::Bool,
             Self::Radio | Self::Select => BValueKind::Enum,
             Self::Int { .. } => BValueKind::Int,
             Self::Number { .. } | Self::Slider { .. } => BValueKind::Float,

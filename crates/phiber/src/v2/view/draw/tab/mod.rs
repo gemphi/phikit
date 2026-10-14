@@ -215,9 +215,12 @@ fn properties_layers(
     );
     paint = side.round(paint, r);
     paint = if active {
-        // The selected Properties tab sweeps into the panel beside it, so the
-        // rail and the content read as one area.
-        paint.bg(resolved_gradient(ctx.style.tab_active_gradient(ctx.host).along(side.gradient_axis())))
+        // The selected Properties tab is painted as the accordion heading
+        // level with it is — the same surface, the same lit edge, so the two
+        // read as one row (`tab_active_gradient`). The heading's own axis is
+        // kept rather than turned towards the pane: a sweep running the
+        // other way from the accordion's would make them two materials.
+        paint.bg(resolved_gradient(ctx.style.tab_active_gradient(ctx.host)))
     } else {
         // An unselected tab paints NOTHING at rest. It used to draw a darker
         // chip, which left the strip reading inside out: the resting tabs were

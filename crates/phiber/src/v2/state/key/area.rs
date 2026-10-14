@@ -19,6 +19,9 @@ pub enum AreaKey {
     Switcher(&'static str, &'static str, &'static str),
     /// Area `index`'s share of its zone: `ctx.area_size.<space>.<zone>.<index>`.
     Size(BSpaceType, BZoneType, usize),
+    /// `screen.screen_full_area`: `<space slug>|<area label>` while an area
+    /// fills its workspace (`area::maximize`). Not resumed.
+    Maximized,
     /// The seam drag in flight: which space, zone and boundary.
     DragSpace,
     DragZone,
@@ -50,6 +53,7 @@ impl BKey for AreaKey {
                 zone.slug(),
                 SLOTS[(*index).min(SLOTS.len() - 1)],
             ]),
+            Self::Maximized => BPath::owned(vec!["area", "maximized"]),
             Self::DragSpace => BPath::owned(vec!["area_resize", "drag", "space"]),
             Self::DragZone => BPath::owned(vec!["area_resize", "drag", "zone"]),
             Self::DragIndex => BPath::owned(vec!["area_resize", "drag", "index"]),

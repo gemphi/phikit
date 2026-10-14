@@ -430,7 +430,7 @@ async fn the_progress_bar_holds_its_place_as_the_stage_changes(cx: &mut TestAppC
 // ── Gradients ─────────────────────────────────────────────────────────────
 
 #[test]
-fn the_selected_properties_tab_is_the_panel_beside_it() {
+fn the_selected_properties_tab_is_the_panel_head_beside_it() {
     use phiber::v2::theme::{
         BGradientAxis, BPaletteName, resolve_ui_style, ui_style_defaults,
     };
@@ -438,19 +438,12 @@ fn the_selected_properties_tab_is_the_panel_beside_it() {
 
     let style = resolve_ui_style(ui_style_defaults(BPaletteName::DEFAULT), &BState::new());
     let fill = style.tab_active_gradient(BHostType::Buts);
-    // The tab is exactly the panel's own surface, flat. It used to sweep in
-    // from one step over it; a gradient on one side of the join between the
-    // tab and the panel it selects is what made the two read as two matching
-    // boxes rather than as one continuous area — a hole cut in the strip
-    // onto what it selects (`tests/the_properties_strip_is_a_strip.rs`).
-    // The body is one step under the strip — the step a resting tab used to
-    // draw as a chip of its own — so the claim is stated against the body and
-    // not against `bg_panel`, which is the STRIP's shade now.
-    let panel = style.host_body_surface(BHostType::Buts);
-    assert_eq!(fill.bottom, panel.bottom);
-    assert_eq!(fill.top, fill.bottom, "flat, so the join has no edge");
-    assert_eq!(fill, panel);
-    assert_eq!(panel.bottom, style.step(style.colors.bg_panel, -1));
+    // The tab is the accordion heading's surface — the one the panel heads
+    // beside it are painted in — and the strip is the body, so the tab is
+    // marked by wearing the colour of what it opens
+    // (`tests/the_properties_strip_is_a_strip.rs`).
+    assert_eq!(fill, style.heading_surface(phiber::v2::theme::BSurfaceTone::Card));
+    assert_eq!(style.rail_surface(BHostType::Buts), style.host_body_surface(BHostType::Buts));
 
     // And it runs along the rail-to-panel axis, whichever side the rail is on.
     assert_eq!(

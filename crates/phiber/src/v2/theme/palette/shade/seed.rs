@@ -18,9 +18,13 @@ pub const PLUM_SEED: [u8; 3] = [0x43, 0x3B, 0x57];
 pub const ONYX_SEED: [u8; 3] = [0x2A, 0x2A, 0x2A];
 pub const GREY_SEED: [u8; 3] = [0x7A, 0x7A, 0x7A];
 pub const GREY_LIGHT_SEED: [u8; 3] = [0xC4, 0xC6, 0xC9];
-/// Silver: that silver as a theme of its own, born light — its dark mode
-/// is the silver lowered toward black (`lowered`).
-pub const SILVER_LIGHT_SEED: [u8; 3] = GREY_LIGHT_SEED;
+/// Silver: the show's blue-grey — the costume's `#484C74`, read off its
+/// render — as the dominant shade, with its dark blue as the accent
+/// (`theme::SILVER`); its light mode is that blue-grey lifted toward white,
+/// a lavender silver. It was the Tesla silver lowered to a gunmetal, which
+/// read as one more dark grey beside Graphite and Apple Dark.
+pub const SILVER_SEED: [u8; 3] = [0x48, 0x4C, 0x74];
+pub const SILVER_LIGHT_SEED: [u8; 3] = lifted(SILVER_SEED);
 /// Apple's dark and light window greys — one theme, two modes. Apple Dark
 /// is the dark grey alone: its light mode is that grey lifted.
 pub const APPLE_SEED: [u8; 3] = [0x38, 0x38, 0x3A];
@@ -76,7 +80,7 @@ pub const EMBER: BShadeLadder = BShadeLadder::dark(EMBER_SEED);
 pub const PLUM: BShadeLadder = BShadeLadder::dark(PLUM_SEED);
 pub const ONYX: BShadeLadder = BShadeLadder::dark(ONYX_SEED);
 pub const GREY: BShadeLadder = BShadeLadder::dark(GREY_SEED);
-pub const SILVER: BShadeLadder = BShadeLadder::dark(lowered(SILVER_LIGHT_SEED));
+pub const SILVER: BShadeLadder = BShadeLadder::dark(SILVER_SEED);
 pub const APPLE: BShadeLadder = BShadeLadder::dark(APPLE_SEED);
 pub const APPLE_DARK: BShadeLadder = BShadeLadder::dark(APPLE_DARK_SEED);
 pub const SWIFT: BShadeLadder = BShadeLadder::dark(SWIFT_SEED);

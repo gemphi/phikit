@@ -42,15 +42,25 @@ impl BViewItem for BImageBlock {
         if self.host == BHostType::Image && !names.is_empty() {
             let pick = BPick::new(MenuKey::Top(self.host.slug(), "image").path(), BControl::new().with_icon("image").with_label(shown.name()).with_tooltip("Image"));
             row.push(names.iter().fold(pick, |pick, name| pick.item(name, *name == shown.name(), BAction::Set(ImageKey::Shown.path(), name.clone()))).view(s));
-            // While the render runs, its progress and a Cancel beside the
-            // image it is drawing — Blender keeps the job's bar and X in the
-            // status bar (`WM_jobs_stop`), which stays too; here it is also
-            // where the eye is.
+            // While the render runs, its progress, a Pause and a Cancel
+            // beside the image it is drawing — Blender keeps the job's bar
+            // and X in the status bar (`WM_jobs_stop`), which stays too;
+            // here it is also where the eye is. The pause is Phiber's own
+            // (`render_job::pause`): held, the bar says so and the button
+            // reads Resume.
             if shown == super::shown::BShownImage::RenderResult
                 && render_job::rendering()
                 && let Some(shot) = render_job::shot().0
             {
-                row.push(BView::progress_bar(shot.fraction(), set::RENDERING));
+                let held = render_job::paused();
+                row.push(BView::progress_bar(shot.fraction(), if held { set::PAUSED } else { set::RENDERING }));
+                row.push(BView::Button(
+                    BControl::new()
+                        .with_icon(if held { "play" } else { "pause" })
+                        .with_label(if held { set::RESUME } else { set::PAUSE })
+                        .with_tooltip(if held { "Let the render go on from the sample it stopped at" } else { "Hold the render after this sample; the image stays up as it stands" })
+                        .with_action(BAction::Set(OpKey::Render.path(), "pause".to_string())),
+                ));
                 row.push(BView::Button(
                     BControl::new().with_icon("x").with_label(set::CANCEL).with_tooltip("Stop the render and keep what it has drawn (Esc)").with_action(BAction::Set(OpKey::Render.path(), "cancel".to_string())),
                 ));

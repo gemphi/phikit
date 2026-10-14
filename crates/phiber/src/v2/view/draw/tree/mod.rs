@@ -2,9 +2,9 @@
 //!
 //! A tree is a table with indentation: a row's depth is a run of indent
 //! units before its arrow slot, which every row keeps (a leaf's is blank,
-//! as Blender reserves it), and the hierarchy lines that run down those
-//! units are drawn once behind the whole column (`guide::guides_backdrop`),
-//! so they reach the column's foot and no row draws a line of its own.
+//! as Blender reserves it), and each unit of that run carries one hierarchy
+//! line, in the other zebra band's colour (`guide::guide_fill`) — so a row
+//! shows exactly as many lines as it is deep, inside its own background.
 
 use super::atom;
 use super::ctx::BRenderCtx;
@@ -21,7 +21,6 @@ use self::disclosure::BTreeDisclosure;
 
 mod drag;
 mod guide;
-pub use self::guide::guides_backdrop;
 
 mod window;
 pub use self::window::BRowWindow;
@@ -29,8 +28,14 @@ pub use self::window::BRowWindow;
 /// The parts of a tree row — one enum for the family, as every other level
 /// and family states its parts (`BCardPart`, `BMenuPart`, `BRailPart`).
 pub(super) enum BTreePart {
-    /// The run of indent units before the arrow slot: a row's depth, drawn.
+    /// The run of indent units before the arrow slot: a row's depth, drawn,
+    /// each unit carrying its hierarchy line (`Guide`) in the row's
+    /// opposite band.
     Indent(u16),
+    /// One indent unit: a line down its middle, the row's height.
+    IndentUnit,
+    /// The line itself: a hairline, as tall as the row.
+    Guide(BRowShade),
     /// The row itself. `shade` is what it paints at rest and `selected` is
     /// whether the pointer may repaint it — a selected row keeps its fill.
     Row { shade: BRowShade, selected: bool },
@@ -50,8 +55,18 @@ impl BFlexed for BTreePart {
         let unit = ctx.style.dimensions.indent_unit;
         match *self {
             Self::Indent(depth) => {
-                BFlex::cell().width(BLen::Measured(unit * f32::from(depth))).keeps_size()
+                BFlex::row().width(BLen::Measured(unit * f32::from(depth))).height(BLen::Full).keeps_size()
             }
+            Self::IndentUnit => BFlex::row()
+                .width(BLen::Measured(unit))
+                .height(BLen::Full)
+                .keeps_size()
+                .justify(BJustify::Center),
+            Self::Guide(shade) => BFlex::cell()
+                .width(BLen::Measured(ctx.style.strokes.hairline))
+                .height(BLen::Full)
+                .keeps_size()
+                .fill(self::guide::guide_fill(shade, ctx)),
             // A tree row takes the same fills as every other selectable
             // control in the app — the row shade when banded or selected,
             // the shared item hover otherwise. Palette-only `row_alt` /
@@ -65,7 +80,7 @@ impl BFlexed for BTreePart {
             Self::Row { shade, selected } => {
                 let row = BFlex::row()
                     .width(BLen::Full)
-                    .height(BLen::Dim(BDim::RowHeight))
+                    .height(BLen::Dim(BDim::TreeRow))
                     // A row keeps its height: when the host is short the list
                     // scrolls (`column`) rather than squashing every row.
                     .keeps_size()
@@ -112,7 +127,10 @@ impl BFlexed for BTreePart {
     }
 }
 
-pub struct BTreeIndent(pub u16);
+pub struct BTreeIndent {
+    pub depth: u16,
+    pub shade: BRowShade,
+}
 
 pub struct BTreeRow<'a> {
     pub depth: u16,
@@ -130,7 +148,11 @@ pub struct BTreeRow<'a> {
 
 impl BTreeIndent {
     pub fn render(&self, ctx: &BRenderCtx) -> AnyElement {
-        BTreePart::Indent(self.0).flex(ctx).div(ctx).into_any_element()
+        let mut run = BTreePart::Indent(self.depth).flex(ctx).div(ctx);
+        for _ in 0..self.depth {
+            run = run.child(BTreePart::IndentUnit.flex(ctx).div(ctx).child(BTreePart::Guide(self.shade).flex(ctx).div(ctx)));
+        }
+        run.into_any_element()
     }
 }
 
@@ -138,7 +160,7 @@ impl BTreeRow<'_> {
     pub fn render(&self, ctx: &BRenderCtx) -> AnyElement {
         let selected = matches!(self.shade, BRowShade::Selected | BRowShade::Active);
         let mut element = BTreePart::Row { shade: self.shade, selected }.flex(ctx).div(ctx);
-        element = element.child(BTreeIndent(self.depth).render(ctx));
+        element = element.child(BTreeIndent { depth: self.depth, shade: self.shade }.render(ctx));
         element = element.child(
             BTreeDisclosure {
                 expanded: self.expanded,

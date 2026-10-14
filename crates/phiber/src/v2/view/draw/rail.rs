@@ -204,8 +204,12 @@ impl BRail<'_> {
         // it keeps the gap a button keeps rather than running edge to edge
         // the way a tab does (`tab::cap`, and `layout_gutters`, which is
         // about tabs and not this).
-        let element = BFlex::column()
-            .margin_x(BSpace::PadXs)
+        // On a floating strip the bar itself is inset by the strip's own
+        // pad (`BPanePart::Float`), so it takes the strip's full inner width
+        // and its button comes out the same square as the tools above it —
+        // the margin on top of the pad made it the one narrow control.
+        let column = if ctx.floating { BFlex::column() } else { BFlex::column().margin_x(BSpace::PadXs) };
+        let element = column
             .radius(BRadius::Role(BStyleRole::Button))
             .div(ctx)
             .id("rail-actions");

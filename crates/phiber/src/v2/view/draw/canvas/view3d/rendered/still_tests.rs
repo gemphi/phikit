@@ -23,8 +23,8 @@ fn a_still_rendered_in_bands_is_the_still_rendered_whole() {
     let (whole, _) = still(&objects, super::BStillLook::new(BShading::Solid, gpui::white()), cam, 40, 40, 1, false).expect("a GPU");
     super::bands::force(Some(40 * 16));
     let mut banded = None;
-    still_stepwise(&objects, super::BStillLook::new(BShading::Solid, gpui::white()), cam, 40, 40, 1, false, Default::default(), |_, done| {
-        banded = banded.take().or(done);
+    still_stepwise(&objects, super::BStillLook::new(BShading::Solid, gpui::white()), cam, 40, 40, 1, false, Default::default(), |_, at| {
+        if banded.is_none() && at.settled() { banded = at.image(); }
         true
     });
     super::bands::force(None);

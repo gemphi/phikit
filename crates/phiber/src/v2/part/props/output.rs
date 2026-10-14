@@ -30,7 +30,7 @@ static COLOR_DEPTH: &[BEnumItem] = &[
     en("32", "32"),
 ];
 
-static FORMAT: &[BPropSpec] = &[
+pub(crate) static FORMAT: &[BPropSpec] = &[
     i("resolution_x", "Resolution X", 0, 65536),
     i("resolution_y", "Resolution Y", 0, 65536),
     i("resolution_percentage", "Resolution %", 1, 32767),
@@ -104,7 +104,7 @@ static ENCODING: &[BPropSpec] = &[
     i("ffmpeg.video_bitrate", "Bitrate", 1, 14000),
 ];
 
-static OUTPUT: &[BPropSpec] = &[
+pub(crate) static OUTPUT: &[BPropSpec] = &[
     s("filepath", "Output Path"),
     b("use_overwrite", "Overwrite"),
     b("use_placeholder", "Placeholders"),

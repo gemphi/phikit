@@ -104,6 +104,11 @@ fn worlds(s: &BState, model: Option<&SceneModel>) -> HashMap<String, Mat4> {
     out
 }
 
+/// A point rounded to the nearest world unit — Blender's default grid.
+fn grid(p: Vec3) -> Vec3 {
+    p.round()
+}
+
 /// `ctx.op.cursor` (see the module docs).
 pub struct BCursorRule;
 
@@ -132,22 +137,41 @@ impl BRule for BCursorRule {
                 let points: Vec<Vec3> = selection.list.iter().filter_map(|n| place(n)).collect();
                 (!points.is_empty()).then(|| moved(points.iter().sum::<Vec3>() / points.len() as f32))
             }
-            "selection_to_cursor" => {
+            // `view3d.snap_cursor_to_grid`: the cursor rounded to the nearest
+            // world unit (Blender's default grid scale is 1).
+            "cursor_to_grid" => Some(moved(grid(cursor.location))),
+            // `view3d.snap_selected_to_grid` / `_to_active`: each selected
+            // object's origin to the nearest grid point, or onto the active
+            // object. The transform machinery is `selection_to_cursor`'s —
+            // only the per-object target differs — so it is one closure.
+            "selection_to_cursor" | "selection_to_grid" | "selection_to_active" => {
                 let Some(model) = model.as_deref() else { return };
+                let active_at = s.get(CtxKey::Object).and_then(|n| place(n));
+                if op == "selection_to_active" && active_at.is_none() {
+                    return;
+                }
+                let target_for = |world: &Mat4| -> Vec3 {
+                    match op {
+                        "selection_to_grid" => grid(world.w_axis.truncate()),
+                        "selection_to_active" => active_at.unwrap_or(cursor.location),
+                        _ => cursor.location,
+                    }
+                };
                 let mut edits = BTransforms::now(s);
                 let edit = crate::v2::scene::edit::BSceneEdit::now(s);
                 for name in &selection.list {
                     let Some(world) = worlds.get(name) else { continue };
                     // The new world is the old one with its place at the
-                    // cursor; the object's own part takes the difference:
+                    // target; the object's own part takes the difference:
                     // `local · world⁻¹ · world′`.
                     let local = edits.get(name).map(|t| t.matrix()).or_else(|| BTransforms::file_local(&edit, model, name)).unwrap_or(*world);
                     let mut target = *world;
-                    target.w_axis = cursor.location.extend(1.0);
+                    target.w_axis = target_for(world).extend(1.0);
                     edits.set(name, BTransform::of_matrix(local * world.inverse() * target));
                 }
                 edits.write(s);
-                log::push(format!("Moved {} object(s) to the cursor", selection.list.len()));
+                let where_to = match op { "selection_to_grid" => "the grid", "selection_to_active" => "the active object", _ => "the cursor" };
+                log::push(format!("Moved {} object(s) to {where_to}", selection.list.len()));
                 return;
             }
             _ => None,

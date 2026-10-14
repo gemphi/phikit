@@ -52,35 +52,28 @@ fn the_rail_is_level_with_the_content_beside_it() {
 }
 
 #[test]
-fn a_resting_tab_is_the_strip_and_the_selected_one_is_the_panel() {
-    // `wcol_tab.inner` sits UNDER `TH_BACK` and `inner_sel` sits ON it — one
-    // step apart, and the direction is the whole point. Which of the two the
-    // step lands on is what changed: it used to be the resting tab's chip, so
-    // every unselected tab drew a square and the selected tab drew nothing,
-    // and the selection was the one tab with no mark on it. It is the BODY's
-    // now, so a resting tab is strip and the selected tab carries the shade.
-    //
-    // Stated as a step rather than as a lightness comparison, because "darker"
-    // is only Blender's answer in Blender's one dark theme, and this has
-    // sixteen palettes in two modes.
+fn a_resting_tab_is_the_strip_and_the_selected_one_is_the_accordion() {
+    // The strip and the panel beside it are one surface, in every palette
+    // and both modes; a resting tab paints nothing on it; and the selected
+    // tab is the accordion heading's surface (`heading_surface(Card)`), so it
+    // is marked by wearing the colour of what it opens. Stated as surfaces
+    // rather than as a lightness comparison, because "lighter" is only one
+    // theme's answer and this has sixteen palettes in two modes.
     for palette in BPaletteName::ALL {
         for mode in BThemeMode::ALL {
             let style = style_for(*palette, mode);
             let strip = style.rail_surface(BHostType::Buts).bottom;
             let panel = style.host_body_surface(BHostType::Buts).bottom;
-            let active = style.tab_active_gradient(BHostType::Buts).bottom;
+            let active = style.tab_active_gradient(BHostType::Buts);
 
+            assert_eq!(panel, strip, "{palette:?}/{mode:?}: the strip is the panel's own surface, no colour behind it");
             assert_eq!(
-                panel,
-                style.step(strip, -1),
-                "{palette:?}/{mode:?}: the panel is one step off the strip (`wcol_tab.inner` under `TH_BACK`)"
-            );
-            assert_eq!(
-                active, panel,
-                "{palette:?}/{mode:?}: the selected tab is the panel's own shade, so it reads as a hole cut onto it"
+                active,
+                style.heading_surface(phiber::v2::theme::BSurfaceTone::Card),
+                "{palette:?}/{mode:?}: the selected tab is the accordion heading's surface"
             );
             assert_ne!(
-                active, strip,
+                active.bottom, strip,
                 "{palette:?}/{mode:?}: and it must not be the strip, or nothing marks the selection"
             );
         }

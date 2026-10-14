@@ -153,6 +153,20 @@ impl BlendFile {
             scene.props.material_drivers = self.material_drivers(dna).into_iter().map(|(_, set)| set).collect();
             scene.props.light_drivers = self.light_drivers(dna);
             scene.props.world_drivers = self.world_drivers(dna);
+            // Drivers on things that are not objects were read and measured
+            // over batches 172–174 and then never applied, so a file whose
+            // material roughness is driven to 0.9 opened showing the 0.2
+            // saved in it. This is the call that was missing
+            // (`anim/driver/wire.rs`, which says what is still not wired).
+            //
+            // It must come after all three sets are read — the first attempt
+            // sat one line below the materials and silently drove nothing for
+            // the lamps and the world, whose sets were still empty. It reads
+            // the state the object pass leaves, because a socket driven off a
+            // driven custom property only resolves in that order, which is
+            // the depsgraph's.
+            let state = scene.props.motion.driver_state_at(scene.props.frame_current as f32);
+            state.drive(&mut scene);
             scene.props.modifier_drivers = self.modifier_drivers(&scene.objects, dna);
             scene.props.rigs = self.rigs(&scene.objects, dna, &actions);
             // Objects that follow others — by a constraint or a bone parent

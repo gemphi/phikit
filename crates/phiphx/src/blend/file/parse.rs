@@ -105,6 +105,8 @@ impl BlendFile {
             dup_index,
             scope: std::sync::atomic::AtomicUsize::new(usize::MAX),
             cancel_requested: std::sync::atomic::AtomicBool::new(false),
+            deform_memo: std::sync::Mutex::default(),
+            prefix_box: std::sync::Arc::default(),
         })
     }
 

@@ -19,9 +19,13 @@
 //! and the selected one is the background's own shade. Same two shades as the
 //! old rule, opposite roles — the strip was wearing the chip's colour.
 //!
-//! So: the strip is level with the panel, a resting tab is one step under it,
-//! and the active tab is the panel's own surface — flat, not a sheen, because a
-//! gradient on one side of that join makes the two read as two things again.
+//! So: the strip is the column's own surface — no colour behind it that the
+//! panel beside it lacks — a resting tab paints nothing, and the selected tab
+//! is painted as the accordion heading level with it (`heading_surface(Card)`,
+//! lit edge and all), so the tab and the first panel head read as one row of
+//! the same material. The body used to sit one step under the strip with the
+//! selected tab in the body's shade, a hole cut onto the panel; that put a
+//! shade behind the strip, and the hole marked the tab by what it lacked.
 //! The shades across every palette and both modes are
 //! `the_strips_read_as_one_surface.rs`.
 
@@ -56,55 +60,51 @@ fn a_content_region_still_paints_nothing() {
 }
 
 #[test]
-fn the_active_tab_is_exactly_the_surface_it_selects() {
+fn the_active_tab_is_the_accordion_heading_beside_it() {
+    use phiber::v2::theme::BSurfaceTone;
     let style = style();
     let tab = style.tab_active_gradient(BHostType::Buts);
-    let panel = style.host_body_surface(BHostType::Buts);
-    assert_eq!(tab, panel, "the active tab is the panel beside it, so the two meet with no seam");
+    let head = style.heading_surface(BSurfaceTone::Card);
+    assert_eq!(tab, head, "the selected tab is painted as a panel's head — the same surface, the same lit edge");
+    assert_ne!(tab.bottom, style.rail_surface(BHostType::Buts).bottom, "and not the strip, or nothing marks it");
 }
 
 #[test]
-fn that_join_is_flat_on_both_sides() {
-    // A sheen on the tab and a flat panel is the same colour twice with a
-    // gradient across the join, which reads as an edge.
-    let style = style();
-    let tab = style.tab_active_gradient(BHostType::Buts);
-    assert_eq!(tab.top, tab.bottom, "the active Properties tab is flat");
+fn the_tab_keeps_the_headings_own_axis() {
+    // The paint used to be turned towards the pane (`along(side.gradient_axis())`),
+    // which ran its sweep the other way from the accordion's: two materials.
+    let tab = include_str!("../src/v2/view/draw/tab/mod.rs");
+    let paint = tab.split("fn properties_layers").nth(1).expect("the Properties paint layer");
+    let paint = &paint[..paint.find("} else {").unwrap_or(paint.len())];
+    assert!(paint.contains("tab_active_gradient(ctx.host))"), "the heading's gradient as it is");
+    assert!(!paint.contains("gradient_axis"), "not re-aimed at the pane");
 }
 
 #[test]
-fn the_strip_is_flat_and_the_panel_is_the_step_under_it() {
-    // The step has moved twice, and this is where it landed.
+fn the_strip_is_the_column_beside_it() {
+    // The step has moved three times, and this is where it landed: nowhere.
     //
     // It began on the whole strip, which made the nav bar read as a separate
     // panel — wrong, because `region_background_color_id` returns `TH_BACK` for
     // a nav bar, the same as the region beside it. It then moved to the resting
-    // TAB (`wcol_tab.inner`), which was right in Blender's terms and wrong in
-    // the editor's: an unselected tab drew a chip and the selected tab drew
-    // nothing, so the selection was the one tab with no mark on it, and the
-    // chips were louder than the thing they point at.
+    // TAB (`wcol_tab.inner`): an unselected tab drew a chip and the selected tab
+    // drew nothing, so the selection was the one tab with no mark on it. Then
+    // to the BODY, one step under the strip, with the selected tab in the
+    // body's shade — which still painted a colour behind the strip that the
+    // column beside it did not have.
     //
-    // It belongs on the BODY. The strip is flat and level with its own host's
-    // background; the panel is one step under; a resting tab is strip; and the
-    // selected tab takes the panel's shade, so the two are one surface.
+    // The strip is the column's own surface, flat; a resting tab is strip; and
+    // the selected tab wears the accordions' heading, so it is marked by what
+    // it is, not by what it lacks.
     let style = style();
     let rail = style.rail_surface(BHostType::Buts);
     let panel = style.host_body_surface(BHostType::Buts);
-    assert_eq!(rail.top, rail.bottom, "the strip is flat, like the tab it frames");
+    assert_eq!(rail.top, rail.bottom, "the strip is flat");
+    assert_eq!(rail, panel, "the strip is the column beside it — one surface, no colour behind the strip");
     assert_eq!(
         rail.bottom,
         style.host_background(BHostType::Buts),
-        "the strip is its host's own background — `TH_BACK`, not a shade of its own",
-    );
-    assert_eq!(
-        panel.bottom,
-        style.step(rail.bottom, -1),
-        "the panel is the step under the strip — the step the chip used to be",
-    );
-    assert_eq!(
-        style.tab_active_gradient(BHostType::Buts).bottom,
-        panel.bottom,
-        "and the selected tab is the panel, so the join is invisible",
+        "and that is the host's own background — `TH_BACK`, not a shade of its own",
     );
 }
 

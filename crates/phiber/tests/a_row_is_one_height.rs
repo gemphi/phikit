@@ -152,7 +152,11 @@ fn a_cards_row_and_every_other_row_are_the_same_question() {
 async fn every_painted_row_family_lands_on_that_height(cx: &mut TestAppContext) {
     let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
     cx.simulate_resize(size(px(1600.0), px(900.0)));
-    let row_height = ui_style_defaults_in(BPaletteName::DEFAULT, BThemeMode::DEFAULT).dimensions.row_height;
+    let dims = ui_style_defaults_in(BPaletteName::DEFAULT, BThemeMode::DEFAULT).dimensions;
+    let row_height = dims.row_height;
+    // A tree's row is its own, shorter height (`tree_row_height`): Blender's
+    // outliner row is a unit, not a control row, so the list reads as a list.
+    let height_of = |family: &str| if family == "tree row" { dims.tree_row_height } else { row_height };
 
     // Every space, so the tree, the list, the table, the cards and the section
     // headings all get a turn at being on screen.
@@ -192,6 +196,7 @@ async fn every_painted_row_family_lands_on_that_height(cx: &mut TestAppContext) 
     assert!(families.len() >= 3, "at least three row families are on screen to check: {:?}", families.keys());
     let mut wrong: Vec<String> = Vec::new();
     for (family, rows) in &families {
+        let row_height = height_of(family);
         for (sel, h) in rows {
             // A row may be TALLER than the height when it wraps (a two-line
             // label); it may never be shorter, and the common case is exact.
@@ -204,6 +209,7 @@ async fn every_painted_row_family_lands_on_that_height(cx: &mut TestAppContext) 
     // And the common case really is exact, family by family — a rule that only
     // held as "not shorter than" would let one family sit at 40 unnoticed.
     for (family, rows) in &families {
+        let row_height = height_of(family);
         let exact = rows.iter().filter(|(_, h)| (h - row_height).abs() < 0.5).count();
         assert!(
             exact * 2 >= rows.len(),

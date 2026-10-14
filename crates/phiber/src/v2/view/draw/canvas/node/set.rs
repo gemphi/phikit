@@ -63,10 +63,19 @@ fn card(
     ctx: &BRenderCtx,
 ) -> AnyElement {
     let id = node.name.clone();
+    // The card's size is a fraction of the CANVAS (`BCardFraction`), so it
+    // belongs on the absolute wrapper — whose percentage dimensions resolve
+    // against the sized, positioned canvas (`surface::base`) — not on this
+    // inner card, which would resolve its own percentage width against the
+    // auto-sized wrapper and collapse to nothing (the node graph drew its
+    // sockets and wires but no card bodies at all). The inner card fills the
+    // wrapper and splits its own height into the header and the body.
+    let total = size.header + size.body;
+    let header_share = if total > 0.0 { (size.header / total).clamp(0.0, 1.0) } else { 1.0 };
     let mut card = div()
+        .size_full()
         .flex()
         .flex_col()
-        .w(gpui::relative(size.width))
         .rounded(px(ctx.style.radius_for(BStyleRole::Card)))
         .bg(to_hsla(ctx.style.colors.bg_panel))
         .border(px(ctx.style.strokes.border))
@@ -74,7 +83,7 @@ fn card(
         .overflow_hidden()
         .child(
             div()
-                .h(gpui::relative(size.header))
+                .h(gpui::relative(header_share))
                 .px(px(ctx.style.spacing.pad_sm))
                 .flex()
                 .items_center()
@@ -89,8 +98,9 @@ fn card(
         // The body is empty on purpose: everything in it — the socket dots and
         // their names — is painted over the canvas, because a socket sits ON
         // the card's border and a div cannot be drawn half outside its parent.
-        // What the body contributes is its HEIGHT, which is Blender's.
-        .child(div().h(gpui::relative(size.body)));
+        // What the body contributes is its HEIGHT, which is Blender's; it
+        // fills whatever the header leaves.
+        .child(div().flex_1());
     if selected {
         card = card
             .border(px(ctx.style.strokes.border * 2.0))
@@ -103,6 +113,8 @@ fn card(
         .absolute()
         .left(gpui::relative(at.0))
         .top(gpui::relative(at.1))
+        .w(gpui::relative(size.width))
+        .h(gpui::relative(total))
         .child(card)
         .on_click(move |_e: &ClickEvent, w, cx| {
             (Rc::clone(&handler))(&action, w, cx);

@@ -38,8 +38,8 @@ pub enum BFill {
     /// A rail tab at rest — `wcol_tab.inner`, one step under the strip it sits
     /// on, since the strip is level with the panel beside it.
     RailTabResting,
-    /// Chrome floating over a canvas: the panel colour, translucent enough
-    /// for the canvas to show through (Blender's floating panels).
+    /// Chrome floating over a canvas: a step over the panel colour, near
+    /// solid (`pane::floating_bg`).
     Floating,
     /// The dim laid over the workspace behind a modal.
     ModalDim,
@@ -55,8 +55,14 @@ pub enum BFill {
     SwatchHsl(BColor),
     /// An ink, as a fill — the filled part of a drawn glyph.
     Ink(BInk),
-    /// A rule between entries — a menu's separator, a header's divider.
+    /// A rule between entries — a header's divider. `colors.sep` sits near
+    /// the dark end of the ladder, so this is for a rule against a dark
+    /// surface; a rule inside a panel wants [`Self::MenuDivider`].
     Separator,
+    /// A divider inside a menu or a panel: `colors.border`, the shade every
+    /// other border uses and a step lighter than the surface it sits on.
+    /// Borders here are always lighter than their ground, never darker.
+    MenuDivider,
     /// A tone's surface with its gradient flattened to the bottom stop: a
     /// progress track, where a sweep would read as motion that is not there.
     Flat(BSurfaceTone),
@@ -87,6 +93,7 @@ impl BFill {
             Self::SwatchHsl(color) => to_hsla(color).into(),
             Self::Ink(ink) => ink.color(ctx).into(),
             Self::Separator => to_hsla(ctx.style.colors.sep).into(),
+            Self::MenuDivider => to_hsla(ctx.style.colors.border).into(),
             Self::Flat(tone) => to_hsla(ctx.style.surface(tone).bottom).into(),
             Self::Row(shade) => match shade.fill(ctx.style) {
                 Some(color) => to_hsla(color).into(),
@@ -96,7 +103,7 @@ impl BFill {
             Self::ItemHover => to_hsla(ctx.style.host_item_hover(ctx.host)).into(),
             Self::ControlActive => to_hsla(ctx.style.colors.bg_active).into(),
             Self::Floating => {
-                let base = to_hsla(ctx.style.colors.bg_panel);
+                let base = to_hsla(ctx.style.step(ctx.style.colors.bg_panel, 1));
                 gpui::hsla(base.h, base.s, base.l, ctx.style.effects.floating_alpha).into()
             }
         }

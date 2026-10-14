@@ -100,3 +100,27 @@ fn a_node_is_titled_by_its_label_and_identified_by_its_type() {
     n.label = "Skin".into();
     assert_eq!(n.title(), "Skin", "a labelled node is called by its label");
 }
+
+#[test]
+fn a_cards_canvas_size_rides_its_absolute_wrapper_not_the_inner_card() {
+    // The card's width and height are a fraction of the CANVAS, so they must
+    // sit on the absolute wrapper — whose percentages resolve against the
+    // sized canvas — not on the inner card, which would resolve its own
+    // percentage width against the auto-sized wrapper and collapse to a point.
+    // That collapse is what drew the node graph as bare sockets and wires with
+    // no card bodies at all. A source check, because the mistake is in which
+    // div carries the dimension, and that reads straight off the source.
+    let src = include_str!("set.rs");
+    let card_fn = src.split("fn card(").nth(1).expect("the card builder");
+    let card_fn = &card_fn[..card_fn.find("\npub fn render").unwrap_or(card_fn.len())];
+    // The wrapper (`placed`) carries the canvas fractions.
+    assert!(card_fn.contains(".w(gpui::relative(size.width))"), "the wrapper takes the card's canvas-fraction width");
+    assert!(card_fn.contains(".h(gpui::relative(total))"), "and its total height");
+    // The inner card fills that wrapper rather than sizing itself in fractions.
+    assert!(card_fn.contains(".size_full()"), "the inner card fills the wrapper");
+    let before_wrapper = card_fn.split(".absolute()").next().unwrap_or("");
+    assert!(
+        !before_wrapper.contains(".w(gpui::relative(size.width))"),
+        "the inner card must NOT carry the canvas-fraction width (it would collapse to zero)"
+    );
+}

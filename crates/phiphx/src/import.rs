@@ -10,8 +10,6 @@ pub mod usd;
 
 pub mod asset;
 pub mod format;
-#[cfg(feature = "appkit")]
-pub mod project;
 
 pub use asset::{
     AssetImportResult, AssetImporter, ImportedCollection, ImportedMaterial, ImportedObject,
@@ -19,8 +17,6 @@ pub use asset::{
 pub use format::{FileFormat, ObjImporter};
 pub use phx::PhxImporter;
 pub use ply::PlyImporter;
-#[cfg(feature = "appkit")]
-pub use project::{ProjectImportResult, ProjectImporter};
 
 use crate::{PointCloud, Result};
 

@@ -37,7 +37,6 @@ bui = ["dep:gpui"]
 gltf-import = ["dep:gltf"]
 usdz-import = ["dep:zip"]
 usdc-parser = []
-appkit = []
 proptest = []
 
 [dev-dependencies]

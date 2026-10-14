@@ -61,6 +61,10 @@ pub enum OpKey {
     Nla,
     /// `screen.region_toggle`-ish for the Properties panels: `expand` / `collapse`.
     Props,
+    /// `screen.screen_full_area` (Ctrl Space): the slug of the editor whose
+    /// menu fired it — the area showing that editor fills the workspace, or
+    /// the maximized area is put back (`area::maximize`).
+    AreaMaximize,
     /// `wm.read_factory_settings`.
     Factory,
     /// `render.render`: `image` (F12) or `animation` (Ctrl F12).
@@ -136,6 +140,7 @@ impl OpKey {
         Self::Keyframe,
         Self::Nla,
         Self::Props,
+        Self::AreaMaximize,
         Self::Factory,
         Self::Render,
         Self::ExportFormat,
@@ -184,6 +189,7 @@ impl OpKey {
             Self::Keyframe => "keyframe",
             Self::Nla => "nla",
             Self::Props => "props",
+            Self::AreaMaximize => "area_maximize",
             Self::Factory => "factory",
             Self::Render => "render",
             Self::ExportFormat => "export_format",

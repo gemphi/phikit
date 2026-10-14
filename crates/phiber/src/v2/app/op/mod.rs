@@ -62,7 +62,12 @@ impl BPhiberApp {
             Some(OpKey::UndoHistory) => self.undo_to(value.parse().unwrap_or(0)),
             Some(OpKey::Render) => match value.as_str() {
                 "animation" => self.render_animation(cx),
+                "turnaround" => self.render_turnaround(cx),
                 "cancel" => crate::v2::scene::render_job::cancel(),
+                "pause" => {
+                    crate::v2::scene::render_job::toggle_pause();
+                    log::push(if crate::v2::scene::render_job::paused() { "Render paused" } else { "Render resumed" }.to_string());
+                }
                 "view" => self.render_view(),
                 "play" => self.render_play(cx),
                 _ => self.render_image(),

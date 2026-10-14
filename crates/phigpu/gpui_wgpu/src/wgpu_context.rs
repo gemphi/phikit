@@ -183,7 +183,17 @@ impl WgpuContext {
     #[cfg(not(target_family = "wasm"))]
     pub fn instance(display: Box<dyn wgpu::wgt::WgpuHasDisplayHandle>) -> wgpu::Instance {
         wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::VULKAN | wgpu::Backends::GL,
+            // Every platform's NATIVE backend, GL last. DX12 was missing, so on
+            // Windows the instance offered only Vulkan or GL — and a machine
+            // with a discrete GPU but no Vulkan driver fell back to OpenGL and
+            // rendered poorly. `select_adapter_and_device` already ranks
+            // Vulkan/Metal/DX12 over GL and discrete over integrated, so the
+            // only thing missing was offering DX12/Metal to rank in the first
+            // place (Metal on macOS, DX12 on Windows).
+            backends: wgpu::Backends::VULKAN
+                | wgpu::Backends::METAL
+                | wgpu::Backends::DX12
+                | wgpu::Backends::GL,
             flags: wgpu::InstanceFlags::default(),
             backend_options: wgpu::BackendOptions::default(),
             memory_budget_thresholds: wgpu::MemoryBudgetThresholds::default(),

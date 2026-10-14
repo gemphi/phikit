@@ -8,7 +8,8 @@
 //! overlays on top of the content so the canvas fills the full host area
 //! (Blender's floating panel behaviour).
 
-use super::flex::{BAlign, BFill, BFlex, BFlexed, BJustify, BLen, BOverflow, BPlace, BSide, BSpace, BDim};
+use super::flex::{BAlign, BFill, BFlex, BFlexed, BJustify, BLen, BOverflow, BPlace, BRadius, BSide, BSpace, BDim};
+use crate::v2::theme::BStyleRole;
 use super::color::to_hsla;
 use super::ctx::BRenderCtx;
 use super::walk;
@@ -34,11 +35,14 @@ fn is_floating_pane(kind: BPaneType, ctx: &BRenderCtx) -> bool {
 }
 
 /// The fill every piece of floating chrome shares — the toolbar, the sidebar
-/// and the navigation gizmos. Slightly translucent so the canvas shows
-/// through, matching Blender's floating panels. (`BFill::Floating` is the
-/// same colour for containers built through `BFlex`.)
+/// and the navigation gizmos: one step over the panel shade, so the strip
+/// is a light bar on the body it floats over, at `floating_alpha` — near
+/// solid, a hint of the canvas through it. (`BFill::Floating` is the same
+/// colour for containers built through `BFlex`.) Blender's floating panels
+/// are the region's own colour at `TH_BACK`'s alpha; a lighter bar is
+/// Phiber's — deliberate, recorded.
 pub fn floating_bg(ctx: &BRenderCtx) -> Hsla {
-    let base = to_hsla(ctx.style.colors.bg_panel);
+    let base = to_hsla(ctx.style.step(ctx.style.colors.bg_panel, 1));
     hsla(base.h, base.s, base.l, ctx.style.effects.floating_alpha)
 }
 
@@ -49,7 +53,7 @@ pub fn floating_strip_room(is_right: bool, ctx: &BRenderCtx) -> f32 {
     if !ctx.host.floats_side_panels() {
         return 0.0;
     }
-    strip_width(is_right, ctx) + panels_width(is_right, ctx) + 2.0 * ctx.style.spacing.pad_sm
+    strip_width(is_right, ctx) + panels_width(is_right, ctx) + 2.0 * ctx.style.spacing.pad_sm + 2.0 * ctx.style.spacing.pad_xs
 }
 
 /// The sidebar region beside a right-hand strip while it is open (the N panel).
@@ -142,14 +146,21 @@ impl BFlexed for BPanePart {
             // No rail behind the entries: each is a button on the canvas
             // (`control_fill` floating), a gap apart, as the mock-ups draw the
             // toolbar and the sidebar tabs.
+            // A floating strip is a bar: the floating shade behind its
+            // buttons (`floating_bg`), rounded as a panel is, its buttons a
+            // pad in from its edges — so the strip reads as one sidebar over
+            // the canvas rather than loose buttons on it, and the foot's
+            // controls sit off its edges as every other button does.
             Self::Float { side, strip } => BFlex::column()
                 // The strip's foot is its pinned cluster, a cap gap (2px) off
                 // the canvas's bottom edge, as a docked rail's is off its
                 // region's (`region`).
                 .place(BPlace::Float { side, inset: BSpace::PadSm, foot: BSpace::MenuTopGap })
                 .gap(BSpace::GapXs)
-                .width(BLen::Measured(strip))
-                .fill(BFill::Clear),
+                .pad(BSpace::PadXs)
+                .width(BLen::Measured(strip + 2.0 * ctx.style.spacing.pad_xs))
+                .radius(BRadius::Role(BStyleRole::Panel))
+                .fill(BFill::Floating),
             Self::Cell { kind, in_header, pinned, floor, fielded, columns, wraps } => {
             let base = BFlex::row().gap(BSpace::GapXs);
             // A strip centres its controls on one line — a cap, a button, a
@@ -252,6 +263,11 @@ impl BFlexed for BPanePart {
 pub fn view(kind: BPaneType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
     // Canvas-host Toolbar / Sidebar: an overlay on the canvas, not a flex slot.
     if is_floating_pane(kind, ctx) {
+        // Hidden (Toolbar off, T): the parts are all empty, so the floating
+        // bar draws nothing rather than an empty rounded strip on the canvas.
+        if list.iter().all(view_is_empty) {
+            return gpui::div().into_any_element();
+        }
         let is_right = kind == BPaneType::Right;
         let side = if is_right { BSide::Right } else { BSide::Left };
         let id = format!("pane-floating-{:?}-{:?}", kind, ctx.host);
@@ -307,6 +323,16 @@ pub fn view(kind: BPaneType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
         }
     }
     element.into_any_element()
+}
+
+/// Whether a view contributes nothing to paint — an empty part, or a part
+/// whose body is empty (a hidden Toolbar).
+fn view_is_empty(view: &BView) -> bool {
+    match view {
+        BView::Empty => true,
+        BView::Part { body, .. } => view_is_empty(body),
+        _ => false,
+    }
 }
 
 /// Whether a view holds a typed field somewhere in it.

@@ -20,7 +20,7 @@ pub use semantic::{
 };
 pub use set::{BMetric, METRICS};
 pub use style::{
-    BAnimColors, BDimensions, BEffects, BElevation, BFontFamily, BRadiusScale, BRadiusToken, BResizeStyle,
+    BAnimColors, BDimensions, BEffects, BElevation, BFlavour, BFlavourScope, BFontFamily, BRadiusScale, BRadiusToken, BResizeStyle,
     BResolvedColors, BResolvedUiStyle, BRoleMap, BShadowStyle, BSpacing, BStrokes, BStyleRole,
     BTypography, BUiStyleDefaults, BUvColors, MEDIUM_RADII, PILL_RADII, ROUND_RADII, SOFT_RADII,
     SQUARE_RADII, TIGHT_RADII, HEAD_ROOM, BNodeClass, class_color, class_of, socket_color, ui_style_defaults, ui_style_defaults_in,

@@ -11,7 +11,7 @@ use crate::v2::state::OpKey;
 
 // ── 3D Viewport (`VIEW3D_MT_view`, `_select_object`, `_add`, `_object`) ──
 static VIEW3D_VIEWPOINT: &[BMenuItem] = &[
-    op("Camera", "Numpad 0"),
+    fire("Camera", "Numpad 0", OpKey::View3d, "view_camera"),
     SEP,
     fire("Top", "Numpad 7", OpKey::View3d, "viewpoint:top"),
     fire("Bottom", "Ctrl Numpad 7", OpKey::View3d, "viewpoint:bottom"),
@@ -44,7 +44,7 @@ static VIEW3D_REGIONS: &[BMenuItem] = &[
     fire("Clear Render Region", "Ctrl Alt B", OpKey::RenderBorder, "clear"),
 ];
 pub static VIEW3D_VIEW: &[BMenuItem] = &[
-    op("Toolbar", "T"),
+    tog_host_on("Toolbar", "T", crate::v2::part::toolbar::BToolbarShown::key_for),
     // `space_data.show_region_ui`: the sidebar region beside the tab strip.
     tog_keyed("Sidebar", "N", crate::v2::part::sidebar::show::BSidebarShown::view3d_key),
     SEP,
@@ -58,14 +58,17 @@ pub static VIEW3D_VIEW: &[BMenuItem] = &[
     SEP,
     sub("View Regions", VIEW3D_REGIONS),
     SEP,
-    op("Toggle Maximize Area", "Ctrl Space"),
+    fire("Toggle Maximize Area", "Ctrl Space", OpKey::AreaMaximize, ""),
 ];
-/// The node editors' View menu (`NODE_MT_view`).
+/// The node editors' View menu (`NODE_MT_view`). Frame All (Home) and Frame
+/// Selected (Numpad .) each frame the showing editor's graph — the whole of
+/// it, or the selected nodes alone (`NODE_OT_view_all` /
+/// `NODE_OT_view_selected`, `canvas/node/view/op`).
 pub static EDITOR_VIEW: &[BMenuItem] = &[
-    op("Frame All", "Home"),
-    op("Frame Selected", "Numpad ."),
+    fire_host("Frame All", "Home", OpKey::NodeView, ":all"),
+    fire_host("Frame Selected", "Numpad .", OpKey::NodeView, ":selected"),
     SEP,
-    op("Toggle Maximize Area", "Ctrl Space"),
+    fire("Toggle Maximize Area", "Ctrl Space", OpKey::AreaMaximize, ""),
 ];
 pub static SELECT_ITEMS: &[BMenuItem] = &[
     fire("All", "A", OpKey::Select, "all"),
@@ -106,13 +109,13 @@ static OBJECT_TRANSFORM: &[BMenuItem] = &[
 ];
 /// `VIEW3D_MT_snap`: the cursor to the selection and back (`scene::cursor`).
 static OBJECT_SNAP: &[BMenuItem] = &[
-    op("Selection to Grid", ""),
+    fire("Selection to Grid", "", OpKey::Cursor, "selection_to_grid"),
     fire("Selection to Cursor", "", OpKey::Cursor, "selection_to_cursor"),
-    op("Selection to Active", ""),
+    fire("Selection to Active", "", OpKey::Cursor, "selection_to_active"),
     SEP,
     fire("Cursor to Selected", "", OpKey::Cursor, "selected"),
     fire("Cursor to World Origin", "", OpKey::Cursor, "origin"),
-    op("Cursor to Grid", ""),
+    fire("Cursor to Grid", "", OpKey::Cursor, "cursor_to_grid"),
     fire("Cursor to Active", "", OpKey::Cursor, "active"),
 ];
 /// `VIEW3D_MT_object_animation`: I keys the selected objects

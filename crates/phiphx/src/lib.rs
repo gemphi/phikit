@@ -47,8 +47,6 @@ pub use geom::vertex::{Vertex, VertexAttributes};
 pub use import::{
     AssetImportResult, AssetImporter, ImportedCollection, ImportedMaterial, ImportedObject,
 };
-#[cfg(feature = "appkit")]
-pub use import::{ProjectImportResult, ProjectImporter};
 pub use phx::Phx;
 pub use project::*;
 pub use spatial::{

@@ -98,6 +98,10 @@ fn command_palette_searches_every_menu_leaf() {
     let hits = phiber::v2::modal::command::palette::hits("open");
     assert!(hits.iter().any(|h| h.path == "File ▸ Open…" || h.path.starts_with("File ▸ Open")), "{:?}", hits.iter().map(|h| &h.path).collect::<Vec<_>>());
     assert!(phiber::v2::modal::command::palette::hits("").len() > 30);
+    // Render ▸ Render Turnaround is a leaf the palette finds, firing the op.
+    let turnaround = phiber::v2::modal::command::palette::hits("turnaround");
+    let hit = turnaround.iter().find(|h| h.path == "Render ▸ Render Turnaround").expect("the turnaround command is in the Render menu");
+    assert_eq!(hit.action, BAction::Set(phiber::v2::state::OpKey::Render.path(), "turnaround".to_string()));
 }
 
 #[test]

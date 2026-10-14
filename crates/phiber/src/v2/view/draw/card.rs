@@ -156,8 +156,11 @@ impl BFlexed for BCardPart {
 /// for itself — this one replaces the `panel_tone` that only ever answered
 /// `Card`.
 fn panel_fill(ctx: &BRenderCtx) -> BFill {
-    // Flat where the panel fills its region: the activity bar's strip.
-    if ctx.host == crate::v2::host::BHostType::Activity && ctx.region == Some(crate::v2::region::BRegionType::Center) { BFill::Flat(BSurfaceTone::Card) } else { BFill::Tone(BSurfaceTone::Card) }
+    // The activity bar's secondary column takes the floating bar's material
+    // — the shade the viewport's toolbar and sidebar bars wear — so every
+    // column standing beside a rail is one surface, not a card shade here
+    // and a lighter bar there.
+    if ctx.host == crate::v2::host::BHostType::Activity && ctx.region == Some(crate::v2::region::BRegionType::Center) { BFill::Floating } else { BFill::Tone(BSurfaceTone::Card) }
 }
 
 /// The name a card's selectors are built from: its fold key, its title, or

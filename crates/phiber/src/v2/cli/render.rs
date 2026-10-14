@@ -1,0 +1,197 @@
+//! One headless render pass, as a type — the loop that
+//! `examples/animation_render.rs` has run since batch 53, lifted into the
+//! library so the command line and the examples share it instead of each
+//! carrying a copy.
+//!
+//! Nothing about the scene is changed by rendering it: the camera, the
+//! lamps, the world and the view transform are the file's, because the
+//! point is what the file looks like. The switches under
+//! [`BLookOverride`] exist for *measurement* — isolating where the light
+//! comes from when comparing against Blender — and are off unless asked
+//! for.
+
+use crate::phiphx::Phx;
+use crate::v2::app::seed::{seed_output_props, seed_render_props, seed_view_layer};
+use crate::v2::part::outliner::key::BHidden;
+use crate::v2::scene::{BObject3D, current_scene, plan_at, render_set, source::set_loaded_scene};
+use crate::v2::state::{BState, CtxKey};
+use crate::v2::view::draw::canvas::view3d::rendered::{BMatStand, BRayLook, environment, still, view_words};
+
+use super::set::BRenderQuality;
+
+/// What one frame cost, for the `times.txt` the comparisons read.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct BFrameCost {
+    pub frame: f32,
+    pub posed_ms: f64,
+    pub drew_ms: f64,
+    pub samples: u32,
+}
+
+impl BFrameCost {
+    /// The line `times.txt` holds — `frame posed_ms render_ms samples`, the
+    /// shape `animation_compare` and `blender_animation.py` both expect.
+    pub fn line(&self) -> String {
+        format!("{} {:.0} {:.0} {}\n", self.frame, self.posed_ms, self.drew_ms, self.samples)
+    }
+}
+
+/// The measurement switches, each off by default. A render for its own sake
+/// leaves every one of these alone.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct BLookOverride {
+    /// `PHIBER_NO_WORLD`: the world contributes nothing (lamps only).
+    pub no_world: bool,
+    /// `PHIBER_NO_LIGHTS`: every lamp is dropped (the world only).
+    pub no_lights: bool,
+    /// `PHIBER_VIEW`: a view transform in place of the file's.
+    pub view: Option<String>,
+    /// `PHIBER_OVERRIDE`: one grey Lambertian surface in place of every
+    /// material, so a render measures the light and not the materials.
+    pub material: Option<f32>,
+    /// `PHIBER_SCALE`: divide the resolution, for a quick pass.
+    pub scale: u32,
+    /// `PHIRAY_DENOISE=0`: the filter off, which is what a measurement
+    /// wants — the denoiser smooths frame-to-frame noise.
+    pub denoise: Option<bool>,
+}
+
+impl BLookOverride {
+    /// The switches as the environment sets them, which is how the
+    /// examples have always taken them.
+    pub fn from_env() -> Self {
+        let flag = |name: &str| std::env::var(name).is_ok();
+        Self {
+            no_world: flag("PHIBER_NO_WORLD"),
+            no_lights: flag("PHIBER_NO_LIGHTS"),
+            view: std::env::var("PHIBER_VIEW").ok(),
+            material: std::env::var("PHIBER_OVERRIDE").ok().map(|a| a.parse().unwrap_or(1.0)),
+            scale: std::env::var("PHIBER_SCALE").ok().and_then(|v| v.parse().ok()).unwrap_or(1),
+            denoise: std::env::var("PHIRAY_DENOISE").ok().map(|v| v != "0"),
+        }
+    }
+}
+
+/// A render to perform: which file, which frames, and where the frames go.
+#[derive(Clone, Debug)]
+pub struct BHeadlessRender {
+    pub file: String,
+    pub out: String,
+    /// The frames, already resolved — `BCli::frame_list` for the command
+    /// line, a `start ..= end` walk for the examples.
+    pub frame: Vec<f32>,
+    /// `None` takes [`BRenderQuality::SAMPLE_FLOOR`], so a render is the
+    /// quality one unless it was asked to be otherwise.
+    pub samples: Option<u32>,
+    pub draft: bool,
+    pub look: BLookOverride,
+}
+
+impl BHeadlessRender {
+    /// The frames `start ..= end` by `step`, the way Ctrl F12 takes them —
+    /// an `end` below `start` means the file's own end, and an `end` equal
+    /// to `start` is one frame and not "unset".
+    pub fn range(start: f32, end: f32, step: f32, file_end: f32) -> Vec<f32> {
+        let end = if end >= start { end } else { file_end };
+        let step = if step > 0.0 { step } else { 1.0 };
+        let mut out = Vec::new();
+        let mut frame = start;
+        while frame <= end + 1e-3 {
+            out.push(frame);
+            frame += step;
+        }
+        out
+    }
+
+    /// The samples every frame takes: the floor applied, as the command
+    /// line applies it.
+    pub fn sample_count(&self) -> u32 {
+        BRenderQuality::samples(self.samples, self.draft)
+    }
+
+    /// Run it. One PNG per frame as `f0001.png`, and a `times.txt` beside
+    /// them — the names the Blender script and the comparisons expect.
+    pub fn run(&self) -> Result<Vec<BFrameCost>, String> {
+        std::fs::create_dir_all(&self.out).map_err(|e| format!("outdir: {e}"))?;
+        let mut model = Phx::open(std::path::Path::new(&self.file)).map_err(|e| format!("open: {e:?}"))?;
+        if let Some(albedo) = self.look.material {
+            BMatStand::set(Some(BMatStand::grey(albedo)));
+        }
+        if self.look.no_world {
+            model.world.background.strength = 0.0;
+        }
+        if self.look.no_lights {
+            model.lights.clear();
+        }
+        if let Some(view) = &self.look.view {
+            model.render.view_transform = view.clone();
+        }
+
+        let mut state = BState::new();
+        seed_view_layer(&mut state, &model);
+        seed_render_props(&mut state, &model);
+        // Film ▸ Transparent and the output settings live in the other
+        // seed; without it every render painted a background Blender
+        // leaves out.
+        seed_output_props(&mut state, &model);
+        set_loaded_scene(Some(model.clone()));
+        let hidden = BHidden::now(&state);
+        let mut set = render_set(&state);
+        set.samples = self.sample_count();
+
+        let scale = self.look.scale.max(1);
+        let plain = gpui::hsla(0.0, 0.0, 0.8, 1.0);
+        let mut cost = Vec::new();
+        for &frame in &self.frame {
+            let began = std::time::Instant::now();
+            // The frame the scene stands at: `current_scene` poses the rig
+            // and the objects, `plan_at` puts the camera where it is.
+            state.set(CtxKey::Frame, format!("{frame}"));
+            let objects: Vec<BObject3D> = current_scene(&state, Some(&model))
+                .into_iter()
+                .filter(|o| !matches!(o, BObject3D::Loaded { name, .. } if hidden.hides(&state, name)))
+                .collect();
+            let posed = began.elapsed();
+            let look = BRayLook {
+                sky: gpui::hsla(0.0, 0.0, 0.14, 1.0),
+                grid: gpui::hsla(0.0, 0.0, 0.3, 1.0),
+                world: Some(model.world.background.radiance()),
+                lights: crate::v2::scene::motion::lights_at(&model, Some(frame)),
+                wire: None,
+                view: view_words(&state),
+                grid_hide: 0,
+                environment: environment().map(|(_, rot)| rot),
+                set,
+                studio: false,
+            };
+            let mut plan = plan_at(&model, set, &look, plain, Some(frame)).ok_or("the scene names no camera")?;
+            if let Some(denoise) = self.look.denoise {
+                plan.denoise = denoise;
+            }
+            plan.w = (plan.w / scale).max(1);
+            plan.h = (plan.h / scale).max(1);
+            let shot = std::time::Instant::now();
+            let (pixel, taken) = still(&objects, plan.look, plan.camera, plan.w, plan.h, plan.samples, plan.denoise)
+                .ok_or("no gpu adapter, or a scene that does not fit")?;
+            let drew = shot.elapsed();
+            let path = format!("{}/f{:04}.png", self.out, frame as i64);
+            image::RgbaImage::from_raw(plan.w, plan.h, pixel)
+                .ok_or("the pixels do not fill the frame")?
+                .save(&path)
+                .map_err(|e| format!("save {path}: {e}"))?;
+            cost.push(BFrameCost {
+                frame,
+                posed_ms: posed.as_secs_f64() * 1000.0,
+                drew_ms: drew.as_secs_f64() * 1000.0,
+                samples: taken,
+            });
+        }
+        let times: String = cost.iter().map(BFrameCost::line).collect();
+        std::fs::write(format!("{}/times.txt", self.out), times).map_err(|e| format!("times: {e}"))?;
+        Ok(cost)
+    }
+}
+
+#[cfg(test)]
+#[path = "render_tests.rs"]
+mod render_tests;

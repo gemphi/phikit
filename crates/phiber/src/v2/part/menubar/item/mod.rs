@@ -24,6 +24,12 @@ pub enum BMenuKind {
     /// — checked unless the key is `false` (a zone's "Show …"), rather than
     /// only while it is `true`.
     Toggle(fn() -> crate::v2::state::BPath, bool),
+    /// A checkable entry whose key belongs to the editor showing the menu:
+    /// the key is asked for with the host at hand, when drawn and when
+    /// picked. For a table several editors share (`image::VIEW` serves the
+    /// Image and UV editors; `NODE` the node editors), View ▸ Sidebar flips
+    /// *that* editor's `<host>.show.sidebar`, not a fixed one's.
+    HostToggle(fn(crate::v2::host::BHostType) -> crate::v2::state::BPath, bool),
     Sub(&'static [BMenuItem]),
     Sep,
     /// An entry that writes state when picked — `image.view_zoom_ratio`,
@@ -32,6 +38,14 @@ pub enum BMenuKind {
     /// An operator fired as one intent: `Set(ctx.op.<key>, value)`, consumed
     /// by the rule (or the app) that owns it.
     Fire(crate::v2::state::OpKey, &'static str),
+    /// An operator whose value names the editor showing the menu — the host's
+    /// slug followed by the suffix: `HostFire(NodeView, ":all")` picked in the
+    /// Compositor fires `Set(ctx.op.node_view, "compositor:all")`, in the
+    /// Shader editor `"shader:all"`. One shared table (`EDITOR_VIEW` serves the
+    /// node editors) thus frames *that* editor's graph, the way `HostToggle`
+    /// flips that editor's region. A host the slug does not name (the palette
+    /// walking the table) reports the entry instead.
+    HostFire(crate::v2::state::OpKey, &'static str),
     /// The recent files, one entry each, from the list the splash keeps.
     Recent,
     /// The undo steps, listed live from `app::undo::listing()`.

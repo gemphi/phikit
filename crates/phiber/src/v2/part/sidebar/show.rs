@@ -25,6 +25,13 @@ impl BSidebarShown {
         Self(BHostType::View3D).key()
     }
 
+    /// `host`'s key, for a View ▸ Sidebar (N) in a menu table several editors
+    /// share (`tog_host`): the Image and UV editors, the node editors, the
+    /// animation editors each flip their own region.
+    pub fn key_for(host: BHostType) -> BPath {
+        Self(host).key()
+    }
+
     /// Is the region open? Closed until opened, as Blender's startup file
     /// has it.
     pub fn on(self, s: &BState) -> bool {
