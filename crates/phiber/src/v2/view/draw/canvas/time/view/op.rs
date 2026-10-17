@@ -2,10 +2,13 @@
 //! `<editor>:all` is `action.view_all` / `graph.view_all` / `nla.view_all`
 //! (Home) — the shown keys or strips stretched across the window;
 //! `<editor>:scene` is `anim.scene_range_frame` — the scene or preview
-//! range; `<editor>:zoom:<steps>` is `view2d.zoom_in` / `zoom_out` (the
-//! wheel) and `<editor>:scroll:<pixels>` is `view2d.scroll_left` /
-//! `scroll_right` (Ctrl wheel). The maths is `cur.rs`; the editor's window
-//! width comes from its last paint (`BTimeCur::width_of`).
+//! range; `<editor>:center` is `action.view_frame` / `graph.view_frame` /
+//! `nla.view_frame` (Numpad 0) — pan the view to the current frame, keeping
+//! width (`ANIM_center_frame`, `anim_ops.cc`); `<editor>:zoom:<steps>` is
+//! `view2d.zoom_in` / `zoom_out` (the wheel) and `<editor>:scroll:<pixels>`
+//! is `view2d.scroll_left` / `scroll_right` (Ctrl wheel). The maths is
+//! `cur.rs`; the editor's window width comes from its last paint
+//! (`BTimeCur::width_of`).
 
 use super::cur::{BTimeCur, SCROLL_PX};
 use super::super::curve::BAxisColors;
@@ -94,6 +97,14 @@ impl BRule for BTimeViewRule {
             }
             "zoom" => cur.zoomed(amount, px),
             "scroll" => cur.scrolled(amount, px),
+            // `ACTION_OT_view_frame` (`action_edit.cc`'s `actkeys_view_frame_exec`,
+            // Numpad 0): pan the view to the current frame, keeping width.
+            // `ANIM_center_frame` is the shared helper the Dope / Graph /
+            // NLA / Sequencer each dispatch to.
+            "center" => {
+                let frame = s.get(CtxKey::Frame).and_then(|v| v.parse::<f32>().ok()).unwrap_or(1.0);
+                cur.centered(frame)
+            }
             _ => return,
         };
         s.set(TimeViewKey(host), next.encode());
@@ -136,6 +147,25 @@ mod tests {
         assert_eq!(wheel_op(BHostType::Time, 1.0, false, false).as_deref(), Some("time:zoom:1.000"));
         assert_eq!(wheel_op(BHostType::Nla, -1.0, true, false).as_deref(), Some("nla:scroll:40.0"), "Ctrl wheel down: right");
         assert_eq!(wheel_op(BHostType::Time, 1.0, false, true), None, "Shift: the channels' scroll, not the view's");
+    }
+
+    #[test]
+    fn center_pans_the_view_to_the_current_frame_keeping_width() {
+        // `ACTION_OT_view_frame`: the frame goes to the middle, the width is
+        // the same.
+        let mut s = BState::default();
+        BTimeCur::note_width(BHostType::Time, 1000.0);
+        // Start from a known view: `time:all` with no keys lays out the scene
+        // range with margins — a predictable `first..last`.
+        fire(&mut s, "time:all");
+        let before = BTimeCur::stored(&s, BHostType::Time).expect("the Timeline keeps its view");
+        let width = before.width();
+        s.set(CtxKey::Frame, "100");
+        fire(&mut s, "time:center");
+        let after = BTimeCur::stored(&s, BHostType::Time).expect("still kept");
+        assert!((after.width() - width).abs() < 1e-3, "width unchanged");
+        let middle = (after.first + after.last) * 0.5;
+        assert!((middle - 100.0).abs() < 1e-3, "{middle}: current frame at the centre");
     }
 
     /// Over phiphx's `fixtures/actions.blend`: the Cube's keys at 1 and 20.

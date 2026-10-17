@@ -10,10 +10,12 @@ use crate::v2::state::BState;
 
 // ── Child modules ───────────────────────────────────────────────────────
 
+pub mod shape;
+pub use shape::BShape;
+
 pub mod skin;
 pub use skin::RaySkin;
 
-pub mod composite;
 pub mod source;
 pub use source::{
     clear_loaded_scene, clear_scene_objects, scene_actions, scene_cameras, scene_lights,
@@ -59,9 +61,11 @@ pub mod color;
 pub mod keyframe;
 pub use keyframe::BShownKeys;
 pub mod edit;
-pub mod uv_edit;
 pub mod export;
 pub mod extra;
+pub mod parent;
+pub mod composite;
+pub mod uv_edit;
 pub mod image_gen;
 pub mod image_list;
 pub mod import;
@@ -113,9 +117,6 @@ mod tests_scene;
 mod tests_state;
 
 // ── Default scene: shapes, static objects, and the runtime scene source ──
-
-pub mod shape;
-pub use shape::BShape;
 
 /// One scene object. Position is in an abstract world space centred on the
 /// origin; the viewport projects `(x, y)` to screen using the current yaw.
@@ -207,4 +208,11 @@ pub fn scene_metrics(objects: &[BObject3D]) -> (usize, usize, usize) {
 /// thread instead.
 pub fn current_scene(s: &BState, loaded: Option<&SceneModel>) -> Vec<BObject3D> {
     pose::BPosed::exact(loaded, motion::shown_frame(s)).scene(s, loaded)
+}
+
+/// `current_scene` filtered by Outliner render restrictions — the camera
+/// icon (`pose::visible_in_render`). What a render job draws; viewport
+/// filtering is applied downstream through `BShown::now` instead.
+pub fn render_scene(s: &BState, loaded: Option<&SceneModel>) -> Vec<BObject3D> {
+    pose::visible_in_render(s, current_scene(s, loaded))
 }

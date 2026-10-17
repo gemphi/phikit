@@ -112,6 +112,39 @@ pub enum OpKey {
     /// `NodeKey::View` straight from the canvas, which is the only place that
     /// knows the pointer and the region (`canvas/node/view/op.rs` says why).
     NodeView,
+    /// `NODE_OT_select_all`: `<editor>:all` (A), `<editor>:none` (Alt A),
+    /// `<editor>:invert` (Ctrl I) — the whole-graph selection ops the node
+    /// editors share. Picking is a gesture (`canvas/node/select`); these are
+    /// the keystrokes that act on every node at once (`canvas/node/select/op.rs`).
+    NodeSelect,
+    /// `NODE_OT_delete` (X): the selected nodes come out of the graph. The
+    /// value names the editor (`<editor>`); the rule reads that editor's
+    /// selection (`canvas/node/remove/op.rs`).
+    NodeDelete,
+    /// `NODE_OT_duplicate` (Shift D): the selected nodes copied as additions,
+    /// the copies selected. The value names the editor
+    /// (`canvas/node/add/duplicate.rs`).
+    NodeDuplicate,
+    /// The animation editors' channel operators: `extend:const|lin`,
+    /// `protect:on|off|toggle`, `mute:on|off|toggle` — a curve's
+    /// extrapolation and its Protect / Mute (`scene/action/channel.rs`).
+    Channels,
+    /// Object ▸ Clear (Alt G / R / S): `location` / `rotation` / `scale` back
+    /// to identity on the selected objects (`scene/transform`).
+    ObjectClear,
+    /// Object ▸ Parent: `set` makes the selected objects children of the
+    /// active one (Ctrl P `PAR_OBJECT`); `clear` takes a parent off (Alt P
+    /// `CLEAR_PARENT_ALL`) — `scene/parent`.
+    ObjectParent,
+    /// `wm.context_set_enum` with `area.type` — the Toggle Graph Editor and
+    /// Toggle Dope Sheet entries (`space_dopesheet.py`, `space_graph.py`).
+    /// Value is `<from>:<to>`: the area currently showing `from` switches to
+    /// `to` (`area/current::area_key`).
+    EditorType,
+    /// Scene ▸ Preview Range: `selected` reads the selected keyframe columns
+    /// and makes their extents the preview range (`ACTION_OT_previewrange_set`,
+    /// `action_edit.cc`); `clear` turns the preview range off.
+    PreviewRange,
 }
 
 impl OpKey {
@@ -156,6 +189,14 @@ impl OpKey {
         Self::UndoHistory,
         Self::TimeView,
         Self::NodeView,
+        Self::NodeSelect,
+        Self::NodeDelete,
+        Self::NodeDuplicate,
+        Self::Channels,
+        Self::ObjectClear,
+        Self::ObjectParent,
+        Self::EditorType,
+        Self::PreviewRange,
     ];
 
     /// The last segment of this op's path.
@@ -205,6 +246,14 @@ impl OpKey {
             Self::UndoHistory => "undo_history",
             Self::TimeView => "time_view",
             Self::NodeView => "node_view",
+            Self::NodeSelect => "node_select",
+            Self::NodeDelete => "node_delete",
+            Self::NodeDuplicate => "node_duplicate",
+            Self::Channels => "channels",
+            Self::ObjectClear => "object_clear",
+            Self::ObjectParent => "object_parent",
+            Self::EditorType => "editor_type",
+            Self::PreviewRange => "preview_range",
         }
     }
 

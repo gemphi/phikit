@@ -121,6 +121,12 @@ pub(super) fn read(f: &BlendFile, md: &BlendBlock, ob: &BlendBlock, dna: &DnaTyp
 }
 
 impl BModifier for BArmatureDeform {
+    fn clone_box(&self) -> Box<dyn BModifier> {
+        // `mats` is the shared read of one rig (`deform.rs`) — the clone
+        // points at the same one rather than reading it again.
+        Box::new(Self { armature: self.armature, mats: self.mats.clone(), groups: self.groups.clone() })
+    }
+
     fn wants_weights(&self) -> bool {
         true
     }
@@ -138,6 +144,14 @@ impl BModifier for BArmatureDeform {
 
     fn armature_source(&self) -> Option<(u64, &[String])> {
         Some((self.armature, &self.groups))
+    }
+
+    /// `MOD_armature.cc`'s `is_disabled`: `!object || object->type != OB_ARMATURE`.
+    /// A modifier with no rig deforms nothing; `apply` already bailed on the
+    /// missing world matrix, so this drops it one step earlier and keeps
+    /// `skin_sources` from building a skin for a rig that is not there.
+    fn disabled(&self) -> bool {
+        self.armature == 0
     }
 
     fn skin_job(&self, mesh: &BlendEvalMesh, ctx: &EvalCtx) -> Option<SkinJob> {

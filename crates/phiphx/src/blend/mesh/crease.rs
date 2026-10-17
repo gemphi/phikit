@@ -102,3 +102,81 @@ impl BlendFile {
         legacy.and_then(|cd| self.customdata_layer(me, cd, dna, &|t, _| t == CD_CREASE)).map(Cow::Borrowed)
     }
 }
+
+/// `find_edges_bad_verts` (`blenkernel/intern/mesh_validate.cc`): the two
+/// rules Blender drops an edge by when it validates a mesh — "Edge {} has
+/// equal vertex indices {}" and "Edge {} has out of range vertex ({}, {})".
+/// True for an edge worth keeping, over a mesh of `verts` vertices.
+pub(crate) fn edge_verts_are_good(a: u32, b: u32, verts: usize) -> bool {
+    a != b && (a as usize) < verts && (b as usize) < verts
+}
+
+impl BlendFile {
+    /// Edges that belong to no face — wire-only geometry.
+    ///
+    /// Reads every edge from the mesh block (`mesh_edges`), collects all
+    /// edges the faces reference, and returns the difference: edges present
+    /// in the file but absent from any face's corner loop. Each pair has
+    /// `a < b`.
+    ///
+    /// Validated as Blender validates a mesh it loads (`edge_verts_are_good`,
+    /// above): an edge whose ends are the same vertex, or whose ends are not
+    /// vertices of this mesh, is dropped rather than handed on. Blender drops
+    /// them at load, so nothing downstream of it is written to expect one —
+    /// and nothing here was either: an edge naming vertex 24 of a 24-vertex
+    /// mesh panicked the Mirror modifier building its vertex map
+    /// (`modifier/mirror.rs`) and Subsurf blending the group weights of its
+    /// midpoint (`modifier/subsurf.rs`). `verts` is the mesh's vertex count,
+    /// as `mesh_creases` already takes it.
+    pub(crate) fn mesh_loose_edges(
+        &self,
+        me: &BlendBlock,
+        dna: &DnaType,
+        faces: &crate::blend::BFaces,
+        verts: usize,
+    ) -> Vec<(u32, u32)> {
+        let all = self.mesh_edges(me, dna);
+        if all.is_empty() {
+            return Vec::new();
+        }
+        let mut face_edges: std::collections::HashSet<(u32, u32)> =
+            std::collections::HashSet::new();
+        for face in faces.iter() {
+            for i in 0..face.len() {
+                let (a, b) = (face[i], face[(i + 1) % face.len()]);
+                face_edges.insert((a.min(b), a.max(b)));
+            }
+        }
+        all.into_iter()
+            .filter(|&(a, b)| edge_verts_are_good(a, b, verts))
+            .map(|(a, b)| (a.min(b), a.max(b)))
+            .filter(|e| !face_edges.contains(e))
+            .collect()
+    }
+}
+
+#[cfg(test)]
+mod loose_edge_tests {
+    use super::edge_verts_are_good;
+
+    /// Blender's `find_edges_bad_verts`, rule for rule. Before this, an edge
+    /// naming vertex 24 of a 24-vertex mesh reached the modifier stack and
+    /// panicked the Mirror modifier building its vertex map
+    /// (`modifier/mirror.rs`, `the len is 24 but the index is 24`) and
+    /// Subsurf blending its midpoint's group weights (`modifier/subsurf.rs`).
+    #[test]
+    fn an_edge_is_kept_unless_blender_would_have_dropped_it() {
+        // In range and distinct: kept, either way round.
+        assert!(edge_verts_are_good(0, 23, 24));
+        assert!(edge_verts_are_good(23, 0, 24));
+        // "Edge {} has out of range vertex": one past the last vertex is the
+        // case that panicked, and so is anything beyond it.
+        assert!(!edge_verts_are_good(0, 24, 24));
+        assert!(!edge_verts_are_good(24, 0, 24));
+        assert!(!edge_verts_are_good(0, 3_187_833_393, 24));
+        // "Edge {} has equal vertex indices": a loop on one vertex.
+        assert!(!edge_verts_are_good(7, 7, 24));
+        // A mesh with no vertices keeps no edges.
+        assert!(!edge_verts_are_good(0, 0, 0));
+    }
+}

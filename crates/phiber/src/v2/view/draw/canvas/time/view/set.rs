@@ -37,7 +37,11 @@ impl BTimeView {
         if matches!(host, BHostType::Action | BHostType::Ipo | BHostType::Nla | BHostType::Drivers) {
             view.channel_width = CHANNEL_WIDTH;
         }
-        if host != BHostType::Drivers {
+        // `SpaceAction.flag & SACTION_SHOW_MARKERS` (`DNA_action_types.h`):
+        // the Timeline/Dope/Graph editor shows markers when on (default), and
+        // leaves them off when toggled from View ▸ Show Markers. The Drivers
+        // editor's x axis is not time, so it carries none regardless.
+        if host != BHostType::Drivers && super::super::show::BShowMarkers(host).on(s) {
             let selected = BMarkerList::selected(s);
             view.markers = BMarkerList::now(s).list.into_iter().map(|(frame, name)| (frame as f32, name, selected.contains(&frame))).collect();
             view.marker_box = crate::v2::scene::grab::BMarkerBox::now(s).map(|(a, b)| (a as f32, b as f32));
@@ -102,5 +106,17 @@ mod tests {
         assert_eq!(time.markers, [(12.0, "Intro".to_string(), false), (40.0, "Cut".to_string(), false)], "in frame order");
         assert_eq!(BTimeView::now(&state, BHostType::Ipo, AXIS).markers.len(), 2, "the Graph editor shows them too");
         assert!(BTimeView::now(&state, BHostType::Drivers, AXIS).markers.is_empty(), "the Drivers editor has no time axis");
+    }
+
+    #[test]
+    fn show_markers_off_per_host_leaves_the_markers_out() {
+        // `SACTION_SHOW_MARKERS` on by default; turning it off on the Timeline
+        // alone leaves the Dope Sheet's showing, as Blender's per-space flag.
+        use crate::v2::state::val::V_FALSE;
+        let mut state = BState::default();
+        state.set(CtxKey::Markers, "10=A");
+        state.set(crate::v2::view::draw::canvas::time::show::BShowMarkers::key_for(BHostType::Time), V_FALSE);
+        assert!(BTimeView::now(&state, BHostType::Time, AXIS).markers.is_empty(), "Timeline hides them");
+        assert_eq!(BTimeView::now(&state, BHostType::Action, AXIS).markers.len(), 1, "the Dope Sheet still shows them");
     }
 }

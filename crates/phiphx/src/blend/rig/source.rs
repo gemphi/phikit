@@ -87,13 +87,19 @@ impl BlendRigSource {
 pub struct BlendRigs {
     pub rigs: Vec<std::sync::Arc<BlendRigSource>>,
     pub skins: Vec<std::sync::Arc<crate::blend::modifier::BlendSkinSource>>,
+    /// Non-rigged meshes with modifier drivers, retained for per-frame
+    /// re-evaluation (`modifier/driven.rs`).
+    pub driven: Vec<std::sync::Arc<crate::blend::modifier::driven::BlendDrivenSource>>,
 }
 
 impl PartialEq for BlendRigs {
     fn eq(&self, other: &Self) -> bool {
         self.rigs.len() == other.rigs.len()
             && self.rigs.iter().zip(&other.rigs).all(|(x, y)| std::sync::Arc::ptr_eq(x, y))
-            && self.skins.len() == other.skins.len() && self.skins.iter().zip(&other.skins).all(|(x, y)| std::sync::Arc::ptr_eq(x, y))
+            && self.skins.len() == other.skins.len()
+            && self.skins.iter().zip(&other.skins).all(|(x, y)| std::sync::Arc::ptr_eq(x, y))
+            && self.driven.len() == other.driven.len()
+            && self.driven.iter().zip(&other.driven).all(|(x, y)| std::sync::Arc::ptr_eq(x, y))
     }
 }
 
@@ -106,10 +112,11 @@ impl BlendFile {
         actions: &HashMap<u64, crate::blend::anim::read::BAction>,
     ) -> BlendRigs {
         let rigs = self.rig_sources(objects, dna, actions);
+        let driven = self.driven_sources(objects, dna).into_iter().map(std::sync::Arc::new).collect();
         if rigs.is_empty() {
-            return BlendRigs::default();
+            return BlendRigs { rigs: Vec::new(), skins: Vec::new(), driven };
         }
         let skins = self.skin_sources(objects, dna).into_iter().filter(|s| rigs.iter().any(|r| r.moves && r.address == s.armature)).map(std::sync::Arc::new).collect();
-        BlendRigs { rigs: rigs.into_iter().map(std::sync::Arc::new).collect(), skins }
+        BlendRigs { rigs: rigs.into_iter().map(std::sync::Arc::new).collect(), skins, driven }
     }
 }

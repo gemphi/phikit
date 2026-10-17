@@ -168,6 +168,10 @@ impl PartialEq for BModSetting {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct BModifierDrivers {
     pub object: String,
+    /// The object's saved address. The name is for reporting; this is what
+    /// the stack reader matches on, the way a lamp's and the world's sets
+    /// are matched (`anim/driver/wire.rs`).
+    pub address: u64,
     pub drivers: Vec<BModDriver>,
 }
 

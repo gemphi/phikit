@@ -9,6 +9,7 @@
 //! smoothing.
 
 use crate::blend::file::types::*;
+use super::driver::BModValue;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
 use super::crease::{BCreaseLevel, BRule, BSharpness};
 use super::topology::Topology;
@@ -91,7 +92,17 @@ impl BSubsurf {
 
 pub(super) fn read(f: &BlendFile, md: &BlendBlock, _ob: &BlendBlock, dna: &DnaType) -> Option<Box<dyn BModifier>> {
     let levels = f.int_field(md, "SubsurfModifierData", "levels", dna);
-    (levels > 0).then(|| {
+    // Built whatever the level is. Blender decides a Subdivision is disabled
+    // from the level on the EVALUATED modifier (`MOD_subsurf.cc`'s
+    // `is_disabled` → `get_render_subsurf_level(…) == 0`), which is after its
+    // drivers have run — so dropping it here on the file's saved 0 would lose
+    // a modifier a driver raises to 2. `disabled()` makes the same call one
+    // step later, on the settings as the drivers left them.
+    //
+    // `get_render_subsurf_level` also caps the level by the scene's Simplify
+    // setting (`r->simplify_subsurf` under `R_SIMPLIFY`); phiphx does not read
+    // Simplify, so this is the un-simplified branch of that function.
+    Some({
         Box::new(BSubsurf {
             levels: levels.min(6),
             simple: f.int_field(md, "SubsurfModifierData", "subdivType", dna) == 1,
@@ -104,7 +115,47 @@ pub(super) fn read(f: &BlendFile, md: &BlendBlock, _ob: &BlendBlock, dna: &DnaTy
     })
 }
 
+/// `levels` and `quality` take a driver; `render_levels` is Blender's
+/// render-time count and this reader is the viewport's, so it is reported
+/// as not landing rather than quietly setting the viewport level.
+impl BSubsurf {
+    fn driven(&mut self, prop: &str, value: BModValue) -> bool {
+        match prop {
+            // The same cap the reader applies, so a driver cannot take a
+            // level past what `read` would have allowed.
+            "levels" => self.levels = (value.as_f32().max(0.0) as u32).min(6),
+            "quality" => self.quality = value.as_f32().clamp(1.0, 10.0) as u32,
+            _ => return false,
+        }
+        true
+    }
+}
 impl BModifier for BSubsurf {
+    fn clone_box(&self) -> Box<dyn BModifier> {
+        // The topology tables are a runtime cache, and Blender's generic copy
+        // keeps no runtime fields — so the clone starts empty and rebuilds
+        // them for whatever mesh it is handed.
+        Box::new(Self {
+            levels: self.levels,
+            simple: self.simple,
+            limit: self.limit,
+            keep_corners: self.keep_corners,
+            use_creases: self.use_creases,
+            quality: self.quality,
+            topologies: Default::default(),
+        })
+    }
+
+    fn set_driven(&mut self, prop: &str, _component: usize, value: BModValue) -> bool {
+        self.driven(prop, value)
+    }
+
+    /// `is_disabled`: a Subdivision at level 0 does nothing, so Blender drops
+    /// it from the stack instead of evaluating an identity.
+    fn disabled(&self) -> bool {
+        self.levels == 0
+    }
+
     fn apply(&self, mesh: &mut BlendEvalMesh, _ctx: &EvalCtx) {
         let adaptive = self.limit && !self.simple;
         let mut creases = BCreaseLevel::read(mesh, self.use_creases);
@@ -243,5 +294,24 @@ fn refine(m: &mut BlendEvalMesh, s: &BSubsurf, t: &Topology, sharp: &BSharpness)
             out.face_smooth.extend(m.face_smooth.get(fi).copied());
         }
     }
+    // Subdivide loose edges: each edge (a, b) becomes two edges
+    // (a, mid) and (mid, b) with a new midpoint vertex.
+    let mut loose = Vec::with_capacity(m.loose_edges.len() * 2);
+    for &(a, b) in &m.loose_edges {
+        let mid = out.vertices.len() as u32;
+        let pa = m.vertices.get(a as usize).copied().unwrap_or([0.0; 3]);
+        let pb = m.vertices.get(b as usize).copied().unwrap_or([0.0; 3]);
+        out.vertices.push(scale(add(pa, pb), 0.5));
+        // Both ends, not just `a`: `mix` reads the weights of each, so a
+        // guard on one of them is no guard at all.
+        if out.dverts.len() > a.max(b) as usize {
+            out.dverts.push(mix(&out.dverts, &[a, b]));
+        }
+        let (lo0, hi0) = (a.min(mid), a.max(mid));
+        let (lo1, hi1) = (b.min(mid), b.max(mid));
+        loose.push((lo0, hi0));
+        loose.push((lo1, hi1));
+    }
+    out.loose_edges = loose;
     *m = out;
 }

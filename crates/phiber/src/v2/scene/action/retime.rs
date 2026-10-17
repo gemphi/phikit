@@ -99,6 +99,7 @@ impl BKeyRetime {
 pub enum BKeyStep {
     Insert(BKeyInsert),
     Retime(BKeyRetime),
+    Reshape(super::reshape::BKeyReshape),
 }
 
 impl BKeyStep {
@@ -106,6 +107,7 @@ impl BKeyStep {
         match self {
             Self::Insert(i) => &i.action,
             Self::Retime(r) => &r.action,
+            Self::Reshape(r) => &r.action,
         }
     }
 
@@ -113,6 +115,7 @@ impl BKeyStep {
         match self {
             Self::Insert(i) => &i.slot,
             Self::Retime(r) => &r.slot,
+            Self::Reshape(r) => &r.slot,
         }
     }
 
@@ -120,17 +123,19 @@ impl BKeyStep {
         match self {
             Self::Insert(i) => i.apply(actions),
             Self::Retime(r) => r.apply(actions),
+            Self::Reshape(r) => r.apply(actions),
         }
     }
 
     /// The steps as `ctx.scene.keyed` spells them: an insert as before
-    /// (`keys.rs`), a retime marked `~`.
+    /// (`keys.rs`), a retime marked `~`, a reshape marked `^`.
     pub fn parse_all(raw: &str) -> Vec<Self> {
         raw.split('|')
             .filter(|e| !e.is_empty())
-            .filter_map(|e| match e.starts_with(MARK) {
-                true => BKeyRetime::parse(e).map(Self::Retime),
-                false => BKeyInsert::parse(e).map(Self::Insert),
+            .filter_map(|e| match (e.starts_with(MARK), super::reshape::BKeyReshape::is_mark(e)) {
+                (true, _) => BKeyRetime::parse(e).map(Self::Retime),
+                (_, true) => super::reshape::BKeyReshape::parse(e).map(Self::Reshape),
+                _ => BKeyInsert::parse(e).map(Self::Insert),
             })
             .collect()
     }
@@ -139,6 +144,7 @@ impl BKeyStep {
         let one = |s: &Self| match s {
             Self::Insert(i) => i.encode(),
             Self::Retime(r) => r.encode(),
+            Self::Reshape(r) => r.encode(),
         };
         list.iter().map(one).collect::<Vec<_>>().join("|")
     }

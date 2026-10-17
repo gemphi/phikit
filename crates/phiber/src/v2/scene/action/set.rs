@@ -83,6 +83,11 @@ impl BSceneActions {
         for insert in &self.keyed {
             insert.apply(&mut actions);
         }
+        // Channel properties last, over the curves the key steps leave
+        // (`channel.rs`).
+        for edit in &self.channels {
+            edit.apply(&mut actions);
+        }
         actions
     }
 

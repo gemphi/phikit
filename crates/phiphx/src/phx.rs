@@ -112,6 +112,7 @@ pub(super) fn blend(path: &Path, progress: Progress) -> Result<SceneModel, Scene
     }
     let mut model = SceneModel::from_blend_owned(scene, &source_path);
     model.report.duration_ms = started.elapsed().as_millis() as u64;
+    model.report.memory_bytes = scene_heap_bytes(&model);
     progress(1.0, "Done");
     Ok(model)
 }
@@ -149,6 +150,7 @@ pub(super) fn blend_progressive(
     }
     let (mut model, deferred) = SceneModel::from_blend_progressive(scene, &source_path);
     model.report.duration_ms = started.elapsed().as_millis() as u64;
+    model.report.memory_bytes = scene_heap_bytes(&model);
     progress(1.0, "Done");
     Ok((model, deferred))
 }
@@ -187,4 +189,27 @@ fn classify_native_error(err: crate::PointCloudError) -> SceneLoadError {
     } else {
         SceneLoadError::Malformed(msg)
     }
+}
+
+/// Approximate heap bytes held by the scene's mesh buffers (Blender's
+/// `MEM_get_memory_in_use` equivalent for the data we actually keep).
+fn scene_heap_bytes(model: &SceneModel) -> u64 {
+    let mut bytes: u64 = 0;
+    for obj in &model.objects {
+        let m = &obj.mesh;
+        bytes += (m.vertices.len() * std::mem::size_of::<[f32; 3]>()) as u64;
+        bytes += (m.indices.len() * std::mem::size_of::<u32>()) as u64;
+        bytes += match &m.normals {
+            crate::scene::SceneNormals::PerVertex(v) | crate::scene::SceneNormals::PerFace(v) => {
+                (v.len() * std::mem::size_of::<[f32; 3]>()) as u64
+            }
+        };
+        bytes += (m.corners.ids.len() * std::mem::size_of::<u32>()) as u64;
+        bytes += (m.corners.normals.len() * std::mem::size_of::<[f32; 3]>()) as u64;
+        bytes += (m.corners.colors.len() * std::mem::size_of::<[f32; 3]>()) as u64;
+        // UVs and material indices live on SceneObject, not SceneMesh.
+        bytes += (obj.uvs.len() * std::mem::size_of::<[f32; 2]>()) as u64;
+        bytes += (obj.material_indices.len() * std::mem::size_of::<u16>()) as u64;
+    }
+    bytes
 }

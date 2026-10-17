@@ -132,6 +132,40 @@ impl BKeyTarget {
         }
         out.into_iter().map(BKeyStep::Retime).collect()
     }
+
+    /// The steps that snap the `picks` to the frames `target` maps them to —
+    /// one move per column, `by` its own distance, so a column already on its
+    /// target stays put (`ACTION_OT_snap`).
+    pub(in crate::v2::scene::action) fn snap(actions: &[SceneAction], picks: &BKeySelection, target: impl Fn(f32) -> f32) -> Vec<BKeyStep> {
+        let mut out: Vec<BKeyRetime> = Vec::new();
+        for pick in &picks.0 {
+            let by = target(pick.frame) - pick.frame;
+            if by.abs() < 5e-4 {
+                continue;
+            }
+            for t in Self::of(actions, &pick.object).into_iter().filter(|t| t.columns.iter().any(|c| (c - pick.frame).abs() < 5e-4)) {
+                out.push(BKeyRetime { action: t.action, slot: t.slot, frames: vec![pick.frame], by: Some(by) });
+            }
+        }
+        out.into_iter().map(BKeyStep::Retime).collect()
+    }
+
+    /// The steps that reshape the `picks` — the same grouping as [`Self::steps`],
+    /// one reshape per `(action, slot)` carrying the picked frames and the
+    /// shape to set (Key ▸ Interpolation / Easing / Handle Type).
+    pub(in crate::v2::scene::action) fn reshapes(actions: &[SceneAction], picks: &BKeySelection, shape: super::reshape::BKeyShape) -> Vec<BKeyStep> {
+        let mut out: Vec<super::reshape::BKeyReshape> = Vec::new();
+        for pick in &picks.0 {
+            for t in Self::of(actions, &pick.object).into_iter().filter(|t| t.columns.iter().any(|c| (c - pick.frame).abs() < 5e-4)) {
+                match out.iter_mut().find(|r| r.action == t.action && r.slot == t.slot) {
+                    Some(r) if !r.frames.contains(&pick.frame) => r.frames.push(pick.frame),
+                    Some(_) => {}
+                    None => out.push(super::reshape::BKeyReshape { action: t.action, slot: t.slot, frames: vec![pick.frame], shape }),
+                }
+            }
+        }
+        out.into_iter().map(BKeyStep::Reshape).collect()
+    }
 }
 
 /// A move under way: where it began (`None` until the pointer first says),

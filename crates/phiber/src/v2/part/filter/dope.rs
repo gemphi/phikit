@@ -112,15 +112,40 @@ fn group<'a>(
         .collect()
 }
 
-/// The popover's rows, in Blender's order. `is_nla` swaps the one box that
-/// differs there.
+/// The scope this popover's fold keys sit under, beside the overlay
+/// families' (`overlay::scope`).
+const SCOPE: [&str; 2] = ["dope", "filter"];
+
+/// Blender keeps `DOPESHEET_PT_filters` short two ways that phiber does not
+/// have: `draw_standard_filters` draws a type's box only when the file holds
+/// data of that type (`if bpy.data.armatures:` …), and lays the survivors out
+/// `grid_flow(columns=2)`. phiber draws all twenty-three in one column, so
+/// the popover ran to twenty-nine rows. Recorded divergence: the four
+/// headings fold instead, and Filter by Type ships shut — the same twenty-odd
+/// boxes an empty scene would never have shown. Polling the file would be the
+/// closer port and is the better fix when the type counts are to hand; this
+/// one costs nothing and survives a file that does hold every type.
+fn closed(group: &str) -> bool {
+    group == "Filters"
+}
+
+/// The popover's boxes split at Blender's headings, headless — what the
+/// cards fold over.
+pub fn groups(state: &BState, is_nla: bool) -> Vec<super::fold::BGroup> {
+    let mut show = group(state, "", &INLINE);
+    show.push(check(state, "", if is_nla { &MISSING_NLA } else { &ERRORS }));
+    vec![
+        ("Show", show),
+        ("Search", group(state, "", [&MULTI_WORD])),
+        ("Order", group(state, "", &ORDER)),
+        ("Filters", group(state, "", &TYPES)),
+    ]
+}
+
+/// The popover's body, in Blender's order: four folding cards
+/// (`filter::fold`), `is_nla` swapping the one box that differs there.
 pub fn body(state: &BState, is_nla: bool) -> Vec<BView> {
-    let mut rows = group(state, "Show", &INLINE);
-    rows.push(check(state, "", if is_nla { &MISSING_NLA } else { &ERRORS }));
-    rows.extend(group(state, "Search", [&MULTI_WORD]));
-    rows.extend(group(state, "Order", &ORDER));
-    rows.extend(group(state, "Filters", &TYPES));
-    rows
+    super::fold::cards(state, &SCOPE, groups(state, is_nla), closed)
 }
 
 /// The header's right-hand control: the icon that opens the popover.
@@ -167,9 +192,39 @@ mod tests {
     #[test]
     fn the_nla_swaps_one_box_and_nothing_else() {
         let state = BState::new();
-        let (dope, nla) = (body(&state, false), body(&state, true));
-        assert_eq!(dope.len(), nla.len(), "one box swapped, not added");
-        assert_eq!(dope.len(), INLINE.len() + 1 + 1 + ORDER.len() + TYPES.len());
+        let (dope, nla) = (groups(&state, false), groups(&state, true));
+        let count = |g: &[super::super::fold::BGroup]| g.iter().map(|(_, rows)| rows.len()).sum::<usize>();
+        assert_eq!(count(&dope), count(&nla), "one box swapped, not added");
+        assert_eq!(count(&dope), INLINE.len() + 1 + 1 + ORDER.len() + TYPES.len());
+    }
+
+    #[test]
+    fn the_four_headings_fold_and_filter_by_type_ships_shut() {
+        use crate::v2::view::BView;
+        let state = BState::new();
+        let cards = body(&state, false);
+        assert_eq!(cards.len(), 4, "Show, Search, Order, Filters — not twenty-nine rows");
+        for view in &cards {
+            let BView::Card(card) = view else { panic!("a folding card per heading") };
+            assert!(card.fold.is_some(), "a heading with no triangle is the long list again");
+        }
+        // Blender draws a type's box only when the file holds that type; the
+        // twenty-three are folded away instead (see `closed`).
+        let BView::Card(filters) = &cards[3] else { panic!("a card") };
+        assert!(filters.body.is_empty(), "Filter by Type ships shut");
+        let BView::Card(show) = &cards[0] else { panic!("a card") };
+        assert_eq!(show.body.len(), INLINE.len() + 1, "the rest ship open, as Blender's do");
+    }
+
+    #[test]
+    fn opening_filter_by_type_brings_every_box_back() {
+        use crate::v2::state::val::V_TRUE;
+        use crate::v2::view::BView;
+        let mut state = BState::new();
+        state.set(&super::super::fold::expand_key(&SCOPE, "Filters"), V_TRUE);
+        let cards = body(&state, false);
+        let BView::Card(filters) = &cards[3] else { panic!("a card") };
+        assert_eq!(filters.body.len(), TYPES.len(), "shut hides them, it does not drop them");
     }
 
     #[test]

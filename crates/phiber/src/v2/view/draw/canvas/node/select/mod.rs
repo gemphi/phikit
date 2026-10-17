@@ -191,6 +191,8 @@ pub fn boxed(selection: &BNodeSelection, inside: &[&str], mode: BBoxMode) -> BNo
 
 /// What a selection means for draw order, and whether a box touches a card.
 pub mod rank;
+/// The whole-graph selection operators (A / Alt A / Ctrl I).
+pub mod op;
 /// How the selection is spelled in one state value, and read back.
 pub mod store;
 

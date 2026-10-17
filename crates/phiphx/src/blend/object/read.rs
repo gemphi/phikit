@@ -182,6 +182,7 @@ impl BlendFile {
             data,
             face_smooth,
             modifiers,
+            skipped_modifiers: Vec::new(),
             instance_targets,
             is_instance,
             base_color,
@@ -189,6 +190,7 @@ impl BlendFile {
             metallic,
             materials,
             texture_paths,
+            loose_edges: Vec::new(),
         }))
     }
 }

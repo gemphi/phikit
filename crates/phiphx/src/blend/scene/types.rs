@@ -52,6 +52,9 @@ pub struct BlendSceneObject {
     /// mesh has one slot / no attribute.
     pub face_materials: Vec<u16>,
     pub modifiers: Vec<String>,
+    /// Viewport-enabled modifiers the reader does not support — the
+    /// geometry the open drops. Each entry is `"TypeName (user name)"`.
+    pub skipped_modifiers: Vec<String>,
     pub instance_targets: Vec<String>,
     pub is_instance: bool,
     /// Base/diffuse colour (RGBA) from the object's first material.
@@ -69,6 +72,10 @@ pub struct BlendSceneObject {
     /// (Image Texture → filepath). Relative to the .blend file or absolute,
     /// as stored by Blender. May include `//` prefix (Blender-relative).
     pub texture_paths: Vec<String>,
+    /// Edges not used by any face — wire-only geometry (hair guides,
+    /// curve-to-mesh outlines, construction lines). Each pair is `(a, b)`
+    /// with `a < b`.
+    pub loose_edges: Vec<(u32, u32)>,
 }
 
 /// A single PBR material slot extracted from a Blender object.

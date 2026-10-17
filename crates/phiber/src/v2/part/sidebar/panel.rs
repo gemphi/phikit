@@ -60,20 +60,14 @@ impl BSidebarPanels {
     }
 
     /// The host's box panel as folding cards, one per sub-panel
-    /// (`filter::overlay::groups`). The rows are the header popover's own, so
-    /// the two places cannot disagree about what is ticked.
-    fn overlay_cards(&self, tab: &'static str, s: &BState) -> Vec<BView> {
-        with_peers(
-            crate::v2::part::filter::overlay::groups(s, self.host)
-                .into_iter()
-                .map(|(title, rows)| {
-                    let key = BPanelItem::expand_key(self.host, tab, title);
-                    let open = BPanelItem::is_open(s, &key, false);
-                    let body = if open { rows } else { Vec::new() };
-                    BCard::panel(title).fold(key, open).body(body).into()
-                })
-                .collect(),
-        )
+    /// (`filter::overlay::groups`). The rows are the header popover's own and
+    /// so are the fold keys (`overlay::scope`), so the two places cannot
+    /// disagree about what is ticked or about what is folded — the Movie Clip
+    /// editor's Marker Display is shut here exactly when it is shut in the
+    /// header. The `tab` plays no part: a key per drawing site is the fork.
+    fn overlay_cards(&self, _tab: &'static str, s: &BState) -> Vec<BView> {
+        use crate::v2::part::filter::{fold, overlay};
+        fold::cards(s, &overlay::scope(self.host), overlay::groups(s, self.host), fold::all_open)
     }
 
     /// Cards built from rows someone else already owns: the title, and the

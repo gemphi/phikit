@@ -74,6 +74,17 @@ impl BRule for BMarkerOpRule {
     }
     fn after(&self, _: &BPath, op: &str, state: &mut BState) {
         let frame = int_or(state, CtxKey::Frame, 1);
+        // `ts->lock_markers` (`anim_markers.cc`): every edit op is a no-op
+        // when the lock is on. `select` and `next`/`prev` do not change the
+        // markers, so they are allowed through (Blender's `ed_marker_select`
+        // runs under the lock; only the mutating ops are gated).
+        let locked = state.get(CtxKey::MarkersLocked) == Some(crate::v2::state::val::V_TRUE);
+        let gated = ["add", "delete", "duplicate", "grab", "grab:confirm", "grab:cancel"];
+        if locked && (gated.contains(&op) || op.starts_with("grab:at:") || op.starts_with("move:")) {
+            log::push("Markers are locked".to_string());
+            state.remove(OpKey::Marker);
+            return;
+        }
         let mut markers = BMarkerList::now(state);
         match op {
             // `ed_marker_add_exec`: one marker per frame, named F_<frame>.
@@ -96,6 +107,33 @@ impl BRule for BMarkerOpRule {
                     markers.write(state);
                     BMarkerList::write_selected(state, &[]);
                     log::push(format!("Deleted marker {}", names.join(", ")));
+                }
+            }
+            // `MARKER_OT_duplicate` (`anim_markers.cc` `ed_marker_duplicate_apply`):
+            // for each selected marker, deselect the original, create a copy
+            // at the SAME frame with its name selected, then move the copies.
+            // phiber has one marker per frame, so a copy cannot land on top of
+            // its original; it goes to the next free frame after it (Blender's
+            // move step would otherwise collide the two). Recorded divergence.
+            "duplicate" => {
+                let selected = BMarkerList::selected(state);
+                if selected.is_empty() {
+                    log::push("No markers selected to duplicate".to_string());
+                } else {
+                    let mut copies: Vec<i32> = Vec::new();
+                    for from in &selected {
+                        let Some((_, name)) = markers.list.iter().find(|(f, _)| f == from).map(|(f, n)| (*f, n.clone())) else { continue };
+                        let mut to = from + 1;
+                        while markers.at(to).is_some() {
+                            to += 1;
+                        }
+                        markers.list.push((to, name));
+                        copies.push(to);
+                    }
+                    markers.list.sort_by_key(|(f, _)| *f);
+                    markers.write(state);
+                    BMarkerList::write_selected(state, &copies);
+                    log::push(format!("Duplicated {} marker(s)", copies.len()));
                 }
             }
             "select:none" => BMarkerList::write_selected(state, &[]),
@@ -213,5 +251,42 @@ mod tests {
         op(&mut state, "select:none");
         op(&mut state, "delete");
         assert_eq!(BMarkerList::now(&state).list, [(30, "C".to_string())], "without a selection, the playhead's");
+    }
+
+    #[test]
+    fn duplicate_copies_the_selection_to_the_next_free_frame_and_selects_it() {
+        crate::v2::scene::source::clear_loaded_scene();
+        let mut state = BState::new();
+        state.set(CtxKey::Markers, "10=A|11=B|20=C");
+        op(&mut state, "select:10");
+        op(&mut state, "duplicate");
+        // Blender duplicates in place, then the modal move spreads them.
+        // phiber has one marker per frame: 10's copy lands at 12 (11 taken).
+        let markers = BMarkerList::now(&state).list;
+        assert!(markers.contains(&(10, "A".to_string())), "original kept");
+        assert!(markers.contains(&(12, "A".to_string())), "copy at next free frame");
+        assert_eq!(BMarkerList::selected(&state), [12], "copy selected, original deselected");
+    }
+
+    #[test]
+    fn lock_markers_gates_edits_but_leaves_selection_and_jumps() {
+        crate::v2::scene::source::clear_loaded_scene();
+        let mut state = BState::new();
+        state.set(CtxKey::Markers, "10=A|20=B");
+        state.set(CtxKey::MarkersLocked, crate::v2::state::val::V_TRUE);
+        // add is gated.
+        state.set(CtxKey::Frame, "30");
+        op(&mut state, "add");
+        assert!(BMarkerList::now(&state).at(30).is_none(), "locked: add is a no-op");
+        // delete is gated.
+        op(&mut state, "select:10");
+        op(&mut state, "delete");
+        assert_eq!(BMarkerList::now(&state).list.len(), 2, "locked: delete is a no-op");
+        // Selection and jumps still work.
+        op(&mut state, "select:20");
+        assert_eq!(BMarkerList::selected(&state), [20]);
+        state.set(CtxKey::Frame, "1");
+        op(&mut state, "next");
+        assert_eq!(state.get(CtxKey::Frame), Some("10"));
     }
 }

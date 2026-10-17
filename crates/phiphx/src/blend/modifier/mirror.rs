@@ -6,6 +6,7 @@
 //! Not yet: bisect, clipping (an edit-mode option).
 
 use crate::blend::file::types::*;
+use super::driver::BModValue;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
 use glam::{Mat4, Vec3};
 
@@ -48,7 +49,45 @@ pub(super) fn read(f: &BlendFile, md: &BlendBlock, ob: &BlendBlock, dna: &DnaTyp
     }))
 }
 
+/// `merge_threshold` lands on `tolerance`. `bisect_threshold` has no field
+/// here — this reader does not bisect — so it reports `false`.
+impl BMirror {
+    #[cfg(test)]
+    pub(crate) fn for_test() -> Self {
+        Self { flag: 0, tolerance: 0.001, mirror_ob: 0, uv_offset: [0.0; 2], uv_offset_copy: [0.0; 2], group_flip: Vec::new() }
+    }
+
+    /// `tolerance` is private to this module; the test reads it through here
+    /// rather than the field being opened up for one assertion.
+    #[cfg(test)]
+    pub(crate) fn tolerance_for_test(&self) -> f32 {
+        self.tolerance
+    }
+
+    fn driven(&mut self, prop: &str, value: BModValue) -> bool {
+        match prop {
+            "merge_threshold" => self.tolerance = value.as_f32().max(0.0),
+            _ => return false,
+        }
+        true
+    }
+}
 impl BModifier for BMirror {
+    fn clone_box(&self) -> Box<dyn BModifier> {
+        Box::new(Self {
+            flag: self.flag,
+            tolerance: self.tolerance,
+            mirror_ob: self.mirror_ob,
+            uv_offset: self.uv_offset,
+            uv_offset_copy: self.uv_offset_copy,
+            group_flip: self.group_flip.clone(),
+        })
+    }
+
+    fn set_driven(&mut self, prop: &str, _component: usize, value: BModValue) -> bool {
+        self.driven(prop, value)
+    }
+
     fn apply(&self, mesh: &mut BlendEvalMesh, ctx: &EvalCtx) {
         for axis in 0..3 {
             if self.flag & (AXIS_X << axis) != 0 {
@@ -123,6 +162,20 @@ impl BMirror {
             m.face_materials.extend(mat);
             m.face_smooth.extend(smooth);
             corner += k;
+        }
+        // Mirror loose edges: remap through map[], skip edges on the plane.
+        let base_loose = m.loose_edges.len();
+        for i in 0..base_loose {
+            let (a, b) = m.loose_edges[i];
+            let ma = map[a as usize];
+            let mb = map[b as usize];
+            if ma == a && mb == b {
+                continue; // both endpoints merged onto the mirror plane
+            }
+            let (lo, hi) = (ma.min(mb), ma.max(mb));
+            if lo != hi {
+                m.loose_edges.push((lo, hi));
+            }
         }
     }
 }

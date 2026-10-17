@@ -10,9 +10,12 @@ pub mod driver;
 pub(crate) mod driver_read;
 pub(crate) mod armature;
 pub(crate) mod deform;
+pub(crate) mod driven;
 pub(crate) mod prefix;
 #[cfg(test)]
 mod prefix_tests;
+#[cfg(test)]
+mod driven_tests;
 pub(crate) mod bbone;
 mod array;
 mod displace;
@@ -26,6 +29,7 @@ mod triangulate;
 mod weld;
 mod lattice;
 mod crease;
+pub(crate) mod report;
 #[cfg(test)]
 mod tests;
 
@@ -56,6 +60,12 @@ pub struct BlendEvalMesh {
     pub edge_creases: Vec<(u32, u32, f32)>,
     /// Vertex creases (`crease_vert`), one per vertex or empty.
     pub vert_creases: Vec<f32>,
+    /// Edges not used by any face — wire-only geometry (hair guides,
+    /// curve-to-mesh outlines, construction lines). Each pair is `(a, b)`
+    /// with `a < b`. Carried through the modifier stack and subdivided by
+    /// the Subdivision Surface so the vertex count stays in parity with
+    /// Blender.
+    pub loose_edges: Vec<(u32, u32)>,
 }
 
 /// What a modifier may look up while evaluating.
@@ -85,6 +95,45 @@ pub(crate) trait BModifier: Send + Sync {
     fn armature_source(&self) -> Option<(u64, &[String])> {
         None
     }
+    /// Take this frame's driven value for one of this modifier's settings,
+    /// named as the driver's path names it (`driver.rs`'s `SETTINGS` table).
+    ///
+    /// Returns whether it landed. `false` is not an error: a setting the
+    /// table models but this struct has no field for — `Subsurf.render_levels`
+    /// on a viewport-only reader, `Solidify.material_offset` — is reported
+    /// rather than silently dropped, which is how the gap stays visible.
+    ///
+    /// The value arrives already typed and clamped as Blender clamps it,
+    /// integers truncated toward zero; an implementation applies its own
+    /// reader's guards on top (a Subdivision's level cap) and nothing else.
+    fn set_driven(&mut self, _prop: &str, _component: usize, _value: driver::BModValue) -> bool {
+        false
+    }
+    /// Blender's `copy_data` (`ModifierTypeInfo.copy_data`, and the memcpy
+    /// behind `BKE_modifier_copydata_generic`): one modifier, copied.
+    ///
+    /// This is how Blender gets a *per-frame* stack at all. The depsgraph
+    /// evaluates a **copy** of the object, its drivers write into that copy's
+    /// modifier data, and the copy is what runs — the file's own stack is
+    /// never touched. So a frame that wants its own driven settings takes its
+    /// own stack, which is why this is a clone and not interior mutability:
+    /// two frames evaluated at once must not share a `levels` field.
+    ///
+    /// Blender's generic copy ends with *"Runtime fields are never to be
+    /// preserved"*, so a clone starts with an empty cache rather than
+    /// inheriting one (`BSubsurf`'s topology tables are exactly that).
+    fn clone_box(&self) -> Box<dyn BModifier>;
+    /// Blender's `is_disabled`: a modifier whose settings make it a no-op is
+    /// dropped from the stack rather than applied.
+    ///
+    /// It is asked **after** the driven settings land, because Blender asks
+    /// it of the *evaluated* modifier — `is_disabled(scene, md, …)` runs on
+    /// the depsgraph's copy, whose fields the drivers have already written.
+    /// Asking before would read the file's saved value and drop a modifier a
+    /// driver was about to switch on.
+    fn disabled(&self) -> bool {
+        false
+    }
 }
 
 /// A mesh an Armature modifier deforms, kept so its rig can pose it at any
@@ -94,6 +143,11 @@ pub(crate) trait BModifier: Send + Sync {
 pub struct BlendSkinSource {
     /// Index into the scene's objects.
     pub object: usize,
+    /// The object's saved address — what a modifier driver set is keyed by
+    /// (`modifier/driver.rs`), so a frame's driven settings can find this
+    /// mesh's own. The index above is a position in one scene's list; the
+    /// address is the identity, as everywhere else.
+    pub object_address: u64,
     /// The rig object's block address.
     pub armature: u64,
     pub base: BlendEvalMesh,
@@ -111,7 +165,43 @@ impl BlendSkinSource {
     /// The modifiers after the Armature over `deformed` (the base's
     /// vertices, posed) — the mesh the viewport draws at that pose.
     pub fn evaluate(&self, deformed: Vec<[f32; 3]>, world: Mat4) -> BlendEvalMesh {
-        if self.tail.is_empty() {
+        self.evaluate_driven(deformed, world, &[])
+    }
+
+    /// As [`Self::evaluate`], with this frame's driven settings over the
+    /// tail's own — the per-frame path.
+    ///
+    /// The tail is **cloned** before the settings land on it, which is what
+    /// Blender does: the depsgraph evaluates a copy of the object and the
+    /// drivers write into that copy, never into the file's stack
+    /// (`BKE_modifier_copydata_generic`). Two frames evaluated at once
+    /// therefore cannot fight over one `strength` field, and this source
+    /// stays shareable behind its `Arc`.
+    ///
+    /// `driven` empty is the common case and clones nothing.
+    pub fn evaluate_driven(
+        &self,
+        deformed: Vec<[f32; 3]>,
+        world: Mat4,
+        driven: &[(driver::BModWrite, driver::BModValue)],
+    ) -> BlendEvalMesh {
+        if driven.is_empty() {
+            return self.run(&self.tail, deformed, world);
+        }
+        let mut tail: Vec<Box<dyn BModifier>> = self.tail.iter().map(|m| m.clone_box()).collect();
+        for m in tail.iter_mut() {
+            for (write, value) in driven {
+                m.set_driven(&write.prop, write.component, *value);
+            }
+        }
+        // `is_disabled` again, on the settings this frame's drivers left —
+        // the same reason it is asked after `set_driven` at open.
+        tail.retain(|m| !m.disabled());
+        self.run(&tail, deformed, world)
+    }
+
+    fn run(&self, tail: &[Box<dyn BModifier>], deformed: Vec<[f32; 3]>, world: Mat4) -> BlendEvalMesh {
+        if tail.is_empty() {
             return BlendEvalMesh { vertices: deformed, ..Default::default() };
         }
         // Positions only: the UVs, materials and weights the modifiers would
@@ -120,12 +210,13 @@ impl BlendSkinSource {
             vertices: deformed,
             faces: self.base.faces.clone(),
             edge_creases: self.base.edge_creases.clone(),
+            loose_edges: self.base.loose_edges.clone(),
             vert_creases: self.base.vert_creases.clone(),
             ..Default::default()
         };
         let worlds = HashMap::new();
         let ctx = EvalCtx { world, worlds: &worlds };
-        for m in &self.tail {
+        for m in tail {
             m.apply(&mut mesh, &ctx);
         }
         mesh
@@ -161,16 +252,35 @@ pub fn supported_modifiers() -> impl Iterator<Item = &'static str> {
 
 impl BlendFile {
     /// Enabled viewport modifiers of `ob`, in stack order (supported ones).
-    fn modifier_stack(&self, ob: &BlendBlock, dna: &DnaType) -> Vec<Box<dyn BModifier>> {
+    pub(crate) fn modifier_stack(&self, ob: &BlendBlock, dna: &DnaType) -> Vec<Box<dyn BModifier>> {
         let first = self.ptr(ob, self.off("Object", "modifiers", dna));
         let next = self.off("ModifierData", "*next", dna);
         let mds = self.scoped(ob, || self.list(first, next));
+        // This frame's driven settings for THIS object, read before the
+        // geometry was evaluated (`scene/read.rs`). Empty for almost every
+        // object, so the name lookup below is paid for only where a driver
+        // actually exists.
+        let driven = {
+            let held = self.driven_modifiers.lock().unwrap_or_else(|e| e.into_inner());
+            held.get(&ob.old_address).cloned().unwrap_or_default()
+        };
+        let name_at = (!driven.is_empty()).then(|| self.modifier_name_offset(dna)).flatten();
         mds.into_iter()
             .filter(|md| self.int_field(md, "ModifierData", "mode", dna) & MODE_REALTIME != 0)
             .filter_map(|md| {
                 let ty = self.int_field(md, "ModifierData", "type", dna);
                 let kind = KINDS.iter().find(|k| k.dna_type == ty)?;
-                self.scoped(ob, || (kind.read)(self, md, ob, dna))
+                let mut built = self.scoped(ob, || (kind.read)(self, md, ob, dna))?;
+                if let Some(name) = name_at.and_then(|at| self.modifier_name(md, Some(at))) {
+                    // A driver's path carries the modifier's NAME only, and
+                    // the same name means different properties on different
+                    // types — so the type has to match too (`driver.rs`).
+                    for (write, value) in driven.iter().filter(|(w, _)| w.modifier == name && w.kind == kind.name) {
+                        built.set_driven(&write.prop, write.component, *value);
+                    }
+                }
+                // `is_disabled`, on the settings as the drivers left them.
+                (!built.disabled()).then_some(built)
             })
             .collect()
     }
@@ -230,6 +340,7 @@ impl BlendFile {
                 _ => Vec::new(),
             };
             let creases = me.map(|me| self.mesh_creases(me, dna, o.vertices.len())).unwrap_or_default();
+            let loose = me.map(|me| self.mesh_loose_edges(me, dna, &o.faces, o.vertices.len())).unwrap_or_default();
             let mesh = BlendEvalMesh {
                 vertices: o.vertices.clone(),
                 faces: o.faces.clone(),
@@ -240,6 +351,7 @@ impl BlendFile {
                 dverts,
                 edge_creases: creases.edge,
                 vert_creases: creases.vert,
+                loose_edges: loose,
             };
             jobs.push(BEvalJob { index: i, mesh, stack, world: Mat4::from_cols_array_2d(&o.matrix_world), weights: dverts_loaded });
         }
@@ -268,7 +380,8 @@ impl BlendFile {
             let Some((rig, groups)) = armature.armature_source() else { continue };
             let dverts = self.deform_verts(me, dna, o.vertices.len());
             let creases = self.mesh_creases(me, dna, o.vertices.len());
-            jobs.push((i, o, stack, tail, rig, groups.to_vec(), dverts, creases));
+            let loose = self.mesh_loose_edges(me, dna, &o.faces, o.vertices.len());
+            jobs.push((i, o, stack, tail, rig, groups.to_vec(), dverts, creases, loose));
         }
         use rayon::prelude::*;
         // The same drop box the stack apply uses (`prefix.rs`): `stack` here
@@ -276,13 +389,13 @@ impl BlendFile {
         // and the other takes the result.
         let prefix = self.prefix_box.clone();
         jobs.into_par_iter()
-            .map(|(i, o, stack, tail, rig, groups, dverts, creases)| {
+            .map(|(i, o, stack, tail, rig, groups, dverts, creases, loose)| {
                 // `skin_sources` always loads the weights, so `weights` is
                 // true on this side by construction.
                 let key = (prefix::sharing() && !stack.is_empty())
                     .then_some(prefix::BPrefixKey { object: i, applied: stack.len(), weights: true });
                 if let Some(base) = key.and_then(|k| prefix.take(k)) {
-                    return BlendSkinSource { object: i, armature: rig, base, groups, tail };
+                    return BlendSkinSource { object: i, object_address: o.block_address, armature: rig, base, groups, tail };
                 }
                 let mut base = BlendEvalMesh {
                     vertices: o.vertices.clone(),
@@ -294,6 +407,7 @@ impl BlendFile {
                     dverts,
                     edge_creases: creases.edge,
                     vert_creases: creases.vert,
+                    loose_edges: loose,
                 };
                 let ctx = EvalCtx { world: Mat4::from_cols_array_2d(&o.matrix_world), worlds: &worlds };
                 for m in &stack {
@@ -302,7 +416,7 @@ impl BlendFile {
                 if let Some(k) = key {
                     prefix.put(k, &base);
                 }
-                BlendSkinSource { object: i, armature: rig, base, groups, tail }
+                BlendSkinSource { object: i, object_address: o.block_address, armature: rig, base, groups, tail }
             })
             .collect()
     }

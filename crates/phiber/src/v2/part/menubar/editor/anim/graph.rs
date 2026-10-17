@@ -3,7 +3,7 @@
 
 use super::super::super::item::set::*;
 use super::super::super::item::BMenuItem;
-use super::set::{AREA, BAnimMenu, CHANNEL_SETTING, EASING, EXTRAPOLATION, HANDLE_TYPE, INTERPOLATION, MOVE};
+use super::set::{AREA, BAnimMenu, CHANNEL_SETTING_DISABLE, CHANNEL_SETTING_ENABLE, CHANNEL_SETTING_TOGGLE, EASING, EXTRAPOLATION, HANDLE_TYPE, INTERPOLATION, MOVE};
 use crate::v2::state::OpKey;
 
 /// `GRAPH_MT_view` in F-Curves mode.
@@ -16,14 +16,14 @@ pub static VIEW: &[BMenuItem] = &[
     op("Frame Selected", "Numpad ."),
     fire("Frame All", "Home", OpKey::TimeView, "ipo:all"),
     fire("Frame Scene Range", "", OpKey::TimeView, "ipo:scene"),
-    op("Go to Current Frame", "Numpad 0"),
+    fire_host("Go to Current Frame", "Numpad 0", OpKey::TimeView, ":center"),
     SEP,
     op("Realtime Updates", ""),
     op("Show Sliders", ""),
     op("Auto-Merge Keyframes", ""),
     op("Auto-Lock Key Axis", ""),
     SEP,
-    op("Show Markers", ""),
+    tog_host_on("Show Markers", "", crate::v2::view::draw::canvas::time::show::BShowMarkers::key_for),
     op("Show Cursor", ""),
     op("Use Timecode", "Ctrl T"),
     op("Sync Visible Range", ""),
@@ -34,9 +34,9 @@ pub static VIEW: &[BMenuItem] = &[
     SEP,
     op("Set Preview Range", "P"),
     act("Clear Preview Range", "Alt P", BAnimMenu::clear_preview),
-    op("Set Preview Range to Selected", "Ctrl Alt P"),
+    fire("Set Preview Range to Selected", "Ctrl Alt P", OpKey::PreviewRange, "selected"),
     SEP,
-    op("Toggle Dope Sheet", "Ctrl Tab"),
+    fire_host("Toggle Dope Sheet", "Ctrl Tab", OpKey::EditorType, ":action"),
     SEP,
     sub("Area", AREA),
 ];
@@ -48,7 +48,7 @@ pub static DRIVERS_VIEW: &[BMenuItem] = &[
     SEP,
     op("Frame Selected", "Numpad ."),
     op("Frame All", "Home"),
-    op("Go to Current Frame", "Numpad 0"),
+    fire_host("Go to Current Frame", "Numpad 0", OpKey::TimeView, ":center"),
     SEP,
     op("Realtime Updates", ""),
     op("Show Sliders", ""),
@@ -63,7 +63,7 @@ pub static DRIVERS_VIEW: &[BMenuItem] = &[
     op("Show Handles", "Ctrl H"),
     op("Only Selected Keyframes Handles", ""),
     SEP,
-    op("Toggle Dope Sheet", "Ctrl Tab"),
+    fire_host("Toggle Dope Sheet", "Ctrl Tab", OpKey::EditorType, ":action"),
     SEP,
     sub("Area", AREA),
 ];
@@ -112,9 +112,9 @@ pub static CHANNEL: &[BMenuItem] = &[
     op("Group Channels", "Ctrl G"),
     op("Ungroup Channels", "Ctrl Alt G"),
     SEP,
-    sub("Toggle Channel Setting", CHANNEL_SETTING),
-    sub("Enable Channel Setting", CHANNEL_SETTING),
-    sub("Disable Channel Setting", CHANNEL_SETTING),
+    sub("Toggle Channel Setting", CHANNEL_SETTING_TOGGLE),
+    sub("Enable Channel Setting", CHANNEL_SETTING_ENABLE),
+    sub("Disable Channel Setting", CHANNEL_SETTING_DISABLE),
     SEP,
     op("Toggle Channel Editability", "Tab"),
     sub("Extrapolation Mode", EXTRAPOLATION),
@@ -148,9 +148,9 @@ pub static DRIVERS_CHANNEL: &[BMenuItem] = &[
     op("Group Channels", "Ctrl G"),
     op("Ungroup Channels", "Ctrl Alt G"),
     SEP,
-    sub("Toggle Channel Setting", CHANNEL_SETTING),
-    sub("Enable Channel Setting", CHANNEL_SETTING),
-    sub("Disable Channel Setting", CHANNEL_SETTING),
+    sub("Toggle Channel Setting", CHANNEL_SETTING_TOGGLE),
+    sub("Enable Channel Setting", CHANNEL_SETTING_ENABLE),
+    sub("Disable Channel Setting", CHANNEL_SETTING_DISABLE),
     SEP,
     op("Toggle Channel Editability", "Tab"),
     sub("Extrapolation Mode", EXTRAPOLATION),
@@ -169,11 +169,11 @@ pub static DRIVERS_CHANNEL: &[BMenuItem] = &[
 ];
 pub static TRANSFORM: &[BMenuItem] = &[op("Move", "G"), op("Extend", "E"), op("Rotate", "R"), op("Scale", "S")];
 pub static SNAP: &[BMenuItem] = &[
-    op("Selection to Current Frame", ""),
+    fire("Selection to Current Frame", "", OpKey::Keys, "snap:current"),
     op("Selection to Cursor Value", ""),
-    op("Selection to Nearest Frame", ""),
-    op("Selection to Nearest Second", ""),
-    op("Selection to Nearest Marker", ""),
+    fire("Selection to Nearest Frame", "", OpKey::Keys, "snap:nearest_frame"),
+    fire("Selection to Nearest Second", "", OpKey::Keys, "snap:nearest_second"),
+    fire("Selection to Nearest Marker", "", OpKey::Keys, "snap:nearest_marker"),
     op("Flatten Handles", ""),
     op("Equalize Handles", ""),
     SEP,
@@ -181,11 +181,11 @@ pub static SNAP: &[BMenuItem] = &[
     op("Cursor Value to Selection", ""),
 ];
 pub static MIRROR: &[BMenuItem] = &[
-    op("By Times Over Current Frame", ""),
+    fire("By Times Over Current Frame", "", OpKey::Keys, "mirror:current"),
     op("By Values Over Cursor Value", ""),
-    op("By Times Over Zero Time", ""),
+    fire("By Times Over Zero Time", "", OpKey::Keys, "mirror:zero"),
     op("By Values Over Zero Value", ""),
-    op("By Times Over First Selected Marker", ""),
+    fire("By Times Over First Selected Marker", "", OpKey::Keys, "mirror:marker"),
 ];
 pub static INSERT: &[BMenuItem] = &[
     fire("All Channels", "", OpKey::Keyframe, "channels"),
@@ -222,7 +222,7 @@ pub static KEY: &[BMenuItem] = &[
     op("Copy", "Ctrl C"),
     op("Paste", "Ctrl V"),
     op("Paste Flipped", "Shift Ctrl V"),
-    op("Duplicate", "Shift D"),
+    fire("Duplicate", "Shift D", OpKey::Keys, "duplicate"),
     op("Delete", "X"),
     SEP,
     sub("Handle Type", HANDLE_TYPE),

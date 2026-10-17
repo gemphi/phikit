@@ -28,6 +28,8 @@ pub use file::types::{
     BlendSceneObject, DnaField, DnaStruct, DnaType,
 };
 pub use modifier::BlendEvalMesh;
+pub use modifier::driven::BlendDrivenSource;
+pub use modifier::driver::{BModValue, BModWrite, BModifierDrivers};
 pub use modifier::skin::{CpuSkin, SKIN_MIN, SkinJob, SkinPair, Skinner, set_skinner};
 pub(crate) use modifier::supported_modifiers;
 pub(crate) use modifier::{DeferredRaw, apply_eval_jobs};
@@ -58,16 +60,13 @@ pub(crate) fn progressive_open() -> bool {
     PROGRESSIVE.with(std::cell::Cell::get)
 }
 pub use object::kind::ObjectKind;
+pub use object::light_driver::AREA_ENERGY_SCALE;
 pub use object::data::{BlendCameraData, BlendEmptyData, BlendLightData, BlendObjectData};
 pub use object::dof::BlendDof;
-pub use anim::fcurve::{BFCurve, BKey, COLOR_AUTO_RAINBOW, COLOR_AUTO_RGB, COLOR_AUTO_YRGB, COLOR_CUSTOM, FLAG_ACTIVE, FLAG_MUTED, FLAG_PROTECTED, FLAG_SELECTED, HANDLE_ALIGN, HANDLE_AUTO, HANDLE_AUTO_ANIM, HANDLE_FREE, HANDLE_VECT, IPO_BEZ};
+pub use anim::fcurve::{BFCurve, BKey, COLOR_AUTO_RAINBOW, COLOR_AUTO_RGB, COLOR_AUTO_YRGB, COLOR_CUSTOM, FLAG_ACTIVE, FLAG_MUTED, FLAG_PROTECTED, FLAG_SELECTED, HANDLE_ALIGN, HANDLE_AUTO, HANDLE_AUTO_ANIM, HANDLE_FREE, HANDLE_VECT, IPO_BEZ, IPO_CONST, IPO_LIN};
+pub use anim::easing::{EASE_AUTO, EASE_IN, EASE_IN_OUT, EASE_OUT, IPO_BACK, IPO_BOUNCE, IPO_CIRC, IPO_CUBIC, IPO_ELASTIC, IPO_EXPO, IPO_QUAD, IPO_QUART, IPO_QUINT, IPO_SINE};
+pub use anim::fcurve::{EXTRAPOLATE_CONSTANT, EXTRAPOLATE_LINEAR};
 pub use anim::drivers::BlendDrivers;
-pub use anim::driver::chan::{MAX_TRANSCHAN, ROTMODE_AUTO, ROTMODE_QUATERNION, ROTMODE_SWING_TWIST_X, TRANSCHAN_ROTW, TRANSCHAN_ROTX, TRANSCHAN_SCALEX, TRANSCHAN_SCALE_AVG};
-pub use anim::driver::space::BDriverSpace;
-pub use modifier::driver::{BModDriver, BModKind, BModValue, BModWrite, BModifierDrivers};
-pub use object::light_driver::{AREA_ENERGY_SCALE, BLightDriver, BLightDrivers, BLightProp, LA_AREA, SPOT_SIZE_MIN};
-pub use shade::world_driver::{BWorldDriver, BWorldDrivers, BWorldWrite};
-pub use anim::driver::{BDriverRun, BDriverState, BlendDriver, BlendDriverEnd, BlendDriverRead, BlendDriverScene, BlendDriverSet, BlendDriverVar, BlendObjectDriver, BlendPropDriver};
 pub use anim::nla_eval::{BMotionClip, BMotionTrack};
 pub use anim::nla_edit::{BNlaAt, BNlaPick, BNlaStacks, NEW_TRACK};
 pub use anim::nla_stack::{BNlaPlaced, STASH_TRACK};

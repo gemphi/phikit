@@ -6,7 +6,7 @@
 
 ## Todo
 
-- [ ] Animation reader: legacy `bAction.curves` and layered actions (4.4+); Bézier evaluation
+- [ ] Animation reader: legacy `bAction.curves` and layered actions (4.4+). **Bézier evaluation is done** — `anim/fcurve.rs:179`, `IPO_BEZ => bezier(a, b, frame)`, with its own test; it was on this line as open and was not (found in the batch-191 sweep)
 - [ ] Linked libraries (`LI` blocks, `ID.lib`)
 - [ ] Writer: new `OB` / `ME` blocks for added and duplicated objects, dropping deleted ones (`write/` patches only what the file already has)
 

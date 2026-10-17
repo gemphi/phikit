@@ -96,6 +96,109 @@ fn a_move_follows_the_pointer_from_where_it_began_and_escape_puts_it_back() {
     crate::v2::scene::source::set_loaded_scene(None);
 }
 
+fn cube_ipo(s: &BState, model: &SceneModel) -> Vec<(f32, u8)> {
+    let actions = BSceneActions::now(s).keyed_actions(model);
+    let action = actions.iter().find(|a| a.name == "CubeAction").unwrap();
+    let c = action.curves.iter().find(|c| c.path == "location" && c.index == 0).unwrap();
+    c.keys.iter().map(|k| (k.co[0], k.ipo)).collect()
+}
+
+#[test]
+fn interpolation_is_set_on_the_picked_column_only() {
+    use crate::phiphx::blend::{IPO_BEZ, IPO_LIN};
+    let model = model();
+    crate::v2::scene::source::set_loaded_scene(Some(model.clone()));
+    let mut s = BState::new();
+    s.set(CtxKey::Object, "Cube");
+    // Nothing picked: the menu reports and changes no key.
+    op(&mut s, "ipo:lin");
+    assert!(BSceneActions::now(&s).keyed.is_empty(), "no selection, no reshape");
+    // Pick the key at frame 20 and make it linear.
+    op(&mut s, "click:1:20");
+    op(&mut s, "ipo:lin");
+    assert_eq!(cube_ipo(&s, &model), [(1.0, IPO_BEZ), (20.0, IPO_LIN)], "only the picked column changes");
+    // The pick stays, so a second reshape acts on the same key.
+    assert_eq!(picks(&s), [("Cube".to_string(), 20.0)]);
+    crate::v2::scene::source::set_loaded_scene(None);
+}
+
+#[test]
+fn snap_moves_the_picked_columns_to_the_current_frame() {
+    let model = model();
+    crate::v2::scene::source::set_loaded_scene(Some(model.clone()));
+    let mut s = BState::new();
+    s.set(CtxKey::Object, "Cube");
+    s.set(CtxKey::Frame, "10");
+    // Nothing picked: nothing snaps.
+    op(&mut s, "snap:current");
+    assert!(BSceneActions::now(&s).keyed.is_empty(), "no selection, no snap");
+    op(&mut s, "click:1:20");
+    op(&mut s, "snap:current");
+    assert_eq!(cube_x(&s, &model), [1.0, 10.0], "the key at 20 lands on the current frame");
+    assert_eq!(picks(&s), [("Cube".to_string(), 10.0)], "and the pick follows it");
+    crate::v2::scene::source::set_loaded_scene(None);
+}
+
+#[test]
+fn mirror_reflects_the_picked_columns_over_a_pivot() {
+    let model = model();
+    crate::v2::scene::source::set_loaded_scene(Some(model.clone()));
+    let mut s = BState::new();
+    s.set(CtxKey::Object, "Cube");
+    s.set(CtxKey::Frame, "10");
+    op(&mut s, "click:1:20");
+    // Over the current frame (10): 20 reflects to 2·10 − 20 = 0.
+    op(&mut s, "mirror:current");
+    assert_eq!(cube_x(&s, &model), [0.0, 1.0], "the key at 20 reflects to 0");
+    assert_eq!(picks(&s), [("Cube".to_string(), 0.0)], "the pick follows the reflection");
+    crate::v2::scene::source::set_loaded_scene(None);
+}
+
+#[test]
+fn duplicate_copies_the_picked_column_at_the_next_free_frame_and_the_picks_follow() {
+    let model = model();
+    crate::v2::scene::source::set_loaded_scene(Some(model.clone()));
+    let mut s = BState::new();
+    s.set(CtxKey::Object, "Cube");
+    // Nothing picked: nothing duplicates.
+    op(&mut s, "duplicate");
+    assert!(BSceneActions::now(&s).keyed.is_empty(), "no selection, no duplicate");
+    op(&mut s, "click:1:20");
+    op(&mut s, "duplicate");
+    // Frame 1 and 20 are taken; the copy lands on 21.
+    assert_eq!(cube_x(&s, &model), [1.0, 20.0, 21.0], "the copy lands on frame 21");
+    assert_eq!(picks(&s), [("Cube".to_string(), 21.0)], "the picks follow to the copy");
+    // The curves' value at the copy matches Blender evaluating the originals
+    // there (the key was read with `evaluate(20.0)`).
+    let actions = BSceneActions::now(&s).keyed_actions(&model);
+    let a = actions.iter().find(|a| a.name == "CubeAction").unwrap();
+    let x = a.curves.iter().find(|c| c.path == "location" && c.index == 0).unwrap();
+    assert!((x.evaluate(21.0) - x.evaluate(20.0)).abs() < 1e-6, "the copy's x matches the source's");
+    // A second duplicate on the same (now-moved) pick skips the frame the
+    // first batch just filled.
+    op(&mut s, "duplicate");
+    assert_eq!(cube_x(&s, &model), [1.0, 20.0, 21.0, 22.0], "the second copy lands on 22");
+    assert_eq!(picks(&s), [("Cube".to_string(), 22.0)]);
+    crate::v2::scene::source::set_loaded_scene(None);
+}
+
+#[test]
+fn jump_moves_the_playhead_to_the_nearest_selected_key() {
+    let model = model();
+    crate::v2::scene::source::set_loaded_scene(Some(model.clone()));
+    let mut s = BState::new();
+    s.set(CtxKey::Object, "Cube");
+    s.set(CtxKey::Frame, "15");
+    op(&mut s, "jump");
+    assert_eq!(s.get(CtxKey::Frame), Some("15"), "nothing selected, the playhead stays");
+    op(&mut s, "all");
+    op(&mut s, "jump");
+    assert_eq!(s.get(CtxKey::Frame), Some("20"), "20 is nearer 15 than 1 is");
+    // No key was edited by the jump.
+    assert!(BSceneActions::now(&s).keyed.is_empty());
+    crate::v2::scene::source::set_loaded_scene(None);
+}
+
 #[test]
 fn delete_takes_the_picked_columns_off() {
     let model = model();

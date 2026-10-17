@@ -115,6 +115,17 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
             })
             .collect(),
         saved: Vec::new(),
+        drivers: blend.props.modifier_drivers.clone(),
+        driven: blend
+            .props
+            .rigs
+            .driven
+            .iter()
+            .filter_map(|source| {
+                let object = remap.get(source.object).copied().flatten()?;
+                Some(std::sync::Arc::new(super::SceneDriven { object, motion: source.object, source: source.clone() }))
+            })
+            .collect(),
     };
     motion.rigs = rigs;
     // The rigs as the file was saved, for the viewport to draw.
@@ -123,6 +134,10 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
     }
     // `into_par_iter` hands each object to the closure by value, so its raw
     // vertices, faces and loop data are freed as the conversion walks on.
+    // Collect skipped-modifier warnings before raw is consumed.
+    let skipped_warnings: Vec<String> = raw.iter().flat_map(|obj| {
+        obj.skipped_modifiers.iter().map(move |m| format!("{}: unsupported modifier {}", obj.name, m))
+    }).collect();
     let wanted: std::collections::HashSet<usize> = mesh_jobs.iter().copied().collect();
     let (mut objects, uv_maps): (Vec<SceneObject>, Vec<std::sync::Arc<super::SceneUvMap>>) = raw
         .into_par_iter()
@@ -143,7 +158,12 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
         cameras: cameras.len(),
         lights: lights.len(),
         empties: empties.len(),
-        warnings: missing,
+        memory_bytes: 0,
+        warnings: {
+            let mut w = missing;
+            w.extend(skipped_warnings);
+            w
+        },
     };
     SceneModel {
         report,

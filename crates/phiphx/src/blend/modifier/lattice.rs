@@ -14,6 +14,7 @@
 //! comes through the clothes.
 
 use crate::blend::file::types::*;
+use super::driver::BModValue;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
 use glam::{Mat3, Vec3};
 
@@ -54,6 +55,7 @@ fn clamp_axis(value: f32, points: i32) -> f32 {
 }
 
 /// The lattice's grid, read once.
+#[derive(Clone)]
 pub(crate) struct BLatticeGrid {
     pub pnts: [i32; 3],
     pub kinds: [u8; 3],
@@ -132,7 +134,48 @@ pub(super) fn read(f: &BlendFile, md: &BlendBlock, ob: &BlendBlock, dna: &DnaTyp
     }))
 }
 
+impl BLattice {
+    #[cfg(test)]
+    pub(crate) fn for_test() -> Self {
+        Self {
+            lattice: 0,
+            grid: BLatticeGrid { pnts: [2, 2, 2], kinds: [0; 3], first: [0.0; 3], step: [1.0; 3], points: Vec::new() },
+            strength: 1.0,
+            group: None,
+            invert: false,
+        }
+    }
+
+    fn driven(&mut self, prop: &str, value: BModValue) -> bool {
+        match prop {
+            "strength" => self.strength = value.as_f32(),
+            _ => return false,
+        }
+        true
+    }
+}
 impl BModifier for BLattice {
+    fn clone_box(&self) -> Box<dyn BModifier> {
+        Box::new(Self {
+            lattice: self.lattice,
+            grid: self.grid.clone(),
+            strength: self.strength,
+            group: self.group,
+            invert: self.invert,
+        })
+    }
+
+    fn set_driven(&mut self, prop: &str, _component: usize, value: BModValue) -> bool {
+        self.driven(prop, value)
+    }
+
+    /// `MOD_lattice.cc`'s `is_disabled`: `!object || object->type != OB_LATTICE`.
+    /// The type half cannot arise here — the reader only resolves a lattice
+    /// through a lattice block — so a missing object is the whole rule.
+    fn disabled(&self) -> bool {
+        self.lattice == 0
+    }
+
     #[cfg(test)]
     fn is_lattice(&self) -> bool {
         true

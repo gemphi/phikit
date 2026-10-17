@@ -169,6 +169,9 @@ pub fn render(ctx: &BRenderCtx) -> AnyElement {
     let edits = link::edits_of(ctx.state, ctx.host);
     let carrying = link::linking_of(ctx.state, ctx.host);
     let mut wired = edits.apply(&graph.links);
+    // A deleted node's wires go with it: the node is already off `graph.nodes`
+    // (`BNode::graph`), so prune the links that still name it (`remove/`).
+    super::remove::removed_of(ctx.state, ctx.host).prune(&mut wired);
     let view = view_store::view_of(ctx.state, ctx.host, &graph.nodes, |n| size.height_of(n, &link::linked_inputs(&wired, &n.name)), size.width);
     // Where every node sits: file location, drag offset, and the fraction of the
     // canvas it is drawn at (`plan::positions`).

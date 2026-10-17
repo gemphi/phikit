@@ -5,6 +5,7 @@
 //! Not yet: start/end caps, merge, fit-to-curve and fit-to-length.
 
 use super::{BModifier, BlendEvalMesh, EvalCtx};
+use super::driver::BModValue;
 use crate::blend::file::types::*;
 use glam::{Mat4, Vec3};
 
@@ -48,6 +49,12 @@ pub(super) fn read(
 }
 
 impl BArray {
+    /// A plain Array for the driven-setting tests (`driven_tests.rs`).
+    #[cfg(test)]
+    pub(crate) fn for_test() -> Self {
+        Self { count: 2, offset_type: 0, constant: Default::default(), relative: Default::default(), offset_ob: 0 }
+    }
+
     /// The displacement between one copy and the next, in object space.
     fn step(&self, mesh: &BlendEvalMesh, ctx: &EvalCtx) -> Vec3 {
         let mut step = Vec3::ZERO;
@@ -87,7 +94,34 @@ fn bounds(mesh: &BlendEvalMesh) -> (Vec3, Vec3) {
     (min, max)
 }
 
+impl BArray {
+    fn driven(&mut self, prop: &str, component: usize, value: BModValue) -> bool {
+        let v = value.as_f32();
+        match prop {
+            // Blender's own minimum: an Array of zero copies is one copy.
+            "count" => self.count = (v as i64).max(1) as usize,
+            "constant_offset_displace" if component < 3 => self.constant[component] = v,
+            "relative_offset_displace" if component < 3 => self.relative[component] = v,
+            _ => return false,
+        }
+        true
+    }
+}
 impl BModifier for BArray {
+    fn clone_box(&self) -> Box<dyn BModifier> {
+        Box::new(Self {
+            count: self.count,
+            offset_type: self.offset_type,
+            constant: self.constant,
+            relative: self.relative,
+            offset_ob: self.offset_ob,
+        })
+    }
+
+    fn set_driven(&mut self, prop: &str, component: usize, value: BModValue) -> bool {
+        self.driven(prop, component, value)
+    }
+
     fn apply(&self, mesh: &mut BlendEvalMesh, ctx: &EvalCtx) {
         if self.count <= 1 || mesh.vertices.is_empty() {
             return;
@@ -97,6 +131,7 @@ impl BModifier for BArray {
         let base_faces = mesh.faces.len();
         let base_uvs = mesh.loop_uvs.len();
         let base_colors = mesh.loop_colors.len();
+        let base_loose = mesh.loose_edges.len();
 
         for copy in 1..self.count {
             let shift = step * copy as f32;
@@ -124,6 +159,11 @@ impl BModifier for BArray {
             for n in 0..verts as usize {
                 let weights = mesh.dverts.get(n).cloned().unwrap_or_default();
                 mesh.dverts.push(weights);
+            }
+            // Duplicate loose edges with vertex offset for this copy.
+            for n in 0..base_loose {
+                let (a, b) = mesh.loose_edges[n];
+                mesh.loose_edges.push((a + base, b + base));
             }
         }
     }

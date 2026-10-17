@@ -118,7 +118,7 @@ impl BPanelItem {
 /// A title or tab as a lowercase path segment, interned: the same name always
 /// yields the same `&'static str`, and each distinct name is allocated once.
 /// (Leaking a fresh string on every build grew memory every frame.)
-fn slug(title: &str) -> &'static str {
+pub(crate) fn slug(title: &str) -> &'static str {
     static POOL: Mutex<Option<HashMap<String, &'static str>>> = Mutex::new(None);
     let mut guard = POOL.lock().unwrap_or_else(|e| e.into_inner());
     let pool = guard.get_or_insert_with(HashMap::new);

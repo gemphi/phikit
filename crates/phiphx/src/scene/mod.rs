@@ -217,7 +217,7 @@ mod corners;
 pub mod motion;
 pub use motion::{SceneMotion, SceneMotionFrame};
 pub mod rig;
-pub use rig::{SceneRigs, SceneSkin};
+pub use rig::{SceneDriven, SceneRigs, SceneSkin};
 pub mod relation;
 pub use relation::SceneRelation;
 pub mod uv;
@@ -237,6 +237,10 @@ pub(crate) mod texture;
 mod types_ext;
 mod ui;
 
+#[cfg(test)]
+mod tests_fixture;
+#[cfg(test)]
+mod tests_material;
 #[cfg(test)]
 mod tests_traversal;
 #[cfg(test)]

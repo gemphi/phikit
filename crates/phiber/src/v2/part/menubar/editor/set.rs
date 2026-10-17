@@ -68,13 +68,13 @@ pub static NODE_ADD: &[BMenuItem] = &[
     op("Converter", ""),
 ];
 pub static NODE_ITEMS: &[BMenuItem] = &[
-    op("Duplicate", "Shift D"),
-    op("Delete", "X"),
+    fire_host("Duplicate", "Shift D", OpKey::NodeDuplicate, ""),
+    fire_host("Delete", "X", OpKey::NodeDelete, ""),
     op("Join in New Frame", "Ctrl J"),
 ];
 
 pub static VIEW3D: &[BMenuSpec] = super::view3d::VIEW3D;
-pub use super::view3d::{EDITOR_VIEW, SELECT_ITEMS};
+pub use super::view3d::{EDITOR_SELECT, EDITOR_VIEW, SELECT_ITEMS};
 pub static OUTLINER: &[BMenuSpec] = &[m("View", OUTLINER_VIEW)];
 pub static BUTS: &[BMenuSpec] = &[m("View", PROPERTIES_VIEW)];
 // Blender ref: `TIME_MT_view`, `marker_menu_generic`, `TIME_PT_playback` (`bl_ui/space_time.py`).
@@ -89,7 +89,7 @@ pub static TIME_VIEW: &[BMenuItem] = &[
     fire("Frame Scene Range", "", OpKey::TimeView, "time:scene"),
     act("Go to Start Frame", "Shift Left", frame_start),
     SEP,
-    op("Show Markers", ""),
+    tog_host_on("Show Markers", "", crate::v2::view::draw::canvas::time::show::BShowMarkers::key_for),
     op("Show Seconds", "Ctrl T"),
     op("Sync Visible Range", ""),
     SEP,
@@ -98,8 +98,11 @@ pub static TIME_VIEW: &[BMenuItem] = &[
     SEP,
     fire("Toggle Maximize Area", "Ctrl Space", OpKey::AreaMaximize, ""),
 ];
+fn k_markers_locked() -> BPath {
+    CtxKey::MarkersLocked.path()
+}
 pub static TIME_MARKER: &[BMenuItem] = &[
-    op("Lock Markers", ""),
+    tog("Lock Markers", k_markers_locked),
     SEP,
     fire("Jump to Previous Marker", "", OpKey::Marker, "prev"),
     fire("Jump to Next Marker", "", OpKey::Marker, "next"),
@@ -110,7 +113,7 @@ pub static TIME_MARKER: &[BMenuItem] = &[
     fire("Rename Marker", "F2", OpKey::Rename, "marker"),
     SEP,
     fire("Delete Marker", "", OpKey::Marker, "delete"),
-    op("Duplicate Marker", ""),
+    fire("Duplicate Marker", "", OpKey::Marker, "duplicate"),
     fire("Add Marker", "M", OpKey::Marker, "add"),
 ];
 /// `TIME_PT_playback` as a header entry: the Timeline's menu row, and the
@@ -139,7 +142,7 @@ pub static ACTION: &[BMenuSpec] = super::anim::ACTION;
 pub static NLA: &[BMenuSpec] = super::anim::NLA;
 pub static NODE: &[BMenuSpec] = &[
     m("View", EDITOR_VIEW),
-    m("Select", SELECT_ITEMS),
+    m("Select", EDITOR_SELECT),
     m("Add", NODE_ADD),
     m("Node", NODE_ITEMS),
 ];
@@ -152,7 +155,7 @@ pub static COMPOSITOR: &[BMenuSpec] = NODE;
 /// editors (`canvas/node/add/menu::body`).
 pub static SHADER: &[BMenuSpec] = &[
     m("View", EDITOR_VIEW),
-    m("Select", SELECT_ITEMS),
+    m("Select", EDITOR_SELECT),
     panel("Add", crate::v2::view::draw::canvas::node::add::menu::body),
     m("Node", NODE_ITEMS),
 ];

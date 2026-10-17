@@ -55,33 +55,58 @@ pub static AREA: &[BMenuItem] = &[
 ];
 pub static LASSO: &[BMenuItem] = &[op("Set", ""), op("Extend", ""), op("Subtract", "")];
 /// `anim.channels_setting_toggle / _enable / _disable`'s `type`.
-pub static CHANNEL_SETTING: &[BMenuItem] = &[op("Protect", ""), op("Mute", "")];
-pub static MOVE: &[BMenuItem] = &[op("To Top", "Shift Page Up"), op("Up", "Page Up"), op("Down", "Page Down"), op("To Bottom", "Shift Page Down")];
+/// `anim.channels_setting_toggle` — flip Protect / Mute on the shown channels.
+pub static CHANNEL_SETTING_TOGGLE: &[BMenuItem] = &[
+    fire("Protect", "", OpKey::Channels, "protect:toggle"),
+    fire("Mute", "", OpKey::Channels, "mute:toggle"),
+];
+/// `anim.channels_setting_enable`.
+pub static CHANNEL_SETTING_ENABLE: &[BMenuItem] = &[
+    fire("Protect", "", OpKey::Channels, "protect:on"),
+    fire("Mute", "", OpKey::Channels, "mute:on"),
+];
+/// `anim.channels_setting_disable`.
+pub static CHANNEL_SETTING_DISABLE: &[BMenuItem] = &[
+    fire("Protect", "", OpKey::Channels, "protect:off"),
+    fire("Mute", "", OpKey::Channels, "mute:off"),
+];
+pub static MOVE: &[BMenuItem] = &[op("To Top", "Shift PageUp"), op("Up", "PageUp"), op("Down", "PageDown"), op("To Bottom", "Shift PageDown")];
 pub static EXTRAPOLATION: &[BMenuItem] = &[
-    op("Constant Extrapolation", ""),
-    op("Linear Extrapolation", ""),
+    fire("Constant Extrapolation", "", OpKey::Channels, "extend:const"),
+    fire("Linear Extrapolation", "", OpKey::Channels, "extend:lin"),
     op("Make Cyclic (F-Modifier)", ""),
     op("Clear Cyclic (F-Modifier)", ""),
 ];
-pub static HANDLE_TYPE: &[BMenuItem] = &[op("Free", ""), op("Aligned", ""), op("Vector", ""), op("Automatic", ""), op("Auto Clamped", "")];
-pub static INTERPOLATION: &[BMenuItem] = &[
-    op("Constant", ""),
-    op("Linear", ""),
-    op("Bézier", ""),
-    SEP,
-    op("Sinusoidal", ""),
-    op("Quadratic", ""),
-    op("Cubic", ""),
-    op("Quartic", ""),
-    op("Quintic", ""),
-    op("Exponential", ""),
-    op("Circular", ""),
-    SEP,
-    op("Back", ""),
-    op("Bounce", ""),
-    op("Elastic", ""),
+pub static HANDLE_TYPE: &[BMenuItem] = &[
+    fire("Free", "", OpKey::Keys, "handle:free"),
+    fire("Aligned", "", OpKey::Keys, "handle:aligned"),
+    fire("Vector", "", OpKey::Keys, "handle:vector"),
+    fire("Automatic", "", OpKey::Keys, "handle:auto"),
+    fire("Auto Clamped", "", OpKey::Keys, "handle:auto_clamped"),
 ];
-pub static EASING: &[BMenuItem] = &[op("Automatic Easing", ""), op("Ease In", ""), op("Ease Out", ""), op("Ease In and Out", "")];
+pub static INTERPOLATION: &[BMenuItem] = &[
+    fire("Constant", "", OpKey::Keys, "ipo:const"),
+    fire("Linear", "", OpKey::Keys, "ipo:lin"),
+    fire("Bézier", "", OpKey::Keys, "ipo:bez"),
+    SEP,
+    fire("Sinusoidal", "", OpKey::Keys, "ipo:sine"),
+    fire("Quadratic", "", OpKey::Keys, "ipo:quad"),
+    fire("Cubic", "", OpKey::Keys, "ipo:cubic"),
+    fire("Quartic", "", OpKey::Keys, "ipo:quart"),
+    fire("Quintic", "", OpKey::Keys, "ipo:quint"),
+    fire("Exponential", "", OpKey::Keys, "ipo:expo"),
+    fire("Circular", "", OpKey::Keys, "ipo:circ"),
+    SEP,
+    fire("Back", "", OpKey::Keys, "ipo:back"),
+    fire("Bounce", "", OpKey::Keys, "ipo:bounce"),
+    fire("Elastic", "", OpKey::Keys, "ipo:elastic"),
+];
+pub static EASING: &[BMenuItem] = &[
+    fire("Automatic Easing", "", OpKey::Keys, "easing:auto"),
+    fire("Ease In", "", OpKey::Keys, "easing:in"),
+    fire("Ease Out", "", OpKey::Keys, "easing:out"),
+    fire("Ease In and Out", "", OpKey::Keys, "easing:inout"),
+];
 
 pub static CACHE: &[BMenuItem] = &[
     op("Show Cache", ""),
@@ -104,7 +129,7 @@ pub static VIEW: &[BMenuItem] = &[
     op("Frame Selected", "Numpad ."),
     fire("Frame All", "Home", OpKey::TimeView, "action:all"),
     fire("Frame Scene Range", "", OpKey::TimeView, "action:scene"),
-    op("Go to Current Frame", "Numpad 0"),
+    fire_host("Go to Current Frame", "Numpad 0", OpKey::TimeView, ":center"),
     SEP,
     op("Multi-Word Match Search", ""),
     SEP,
@@ -114,15 +139,15 @@ pub static VIEW: &[BMenuItem] = &[
     op("Show Curve Extremes", ""),
     op("Auto-Merge Keyframes", ""),
     SEP,
-    op("Show Markers", ""),
+    tog_host_on("Show Markers", "", crate::v2::view::draw::canvas::time::show::BShowMarkers::key_for),
     op("Use Timecode", "Ctrl T"),
     op("Sync Visible Range", ""),
     SEP,
     op("Set Preview Range", "P"),
     act("Clear Preview Range", "Alt P", BAnimMenu::clear_preview),
-    op("Set Preview Range to Selected", "Ctrl Alt P"),
+    fire("Set Preview Range to Selected", "Ctrl Alt P", OpKey::PreviewRange, "selected"),
     SEP,
-    op("Toggle Graph Editor", "Ctrl Tab"),
+    fire_host("Toggle Graph Editor", "Ctrl Tab", OpKey::EditorType, ":ipo"),
     SEP,
     sub("Cache", CACHE),
     SEP,
@@ -160,9 +185,9 @@ pub static CHANNEL: &[BMenuItem] = &[
     op("Group Channels", "Ctrl G"),
     op("Ungroup Channels", "Ctrl Alt G"),
     SEP,
-    sub("Toggle Channel Setting", CHANNEL_SETTING),
-    sub("Enable Channel Setting", CHANNEL_SETTING),
-    sub("Disable Channel Setting", CHANNEL_SETTING),
+    sub("Toggle Channel Setting", CHANNEL_SETTING_TOGGLE),
+    sub("Enable Channel Setting", CHANNEL_SETTING_ENABLE),
+    sub("Disable Channel Setting", CHANNEL_SETTING_DISABLE),
     SEP,
     op("Toggle Channel Editability", "Tab"),
     sub("Extrapolation Mode", EXTRAPOLATION),
@@ -180,12 +205,16 @@ pub static CHANNEL: &[BMenuItem] = &[
 ];
 pub static TRANSFORM: &[BMenuItem] = &[fire("Move", "G", OpKey::Keys, "grab:start"), op("Extend", "E"), op("Slide", "Shift T"), op("Scale", "S")];
 pub static SNAP: &[BMenuItem] = &[
-    op("Selection to Current Frame", ""),
-    op("Selection to Nearest Frame", ""),
-    op("Selection to Nearest Second", ""),
-    op("Selection to Nearest Marker", ""),
+    fire("Selection to Current Frame", "", OpKey::Keys, "snap:current"),
+    fire("Selection to Nearest Frame", "", OpKey::Keys, "snap:nearest_frame"),
+    fire("Selection to Nearest Second", "", OpKey::Keys, "snap:nearest_second"),
+    fire("Selection to Nearest Marker", "", OpKey::Keys, "snap:nearest_marker"),
 ];
-pub static MIRROR: &[BMenuItem] = &[op("By Times Over Current Frame", ""), op("By Values Over Zero Value", ""), op("By Times Over First Selected Marker", "")];
+pub static MIRROR: &[BMenuItem] = &[
+    fire("By Times Over Current Frame", "", OpKey::Keys, "mirror:current"),
+    op("By Values Over Zero Value", ""),
+    fire("By Times Over First Selected Marker", "", OpKey::Keys, "mirror:marker"),
+];
 pub static KEYFRAME_TYPE: &[BMenuItem] = &[op("Keyframe", ""), op("Breakdown", ""), op("Moving Hold", ""), op("Extreme", ""), op("Jitter", ""), op("Generated", "")];
 /// `DOPESHEET_MT_key`.
 pub static KEY: &[BMenuItem] = &[
@@ -196,12 +225,12 @@ pub static KEY: &[BMenuItem] = &[
     // `action.keyframe_insert` asks which channels; I keys them all.
     fire("Insert Keyframes", "I", OpKey::Keyframe, "channels"),
     SEP,
-    op("Jump to Keyframes", "Ctrl G"),
+    fire("Jump to Keyframes", "Ctrl G", OpKey::Keys, "jump"),
     SEP,
     op("Copy Keyframes", "Ctrl C"),
     op("Paste Keyframes", "Ctrl V"),
     op("Paste Flipped", "Shift Ctrl V"),
-    op("Duplicate", "Shift D"),
+    fire("Duplicate", "Shift D", OpKey::Keys, "duplicate"),
     fire("Delete Keyframes", "X", OpKey::Keys, "delete"),
     SEP,
     sub("Keyframe Type", KEYFRAME_TYPE),

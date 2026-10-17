@@ -9,6 +9,7 @@
 //! `FILEBROWSER_PT_filter`, both opened from an icon in their header.
 
 pub mod dope;
+pub mod fold;
 pub mod overlay;
 pub mod shading;
 pub mod view3d;

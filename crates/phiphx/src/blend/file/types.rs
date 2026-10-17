@@ -116,6 +116,22 @@ pub struct BlendFile {
     /// (`modifier/prefix.rs`). An `Arc` because a progressive open's deferred
     /// apply reaches it from a worker thread through `DeferredRaw`.
     pub(crate) prefix_box: std::sync::Arc<crate::blend::modifier::prefix::BPrefixBox>,
+    /// This frame's driven modifier settings, by the OBJECT's saved address
+    /// (`modifier/driver.rs`, batch 174 read them; this is what finally
+    /// carries them into the stack).
+    ///
+    /// It lives on the file rather than being threaded through
+    /// `modifier_jobs` and `skin_sources` because `modifier_stack` — the one
+    /// place a modifier is built — already has `&self` and the object's
+    /// block, so a store here needs no signature to change and both
+    /// consumers pick the overrides up for free.
+    ///
+    /// Filled by `scene/read.rs` AFTER the animation is read, which is why
+    /// the modifier evaluation had to move below it: Blender's depsgraph
+    /// runs animation then geometry for exactly this reason.
+    pub(crate) driven_modifiers: std::sync::Mutex<
+        std::collections::HashMap<u64, Vec<(crate::blend::modifier::driver::BModWrite, crate::blend::modifier::driver::BModValue)>>,
+    >,
 }
 
 pub use crate::blend::scene::types::*;

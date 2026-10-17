@@ -16,6 +16,7 @@ pub mod marker;
 pub mod row;
 pub mod set;
 pub mod sheet;
+pub mod show;
 pub mod expander;
 pub mod strip;
 pub mod view;
@@ -74,7 +75,7 @@ impl BTime {
         // G left the key where it was (`dope_sheet_edits_keys`: "G: the key
         // follows the pointer").
         let grabbing = crate::v2::scene::grab::BMarkerGrab::active(ctx.state) || view.key_grab;
-        let gesture = Rc::new(gesture::BTimeGesture { view, handler: ctx.handler.clone(), bounds, grabbing, snap: (crate::v2::part::playback::snap::BPlayheadSnap::now(ctx.state), crate::v2::part::playback::snap::BSnapTargets::now(ctx.state)) });
+        let gesture = Rc::new(gesture::BTimeGesture { view: view.clone(), handler: ctx.handler.clone(), bounds, grabbing, snap: (crate::v2::part::playback::snap::BPlayheadSnap::now(ctx.state), crate::v2::part::playback::snap::BSnapTargets::now(ctx.state)) });
         let (down, moved, dragged, up, cancel, wheeled) =
             (gesture.clone(), gesture.clone(), gesture.clone(), gesture.clone(), gesture.clone(), gesture);
         let host = self.0;

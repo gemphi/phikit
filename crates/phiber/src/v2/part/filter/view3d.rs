@@ -35,18 +35,31 @@ fn group(state: &BState, heading: &str, specs: &'static [BPropSpec]) -> Vec<BVie
         .collect()
 }
 
-/// `VIEW3D_PT_gizmo_display`'s rows.
+/// The scope the viewport's fold keys sit under, beside the families'
+/// (`overlay::scope`), so one rule reads them all.
+const SCOPE: [&str; 2] = ["overlay", "view3d"];
+
+/// `VIEW3D_PT_gizmo_display`'s rows. One panel in Blender — its "Viewport
+/// Gizmos" / "Object Gizmos" headings are `col.label`, not sub-panels — so
+/// its one heading stays a flat list and grows no triangle.
 pub fn gizmo_body(state: &BState) -> Vec<BView> {
     group(state, "Gizmos", crate::v2::part::props::tool::OPTIONS)
 }
 
-/// `VIEW3D_PT_overlay`'s rows, under Blender's two headings.
+/// `VIEW3D_PT_overlay`'s rows under Blender's two headings, each a folding
+/// card: Blender's are the sub-panels `VIEW3D_PT_overlay_guides` and
+/// `VIEW3D_PT_overlay_object`, which carry their own collapse triangle
+/// inside the popover (`filter::fold`).
 pub fn overlay_body(state: &BState) -> Vec<BView> {
+    super::fold::cards(state, &SCOPE, overlay_groups(state), super::fold::all_open)
+}
+
+/// The same boxes split at Blender's two headings, headless — what the cards
+/// fold over, and what a flat read of the popover counts.
+pub fn overlay_groups(state: &BState) -> Vec<super::fold::BGroup> {
     use crate::v2::part::props::tool::{OVERLAYS, OVERLAY_OBJECTS};
     let (guides, objects) = OVERLAYS.split_at(OVERLAY_OBJECTS);
-    let mut rows = group(state, "Guides", guides);
-    rows.extend(group(state, "Objects", objects));
-    rows
+    vec![("Guides", group(state, "", guides)), ("Objects", group(state, "", objects))]
 }
 
 /// One header popover, keyed the way every other header popover is
@@ -92,8 +105,27 @@ mod tests {
     #[test]
     fn each_popover_draws_one_row_per_property() {
         let state = BState::new();
+        // Gizmos is one panel in Blender, so it is still one row per box.
         assert_eq!(gizmo_body(&state).len(), crate::v2::part::props::tool::OPTIONS.len());
-        assert_eq!(overlay_body(&state).len(), crate::v2::part::props::tool::OVERLAYS.len());
+        // Overlays is two sub-panels, so it is two cards — and between them
+        // still one row per box, none lost in the fold.
+        let cards = overlay_body(&state);
+        assert_eq!(cards.len(), 2, "Guides and Objects, not fourteen loose rows");
+        let rows: usize = overlay_groups(&state).iter().map(|(_, rows)| rows.len()).sum();
+        assert_eq!(rows, crate::v2::part::props::tool::OVERLAYS.len());
+    }
+
+    #[test]
+    fn the_overlay_headings_fold_and_the_gizmo_popover_does_not() {
+        use crate::v2::view::BView;
+        let state = BState::new();
+        // `VIEW3D_PT_overlay_guides` / `_object`: a triangle each.
+        for view in overlay_body(&state) {
+            let BView::Card(card) = view else { panic!("a folding card per heading") };
+            assert!(card.fold.is_some(), "a heading with no triangle is the long list again");
+        }
+        // `VIEW3D_PT_gizmo_display`: no sub-panels, so no cards.
+        assert!(!gizmo_body(&state).iter().any(|v| matches!(v, BView::Card(_))));
     }
 
     #[test]

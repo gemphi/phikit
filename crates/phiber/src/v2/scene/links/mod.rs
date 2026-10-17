@@ -78,6 +78,15 @@ impl BSceneLinks {
         self.parented.push((child.to_string(), parent.to_string()));
     }
 
+    /// `child` loses its parent, keeping its other links — the overlay form
+    /// of Blender's `CLEAR_PARENT_ALL` (`object_relations.cc`): the entry
+    /// comes out so the stored list stops naming a parent, equivalent to
+    /// `ob->parent = NULL`. Keep-transform (`CLEAR_PARENT_KEEP_TRANSFORM`,
+    /// which also rewrites the local matrix) is a separate step.
+    pub fn unparent(&mut self, child: &str) {
+        self.parented.retain(|(c, _)| c != child);
+    }
+
     /// The collection at `child` goes into the one at `parent`. Kept as a
     /// history, replayed in order (`BCollectionNode::now`), as the save
     /// replays it: each step was checked against the tree it was made on.

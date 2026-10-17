@@ -49,7 +49,7 @@ impl BlendFile {
     /// One object's modifier drivers, with each modifier's type resolved
     /// from its own stack.
     fn object_modifier_drivers(&self, name: String, ob: &BlendBlock, dna: &DnaType) -> BModifierDrivers {
-        let mut set = BModifierDrivers { object: name, drivers: Vec::new() };
+        let mut set = BModifierDrivers { object: name, address: ob.old_address, drivers: Vec::new() };
         let stack = self.modifier_kinds(ob, dna);
         if stack.is_empty() {
             return set;
@@ -74,18 +74,31 @@ impl BlendFile {
     fn modifier_kinds(&self, ob: &BlendBlock, dna: &DnaType) -> Vec<(String, &'static str)> {
         let first = self.ptr(ob, self.off("Object", "modifiers", dna));
         let next = self.off("ModifierData", "*next", dna);
-        let name_o = self.off("ModifierData", "name[64]", dna).or_else(|| self.off("ModifierData", "name", dna));
+        let name_o = self.modifier_name_offset(dna);
         self.scoped(ob, || self.list(first, next))
             .into_iter()
             .filter_map(|md| {
                 let ty = self.int_field(md, "ModifierData", "type", dna);
                 let kind = KINDS.iter().find(|k| k.dna_type == ty)?;
-                let o = name_o?;
-                let bytes = md.data.get(o..(o + 64).min(md.data.len()))?;
-                let end = bytes.iter().position(|&c| c == 0).unwrap_or(bytes.len());
-                Some((String::from_utf8_lossy(&bytes[..end]).to_string(), kind.name))
+                Some((self.modifier_name(md, name_o)?, kind.name))
             })
             .collect()
+    }
+
+    /// Where `ModifierData.name` sits, looked up once for a whole stack —
+    /// two spellings because the DNA carries the array length in older
+    /// files and not in newer ones.
+    pub(crate) fn modifier_name_offset(&self, dna: &DnaType) -> Option<usize> {
+        self.off("ModifierData", "name[64]", dna).or_else(|| self.off("ModifierData", "name", dna))
+    }
+
+    /// A modifier's name, which is the only thing a driver's path carries to
+    /// identify it by (`modifiers["Name"].property`).
+    pub(crate) fn modifier_name(&self, md: &BlendBlock, offset: Option<usize>) -> Option<String> {
+        let o = offset?;
+        let bytes = md.data.get(o..(o + 64).min(md.data.len()))?;
+        let end = bytes.iter().position(|&c| c == 0).unwrap_or(bytes.len());
+        Some(String::from_utf8_lossy(&bytes[..end]).to_string())
     }
 }
 

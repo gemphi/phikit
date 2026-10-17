@@ -49,6 +49,10 @@ pub enum SceneKey {
     /// Each NLA stack Push Down, Stash and the NLA editor edited, whole,
     /// as JSON (`scene::action::nla`).
     Nla,
+    /// F-curves whose channel properties the session changed — extrapolation,
+    /// protect, mute — `action#slot#path#index=extend,protect,mute|…`
+    /// (`scene::action::channel`).
+    Channels,
     /// Objects the Transform panel moved, turned or scaled:
     /// `name=lx,ly,lz,rx,ry,rz,sx,sy,sz|…` (rotation in degrees, XYZ).
     Transformed,
@@ -89,6 +93,7 @@ impl BKey for SceneKey {
             Self::ActionRanges => "action_ranges",
             Self::Keyed => "keyed",
             Self::Nla => "nla",
+            Self::Channels => "channels",
             Self::Transformed => "transformed",
             Self::ShadowCast => "shadow_cast",
             Self::RenderBorder => "render_border",

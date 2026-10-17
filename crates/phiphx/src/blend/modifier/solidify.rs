@@ -8,6 +8,7 @@
 //! (non-manifold) mode, per-vertex-group thickness, rim material offsets.
 
 use super::geom::{boundary, vertex_normals};
+use super::driver::BModValue;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::blend::file::types::*;
 use glam::Vec3;
@@ -37,7 +38,33 @@ pub(super) fn read(
     }))
 }
 
+/// `thickness` and `offset` land. `material_offset` and `material_offset_rim`
+/// are modelled by the driver table and have no field here — this reader
+/// does not shift material slots — so they report `false`.
+impl BSolidify {
+    #[cfg(test)]
+    pub(crate) fn for_test() -> Self {
+        Self { thickness: 0.01, offset: -1.0, flag: 0 }
+    }
+
+    fn driven(&mut self, prop: &str, value: BModValue) -> bool {
+        match prop {
+            "thickness" => self.thickness = value.as_f32(),
+            "offset" => self.offset = value.as_f32(),
+            _ => return false,
+        }
+        true
+    }
+}
 impl BModifier for BSolidify {
+    fn clone_box(&self) -> Box<dyn BModifier> {
+        Box::new(Self { thickness: self.thickness, offset: self.offset, flag: self.flag })
+    }
+
+    fn set_driven(&mut self, prop: &str, _component: usize, value: BModValue) -> bool {
+        self.driven(prop, value)
+    }
+
     fn apply(&self, mesh: &mut BlendEvalMesh, _ctx: &EvalCtx) {
         if mesh.vertices.is_empty() || mesh.faces.is_empty() {
             return;
@@ -182,6 +209,12 @@ impl BModifier for BSolidify {
             mesh.loop_colors.extend(shell_colors);
         } else if !mesh.loop_colors.is_empty() {
             mesh.loop_colors.clear();
+        }
+        // Duplicate loose edges for the inner shell.
+        let base_loose = mesh.loose_edges.len();
+        for i in 0..base_loose {
+            let (a, b) = mesh.loose_edges[i];
+            mesh.loose_edges.push((a + base_verts, b + base_verts));
         }
     }
 }

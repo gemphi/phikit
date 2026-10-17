@@ -18,6 +18,9 @@ pub struct SceneReadReport {
     pub cameras: usize,
     pub lights: usize,
     pub empties: usize,
+    /// Approximate heap memory of the loaded scene, in bytes (Blender's
+    /// `MEM_get_memory_in_use` equivalent for the read data).
+    pub memory_bytes: u64,
     /// Non-fatal notes (e.g. unsupported data skipped).
     pub warnings: Vec<String>,
 }
@@ -31,13 +34,30 @@ impl SceneReadReport {
 
     /// Status-bar statistics in `info_stats.cc` format (Object Mode).
     pub fn stats_line(&self) -> String {
-        format!(
+        let stats = format!(
             "Verts:{} | Faces:{} | Tris:{} | Objects:{}",
             group(self.verts),
             group(self.faces),
             group(self.tris),
-            group(self.objects)
-        )
+            group(self.objects),
+        );
+        let mem = self.mem_line();
+        if mem.is_empty() { stats } else { format!("{stats} | {mem}") }
+    }
+    /// Blender's status-bar `Mem:` segment (`BLI_str_format_byte_unit`,
+    /// binary base). Returns an empty string when no memory figure was set.
+    pub fn mem_line(&self) -> String {
+        if self.memory_bytes == 0 {
+            return String::new();
+        }
+        let b = self.memory_bytes as f64;
+        if b < 1024.0 * 1024.0 {
+            format!("Mem: {:.1} KiB", b / 1024.0)
+        } else if b < 1024.0 * 1024.0 * 1024.0 {
+            format!("Mem: {:.1} MiB", b / (1024.0 * 1024.0))
+        } else {
+            format!("Mem: {:.2} GiB", b / (1024.0 * 1024.0 * 1024.0))
+        }
     }
 }
 
@@ -63,5 +83,9 @@ mod tests {
         let r = SceneReadReport { duration_ms: 1410, verts: 754928, faces: 12, tris: 20, objects: 179, ..Default::default() };
         assert_eq!(r.duration_line(), "Blender file read in 0m1.41s");
         assert_eq!(r.stats_line(), "Verts:754,928 | Faces:12 | Tris:20 | Objects:179");
+        // With memory set, stats line includes it.
+        let r2 = SceneReadReport { memory_bytes: 52_428_800, ..r.clone() };
+        assert_eq!(r2.mem_line(), "Mem: 50.0 MiB");
+        assert!(r2.stats_line().ends_with("| Mem: 50.0 MiB"));
     }
 }

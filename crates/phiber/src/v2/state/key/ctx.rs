@@ -45,6 +45,11 @@ pub enum CtxKey {
     MarkerGrab,
     /// A box swept over the marker band (`scene::grab::BMarkerBox`).
     MarkerBox,
+    /// `ToolSettings.lock_markers` — "Lock Markers" in the Timeline's Marker
+    /// menu: a scene tool setting that gates every marker edit (add, move,
+    /// delete, duplicate) in Blender's `anim_markers.cc`. Checked here with
+    /// the same gate at the head of `BMarkerOpRule`.
+    MarkersLocked,
     /// The Dope Sheet's selected keys, its key grab and its box
     /// (`scene::action::dope`).
     KeySelected,
@@ -77,6 +82,7 @@ impl BKey for CtxKey {
             Self::MarkerSelected => return BPath::owned(vec!["markers", "selected"]),
             Self::MarkerGrab => return BPath::owned(vec!["markers", "grab"]),
             Self::MarkerBox => return BPath::owned(vec!["markers", "box"]),
+            Self::MarkersLocked => return BPath::owned(vec!["markers", "locked"]),
             Self::KeySelected => return BPath::owned(vec!["keys", "selected"]),
             Self::KeyGrab => return BPath::owned(vec!["keys", "grab"]),
             Self::KeyBox => return BPath::owned(vec!["keys", "box"]),

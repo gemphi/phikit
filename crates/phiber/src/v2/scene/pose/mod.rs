@@ -106,3 +106,41 @@ impl BPosed {
         objects
     }
 }
+
+/// Objects left in after the Outliner's **render** restrictions — the
+/// camera icon (`OB_HIDE_RENDER`, `DNA_object_types.h`) and excluded
+/// collections. `BHidden::for_render` reads the monitor key per object;
+/// collection exclusion is shared with the viewport, so an eye-off object
+/// with its render shown still renders (`blenkernel/object.cc`'s
+/// `BKE_object_is_visible` is the viewport's rule, not render's).
+pub fn visible_in_render(s: &crate::v2::state::BState, objects: Vec<BObject3D>) -> Vec<BObject3D> {
+    let hidden = crate::v2::part::outliner::key::BHidden::for_render(s);
+    objects.into_iter().filter(|o| !hidden.hides(s, o.name())).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::v2::part::outliner::key::k_restrict;
+    use crate::v2::state::val::V_TRUE;
+
+    #[test]
+    fn render_skips_the_render_hidden_objects_the_outliner_marked() {
+        // Default scene; no model is needed to exercise the filter.
+        let mut s = BState::new();
+        let before = crate::v2::scene::current_scene(&s, None);
+        let name = before.iter().map(|o| o.name().to_string()).next().expect("at least one default object");
+
+        // The eye alone does not hide a render — Blender renders what the
+        // viewport hides.
+        s.set(&k_restrict(&name, "hide_get"), V_TRUE);
+        let still_rendered: Vec<_> = crate::v2::scene::render_scene(&s, None).iter().map(|o| o.name().to_string()).collect();
+        assert!(still_rendered.contains(&name), "eye off leaves it in the render");
+
+        // The camera does.
+        s.set(&k_restrict(&name, "hide_render"), V_TRUE);
+        let rendered: Vec<_> = crate::v2::scene::render_scene(&s, None).iter().map(|o| o.name().to_string()).collect();
+        assert!(!rendered.contains(&name), "camera off takes it out of the render");
+        assert_eq!(rendered.len(), before.len() - 1);
+    }
+}

@@ -78,6 +78,16 @@ pub static SELECT_ITEMS: &[BMenuItem] = &[
     fire("Box Select", "B", OpKey::Select, "box"),
     fire("Circle Select", "C", OpKey::Select, "circle"),
 ];
+/// The node editors' Select menu (`NODE_MT_select`): the whole-graph
+/// selection ops, each naming the editor it was picked in so one table serves
+/// them all (`canvas/node/select/op`). Box and lasso select are gestures on
+/// the canvas, not menu entries. This replaces the viewport's `SELECT_ITEMS`,
+/// which fired the 3D object select and left a node graph untouched.
+pub static EDITOR_SELECT: &[BMenuItem] = &[
+    fire_host("All", "A", OpKey::NodeSelect, ":all"),
+    fire_host("None", "Alt A", OpKey::NodeSelect, ":none"),
+    fire_host("Invert", "Ctrl I", OpKey::NodeSelect, ":invert"),
+];
 /// `VIEW3D_MT_mesh_add`: the primitives phiber builds (`scene/edit.rs`).
 static VIEW3D_ADD_MESH: &[BMenuItem] = &[
     fire("Plane", "", OpKey::SceneEdit, "add:plane"),
@@ -118,11 +128,23 @@ static OBJECT_SNAP: &[BMenuItem] = &[
     fire("Cursor to Grid", "", OpKey::Cursor, "cursor_to_grid"),
     fire("Cursor to Active", "", OpKey::Cursor, "active"),
 ];
+/// `VIEW3D_MT_object_clear`: each channel back to identity on the selected
+/// objects (`scene/transform`, `object.*_clear`).
+static OBJECT_CLEAR: &[BMenuItem] = &[
+    fire("Location", "Alt G", OpKey::ObjectClear, "location"),
+    fire("Rotation", "Alt R", OpKey::ObjectClear, "rotation"),
+    fire("Scale", "Alt S", OpKey::ObjectClear, "scale"),
+];
 /// `VIEW3D_MT_object_animation`: I keys the selected objects
 /// (`scene/action/keying.rs`).
 static OBJECT_ANIMATION: &[BMenuItem] = &[
     fire("Insert Keyframe", "I", OpKey::Keyframe, "insert"),
-    op("Insert Keyframe with Keying Set", "K"),
+    // `ANIM_OT_keyframe_insert_menu` (K, `editors/animation/keyframing.cc`):
+    // normally opens a popup of keying sets, but with no active keying set
+    // (phiber has none yet) it falls through to the default behaviour, which
+    // is what Insert Keyframe already does. Recorded divergence: no keying
+    // set selection UI yet, so K and I act the same way.
+    fire("Insert Keyframe with Keying Set", "K", OpKey::Keyframe, "insert"),
     fire("Delete Keyframes...", "Alt I", OpKey::Keyframe, "delete"),
     fire("Clear Keyframes...", "", OpKey::Keyframe, "clear"),
     op("Change Keying Set...", "Shift K"),
@@ -132,11 +154,15 @@ static OBJECT_ANIMATION: &[BMenuItem] = &[
 ];
 pub static OBJECT_ITEMS: &[BMenuItem] = &[
     sub("Transform", OBJECT_TRANSFORM),
+    sub("Clear", OBJECT_CLEAR),
     sub("Snap", OBJECT_SNAP),
     SEP,
     op("Shade Auto Smooth", ""),
     SEP,
     sub("Animation", OBJECT_ANIMATION),
+    SEP,
+    fire("Parent", "Ctrl P", OpKey::ObjectParent, "set"),
+    fire("Clear Parent", "Alt P", OpKey::ObjectParent, "clear"),
     SEP,
     fire("Duplicate Objects", "Shift D", OpKey::SceneEdit, "duplicate"),
     fire("Delete", "X", OpKey::SceneEdit, "delete"),

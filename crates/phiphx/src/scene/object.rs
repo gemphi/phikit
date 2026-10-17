@@ -18,6 +18,7 @@ pub(super) fn evaluated_triangles(src: &BlendSceneObject, eval: Option<&crate::b
             face_materials: e.face_materials.clone(),
             face_smooth: e.face_smooth.clone(),
             loop_normals: Vec::new(),
+            loose_edges: e.loose_edges.clone(),
             ..src.clone()
         }),
         None => STriangles::of(src),
@@ -39,6 +40,7 @@ pub(super) fn evaluated_object(src: &BlendSceneObject, eval: Option<&crate::blen
                 face_materials: e.face_materials.clone(),
                 face_smooth: e.face_smooth.clone(),
                 loop_normals: Vec::new(),
+                loose_edges: e.loose_edges.clone(),
                 ..src.clone()
             };
             &owned
@@ -106,6 +108,39 @@ impl STriangles {
             loop_base += len;
         }
         // Only keep per-triangle slots when the mesh really is multi-material.
+        if t.material_indices.iter().all(|&m| m == 0) {
+            t.material_indices.clear();
+        }
+        t
+    }
+
+
+    /// Triangulation of a modifier-evaluated mesh whose topology may have
+    /// changed (a driven Subdivision level). No saved normals — every
+    /// frame recomputes.
+    pub(super) fn from_eval(eval: &crate::blend::BlendEvalMesh) -> Self {
+        let vertices = &eval.vertices;
+        let vert_count = vertices.len();
+        let mut t = Self::default();
+        let mut loop_base = 0usize;
+        for (face_i, face) in eval.faces.iter().enumerate() {
+            let len = face.len();
+            if len < 3 || face.iter().any(|&v| (v as usize) >= vert_count) {
+                loop_base += len;
+                continue;
+            }
+            let slot = eval.face_materials.get(face_i).copied().unwrap_or(0);
+            let smooth = eval.face_smooth.get(face_i).copied().unwrap_or(false);
+            let pts: Vec<[f32; 3]> = face.iter().map(|&v| vertices[v as usize]).collect();
+            for [i, j, k] in triangulate(&pts) {
+                t.indices.extend([face[i], face[j], face[k]]);
+                t.tri_loop_starts.push(loop_base);
+                t.tri_loops.push([loop_base + i, loop_base + j, loop_base + k]);
+                t.material_indices.push(slot);
+                t.tri_smooth.push(smooth);
+            }
+            loop_base += len;
+        }
         if t.material_indices.iter().all(|&m| m == 0) {
             t.material_indices.clear();
         }

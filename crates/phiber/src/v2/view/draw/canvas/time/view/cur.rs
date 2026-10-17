@@ -73,6 +73,14 @@ impl BTimeCur {
         Self { first: self.first + dx, last: self.last + dx }
     }
 
+    /// `ANIM_center_frame` (`anim_ops.cc`): pan the view so `frame` is at
+    /// the centre, keeping the current width. Called by `ACTION_OT_view_frame`
+    /// (Numpad 0, Go to Current Frame) and its graph / NLA / sequencer kin.
+    pub fn centered(self, frame: f32) -> Self {
+        let half = self.width() / 2.0;
+        Self { first: frame - half, last: frame + half }
+    }
+
     /// `actkeys_viewall` over keys spanning `min..max`: a lone key (or
     /// none apart) is centred at the width in hand; a span fills the
     /// window with the margin.

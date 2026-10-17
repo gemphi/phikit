@@ -256,14 +256,47 @@ were applying empty lists. It is a one-line ordering mistake that a value test
 could never have caught, and the reason `driven_lights.rs` asserts against
 Blender's dump through `Phx::open` rather than against the pass.
 
-### What is still not wired
+### Modifier settings, and the order that was wrong (batch 188)
 
-A **modifier**'s values, and the reason is ordering rather than identity:
-`scene/read.rs` evaluates geometry at 0.90 and reads the animation at 0.94+,
-so when the modifier stack is applied the driven settings do not exist yet.
-Blender's depsgraph runs animation first and geometry after, precisely because
-geometry depends on driven settings. The fix is to move the modifier
-evaluation after the motion read — not to thread values backwards.
+All four kinds are wired now. The modifier one needed a reorder rather than an
+identity: `scene/read.rs` evaluated geometry at 0.90 and read the animation at
+0.94+, so when the stack was applied the driven settings **did not exist yet**.
+Blender's depsgraph runs the animation system first and geometry after,
+precisely because geometry depends on driven settings, so the fix was to move
+the evaluation rather than thread values backwards into it. The open now reads
+actions (0.90), motion (0.93), every driver set, and evaluates the geometry
+last (0.96).
+
+`BlendFile::driven_modifiers` is the handover — the frame's settings by object
+address — which `modifier_stack` picks up as it builds each modifier. It lives
+on the file rather than being threaded through `modifier_jobs` and
+`skin_sources` because that one function already has `&self` and the object's
+block, so no signature changed and both consumers get the overrides for free.
+`BModifier::set_driven` takes one setting and each type applies its own
+reader's guards on top: a driven Subdivision level takes the same cap a file's
+level does, so a driver is not a way around it.
+
+Measured on MODDRIVERS at the saved frame: of the fixture's 16 drivers, 15 are
+live (one is deliberately muted and correctly leaves the saved value standing),
+**13 land on a field with exactly Blender's values**, and 2 report `false`
+because this reader has no field for them — `Solidify.material_offset` and
+`Mirror.bisect_threshold`, listed rather than dropped, as `specular_intensity`
+is on a material.
+
+**What this does not change yet, stated plainly.** The evaluated geometry is
+byte-identical either way on this fixture, because a mesh is evaluated **once,
+at the saved frame**, and at that frame the file's own values already agree
+with the drivers. The mechanism is verified by the values landing, not by a
+mesh moving. It becomes visible the moment geometry is re-evaluated at another
+frame — which is the next item.
+
+**One gap it exposed.** `subsurf::read` returns `None` when the file's saved
+level is 0, so no Subdivision modifier is built at all — and a driver that
+raises the level to 2 or 11 at another frame has nothing to raise. MODDRIVERS
+drives exactly that (0 → 2 → 0 → 11 → 0 over five frames). Building a
+level-0 Subdivision instead would mean deciding what Blender's level-0
+Subdivision does to a mesh with Use Limit Surface on, which is a measurement,
+not a guess, so it is recorded here rather than folded into a plumbing batch.
 
 ## Light and world drivers (batch 173)
 
@@ -433,18 +466,20 @@ truncation entirely.
 
 ## Next
 
-1. **Evaluate the modifier stack after the motion read**, Blender's own
-   depsgraph order, which is what driven modifier settings need before any
-   of batch 174's measured values can reach a mesh. See "What this does not
-   do" under modifier drivers.
-2. **An area light's energy through the renderer.** Not a driver job — see
+1. **Re-evaluate geometry per frame.** A mesh is evaluated once at open, so
+   every driven modifier setting above is correct and invisible until this
+   exists. It is also what a driven Subdivision level needs before the
+   level-0 gap above matters.
+2. **What Blender's level-0 Subdivision does**, measured, so `subsurf::read`
+   can stop dropping the modifier and a driver can raise it.
+3. **An area light's energy through the renderer.** Not a driver job — see
    batch 173's open question. Needs one Cycles render of an area light read
    from a file, compared with `phiray`'s.
-3. **Shape-key drivers.** `Key.adt`, `key_blocks["Name"].value`. Blocked on
+4. **Shape-key drivers.** `Key.adt`, `key_blocks["Name"].value`. Blocked on
    shape keys themselves, which phiphx does not read yet.
-4. **Context Property variables.** `DTAR_CONTEXT_PROPERTY_ACTIVE_SCENE` and
+5. **Context Property variables.** `DTAR_CONTEXT_PROPERTY_ACTIVE_SCENE` and
    `ACTIVE_VIEW_LAYER`; small, once there is a scene context to resolve
    against.
-5. **Driver-against-driver ordering.** A dependency sort over the channel
+6. **Driver-against-driver ordering.** A dependency sort over the channel
    drivers would close the one limit stated above. Worth doing only on a
    file that needs it.

@@ -48,14 +48,18 @@ impl SceneMotion {
         if !self.rigs.animated() {
             return Vec::new();
         }
-        self.rigs.meshes_at(&self.solved_at(frame))
+        self.rigs.meshes_at(&self.solved_at(frame), &self.rigs.driven_at(&self.motion, frame))
     }
 
     /// Each mesh a rig deforms and each rig's bones, posed at `frame` —
     /// one solve for both.
     pub fn posed_at(&self, frame: f32) -> (Vec<(usize, super::SceneMesh)>, Vec<std::sync::Arc<Vec<glam::Mat4>>>) {
         let at = self.solved_at(frame);
-        let meshes = if self.rigs.animated() { self.rigs.meshes_at(&at) } else { Vec::new() };
+        let meshes = if self.rigs.animated() {
+            self.rigs.meshes_at(&at, &self.rigs.driven_at(&self.motion, frame))
+        } else {
+            Vec::new()
+        };
         (meshes, self.rigs.bones_at(&at))
     }
 

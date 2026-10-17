@@ -56,24 +56,38 @@ pub fn is_on(state: &BState, host: BHostType, spec: &BOverlaySpec) -> bool {
     }
 }
 
-/// The popover's rows, under the headings the table opens.
+/// The scope a family's fold keys sit under — the one its boxes already sit
+/// under (`key`), so the header popover and the sidebar tab drawing the same
+/// groups fold together instead of each keeping its own triangles.
+pub fn scope(host: BHostType) -> [&'static str; 2] {
+    ["overlay", panel_for(host).map_or_else(|| host.slug(), |panel| panel.family)]
+}
+
+/// The popover's body: its headings as folding cards when Blender draws them
+/// as sub-panels — `IMAGE_PT_overlay`'s four and `CLIP_PT_display`'s two —
+/// and the flat rows when the table has the one heading that is the panel's
+/// own name, as `NODE_PT_overlay` and `SPREADSHEET_PT_filter` are
+/// (`filter::fold` states the rule and cites the source).
 pub fn body(state: &BState, host: BHostType) -> Vec<BView> {
     let Some(table) = table_for(host) else { return Vec::new() };
-    table
-        .iter()
-        .map(|spec| {
-            BView::check_row(state, spec.group, key(host, spec), spec.default_on, spec.label)
-        })
-        .collect()
+    super::fold::body(state, &scope(host), groups(state, host), super::fold::all_open, || {
+        table
+            .iter()
+            .map(|spec| {
+                BView::check_row(state, spec.group, key(host, spec), spec.default_on, spec.label)
+            })
+            .collect()
+    })
 }
 
 /// The same boxes as `body`, split at their headings — one entry per group,
 /// which is one sub-panel in Blender (`CLIP_PT_marker_display` and
 /// `CLIP_PT_clip_display` under `CLIP_PT_display`).
 ///
-/// The sidebar draws these as folding cards and the header draws `body` as one
-/// list. One table, two places to reach it: a second copy of the rows is how
-/// a box comes to be ticked in the popover and clear in the sidebar.
+/// Both the sidebar tab and the header popover draw these as folding cards,
+/// over one set of keys (`scope`). One table, two places to reach it: a second
+/// copy of the rows — or a second set of fold keys — is how a box comes to be
+/// ticked in the popover and clear in the sidebar.
 pub fn groups(state: &BState, host: BHostType) -> Vec<(&'static str, Vec<BView>)> {
     let Some(table) = table_for(host) else { return Vec::new() };
     let mut out: Vec<(&'static str, Vec<BView>)> = Vec::new();
@@ -173,6 +187,55 @@ mod tests {
             keys.dedup();
             assert_eq!(keys.len(), n, "two boxes would fight over one key");
         }
+    }
+
+    /// The rule `filter::fold` states, checked over every real table: a
+    /// table with two or more headings draws folding cards, a table with one
+    /// draws its rows. This is what stops a table that grows a second heading
+    /// from quietly staying a long flat list.
+    #[test]
+    fn a_table_with_two_headings_folds_and_a_table_with_one_does_not() {
+        let state = BState::new();
+        for host in DRAWN_BY.map(|(host, _)| host) {
+            let headings = groups(&state, host).len();
+            let drawn = body(&state, host);
+            let cards = drawn.iter().filter(|v| matches!(v, BView::Card(_))).count();
+            match headings {
+                // `IMAGE_PT_overlay`'s four, `CLIP_PT_display`'s two.
+                2.. => {
+                    assert_eq!(cards, headings, "{host:?}: a card per heading");
+                    assert_eq!(drawn.len(), headings, "{host:?}: cards only, no loose rows");
+                }
+                // `NODE_PT_overlay`, `SPREADSHEET_PT_filter`: one panel.
+                _ => {
+                    assert_eq!(cards, 0, "{host:?}: one heading is the panel's own name");
+                    assert_eq!(drawn.len(), table_for(host).unwrap().len(), "{host:?}");
+                }
+            }
+        }
+    }
+
+    /// The header and the sidebar fold as one: the Movie Clip editor's View
+    /// tab and its header popover draw the same groups, so a triangle shut in
+    /// one is shut in the other.
+    #[test]
+    fn the_header_and_the_sidebar_fold_on_one_set_of_keys() {
+        use crate::v2::part::filter::fold;
+        let mut state = BState::new();
+        let key = fold::expand_key(&scope(BHostType::Clip), "Marker Display");
+        assert_eq!(key.encode(), "ctx.overlay.clip.marker_display.expanded");
+        state.set(&key, V_FALSE);
+        let shut = |views: Vec<BView>| match views.first() {
+            Some(BView::Card(card)) => card.body.is_empty(),
+            _ => panic!("a card"),
+        };
+        assert!(shut(body(&state, BHostType::Clip)), "the header reads it");
+        assert!(
+            shut(fold::cards(&state, &scope(BHostType::Clip), groups(&state, BHostType::Clip), fold::all_open)),
+            "and the sidebar's View tab reads the same key",
+        );
+        // Two families keep their own triangles.
+        assert_ne!(key, fold::expand_key(&scope(BHostType::Image), "Marker Display"));
     }
 
     #[test]

@@ -38,6 +38,7 @@ pub mod overlay;
 pub mod paint;
 pub mod pick;
 pub mod plan;
+pub mod remove;
 pub mod reroute;
 pub mod select;
 pub mod set;
@@ -142,6 +143,11 @@ impl BNode {
         // Then the user's own socket-value edits, over both the file's nodes
         // and the added ones (`edit/`).
         edit::edits_of(ctx.state, ctx.host).apply(&mut graph.nodes);
+        // Then the deletions, last: a removed name takes out a file node and an
+        // added one alike (`remove/`). The links touching them are pruned where
+        // the effective link list is built (`set.rs`), as a wire needs both of
+        // its nodes to be drawn at all.
+        remove::removed_of(ctx.state, ctx.host).apply(&mut graph.nodes);
         Some(graph)
     }
 

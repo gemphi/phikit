@@ -7,6 +7,7 @@
 //! it is in Blender), custom normals and per-vertex-group strength.
 
 use super::geom::vertex_normals;
+use super::driver::BModValue;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::blend::file::types::*;
 use glam::Vec3;
@@ -37,7 +38,43 @@ pub(super) fn read(
     }))
 }
 
+impl BDisplace {
+    #[cfg(test)]
+    pub(crate) fn for_test() -> Self {
+        Self { strength: 1.0, midlevel: 0.5, direction: 0 }
+    }
+
+    fn driven(&mut self, prop: &str, value: BModValue) -> bool {
+        match prop {
+            "strength" => self.strength = value.as_f32(),
+            // The path's name and the field's differ by an underscore.
+            "mid_level" => self.midlevel = value.as_f32(),
+            _ => return false,
+        }
+        true
+    }
+}
 impl BModifier for BDisplace {
+    fn clone_box(&self) -> Box<dyn BModifier> {
+        Box::new(Self { strength: self.strength, midlevel: self.midlevel, direction: self.direction })
+    }
+
+    fn set_driven(&mut self, prop: &str, _component: usize, value: BModValue) -> bool {
+        self.driven(prop, value)
+    }
+
+    /// `MOD_displace.cc`'s `is_disabled`:
+    /// `(!texture && direction == MOD_DISP_DIR_RGB_XYZ) || strength == 0`.
+    ///
+    /// This reader is textureless, so `!texture` always holds and the first
+    /// branch reduces to the direction alone: an RGB→XYZ displace with no
+    /// texture to read the colours from has nothing to displace along, and
+    /// Blender drops it rather than falling back to an axis.
+    fn disabled(&self) -> bool {
+        const MOD_DISP_DIR_RGB_XYZ: u32 = 4;
+        self.direction == MOD_DISP_DIR_RGB_XYZ || self.strength == 0.0
+    }
+
     fn apply(&self, mesh: &mut BlendEvalMesh, _ctx: &EvalCtx) {
         // With no texture the sampled value is 1, so this is the whole delta.
         let delta = self.strength * (1.0 - self.midlevel);

@@ -14,11 +14,14 @@
 //! `rule.rs` is the operator; `keys.rs` the inserts, `keying.rs` I.
 
 pub mod autokey;
+pub mod channel;
 pub mod dope;
 pub mod keying;
 pub mod keys;
 pub mod nla;
 pub mod nla_editor;
+pub mod preview;
+pub mod reshape;
 pub mod retime;
 pub mod rule;
 pub mod set;
@@ -58,6 +61,9 @@ pub struct BSceneActions {
     pub ranges: Vec<BActionRange>,
     /// The keys inserted, moved and deleted, in order (`retime.rs`).
     pub keyed: Vec<BKeyStep>,
+    /// F-curve channel properties changed — extrapolation, protect, mute
+    /// (`channel.rs`).
+    pub channels: Vec<channel::BChannelEdit>,
     /// Each NLA stack the session edited, whole (`nla.rs`).
     pub nla: Vec<SceneNla>,
 }
@@ -84,8 +90,9 @@ impl BSceneActions {
             })
             .collect();
         let keyed = BKeyStep::parse_all(state.get(SceneKey::Keyed).unwrap_or(""));
+        let channels = channel::BChannelEdit::parse_all(state.get(SceneKey::Channels).unwrap_or(""));
         let nla = Self::parse_nla(state.get(SceneKey::Nla).unwrap_or(""));
-        Self { assigned, made: Self::entries(state, SceneKey::MadeActions), ranges, keyed, nla }
+        Self { assigned, made: Self::entries(state, SceneKey::MadeActions), ranges, keyed, channels, nla }
     }
 
     pub fn write(&self, state: &mut BState) {
@@ -95,11 +102,27 @@ impl BSceneActions {
         let range = |r: &BActionRange| r.range.map_or("-,-".to_string(), |(s, e)| format!("{s},{e}"));
         state.set(SceneKey::ActionRanges, join(self.ranges.iter().map(|r| format!("{}{IS}{},{}", r.action, range(r), u8::from(r.cyclic))).collect()));
         state.set(SceneKey::Keyed, BKeyStep::encode_all(&self.keyed));
+        state.set(SceneKey::Channels, channel::BChannelEdit::encode_all(&self.channels));
         state.set(SceneKey::Nla, Self::encode_nla(&self.nla));
     }
 
     pub fn is_empty(&self) -> bool {
-        self.assigned.is_empty() && self.made.is_empty() && self.ranges.is_empty() && self.keyed.is_empty() && self.nla.is_empty()
+        self.assigned.is_empty() && self.made.is_empty() && self.ranges.is_empty() && self.keyed.is_empty() && self.channels.is_empty() && self.nla.is_empty()
+    }
+
+    /// Set a channel's properties, replacing any edit already made to it — one
+    /// entry per `(action, slot, path, index)`, so a property does not stack
+    /// with its own past.
+    pub fn set_channel(&mut self, edit: channel::BChannelEdit) {
+        if let Some(found) = self.channels.iter_mut().find(|e| e.id == edit.id) {
+            // Keep the fields the new edit leaves unset, so Protect then Mute
+            // on the same channel both stand.
+            found.extend = edit.extend.or(found.extend);
+            found.protect = edit.protect.or(found.protect);
+            found.mute = edit.mute.or(found.mute);
+        } else {
+            self.channels.push(edit);
+        }
     }
 
     /// `object` animated by `action` through `slot` from here on.

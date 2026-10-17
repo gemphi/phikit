@@ -121,6 +121,15 @@ pub enum NodeKey {
     /// second click on the swatch clears it. One at a time per host, like a
     /// popover.
     Picking(BHostType),
+    /// `ctx.<host>.node.removed` — the nodes the user has DELETED, over the
+    /// ones the file carries.
+    ///
+    /// The mirror of `Added`: the file is read-only, so a deletion is an
+    /// overlay too — a set of names taken OUT of the merged tree, applied last
+    /// so one name removes a file node and an added node alike
+    /// (`canvas/node/remove/`). One key holds the whole set — deleting is one
+    /// store write and one undo step, as adding is.
+    Removed(BHostType),
 }
 
 impl BKey for NodeKey {
@@ -136,6 +145,7 @@ impl BKey for NodeKey {
             Self::AddLink(host) => BPath::owned(vec![host.slug(), "node", "addlink"]),
             Self::Values(host) => BPath::owned(vec![host.slug(), "node", "values"]),
             Self::Picking(host) => BPath::owned(vec![host.slug(), "node", "picking"]),
+            Self::Removed(host) => BPath::owned(vec![host.slug(), "node", "removed"]),
         }
     }
 }

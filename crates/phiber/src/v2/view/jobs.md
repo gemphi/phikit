@@ -10,7 +10,7 @@
 - [ ] One menu look: every popover body uses `MenuItem` rows
 - [ ] One zone look: all zone / area / host frames from the same surface treatment
 - [ ] GPU viewport: renderer 2 (appkit wgpu, Material Preview) and renderer 3 (WebGPU path tracer) in the View3D area
-- [ ] Viewport interaction on the real camera: orbit yaw + pitch, Shift pan of the pivot, dolly, numpad views, frame selected
+- [ ] Viewport interaction on the real camera — **mostly done and mis-tracked**: orbit and dolly are across six `view3d/` files and the numpad axis views are in `op/render.rs`. Re-scope this line to whatever is genuinely left (found in the batch-191 sweep)
 
 ## Done
 

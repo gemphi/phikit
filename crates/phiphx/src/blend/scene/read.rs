@@ -129,24 +129,12 @@ impl BlendFile {
             // and drivers. The bar sat at one number and Cancel was dead for
             // the whole phase, which is what a hang looks like from outside.
             // Each step now reports before it runs and honours a decline.
-            if !progress(0.90, "Evaluating modifiers") {
-                return Err(crate::PointCloudError::Cancelled);
-            }
-            // Progressive open: capture the modifier work but do not apply it
-            // now — the base meshes show first and the apply runs off the read
-            // thread (`SceneModel::from_blend_progressive`). Eager open applies
-            // it here as before.
-            if crate::blend::progressive_open() {
-                scene.deferred = Some(std::sync::Arc::new(self.modifier_jobs(&scene.objects, dna)));
-            } else {
-                scene.props.evaluated = self.evaluate_modifiers(&scene.objects, dna);
-            }
-            if !progress(0.94, "Reading actions") {
+            if !progress(0.90, "Reading actions") {
                 return Err(crate::PointCloudError::Cancelled);
             }
             let actions = self.actions(dna);
             scene.props.actions = self.action_summaries(&scene.objects, &actions, dna);
-            if !progress(0.96, "Reading motion") {
+            if !progress(0.93, "Reading motion") {
                 return Err(crate::PointCloudError::Cancelled);
             }
             scene.props.motion = self.motion_list(&scene.objects, &actions, dna);
@@ -168,6 +156,53 @@ impl BlendFile {
             let state = scene.props.motion.driver_state_at(scene.props.frame_current as f32);
             state.drive(&mut scene);
             scene.props.modifier_drivers = self.modifier_drivers(&scene.objects, dna);
+
+            // Geometry LAST, because geometry depends on the animation.
+            //
+            // This block used to run at 0.90, before a single action had been
+            // read — so a modifier setting driven to 3 was evaluated at the 1
+            // the file saved, and batch 174's measured values had nowhere to
+            // go. Blender's depsgraph runs the animation system first and the
+            // geometry after it for exactly this reason, so the fix was to
+            // move the evaluation rather than to thread values backwards into
+            // it.
+            //
+            // `driven_modifiers` is the handover: the frame's settings by
+            // object address, which `modifier_stack` picks up as it builds
+            // each modifier (`modifier/mod.rs`). Both consumers — the eager
+            // apply and the deferred capture — get them without either
+            // knowing this happened.
+            {
+                let at = scene.props.motion.driver_state_at(scene.props.frame_current as f32);
+                let frame = scene.props.frame_current as f32;
+                let mut held = self.driven_modifiers.lock().unwrap_or_else(|e| e.into_inner());
+                held.clear();
+                for set in &scene.props.modifier_drivers {
+                    let values = set.values(&at.scene(), frame);
+                    if !values.is_empty() {
+                        held.insert(set.address, values);
+                    }
+                }
+            }
+            if !progress(0.96, "Evaluating modifiers") {
+                return Err(crate::PointCloudError::Cancelled);
+            }
+            // Progressive open: capture the modifier work but do not apply it
+            // now — the base meshes show first and the apply runs off the read
+            // thread (`SceneModel::from_blend_progressive`). Eager open applies
+            // it here as before.
+            if crate::blend::progressive_open() {
+                scene.deferred = Some(std::sync::Arc::new(self.modifier_jobs(&scene.objects, dna)));
+            } else {
+                scene.props.evaluated = self.evaluate_modifiers(&scene.objects, dna);
+            }
+            // Report viewport-enabled modifiers the reader does not
+            // support, so the open tells the user what geometry is missing.
+            for o in &mut scene.objects {
+                if let Some(ob) = self.block_at_code(o.block_address, "OB") {
+                    o.skipped_modifiers = self.skipped_modifiers(ob, dna);
+                }
+            }
             scene.props.rigs = self.rigs(&scene.objects, dna, &actions);
             // Objects that follow others — by a constraint or a bone parent
             // — stand where their targets put them at the saved frame

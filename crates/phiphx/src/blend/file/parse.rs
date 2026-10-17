@@ -107,6 +107,7 @@ impl BlendFile {
             cancel_requested: std::sync::atomic::AtomicBool::new(false),
             deform_memo: std::sync::Mutex::default(),
             prefix_box: std::sync::Arc::default(),
+            driven_modifiers: std::sync::Mutex::default(),
         })
     }
 

@@ -19,6 +19,7 @@
 //! to the file unchanged.
 
 pub mod catalog;
+pub mod duplicate;
 pub mod rule;
 pub mod store;
 

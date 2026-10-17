@@ -28,7 +28,9 @@ impl BPhiberApp {
         // No file open: the default scene through the startup file's camera
         // (`BStartupCamera`), as a fresh Blender renders its cube.
         let loaded = crate::v2::scene::source::with_loaded(|m| m.cloned());
-        let scene = crate::v2::scene::current_scene(&self.state, loaded.as_ref());
+        // The render-pass camera icon filters this list; the viewport eye
+        // doesn't (Blender renders what the viewport hides, `pose::visible_in_render`).
+        let scene = crate::v2::scene::render_scene(&self.state, loaded.as_ref());
         let model = loaded.unwrap_or_else(|| crate::v2::scene::startup_camera::BStartupCamera::model(&scene));
         let set = crate::v2::scene::render_set(&self.state);
         let look = self.render_look(&model, set);

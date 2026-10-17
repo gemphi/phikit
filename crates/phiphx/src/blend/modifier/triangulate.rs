@@ -6,6 +6,7 @@
 //! untriangulated one are shaded identically — which is what Blender shows.
 
 use super::{BModifier, BlendEvalMesh, EvalCtx};
+use super::driver::BModValue;
 use crate::blend::file::types::*;
 
 pub(crate) struct BTriangulate {
@@ -27,7 +28,24 @@ pub(super) fn read(
     }))
 }
 
+impl BTriangulate {
+    fn driven(&mut self, prop: &str, value: BModValue) -> bool {
+        match prop {
+            "min_vertices" => self.min_vertices = value.as_f32().max(4.0) as u32,
+            _ => return false,
+        }
+        true
+    }
+}
 impl BModifier for BTriangulate {
+    fn clone_box(&self) -> Box<dyn BModifier> {
+        Box::new(Self { min_vertices: self.min_vertices })
+    }
+
+    fn set_driven(&mut self, prop: &str, _component: usize, value: BModValue) -> bool {
+        self.driven(prop, value)
+    }
+
     fn apply(&self, mesh: &mut BlendEvalMesh, _ctx: &EvalCtx) {
         let faces = mesh.faces.len();
         if faces == 0 {

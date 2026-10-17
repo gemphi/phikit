@@ -8,6 +8,7 @@
 //! and the `loose_edges` option.
 
 use super::{BModifier, BlendEvalMesh, EvalCtx};
+use super::driver::BModValue;
 use crate::blend::file::types::*;
 use glam::Vec3;
 
@@ -57,6 +58,11 @@ impl Groups {
 }
 
 impl BWeld {
+    #[cfg(test)]
+    pub(crate) fn for_test() -> Self {
+        Self { merge_dist: 0.001, mode: 0 }
+    }
+
     /// Vertex pairs close enough to merge.
     fn pairs(&self, mesh: &BlendEvalMesh) -> Vec<(u32, u32)> {
         let d = self.merge_dist;
@@ -103,7 +109,25 @@ impl BWeld {
     }
 }
 
+impl BWeld {
+    fn driven(&mut self, prop: &str, value: BModValue) -> bool {
+        match prop {
+            // Blender calls it `merge_threshold`; the field is the distance.
+            "merge_threshold" => self.merge_dist = value.as_f32().max(0.0),
+            _ => return false,
+        }
+        true
+    }
+}
 impl BModifier for BWeld {
+    fn clone_box(&self) -> Box<dyn BModifier> {
+        Box::new(Self { merge_dist: self.merge_dist, mode: self.mode })
+    }
+
+    fn set_driven(&mut self, prop: &str, _component: usize, value: BModValue) -> bool {
+        self.driven(prop, value)
+    }
+
     fn apply(&self, mesh: &mut BlendEvalMesh, _ctx: &EvalCtx) {
         if self.merge_dist <= 0.0 || mesh.vertices.is_empty() {
             return;
@@ -168,5 +192,14 @@ impl BModifier for BWeld {
         if has_colors {
             mesh.loop_colors = colors;
         }
+        // Remap loose edges; drop degenerate ones where both endpoints merged.
+        mesh.loose_edges = mesh.loose_edges.iter()
+            .map(|&(a, b)| {
+                let ma = moved[a as usize];
+                let mb = moved[b as usize];
+                (ma.min(mb), ma.max(mb))
+            })
+            .filter(|(a, b)| a != b)
+            .collect();
     }
 }

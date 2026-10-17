@@ -12,7 +12,7 @@
 mod world;
 
 use super::edit::BSceneEdit;
-use crate::v2::state::{BKey as _, BPath, BState, ButsKey, CtxKey, SceneKey, rule::BRule, val::{BValue, BValueKind}};
+use crate::v2::state::{BKey as _, BPath, BState, ButsKey, CtxKey, OpKey, SceneKey, rule::BRule, val::{BValue, BValueKind}};
 use glam::{EulerRot, Mat4, Quat, Vec3};
 
 /// The panel's three vectors, and the keys it draws them from.
@@ -28,6 +28,9 @@ pub struct BTransform {
 }
 
 impl BTransform {
+    /// No move, no turn, unit scale — what a cleared object has.
+    pub const IDENTITY: Self = Self { location: [0.0; 3], rotation: [0.0; 3], scale: [1.0; 3] };
+
     /// `T · R · S`, R as Blender's XYZ Euler (`eul_to_mat3`: X first).
     pub fn matrix(&self) -> Mat4 {
         let [rx, ry, rz] = self.rotation.map(f32::to_radians);
@@ -153,6 +156,50 @@ impl BRule for BTransformRule {
     }
 }
 
+/// `object.location_clear` / `rotation_clear` / `scale_clear` — Object ▸ Clear
+/// (Alt G / R / S): each selected object's channel goes back to identity, its
+/// other channels kept. Blender clears per axis unless that axis is locked
+/// (`object_transform.cc`'s `object_clear_loc` / `_rot` / `_scale`); phiber has
+/// no transform locks yet, so it clears the whole channel — which is exactly
+/// Blender's result for an unlocked object (the default), a recorded divergence
+/// only for the locked case.
+pub struct BObjectClearRule;
+
+impl BRule for BObjectClearRule {
+    fn wants(&self, path: &BPath) -> bool {
+        *path == OpKey::ObjectClear.path()
+    }
+
+    fn after(&self, _: &BPath, value: &str, s: &mut BState) {
+        s.remove(OpKey::ObjectClear);
+        let Some(model) = crate::v2::scene::source::loaded_shared() else { return };
+        let edit = BSceneEdit::now(s);
+        let mut all = BTransforms::now(s);
+        for name in &model.selection.selected {
+            // Where the object stands now: its overlay transform, else the one
+            // the file gives it, else identity.
+            let current = all
+                .get(name)
+                .or_else(|| BTransforms::file_local(&edit, &model, name).map(BTransform::of_matrix))
+                .unwrap_or(BTransform::IDENTITY);
+            let next = match value {
+                "location" => BTransform { location: [0.0; 3], ..current },
+                "rotation" => BTransform { rotation: [0.0; 3], ..current },
+                "scale" => BTransform { scale: [1.0; 3], ..current },
+                _ => return,
+            };
+            all.set(name, next);
+        }
+        all.write(s);
+        // The panel shows what the active object now has.
+        if let Some(active) = s.get(CtxKey::Object).map(str::to_string) {
+            if let Some(t) = BTransforms::now(s).get(&active) {
+                crate::v2::part::props::active::set::seed_edited(s, &t);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -170,5 +217,41 @@ mod tests {
         let mut s = BState::new();
         BTransforms { list: vec![("Cube".into(), t)] }.write(&mut s);
         assert_eq!(BTransforms::now(&s).get("Cube"), Some(t));
+    }
+
+    #[test]
+    fn clear_sends_a_channel_back_to_identity_keeping_the_others() {
+        use crate::phiphx::scene::{SceneCorners, SceneMesh, SceneModel, SceneNormals, SceneObject};
+        use crate::v2::state::action::apply_action;
+        use crate::v2::view::prim::BAction;
+
+        let mesh = SceneMesh {
+            vertices: vec![[0.0; 3]],
+            indices: Vec::new(),
+            normals: SceneNormals::PerFace(Vec::new()),
+            corners: SceneCorners::default(),
+        };
+        let mut model = SceneModel { objects: vec![SceneObject::identity("Cube", mesh)], ..Default::default() };
+        model.selection.selected = vec!["Cube".into()];
+        crate::v2::scene::source::set_loaded_scene(Some(model));
+
+        let mut s = BState::new();
+        let posed = BTransform { location: [5.0, 1.0, -2.0], rotation: [0.0, 0.0, 90.0], scale: [2.0, 2.0, 2.0] };
+        BTransforms { list: vec![("Cube".into(), posed)] }.write(&mut s);
+
+        let clear = |s: &mut BState, which: &str| apply_action(s, &BAction::Set(OpKey::ObjectClear.path(), which.to_string()));
+
+        clear(&mut s, "location");
+        let after = BTransforms::now(&s).get("Cube").unwrap();
+        assert_eq!(after.location, [0.0; 3], "location cleared");
+        assert_eq!((after.rotation, after.scale), (posed.rotation, posed.scale), "rotation and scale kept");
+
+        clear(&mut s, "rotation");
+        assert_eq!(BTransforms::now(&s).get("Cube").unwrap().rotation, [0.0; 3], "rotation cleared");
+
+        clear(&mut s, "scale");
+        assert_eq!(BTransforms::now(&s).get("Cube").unwrap().scale, [1.0; 3], "scale back to one");
+
+        crate::v2::scene::source::clear_loaded_scene();
     }
 }

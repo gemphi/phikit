@@ -33,19 +33,19 @@ pub static VIEW: &[BMenuItem] = &[
     op("Frame Selected", "Numpad ."),
     fire("Frame All", "Home", OpKey::TimeView, "nla:all"),
     fire("Frame Scene Range", "", OpKey::TimeView, "nla:scene"),
-    op("Go to Current Frame", "Numpad 0"),
+    fire_host("Go to Current Frame", "Numpad 0", OpKey::TimeView, ":center"),
     SEP,
     op("Realtime Updates", ""),
     op("Show Control F-Curves", ""),
     SEP,
-    op("Show Markers", ""),
+    tog_host_on("Show Markers", "", crate::v2::view::draw::canvas::time::show::BShowMarkers::key_for),
     op("Show Local Markers", ""),
     op("Use Timecode", "Ctrl T"),
     op("Sync Visible Range", ""),
     SEP,
     op("Set Preview Range", "P"),
     act("Clear Preview Range", "Alt P", BAnimMenu::clear_preview),
-    op("Set Preview Range to Selected", "Ctrl Alt P"),
+    fire("Set Preview Range to Selected", "Ctrl Alt P", OpKey::PreviewRange, "selected"),
     SEP,
     sub("Area", AREA),
 ];
@@ -86,7 +86,7 @@ pub static SNAP: &[BMenuItem] = &[
     op("Selection to Nearest Marker", ""),
 ];
 /// `NLA_MT_strips_transform`.
-pub static TRANSFORM: &[BMenuItem] = &[op("Move", "G"), op("Extend", "E"), op("Scale", "S"), SEP, op("Swap", "Alt F"), SEP, op("Move Up", "Page Up"), op("Move Down", "Page Down")];
+pub static TRANSFORM: &[BMenuItem] = &[op("Move", "G"), op("Extend", "E"), op("Scale", "S"), SEP, op("Swap", "Alt F"), SEP, op("Move Up", "PageUp"), op("Move Down", "PageDown")];
 /// `NLA_MT_strips`, outside tweak mode.
 pub static STRIPS: &[BMenuItem] = &[
     sub("Transform", TRANSFORM),

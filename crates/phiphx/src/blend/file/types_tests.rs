@@ -31,6 +31,7 @@ use super::*;
             face_smooth: Vec::new(),
             data: Default::default(),
             modifiers: Vec::new(),
+            skipped_modifiers: Vec::new(),
             instance_targets: Vec::new(),
             is_instance: false,
             base_color: [0.8, 0.8, 0.8, 1.0],
