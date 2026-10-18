@@ -109,10 +109,34 @@ impl BHeadlessRender {
         BRenderQuality::samples(self.samples, self.draft)
     }
 
-    /// Run it. One PNG per frame as `f0001.png`, and a `times.txt` beside
-    /// them — the names the Blender script and the comparisons expect.
+    /// Where frame `frame` is written, by Blender's own rule
+    /// (`BLI_path_frame`, `BKE_image_path_from_imformat`): the last
+    /// component of `-o` is a **name prefix**, not a folder, unless the
+    /// path ends with a separator. `####` anywhere in the name is replaced
+    /// by the frame number at that width, else four digits are appended.
+    ///
+    /// `-o …\\pose26_phiray_` used to make a *folder* called
+    /// `pose26_phiray_` and write `f0001.png` inside it, which is neither
+    /// where nor what the caller asked for.
+    pub fn frame_path(out: &str, frame: i64) -> (std::path::PathBuf, std::path::PathBuf) {
+        let dir_only = out.ends_with('/') || out.ends_with('\\');
+        let trimmed = out.trim_end_matches(['/', '\\']);
+        let cut = trimmed.rfind(['/', '\\']).map(|i| i + 1).unwrap_or(0);
+        let (dir, prefix) = if dir_only { (trimmed, "") } else { (&trimmed[..cut.saturating_sub(1).max(0)], &trimmed[cut..]) };
+        let dir = std::path::PathBuf::from(if dir.is_empty() { "." } else { dir });
+        // `####` sets its own width; otherwise four digits follow the name.
+        let name = match (prefix.find('#'), prefix.rfind('#')) {
+            (Some(a), Some(b)) => format!("{}{:0width$}{}.png", &prefix[..a], frame, &prefix[b + 1..], width = b - a + 1),
+            _ => format!("{prefix}{frame:04}.png"),
+        };
+        (dir.clone(), dir.join(name))
+    }
+
+    /// Run it. One PNG per frame, named Blender's way ([`Self::frame_path`]),
+    /// and a `times.txt` beside them for the comparisons.
     pub fn run(&self) -> Result<Vec<BFrameCost>, String> {
-        std::fs::create_dir_all(&self.out).map_err(|e| format!("outdir: {e}"))?;
+        let (outdir, _) = Self::frame_path(&self.out, 1);
+        std::fs::create_dir_all(&outdir).map_err(|e| format!("outdir: {e}"))?;
         let mut model = Phx::open(std::path::Path::new(&self.file)).map_err(|e| format!("open: {e:?}"))?;
         if let Some(albedo) = self.look.material {
             BMatStand::set(Some(BMatStand::grey(albedo)));
@@ -174,11 +198,12 @@ impl BHeadlessRender {
             let (pixel, taken) = still(&objects, plan.look, plan.camera, plan.w, plan.h, plan.samples, plan.denoise)
                 .ok_or("no gpu adapter, or a scene that does not fit")?;
             let drew = shot.elapsed();
-            let path = format!("{}/f{:04}.png", self.out, frame as i64);
+            let (_, path) = Self::frame_path(&self.out, frame as i64);
             image::RgbaImage::from_raw(plan.w, plan.h, pixel)
                 .ok_or("the pixels do not fill the frame")?
                 .save(&path)
-                .map_err(|e| format!("save {path}: {e}"))?;
+                .map_err(|e| format!("save {}: {e}", path.display()))?;
+            println!("Saved: {}", path.display());
             cost.push(BFrameCost {
                 frame,
                 posed_ms: posed.as_secs_f64() * 1000.0,
@@ -187,7 +212,7 @@ impl BHeadlessRender {
             });
         }
         let times: String = cost.iter().map(BFrameCost::line).collect();
-        std::fs::write(format!("{}/times.txt", self.out), times).map_err(|e| format!("times: {e}"))?;
+        std::fs::write(outdir.join("times.txt"), times).map_err(|e| format!("times: {e}"))?;
         Ok(cost)
     }
 }

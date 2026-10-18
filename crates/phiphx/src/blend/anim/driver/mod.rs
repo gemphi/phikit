@@ -33,7 +33,6 @@ mod wire;
 
 pub use pass::{BlendDriverSet, BlendPropDriver};
 pub use socket::{BDriverSocket, socket_clamp, socket_path};
-pub use state::BDriverState;
 pub use var::{BDriverValue, BlendDriverEnd, BlendDriverRead, BlendDriverScene};
 
 use super::fcurve::BFCurve;

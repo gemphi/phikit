@@ -121,10 +121,15 @@ fn the_shrink_rule_is_scoped_to_where_a_width_exists() {
     assert!(!split.contains("BFlex::row().fills().min_width(BLen::Zero)"), "the equal halves are gone");
 }
 
-/// Every checkbox in the popover is one width — its column's — rather than
-/// a pill cut to its own label, so the column reads as a column. The row
-/// inside the control filled its slot; the wrapper around it hugged, and
-/// "Sync" sat in a pill a third the width of "Limit to Frame Range".
+/// Every boolean control in the popover is one width — its column's —
+/// rather than a pill cut to its own label, so the column reads as a column.
+/// The row inside the control filled its slot; the wrapper around it hugged,
+/// and "Sync" sat in a pill a third the width of "Limit to Frame Range".
+///
+/// `BView::check_row` builds a `BCtrlKind::Switch` in a property row's value
+/// column now, not a labelled button, so the switches are what to measure —
+/// the test looked for `btn-label-…-true-text` and found nothing at all,
+/// which passes no judgement on the widths it is here to judge.
 #[gpui::test]
 async fn the_checkboxes_in_a_popover_are_one_width(cx: &mut TestAppContext) {
     let (_app, cx) = playback_open!(cx);
@@ -137,13 +142,13 @@ async fn the_checkboxes_in_a_popover_are_one_width(cx: &mut TestAppContext) {
     };
     let widths: Vec<(&str, f32)> = bounds
         .iter()
-        // A checkbox is a labelled button whose action sets its key to the
-        // other bool (`BCtrl::flip`): `btn-label-set-ctx.…-true|false-text`.
-        .filter(|(s, b)| s.starts_with("btn-label-set-") && (s.ends_with("-true-text") || s.ends_with("-false-text")) && !s.contains("ctx.header.") && inside(b))
+        // A boolean row's control is a switch over its key
+        // (`view/draw/ctrl/mod.rs`): `switch-ctx.…`.
+        .filter(|(s, b)| s.starts_with("switch-") && !s.contains("ctx.header.") && inside(b))
         .map(|(s, b)| (s.as_str(), (f32::from(b.size.width) * 2.0).round() / 2.0))
         .collect();
-    assert!(widths.len() >= 5, "the popover's checkboxes: {widths:?}");
+    assert!(widths.len() >= 5, "the popover's switches: {widths:?}");
     let first = widths[0].1;
     let odd: Vec<&(&str, f32)> = widths.iter().filter(|(_, w)| (*w - first).abs() > 0.5).collect();
-    assert!(odd.is_empty(), "every checkbox as wide as the first ({first}): {odd:?}");
+    assert!(odd.is_empty(), "every switch as wide as the first ({first}): {odd:?}");
 }

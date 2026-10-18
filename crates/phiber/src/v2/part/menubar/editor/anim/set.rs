@@ -180,7 +180,7 @@ pub static SELECT: &[BMenuItem] = &[
 /// `DOPESHEET_MT_channel`.
 pub static CHANNEL: &[BMenuItem] = &[
     op("Delete Channels", "X"),
-    op("Clean Channels", ""),
+    fire("Clean Channels", "", OpKey::Keys, "clean:channels"),
     SEP,
     op("Group Channels", "Ctrl G"),
     op("Ungroup Channels", "Ctrl Alt G"),
@@ -238,7 +238,7 @@ pub static KEY: &[BMenuItem] = &[
     sub("Interpolation Mode", INTERPOLATION),
     sub("Easing Mode", EASING),
     SEP,
-    op("Clean Keyframes", ""),
+    fire("Clean Keyframes", "", OpKey::Keys, "clean:keys"),
     op("Bake Keyframes", "Shift Alt O"),
     SEP,
     op("Discontinuity (Euler) Filter", ""),

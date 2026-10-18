@@ -85,6 +85,18 @@ pub fn seed_render_props(state: &mut BState, model: &SceneModel) {
         };
         state.set(ButsKey::Value(spec.key), encoded);
     }
+    // The quality floor, applied once as the file is read
+    // (`scene::render_quality::BRenderQuality`): a `.blend` saved at a
+    // turntable's sample count opens at the floor instead, and the Render
+    // panel SHOWS that number — so what is on screen is what will render,
+    // and a count typed over it afterwards is still honoured.
+    let floor = crate::v2::scene::render_quality::BRenderQuality::SAMPLE_FLOOR;
+    let saved = cycles.get("samples").and_then(BIdValue::as_int).unwrap_or(0).max(0) as u32;
+    if saved < floor {
+        if let Some(spec) = spec_of("cycles.samples") {
+            state.set(ButsKey::Value(spec.key), BValue::Int(i64::from(floor)).encode());
+        }
+    }
 }
 
 /// The file's own Output-panel values — resolution, frame rate, and where a

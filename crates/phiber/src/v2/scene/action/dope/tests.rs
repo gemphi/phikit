@@ -183,6 +183,56 @@ fn duplicate_copies_the_picked_column_at_the_next_free_frame_and_the_picks_follo
 }
 
 #[test]
+fn clean_simplifies_the_selected_keys_and_clean_channels_drops_a_flat_curve() {
+    // Over the fixture's CubeAction: a key inserted midway at the value the
+    // curve already holds there says nothing, and Clean takes it off again
+    // (`ACTION_OT_clean`). Duplicate puts a copy at 21 with frame 20's exact
+    // value, so 21 repeats what 20 says and is what Clean should remove.
+    let model = model();
+    crate::v2::scene::source::set_loaded_scene(Some(model.clone()));
+    let mut s = BState::new();
+    s.set(CtxKey::Object, "Cube");
+    // Nothing picked: Clean Keyframes reports and changes nothing.
+    op(&mut s, "clean:keys");
+    assert!(BSceneActions::now(&s).keyed.is_empty(), "no selection, no clean");
+    op(&mut s, "click:1:20");
+    op(&mut s, "duplicate");
+    assert_eq!(cube_x(&s, &model), [1.0, 20.0, 21.0], "the copy is in");
+    // `all` reads the model in scope, which the app keeps edited
+    // (`set_loaded_at` → `BActionScene::over`) but this test scopes raw — so
+    // here it adds the file's own columns to the duplicate's own pick rather
+    // than re-finding the copy. Either way the three columns end up picked.
+    op(&mut s, "all");
+    assert_eq!(picks(&s).len(), 3, "1, 20 and the copy at 21");
+    op(&mut s, "clean:keys");
+    assert_eq!(cube_x(&s, &model), [1.0, 20.0], "the copy said nothing and is gone");
+    // The picks follow: the column that is no longer keyed stops being picked.
+    assert!(!picks(&s).iter().any(|(_, f)| (*f - 21.0).abs() < 5e-4), "the dropped column is unpicked");
+    assert!(picks(&s).iter().any(|(_, f)| (*f - 1.0).abs() < 5e-4), "the kept ones stay");
+    crate::v2::scene::source::set_loaded_scene(None);
+}
+
+#[test]
+fn clean_channels_needs_no_selection_and_reaches_every_shown_object() {
+    // `clean_action_keys` filters by selection only when `channels` is set,
+    // and `only_selected_keys = !channels` — so Clean Channels walks every
+    // key of every shown object with nothing picked at all.
+    let model = model();
+    crate::v2::scene::source::set_loaded_scene(Some(model.clone()));
+    let mut s = BState::new();
+    s.set(CtxKey::Object, "Cube");
+    op(&mut s, "click:none");
+    assert!(picks(&s).is_empty());
+    op(&mut s, "clean:channels");
+    let steps = BSceneActions::now(&s).keyed;
+    assert_eq!(steps.len(), 1, "one step for the Cube's (action, slot)");
+    let crate::v2::scene::action::retime::BKeyStep::Clean(c) = &steps[0] else { panic!("a clean step") };
+    assert!(c.channels && c.frames.is_empty(), "every key, not a selection");
+    assert_eq!((c.action.as_str(), c.slot.as_str()), ("CubeAction", "OBCube"));
+    crate::v2::scene::source::set_loaded_scene(None);
+}
+
+#[test]
 fn jump_moves_the_playhead_to_the_nearest_selected_key() {
     let model = model();
     crate::v2::scene::source::set_loaded_scene(Some(model.clone()));

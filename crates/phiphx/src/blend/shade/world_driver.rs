@@ -107,7 +107,7 @@ impl BWorldDrivers {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::blend::anim::driver::BDriverState;
+    use crate::blend::anim::driver::state::BDriverState;
 
     fn sockets(linked: bool) -> Vec<(String, Vec<BDriverSocket>)> {
         vec![(
@@ -137,7 +137,7 @@ mod tests {
         }
     }
 
-    fn state() -> crate::blend::anim::driver::BDriverState {
+    fn state() -> BDriverState {
         BDriverState::default()
     }
 

@@ -134,8 +134,8 @@ fn actions(scene: &BlendScene) -> BlendEdits {
         // Cube's copy stashed — both then play no action.
         assigned: vec![unlinked("Renamed", "OBCube"), unlinked(other, "OBCube"), assign("Crate", "Action", Some("OBCrate"))],
         nla: vec![
-            stack(scene, other, other, |n| drop(n.push_down(BNlaStrip::clip("Spin", (0, "OBCube"), (1.0, 24.0), false, false)))),
-            stack(scene, "Cube", "Renamed", |n| drop(n.stash(BNlaStrip::clip("CubeAction.001", (0, "OBCube"), (5.0, 30.0), true, true)))),
+            stack(scene, other, other, |n| { let _ = n.push_down(BNlaStrip::clip("Spin", (0, "OBCube"), (1.0, 24.0), false, false)); }),
+            stack(scene, "Cube", "Renamed", |n| { let _ = n.stash(BNlaStrip::clip("CubeAction.001", (0, "OBCube"), (5.0, 30.0), true, true)); }),
         ],
         ranges: vec![
             BlendActionRange { action: "CameraAction".into(), range: Some((10.0, 50.0)), cyclic: true },

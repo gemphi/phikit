@@ -53,3 +53,48 @@ fn the_engine_comes_from_the_file() {
         "Render Engine does not show what the file saved"
     );
 }
+
+/// The quality floor reaches the panel when a file opens, so Max Samples
+/// shows the number that will actually render. Pose 26
+/// (`CHATTY-POSES-RENDER-SCENE-03_Duo pose 26_1.blend`) is saved at **20**
+/// samples — a turntable preview — and rendered as twenty, which is what
+/// sent its Render Result out noisy.
+#[test]
+fn a_files_sample_count_opens_at_the_quality_floor_and_a_typed_one_still_wins() {
+    use phiber::phiphx::blend::{BIdGroup, BIdValue};
+    use phiber::phiphx::scene::SceneModel;
+    use phiber::v2::scene::render_quality::BRenderQuality;
+    use phiber::v2::scene::render_set;
+    use phiber::v2::state::{BState, ButsKey, val::BValue};
+
+    let seeded = |saved: i32| {
+        let mut model = SceneModel::default();
+        let mut cycles = BIdGroup::default();
+        cycles.set("samples", BIdValue::Int(saved));
+        model.render.cycles = cycles;
+        let mut s = BState::new();
+        phiber::v2::app::seed::seed_render_props(&mut s, &model);
+        phiber::v2::scene::source::set_loaded_scene(Some(model));
+        let samples = render_set(&s).samples;
+        phiber::v2::scene::source::set_loaded_scene(None);
+        (s, samples)
+    };
+
+    // Below the floor: lifted, and the panel holds the lifted value.
+    let (s, samples) = seeded(20);
+    assert_eq!(samples, BRenderQuality::SAMPLE_FLOOR, "pose 26's twenty opens at the floor");
+    assert_eq!(
+        s.get(ButsKey::Value("cycles.samples")),
+        Some(BValue::Int(i64::from(BRenderQuality::SAMPLE_FLOOR)).encode()).as_deref(),
+        "and Max Samples SHOWS it, so the panel and the render agree",
+    );
+
+    // Above the floor: the file's own count is kept, not lowered.
+    let (_, samples) = seeded(4096);
+    assert_eq!(samples, 4096, "a file that asks for more than the floor keeps it");
+
+    // Typed over afterwards: the panel wins, so a quick look is still possible.
+    let (mut s, _) = seeded(20);
+    s.set(ButsKey::Value("cycles.samples"), BValue::Int(64).encode());
+    assert_eq!(render_set(&s).samples, 64, "a count typed into the panel is the count that renders");
+}

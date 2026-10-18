@@ -20,6 +20,18 @@ pub enum BOutlineToggle {
 pub struct BOutlineToggleSpec {
     pub kind: BOutlineToggle,
     pub icon: &'static str,
+    /// The glyph while the restriction is ON.
+    ///
+    /// Blender draws every restriction toggle as a `ButtonType::IconToggle`
+    /// over a pair of consecutive icons and swaps between them: the button
+    /// adds 1 to the icon when selected (`interface.cc`, `but->iconadd`), and
+    /// the outliner's buttons set `BUT_ICON_REVERSE` so they subtract instead
+    /// (`interface_query.cc`) — which, with the `_OFF` icon as the base,
+    /// lands on the `_ON` one beside it in `UI_icons.hh`
+    /// (`RESTRICT_VIEW_ON`/`_OFF`, `HIDE_ON`/`_OFF`, and the rest). So "off"
+    /// is never a dimmed version of "on" there; it is its own glyph, and the
+    /// colour is free to say something else.
+    pub icon_on: &'static str,
     pub tooltip: &'static str,
     pub state_key: &'static str,
     /// Whether this column is shown without being asked.
@@ -57,10 +69,16 @@ impl BSpec for BOutlineToggleSpec {
 /// Icons are chosen from the shipped `assets/icons` set: there is no
 /// `arrow`/`holdout`/`indirect` svg, so selectability uses `mouse_pointer`,
 /// holdout uses `circle_dashed` and indirect-only uses `lightbulb`.
+///
+/// Each carries its restricted twin (`icon_on`). `eye_off` and `circle_off`
+/// already shipped; `mouse_pointer_off`, `monitor_off`, `camera_off` and
+/// `lightbulb_off` are the base glyph with a strike through it, which is how
+/// Blender draws a `RESTRICT_*_ON` beside its `_OFF`.
 pub static TOGGLES: &[BOutlineToggleSpec] = &[
     BOutlineToggleSpec {
         kind: BOutlineToggle::SelectLock,
         icon: "mouse_pointer",
+        icon_on: "mouse_pointer_off",
         tooltip: "Disable Selection",
         state_key: "hide_select",
         default_on: true,
@@ -68,6 +86,7 @@ pub static TOGGLES: &[BOutlineToggleSpec] = &[
     BOutlineToggleSpec {
         kind: BOutlineToggle::Hide,
         icon: "eye",
+        icon_on: "eye_off",
         tooltip: "Hide in Viewport",
         state_key: "hide_get",
         default_on: true,
@@ -75,6 +94,7 @@ pub static TOGGLES: &[BOutlineToggleSpec] = &[
     BOutlineToggleSpec {
         kind: BOutlineToggle::Viewport,
         icon: "monitor",
+        icon_on: "monitor_off",
         tooltip: "Disable in Viewports",
         state_key: "hide_viewport",
         default_on: true,
@@ -82,6 +102,7 @@ pub static TOGGLES: &[BOutlineToggleSpec] = &[
     BOutlineToggleSpec {
         kind: BOutlineToggle::Render,
         icon: "camera",
+        icon_on: "camera_off",
         tooltip: "Disable in Renders",
         state_key: "hide_render",
         default_on: true,
@@ -89,6 +110,7 @@ pub static TOGGLES: &[BOutlineToggleSpec] = &[
     BOutlineToggleSpec {
         kind: BOutlineToggle::Holdout,
         icon: "circle_dashed",
+        icon_on: "circle_off",
         tooltip: "Holdout",
         state_key: "holdout",
         default_on: true,
@@ -96,6 +118,7 @@ pub static TOGGLES: &[BOutlineToggleSpec] = &[
     BOutlineToggleSpec {
         kind: BOutlineToggle::IndirectOnly,
         icon: "lightbulb",
+        icon_on: "lightbulb_off",
         tooltip: "Indirect Only",
         state_key: "indirect_only",
         default_on: true,
@@ -122,6 +145,23 @@ mod tests {
         assert_eq!(TOGGLES.len(), 6, "select, hide, viewport, render, holdout, indirect-only");
         let view_layer_only = TOGGLES.iter().filter(|t| t.kind.view_layer_only()).count();
         assert_eq!(view_layer_only, 2, "holdout and indirect-only remain View-Layer-only");
+    }
+
+    /// Blender's restriction toggles swap glyph rather than dimming one, so
+    /// every column needs its own pair — and a pair that is the same glyph
+    /// twice is the bug this replaced: a toggle that reads its state and then
+    /// draws the same thing either way.
+    #[test]
+    fn every_column_has_its_own_restricted_glyph() {
+        for t in TOGGLES {
+            assert!(!t.icon_on.is_empty(), "{:?} has no restricted glyph", t.kind);
+            assert_ne!(t.icon, t.icon_on, "{:?} draws the same glyph either way", t.kind);
+        }
+        let mut on: Vec<&str> = TOGGLES.iter().map(|t| t.icon_on).collect();
+        let n = on.len();
+        on.sort_unstable();
+        on.dedup();
+        assert_eq!(on.len(), n, "two columns would be indistinguishable while restricted");
     }
 }
 

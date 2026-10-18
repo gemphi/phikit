@@ -188,3 +188,50 @@ editors draw, renders work. What they would currently document is an app whose
 animation does not re-evaluate geometry per frame, so any screenshot of the
 timeline would be showing a mesh that does not move with it. That is the one
 thing worth fixing before the guide, rather than all seventy.
+
+## Check of 17 October — rendering modes and the animation spaces
+
+Run on the machine's tree as it stood at 22:14 (uncommitted work included),
+in the cloud workspace with the software GPU. 20 phiber test files for the
+animation editors, the viewport shading modes and rendering, plus the phiphx
+open, driver and modifier tests.
+
+**Fixed tonight**
+
+| what | cause | where | proved by |
+| --- | --- | --- | --- |
+| The wheel did not zoom or scroll any animation editor's time axis, and G on Dope Sheet keys did not follow the pointer | the machine's `canvas/time/mod.rs` (saved 14 Oct 22:49) was edited from a copy older than `60da681f6` and dropped both fixes: the `on_scroll_wheel` hookup and `\|\| view.key_grab` in `grabbing` | `view/draw/canvas/time/mod.rs` — both lines restored, the other agent's `view.clone()` kept | `the_time_axis_zooms_under_the_wheel`, `dope_sheet_edits_keys` |
+| THYMUS (and FLORIS) would not open at all: "parser panicked while reading blend structure" | batch 194's loose edges were taken from the file unchecked; an edge naming vertex 24 of a 24-vertex mesh panicked Mirror's map, and Subsurf's weight mix guarded only one end | fixed on the machine at 22:23 by the other agent (`edge_verts_are_good`, Blender's `find_edges_bad_verts`; Subsurf guards both ends) — verified here | `viewport_vs_blender`, `loose_edge_tests` |
+| `the_viewport_always_draws_something` failed | source-reading test pinned the paint call before `supersample` was added to it; behaviour unchanged | the test's expected spelling | that test, 6/6 |
+| `phiphx` lib tests did not compile | `BlendSceneObject.loose_edges` added without its test fixture | `scene/tests_fixture.rs` (also fixed on the machine) | 262 pass, 6 baseline asset misses |
+
+**Passing** — animation: wheel zoom, Dope Sheet keys, scrubbing, playback,
+Graph editor drawing, NLA editing, markers, the editors' menus, keyframe
+insert, rig playback in the viewport; phiphx `driven_frames`, `driven_open`,
+`mod_driver_truth`, `rig_plays`, `progressive_open`, `subsurf_creases`.
+Rendering: the viewport falls back when the GPU has no frame, Material
+Preview's studio light, viewport anti-aliasing, overlays, the engine row, the
+render panel, the Rendering workspace opening on a render and showing it, the
+Render menu, silhouettes against Blender's renders.
+(`rendering_workspace_shows_the_render` timed out at 60 s once under load on
+the software GPU and passes alone in 13 s — environment, not code.)
+
+**Still open — what stops these two from being complete**
+
+1. **Loose edges over-count vertices** (`open_parity`): Blender reads 223,988
+   vertices in THYMUS and phiphx 223,898 against an allowance of 240 (over by
+   150); FLORIS 85,948 against 91,950 (over by 6,194). Batch 194's loose-edge
+   subdivision adds vertices Blender does not have — most likely edges that
+   *are* on faces are being treated as loose. The `SHORT` table must end
+   empty, not negative.
+2. **Tier 0, per-frame geometry for un-rigged objects** — in progress on the
+   machine (`blend/modifier/driven.rs`, `SceneRigs::driven_at`), uncommitted,
+   and the reason driven modifiers do not show while playing.
+3. **About 74 files of work uncommitted** on the machine since `60da681f6`.
+   Two of tonight's three regressions came from an agent editing an older copy;
+   committing in smaller steps is what stops that recurring.
+4. **The UI is slow on a real file**: the 17 Oct session log shows 120–400 ms
+   frames, 75–255 ms of it rebuilding the view tree, worst with the File
+   Browser open — rendering time is not where it goes.
+5. Unchanged from above: the Graph editor's key editing, channel rows per
+   F-curve, NLA tweak mode; Material Preview's screen-space reflections and AO.

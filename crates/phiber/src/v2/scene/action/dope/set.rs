@@ -72,6 +72,63 @@ impl BRule for BKeyOpRule {
                 log::push(format!("Deleted {} keyframe column(s)", picks.0.len()));
                 picks = BKeySelection::default();
             }
+            // Key ▸ Clean Keyframes / Channel ▸ Clean Channels
+            // (`ACTION_OT_clean`). Blender's one `channels` property becomes
+            // the two `clean_fcurve` takes — `cleardefault = channels`,
+            // `only_selected_keys = !channels` — so `clean:keys` simplifies
+            // the selected columns and `clean:channels` walks every key and
+            // drops a curve left holding one at its default (`action::clean`).
+            // One step per `(action, slot)` the clean reaches: the walk is
+            // per curve, so the step records the intent and runs it at replay.
+            ("clean", kind, _) => {
+                let channels = kind == Some("channels");
+                if !channels && picks.0.is_empty() {
+                    return log::push("No keyframes selected to clean".to_string());
+                }
+                let mut edits = BSceneActions::now(s);
+                let before = edits.keyed_actions(&super::super::set::BActionScene::raw(model.clone()));
+                // Clean Channels reaches every shown object's slots; Clean
+                // Keyframes only the ones the picks stand on.
+                let reached: Vec<(String, f32)> = match channels {
+                    true => shown.iter().map(|n| (n.clone(), f32::NAN)).collect(),
+                    false => picks.0.iter().map(|p| (p.object.clone(), p.frame)).collect(),
+                };
+                let mut steps: Vec<super::super::clean::BKeyClean> = Vec::new();
+                for (object, frame) in reached {
+                    for t in BKeyTarget::of(&before, &object) {
+                        match steps.iter_mut().find(|c| c.action == t.action && c.slot == t.slot) {
+                            Some(c) if !channels && !c.frames.contains(&frame) => c.frames.push(frame),
+                            Some(_) => {}
+                            None => steps.push(super::super::clean::BKeyClean {
+                                action: t.action,
+                                slot: t.slot,
+                                frames: match channels {
+                                    true => Vec::new(),
+                                    false => vec![frame],
+                                },
+                                threshold: super::super::clean::DEFAULT_THRESHOLD,
+                                channels,
+                            }),
+                        }
+                    }
+                }
+                if steps.is_empty() {
+                    return log::push("No channels to clean".to_string());
+                }
+                let cleaned = steps.len();
+                edits.keyed.extend(steps.into_iter().map(BKeyStep::Clean));
+                edits.write(s);
+                // The picks may name frames the clean took off; the ones
+                // still keyed stay picked, as Blender leaves the selection.
+                let after = BSceneActions::now(s).keyed_actions(&super::super::set::BActionScene::raw(model.clone()));
+                picks = BKeySelection(
+                    picks.0.into_iter().filter(|p| BKeyTarget::columns(&after, &p.object).iter().any(|c| (c - p.frame).abs() < 5e-4)).collect(),
+                );
+                log::push(match channels {
+                    true => format!("Cleaned {cleaned} channel group(s)"),
+                    false => format!("Cleaned {cleaned} channel group(s) of selected keys"),
+                });
+            }
             // Key ▸ Duplicate: an insert per `(action, slot)` the pick keys,
             // at the column's next free frame, replaying the curves' values at
             // the pick (`ACTION_OT_duplicate`, `space_action/action_edit.cc`'s

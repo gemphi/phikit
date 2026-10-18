@@ -26,7 +26,7 @@ use crate::v2::view::prim::BControl;
 use crate::v2::view::prim::BRowShade;
 use crate::v2::view::BView;
 use crate::v2::view::BViewItem;
-use self::set::TOGGLES;
+use self::set::{BOutlineToggleSpec, TOGGLES};
 use crate::v2::view::BViewList;
 pub use self::tree::BOutlineRow;
 pub use self::tree::BRowKind;
@@ -61,25 +61,25 @@ impl BOutlinerItem {
 
     /// One restriction toggle. Blender draws these as icon-only buttons in a
     /// fixed column at the row's right edge; the flag lives per object.
-    fn restriction(s: &BState, object: &str, field: &'static str, icon: &'static str) -> BView {
-        let key = self::tree::k_restrict(object, field);
+    fn restriction(s: &BState, object: &str, spec: &'static BOutlineToggleSpec) -> BView {
+        let key = self::tree::k_restrict(object, spec.state_key);
         let on = s.get(&key) == Some(V_TRUE);
         let next = if on { V_FALSE } else { V_TRUE };
-        // `eye` / `eye_off` is the one pair where the icon itself carries the
-        // state. The rest were said to "dim via the button's own disabled-ish
-        // styling", and nothing set `muted`, so nothing dimmed: nine toggles
-        // that read their state and then rendered identically on and off.
+        // The glyph carries the state, as it does in Blender: every
+        // restriction button there is a `ButtonType::IconToggle` over a pair
+        // of consecutive icons and swaps between them (`toggle::set`'s
+        // `icon_on` cites the mechanism). `eye`/`eye_off` was the only pair
+        // here, so the other five read their state and then drew the same
+        // thing either way — the colour was doing the whole job, and for an
+        // icon with no second glyph there was nothing else to say it.
         //
-        // On takes the fill, off takes the quiet ink — which is how Blender
-        // draws a restriction column, and what `muted` is for.
-        let shown = if field == "hide_get" && on {
-            "eye_off"
-        } else {
-            icon
-        };
+        // The fill and the quiet ink stay on top of that: on takes the fill,
+        // off takes `muted`, so a restricted row reads at a glance and an
+        // unrestricted one stays quiet.
         BView::Button(
             BControl::new()
-                .with_icon(shown)
+                .with_icon(if on { spec.icon_on } else { spec.icon })
+                .with_tooltip(spec.tooltip)
                 .with_active(on)
                 .with_muted(!on)
                 .with_action(BAction::Set(key, next.to_string())),
@@ -109,7 +109,7 @@ impl BOutlinerItem {
             if !shown {
                 continue;
             }
-            out.push(Self::restriction(s, object, t.state_key, t.icon));
+            out.push(Self::restriction(s, object, t));
         }
         out
     }
@@ -249,6 +249,60 @@ mod tests {
             panic!()
         };
         list
+    }
+
+    /// Every restriction toggle answers its state in the glyph, not only in
+    /// the colour — which is what Blender's `IconToggle` over a pair of
+    /// consecutive icons does (`toggle::set`'s `icon_on`). Before this, five
+    /// of the six drew the same glyph on and off and only the fill differed,
+    /// so a restricted row and a clear one were the same picture in a
+    /// screenshot, in a theme with a quiet accent, or to anyone reading the
+    /// shape rather than the shade.
+    #[test]
+    fn a_restricted_toggle_draws_a_different_glyph_from_a_clear_one() {
+        let icons = |state: &BState| -> Vec<(String, bool, bool)> {
+            fn walk(v: &BView, out: &mut Vec<(String, bool, bool)>) {
+                match v {
+                    BView::Button(c) => {
+                        if let Some(icon) = c.icon.as_deref() {
+                            out.push((icon.to_string(), c.active, c.muted));
+                        }
+                    }
+                    BView::Row { list } | BView::Column { list } => list.iter().for_each(|v| walk(v, out)),
+                    BView::Shared(rc) => walk(rc, out),
+                    // The restriction cluster is a tree row's `trail`; the
+                    // collection checkbox is its `lead` (`view/prim/tree.rs`).
+                    BView::TreeRow { lead, list, trail, .. } => {
+                        lead.iter().chain(list).chain(trail).for_each(|v| walk(v, out));
+                    }
+                    _ => {}
+                }
+            }
+            let mut out = Vec::new();
+            rows(state).iter().for_each(|v| walk(v, &mut out));
+            out
+        };
+
+        let mut state = BState::new();
+        let clear = icons(&state);
+        // Restrict the Cube every way the columns allow.
+        for t in TOGGLES {
+            state.set(&self::tree::k_restrict("Cube", t.state_key), V_TRUE);
+        }
+        let restricted = icons(&state);
+
+        for t in TOGGLES {
+            let was = clear.iter().find(|(i, ..)| i == t.icon);
+            let now = restricted.iter().find(|(i, ..)| i == t.icon_on);
+            assert!(was.is_some(), "{:?}: its clear glyph `{}` is drawn", t.kind, t.icon);
+            assert!(now.is_some(), "{:?}: its restricted glyph `{}` is drawn", t.kind, t.icon_on);
+            // And the colour still says it too, on top of the glyph.
+            assert_eq!(was.map(|(_, active, muted)| (*active, *muted)), Some((false, true)), "{:?} clear: quiet", t.kind);
+            assert_eq!(now.map(|(_, active, muted)| (*active, *muted)), Some((true, false)), "{:?} restricted: lit", t.kind);
+        }
+        // The pictures genuinely differ, not just the flags.
+        let shape = |v: &[(String, bool, bool)]| v.iter().map(|(i, ..)| i.clone()).collect::<Vec<_>>();
+        assert_ne!(shape(&clear), shape(&restricted), "the row is a different picture when restricted");
     }
 
     /// Built once for every frame of an orbit: the viewport's keys are not

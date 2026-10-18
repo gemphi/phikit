@@ -129,6 +129,9 @@ impl BImage {
         let scene = (ctx.state.get(crate::v2::state::CtxKey::Scene).unwrap_or("Scene").to_string(), ctx.state.get(crate::v2::state::CtxKey::ViewLayer).unwrap_or("ViewLayer").to_string());
         let frame = ctx.state.get(crate::v2::state::CtxKey::Frame).unwrap_or("1").to_string();
         let dragged = ctx.state.get(ImageKey::BorderRect).and_then(crate::v2::scene::boxsel::dragged_of);
+        // How far the info line must start in to clear the floating tool
+        // strip over the canvas's left edge (`paint_info`).
+        let info_clear = ctx.style.dimensions.toolbar_width + ctx.style.spacing.pad_sm;
         let ink = crate::v2::view::draw::color::to_hsla(ctx.style.view_overlay());
         let back = crate::v2::view::draw::color::to_hsla(ctx.style.viewport_surface());
         // The 0..1 square the gesture picks over, set by the painter: it is
@@ -146,7 +149,7 @@ impl BImage {
                 uv::BUvPaint { shown: &painted_shown, colors: uv_colors, square: on, edit: &uv_edit }.paint(window);
             } else {
                 painted.paint_image(checker, b, window);
-                painted.paint_info(&scene, &frame, text, dim, b, window, cx);
+                painted.paint_info(&scene, &frame, text, dim, b, info_clear, window, cx);
                 // `image.render_border`'s box as it is dragged (`WM_gesture_draw`).
                 if let Some(rect) = dragged {
                     border::paint_box(b, rect, back, ink, window);

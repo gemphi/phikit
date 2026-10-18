@@ -51,6 +51,7 @@ pub mod render_save;
 pub use render_save::{BSaveKind, kind_of as save_kind, save as save_render, save_to as save_render_to, written_pass};
 pub mod render_edit;
 pub mod render_set;
+pub mod render_quality;
 pub mod video;
 pub use render_set::{BRenderSet, render_set};
 pub mod action;

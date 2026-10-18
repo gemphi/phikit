@@ -161,18 +161,22 @@ impl BImageView {
             let view = self;
         let status = view.status?;
         let time = render_status::timecode(render_status::elapsed());
-        let progress = if status.done {
-            "Finished".to_string()
-        } else if crate::v2::scene::render_job::paused() {
-            format!("Paused at sample {}/{}", status.taken, status.target)
-        } else {
-            format!("Sample {}/{}", status.taken, status.target)
+        let progress = match (status.done, crate::v2::scene::render_job::paused()) {
+            (true, _) => "Finished".to_string(),
+            (_, true) => format!("Paused at sample {}/{}", status.taken, status.target),
+            _ => format!("Sample {}/{}", status.taken, status.target),
         };
         Some(format!("Frame:{frame} | Time:{time} | Mem:{m}M, Peak: {m}M | {}, {} | {progress}", scene.0, scene.1, m = status.megabytes()))
     }
 
     /// `draw_render_info`: the bar across the top of the window.
-    pub fn paint_info(&self, scene: &(String, String), frame: &str, text: BColor, dim: BColor, at: Bounds<Pixels>, window: &mut Window, cx: &mut App) {
+    ///
+    /// `clear` is how far in the text must start to clear the floating tool
+    /// strip. Blender draws this into the image *region*, which does not
+    /// include the Toolbar; phiber floats the Toolbar over the canvas, so
+    /// without the inset the strip is painted over the front of the line and
+    /// the render window read `1 | Time:…` with `Frame:` hidden behind it.
+    pub fn paint_info(&self, scene: &(String, String), frame: &str, text: BColor, dim: BColor, at: Bounds<Pixels>, clear: f32, window: &mut Window, cx: &mut App) {
             let view = self;
         let Some(line) = view.info_text(scene, frame) else { return };
         let bar = Bounds::new(at.origin, size(at.size.width, px(INFO_BAR_HEIGHT)));
@@ -184,7 +188,7 @@ impl BImageView {
         let run = TextRun { len: line.len(), font: window.text_style().font(), color: to_hsla(text), background_color: None, underline: None, strikethrough: None };
         let shaped = window.text_system().shape_line(SharedString::from(line), px(FONT), &[run], None);
         let line_height = px(FONT * 1.3);
-        let origin = point(at.origin.x + px(INFO_INSET), at.origin.y + px(INFO_BAR_HEIGHT / 2.0) - line_height / 2.0);
+        let origin = point(at.origin.x + px(INFO_INSET + clear), at.origin.y + px(INFO_BAR_HEIGHT / 2.0) - line_height / 2.0);
         let _ = shaped.paint(origin, line_height, gpui::TextAlign::Left, None, window, cx);
     }
 

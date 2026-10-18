@@ -86,30 +86,8 @@ pub fn spec_of(word: &str) -> Option<&'static BArgSpec> {
     ARG.iter().find(|spec| spec.names(word))
 }
 
-/// The quality policy: what a render defaults to when the command line and
-/// the file are both silent.
-pub struct BRenderQuality;
+/// The quality policy — the engine and the sample floor — lives with the
+/// renderer it governs (`v2::scene::render_quality`), so the command line
+/// and the app's own F12 take the same rule rather than two copies of it.
+pub use crate::v2::scene::render_quality::BRenderQuality;
 
-impl BRenderQuality {
-    /// The engine a render uses unless `-E` says otherwise — Phiber's own
-    /// tracer, not whatever engine the `.blend` was saved with. A file from
-    /// Blender names EEVEE or Cycles and neither is ours to run, so the
-    /// file's engine is a *preference* here and not an instruction.
-    pub const ENGINE: &'static str = "PHIRAY";
-
-    /// The sample floor. A render takes at least this many samples, so the
-    /// default is the quality one rather than whatever a file happened to
-    /// be saved with; `--draft` lifts it for a quick look.
-    pub const SAMPLE_FLOOR: u32 = 2048;
-
-    /// The samples a render actually takes: what was asked for, never
-    /// below the floor unless the floor was lifted. `None` asked for means
-    /// the floor itself.
-    pub fn samples(asked: Option<u32>, draft: bool) -> u32 {
-        match (asked, draft) {
-            (Some(asked), true) => asked.max(1),
-            (Some(asked), false) => asked.max(Self::SAMPLE_FLOOR),
-            (None, _) => Self::SAMPLE_FLOOR,
-        }
-    }
-}

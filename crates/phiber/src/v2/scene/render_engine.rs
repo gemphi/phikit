@@ -20,14 +20,16 @@ use phiray::Camera;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum BRenderEngine {
     /// `BLENDER_EEVEE_NEXT`, the engine a fresh Blender scene names.
-    #[default]
     Eevee,
     /// `BLENDER_WORKBENCH`.
     Workbench,
     /// `CYCLES`.
     Cycles,
     /// `PHIRAY` — phiber's own tracer, named as itself rather than as
-    /// Cycles. No `.blend` carries it.
+    /// Cycles. No `.blend` carries it, and it is **the default**: it is
+    /// the only engine phiber has for a traced frame
+    /// (`render_quality::BRenderQuality::ENGINE`).
+    #[default]
     Phiray,
 }
 
@@ -68,6 +70,10 @@ impl BStillLook {
     /// other engine renders through the path tracer at the panel's settings.
     pub fn for_engine(model: &SceneModel, set: BRenderSet, lens: super::BCameraLens, camera: &mut Camera, plain: gpui::Hsla) -> (Self, u32, bool) {
         if set.engine.traces() {
+            // The sample floor is applied where the panel is seeded
+            // (`app::seed::seed_render_props`), not here: that way Max
+            // Samples *shows* 2048 and a count typed into the panel is
+            // still the count that renders.
             return (Self::new(crate::v2::scene::BShading::Rendered, plain), set.samples.max(1), set.denoise);
         }
         let d = &model.render.display;

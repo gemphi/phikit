@@ -100,6 +100,9 @@ pub enum BKeyStep {
     Insert(BKeyInsert),
     Retime(BKeyRetime),
     Reshape(super::reshape::BKeyReshape),
+    /// `ACTION_OT_clean` — a per-curve simplification rather than a
+    /// per-column edit, which is why it is its own step (`clean.rs`).
+    Clean(super::clean::BKeyClean),
 }
 
 impl BKeyStep {
@@ -108,6 +111,7 @@ impl BKeyStep {
             Self::Insert(i) => &i.action,
             Self::Retime(r) => &r.action,
             Self::Reshape(r) => &r.action,
+            Self::Clean(c) => &c.action,
         }
     }
 
@@ -116,6 +120,7 @@ impl BKeyStep {
             Self::Insert(i) => &i.slot,
             Self::Retime(r) => &r.slot,
             Self::Reshape(r) => &r.slot,
+            Self::Clean(c) => &c.slot,
         }
     }
 
@@ -124,20 +129,21 @@ impl BKeyStep {
             Self::Insert(i) => i.apply(actions),
             Self::Retime(r) => r.apply(actions),
             Self::Reshape(r) => r.apply(actions),
+            Self::Clean(c) => c.apply(actions),
         }
     }
 
     /// The steps as `ctx.scene.keyed` spells them: an insert as before
-    /// (`keys.rs`), a retime marked `~`, a reshape marked `^`.
+    /// (`keys.rs`), a retime marked `~`, a reshape marked `^`, a clean
+    /// marked `%`.
     pub fn parse_all(raw: &str) -> Vec<Self> {
-        raw.split('|')
-            .filter(|e| !e.is_empty())
-            .filter_map(|e| match (e.starts_with(MARK), super::reshape::BKeyReshape::is_mark(e)) {
-                (true, _) => BKeyRetime::parse(e).map(Self::Retime),
-                (_, true) => super::reshape::BKeyReshape::parse(e).map(Self::Reshape),
-                _ => BKeyInsert::parse(e).map(Self::Insert),
-            })
-            .collect()
+        let one = |e: &str| match e {
+            _ if e.starts_with(MARK) => BKeyRetime::parse(e).map(Self::Retime),
+            _ if super::reshape::BKeyReshape::is_mark(e) => super::reshape::BKeyReshape::parse(e).map(Self::Reshape),
+            _ if super::clean::BKeyClean::is_mark(e) => super::clean::BKeyClean::parse(e).map(Self::Clean),
+            _ => BKeyInsert::parse(e).map(Self::Insert),
+        };
+        raw.split('|').filter(|e| !e.is_empty()).filter_map(one).collect()
     }
 
     pub fn encode_all(list: &[Self]) -> String {
@@ -145,6 +151,7 @@ impl BKeyStep {
             Self::Insert(i) => i.encode(),
             Self::Retime(r) => r.encode(),
             Self::Reshape(r) => r.encode(),
+            Self::Clean(c) => c.encode(),
         };
         list.iter().map(one).collect::<Vec<_>>().join("|")
     }

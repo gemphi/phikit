@@ -194,7 +194,7 @@ pub static INSERT: &[BMenuItem] = &[
     op("Active Channels at Cursor", ""),
     op("Selected Channels at Cursor", ""),
 ];
-pub static DENSITY: &[BMenuItem] = &[op("Decimate (Ratio)", ""), op("Decimate (Allowed Change)", ""), op("Bake Keyframes", "Shift Alt O"), SEP, op("Clean Keyframes", "")];
+pub static DENSITY: &[BMenuItem] = &[op("Decimate (Ratio)", ""), op("Decimate (Allowed Change)", ""), op("Bake Keyframes", "Shift Alt O"), SEP, fire("Clean Keyframes", "", OpKey::Keys, "clean:keys")];
 pub static BLENDING: &[BMenuItem] = &[
     op("Breakdown", ""),
     op("Blend to Neighbor", ""),

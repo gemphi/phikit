@@ -26,7 +26,7 @@ impl BStillLook {
         Self { shading, plain, matcap: None, texture: false }
     }
 
-    fn palette(&self) -> BMeshPalette {
+    pub(super) fn palette(&self) -> BMeshPalette {
         let plain = self.plain;
         BMeshPalette { shading: self.shading, cube: plain, sphere: plain, gem: plain, loaded: plain, accent: plain, accent_active: plain, matcap: self.matcap, texture: self.texture }
     }
@@ -39,28 +39,24 @@ impl BStillLook {
 /// not fit. `plain` paints anything without a material, `samples` is how far
 /// the still refines (Blender's Max Samples) and `denoise` runs the a-trous
 /// filter over the finished frame (Blender's Denoise).
+/// A render, settled, as one image.
+///
+/// Banded through [`still_stepwise`] rather than traced in one pass: a
+/// frame with more pixels than the device draws at once comes back short,
+/// and the caller then has a buffer that does not fill `w × h`. This used
+/// to trace `w × h` directly, so `phiber -b … -f 1` on a 1440 × 1440 frame
+/// failed with *"the pixels do not fill the frame"* while the app's own F12,
+/// which already banded, was fine (`bands.rs`, `Tracer::max_pixels`).
+/// One implementation now, so the command line and F12 cannot diverge again.
 pub fn still(objects: &[BObject3D], look: BStillLook, cam: phiray::Camera, w: u32, h: u32, samples: u32, denoise: bool) -> Option<(Vec<u8>, u32)> {
-    use crate::v2::scene::BShading;
-    let gpu = phiray::Ray::gpu()?;
-    let (shading, palette) = (look.shading, look.palette());
-    let cam = with_studio(cam, shading);
-    let mut tracer = phiray::Tracer::from_scene(&gpu, scene::build(objects, &palette))?;
-    // A Workbench render's `render_aa` is its anti-aliasing count; the
-    // path tracer's samples are its own.
-    tracer.set_samples(samples);
-    tracer.set_aa_samples(samples);
-    tracer.set_mode(match shading {
-        BShading::Wireframe => phiray::Mode::Wire,
-        BShading::Solid => phiray::Mode::Solid,
-        BShading::Material => phiray::Mode::Preview,
-        BShading::Rendered => phiray::Mode::Rendered,
-    });
-    while !tracer.sample(&gpu, cam, w, h).1 {}
-    if denoise {
-        tracer.denoise(&gpu);
-    }
-    composite(&gpu, &mut tracer);
-    Some((tracer.pixels(&gpu), tracer.samples()))
+    let mut image: Option<Vec<u8>> = None;
+    let taken = still_stepwise(objects, look, cam, w, h, samples, denoise, super::region::BStillRegion::default(), |_, at| {
+        if let Some(settled) = at.image() {
+            image = Some(settled.rgba);
+        }
+        true
+    })?;
+    Some((image?, taken))
 }
 
 /// A settled render, in the three forms a save might want: the bytes the
@@ -133,6 +129,16 @@ pub const PEEK_EVERY: std::time::Duration = std::time::Duration::from_millis(350
 ///
 /// `still` is this without the reporting; a final render uses this one so the
 /// Rendering space can show progress rather than freeze (`scene/render_job.rs`).
+
+/// Why a render produced nothing, said once: the Info editor's report and
+/// the session journal both carry it, so a blank Render Result is never the
+/// only evidence that something went wrong.
+fn note_render_refused(why: String) {
+    let line = format!("Render failed: {why}");
+    crate::v2::state::log::push(line.clone());
+    crate::v2::app::journal::BJournal::note(line);
+}
+
 pub fn still_stepwise(
     objects: &[BObject3D],
     look: BStillLook,
@@ -145,10 +151,21 @@ pub fn still_stepwise(
     mut step: impl FnMut(u32, BStillAt) -> bool,
 ) -> Option<u32> {
     use crate::v2::scene::BShading;
-    let gpu = phiray::Ray::gpu()?;
+    let Some(gpu) = phiray::Ray::gpu() else {
+        note_render_refused("no GPU adapter".to_string());
+        return None;
+    };
     let (shading, palette) = (look.shading, look.palette());
     let cam = with_studio(cam, shading);
-    let mut tracer = phiray::Tracer::from_scene(&gpu, scene::build(objects, &palette))?;
+    let built = scene::build(objects, &palette);
+    // A scene the device will not take is reported with its reason rather
+    // than leaving a blank Render Result behind: pose 26 declined here and
+    // the info bar still said "Finished" (`phiray::Tracer::why_not`).
+    if let Some(why) = phiray::Tracer::why_not(&built, gpu.max_binding(), phiray::Tracer::chunks_for(&gpu)) {
+        note_render_refused(format!("the GPU declined this scene — {why}"));
+        return None;
+    }
+    let mut tracer = phiray::Tracer::from_scene(&gpu, built)?;
     // A Workbench render's `render_aa` is its anti-aliasing count; the
     // path tracer's samples are its own.
     tracer.set_samples(samples);
@@ -168,6 +185,13 @@ pub fn still_stepwise(
     // at a tile's edge, and the overlap is what makes the seam invisible —
     // two rows, or SMAA's reach when the single pass leaves it on the
     // finished frame (`Tracer::seam_rows`).
+    // A final render keeps the GPU busy far longer than the viewport's
+    // five-second readback guard allows, and a readback that gives up
+    // returns an EMPTY buffer that every caller reads as "the GPU
+    // declined" — which is exactly how pose 26 came back blank while the
+    // card was working. The budget is the render's for as long as it runs
+    // (`phiray::PatienceFor`), and the viewport keeps its own.
+    let _patience = phiray::PatienceFor::render(std::time::Duration::from_secs(600));
     let reach = tracer.seam_rows();
     let (rx, ry, rw, rh) = region.drawn(w, h, reach);
     let bands = BBandList::of(rw, rh, BBandList::most(&gpu), reach);
@@ -255,9 +279,16 @@ impl BStill {
     }
 
     /// `lay` for the bytes alone.
+    /// A short `piece` is laid as far as it goes rather than panicking: a
+    /// readback that timed out comes back empty, and a peek is not worth a
+    /// crash (`gpu::PatienceFor` is what stops it happening).
     pub(super) fn lay_rgba(into: &mut [u8], piece: &[u8], y0: usize, rows: usize, skip: usize, w: usize) {
         let (at, from, n) = (y0 * w, skip * w, rows * w);
-        into[at * 4..(at + n) * 4].copy_from_slice(&piece[from * 4..(from + n) * 4]);
+        let (dst, src) = ((at * 4, (at + n) * 4), (from * 4, (from + n) * 4));
+        if dst.1 > into.len() || src.1 > piece.len() {
+            return;
+        }
+        into[dst.0..dst.1].copy_from_slice(&piece[src.0..src.1]);
     }
 
     pub(super) fn empty(w: u32, h: u32) -> Self {
@@ -269,6 +300,11 @@ impl BStill {
     /// row `y0`.
     fn lay(&mut self, piece: &Self, y0: usize, rows: usize, skip: usize, w: usize) {
         let (at, from, n) = (y0 * w, skip * w, rows * w);
+        // A band whose readback came back short leaves the frame as it was
+        // rather than bringing the render down (`lay_rgba`).
+        if (at + n) * 4 > self.rgba.len() || (from + n) * 4 > piece.rgba.len() {
+            return;
+        }
         self.rgba[at * 4..(at + n) * 4].copy_from_slice(&piece.rgba[from * 4..(from + n) * 4]);
         self.display[at..at + n].copy_from_slice(&piece.display[from..from + n]);
         self.linear[at..at + n].copy_from_slice(&piece.linear[from..from + n]);

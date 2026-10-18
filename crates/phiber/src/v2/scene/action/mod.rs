@@ -15,6 +15,7 @@
 
 pub mod autokey;
 pub mod channel;
+pub mod clean;
 pub mod dope;
 pub mod keying;
 pub mod keys;

@@ -64,7 +64,7 @@ fn the_canvas_falls_back_when_it_did_not() {
     );
     // And the fill is skipped when the tracer's image is already there, or
     // the raster would paint over a finished frame.
-    assert!(canvas.contains("corners, !traced, window)"), "the fill is the fallback's, not both");
+    assert!(canvas.contains("corners, !traced, supersample, window)"), "the fill is the fallback's, not both");
 }
 
 #[test]
