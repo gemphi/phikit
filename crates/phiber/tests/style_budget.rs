@@ -20,6 +20,12 @@
 //! regressed in that pass; the ruler got more accurate. Widening the ruler
 //! again is the only reason a budget may rise, and it needs saying here.
 //!
+//! The ruler widened a second time: a bare integer argument is not a length,
+//! so `.size(0)` — `RenderImage::size(frame)`, an index — stopped counting as
+//! styling. GPUI's sizing methods take a `Pixels`, a `DefiniteLength` or a
+//! token and never a plain number, so nothing real is lost and
+//! `canvas/view3d/rendered/state.rs` goes to zero, which was its only entry.
+//!
 //! `popover/leave.rs` earned an entry when the popover's dismissal backdrop
 //! moved into it from `popover/mod.rs` — the file that already owned the
 //! pointer-strayed-away test now owns the layer that asks it. That is the
@@ -122,6 +128,16 @@ fn raw_calls(src: &str) -> usize {
                 continue;
             }
             if args.starts_with(')') && !NO_ARG.contains(&name) {
+                continue;
+            }
+            // A bare integer is not a length. GPUI's sizing methods take a
+            // `Pixels`, a `DefiniteLength` or a token — never a plain number
+            // — so `.size(0)` is some other type's method taking an index:
+            // `RenderImage::size(frame)` in `canvas/view3d/rendered/state.rs`
+            // was the whole of that file's "1 raw style call". The ruler
+            // getting more accurate is the one reason a count may change
+            // without the code changing (see the note at the top).
+            if args.as_bytes().first().is_some_and(u8::is_ascii_digit) {
                 continue;
             }
             n += 1;

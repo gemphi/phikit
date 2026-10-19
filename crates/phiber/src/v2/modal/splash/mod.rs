@@ -1,24 +1,38 @@
-//! Splash / Welcome window — the Phiber welcome screen.
+//! Welcome window — the Phiber home screen.
 //!
-//! Blender ref: `WM_OT_splash` + `WM_MT_splash` (`bl_operators/wm.py:3431`).
-//! Every block is one rounded `Card`, laid out exactly like Blender's splash:
+//! This was Blender's splash (`WM_OT_splash`, `WM_MT_splash`): a banner
+//! over New File | Recent Files and Open… | links. It is a **home** now,
+//! and the three changes are deliberate:
 //!
 //! ```text
-//! ┌─ banner ──────────────────────────────── Phiber  v0.1.0 ─┐
-//! ├─ New File ─────────────┬─ Recent Files ─────────────────┤
-//! │  General               │  scene.blend      ~/Projects   │
-//! │  Shading …             │  … (5 rows)          More…     │
-//! ├─ Open… ────────────────┼─ What's New ───────────────────┤
-//! │  Recover Last Session  │  Support Phiber                │
-//! └────────────────────────┴────────────────────────────────┘
+//! ┌──────────── the mark: two bands, then the face ────────────┐
+//! │                    ▂▂▂▂▂▂▂▂▂▂▂▂                            │
+//! │                 ▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂                         │
+//! │              ▂▂▂▂▂▂  ⬡ Phiber  ▂▂▂▂▂▂                      │
+//! ├─ Quick access ──┬─ Upcoming ──┬─ Quests ──┬─ Center ───────┤
+//! │  Recent         │             │           │  the library   │
+//! │  Favourites     │             │           │                │
+//! │  Shared         │             │           │                │
+//! └─────────────────┴─────────────┴───────────┴────────────────┘
 //! ```
-//! With no recent files the right card becomes "Getting Started" links, as
-//! Blender does.
+//!
+//! 1. **The mark is the layers** (`mark.rs`) — the same `BDeck` the manual
+//!    draws every figure with, read as a cascade: two bands, then the face
+//!    carrying the logo. Half a hexagon above, the face below; the shape is
+//!    the bands and there is no outline.
+//! 2. **No header backgrounds.** Every card is `BCard::headless()` and its
+//!    title is a label in the body. A filled header bar across the top of
+//!    the brand is the one chrome shade this window must not have.
+//! 3. **Four groups** (`home.rs`) — Quick access, Upcoming, Quests and
+//!    Center, the library.
 //!
 //! Opened by `Phiber ▸ Splash Screen`, and shown once at startup (the seed
-//! writes `ctx.modal = "splash"`). Dismissed like any modal: backdrop click,
-//! the title-bar close button, or picking anything that commits a `Set`.
+//! writes `ctx.modal = "splash"`). Dismissed like any modal.
 
+pub mod home;
+pub mod mark;
+/// Six terrains traced off the welcome video's frames.
+pub mod terrain;
 pub mod recent;
 pub mod set;
 
@@ -33,7 +47,6 @@ use crate::v2::view::prim::BAction;
 use crate::v2::view::prim::BCard;
 use crate::v2::view::prim::BControl;
 use crate::v2::view::prim::BRowShade;
-use crate::v2::view::prim::BStrip;
 use crate::v2::view::BView;
 use crate::v2::view::BViewItem;
 pub use set::APP_NAME;
@@ -49,11 +62,15 @@ pub use set::TEMPLATES;
 #[derive(Clone, Copy, Debug, Default)]
 pub struct BSplashModal;
 
-/// A titled group of the welcome window. Blender's splash draws these as
-/// plain columns of a popup block; Phiber keeps them as panels that do not
-/// fold (`BCard` with no `fold`).
+/// A titled group of the welcome window.
+///
+/// Headless, with the title as a label in the body: this window draws no
+/// filled header bar anywhere (`mark.rs`), so a titled `BCard::panel`
+/// would be the one shade out of place on it.
 fn card(title: &'static str, rows: Vec<BView>) -> BView {
-    BCard::panel(title).body(rows).into()
+    let mut body = vec![BView::label(title.to_string())];
+    body.extend(rows);
+    BCard::headless().body(body).into()
 }
 
 fn link_button(l: &BSplashEntry) -> BView {
@@ -63,20 +80,6 @@ fn link_button(l: &BSplashEntry) -> BView {
             .with_label(l.label)
             .with_action(l.link_action()),
     )
-}
-
-/// Banner — the mark and wordmark, centred both ways in the strip (Blender
-/// paints these on the splash image). The name is the wordmark, not a
-/// label: the brand is drawn, not set. The version sits with the links.
-fn banner() -> BView {
-    BView::from(BCard::strip(BStrip::Header,
-        vec![
-            BView::spacer(),
-            BView::icon("phiber_banner"),
-            BView::icon("phiber_wordmark_banner"),
-            BView::spacer(),
-        ],
-    ))
 }
 
 /// "New File" — one row per workspace template.
@@ -166,11 +169,18 @@ fn links_card() -> BView {
 
 impl BViewItem for BSplashModal {
     fn build(&self, s: &BState) -> BView {
-        BView::column(vec![
-            banner(),
-            BView::row(vec![new_file(), recent_or_getting_started(s)]),
-            BView::row(vec![open_card(), links_card()]),
-        ])
+        // The mark first, then the groups across, then what the file
+        // actions and links were. Recent keeps its own card because it
+        // reads the store rather than a static table.
+        let mut rows = vec![mark::card(), BView::row(home::GROUPS.iter().map(home::BHomeGroup::view).collect())];
+        // New File sits with Open… rather than in its own split: the four
+        // groups took the top row, and a template is a file action like the
+        // two beside it. Dropping it would have taken the workspace
+        // templates off the welcome window altogether, which is what the
+        // dead-code warning on `new_file` was actually reporting.
+        rows.push(BView::row(vec![recent_or_getting_started(s), new_file(), open_card()]));
+        rows.push(links_card());
+        BView::column(rows)
     }
 }
 

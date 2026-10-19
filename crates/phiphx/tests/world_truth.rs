@@ -7,9 +7,16 @@
 //! `//..\..\..\CW\CW-Posing\HDRIs\lonely_road_afternoon_puresky_4k.exr`,
 //! which is not shipped. Blender folds a missing image to magenta — the
 //! `IMB` "invalid" colour every missing texture takes — and since the world
-//! is a dome, that lights the whole scene magenta. Reading it as white
-//! instead made the scene about twice as bright and dropped the cast
-//! (`rendering.md` §52).
+//! is a dome, that lights the whole scene magenta (`rendering.md` §52).
+//!
+//! phiber used to reproduce that. It does not any more, and deliberately:
+//! pose 26 of CW-POSES (`autumn_field_puresky_4k.exr` at an `E:\` path from
+//! the machine it was made on) came out of F12 magenta from floor to hair,
+//! and nobody wants the picture Blender draws for a broken path. The world
+//! records the missing file (`BlendWorld::missing`), the colour is the white
+//! tint a stand-in environment is multiplied by, and the renderer lights
+//! with Blender's own studio light (`forest`, what Material Preview lights
+//! with); the read report says so.
 
 use phiphx::phx::Phx;
 use phiphx::scene::SceneModel;
@@ -25,14 +32,17 @@ fn model(name: &str) -> SceneModel {
 }
 
 #[test]
-fn a_missing_environment_image_lights_the_scene_magenta_as_blender_does() {
+fn a_missing_environment_image_is_recorded_and_lit_by_a_stand_in_not_magenta() {
     let w = model("THYMUS-BOLDROID-WAVE-003.blend").world.background;
-    assert_eq!(w.color, [1.0, 0.0, 1.0], "Blender's missing-image magenta, not white");
+    let missing = w.missing.as_deref().expect("the HDRI Blender could not find is named");
+    assert!(missing.ends_with("lonely_road_afternoon_puresky_4k.exr"), "{missing}");
+    assert_eq!(w.color, [1.0; 3], "the white tint a stand-in environment is multiplied by, not magenta");
     assert_eq!(w.strength, 1.0);
-    assert_eq!(w.radiance(), [1.0, 0.0, 1.0], "and that is what lights every ray");
-    // The renderer is told there is no image, so it lights from `color`
-    // rather than hunting for a file Blender would not find either.
+    // The renderer is told there is no image of the file's own to load.
     assert_eq!(w.texture, None, "a file that is not there is not an image to load");
+    // And the read report says what happened and what was done about it.
+    let report = model("THYMUS-BOLDROID-WAVE-003.blend").report;
+    assert!(report.warnings.iter().any(|w| w.starts_with("World: cannot read") && w.contains("studio light")), "{:?}", report.warnings);
 }
 
 /// A world with no Environment Texture at all reads its Background Color

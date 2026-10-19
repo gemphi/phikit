@@ -66,22 +66,27 @@ fn a_row_never_shrinks_and_the_list_scrolls_instead() {
     );
 }
 
+/// Each row draws its OWN hierarchy run, one line per indent unit of its own
+/// depth, before its arrow slot — so a line exists exactly where a row is
+/// nested and ends with the row it belongs to. It used to be one backdrop of
+/// the deepest row's depth behind the whole column, in the accent and the text
+/// tone, which put the same loud columns through every row and told nothing
+/// about any one of them (`view/draw/tree/guide.rs` carries the reasoning).
 #[test]
-fn the_hierarchy_lines_run_the_whole_list() {
-    let guide = source("view/draw/tree/guide.rs");
-    // A backdrop spanning the container, not a segment inside each row —
-    // per-row guides stop where the content does.
-    assert!(guide.contains(".absolute().inset_0()"));
-    assert!(guide.contains("colors.text_dim"), "the lines are the theme's opposite shade");
-    let column = source("view/draw/column.rs");
-    assert!(
-        column.contains("guides_backdrop"),
-        "the list must paint the guides behind its rows"
-    );
-    assert!(column.contains(".max()"), "one line per indent unit of the deepest row, the whole column down");
+fn a_rows_hierarchy_lines_are_its_own_depth_in_the_other_bands_colour() {
     let row = source("view/draw/tree/mod.rs");
-    assert!(!row.contains("BTreeGuide"), "no row draws a guide of its own: the depth is an indent before the arrow slot");
-    assert!(row.contains("BTreeIndent(self.depth)"));
+    assert!(row.contains("BTreeIndent"), "the depth is an indent run before the arrow slot");
+    assert!(row.contains("BTreePart::IndentUnit"), "one unit per level of the row's own depth");
+    assert!(row.contains("guide::guide_fill(shade, ctx)"), "and the line is filled from the row's band");
+    // Not a backdrop: nothing paints guides behind the column any more.
+    let column = source("view/draw/column.rs");
+    assert!(!column.contains("guides_backdrop"), "no backdrop of the deepest depth behind the list");
+    // The colour is the OPPOSITE zebra band over the editor's body, so a line
+    // is subtle against the row it crosses and never a third colour.
+    let guide = source("view/draw/tree/guide.rs");
+    assert!(guide.contains("shade.opposite_band()"));
+    assert!(guide.contains("host_body_surface(ctx.host)"));
+    assert!(!guide.contains("colors.text_dim"), "the loud text tone is what this replaced");
 }
 
 #[test]

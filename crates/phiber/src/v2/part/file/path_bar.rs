@@ -120,7 +120,9 @@ fn filter_popover(s: &BState) -> BView {
     let toggle = BAction::Set(fkey.clone(), if open { V_FALSE } else { V_TRUE }.to_string());
     let close = BAction::Set(fkey, V_FALSE.to_string());
     let anchor = BView::Button(BControl::new().with_icon("chevron_down").with_active(open).with_action(toggle));
-    BView::popover(anchor, filter_body(s), open, close, BPopoverSide::Below)
+    // The chevron sits at the right end of the path strip (its Right pane),
+    // so the panel opens trailing-edge and spans back across the strip.
+    BView::popover(anchor, filter_body(s), open, close, BPopoverSide::BelowEnd)
 }
 
 /// The strip's row, in Blender's order (`FILEBROWSER_PT_directory_path`):

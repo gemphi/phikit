@@ -118,6 +118,15 @@ pub fn visible_in_render(s: &crate::v2::state::BState, objects: Vec<BObject3D>) 
     objects.into_iter().filter(|o| !hidden.hides(s, o.name())).collect()
 }
 
+/// Objects left in after the Outliner's **viewport** restrictions — the eye
+/// and the monitor (`BHidden::now`): what the viewport draws, and what a
+/// render falls back to when the render rules leave nothing
+/// (`render_cast.rs`).
+pub fn visible_in_viewport(s: &crate::v2::state::BState, objects: Vec<BObject3D>) -> Vec<BObject3D> {
+    let hidden = crate::v2::part::outliner::key::BHidden::now(s);
+    objects.into_iter().filter(|o| !hidden.hides(s, o.name())).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

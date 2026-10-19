@@ -25,6 +25,19 @@ pub(crate) fn set_source(path: &std::path::Path) {
     }
 }
 
+/// There is no folder to resolve images against — the file arrived as bytes
+/// (`Phx::open_bytes`), as it does from a browser's file picker.
+///
+/// Not the same as leaving the last open's folder in place, which would
+/// resolve one file's `//textures/` against another's directory and load the
+/// wrong image. Packed images still work; a `//` path cannot, and reads as
+/// missing, which is what Blender shows for an image it cannot find.
+pub(crate) fn clear_source() {
+    if let Ok(mut dir) = SOURCE_DIR.write() {
+        *dir = None;
+    }
+}
+
 impl BlendFile {
     /// Whether Blender would find this image: packed, or on disk at its path
     /// (`//` resolved against the `.blend`'s folder), or by file name beside
@@ -45,13 +58,9 @@ impl BlendFile {
             // Generated images (no file) always draw.
             return true;
         }
-        let path = path.replace('\\', "/");
-        let full = match path.strip_prefix("//") {
-            Some(rel) => dir.join(rel),
-            None => std::path::PathBuf::from(&path),
-        };
-        let name = std::path::Path::new(&path).file_name().map(|n| dir.join(n));
-        full.exists() || name.is_some_and(|n| n.exists())
+        // The same places `scene/texture.rs` reads from, so "present" here
+        // and "found" there cannot disagree — including Find Missing Files.
+        crate::scene::texture::SceneTexture::candidates_in(&path, Some(&dir)).iter().any(|c| c.exists())
     }
 
     /// How materials refer to an image: its `filepath`, or `ID.name` (no

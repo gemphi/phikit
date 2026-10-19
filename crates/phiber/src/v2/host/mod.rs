@@ -225,8 +225,18 @@ impl BHostType {
     /// Save Preferences at the right (`USERPREF_HT_header`). Every other
     /// elevated host is named by the title bar and its header would be a
     /// second one.
+    ///
+    /// The render window is an Image Editor raised in a dialog, and its
+    /// header is not decoration: the manual puts the View Layer, the Render
+    /// Pass and the Display Channels selectors there
+    /// (`editors/image/introduction`, "Header"), so without it a render can
+    /// be looked at and nothing about it can be chosen — no slot, no pass,
+    /// no alpha. Blender opens that window on a real `SpaceImage` with its
+    /// header drawn, and every other phiber host in a dialog carries its
+    /// own controls, so leaving this one bare made the render window the
+    /// odd one out twice over.
     pub const fn keeps_header_in_dialog(self) -> bool {
-        matches!(self, Self::File | Self::Asset | Self::Prefs)
+        matches!(self, Self::File | Self::Asset | Self::Prefs | Self::Image)
     }
 
     pub const fn floats_side_panels(self) -> bool {

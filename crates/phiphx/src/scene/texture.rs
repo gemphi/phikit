@@ -139,7 +139,14 @@ impl SceneTexture {
 impl SceneTexture {
 /// Candidate on-disk locations for an image key.
 pub fn candidates(key: &str, blend: Option<&Path>) -> Vec<PathBuf> {
-    let dir = blend.and_then(Path::parent);
+    Self::candidates_in(key, blend.and_then(Path::parent))
+}
+
+/// The same, given the `.blend`'s folder: the path as written (`//`
+/// resolved against the folder), the file name beside the `.blend`, and —
+/// Find Missing Files — the file name anywhere under the folder's tree or
+/// its `textures/` (`texture_find.rs`).
+pub fn candidates_in(key: &str, dir: Option<&Path>) -> Vec<PathBuf> {
     let mut out = Vec::new();
     match (key.strip_prefix("//"), dir) {
         (Some(rel), Some(d)) => out.push(d.join(rel.replace('\\', "/"))),
@@ -149,6 +156,9 @@ pub fn candidates(key: &str, blend: Option<&Path>) -> Vec<PathBuf> {
     let name = key.rsplit(['/', '\\']).next().unwrap_or(key);
     if let (Some(d), false) = (dir, name.is_empty()) {
         out.push(d.join(name));
+        if let Some(found) = super::texture_find::find(d, name) {
+            out.push(found);
+        }
     }
     out
 }
@@ -255,38 +265,33 @@ pub(super) fn environment(p: &crate::blend::BlendSceneProps, source_path: &str) 
     SceneEnvironment::decode(&bytes)
 }
 
-/// Every image a material asked for that was neither packed nor on disk —
-/// base colour, normal map and the other maps alike — as the message
-/// Blender prints for it: `Cannot read '<path>': No such file or directory`,
-/// with the path the `//`-relative name resolved to beside the file.
+/// Every image a material asked for, and what to do about the ones that
+/// were neither packed nor on disk — base colour, normal map and the other
+/// maps alike.
+///
+/// Blender prints its `Cannot read '<path>'` per image; a file asking for
+/// three hundred of another machine's textures turns that into a wall with
+/// the answer nowhere in it, so the tally leads with the folders owed and
+/// keeps Blender's lines as evidence (`texture_miss.rs`, which carries the
+/// reasoning and the divergence).
 pub(super) fn attach(objects: &mut [super::SceneObject], p: &crate::blend::BlendSceneProps, source_path: &str) -> Vec<String> {
     let blend = std::path::Path::new(source_path);
     let mut cache = TextureCache::new(&p.packed_images, Some(blend));
-    let mut missing: Vec<String> = Vec::new();
-    let note = |key: &str, found: bool, missing: &mut Vec<String>| {
-        if found {
-            return;
-        }
-        let path = SceneTexture::candidates(key, Some(blend)).into_iter().next().unwrap_or_else(|| PathBuf::from(key));
-        let line = format!("Cannot read '{}': No such file or directory", path.display());
-        if !missing.contains(&line) {
-            missing.push(line);
-        }
-    };
+    let mut missing = super::texture_miss::BMissingTexture::default();
     for m in objects.iter_mut().flat_map(|o| o.materials.iter_mut()) {
         if let Some((key, _)) = m.normal_texture.clone() {
             m.normal_map = cache.get(&key);
-            note(&key, m.normal_map.is_some(), &mut missing);
+            missing.note(&key, m.normal_map.is_some());
         }
         for slot in m.maps.each_mut_pub() {
             if let Some(map) = slot {
                 map.image = cache.get(&map.key);
-                note(&map.key, map.image.is_some(), &mut missing);
+                missing.note(&map.key, map.image.is_some());
             }
         }
         let Some(key) = m.base_color_texture.clone() else { continue };
         m.texture = cache.get(&key);
-        note(&key, m.texture.is_some(), &mut missing);
+        missing.note(&key, m.texture.is_some());
     }
-    missing
+    missing.lines()
 }

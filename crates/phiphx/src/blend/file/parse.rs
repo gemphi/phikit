@@ -18,7 +18,7 @@ impl BlendFile {
     /// Zstandard frame magic — Blender 4.5+ writes `.blend` files compressed
     /// with Zstd; `blenloader` transparently decompresses them before reading
     /// the `BLENDER` header (see `BLEN_blendfile_read*/filelist_readjob`).
-    const ZSTD_MAGIC: [u8; 4] = [0x28, 0xB5, 0x2F, 0xFD];
+    pub(crate) const ZSTD_MAGIC: [u8; 4] = [0x28, 0xB5, 0x2F, 0xFD];
     /// Gzip magic — older Blender releases (≤ 4.4) compress saves with gzip.
     const GZIP_MAGIC: [u8; 2] = [0x1F, 0x8B];
 
@@ -34,9 +34,7 @@ impl BlendFile {
         progress: &mut dyn FnMut(usize, u64),
     ) -> Result<Self> {
         if data.len() >= 4 && data[0..4] == Self::ZSTD_MAGIC {
-            let raw = zstd::stream::decode_all(std::io::Cursor::new(data)).map_err(|e| {
-                PointCloudError::InvalidFormat(format!("Zstd .blend decompression failed: {e}"))
-            })?;
+            let raw = super::zst::all(data)?;
             return Self::parse_with_progress(&mut std::io::Cursor::new(raw), progress);
         }
         if data.len() >= 2 && data[0..2] == Self::GZIP_MAGIC {

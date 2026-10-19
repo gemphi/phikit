@@ -8,7 +8,7 @@
 //! how long it lasted, and how long the final one took to arrive and to
 //! finish.
 
-use std::time::Instant;
+use web_time::Instant;
 
 /// The clock of the view being traced.
 #[derive(Default)]

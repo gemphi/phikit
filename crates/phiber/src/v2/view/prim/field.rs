@@ -7,6 +7,10 @@ impl BView {
     pub fn label(text: impl Into<String>) -> Self {
         Self::Label { text: text.into() }
     }
+    /// A read-out's caption and figure, kept apart for the two shades.
+    pub fn pair(label: impl Into<String>, value: impl Into<String>) -> Self {
+        Self::Pair { label: label.into(), value: value.into() }
+    }
     /// Rotated-90° effect — column of characters.
     pub fn vlabel(text: impl Into<String>) -> Self {
         Self::VLabel { text: text.into() }

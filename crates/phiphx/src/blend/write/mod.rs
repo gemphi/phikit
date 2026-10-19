@@ -68,7 +68,15 @@ impl BlendCompression {
     pub fn wrap(self, raw: Vec<u8>) -> std::io::Result<Vec<u8>> {
         match self {
             Self::None => Ok(raw),
+            // Only the C library encodes; `ruzstd` decodes. A build without
+            // it refuses rather than writing an uncompressed file where
+            // Blender would have written a compressed one.
+            #[cfg(not(target_family = "wasm"))]
             Self::Zstd => zstd::stream::encode_all(std::io::Cursor::new(raw), 3),
+            #[cfg(target_family = "wasm")]
+            Self::Zstd => Err(std::io::Error::other(
+                "saving a Zstd-compressed .blend needs the native encoder",
+            )),
             Self::Gzip => {
                 let mut out = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
                 out.write_all(&raw)?;

@@ -95,6 +95,17 @@ impl Matcap {
     /// `~/Library/Application Support/Blender/<v>` on macOS,
     /// `$XDG_CONFIG_HOME/blender/<v>` elsewhere — each with
     /// `datafiles/studiolights/matcap/`.
+    /// A browser has no Blender install to borrow from, and no folders to
+    /// look in — so the list is empty there and the shipped matcaps are all
+    /// of them. This is also what keeps `dirs` out of the wasm crate graph:
+    /// `dirs-sys` reaches for platform APIs that `wasm32-unknown-unknown`
+    /// does not have.
+    #[cfg(target_family = "wasm")]
+    fn user_dir_list() -> Vec<PathBuf> {
+        Vec::new()
+    }
+
+    #[cfg(not(target_family = "wasm"))]
     fn user_dir_list() -> Vec<PathBuf> {
         let root = if cfg!(target_os = "windows") {
             dirs::config_dir().map(|d| d.join("Blender Foundation").join("Blender"))

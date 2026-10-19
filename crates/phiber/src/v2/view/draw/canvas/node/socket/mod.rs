@@ -69,6 +69,9 @@ pub struct BSocketRow {
     pub name: String,
     /// `eNodeSocketDatatype`, for `theme::socket_color`.
     pub kind: i32,
+    /// `bNodeSocket.display_shape` — what the socket is DRAWN as, which is
+    /// not what `kind` answers (`paint::shape`).
+    pub shape: i32,
     pub side: BSocketSide,
     /// Units below the bottom of the header, at the socket's own centre.
     pub y: f32,
@@ -114,6 +117,7 @@ fn place(
             identifier: socket.identifier.clone(),
             name: socket.name.clone(),
             kind: socket.kind,
+            shape: socket.display_shape,
             side,
             // `locy - NODE_DYS` from the block's top, so the dot stays level with
             // the name row even on a tall vector.
@@ -155,6 +159,7 @@ pub fn reroute_rows(node: &BlendNode) -> Vec<BSocketRow> {
                 identifier: socket.identifier.clone(),
                 name: String::new(),
                 kind: socket.kind,
+                shape: socket.display_shape,
                 side,
                 y: 0.0,
                 default: None,
@@ -213,21 +218,6 @@ pub fn body_height(node: &BlendNode, linked: &[&str]) -> f32 {
     y
 }
 
-/// Where one named socket of `node` sits, if it has one.
-///
-/// A link names its ends by `identifier`, so this is the lookup that turns a
-/// link into two points. `None` for a socket that is not drawn. `linked` matters
-/// because a vector input above a socket makes those below it sit lower.
-pub fn row_of(node: &BlendNode, identifier: &str, linked: &[&str]) -> Option<BSocketRow> {
-    rows(node, linked).into_iter().find(|r| r.identifier == identifier)
-}
-
-/// One row of an already laid-out card, by identifier — the same lookup as
-/// `row_of` without laying the node out a second time.
-pub fn row_of_card(card: &super::paint::BNodeCard, identifier: &str) -> Option<BSocketRow> {
-    card.sockets.iter().find(|r| r.identifier == identifier).cloned()
-}
-
 #[cfg(test)]
 mod tests;
 
@@ -236,5 +226,10 @@ pub mod collapsed;
 
 /// What an unconnected input socket shows for its default value.
 pub mod value;
+
+/// A socket by the identifier a link names it with.
+pub mod find;
+
+pub use find::{row_of, row_of_card};
 
 pub use collapsed::{COLLAPSED_RAD, collapsed_height, collapsed_rows, collapsed_top};

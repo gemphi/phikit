@@ -10,6 +10,13 @@
 //! Record a new golden (only when a layout change is intended):
 //!     UPDATE_LAYOUT_GOLDEN=1 cargo test -p phiber --test layout_fingerprint
 //!
+//! To re-record for the node editor's Flat / Spatial radio
+//! (`canvas/node/spatial/mode.rs`). Every node editor's header right end
+//! gains two icon buttons before its overlay popover, so the popover's
+//! button moves left by two buttons and two quads and two sprites appear per
+//! node-editor header per scenario; the canvas under it is unchanged, because
+//! every scenario here loads no file and the mode is flat by default.
+//!
 //! Re-recorded for the node editor. 74 golden lines no longer hold and **0 are
 //! new** — the asymmetry is the whole account: elements were removed and none
 //! appeared.
@@ -424,6 +431,37 @@
 //! that left appears in the lines that arrived, and the reverse — checked the
 //! same way as the three re-records above. Nothing was re-shaded, re-themed or
 //! re-inked; this is geometry only, and two constants' worth of it.
+//!
+//! Re-recorded for the accordion pass: 15220 golden lines no longer hold and
+//! 12214 are new. Unlike the re-records above this one is a batch of UI work
+//! rather than one number, and it is accounted for as a batch:
+//!
+//! - **a menu row is `MENU_ROW`** (the button less its head room, 28) rather
+//!   than the module a content row is (36) — `BDim::MenuRow`. Every menu in
+//!   the capture is shorter, and the rows under each one move up.
+//! - **a popover's headings fold** (`part::filter::fold`): a filter popover
+//!   with more than one heading is now sub-panels, so its closed groups paint
+//!   a heading instead of their rows. That is most of the net 3006-line fall:
+//!   fewer painted rows, not smaller ones.
+//! - **a header popover is one side zone wide and opens trailing-edge**
+//!   (`BPopoverWidth`, `BPopoverSide::BelowEnd`), so every filter panel in the
+//!   capture changed both width and x origin.
+//! - **a sidebar's panels are bare** (`BCard::plain`) — no heading fill and no
+//!   frame — and **an open accordion takes a border**, which is the one new
+//!   colour below.
+//! - everything else is those cascading, the same way the two-number re-record
+//!   above cascaded: a group that folded moves every group under it, and a
+//!   panel that lost its frame reflows the column it sits in.
+//!
+//! **Five colours changed, and they are the two intended ones.** The lines
+//! that left carry `l: 0.8394118` and `l: 0.87893426` and the three
+//! `hsla(0.5952,0.0769,0.8…,0.0000)` stops beside them; the lines that arrive
+//! carry `l: 0.8786667` and `l: 0.88580394` and two stops — that is
+//! `heading_surface` no longer stepping its tone up before sweeping it, so the
+//! gradient starts on its parent and the seam goes. The one colour that is new
+//! outright, `hsla(0.5952,0.0167,0.2465,1.0000)`, is the open accordion's
+//! border. Nothing else was re-shaded: every other `l:` and `hsla(...)` in the
+//! lines that left appears in the lines that arrived, and the reverse.
 
 use phiber::v2::state::{CtxKey, ModalKey};
 use gpui::{TestAppContext, px, size};

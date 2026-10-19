@@ -167,7 +167,7 @@ impl BHeadlessRender {
         let plain = gpui::hsla(0.0, 0.0, 0.8, 1.0);
         let mut cost = Vec::new();
         for &frame in &self.frame {
-            let began = std::time::Instant::now();
+            let began = web_time::Instant::now();
             // The frame the scene stands at: `current_scene` poses the rig
             // and the objects, `plan_at` puts the camera where it is.
             state.set(CtxKey::Frame, format!("{frame}"));
@@ -176,6 +176,15 @@ impl BHeadlessRender {
                 .filter(|o| !matches!(o, BObject3D::Loaded { name, .. } if hidden.hides(&state, name)))
                 .collect();
             let posed = began.elapsed();
+            // An empty list here is the headless twin of the app's blank
+            // Render Result, and was just as silent (`scene::render_cast`).
+            let drawn = crate::v2::scene::render_cast::BRenderCast::count_geometry(&objects);
+            if drawn == 0 {
+                return Err(format!(
+                    "frame {frame}: nothing to render — {} objects reached the tracer, none with geometry",
+                    objects.len()
+                ));
+            }
             let look = BRayLook {
                 sky: gpui::hsla(0.0, 0.0, 0.14, 1.0),
                 grid: gpui::hsla(0.0, 0.0, 0.3, 1.0),
@@ -194,9 +203,16 @@ impl BHeadlessRender {
             }
             plan.w = (plan.w / scale).max(1);
             plan.h = (plan.h / scale).max(1);
-            let shot = std::time::Instant::now();
-            let (pixel, taken) = still(&objects, plan.look, plan.camera, plan.w, plan.h, plan.samples, plan.denoise)
-                .ok_or("no gpu adapter, or a scene that does not fit")?;
+            let shot = web_time::Instant::now();
+            let (pixel, taken) = still(&objects, plan.look, plan.camera, plan.w, plan.h, plan.samples, plan.denoise, plan.adapt, plan.time_limit)
+                // The tracer's own reason (`render_job::note_failure`), not a
+                // guess: headless has no Info editor and no journal, so the
+                // 2048-sample run of pose 26 ended after 30 minutes having
+                // printed nothing at all.
+                .ok_or_else(|| {
+                    crate::v2::scene::render_job::failure()
+                        .unwrap_or_else(|| "no gpu adapter, or a scene that does not fit".to_string())
+                })?;
             let drew = shot.elapsed();
             let (_, path) = Self::frame_path(&self.out, frame as i64);
             image::RgbaImage::from_raw(plan.w, plan.h, pixel)

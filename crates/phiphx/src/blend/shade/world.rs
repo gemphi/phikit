@@ -31,6 +31,15 @@ pub struct BlendWorld {
     pub texture: Option<String>,
     /// Mapping node `Rotation` around Z, in radians (the usual HDRI spin).
     pub rotation: f32,
+    /// The Environment Texture image Blender could NOT find — its path as
+    /// the file spells it — when the world asks for one that is not there.
+    /// Blender lights the whole scene its missing-image magenta in that
+    /// case; phiber lights it with Blender's own studio light instead and
+    /// says so in the read report (`scene/import.rs`), because a demo lit
+    /// magenta by a path from another machine is a broken picture, not a
+    /// faithful one. `color` is then the white tint the stand-in is
+    /// multiplied by, and `texture` is `None`.
+    pub missing: Option<String>,
     /// A Sky Texture on `Color` instead of an image, with its own settings
     /// (`crate::sky`). The sky is not evaluated per ray in Blender either —
     /// it is baked and sampled as an image — so this is what the renderer
@@ -46,7 +55,7 @@ pub struct BlendWorld {
 impl Default for BlendWorld {
     fn default() -> Self {
         // Blender's default world: a near-black grey at full strength.
-        Self { color: [0.05; 3], strength: 1.0, texture: None, rotation: 0.0, sky: None, address: 0 }
+        Self { color: [0.05; 3], strength: 1.0, texture: None, missing: None, rotation: 0.0, sky: None, address: 0 }
     }
 }
 
@@ -83,14 +92,17 @@ impl BlendFile {
             let im = self.block_at(self.ptr(env, self.off("bNode", "*id", dna)));
             let present = im.is_none_or(|im| self.image_present(im, dna));
             // An image replaces the socket, so Color is the tint it is
-            // multiplied by — white. A file Blender cannot find is magenta,
-            // the same `IMB` "invalid" colour every other missing image
-            // takes (`eval.rs`'s `ShaderNodeTexImage`), and it lights the
-            // whole scene that colour because the world is a dome. Reading
-            // it as white instead made a scene with a missing HDRI about
-            // twice as bright as Blender's and dropped its magenta cast.
+            // multiplied by — white. A file Blender cannot find is magenta
+            // in Blender, the same `IMB` "invalid" colour every other
+            // missing image takes (`eval.rs`'s `ShaderNodeTexImage`), and it
+            // lights the whole scene that colour because the world is a
+            // dome. That is recorded in `missing` rather than reproduced:
+            // the renderer stands Blender's studio light in for the file
+            // the HDRI points at on another machine, and the read report
+            // names it (`SceneReadReport::warnings`).
             world.texture = im.filter(|_| present).map(|im| self.image_key(im, dna));
-            world.color = if present { [1.0; 3] } else { [1.0, 0.0, 1.0] };
+            world.missing = im.filter(|_| !present).map(|im| self.image_key(im, dna));
+            world.color = [1.0; 3];
         }
         // A Sky Texture takes the same place as an Environment Texture: it
         // replaces `Color`, so the socket's value becomes the white tint it

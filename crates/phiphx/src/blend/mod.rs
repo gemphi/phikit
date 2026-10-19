@@ -20,6 +20,7 @@ pub mod shade;
 pub use shade::material::VIEWPORT_PBR;
 pub mod write;
 pub(crate) use shade::image::set_source as set_image_source;
+pub(crate) use shade::image::clear_source as clear_image_source;
 pub mod mesh;
 
 pub use file::quick::{BlendQuickInfo, BlendRenderInfo, BlendThumbnail};
@@ -128,6 +129,24 @@ impl BlendImporter {
             return Err(PointCloudError::Cancelled);
         }
         let data = std::fs::read(path)?;
+        Self::import_blend_bytes_with_progress(&data, progress)
+    }
+
+    /// The same read, from bytes that are already in memory.
+    ///
+    /// This is where the path stopped being needed: the parser underneath
+    /// has always been `parse_bytes_with_progress`, and the only thing the
+    /// path did here was `std::fs::read`. Splitting the two is what lets a
+    /// `.blend` arrive from somewhere that has no filesystem — a browser's
+    /// file picker, an HTTP body, an asset server — without a second reader.
+    ///
+    /// Stage fractions start at 0.05: 0.00-0.05 was reading the file, and
+    /// for a caller holding the bytes that stage has already happened.
+    pub fn import_blend_bytes_with_progress(
+        data: &[u8],
+        progress: &(dyn Fn(f32, &str) -> bool + Sync),
+    ) -> Result<BlendScene> {
+        use crate::PointCloudError;
         let total = data.len().max(1) as f64;
         if !progress(0.05, "Indexing blocks") {
             return Err(PointCloudError::Cancelled);
@@ -142,7 +161,7 @@ impl BlendImporter {
                 cancelled.store(true, std::sync::atomic::Ordering::Relaxed);
             }
         };
-        let blend = BlendFile::parse_bytes_with_progress(&data, &mut on_block)?;
+        let blend = BlendFile::parse_bytes_with_progress(data, &mut on_block)?;
         if cancelled.load(std::sync::atomic::Ordering::Relaxed) {
             return Err(PointCloudError::Cancelled);
         }

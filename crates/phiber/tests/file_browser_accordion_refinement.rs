@@ -294,8 +294,12 @@ fn properties_keep_transparent_rows_outer_border_and_bounded_scroll_owner() {
     // raised from (`the_activity_strip_is_card_content`).
     assert!(card.contains(".fill(panel_fill(ctx))"));
     assert!(card.contains("BFill::Tone(BSurfaceTone::Card)") && card.contains("fn panel_fill("));
-    let frame = card.split("Self::Frame(kind) =>").nth(1).unwrap().split("Self::Head").next().unwrap();
+    let frame = card.split("Self::Frame { kind, open } =>").nth(1).unwrap().split("Self::Head").next().unwrap();
     assert!(!frame.contains("BOverflow::Clip"));
+    // The open-accordion border is the *folding* bare card's, not every bare
+    // card's: Properties' transparent rows are bare cards with no fold, and
+    // `open` is false without one, so they keep their outer border alone.
+    assert!(frame.contains("BCardKind::Bare if *open => column.border(BEdge::All)"));
 
     // Body scroll ownership is in body.rs.
     let body = source("src/v2/view/draw/body.rs");

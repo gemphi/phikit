@@ -2,6 +2,7 @@
 //! pure value: the path to write and the write semantics. No closures, no
 //! callbacks — the view layer stays declarative and state-driven.
 
+use super::control::BControl;
 use crate::v2::state::BPath;
 use crate::v2::view::BView;
 use crate::v2::zone::BZoneType;
@@ -30,11 +31,28 @@ pub enum BAction {
     Reset(BPath),
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+/// `PartialEq`/`Eq` are gone with the bool: `BControl` has never had them,
+/// nothing ever compared a zone toggle, and `BView` itself derives only
+/// `Clone, Debug` — the same call `BMenuItem` got when its derive turned out
+/// to be a wrong answer waiting for a caller.
+#[derive(Clone, Debug)]
 pub struct BZoneToggle {
     pub zone: BZoneType,
-    pub visible: bool,
-    pub action: BAction,
+    /// The control the toggle IS, rather than a bool beside an action.
+    ///
+    /// It carried `visible: bool` and a bare `BAction`, so `draw/toggle.rs`
+    /// decided accent-against-dim for itself and a zone toggle was the one
+    /// "on" in v2 that could never be `active` — outside the vocabulary every
+    /// other control answers in (`active`, `muted`, `tooltip`), and so
+    /// outside anything that reads it. The state lives on the control now and
+    /// the glyph reads it back.
+    ///
+    /// What the glyph draws is unchanged: the zone's shape says on or off,
+    /// and the button keeps its hover fill alone. Whether an `active` zone
+    /// toggle should also take the active FILL, as every other control with
+    /// `active` does, is a look question and not this change — the state is
+    /// in one place now, so it is a one-line answer whenever it is wanted.
+    pub control: BControl,
 }
 
 impl BView {

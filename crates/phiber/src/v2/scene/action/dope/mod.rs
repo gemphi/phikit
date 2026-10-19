@@ -22,6 +22,12 @@
 //! animated through (`BKeyTarget`).
 
 pub mod set;
+#[path = "set_edit.rs"]
+mod set_edit;
+#[path = "set_grab.rs"]
+mod set_grab;
+#[path = "set_jump.rs"]
+mod set_jump;
 
 pub use set::BKeyOpRule;
 
@@ -197,3 +203,6 @@ impl BKeyGrab {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+#[path = "tests_more.rs"]
+mod tests_more;

@@ -44,6 +44,30 @@ impl Phx {
         crate::blend::with_progressive_open(|| blend_progressive(path, progress))
     }
 
+    /// Open a `.blend` that is already in memory, under the name to record
+    /// as its source.
+    ///
+    /// For a caller with no filesystem to offer: a browser's file picker, an
+    /// HTTP body, an asset server. `name` is only what the scene reports as
+    /// its origin — it is never opened, and it need not exist.
+    ///
+    /// The one thing this cannot do is resolve an image the file refers to by
+    /// path (`//textures/bark.png`): there is no folder to resolve against,
+    /// so those read as missing, which is what Blender shows for an image it
+    /// cannot find. Packed images are unaffected.
+    pub fn open_bytes(name: &str, data: &[u8]) -> Result<SceneModel, PhxError> {
+        Self::open_bytes_with(name, data, &|_, _| true)
+    }
+
+    /// [`Phx::open_bytes`], reporting progress.
+    ///
+    /// Progress starts at the "Indexing blocks" stage rather than "Reading
+    /// file": the caller has already done the reading.
+    pub fn open_bytes_with(name: &str, data: &[u8], progress: Progress) -> Result<SceneModel, PhxError> {
+        crate::blend::clear_image_source();
+        blend_bytes(name, data, progress)
+    }
+
     /// Install the batch skinner used for Armature deform while opening files
     /// (Phiber installs a GPU one; `None` restores the built-in CPU path).
     pub fn use_skinner(skinner: Option<std::sync::Arc<dyn Skinner>>) {
@@ -53,6 +77,12 @@ impl Phx {
     /// Version, render info and embedded thumbnail — header blocks only.
     pub fn peek(path: &Path) -> crate::Result<Peek> {
         BlendFile::read_quick_info(path)
+    }
+
+    /// [`Phx::peek`] from bytes already in memory — header blocks only, so
+    /// it reads the thumbnail and frame range without parsing the file.
+    pub fn peek_bytes(data: &[u8]) -> crate::Result<Peek> {
+        BlendFile::quick_info_bytes(data)
     }
 
     /// Modifier types the viewport evaluates (Blender RNA ids).
@@ -83,36 +113,58 @@ use crate::blend::BlendImporter;
 /// has no on-disk side effects). The former `.phx` sidecar fast-path was a
 /// workaround for the O(n²) pointer remap, which is now a hash lookup.
 pub(super) fn blend(path: &Path, progress: Progress) -> Result<SceneModel, SceneLoadError> {
-    let source_path = path.to_string_lossy().into_owned();
-    let started = std::time::Instant::now();
-
     // 1. Accessibility gate.
     if let Err(e) = std::fs::metadata(path) {
         return Err(SceneLoadError::Inaccessible(e.to_string()));
     }
+    let started = web_time::Instant::now();
+    let scene = guarded(|| BlendImporter::import_blend_native_with_progress(path, progress))?;
+    settle(scene, &path.to_string_lossy(), started, progress)
+}
 
-    // 2. Parse under catch_unwind so a parser panic maps to Malformed.
-    let parsed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        BlendImporter::import_blend_native_with_progress(path, progress)
-    }));
+/// [`blend`] from bytes already in memory ([`Phx::open_bytes`]).
+///
+/// No accessibility gate, because there is no file to be inaccessible —
+/// `name` is a label, not a path. Everything after the read is shared with
+/// [`blend`], which is the point: one reader, two ways in.
+pub(super) fn blend_bytes(
+    name: &str,
+    data: &[u8],
+    progress: Progress,
+) -> Result<SceneModel, SceneLoadError> {
+    let started = web_time::Instant::now();
+    let scene = guarded(|| BlendImporter::import_blend_bytes_with_progress(data, progress))?;
+    settle(scene, name, started, progress)
+}
 
-    let scene = match parsed {
-        Ok(Ok(scene)) => scene,
-        Ok(Err(err)) => return Err(classify_native_error(err)),
-        Err(_panic) => {
-            return Err(SceneLoadError::Malformed(
-                "parser panicked while reading blend structure".to_string(),
-            ));
-        }
-    };
+/// Parse under `catch_unwind`, so a parser panic on a malformed file settles
+/// as [`SceneLoadError::Malformed`] rather than taking the host down.
+fn guarded(
+    read: impl FnOnce() -> crate::Result<crate::blend::BlendScene>,
+) -> Result<crate::blend::BlendScene, SceneLoadError> {
+    match std::panic::catch_unwind(std::panic::AssertUnwindSafe(read)) {
+        Ok(Ok(scene)) => Ok(scene),
+        Ok(Err(err)) => Err(classify_native_error(err)),
+        Err(_panic) => Err(SceneLoadError::Malformed(
+            "parser panicked while reading blend structure".to_string(),
+        )),
+    }
+}
 
-    // 3. Map to a SceneModel. A zero-object result is still a success.
+/// Map a parsed scene to a [`SceneModel`] and fill its report. A zero-object
+/// result is still a success.
+fn settle(
+    scene: crate::blend::BlendScene,
+    source: &str,
+    started: web_time::Instant,
+    progress: Progress,
+) -> Result<SceneModel, SceneLoadError> {
     if !progress(0.97, "Building scene") {
         return Err(SceneLoadError::Cancelled);
     }
-    let mut model = SceneModel::from_blend_owned(scene, &source_path);
+    let mut model = SceneModel::from_blend_owned(scene, source);
     model.report.duration_ms = started.elapsed().as_millis() as u64;
-    model.report.memory_bytes = scene_heap_bytes(&model);
+    model.report.memory_bytes = model.heap_bytes();
     progress(1.0, "Done");
     Ok(model)
 }
@@ -126,31 +178,20 @@ pub(super) fn blend_progressive(
     progress: Progress,
 ) -> Result<(SceneModel, Option<crate::scene::DeferredModifiers>), SceneLoadError> {
     let source_path = path.to_string_lossy().into_owned();
-    let started = std::time::Instant::now();
+    let started = web_time::Instant::now();
 
     if let Err(e) = std::fs::metadata(path) {
         return Err(SceneLoadError::Inaccessible(e.to_string()));
     }
 
-    let parsed = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        BlendImporter::import_blend_native_with_progress(path, progress)
-    }));
-    let scene = match parsed {
-        Ok(Ok(scene)) => scene,
-        Ok(Err(err)) => return Err(classify_native_error(err)),
-        Err(_panic) => {
-            return Err(SceneLoadError::Malformed(
-                "parser panicked while reading blend structure".to_string(),
-            ));
-        }
-    };
+    let scene = guarded(|| BlendImporter::import_blend_native_with_progress(path, progress))?;
 
     if !progress(0.97, "Building scene") {
         return Err(SceneLoadError::Cancelled);
     }
     let (mut model, deferred) = SceneModel::from_blend_progressive(scene, &source_path);
     model.report.duration_ms = started.elapsed().as_millis() as u64;
-    model.report.memory_bytes = scene_heap_bytes(&model);
+    model.report.memory_bytes = model.heap_bytes();
     progress(1.0, "Done");
     Ok((model, deferred))
 }
@@ -189,27 +230,4 @@ fn classify_native_error(err: crate::PointCloudError) -> SceneLoadError {
     } else {
         SceneLoadError::Malformed(msg)
     }
-}
-
-/// Approximate heap bytes held by the scene's mesh buffers (Blender's
-/// `MEM_get_memory_in_use` equivalent for the data we actually keep).
-fn scene_heap_bytes(model: &SceneModel) -> u64 {
-    let mut bytes: u64 = 0;
-    for obj in &model.objects {
-        let m = &obj.mesh;
-        bytes += (m.vertices.len() * std::mem::size_of::<[f32; 3]>()) as u64;
-        bytes += (m.indices.len() * std::mem::size_of::<u32>()) as u64;
-        bytes += match &m.normals {
-            crate::scene::SceneNormals::PerVertex(v) | crate::scene::SceneNormals::PerFace(v) => {
-                (v.len() * std::mem::size_of::<[f32; 3]>()) as u64
-            }
-        };
-        bytes += (m.corners.ids.len() * std::mem::size_of::<u32>()) as u64;
-        bytes += (m.corners.normals.len() * std::mem::size_of::<[f32; 3]>()) as u64;
-        bytes += (m.corners.colors.len() * std::mem::size_of::<[f32; 3]>()) as u64;
-        // UVs and material indices live on SceneObject, not SceneMesh.
-        bytes += (obj.uvs.len() * std::mem::size_of::<[f32; 2]>()) as u64;
-        bytes += (obj.material_indices.len() * std::mem::size_of::<u16>()) as u64;
-    }
-    bytes
 }

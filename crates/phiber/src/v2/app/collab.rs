@@ -129,26 +129,7 @@ pub fn broadcasts(action: &BAction) -> bool {
     let path = match action {
         BAction::Set(p, _) | BAction::Adjust(p, _) | BAction::Toggle(p) | BAction::Open(p) | BAction::Reset(p) => p,
     };
-    !is_local_only(&path.encode())
-}
-
-/// Keys that are each session's own, never sent: presence itself, open menus
-/// and dialogs, layout drags, the text caret, the viewport camera, the import
-/// machinery, the file browser, the status log and the chosen workspace.
-fn is_local_only(encoded: &str) -> bool {
-    encoded.starts_with("ctx.collab.")
-        || encoded.starts_with("ctx.menu.")
-        || encoded.starts_with("ctx.header.")
-        || encoded == "ctx.modal"
-        || encoded.starts_with("ctx.area_resize.")
-        || encoded == "ctx.edit"
-        || encoded == "ctx.edit_undo"
-        || encoded.starts_with("ctx.view3d.")
-        || encoded.starts_with("ctx.scene.load")
-        || encoded == "ctx.scene.loading"
-        || encoded.starts_with("ctx.file.")
-        || encoded.starts_with("ctx.status.")
-        || encoded == "ctx.space"
+    !super::local_keys::never_sent(&path.encode())
 }
 
 #[cfg(test)]

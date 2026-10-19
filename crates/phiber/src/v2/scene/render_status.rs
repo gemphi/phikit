@@ -4,7 +4,7 @@
 //! is fetched through `render_job::shot` only when its sequence moves.
 
 use super::render_job::{BRenderShot, job};
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -19,8 +19,11 @@ pub struct BRenderStatus {
     pub depth: bool,
     pub normal: bool,
     pub albedo: bool,
-    /// Bytes the shot's buffers hold — the `Mem:` of the info bar.
+    /// Bytes the shot's buffers hold, plus what the renderer is holding on
+    /// the device — the `Mem:` of the info bar.
     pub bytes: usize,
+    /// The most `bytes` has been this session — the info bar's `Peak:`.
+    pub peak: usize,
     /// The sequence number of the shot this describes.
     pub seq: u32,
 }
@@ -37,9 +40,12 @@ impl BRenderStatus {
             depth: !shot.depth.is_empty(),
             normal: !shot.normal.is_empty(),
             albedo: !shot.albedo.is_empty(),
-            bytes: shot.bgra.len()
-                + (shot.display.len() + shot.linear.len() + shot.albedo.len() + shot.normal.len()) * 12
-                + shot.depth.len() * 4,
+            bytes: held(
+                shot.bgra.len()
+                    + (shot.display.len() + shot.linear.len() + shot.albedo.len() + shot.normal.len()) * 12
+                    + shot.depth.len() * 4,
+            ),
+            peak: PEAK.load(Ordering::Relaxed) as usize,
             seq,
         }
     }
@@ -48,6 +54,36 @@ impl BRenderStatus {
     pub fn megabytes(&self) -> u64 {
         (self.bytes as u64).div_ceil(1024 * 1024)
     }
+
+    /// `Peak:` in whole megabytes.
+    pub fn peak_megabytes(&self) -> u64 {
+        (self.peak as u64).div_ceil(1024 * 1024)
+    }
+}
+
+/// Bytes the renderer is holding on the device, published by the render
+/// path (`Tracer::bytes`), and the most it has ever held.
+///
+/// `Mem:` used to count the shot's host-side buffers alone, which on a
+/// 2.4-million-triangle scene read **8M** while the card held hundreds of
+/// megabytes of tree, vertices and textures. Blender's `Mem:` is what the
+/// renderer holds, so this adds it. `Peak:` used to print the same number
+/// as `Mem:` — it was never a peak at all — and now keeps the high-water
+/// mark of the session, which is what Blender shows.
+static SCENE: AtomicU64 = AtomicU64::new(0);
+static PEAK: AtomicU64 = AtomicU64::new(0);
+
+/// What the renderer holds on the device now. Call when a tracer is built
+/// or dropped; `0` when there is none.
+pub fn set_scene_bytes(bytes: u64) {
+    SCENE.store(bytes, Ordering::Relaxed);
+}
+
+/// `shot` bytes plus the device's, with the peak kept.
+fn held(shot: usize) -> usize {
+    let total = shot as u64 + SCENE.load(Ordering::Relaxed);
+    PEAK.fetch_max(total, Ordering::Relaxed);
+    total as usize
 }
 
 /// The render in flight or the last one finished, described without a copy.

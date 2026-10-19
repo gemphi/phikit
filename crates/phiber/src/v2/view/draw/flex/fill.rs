@@ -13,6 +13,9 @@ use crate::v2::theme::{BColor, BSurfaceTone};
 use crate::v2::view::prim::BRowShade;
 use gpui::Background;
 
+/// The fraction of the control colour a node frame's box keeps.
+const NODE_FRAME_ALPHA: f32 = 0.5;
+
 /// What a container paints behind its children.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum BFill {
@@ -74,6 +77,12 @@ pub enum BFill {
     ItemHover,
     /// A control that is on: a pressed toggle, the active tab.
     ControlActive,
+    /// A node frame's box: the control shade at half alpha. A frame is a
+    /// backdrop, so it is mostly transparent and lets the canvas read
+    /// through, and the cards it groups sit on top of it
+    /// (`canvas::node::frame`, a recorded divergence from Blender's
+    /// per-frame `TH_NODE_FRAME` colour, which phiber does not parse).
+    NodeFrame,
 }
 
 impl BFill {
@@ -102,6 +111,10 @@ impl BFill {
             Self::RowHover(shade) => to_hsla(shade.hover(ctx.style, ctx.host)).into(),
             Self::ItemHover => to_hsla(ctx.style.host_item_hover(ctx.host)).into(),
             Self::ControlActive => to_hsla(ctx.style.colors.bg_active).into(),
+            Self::NodeFrame => {
+                let c = ctx.style.colors.bg_control;
+                to_hsla((c.0, c.1, c.2, NODE_FRAME_ALPHA)).into()
+            }
             Self::Floating => {
                 let base = to_hsla(ctx.style.step(ctx.style.colors.bg_panel, 1));
                 gpui::hsla(base.h, base.s, base.l, ctx.style.effects.floating_alpha).into()

@@ -201,3 +201,39 @@ async fn the_columns_are_one_gutter_apart_and_a_workspace_area_matches_the_dialo
         assert!((a - d).abs() < 0.51, "measure {n}: the area {in_area:?} and the dialog {in_dialog:?} lay the host out alike");
     }
 }
+
+/// The dialog and the editor area are ONE browser, differing only in where
+/// it is shown.
+///
+/// `BFileBrowserModal::build` raises `BHostItem::new(BHostType::File)` — the
+/// same host the workspace lays out — so the regions, their order and their
+/// rules come from one declaration. The only thing that knows the difference
+/// is the execute bar, and only about Cancel: in the dialog it closes the
+/// dialog, in an area it drops the purpose so the bar hides, which is
+/// Blender's own split (`file.cancel` in an area only clears
+/// `FileSelectParams`). This pins that, so a second browser cannot grow
+/// quietly out of the first.
+#[test]
+fn the_dialog_and_the_area_are_the_same_browser() {
+    use phiber::v2::host::{BHostItem, BHostType};
+    use phiber::v2::modal::file_browser::BFileBrowserModal;
+    use phiber::v2::view::layout::BRenderer;
+    use phiber::v2::view::text::BAsciiRenderer;
+    use phiber::v2::view::{BView, BViewItem};
+
+    let mut s = BState::new();
+    s.set(CtxKey::Space, "layout");
+    s.set(ModalKey::Open, V_MODAL_FILE_BROWSER);
+
+    // The view tree as text, which the ASCII renderer already writes for
+    // every node — a shape the two can be compared by.
+    let shape = |v: &BView| BAsciiRenderer.render(v, &s);
+    let via_modal = BFileBrowserModal.build(&s);
+    let via_host = BHostItem::new(BHostType::File).build(&s);
+    assert_eq!(
+        shape(&via_modal),
+        shape(&via_host),
+        "the dialog builds the File host, not a browser of its own",
+    );
+    assert!(!shape(&via_modal).is_empty(), "and it builds something");
+}

@@ -40,6 +40,12 @@ impl BFlex {
             BPlace::Anchor => element.relative(),
             BPlace::Overlay => element.absolute().inset_0(),
             BPlace::Drawer => element.absolute().bottom(gpui::relative(1.0)).left(gpui::Pixels::ZERO).right(gpui::Pixels::ZERO),
+            BPlace::Fraction { x, y, w, h } => element
+                .absolute()
+                .left(gpui::relative(x))
+                .top(gpui::relative(y))
+                .w(gpui::relative(w))
+                .h(gpui::relative(h)),
             BPlace::Float { side, inset, foot } => {
                 let d = px(inset.px(ctx));
                 let element = element.absolute().top(d).bottom(px(foot.px(ctx)));

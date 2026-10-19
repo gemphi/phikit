@@ -32,8 +32,20 @@ pub fn in_strip(ctx: &BRenderCtx) -> bool {
 ///
 /// Hover and active are unaffected: a control still lifts under the
 /// pointer and still fills when it is on, in every surface.
+/// Whether a control paints a ground at REST, rather than only on hover.
+///
+/// This used to be the activity rail alone, and the effect was that almost
+/// every icon in the app floated on nothing: a rail of bare glyphs, a
+/// render window whose side icons were a column of marks on a flat field.
+/// An icon with no ground has no hit target the eye can see, so the user
+/// has to hover to find out where the button is.
+///
+/// Now a ground is also painted wherever the caller asked for a tile
+/// (`ctx.floating`, which `button.rs` sets for every icon-only control).
+/// The shade itself is still the theme's: `bg_control`, which carries its
+/// own alpha, so the tile sits ON the panel rather than replacing it.
 pub fn rests(ctx: &BRenderCtx) -> bool {
-    ctx.host == BHostType::Activity
+    ctx.host == BHostType::Activity || ctx.floating
 }
 
 /// Paint one control: the accent at the opacity for its state.

@@ -64,11 +64,13 @@ impl RaySkin {
         let skin = Arc::new(RaySkin::default());
         let handle: Arc<dyn Skinner> = skin.clone();
         Phx::use_skinner(Some(handle));
-        let _ = std::thread::Builder::new()
-            .name("phiray.skin.warm".to_string())
-            .spawn(move || {
-                skin.ready();
-            });
+        // Declines in a browser, where there is no second thread and a
+        // WebGPU handle cannot leave this one; `run` then declines too and
+        // phiphx's CPU skinner does the work, which is the same fallback as
+        // a machine with no adapter.
+        crate::v2::app::offload::offload("phiray.skin.warm", move || {
+            skin.ready();
+        });
     }
 
     /// Always use the GPU, whatever the batch size (tests, benchmarks).

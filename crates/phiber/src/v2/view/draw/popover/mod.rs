@@ -32,7 +32,7 @@ enum BPopoverPart {
     /// The floating panel: a card's frame at the overlay elevation. Bounded
     /// on both axes, so neither a long host list nor a wide one runs past the
     /// area it opened in.
-    Panel { two_column: bool },
+    Panel { two_column: bool, width: BPopoverWidth },
     /// The rows inside it, as a card body holds its rows: the frame gutter on
     /// all four sides and one gap between them. It scrolls — `empty` keeps an
     /// opened submenu with nothing in it visible instead of collapsing to
@@ -47,10 +47,47 @@ enum BPopoverPart {
     Anchor,
 }
 
+/// How wide a popover starts — one token, picked from the side it opens on,
+/// rather than a width hand-set per declaring site.
+///
+/// Blender's header popovers run from `UI_POPOVER_WIDTH_UNITS` (10 widget
+/// units, 200px — the default a panel with no `bl_ui_units_x` gets, which is
+/// what `OUTLINER_PT_filter` is) up to the 14 its biggest take
+/// (`space_view3d.py`'s Overlays and Gizmos). Phiber takes the top of that
+/// band for all of them, because 14 units is 280px, which is also a side
+/// zone's default width: a header popover in a side zone then spans its
+/// header exactly, and its leading edge lands on the header's first icon
+/// instead of somewhere inside the row.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum BPopoverWidth {
+    /// A menu, a property dropdown, a submenu, the switcher's picker: one
+    /// panel wide, so the dropdowns in a strip share a width instead of each
+    /// sizing to its own longest label.
+    Panel,
+    /// A header popover: one side zone wide.
+    Header,
+}
+
+impl BPopoverWidth {
+    fn of(side: BPopoverSide) -> Self {
+        match side {
+            BPopoverSide::BelowEnd => Self::Header,
+            BPopoverSide::Below | BPopoverSide::Switcher | BPopoverSide::Right => Self::Panel,
+        }
+    }
+
+    fn least(self) -> BDim {
+        match self {
+            Self::Panel => BDim::PanelWidth,
+            Self::Header => BDim::SideZoneDefaultWidth,
+        }
+    }
+}
+
 impl BFlexed for BPopoverPart {
     fn flex(&self, ctx: &BRenderCtx) -> BFlex {
         match *self {
-            Self::Panel { two_column } => {
+            Self::Panel { two_column, width } => {
                 let wide = ctx.style.dimensions.panel_width * 2.0;
                 let panel = BFlex::column()
                     .fill(BFill::Tone(BSurfaceTone::Card))
@@ -62,8 +99,9 @@ impl BFlexed for BPopoverPart {
                     )))
                     // Every dropdown is at least one panel wide, so the menus
                     // in a strip share a width instead of each sizing to its
-                    // own longest label; content may grow it further.
-                    .min_width(BLen::Dim(BDim::PanelWidth))
+                    // own longest label; a header popover is one side zone
+                    // wide (`BPopoverWidth`). Content may grow either further.
+                    .min_width(BLen::Dim(width.least()))
                     // As tall as its rows need, or as the window allows,
                     // whichever is less — and it scrolls past that.
                     //
@@ -168,50 +206,5 @@ pub fn view(
     BPopover { anchor, body, open, close, side }.render(ctx)
 }
 
-impl BPopover<'_> {
-    pub fn render(&self, ctx: &BRenderCtx) -> AnyElement {
-        if !self.open {
-            return walk(self.anchor, ctx);
-        }
-        // `BelowEnd` is the host switcher, the one popover with its own
-        // two-column picker; every other side adopts the panel width so a
-        // dropdown reads as a continuation of the button that opened it.
-        let two_column = self.side == BPopoverSide::BelowEnd;
-        let mut content = BPopoverPart::Content { empty: self.body.is_empty() }
-            .flex(ctx)
-            .scroller(gpui::SharedString::from("popover-content"), ctx);
-        match two_column.then(|| self.switcher_columns(ctx)).flatten() {
-            Some(columns) => content = content.child(columns),
-            None => {
-                for item in self.body {
-                    content = content.child(walk(item, ctx));
-                }
-            }
-        }
-        let panel = BPopoverPart::Panel { two_column }
-            .flex(ctx)
-            .div(ctx)
-            .id(gpui::SharedString::from("popover-panel"))
-            .debug_selector(|| "popover-panel".to_string())
-            .child(content);
-        // Blender closes a menu block once the pointer strays far enough from
-        // it (`BLOCK_MOVEMOUSE_QUIT`). `BLeave` records where the panel and
-        // anchor were painted; its backdrop asks on every click and move, and
-        // sits BEHIND the panel, which occludes so its own clicks never reach
-        // it. That is also what gives every enum picker "select item → the
-        // popover closes" without a compound action.
-        let leave = leave::BLeave::default();
-        let panel = panel.child(leave.panel_probe());
-        let backdrop = leave.backdrop(&ctx.handler, self.close);
-        let placement = self.placement(ctx);
-        let opened = placement.origin().child(placement.anchor(panel.into_any_element()));
-        BPopoverPart::Anchor
-            .flex(ctx)
-            .div(ctx)
-            .child(walk(self.anchor, ctx))
-            .child(leave.anchor_probe())
-            .child(deferred(backdrop))
-            .child(deferred(opened))
-            .into_any_element()
-    }
-}
+#[path = "render.rs"]
+mod render;

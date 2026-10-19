@@ -3,6 +3,12 @@
 //! edited text itself lives in `BState` (under the field's own key) and only
 //! the caret travels here.
 //!
+//! It lives at the app level, beside `app/input.rs`, because the caret lives
+//! on `BPhiberApp` and nothing in `state/` reads it: the state level holds the
+//! store, the keys and the rules, and `state/edit.rs` — which field HAS the
+//! caret and what each key does to the value — is the part of this that does
+//! belong there (`tests/rule_budget.rs`).
+//!
 //! Offsets are byte indices into the field's current value. The platform text
 //! system speaks UTF-16, so the conversions here bridge the two; boundaries
 //! step one grapheme cluster at a time (as gpui's example does, via

@@ -45,6 +45,19 @@ impl BRenderEngine {
         }
     }
 
+    /// The identifier the state and a `.blend` both spell it with — the
+    /// inverse of [`Self::of`], so a value read out of the Engine row and
+    /// one written into it agree. The row stores identifiers
+    /// (`props::render`'s `ENGINE`), not labels.
+    pub fn ident(self) -> &'static str {
+        match self {
+            Self::Eevee => "BLENDER_EEVEE_NEXT",
+            Self::Workbench => "BLENDER_WORKBENCH",
+            Self::Cycles => "CYCLES",
+            Self::Phiray => "PHIRAY",
+        }
+    }
+
     /// The name shown in the Info report and the Engine row.
     pub fn label(self) -> &'static str {
         match self {

@@ -110,7 +110,7 @@ fn a_cards_canvas_size_rides_its_absolute_wrapper_not_the_inner_card() {
     // That collapse is what drew the node graph as bare sockets and wires with
     // no card bodies at all. A source check, because the mistake is in which
     // div carries the dimension, and that reads straight off the source.
-    let src = include_str!("set.rs");
+    let src = include_str!("card.rs");
     let card_fn = src.split("fn card(").nth(1).expect("the card builder");
     let card_fn = &card_fn[..card_fn.find("\npub fn render").unwrap_or(card_fn.len())];
     // The wrapper (`placed`) carries the canvas fractions.

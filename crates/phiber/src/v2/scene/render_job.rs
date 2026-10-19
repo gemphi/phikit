@@ -133,6 +133,14 @@ pub struct BRenderPlan {
     pub h: u32,
     pub samples: u32,
     pub denoise: bool,
+    /// Adaptive Sampling, resolved against Cycles' automatic rules at plan
+    /// time (`BAdaptive::of`): `[threshold, min samples, step, on]`. It is
+    /// resolved here, on the main thread, because the rules read the
+    /// render panel — the render thread has no state to read.
+    pub adapt: [f32; 4],
+    /// Render ▸ Sampling ▸ Time Limit, seconds; `0` is none. Only the
+    /// path tracer honours it, as with `adapt`.
+    pub time_limit: f32,
     /// How the frame is drawn: the path tracer for EEVEE and Cycles, or —
     /// `BLENDER_WORKBENCH` — Solid / Wireframe with `Scene.display.shading`,
     /// as Blender's Workbench render engine draws F12 (`workbench_render.cc`).
@@ -169,7 +177,38 @@ pub fn plan_at(model: &SceneModel, set: BRenderSet, look: &BRayLook, plain: gpui
     let lens = super::BCameraLens::of(cam).focused_at(focus);
     let (still_look, samples, denoise) = crate::v2::view::draw::canvas::view3d::rendered::BStillLook::for_engine(model, set, lens, &mut camera, plain);
     let region = crate::v2::view::draw::canvas::view3d::rendered::BStillRegion { pixels: set.border.pixels(w, h), crop: set.border.crop };
-    Some(BRenderPlan { camera, w, h, samples, denoise, look: still_look, region })
+    // Adaptive Sampling, resolved while the panel is still readable. Only
+    // the path tracer honours it; Workbench's own anti-aliasing count is
+    // not a sample count in this sense.
+    let adapt = {
+        let a = super::render_set::BAdaptive::of(&set, samples);
+        let traced = still_look.shading == crate::v2::scene::BShading::Rendered;
+        if a.use_it && traced {
+            [a.threshold, a.min_samples as f32, a.step as f32, 1.0]
+        } else {
+            [0.0; 4]
+        }
+    };
+    // WHICH ENGINE DREW THIS FRAME, said plainly, where the engine is
+    // actually known.
+    //
+    // Properties ▸ Render ▸ Engine offers Cycles and EEVEE and phiber
+    // runs neither: a `.blend` naming them is a preference, and the frame
+    // is path traced by phiray (`BRenderQuality::ENGINE`). That is a
+    // defensible design, but nothing on screen or in the log said so, so
+    // anyone comparing a phiber frame with a Cycles frame of the same
+    // file had no way to know they were not comparing like with like
+    // (`cycles-vs-phiray.md`).
+    {
+        use crate::v2::scene::render_engine::BRenderEngine;
+        let drew = if still_look.shading == crate::v2::scene::BShading::Rendered { "phiray" } else { "Workbench" };
+        crate::v2::app::journal::BJournal::note(match set.engine {
+            BRenderEngine::Phiray | BRenderEngine::Workbench => format!("Render engine: {drew}, {samples} samples"),
+            other => format!("Render engine: {drew}, {samples} samples — the panel asks for {other:?}, which phiber does not have"),
+        });
+    }
+    let time_limit = if still_look.shading == crate::v2::scene::BShading::Rendered { set.time_limit } else { 0.0 };
+    Some(BRenderPlan { camera, w, h, samples, denoise, adapt, time_limit, look: still_look, region })
 }
 
 // ---------------------------------------------------------------------------
@@ -248,7 +287,7 @@ pub(crate) struct BJob {
     /// tell a new frame from the one it already drew.
     pub(crate) seq: AtomicU32,
     /// When the render in flight (or the last one) began, for the info bar.
-    pub(super) started: Mutex<Option<std::time::Instant>>,
+    pub(super) started: Mutex<Option<web_time::Instant>>,
     /// How long the last finished render took — Blender's
     /// `RenderStats.lastframetime`, which `pipeline.cc:1510` sets ONCE as
     /// `BLI_time_now_seconds() - starttime` when the frame ends, and
@@ -258,6 +297,10 @@ pub(crate) struct BJob {
     /// header said `Finished` while the clock kept running — 36 minutes on a
     /// render that took seconds, because nothing had rendered since.
     pub(super) took: Mutex<Option<std::time::Duration>>,
+    /// Why the last render produced no image, when it did not — the reason
+    /// `still_stepwise` refused (`note_failure`), so the Render Result can
+    /// say it where the picture would be instead of "No render".
+    failure: Mutex<Option<String>>,
 }
 
 pub(super) fn job() -> &'static Arc<BJob> {
@@ -287,6 +330,19 @@ impl BJob {
         }
         self.seq.fetch_add(1, Ordering::Relaxed);
     }
+}
+
+/// The tracer refused the render, or the scene reached it empty: keep the
+/// reason for the Render Result's placeholder (`BRenderPhase::Failed`).
+pub fn note_failure(why: impl Into<String>) {
+    if let Ok(mut failure) = job().failure.lock() {
+        *failure = Some(why.into());
+    }
+}
+
+/// Why the last render produced nothing, if it did not.
+pub fn failure() -> Option<String> {
+    job().failure.lock().ok().and_then(|f| f.clone())
 }
 
 /// Whether a render is under way.
@@ -366,14 +422,27 @@ pub fn forget() {
 /// polls. That is what lets the Rendering space show progress instead of
 /// freezing for the minutes a full-resolution render takes.
 pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
+    start_in(objects, plan, super::source::BSceneScope::here());
+}
+
+/// The same, with the scene scope to adopt on the render thread.
+///
+/// The scope is thread-local and belongs to the draw pass; a render runs on
+/// its own thread and had none of it, so anything the build reads from it —
+/// the world's environment image above all — came back empty there
+/// (`source::BSceneScope`).
+pub fn start_in(objects: Vec<BObject3D>, plan: BRenderPlan, scope: super::source::BSceneScope) {
     let j = job().clone();
     if j.running.swap(true, Ordering::SeqCst) {
         return;
     }
     j.cancel.store(false, Ordering::Relaxed);
     j.paused.store(false, Ordering::Relaxed);
+    if let Ok(mut failure) = j.failure.lock() {
+        *failure = None;
+    }
     if let Ok(mut started) = j.started.lock() {
-        *started = Some(std::time::Instant::now());
+        *started = Some(web_time::Instant::now());
     }
     // A new frame has no time yet: the bar counts up again until it finishes.
     if let Ok(mut took) = j.took.lock() {
@@ -395,11 +464,16 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
     publish(BRenderShot { w: ow, h: oh, target: plan.samples, ..Default::default() });
     std::thread::spawn(move || {
         use crate::v2::view::draw::canvas::view3d::rendered::still_stepwise;
+        // The draw pass's scene scope, carried over: without it the build
+        // on this thread sees no loaded model, uploads no environment
+        // image, and the camera — built on the main thread, where the
+        // scope was up — samples a slot nothing filled.
+        scope.adopt();
         let publish = publish;
         // A GPU validation error inside the tracer unwinds this thread; the
         // job must not stay "running" for ever (`BRunning`).
         let _running = super::render_fit::BRunning(j.clone());
-        let began = std::time::Instant::now();
+        let began = web_time::Instant::now();
         let (w, h) = plan.region.size(plan.w, plan.h);
         let mut kept: (Vec<u8>, Vec<[f32; 3]>, Vec<[f32; 3]>, Vec<[f32; 3]>, Vec<[f32; 3]>, Vec<f32>) = Default::default();
         let out = still_stepwise(
@@ -410,6 +484,8 @@ pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
             plan.h,
             plan.samples,
             plan.denoise,
+            plan.adapt,
+            plan.time_limit,
             plan.region,
             // The image KEPT between readbacks: most steps carry only a
             // count (`BStillAt::Counting`), and publishing those with empty

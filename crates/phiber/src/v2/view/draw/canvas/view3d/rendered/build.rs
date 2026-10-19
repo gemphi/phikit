@@ -5,7 +5,7 @@ use super::scene;
 use crate::v2::scene::BObject3D;
 use phiray::{Gpu, Tracer};
 use std::sync::Mutex;
-use std::time::Instant;
+use web_time::Instant;
 
 /// The tracer for `objects`, built afresh; a scene the device cannot hold
 /// is listed as refused (the painter falls back). The journal says what it

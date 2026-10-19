@@ -167,7 +167,7 @@ impl BViewItem for BSwitcher {
             body,
             open,
             BAction::Set(open_key, V_EMPTY.to_string()),
-            BPopoverSide::BelowEnd,
+            BPopoverSide::Switcher,
         )
     }
 }

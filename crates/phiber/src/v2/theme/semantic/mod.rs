@@ -174,8 +174,18 @@ impl BResolvedUiStyle {
     /// every surface while gradients are on and flat where not, so a
     /// heading lifts off its rows by the same step in every theme — a
     /// panel's over its card, a sub-panel's over its well.
+    /// A heading's surface: a lift off the surface it sits on that lands
+    /// back ON it, so its lower edge meets the body with nothing between
+    /// them and the shade disappears into its parent.
+    ///
+    /// It took the sheen over `step(surface, 1)` — a whole step above the
+    /// body, with the gradient running from a step above THAT down to it —
+    /// so the heading never reached the body's colour and every panel had a
+    /// seam across it where the two met. The sweep is the thing that says
+    /// "heading" in a gradient theme; the step was saying it a second time,
+    /// in a flat band, and paying for it with an edge.
     pub fn heading_surface(&self, tone: BSurfaceTone) -> BGradientColors {
-        self.sheen(self.step(self.surface(tone).bottom, 1))
+        self.sheen(self.surface(tone).bottom)
     }
 
     /// The canvas: the palette's viewport token, opaque, flat.

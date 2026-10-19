@@ -203,12 +203,10 @@ async fn a_menu_too_tall_for_the_window_scrolls_instead_of_squashing_its_rows(cx
     });
     cx.run_until_parked();
 
-    let row_height = phiber::v2::theme::ui_style_defaults_in(
-        phiber::v2::theme::BPaletteName::DEFAULT,
-        phiber::v2::theme::BThemeMode::DEFAULT,
-    )
-    .dimensions
-    .row_height;
+    // A menu row is the compact `MENU_ROW` (the button less its head room),
+    // not the module a content row is: a long menu is a list of labels, and
+    // Blender's menus are tighter than its property rows. `BDim::MenuRow`.
+    let row_height = phiber::v2::theme::style::metric::MENU_ROW;
     let panel = bounds(cx, &["popover-panel"], "the open File menu");
     let first = bounds(cx, &["menu-New"], "the menu's first row");
 
@@ -221,7 +219,7 @@ async fn a_menu_too_tall_for_the_window_scrolls_instead_of_squashing_its_rows(cx
         .collect();
     assert!(rows.len() >= 10, "the File menu's rows are painted: {}", rows.len());
     for (sel, h) in &rows {
-        assert!((h - row_height).abs() < 0.5, "{sel} is {h}, and a row is {row_height}");
+        assert!((h - row_height).abs() < 0.5, "{sel} is {h}, and a menu row is {row_height}");
     }
     // The panel is held to the window rather than to its own content, so the
     // rows past the fold are clipped and reachable by scrolling.

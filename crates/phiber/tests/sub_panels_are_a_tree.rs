@@ -78,9 +78,18 @@ fn each_level_is_recessed_a_step_and_its_heading_a_step_over_its_well() {
         let heading = |tone| step(style.heading_surface(tone).bottom);
         assert_eq!(well(1), card, "{name:?}: a sub-panel shares its panel's shade — no darker strip");
         assert_eq!(well(2), card, "{name:?}: at every depth");
-        assert_eq!(heading(BSurfaceTone::Card), card + 1, "{name:?}: a panel heading is a step over its card");
-        assert_eq!(heading(BSurfaceTone::Nested(1)), well(1) + 1, "{name:?}: a sub-panel heading a step over its well");
-        assert_eq!(heading(BSurfaceTone::Nested(2)), well(2) + 1, "{name:?}: at every level");
+        // A heading's gradient STARTS on the card under it and sweeps a step
+        // up from there: its bottom stop is its parent's own shade, so the
+        // shading disappears into the parent and there is no seam across the
+        // panel where the two meet. The step is the sweep's top, not a flat
+        // band under it — taking the sheen over `step(surface, 1)` was saying
+        // "heading" twice and paying for it with an edge.
+        let top = |tone| step(style.heading_surface(tone).top);
+        for (tone, well) in [(BSurfaceTone::Card, card), (BSurfaceTone::Nested(1), well(1)), (BSurfaceTone::Nested(2), well(2))] {
+            assert_eq!(heading(tone), well, "{name:?}: a heading starts on the shade under it");
+            let wanted = well + u8::from(style.effects.gradients);
+            assert_eq!(top(tone), wanted, "{name:?}: and sweeps a step up when the theme sweeps");
+        }
         let swept = style.heading_surface(BSurfaceTone::Nested(1));
         assert_eq!(swept.enabled, style.effects.gradients, "{name:?}: swept when the theme sweeps");
     }

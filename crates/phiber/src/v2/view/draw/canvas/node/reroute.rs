@@ -23,10 +23,10 @@ use super::{drag, socket};
 
 use crate::phiphx::blend::shade::graph::BlendNode;
 use crate::v2::state::{BKey as _, NodeKey};
-use crate::v2::view::draw::color::to_hsla;
+use crate::v2::view::draw::flex::{BEdge, BFlex, BInk, BPlace, BRadius};
 use crate::v2::view::prim::BAction;
 use gpui::prelude::*;
-use gpui::{AnyElement, ClickEvent, SharedString, div, px};
+use gpui::{AnyElement, ClickEvent, SharedString};
 use std::rc::Rc;
 
 /// The transparent hit square a reroute is selected and dragged by, centred on
@@ -51,21 +51,17 @@ pub fn handle(
         socket::DOT * size.unit / view.width(),
         socket::DOT * size.unit / view.height(),
     );
-    let mut square = div()
-        .id(SharedString::from(format!("node-{id}")))
-        .absolute()
-        .left(gpui::relative(at.0 - half.0))
-        .top(gpui::relative(at.1 - half.1))
-        .w(gpui::relative(half.0 * 2.0))
-        .h(gpui::relative(half.1 * 2.0))
-        .rounded_full();
-    if selected {
-        // Blender draws a selected reroute's socket with the selection outline;
-        // a ring in the accent round the dot is the readable stand-in here.
-        square = square
-            .border(px(ctx.style.strokes.border * 2.0))
-            .border_color(to_hsla(ctx.style.colors.accent));
-    }
+    // Blender draws a selected reroute's socket with the selection outline; a
+    // ring in the accent round the dot is the readable stand-in here, so the
+    // only difference between a selected square and a plain one is the edge.
+    let flex = BFlex::cell()
+        .place(BPlace::Fraction { x: at.0 - half.0, y: at.1 - half.1, w: half.0 * 2.0, h: half.1 * 2.0 })
+        .radius(BRadius::Pill);
+    let flex = match selected {
+        true => flex.border(BEdge::Ring(BInk::Accent)),
+        false => flex,
+    };
+    let square = flex.div(ctx).id(SharedString::from(format!("node-{id}")));
     let handler = ctx.handler.clone();
     let action = BAction::Set(NodeKey::Selected(ctx.host).path(), id.clone());
     let clickable = square.on_click(move |_e: &ClickEvent, w, cx| {

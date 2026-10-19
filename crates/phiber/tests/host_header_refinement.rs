@@ -41,11 +41,11 @@ fn popup_columns(view: &BView) -> (&[BView], &[BView]) {
     let BView::Popover {
         body,
         open: true,
-        side: BPopoverSide::BelowEnd,
+        side: BPopoverSide::Switcher,
         ..
     } = view
     else {
-        panic!("switcher must be an opened, right-aligned popover")
+        panic!("switcher must be an opened two-column picker popover")
     };
     let [BView::Row { list }] = body.as_slice() else {
         panic!("switcher body must have one two-column row")
@@ -206,8 +206,52 @@ fn every_declared_host_header_leads_with_its_switcher_and_keeps_its_mode_control
                     "{host:?} lost its mode control (it sits beside the switcher)"
                 );
             }
+
+            // Left, centre, right — the same three cells in every header, and
+            // the same thing in each: what the editor IS on the left, what you
+            // are LOOKING FOR in the middle, how it is FILTERED on the right
+            // (`part::filter`'s header note). So search is never anywhere but
+            // the centre pane, and the filter never anywhere but the right —
+            // a control that drifted into the left cell would read as part of
+            // the editor's identity.
+            for (part, home) in [(BPartType::Search, BPaneType::Center), (BPartType::Filter, BPaneType::Right)] {
+                for pane in [BPaneType::Left, BPaneType::Center, BPaneType::Right] {
+                    let count = parts(pane).filter(|v| is(v, part)).count();
+                    let allowed = usize::from(pane == home);
+                    assert!(
+                        count <= allowed,
+                        "{host:?} header puts {part:?} in its {pane:?} pane; it belongs in {home:?}"
+                    );
+                }
+            }
         }
     }
+}
+
+/// The header row itself: the three panes sit at the start, the centre and
+/// the end, stated as `BJustify::Between` rather than left to the centre
+/// pane's growth — a host with nothing in its middle paints no Center pane,
+/// which stranded its right-hand controls mid-row. Both the one-line header
+/// and the wrapping top bar say it, so the rule does not depend on width.
+#[test]
+fn a_header_row_pushes_its_right_cell_to_the_right() {
+    let region = source("view/draw/region/mod.rs");
+    let rows = region
+        .split("let flex = match (axis, kind.placement()) {")
+        .nth(1)
+        .expect("the region's row flex")
+        .split("(BAxis::Row, _) => BFlex::row(),")
+        .next()
+        .expect("the header arms come before the plain row");
+    assert_eq!(
+        rows.matches("justify(BJustify::Between)").count(),
+        2,
+        "both header arms — wrapping and not — must push their right cell to the right"
+    );
+    // And the right cell never gives its width up, at any window size: the
+    // zone toggles and the window controls stay reachable.
+    let pane = source("view/draw/pane.rs");
+    assert!(pane.contains("cell.keeps_size().min_width(BLen::Measured(floor)).justify(BJustify::End)"));
 }
 
 #[test]
@@ -222,9 +266,22 @@ fn host_switch_popup_opens_inside_its_area() {
         &BState::new(),
     );
     assert_eq!(
-        BPlacement::corner_for(BPopoverSide::BelowEnd, &style),
+        BPlacement::corner_for(BPopoverSide::Switcher, &style),
         gpui::Anchor::TopLeft,
         "the switcher must open into its area, not out of it"
+    );
+    // A header popover's trigger sits at the OTHER end of the header, so
+    // "into its area" is the other corner: trailing edges flush, growing
+    // back across the header rather than off the edge of the host.
+    assert_eq!(
+        BPlacement::corner_for(BPopoverSide::BelowEnd, &style),
+        gpui::Anchor::TopRight,
+        "a header popover must grow back across its header"
+    );
+    assert_eq!(
+        BPlacement::corner_for(BPopoverSide::Below, &style),
+        gpui::Anchor::TopLeft,
+        "a menubar drop still hangs from its trigger's leading edge"
     );
     // Every popover resolves its side through the one placement rule, so a
     // trigger with no room on its preferred side flips instead of clipping.

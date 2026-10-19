@@ -79,6 +79,14 @@ pub struct BImageView {
     pub status: Option<BRenderStatus>,
     /// Which image (`sima->image`): the Render Result or a named one.
     pub shown: crate::v2::part::image::shown::BShownImage,
+    /// Whether the render up has been written to a file — what separates
+    /// `Finished` from `Saved` (`scene::render_phase`).
+    pub saved: bool,
+    /// What the screen is showing, as one value: the eight states and what
+    /// each is grounded in are `scene::render_phase`. Read here, where the
+    /// job's signals are, so everything downstream agrees and a test can set
+    /// the state it means.
+    pub phase: crate::v2::scene::BRenderPhase,
 }
 
 impl BImageView {
@@ -87,13 +95,21 @@ impl BImageView {
         let zoom = s.get(&ImageKey::Zoom.path()).and_then(|v| if v == ZOOM_FIT { None } else { v.parse::<f32>().ok() });
         let fit = s.get(&ImageKey::Zoom.path()) == Some(ZOOM_FIT);
         let read = |key: ImageKey| s.get(&key.path()).and_then(|v| v.parse::<f32>().ok()).unwrap_or(0.0);
+        let status = if shown == crate::v2::part::image::shown::BShownImage::RenderResult { render_status::status() } else { None };
+        let saved = s.get(&ImageKey::SavedTo.path()).is_some_and(|p| !p.is_empty());
         Self {
             zoom: if fit { None } else { Some(zoom.unwrap_or(1.0)) },
             pan: (read(ImageKey::PanX), read(ImageKey::PanY)),
             channels: BChannels::of(chosen(s, ImageKey::Channels, CHANNEL_DEFAULT)),
             pass: chosen(s, ImageKey::Pass, COMBINED).to_string(),
             slot_filled: crate::v2::scene::render_slot::BRenderSlot::filled(crate::v2::scene::render_slot::BRenderSlot::active()),
-            status: if shown == crate::v2::part::image::shown::BShownImage::RenderResult { render_status::status() } else { None },
+            status,
+            saved,
+            phase: {
+                use crate::v2::scene::render_job;
+                let camera = crate::v2::scene::source::with_loaded(|m| m.is_some_and(|m| render_job::active_camera(m).is_some()));
+                crate::v2::scene::render_phase(status, render_job::rendering(), render_job::paused(), render_job::cancelled(), camera, saved)
+            },
             shown,
         }
     }
@@ -129,9 +145,24 @@ impl BImage {
         let scene = (ctx.state.get(crate::v2::state::CtxKey::Scene).unwrap_or("Scene").to_string(), ctx.state.get(crate::v2::state::CtxKey::ViewLayer).unwrap_or("ViewLayer").to_string());
         let frame = ctx.state.get(crate::v2::state::CtxKey::Frame).unwrap_or("1").to_string();
         let dragged = ctx.state.get(ImageKey::BorderRect).and_then(crate::v2::scene::boxsel::dragged_of);
-        // How far the info line must start in to clear the floating tool
-        // strip over the canvas's left edge (`paint_info`).
-        let info_clear = ctx.style.dimensions.toolbar_width + ctx.style.spacing.pad_sm;
+        // How far the info line must hold off each edge to clear the
+        // strips phiber floats over the canvas (`paint_info`). The Toolbar
+        // is always there on the left; the Sidebar is on the right only
+        // while it is open, and it is wider — with no inset for it the
+        // bar's right-anchored group (the sample count) was drawn under
+        // the panel and could not be seen at all.
+        // The canvas element runs the full width of the editor and the
+        // Toolbar and Sidebar are *floated over* it, so its bounds say
+        // nothing about where the clear space is — the line is simply
+        // painted underneath them. Both insets come from the panes
+        // themselves (`pane::floating_width`) rather than from the
+        // minimum-width tokens, which is what left the right-hand group
+        // under an open Sidebar: the token says 160, the Sidebar in force
+        // was over 650.
+        let info_clear = (
+            crate::v2::view::draw::pane::floating_width(false, ctx) + ctx.style.spacing.pad_sm,
+            crate::v2::view::draw::pane::floating_width(true, ctx) + ctx.style.spacing.pad_sm,
+        );
         let ink = crate::v2::view::draw::color::to_hsla(ctx.style.view_overlay());
         let back = crate::v2::view::draw::color::to_hsla(ctx.style.viewport_surface());
         // The 0..1 square the gesture picks over, set by the painter: it is

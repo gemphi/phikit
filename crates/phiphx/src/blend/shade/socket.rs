@@ -21,7 +21,8 @@
 //! | `name[64]` | what the row prints |
 //! | `type` | `eNodeSocketDatatype` — decides the socket's colour |
 //! | `flag` | `eNodeSocketFlag`: `SOCK_UNAVAIL`, `SOCK_HIDDEN`, … |
-//! | `in_out` | input or output; the lists already separate them |
+//! | `in_out` | input or output; the lists already separate them
+//! | `display_shape` | `eNodeSocketDisplayShape` — the shape it is DRAWN as |
 //!
 //! `type` is read through `int_field` rather than at a fixed width because it is
 //! a C++ enum in 5.x and was a `short` in older files, so the DNA is the only
@@ -49,6 +50,14 @@ pub struct BlendSocket {
     /// output takes 4095. That one number is why dropping a link on a
     /// connected input replaces what is there instead of adding to it.
     pub limit: i32,
+    /// `bNodeSocket.display_shape`, an `eNodeSocketDisplayShape`
+    /// (`DNA_node_types.h:116`): circle 0, square 1, diamond 2, the three
+    /// `_DOT` variants 3–5, line 6, volume grid 7, list 8. It is what the
+    /// editor draws the socket AS, and it is a different question from
+    /// `kind`, which is what colours it: a Geometry Nodes field input is a
+    /// diamond whatever its type, and a socket carrying a single value is a
+    /// circle. Defaults to circle, as the DNA member does.
+    pub display_shape: i32,
     /// The saved address, so a link can name this end.
     pub address: u64,
     /// `bNodeSocket.default_value` — the value an UNCONNECTED input shows in its
@@ -81,6 +90,19 @@ pub const SOCK_HIDDEN: i32 = 1 << 1;
 pub const SOCK_IS_LINKED: i32 = 1 << 2;
 pub const SOCK_UNAVAIL: i32 = 1 << 3;
 pub const SOCK_MULTI_INPUT: i32 = 1 << 11;
+
+/// `eNodeSocketDisplayShape` (`DNA_node_types.h:116–126`) — all nine, in
+/// their declared order, which is the order the GPU shader's `switch` takes
+/// them in (`gpu_shader_2D_node_socket_frag.glsl`).
+pub const SOCK_DISPLAY_SHAPE_CIRCLE: i32 = 0;
+pub const SOCK_DISPLAY_SHAPE_SQUARE: i32 = 1;
+pub const SOCK_DISPLAY_SHAPE_DIAMOND: i32 = 2;
+pub const SOCK_DISPLAY_SHAPE_CIRCLE_DOT: i32 = 3;
+pub const SOCK_DISPLAY_SHAPE_SQUARE_DOT: i32 = 4;
+pub const SOCK_DISPLAY_SHAPE_DIAMOND_DOT: i32 = 5;
+pub const SOCK_DISPLAY_SHAPE_LINE: i32 = 6;
+pub const SOCK_DISPLAY_SHAPE_VOLUME_GRID: i32 = 7;
+pub const SOCK_DISPLAY_SHAPE_LIST: i32 = 8;
 
 impl BlendSocket {
     /// `bNodeSocket::is_available` (`BKE_node_runtime.hh:1024`) — exactly
@@ -157,6 +179,12 @@ impl BlendFile {
                     kind,
                     flag: self.int_field(s, "bNodeSocket", "flag", dna) as i32,
                     limit: self.int_field(s, "bNodeSocket", "limit", dna) as i32,
+                    // A `char` enum in the DNA, so `int_field` reads its one
+                    // byte; a file old enough not to carry the member at all
+                    // gets the circle the member itself defaults to.
+                    display_shape: self
+                        .off("bNodeSocket", "display_shape", dna)
+                        .map_or(SOCK_DISPLAY_SHAPE_CIRCLE, |_| self.int_field(s, "bNodeSocket", "display_shape", dna) as i32),
                     address: s.old_address,
                     default: self.socket_default(s, kind, dna),
                 }
@@ -198,70 +226,6 @@ impl BlendFile {
         }
     }
 }
-
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn sock(flag: i32) -> BlendSocket {
-        BlendSocket { flag, ..Default::default() }
-    }
-
-    #[test]
-    fn an_unavailable_socket_is_the_one_the_layout_skips() {
-        // `is_available` is exactly one bit, and it is the bit that decides
-        // whether a socket takes a row — so a node in single-operand mode is
-        // shorter than the same node in two-operand mode.
-        assert!(sock(0).available());
-        assert!(!sock(SOCK_UNAVAIL).available());
-        // Being linked, or selected, is not being unavailable.
-        assert!(sock(SOCK_IS_LINKED).available());
-        assert!(sock(1).available(), "SOCK_SELECT is not SOCK_UNAVAIL");
-    }
-
-    #[test]
-    fn a_hidden_socket_is_available_but_not_drawn() {
-        // The two are separate bits and mean separate things: hidden is the
-        // user's choice (Ctrl+H), unavailable is the node type's.
-        let hidden = sock(SOCK_HIDDEN);
-        assert!(hidden.available(), "hiding a socket does not make it unavailable");
-        assert!(!hidden.visible());
-        assert!(sock(0).visible());
-    }
-
-    #[test]
-    fn the_flag_bits_are_blenders_own_values() {
-        // Spelt out, because a wrong shift here silently hides every socket or
-        // shows every disabled one, and both look like a layout bug.
-        assert_eq!(SOCK_HIDDEN, 2);
-        assert_eq!(SOCK_IS_LINKED, 4);
-        assert_eq!(SOCK_UNAVAIL, 8);
-        assert_eq!(SOCK_MULTI_INPUT, 2048);
-    }
-
-    #[test]
-    fn a_multi_input_socket_says_so() {
-        assert!(sock(SOCK_MULTI_INPUT).multi());
-        assert!(!sock(SOCK_IS_LINKED).multi());
-    }
-
-    #[test]
-    fn an_input_takes_one_link_and_an_output_takes_four_thousand() {
-        // `sock->limit = (in_out == SOCK_IN ? 1 : 0xFFF)` at creation
-        // (`node.cc:3090`). The asymmetry is the whole reason a link dropped on
-        // a connected input replaces it: one in, many out.
-        let input = BlendSocket { limit: 1, ..Default::default() };
-        let output = BlendSocket { limit: 0xFFF, ..Default::default() };
-        assert_eq!(input.link_limit(), 1);
-        assert_eq!(output.link_limit(), 4095);
-        assert_eq!(0xFFF, MULTI_INPUT_LIMIT, "an output's default IS the multi limit");
-    }
-
-    #[test]
-    fn a_multi_input_ignores_its_stored_limit() {
-        // The first thing `node_socket_link_limit` checks, before the type and
-        // before the field — a Join Geometry input is stored with limit 1.
-        let joined = BlendSocket { limit: 1, flag: SOCK_MULTI_INPUT, ..Default::default() };
-        assert_eq!(joined.link_limit(), MULTI_INPUT_LIMIT);
-    }
-}
+#[path = "socket_tests.rs"]
+mod tests;

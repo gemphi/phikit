@@ -161,22 +161,29 @@ impl BImageView {
             let view = self;
         let status = view.status?;
         let time = render_status::timecode(render_status::elapsed());
-        let progress = match (status.done, crate::v2::scene::render_job::paused()) {
-            (true, _) => "Finished".to_string(),
-            (_, true) => format!("Paused at sample {}/{}", status.taken, status.target),
-            _ => format!("Sample {}/{}", status.taken, status.target),
-        };
+        // The tail is the phase's own line, so the bar cannot disagree with
+        // the canvas or the header about what the screen is showing
+        // (`scene::render_phase` lists the eight and what each is grounded
+        // in). It read `(done, paused())` here and had three answers for
+        // eight states.
+        let progress = view.phase.info(status.taken, status.target);
         Some(format!("Frame:{frame} | Time:{time} | Mem:{m}M, Peak: {m}M | {}, {} | {progress}", scene.0, scene.1, m = status.megabytes()))
     }
 
     /// `draw_render_info`: the bar across the top of the window.
     ///
-    /// `clear` is how far in the text must start to clear the floating tool
+    /// `clear` is how far in from each edge the text must start to clear
+    /// the floating panes — left and right, measured from the panes
+    /// themselves (`pane::floating_width`), not from the minimum-width
+    /// tokens. The token says 160; an open Sidebar is over 650, which is
+    /// what put the right-hand group off the end of the bar.
+    ///
+    /// The older note follows: how far in the text must start to clear the floating tool
     /// strip. Blender draws this into the image *region*, which does not
     /// include the Toolbar; phiber floats the Toolbar over the canvas, so
     /// without the inset the strip is painted over the front of the line and
     /// the render window read `1 | Time:…` with `Frame:` hidden behind it.
-    pub fn paint_info(&self, scene: &(String, String), frame: &str, text: BColor, dim: BColor, at: Bounds<Pixels>, clear: f32, window: &mut Window, cx: &mut App) {
+    pub fn paint_info(&self, scene: &(String, String), frame: &str, text: BColor, dim: BColor, at: Bounds<Pixels>, clear: (f32, f32), window: &mut Window, cx: &mut App) {
             let view = self;
         let Some(line) = view.info_text(scene, frame) else { return };
         let bar = Bounds::new(at.origin, size(at.size.width, px(INFO_BAR_HEIGHT)));
@@ -188,7 +195,7 @@ impl BImageView {
         let run = TextRun { len: line.len(), font: window.text_style().font(), color: to_hsla(text), background_color: None, underline: None, strikethrough: None };
         let shaped = window.text_system().shape_line(SharedString::from(line), px(FONT), &[run], None);
         let line_height = px(FONT * 1.3);
-        let origin = point(at.origin.x + px(INFO_INSET + clear), at.origin.y + px(INFO_BAR_HEIGHT / 2.0) - line_height / 2.0);
+        let origin = point(at.origin.x + px(INFO_INSET + clear.0), at.origin.y + px(INFO_BAR_HEIGHT / 2.0) - line_height / 2.0);
         let _ = shaped.paint(origin, line_height, gpui::TextAlign::Left, None, window, cx);
     }
 
@@ -210,52 +217,5 @@ impl BImageView {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn channels_and_passes_pick_the_bytes_blender_shows() {
-        let shot = BRenderShot { w: 1, h: 1, bgra: vec![10, 20, 30, 128], depth: vec![0.5], normal: vec![[1.0, 0.0, -1.0]], albedo: vec![[0.0, 1.0, 0.0]], ..Default::default() };
-        assert_eq!(pixels(&shot, "Combined", BChannels::Color), vec![10, 20, 30, 255]);
-        assert_eq!(pixels(&shot, "Combined", BChannels::ColorAlpha), vec![10, 20, 30, 128]);
-        assert_eq!(pixels(&shot, "Combined", BChannels::Alpha), vec![128, 128, 128, 255]);
-        assert_eq!(pixels(&shot, "Combined", BChannels::Red), vec![30, 30, 30, 255]);
-        assert_eq!(pixels(&shot, DEPTH, BChannels::Color), vec![0, 0, 0, 255], "one hit is the nearest, so black");
-        assert_eq!(pixels(&shot, NORMAL, BChannels::Color), vec![0, 0, 255, 255], "a negative component clips to black");
-        assert_eq!(pixels(&shot, DIFFUSE_COLOR, BChannels::Green), vec![255, 255, 255, 255]);
-    }
-
-    #[test]
-    fn the_data_passes_are_read_for_the_eye() {
-        // Three pixels: near, far, and a miss.
-        let shot = BRenderShot {
-            w: 3,
-            h: 1,
-            bgra: vec![0; 12],
-            depth: vec![2.0, 6.0, 1e10],
-            normal: vec![[0.0, 1.0, 0.0], [0.0, 1.0, 0.0], [0.7, 0.0, 0.3]],
-            albedo: vec![[1.0, 0.0, 0.0]; 3],
-            ..Default::default()
-        };
-        let depth = pixels(&shot, DEPTH, BChannels::ColorAlpha);
-        assert_eq!(&depth[0..4], &[0, 0, 0, 255], "the nearest hit is black");
-        assert_eq!(&depth[4..8], &[255, 255, 255, 255], "the farthest is white, not clipped past a metre");
-        assert_eq!(&depth[8..12], &MISS, "and nothing hit is the field, clear");
-        let normal = pixels(&shot, NORMAL, BChannels::Color);
-        assert_eq!(&normal[0..4], &[0, 255, 0, 255]);
-        assert_eq!(&normal[8..12], &[128, 128, 128, 255], "the kernel's leftover behind the scene is not shown as a normal");
-        assert_eq!(&pixels(&shot, DIFFUSE_COLOR, BChannels::Color)[8..12], &[128, 128, 128, 255]);
-    }
-
-
-    #[test]
-    fn the_info_bar_reads_as_blenders() {
-        let mut view = BImageView { zoom: None, pan: (0.0, 0.0), channels: BChannels::Color, pass: "Combined".into(), slot_filled: true, status: None, shown: crate::v2::part::image::shown::BShownImage::RenderResult };
-        assert_eq!(view.info_text(&("Scene".into(), "ViewLayer".into()), "1"), None, "no render, no bar");
-        view.status = Some(render_status::BRenderStatus { w: 4, h: 4, taken: 3, target: 8, done: false, has_image: true, depth: false, normal: false, albedo: false, bytes: 64, seq: 1 });
-        let text = view.info_text(&("Scene".into(), "ViewLayer".into()), "12").unwrap();
-        assert!(text.starts_with("Frame:12 | Time:") && text.ends_with("| Mem:1M, Peak: 1M | Scene, ViewLayer | Sample 3/8"), "{text}");
-        view.status.as_mut().unwrap().done = true;
-        assert!(view.info_text(&("Scene".into(), "ViewLayer".into()), "12").unwrap().ends_with("| Finished"));
-    }
-}
+#[path = "set_tests.rs"]
+mod tests;

@@ -8,6 +8,9 @@ use crate::v2::state::BPath;
 pub enum SceneKey {
     /// `"true"` while a .blend is being read; absent otherwise.
     Loading,
+    /// Where a resumed session stashes its playhead, so the reopen's
+    /// `settle_import` lands on it rather than on the file's saved frame.
+    ResumeFrame,
     /// The stage label the progress screen shows.
     LoadStage,
     /// 0..1, the progress bar.
@@ -74,6 +77,7 @@ impl BKey for SceneKey {
     fn path(&self) -> BPath {
         let tail: &'static str = match self {
             Self::Loading => "loading",
+            Self::ResumeFrame => "resume_frame",
             Self::LoadStage => "load_stage",
             Self::LoadProgress => "load_progress",
             Self::LoadCancel => "load_cancel",

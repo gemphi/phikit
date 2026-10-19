@@ -29,8 +29,12 @@ use gpui::prelude::*;
 use gpui::{AnyElement, SharedString};
 
 enum BCardPart {
-    /// The card: backdrop and outline, per kind.
-    Frame(BCardKind),
+    /// The card: backdrop and outline, per kind. `open` is whether a
+    /// FOLDING card is unfolded — a bare accordion takes a border while its
+    /// rows are showing, so where its contents start and stop is visible
+    /// against whatever it sits on, and gives it back when it folds away.
+    /// Without it a column of open plain accordions runs together.
+    Frame { kind: BCardKind, open: bool },
     /// The heading strip; `open` decides which corners it rounds.
     Head { kind: BCardKind, open: bool },
     /// A fixed-size slot in the header: the triangle, the grip.
@@ -58,15 +62,12 @@ fn corner(ctx: &BRenderCtx) -> f32 {
 impl BFlexed for BCardPart {
     fn flex(&self, ctx: &BRenderCtx) -> BFlex {
         match self {
-            Self::Frame(kind) => {
+            Self::Frame { kind, open } => {
                 let column = BFlex::column().width(BLen::Full);
                 match kind {
                     // No clipping: a dropdown opened from a row has to escape
                     // the card (`file_browser_accordion_refinement`).
-                    BCardKind::Panel => column
-                        .radius(BRadius::Role(BStyleRole::Card))
-                        .border(BEdge::All)
-                        .fill(panel_fill(ctx)),
+                    BCardKind::Panel => column.radius(BRadius::Role(BStyleRole::Card)).border(BEdge::All).fill(panel_fill(ctx)),
                     // A sub-panel is its parent's card again, one shade in:
                     // no indent and no guide down its left edge. Both marked
                     // it out as a different kind of thing, when the whole
@@ -76,6 +77,13 @@ impl BFlexed for BCardPart {
                     BCardKind::Sub { depth } => column
                         .radius(BRadius::Role(BStyleRole::Card))
                         .fill(BFill::Tone(BSurfaceTone::Nested(*depth))),
+                    // A plain accordion with its rows showing takes a
+                    // border, so the open one reads apart from its
+                    // neighbours; closed, it is a row of text again. The
+                    // Properties editor's transparent rows are bare cards
+                    // that do not fold, so `open` is false there and they
+                    // keep their outer border alone.
+                    BCardKind::Bare if *open => column.border(BEdge::All).radius(BRadius::Role(BStyleRole::Card)),
                     BCardKind::Bare | BCardKind::Strip(_) | BCardKind::Column(_) => column,
                 }
             }
@@ -268,7 +276,7 @@ impl BCardView<'_> {
 fn draw(card: &BCard, ctx: &BRenderCtx) -> AnyElement {
     let name = slot(card);
     let headless = card.head.is_none();
-    let mut frame = tagged(BCardPart::Frame(card.kind).flex(ctx).div(ctx), format!("card-{name}"));
+    let mut frame = tagged(BCardPart::Frame { kind: card.kind, open: card.fold.as_ref().is_some_and(|f| f.open) }.flex(ctx).div(ctx), format!("card-{name}"));
     if let Some(head) = head(card, &name, ctx) {
         frame = frame.child(head);
     }

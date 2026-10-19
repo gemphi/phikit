@@ -15,6 +15,10 @@ fn search_fields(v: &BView, out: &mut Vec<BAction>) {
     match v {
         BView::SearchField { on_change, .. } => out.push(on_change.clone()),
         BView::Row { list } | BView::Column { list } => list.iter().for_each(|c| search_fields(c, out)),
+        // The popover's groups are accordions now (`part::filter::fold`), so
+        // the field lives one card deep: a walk that stopped at rows found
+        // nothing and read as the field having been dropped.
+        BView::Card(card) => card.body.iter().for_each(|c| search_fields(c, out)),
         BView::Part { body, .. } => search_fields(body, out),
         BView::Shared(rc) => search_fields(rc, out),
         _ => {}

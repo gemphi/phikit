@@ -85,7 +85,9 @@ impl BRule for BRenderDeviceRule {
         if pick.is_some() && pick == Gpu::in_use() {
             return GpuAdapters::prefer(preferred);
         }
-        let _ = std::thread::Builder::new().name("phiray.switch".to_string()).spawn(move || Gpu::switch(preferred));
+        crate::v2::app::offload::offload("phiray.switch", move || {
+            Gpu::switch(preferred);
+        });
     }
 }
 

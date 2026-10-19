@@ -13,21 +13,19 @@ use crate::phiphx::blend::shade::graph::{BlendNode, BlendNodeLink};
 use crate::v2::state::{BKey as _, NodeKey};
 use crate::v2::view::draw::ctx::BRenderCtx;
 use crate::v2::view::prim::BAction;
+use crate::v2::view::draw::flex::{BFlex, BPlace};
 use gpui::prelude::*;
-use gpui::{div, AnyElement, ClickEvent, SharedString};
+use gpui::{AnyElement, ClickEvent, SharedString};
 use std::rc::Rc;
 
 /// A canvas-level clickable `div` at a fraction rect, running `action` on click
 /// and stopping propagation so the card beneath neither selects nor drags.
 fn target(id: String, at: (f32, f32), size: (f32, f32), action: BAction, ctx: &BRenderCtx) -> AnyElement {
     let handler = ctx.handler.clone();
-    div()
+    BFlex::cell()
+        .place(BPlace::Fraction { x: at.0, y: at.1, w: size.0, h: size.1 })
+        .div(ctx)
         .id(SharedString::from(id))
-        .absolute()
-        .left(gpui::relative(at.0))
-        .top(gpui::relative(at.1))
-        .w(gpui::relative(size.0))
-        .h(gpui::relative(size.1))
         .on_click(move |_e: &ClickEvent, w, cx| {
             cx.stop_propagation();
             (Rc::clone(&handler))(&action, w, cx);

@@ -51,6 +51,7 @@ fn an_input_sits_on_the_left_edge_and_an_output_on_the_right() {
         identifier: "x".into(),
         name: "x".into(),
         kind: 0,
+        shape: 0,
         side,
         y: 1.0,
         default: None,

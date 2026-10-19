@@ -9,7 +9,7 @@
 //! shading.
 
 use phiray::{Gpu, Tracer};
-use std::time::Instant;
+use web_time::Instant;
 
 /// Whether this render thread has already started the compiles.
 pub(super) struct BWarmed(bool);
@@ -27,7 +27,7 @@ impl BWarmed {
         }
         self.0 = true;
         let gpu = gpu.clone();
-        let _ = std::thread::Builder::new().name("phiray.warm".into()).spawn(move || {
+        crate::v2::app::offload::offload("phiray.warm", move || {
             let at = Instant::now();
             let each: Vec<String> = Tracer::warm(&gpu).into_iter().map(|(name, ms)| format!("{name} {ms:.0}")).collect();
             crate::v2::app::journal::BJournal::note(format!("Tracer: kernels compiled in {:.0}ms ({})", at.elapsed().as_secs_f64() * 1000.0, each.join(", ")));

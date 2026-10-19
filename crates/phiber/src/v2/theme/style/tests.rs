@@ -39,9 +39,13 @@ fn every_theme_owns_its_radius_scale_effects_and_seam() {
         assert_eq!((light.radii, light.effects, light.resize.gap), (radii, effects, gap), "{name:?}");
         assert!(light.colors.ladder.light && !defaults.colors.ladder.light, "{name:?}");
         assert_eq!(light.colors.ladder, super::super::palette::palette_in(name, BThemeMode::Light).ladder, "{name:?}");
-        // Sphere's scale is the one the interface was drawn on.
+        // The default theme's scale is the one the interface was drawn on,
+        // so it is pinned here and cannot drift unnoticed. It followed the
+        // default from Sphere (SOFT) to Silver; the scale is read from the
+        // name rather than spelled out, so moving the default again fails
+        // here instead of silently redrawing every corner in the app.
         if name == BPaletteName::DEFAULT {
-            assert_eq!(radii, BRadiusScale::rungs(4.0, 7.0, 10.0, 14.0, 18.0));
+            assert_eq!(radii, MEDIUM_RADII, "the default theme is {:?}", BPaletteName::DEFAULT);
         }
     }
 }

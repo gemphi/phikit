@@ -143,9 +143,20 @@ impl BViewItem for BFilter {
             BHostType::Buts => crate::v2::part::props::options::view(s),
             // The animation editors share one filter; the NLA swaps one box.
             host if filters_channels(host) => dope::view(s, host == BHostType::Nla),
-            // The node editors, the Sequencer, the Image and UV editors, the
-            // Movie Clip editor and the Spreadsheet end their headers with a
-            // popover of boxes, as every other editor does (`overlay`).
+            // A node editor's header ends with the Flat / Spatial radio and
+            // then its overlay popover — the view toggle is a display control,
+            // so it sits where the 3D viewport's shading radio sits
+            // (`canvas/node/spatial/mode.rs`).
+            BHostType::Node | BHostType::Shader | BHostType::Compositor | BHostType::GeoNode => {
+                let controls = vec![
+                    crate::v2::view::draw::canvas::node::spatial::BNodeMode::radio(s, self.host),
+                    overlay::view(s, self.host),
+                ];
+                if is_narrow(s) { folded(s, self.host, controls) } else { BView::row(controls) }
+            }
+            // The Sequencer, the Image and UV editors, the Movie Clip editor
+            // and the Spreadsheet end their headers with a popover of boxes, as
+            // every other editor does (`overlay`).
             host if overlay::has_overlay(host) => overlay::view(s, host),
             // The file browsers: display mode, hidden files, the filter and
             // its popover — Blender's header, right of the spacer.

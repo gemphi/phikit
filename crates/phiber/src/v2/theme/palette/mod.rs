@@ -103,7 +103,12 @@ impl BPaletteName {
     pub const MAX: usize = 16;
 
     /// The palette applied when no theme has been chosen.
-    pub const DEFAULT: BPaletteName = BPaletteName::Sphere;
+    ///
+    /// Silver, because it is the grey the manual's figures are drawn in
+    /// (`manual::wave::BWave::SILVER`): a figure and the screen it was
+    /// taken from are then the same colour, and the cascade that makes
+    /// phiber's wave series reads the same on the page as in the editor.
+    pub const DEFAULT: BPaletteName = BPaletteName::Silver;
 
     pub fn label(self) -> &'static str {
         match self {

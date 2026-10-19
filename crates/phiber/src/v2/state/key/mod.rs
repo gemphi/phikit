@@ -56,6 +56,24 @@ use super::BPath;
 /// Anything that names a state path.
 pub trait BKey {
     fn path(&self) -> BPath;
+
+    /// The family this key belongs to: everything up to and including the dot
+    /// after the domain, so `ctx.file.path` gives `ctx.file.` and one answer
+    /// covers every key under it. A key only one segment deep (`ctx.modal`)
+    /// has no family below it and stands for itself, which is why the result
+    /// is matched by `ends_with('.')` at the call site rather than always
+    /// being a prefix.
+    ///
+    /// This is here so that no one has to WRITE a domain prefix: the domain
+    /// name lives in the key enum and nowhere else (`tests/key_budget.rs`),
+    /// and a list of families is a list of keys.
+    fn family(&self) -> String {
+        let encoded = self.path().encode();
+        match encoded.match_indices('.').nth(1) {
+            Some((at, _)) => encoded[..=at].to_string(),
+            None => encoded,
+        }
+    }
 }
 
 impl BKey for BPath {

@@ -107,11 +107,11 @@ pub fn settle_import(state: &mut BState, outcome: ImportOutcome) -> Option<Scene
             // Session resume keeps the playhead you left, not the file's saved
             // frame (the session is newer than the last save). Clamped into the
             // scene's range so a resumed frame past the file's end is valid.
-            if let Some(frame) = state.get_encoded(super::session::RESUME_FRAME).and_then(|f| f.parse::<i64>().ok()) {
+            if let Some(frame) = state.get_encoded(super::session::resume_frame().as_str()).and_then(|f| f.parse::<i64>().ok()) {
                 let lo = model.timeline.frame_start as i64;
                 let hi = model.timeline.frame_end as i64;
                 state.set(crate::v2::state::CtxKey::Frame, frame.clamp(lo.min(hi), lo.max(hi)).to_string());
-                state.remove_encoded(super::session::RESUME_FRAME);
+                state.remove_encoded(super::session::resume_frame().as_str());
             }
             match &model.source_path {
                 Some(path) => state.set(&loaded_path_key(), path.clone()),

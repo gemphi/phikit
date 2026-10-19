@@ -335,10 +335,14 @@ fn the_activity_bar_takes_the_toolbars_treatment() {
     )
     .expect("semantic style");
     // Both rest on the control shade; only what happens under the pointer
-    // separates them.
+    // separates them. The floating variant takes that shade at
+    // `control_rest_alpha` — the knob that was declared, given a value and
+    // never read until it was wired, which is what this last line pinned
+    // when it still read `return Some(self.colors.bg_control)` whole.
     assert!(semantic.contains("BControlState::Rest => self.colors.bg_control,"));
     assert!(semantic.contains("BControlState::Active => self.colors.accent,"));
-    assert!(semantic.contains("BControlState::Rest => return Some(self.colors.bg_control)"));
+    assert!(semantic.contains("let (hue, saturation, lightness, alpha) = self.colors.bg_control;"));
+    assert!(semantic.contains("alpha * self.effects.control_rest_alpha"));
 }
 
 /// A module is a file or a folder; read whichever spelling exists.

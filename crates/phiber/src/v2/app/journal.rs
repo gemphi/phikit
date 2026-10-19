@@ -11,7 +11,7 @@
 use crate::v2::state::log;
 use std::io::Write;
 use std::sync::Mutex;
-use std::time::Instant;
+use web_time::Instant;
 
 /// Forwards `log` crate records into the journal (`BJournal::bridge_log`), at
 /// Info and above so the GPU adapter line is kept without the debug/trace flood.

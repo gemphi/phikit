@@ -58,17 +58,37 @@ pub fn stop(s: &mut BState) {
     s.set(AppKey::EditUndo, "");
 }
 
-/// The typed fields, by encoded key: Return on one of these re-applies its
-/// value as a normal `Set` so everything watching the key still fires.
+/// The path behind an edited field's encoded key: Return on a field
+/// re-applies its value as a normal `Set` so everything watching the key
+/// still fires.
+///
+/// The named four are matched first so they keep their exact `'static`
+/// segments; anything else — a property row, a number button — is rebuilt
+/// from the encoded string. It used to be the four and nothing else, which
+/// meant Return on a property field confirmed the caret away without ever
+/// dispatching the write, so typing a value into Max Samples could not take
+/// effect even once the keys reached it.
 pub fn field_path(encoded: &str) -> Option<BPath> {
-    [
+    let known = [
         FileKey::Path.path(),
         FileKey::Search.path(),
         crate::v2::state::AppKey::CommandQuery.path(),
         crate::v2::state::AppKey::RenameText.path(),
     ]
     .into_iter()
-    .find(|p| p.encode() == encoded)
+    .find(|p| p.encode() == encoded);
+    known.or_else(|| rebuilt(encoded))
+}
+
+/// `ctx.a.b.c` back into a `BPath`. Segments are interned (`path::intern`)
+/// because a `BPath` holds `&'static str` and these names are only known at
+/// runtime; the pool leaks each distinct name at most once.
+fn rebuilt(encoded: &str) -> Option<BPath> {
+    let rest = encoded.strip_prefix("ctx.")?;
+    if rest.is_empty() {
+        return None;
+    }
+    Some(BPath::owned(rest.split('.').map(super::path::intern).collect()))
 }
 
 /// Apply one key to the edited field. `key` is GPUI's key name ("a", "space",
@@ -119,6 +139,20 @@ mod tests {
         for ch in text.chars() {
             assert_eq!(key(s, &ch.to_string(), Some(&ch.to_string())), BEdit::Typed);
         }
+    }
+
+    #[test]
+    fn a_property_row_is_a_field_too() {
+        // The four named fields keep resolving.
+        let search = FileKey::Search.path();
+        assert_eq!(field_path(&search.encode()), Some(search));
+        // And so does a key nothing named ahead of time: a property row's
+        // own path, which is what Max Samples is.
+        let samples = BPath::of(&["buts", "cycles", "samples"]);
+        assert_eq!(field_path(&samples.encode()), Some(samples));
+        // Not a field key at all.
+        assert_eq!(field_path("ctx"), None);
+        assert_eq!(field_path(""), None);
     }
 
     #[test]

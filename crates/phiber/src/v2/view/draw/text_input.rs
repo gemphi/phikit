@@ -9,14 +9,16 @@
 //! `BPhiberApp` (`app::input`), not on a per-field entity.
 
 use crate::v2::app::BPhiberApp;
+use super::color::to_hsla;
+use super::ctx::BRenderCtx;
 use gpui::{
     App, Bounds, Element, ElementId, ElementInputHandler, Entity, FocusHandle, GlobalElementId,
     Hsla, LayoutId, PaintQuad, Pixels, ShapedLine, SharedString, Style, TextRun, UnderlineStyle,
     Window, fill, point, prelude::*, px, relative, size,
 };
 
-/// The text content of the active field, with its caret. Built by `search.rs`
-/// for the field that holds the caret.
+/// The text content of the active field, with its caret. Built through
+/// [`BFieldText::of`] by whichever control holds the caret.
 pub struct BFieldText {
     pub app: Entity<BPhiberApp>,
     pub focus: FocusHandle,
@@ -28,12 +30,47 @@ pub struct BFieldText {
     pub caret: Hsla,
     pub selection: Hsla,
     pub font_size: Pixels,
+    /// The caret's own width, and the IME underline's thickness: the theme's
+    /// hairline, as every other one-pixel rule in the app takes it. They were
+    /// written here as `px(1.5)` and `px(1.0)` — the two places the field drew
+    /// a line whose weight nothing else could reach.
+    pub hairline: Pixels,
 }
 
 pub struct BFieldPrepaint {
     line: Option<ShapedLine>,
     cursor: Option<PaintQuad>,
     selection: Option<PaintQuad>,
+}
+
+impl BFieldText {
+    /// The caret-bearing element for whatever field holds the caret, dressed
+    /// from the theme.
+    ///
+    /// `None` when the pass has no window behind it — a headless render or a
+    /// test — which is the caller's cue to draw the plain `value|` fallback
+    /// instead. Both the search field and the number button build their typed
+    /// state through this: the search field had the only copy, which is why
+    /// the number button, having no copy, could not be typed into at all.
+    pub fn of(value: &str, placeholder: &str, ctx: &BRenderCtx) -> Option<Self> {
+        let (app, focus) = ctx.input.clone()?;
+        let mut selection = ctx.style.colors.accent;
+        selection.3 = 0.30;
+        let mut placeholder_color = ctx.style.colors.text;
+        placeholder_color.3 = (placeholder_color.3 * 0.45).clamp(0.0, 1.0);
+        Some(Self {
+            app,
+            focus,
+            content: SharedString::from(value.to_string()),
+            placeholder: SharedString::from(placeholder.to_string()),
+            text: to_hsla(ctx.style.colors.text),
+            placeholder_color: to_hsla(placeholder_color),
+            caret: to_hsla(ctx.style.colors.accent),
+            selection: to_hsla(selection),
+            font_size: px(ctx.style.typography.body),
+            hairline: px(ctx.style.strokes.hairline),
+        })
+    }
 }
 
 impl IntoElement for BFieldText {
@@ -104,7 +141,7 @@ impl Element for BFieldText {
                 TextRun { len: m.start, ..run.clone() },
                 TextRun {
                     len: m.end - m.start,
-                    underline: Some(UnderlineStyle { color: Some(run.color), thickness: px(1.0), wavy: false }),
+                    underline: Some(UnderlineStyle { color: Some(run.color), thickness: self.hairline, wavy: false }),
                     ..run.clone()
                 },
                 TextRun { len: display.len() - m.end, ..run.clone() },
@@ -125,7 +162,7 @@ impl Element for BFieldText {
                 Some(fill(
                     Bounds::new(
                         point(bounds.left() + x, bounds.top()),
-                        size(px(1.5), bounds.bottom() - bounds.top()),
+                        size(self.hairline, bounds.bottom() - bounds.top()),
                     ),
                     self.caret,
                 )),

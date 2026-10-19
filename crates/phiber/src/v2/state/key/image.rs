@@ -43,6 +43,13 @@ pub enum ImageKey {
     /// (`part::filter::overlay`), shared with the UV editor as Blender shares
     /// `SpaceImageEditor.overlay` between the two.
     Gizmo,
+    /// The file the render up was written to, if it has been
+    /// (`scene::render_save`). Stills "must be saved manually from the
+    /// render buffer" (`render/output/animation`), so whether this one has
+    /// been is a state of the buffer worth reporting — it is the difference
+    /// between `Finished` and `Saved` (`scene::render_phase`). A new render
+    /// clears it, since the picture it described is gone.
+    SavedTo,
 }
 
 impl BKey for ImageKey {
@@ -62,6 +69,7 @@ impl BKey for ImageKey {
             Self::Pass => "pass",
             Self::Channels => "channels",
             Self::Gizmo => "gizmo",
+            Self::SavedTo => "saved_to",
         };
         BPath::owned(vec!["image", tail])
     }

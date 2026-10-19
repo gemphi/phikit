@@ -49,12 +49,56 @@ fn rust_files(root: &Path, out: &mut Vec<PathBuf>) {
         if path.is_dir() {
             rust_files(&path, out);
         } else if path.extension().and_then(|ext| ext.to_str()) == Some("rs") {
-            out.push(path);
+            // A sibling `*_tests.rs` is a test module in a file of its own
+            // (`#[path] mod …_tests`), not a renderer: a fixture's `px(12.0)`
+            // is the number the assertion is ABOUT, so reading it as a design
+            // literal asks the test to launder its own inputs through the
+            // style system.
+            let is_test_module =
+                path.file_name().and_then(|name| name.to_str()).is_some_and(|name| name.ends_with("_tests.rs"));
+            if !is_test_module {
+                out.push(path);
+            }
         }
     }
 }
 
+/// `source` with its `#[cfg(test)]` module blanked out, so a fixture's own
+/// numbers are not read as design literals. A test's `px(200.0)` is the value
+/// the assertion is ABOUT — a bounds it builds to drive a hit test — and
+/// asking it to come from the style would mean the test could no longer state
+/// the number it is checking. The same reason `rust_files` skips a sibling
+/// `*_tests.rs`: the module is a test either way, in the file or beside it.
+fn without_tests(source: &str) -> String {
+    let Some(at) = source.find("#[cfg(test)]") else {
+        return source.to_string();
+    };
+    let Some(brace) = source[at..].find('{').map(|offset| at + offset) else {
+        return source.to_string();
+    };
+    let mut depth = 0usize;
+    let mut out = source[..at].to_string();
+    for (offset, byte) in source[brace..].bytes().enumerate() {
+        match byte {
+            b'{' => depth += 1,
+            b'}' => {
+                depth -= 1;
+                if depth == 0 {
+                    // Keep the lines, lose the code: the violation line
+                    // numbers below are counted in the ORIGINAL source.
+                    out.extend(source[at..brace + offset + 1].chars().map(|c| if c == '\n' { '\n' } else { ' ' }));
+                    out.push_str(&without_tests(&source[brace + offset + 1..]));
+                    return out;
+                }
+            }
+            _ => {}
+        }
+    }
+    out
+}
+
 fn code_only(source: &str) -> String {
+    let source = &without_tests(source);
     let bytes = source.as_bytes();
     let mut out = bytes.to_vec();
     let (mut at, mut block_depth) = (0, 0usize);
@@ -192,6 +236,9 @@ fn relative_mechanics_allowed(path: &str) -> bool {
         path,
         "flex/apply.rs"
             | "flex/place.rs"
+            // A gpui `Element` laying out its own line box: `relative(1.)` is
+            // "fill the width you are given", the mechanics this allows for.
+            | "text_input.rs"
             | "canvas/image.rs"
             | "canvas/node.rs"
             | "canvas/view3d/mod.rs"

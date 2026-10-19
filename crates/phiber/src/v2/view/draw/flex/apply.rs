@@ -168,12 +168,16 @@ impl BFlex {
             Some(BEdge::Ink(ink)) => {
                 element = element.border(px(ctx.style.strokes.hairline)).border_color(ink.color(ctx))
             }
+            Some(BEdge::Ring(ink)) => {
+                element = element.border(px(ctx.style.strokes.border * 2.0)).border_color(ink.color(ctx))
+            }
             None => {}
         }
         match self.radius {
             Some(BRadius::Role(role)) => element = element.rounded(px(ctx.style.radius_for(role))),
             Some(BRadius::All(r)) => element = element.rounded(px(r)),
             Some(BRadius::Top(r)) => element = element.rounded_t(px(r)),
+            Some(BRadius::Pill) => element = element.rounded_full(),
             Some(BRadius::Corners { tl, tr, bl, br, radius }) => {
                 let r = px(radius);
                 if tl {

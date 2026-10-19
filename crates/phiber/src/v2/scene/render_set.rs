@@ -15,6 +15,14 @@ use crate::v2::state::{
     val::{BValue, BValueKind},
 };
 
+/// Resolving the panel's adaptive rows lives next door; it stayed
+/// reachable here because that is where callers already look for it.
+pub use super::render_adaptive::BAdaptive;
+
+/// Colour management moved to its own file for the same reason; callers
+/// still reach it through here.
+pub use super::render_color::BColorManagement;
+
 /// The render settings phiray honours.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BRenderSet {
@@ -26,6 +34,21 @@ pub struct BRenderSet {
     pub diffuse_bounces: u32,
     /// `cycles.use_denoising`.
     pub denoise: bool,
+    /// `cycles.use_adaptive_sampling`, `cycles.adaptive_threshold` and
+    /// `cycles.adaptive_min_samples` as the file holds them — **before**
+    /// Cycles' automatic rules are applied to them. `BAdaptive::of`
+    /// resolves them; these three are the raw rows, so a `0` here still
+    /// means "automatic", as the panel shows it.
+    pub adaptive: bool,
+    pub adaptive_threshold: f32,
+    pub adaptive_min_samples: u32,
+    /// `cycles.time_limit`: seconds a final render may take, `0` for no
+    /// limit. Cycles (`session.cpp`, `Session::run_main_render_loop`)
+    /// stops after the sample batch that crosses it, whatever Max Samples
+    /// says — "give it twenty minutes" rather than a count. It was read
+    /// and saved and never applied, so 4096 samples at seven seconds each
+    /// had no way to be told to stop.
+    pub time_limit: f32,
     /// `cycles.use_preview_denoising` and `preview_denoising_start_sample`:
     /// the viewport shown filtered while it refines, from that sample on.
     pub preview_denoise: bool,
@@ -53,6 +76,15 @@ impl Default for BRenderSet {
             preview_samples: 1024,
             diffuse_bounces: 4,
             denoise: true,
+            // Cycles' own defaults (`scene/integrator.cpp`):
+            //   SOCKET_BOOLEAN(use_adaptive_sampling, true)
+            //   SOCKET_FLOAT(adaptive_threshold, 0.01f)
+            //   SOCKET_INT(adaptive_min_samples, 0)
+            adaptive: true,
+            adaptive_threshold: 0.01,
+            adaptive_min_samples: 0,
+            //   SOCKET_FLOAT(time_limit, 0.0f)
+            time_limit: 0.0,
             preview_denoise: true,
             preview_denoise_from: 1,
             resolution: BResolution::default(),
@@ -65,13 +97,20 @@ impl Default for BRenderSet {
 
 /// The state stores every value as the string `BValue::encode` produced, so
 /// reading one back is a parse in the property's own category.
-fn value_at(s: &BState, key: &'static str, kind: BValueKind) -> Option<BValue> {
+pub(super) fn value_at(s: &BState, key: &'static str, kind: BValueKind) -> Option<BValue> {
     BValue::parse(kind, s.get(ButsKey::Value(key))?)
 }
 
 fn int_at(s: &BState, key: &'static str, fallback: u32) -> u32 {
     match value_at(s, key, BValueKind::Int) {
         Some(BValue::Int(v)) => v.clamp(0, i64::from(u32::MAX)) as u32,
+        _ => fallback,
+    }
+}
+
+fn float_at(s: &BState, key: &'static str, fallback: f32) -> f32 {
+    match value_at(s, key, BValueKind::Float) {
+        Some(BValue::Float(v)) => v,
         _ => fallback,
     }
 }
@@ -106,6 +145,10 @@ pub fn render_set(s: &BState) -> BRenderSet {
         preview_samples: int_at(s, "cycles.preview_samples", d.preview_samples),
         diffuse_bounces: int_at(s, "cycles.diffuse_bounces", d.diffuse_bounces),
         denoise: bool_at(s, "cycles.use_denoising", d.denoise),
+        adaptive: bool_at(s, "cycles.use_adaptive_sampling", d.adaptive),
+        adaptive_threshold: float_at(s, "cycles.adaptive_threshold", d.adaptive_threshold),
+        adaptive_min_samples: int_at(s, "cycles.adaptive_min_samples", d.adaptive_min_samples),
+        time_limit: float_at(s, "cycles.time_limit", d.time_limit).max(0.0),
         preview_denoise: bool_at(s, "cycles.use_preview_denoising", d.preview_denoise),
         preview_denoise_from: int_at(s, "cycles.preview_denoising_start_sample", d.preview_denoise_from),
         resolution: BResolution::now(s),
@@ -174,44 +217,6 @@ impl BResolution {
 
     pub fn scoped() -> Self {
         SCOPED.with(std::cell::Cell::get)
-    }
-}
-
-/// Render ▸ Color Management's View Transform, Exposure and Gamma
-/// (`Scene.view_settings`) as the panel holds them — seeded from the file
-/// when it opens (`app::seed`), then whatever is chosen there — over the
-/// file's. The viewport and F12 both look through them, as every Blender
-/// view does, and a save writes them.
-#[derive(Clone, Debug, PartialEq)]
-pub struct BColorManagement {
-    pub transform: String,
-    pub exposure: f32,
-    pub gamma: f32,
-}
-
-impl BColorManagement {
-    pub fn now(s: &BState, model: Option<&crate::phiphx::scene::SceneModel>) -> Self {
-        let file = model.map_or(Self { transform: "Standard".into(), exposure: 0.0, gamma: 1.0 }, |m| Self::of_file(m));
-        let float = |key, d: f32| match value_at(s, key, BValueKind::Float) {
-            Some(BValue::Float(v)) => v,
-            _ => d,
-        };
-        let transform = s.get(ButsKey::Value("view_settings.view_transform")).filter(|t| !t.is_empty()).map_or(file.transform, str::to_string);
-        Self { transform, exposure: float("view_settings.exposure", file.exposure), gamma: float("view_settings.gamma", file.gamma) }
-    }
-
-    pub fn of_file(model: &crate::phiphx::scene::SceneModel) -> Self {
-        Self { transform: model.render.view_transform.clone(), exposure: model.render.exposure, gamma: model.render.gamma }
-    }
-
-    /// `Camera::view`: what the tracer's view kernel applies.
-    pub fn words(&self) -> [f32; 4] {
-        phiray::View::from_blender(&self.transform).words(self.exposure, self.gamma)
-    }
-
-    /// What a save writes, when it differs from the file's.
-    pub fn edited(&self, model: &crate::phiphx::scene::SceneModel) -> Option<(String, f32, f32)> {
-        (*self != Self::of_file(model)).then(|| (self.transform.clone(), self.exposure, self.gamma))
     }
 }
 

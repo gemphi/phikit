@@ -31,10 +31,10 @@ use super::drag;
 use crate::phiphx::blend::shade::graph::BlendNode;
 use crate::v2::state::{BKey as _, NodeKey};
 use crate::v2::theme::BStyleRole;
-use crate::v2::view::draw::color::to_hsla;
+use crate::v2::view::draw::flex::{BEdge, BFill, BFlex, BPlace, BRadius, BSpace, BType};
 use crate::v2::view::prim::BAction;
 use gpui::prelude::*;
-use gpui::{AnyElement, ClickEvent, SharedString, div, px};
+use gpui::{AnyElement, ClickEvent, SharedString};
 use std::rc::Rc;
 
 /// The per-node displacements a drag has written, as `set::render` gathers them:
@@ -53,10 +53,6 @@ pub const MARGIN: f32 = 1.5;
 /// The label height in widget units: Blender's default `label_size` of 20 is
 /// one widget unit, and phiber does not read a frame's own `label_size`.
 pub const LABEL: f32 = 1.0;
-/// The fraction of the panel colour a frame's fill keeps; a frame is a backdrop,
-/// so it is mostly transparent and lets the canvas read through.
-const FILL_ALPHA: f32 = 0.5;
-
 /// The side and top margins of a frame, in widget units.
 ///
 /// `frame_node_layout`: the top margin grows to hold a label —
@@ -137,26 +133,25 @@ pub fn handle(frame: &BlendNode, nodes: &[BlendNode], size: BCardSize, view: &BN
     // The top-left in canvas fractions — Y up, so the top is `ymax`.
     let (fx, fy) = view.to_fraction((xmin, ymax));
     let (fw, fh) = ((xmax - xmin) / view.width(), (ymax - ymin) / view.height());
-    let fill = ctx.style.colors.bg_control;
     let id = frame.name.clone();
-    let mut box_div = div()
-        .id(SharedString::from(format!("frame-{id}")))
-        .absolute()
-        .left(gpui::relative(fx))
-        .top(gpui::relative(fy))
-        .w(gpui::relative(fw))
-        .h(gpui::relative(fh))
-        .rounded(px(ctx.style.radius_for(BStyleRole::Card)))
-        .bg(to_hsla((fill.0, fill.1, fill.2, FILL_ALPHA)))
-        .border(px(ctx.style.strokes.border))
-        .border_color(to_hsla(ctx.style.colors.border));
+    // The box: a card's outline and radius at the frame fill, placed in the
+    // canvas's own fractions (`BPlace::Fraction`).
+    let mut box_div = BFlex::column()
+        .place(BPlace::Fraction { x: fx, y: fy, w: fw, h: fh })
+        .radius(BRadius::Role(BStyleRole::Card))
+        .fill(BFill::NodeFrame)
+        .border(BEdge::All)
+        .div(ctx)
+        .id(SharedString::from(format!("frame-{id}")));
     if !frame.label.is_empty() {
+        // The label sits in the top margin, one pad in, at the header size.
         box_div = box_div.child(
-            div()
-                .px(px(ctx.style.spacing.pad_sm))
-                .pt(px(ctx.style.spacing.pad_sm))
-                .text_size(px(ctx.style.typography.header))
-                .text_color(to_hsla(ctx.style.colors.text))
+            BFlex::cell()
+                .pad_x(BSpace::PadSm)
+                .pad_top(BSpace::PadSm)
+                .type_size(BType::Header)
+                .ink()
+                .div(ctx)
                 .child(SharedString::from(frame.label.clone())),
         );
     }

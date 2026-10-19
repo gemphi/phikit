@@ -228,7 +228,10 @@ async fn a_menus_rows_are_rows(cx: &mut TestAppContext) {
     use phiber::v2::state::{BKey as _, MenuKey, val::V_TRUE};
     let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
     cx.simulate_resize(size(px(1600.0), px(900.0)));
-    let row_height = ui_style_defaults_in(BPaletteName::DEFAULT, BThemeMode::DEFAULT).dimensions.row_height;
+    // A menu row is its own module: `MENU_ROW`, the button less its head
+    // room, rather than the content row a property line is. Blender's menus
+    // are tighter than its property rows, and a long one is a list of labels.
+    let row_height = phiber::v2::theme::style::metric::MENU_ROW;
     app.update(cx, |app, cx| {
         app.state = BState::new();
         app.state.set(CtxKey::Space, BSpaceType::Layout.slug());
@@ -246,7 +249,7 @@ async fn a_menus_rows_are_rows(cx: &mut TestAppContext) {
     for (sel, h) in &rows {
         assert!(
             (h - row_height).abs() < 0.5,
-            "{sel} is {h}, and a menu row is a row ({row_height})"
+            "{sel} is {h}, and a menu row is {row_height}"
         );
     }
 }

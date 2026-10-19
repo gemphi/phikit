@@ -15,7 +15,7 @@ use phiber::v2::state::{BState, ButsKey};
 fn the_engine_row_decides_what_a_render_draws_with() {
     let mut s = BState::new();
     // Nothing chosen and no file: Phiray, the one engine phiber has for a
-    // traced frame (`cli::set::BRenderQuality::ENGINE`). It
+    // traced frame (`scene::render_quality::BRenderQuality::ENGINE`). It
     // used to read EEVEE, a name phiber cannot actually run.
     assert_eq!(render_set(&s).engine, BRenderEngine::Phiray);
     assert!(render_set(&s).engine.traces(), "Phiray path-traces");
@@ -81,7 +81,7 @@ fn an_untouched_row_is_the_files_engine_and_a_chosen_one_overrides_it() {
 #[test]
 fn a_files_engine_and_sample_count_meet_the_quality_policy() {
     use phiber::phiphx::scene::SceneModel;
-    use phiber::v2::cli::set::BRenderQuality;
+    use phiber::v2::scene::render_quality::BRenderQuality;
 
     let mut model = SceneModel::default();
     model.render.engine = "CYCLES".into();

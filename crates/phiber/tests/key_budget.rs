@@ -57,9 +57,28 @@ fn rust_files(dir: &Path, out: &mut Vec<PathBuf>) {
         if path.is_dir() {
             rust_files(&path, out);
         } else if path.extension().and_then(|e| e.to_str()) == Some("rs") {
-            out.push(path);
+            // A sibling `*_tests.rs` is a test module in a file of its own
+            // (`#[path] mod …_tests`), so it is skipped for the same reason
+            // an inline `#[cfg(test)]` module is — see `test_module_at`.
+            let is_test_module =
+                path.file_name().and_then(|name| name.to_str()).is_some_and(|name| name.ends_with("_tests.rs"));
+            if !is_test_module {
+                out.push(path);
+            }
         }
     }
+}
+
+/// The line a file's `#[cfg(test)]` module starts on, or its length. A test
+/// asserting `is_transient("ctx.file.selected")` is stating the encoding it
+/// checks: routing that through the key enum would make the assertion agree
+/// with itself whatever the enum encoded to, which is the one thing it exists
+/// to catch. The rule is about the code that READS and WRITES state.
+fn test_module_at(source: &str) -> usize {
+    source
+        .lines()
+        .position(|line| line.trim_start().starts_with("#[cfg(test)]"))
+        .unwrap_or(usize::MAX)
 }
 
 #[test]
@@ -75,7 +94,7 @@ fn a_moved_domains_keys_are_spelt_only_in_its_keys_file() {
             if rel == format!("state/key/{keys_file}.rs") {
                 continue;
             }
-            for (n, line) in src.lines().enumerate() {
+            for (n, line) in src.lines().enumerate().take(test_module_at(&src)) {
                 let spelt = line.contains(&format!("vec![\"{domain}\","))
                     || line.contains(&format!("vec![\"{domain}\"]"))
                     || line.contains(&format!("\"ctx.{domain}."))

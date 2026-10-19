@@ -114,6 +114,7 @@ impl BAsciiRenderer {
                 self.each(list, s, d + 1, o);
             }
             BView::Label { text } => o.push_str(&format!("{p}Label({:?})\n", text)),
+            BView::Pair { label, value } => o.push_str(&format!("{p}Pair({label:?}, {value:?})\n")),
             BView::Ctrl(ctrl) => o.push_str(&format!("{p}Ctrl({:?}, {}, {:?})\n", ctrl.kind, ctrl.key.encode(), ctrl.value)),
             // The share is what a reader checks: a track that is 0.75 full is
             // saying the value is three quarters along, which is the claim.
@@ -147,7 +148,7 @@ impl BAsciiRenderer {
                 for control in controls {
                     o.push_str(&format!(
                         "{p}  ZoneToggle({:?} visible={})\n",
-                        control.zone, control.visible
+                        control.zone, control.control.active
                     ));
                 }
             }

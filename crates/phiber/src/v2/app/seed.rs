@@ -61,7 +61,18 @@ pub fn seed_render_props(state: &mut BState, model: &SceneModel) {
     use crate::phiphx::blend::BIdValue;
     use crate::v2::part::props::prop::BPropKind;
     use crate::v2::part::props::render::spec_of;
-    state.set(ButsKey::Value("engine"), model.render.engine.clone());
+    // The Engine row opens on the engine phiber will actually use, not the
+    // one the file names. `BRenderSet::engine_at` falls back to
+    // `BRenderQuality::engine_for_file`, but only when the row is unset —
+    // seeding the file's raw `CYCLES` here set it, so the fallback never
+    // ran and a Cycles file opened reading "Cycles" while rendering on
+    // Phiray. The row and the renderer now say the same word. Workbench is
+    // kept, because it is the one engine whose choice changes what is
+    // drawn rather than what draws it.
+    state.set(
+        ButsKey::Value("engine"),
+        crate::v2::scene::render_quality::BRenderQuality::engine_for_file(&model.render.engine).ident().to_string(),
+    );
     let cycles = &model.render.cycles;
     for name in cycles.names() {
         let Some(value) = cycles.get(name) else { continue };

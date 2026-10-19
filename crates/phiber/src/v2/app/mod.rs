@@ -2,8 +2,12 @@
 //! `BSpaceList`, and hands it to `BGpuiRenderer` with an action handler
 //! that calls back into `handle_action` to mutate state.
 
+/// Moving work off the calling thread, where there is one (`offload.rs`).
+pub mod offload;
 pub mod handle;
 pub mod input;
+pub mod local_keys;
+pub mod text_edit;
 pub mod keymap;
 mod op;
 pub mod trace;
@@ -161,7 +165,7 @@ impl BPhiberApp {
         // so `settle_import` lands on where we actually were (the session
         // outlives the save). The camera survives on its own — Load UI is off.
         if let Some(frame) = self.state.get(crate::v2::state::CtxKey::Frame).map(str::to_string) {
-            self.state.set_encoded(session::RESUME_FRAME, frame);
+            self.state.set_encoded(session::resume_frame().as_str(), frame);
         }
         Some(path)
     }

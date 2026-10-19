@@ -71,18 +71,23 @@ fn every_surface_tone_is_a_shade_and_a_gradient_is_one_step_up() {
         } else {
             assert_eq!(style.viewport_sweep_lift(), 0.0);
         }
-        // A heading is a step over what it heads, in every theme — swept
-        // like every surface where gradients are on, flat where not — so a
-        // panel's heading lifts off its card and a sub-panel's off its well.
+        // A heading STARTS on what it heads and sweeps a step up from there,
+        // in every theme — flat where gradients are off. Its bottom stop is
+        // its parent's own shade, so the shading disappears into the parent
+        // and there is no seam across the panel where the two meet; the step
+        // is the sweep's top, not a flat band under it.
         let heading = style.heading_surface(BSurfaceTone::Card);
-        assert_eq!(on_ladder(&style, heading.bottom), panel + 2, "{name:?}: a heading is a step over the card");
+        assert_eq!(on_ladder(&style, heading.bottom), panel + 1, "{name:?}: a heading starts on its card's shade");
+        if heading.enabled {
+            assert_eq!(on_ladder(&style, heading.top), panel + 2, "{name:?}: and sweeps a step over it");
+        }
         assert_eq!(heading.enabled, style.effects.gradients, "{name:?}: swept when the theme sweeps");
         assert_eq!(heading, style.sheen(heading.bottom), "{name:?}: the heading is its shade's sweep");
         // A sub-panel is a branch of its panel's tree: recessed a step toward
         // the region per level, its heading a step over its own well.
         assert_eq!(on_ladder(&style, style.surface(BSurfaceTone::Nested(1)).bottom), panel + 1, "{name:?}: a sub-panel's well is its panel's shade — no darker strip");
         assert_eq!(on_ladder(&style, style.surface(BSurfaceTone::Nested(2)).bottom), panel + 1, "{name:?}: at every depth");
-        assert_eq!(on_ladder(&style, style.heading_surface(BSurfaceTone::Nested(1)).bottom), panel + 2, "{name:?}: its heading a step over it, as a panel's");
+        assert_eq!(on_ladder(&style, style.heading_surface(BSurfaceTone::Nested(1)).bottom), panel + 1, "{name:?}: its heading starts on its well, as a panel's on its card");
     }
 }
 

@@ -102,6 +102,35 @@ pub fn set_loaded_at(model: Option<std::sync::Arc<SceneModel>>, state: &BState) 
     super::render_set::BResolution::scope(state);
 }
 
+/// The scene scope as a value a worker thread can take with it.
+///
+/// `LOADED`, `FRAME` and the rest are thread-locals armed by the draw pass
+/// (`set_loaded_at`) and torn down at the end of it. A render runs on its
+/// own thread, where none of them exist — so `environment()` came back
+/// `None` there and no world image was uploaded, while the camera built on
+/// the main thread had already been told to sample one. The frame rendered
+/// black with its alpha perfect: geometry hit, nothing lighting it.
+///
+/// Captured on the main thread, adopted on the worker.
+#[derive(Clone, Default)]
+pub struct BSceneScope {
+    pub model: Option<std::sync::Arc<SceneModel>>,
+    pub frame: Option<f32>,
+}
+
+impl BSceneScope {
+    /// What is in scope right now.
+    pub fn here() -> Self {
+        Self { model: loaded_shared(), frame: super::motion::scoped_frame() }
+    }
+
+    /// Put it in scope on this thread.
+    pub fn adopt(self) {
+        set_loaded_shared(self.model);
+        super::motion::set_scoped_frame(self.frame);
+    }
+}
+
 /// Clear the loaded scene scope so it does not leak into the next render pass.
 /// Called at the bottom of `BPhiberApp::render`, after the tree build and the
 /// renderer walk have both read it.
@@ -383,10 +412,24 @@ pub fn visible_metrics(s: &BState) -> (usize, usize, usize) {
     super::scene_metrics(&visible)
 }
 
-/// That count as one line, in Blender's status-bar wording.
-pub fn stats_line(s: &BState) -> String {
+/// That count as label/value pairs, in Blender's status-bar wording.
+///
+/// Pairs rather than a sentence because both read-outs that show them —
+/// the viewport's overlay and the status bar — draw the label and the
+/// value in different shades (`view::draw::pair`), and a joined string
+/// cannot be shaded.
+pub fn stats_pairs(s: &BState) -> [(String, String); 3] {
     let (objects, verts, faces) = visible_metrics(s);
-    format!("Objects: {objects} | Verts: {verts} | Faces: {faces}")
+    [
+        ("Objects".to_string(), objects.to_string()),
+        ("Verts".to_string(), verts.to_string()),
+        ("Faces".to_string(), faces.to_string()),
+    ]
+}
+
+/// The same counts as one line, for the places that can only take a string.
+pub fn stats_line(s: &BState) -> String {
+    stats_pairs(s).iter().map(|(label, value)| format!("{label}: {value}")).collect::<Vec<_>>().join(" | ")
 }
 
 /// What an object is called. One match, in the layer that owns the enum: the

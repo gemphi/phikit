@@ -138,6 +138,13 @@ pub enum BView {
     Label {
         text: String,
     },
+    /// A read-out as its two halves: the caption and the figure. Kept apart
+    /// all the way to the renderer so the two can be drawn in different
+    /// shades (`view::draw::pair`) — a joined string cannot be.
+    Pair {
+        label: String,
+        value: String,
+    },
     /// Wrapping text for reading, by role.
     Prose {
         role: prim::BProse,

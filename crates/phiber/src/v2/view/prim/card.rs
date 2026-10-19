@@ -189,6 +189,36 @@ impl BCard {
         self
     }
 
+    /// This card and every card under it drawn plain: no card fill, no
+    /// border, no heading fill — the fold triangle, the title and the body,
+    /// and nothing behind them.
+    ///
+    /// For a region that is a LIST of panels rather than a stack of objects:
+    /// the sidebar. A card says "this is a thing with edges"; a sidebar full
+    /// of them is a column of boxes inside a box, each with its own heading
+    /// colour, and the shading piles up a shade per level until the panel you
+    /// want is three tones from the region it sits in. A menu does not do
+    /// this and is no harder to read for it — the triangle says what folds
+    /// and the indent says what belongs to what.
+    ///
+    /// `BCardKind::Bare` already drew exactly this (`BCardPart::Frame` and
+    /// `::Head` both fall through to the plain column and plain strip); it
+    /// had no way to reach a card that was built as a panel.
+    pub fn plain(mut self) -> Self {
+        self.bare_tree();
+        self
+    }
+
+    /// `plain`, in place, so it can walk the tree as `nest` does.
+    fn bare_tree(&mut self) {
+        self.kind = BCardKind::Bare;
+        for row in &mut self.body {
+            if let BView::Card(child) = row {
+                child.bare_tree();
+            }
+        }
+    }
+
     /// One level deeper in its card tree, with every sub-panel under it.
     fn nest(&mut self) {
         if let BCardKind::Sub { depth } = &mut self.kind {

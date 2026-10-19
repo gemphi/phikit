@@ -24,7 +24,7 @@ pub struct BLogEntry {
     /// Monotonic, so a view can tell new lines from old.
     pub seq: u64,
     pub text: String,
-    pub at: std::time::Instant,
+    pub at: web_time::Instant,
 }
 
 /// How many lines are kept. Older ones fall off the end.
@@ -41,7 +41,7 @@ pub fn push(text: impl Into<String>) {
         log.0 += 1;
         let seq = log.0;
         let entries = Rc::make_mut(&mut log.1);
-        entries.insert(0, BLogEntry { seq, text: text.into(), at: std::time::Instant::now() });
+        entries.insert(0, BLogEntry { seq, text: text.into(), at: web_time::Instant::now() });
         entries.truncate(CAPACITY);
     });
 }

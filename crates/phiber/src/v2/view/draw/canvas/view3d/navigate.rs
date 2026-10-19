@@ -172,6 +172,18 @@ impl BViewWrite {
         use gpui::prelude::*;
         let scroll = handler.clone();
         let ongoing = std::cell::RefCell::new(gpui::OngoingScroll::default());
+        // The viewport this element IS, captured while it is drawn. A gesture
+        // runs in a callback, outside the draw pass, where `BViewSlot` would
+        // otherwise fall back to the viewport the POINTER last moved over —
+        // so a wheel over one viewport wrote to another: GPUI already hands
+        // the event to the element under the pointer, and the slot has to
+        // follow the element, not a separate record of the pointer.
+        let slot = crate::v2::scene::view_slot::BViewSlot::current();
+        let within = move |f: &mut dyn FnMut()| match slot {
+            Some(slot) => slot.with(|| f()),
+            None => f(),
+        };
+        let pinch_within = within;
         element
             .on_scroll_wheel(move |event: &gpui::ScrollWheelEvent, window, app| {
                 let mut delta = event.delta;
@@ -180,12 +192,12 @@ impl BViewWrite {
                     delta = ScrollDelta::Pixels(point);
                 }
                 if let Some(move_to) = BViewNavigate::scroll(delta, event.modifiers, event.touch_phase) {
-                    self.apply(move_to, &scroll, window, app);
+                    within(&mut || self.apply(move_to, &scroll, window, app));
                 }
             })
             .on_pinch(move |event: &gpui::PinchEvent, window, app| {
                 if let Some(move_to) = BViewNavigate::pinch(event.delta) {
-                    self.apply(move_to, &handler, window, app);
+                    pinch_within(&mut || self.apply(move_to, &handler, window, app));
                 }
             })
     }

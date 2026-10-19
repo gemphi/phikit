@@ -106,7 +106,11 @@ pub fn outliner_filter(s: &BState) -> BView {
         crate::v2::part::outliner::filter::popover::body(s),
         open,
         close,
-        BPopoverSide::Below,
+        // It is the icon at the right end of the Outliner's header, so it
+        // opens trailing-edge and one side zone wide: in a side zone the
+        // panel spans the header and its leading edge lands on the switcher,
+        // the header's first icon.
+        BPopoverSide::BelowEnd,
     )
 }
 

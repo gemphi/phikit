@@ -185,6 +185,8 @@ pub fn paint(
 /// The canvas element itself — the one place pixels exist.
 pub mod canvas;
 mod dot;
+/// The nine socket shapes, ported from Blender's socket shader.
+pub mod shape;
 
 #[cfg(test)]
 mod tests;

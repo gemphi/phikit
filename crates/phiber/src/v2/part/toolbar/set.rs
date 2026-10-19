@@ -39,12 +39,23 @@ static VIEW3D: &[BToolSpec] = &[
     t("measure", "Measure"),
     t("add-cube", "Add Cube"),
 ];
-static IMAGE_UV: &[BToolSpec] = &[
+/// The UV editor's toolset: it edits a mesh's UVs, so it transforms.
+static UV: &[BToolSpec] = &[
     t("cursor", "Cursor"),
     t("select", "Select"),
     t("move", "Move"),
     t("rotate", "Rotate"),
     t("scale", "Scale"),
+];
+/// The Image editor's, which is a different editor and has a different
+/// toolbar: the manual lists exactly two tools for it, Sample and Annotate
+/// (`editors/image/introduction`, "Toolbar"). It shares no tool with the UV
+/// editor — there is nothing in a picture to move, rotate or scale — and
+/// the render window wore Cursor / Select / Move / Rotate / Scale down its
+/// left edge because the two hosts were reading one list.
+static IMAGE: &[BToolSpec] = &[
+    t("pipette", "Sample"),
+    t("annotate", "Annotate"),
 ];
 static NODE: &[BToolSpec] = &[
     t("select", "Select Box"),
@@ -69,7 +80,8 @@ static FILE: &[BToolSpec] = &[
 pub fn tools_for(host: BHostType) -> &'static [BToolSpec] {
     match host {
         BHostType::View3D => VIEW3D,
-        BHostType::Uv | BHostType::Image => IMAGE_UV,
+        BHostType::Uv => UV,
+        BHostType::Image => IMAGE,
         BHostType::Node | BHostType::Shader | BHostType::Compositor | BHostType::GeoNode => NODE,
         BHostType::Clip => CLIP,
         BHostType::File | BHostType::Asset => FILE,

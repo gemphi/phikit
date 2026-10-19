@@ -149,14 +149,14 @@ use super::*;
 
         // A stashed resume frame in range wins over the file's.
         let mut s = BState::new();
-        s.set_encoded(crate::v2::app::session::RESUME_FRAME, "42");
+        s.set_encoded(crate::v2::app::session::resume_frame().as_str(), "42");
         settle_import(&mut s, ImportOutcome::Loaded(model_at("/dir/b.blend")));
         assert_eq!(s.get(CtxKey::Frame), Some("42"), "the session's playhead wins");
-        assert_eq!(s.get_encoded(crate::v2::app::session::RESUME_FRAME), None, "the stash is consumed");
+        assert_eq!(s.get_encoded(crate::v2::app::session::resume_frame().as_str()), None, "the stash is consumed");
 
         // A resume frame past the file's end is clamped into range.
         let mut s = BState::new();
-        s.set_encoded(crate::v2::app::session::RESUME_FRAME, "999");
+        s.set_encoded(crate::v2::app::session::resume_frame().as_str(), "999");
         settle_import(&mut s, ImportOutcome::Loaded(model_at("/dir/c.blend")));
         assert_eq!(s.get(CtxKey::Frame), Some("250"), "clamped to the scene's end");
     }

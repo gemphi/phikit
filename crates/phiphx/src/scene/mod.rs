@@ -13,7 +13,7 @@
 //! - `error.rs` — `SceneLoadError` + its message clamp.
 //! - `import.rs` — blend → scene conversion helpers (fan-triangulation,
 //!   per-face normal synthesis, camera / light partitioning).
-//! - `tests_traversal.rs` — traversal tests (opening lives in `crate::phx`).
+//! - `tests_traversal.rs` / `tests_material.rs` — traversal tests over `tests_fixture.rs` (opening lives in `crate::phx`).
 //!
 //! Requirements: 6.1, 6.3, 7.2
 
@@ -212,6 +212,11 @@ impl SceneModel {
 
 // ── Child modules (declared after the core types so they can `use super::*`)
 
+/// What a loaded scene costs in memory (`SceneModel::heap_bytes`).
+mod heap;
+
+#[cfg(test)]
+mod bytes_tests;
 mod collection;
 mod corners;
 pub mod motion;
@@ -234,6 +239,10 @@ mod object;
 pub(crate) mod polyfill;
 mod report;
 pub(crate) mod texture;
+/// Find Missing Files: an image by its name under the `.blend`'s folder.
+pub(crate) mod texture_find;
+/// What a file asked for and could not be given, said once.
+pub(crate) mod texture_miss;
 mod types_ext;
 mod ui;
 

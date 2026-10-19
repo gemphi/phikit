@@ -7,7 +7,8 @@
 use crate::v2::state::{CtxKey};
 use super::super::color::to_hsla;
 use super::super::ctx::BRenderCtx;
-use crate::v2::scene::stats_line;
+use crate::v2::scene::stats_pairs;
+use super::super::pair;
 use gpui::prelude::*;
 use gpui::{AnyElement, SharedString, div, px};
 
@@ -46,7 +47,7 @@ impl BOverlay {
         let frame = ctx.state.get(CtxKey::Frame).unwrap_or("1");
         // The status bar shows the same counts (`scene::stats_line`), so
         // the two read-outs cannot disagree about how big the scene is.
-        let stats = stats_line(ctx.state);
+        let stats = stats_pairs(ctx.state);
         // Text Info and Statistics, as the Overlays popover has them.
         let shown = crate::v2::scene::BOverlays::now(ctx.state);
         let not_drawn = NOT_DRAWN.with(|n| n.get()).map(|(why, tris)| match why {
@@ -68,13 +69,15 @@ impl BOverlay {
             .text_color(to_hsla(ctx.style.colors.text))
             .text_size(px(ctx.style.typography.caption))
             .when_some(readout, |element, line| element.child(div().id("view3d-transform-readout").debug_selector(|| "view3d-transform-readout".to_string()).child(SharedString::from(line))))
+            // Blender's wording, in two shades: what the line is about
+            // recedes, what it says carries (`view::draw::pair`).
             .when(shown.text, |element| {
                 element
                     .child(SharedString::from(self.view_name))
-                    .child(SharedString::from(format!("({scene}) Collection | {object}")))
-                    .child(SharedString::from(format!("Frame {frame}")))
+                    .child(pair::phrase(&format!("({scene}) Collection |"), object, ctx))
+                    .child(pair::pair("Frame", frame, ctx))
             })
-            .when(shown.stats, |element| element.child(SharedString::from(stats)))
+            .when(shown.stats, |element| element.child(pair::strip(&stats, ctx)))
             .when_some(not_drawn, |element, why| {
                 element.child(
                     div()

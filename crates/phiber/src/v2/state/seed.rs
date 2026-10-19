@@ -17,7 +17,10 @@ pub fn default_state() -> BState {
     s.set(CtxKey::Tool, V_TOOL_SELECT_BOX);
     s.set(CtxKey::Frame, V_FRAME_START);
     s.set(CtxKey::Playing, V_FALSE);
-    s.set(AppKey::Theme, V_THEME_SPHERE);
+    // The default palette has one owner — `BPaletteName::DEFAULT`. Naming
+    // a theme here as well meant two, and they disagreed: the constant
+    // said Silver and the seed wrote Sphere over it on every fresh state.
+    s.set(AppKey::Theme, crate::v2::theme::BPaletteName::DEFAULT.slug());
     // Boot into the welcome window (Blender's splash). Any click dismisses
     // it; `Blender ▸ Splash Screen` brings it back.
     s.set(ModalKey::Open, V_MODAL_SPLASH);

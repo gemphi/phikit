@@ -232,7 +232,7 @@ fn focused_renderers_preserve_space_shape_viewport_fill_and_bounds() {
     assert!(viewport.contains(".size_full()"));
 }
 
-fn composition_state(visible: [bool; 3], gap: f32) -> BState {
+fn composition_state(visible: [bool; visibility::TOGGLEABLE.len()], gap: f32) -> BState {
     let mut state = BState::new();
     for (zone, show) in visibility::TOGGLEABLE.into_iter().zip(visible) {
         state.set(
@@ -273,7 +273,7 @@ fn generated_shape(
 
 fn expected_shape(
     space: BSpaceType,
-    visible: [bool; 3],
+    visible: [bool; visibility::TOGGLEABLE.len()],
     include_full: bool,
 ) -> BSpaceCompositionShape {
     let mut shape = BSpaceCompositionShape {
@@ -321,7 +321,7 @@ proptest! {
     #[test]
     fn resolved_style_variants_preserve_space_composition_shape(
         space in prop::sample::select(BSpaceType::EVERY.to_vec()),
-        visible in any::<[bool; 3]>(),
+        visible in any::<[bool; visibility::TOGGLEABLE.len()]>(),
         include_full in any::<bool>(),
         palette_index in 0usize..BPaletteName::ALL.len(),
         palette_offset in 1usize..BPaletteName::ALL.len(),

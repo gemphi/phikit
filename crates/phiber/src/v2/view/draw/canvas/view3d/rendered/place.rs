@@ -10,7 +10,7 @@ use super::scene;
 use crate::v2::app::journal::BJournal;
 use crate::v2::scene::BObject3D;
 use phiray::{Gpu, Tracer};
-use std::time::Instant;
+use web_time::Instant;
 
 /// What the tracer kept of itself.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

@@ -92,20 +92,28 @@ fn exact_match_and_case_sensitive_change_how_search_matches() {
     assert!(BOutlineFilter::now(&s).hits("Cube") && !BOutlineFilter::now(&s).hits("cube"));
 }
 
+/// `OUTLINER_PT_filter` is a parent panel with sub-panels under it
+/// (`OUTLINER_PT_options_search`, `OUTLINER_PT_options_filter` both name it as
+/// `bl_parent_id`), and six headings is exactly the case `part::filter::fold`
+/// is for — so each heading is a folding card on its own key, not a label at
+/// the head of a split row.
 #[test]
 fn the_popover_lays_out_blenders_sub_panels() {
     let s = BState::new();
     let headings: Vec<String> = popover::body(&s)
         .iter()
         .filter_map(|row| match row {
-            BView::Split { list } => match list.first() {
-                Some(BView::Label { text }) if !text.is_empty() => Some(text.clone()),
-                _ => None,
-            },
+            BView::Card(card) => card.head.as_ref().map(|h| h.title.clone()),
             _ => None,
         })
         .collect();
     assert_eq!(headings, ["Columns", "Sort", "Search", "Filter", "Objects", "Types"]);
+    // And each one folds, on the key its own family is scoped to.
+    for row in popover::body(&s) {
+        let BView::Card(card) = row else { panic!("every group is a card") };
+        let fold = card.fold.as_ref().expect("and every card folds");
+        assert!(fold.key.encode().starts_with("ctx.outliner.filter."), "{}", fold.key.encode());
+    }
 }
 
 /// In the app: the Filter button opens the popover, its sections are
@@ -123,7 +131,12 @@ async fn the_popover_opens_and_stays_open_while_boxes_are_ticked(cx: &mut gpui::
         app.handle_action(&BAction::Set(OutlinerKey::FilterOpen.path(), "true".into()), cx);
     });
     cx.run_until_parked();
-    for section in ["section-Search", "section-Filter", "section-Types"] {
+    // The sections are accordions now, so each is a card on its fold key.
+    for section in [
+        "card-ctx-outliner-filter-search-expanded",
+        "card-ctx-outliner-filter-filter-expanded",
+        "card-ctx-outliner-filter-types-expanded",
+    ] {
         assert!(cx.debug_bounds(section).is_some(), "{section} is painted");
     }
     app.update(cx, |app, cx| {

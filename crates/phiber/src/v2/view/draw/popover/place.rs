@@ -30,6 +30,10 @@ pub struct BPlacement {
     pub gap: f32,
     /// True when the panel drops below the anchor rather than beside it.
     vertical: bool,
+    /// True when the panel's TRAILING edge meets the anchor's trailing edge
+    /// rather than its leading one: a header popover grows back across the
+    /// header it was opened from.
+    trailing: bool,
     /// Along the other axis: a submenu rises by its own frame so its first
     /// row stands level with the row that opened it.
     lift: f32,
@@ -49,21 +53,36 @@ impl BPlacement {
     fn from_style(side: BPopoverSide, style: &BResolvedUiStyle) -> Self {
         match side {
             // A drop-down hangs from the anchor's bottom-left corner. The
-            // host switcher (`BelowEnd`) opens from the trigger's leading
-            // edge too, so a wide picker grows into its area rather than out
-            // of it; the flip below still rescues it at a window edge.
-            BPopoverSide::Below | BPopoverSide::BelowEnd => Self {
+            // host switcher opens from the trigger's leading edge too, so a
+            // wide picker grows into its area rather than out of it; the flip
+            // below still rescues it at a window edge.
+            BPopoverSide::Below | BPopoverSide::Switcher => Self {
                 corner: Anchor::TopLeft,
                 gap: 0.0,
                 vertical: true,
                 lift: 0.0,
+                trailing: false,
+            },
+            // A header popover hangs from the anchor's bottom-RIGHT corner.
+            // Its trigger is an icon at the header's right end, so leading-
+            // edge placement sent the panel off the edge of the host and the
+            // flip then slid it back to a position that lined up with
+            // nothing. Trailing-edge placement grows it back across the
+            // header, and at one side zone wide its leading edge lands on
+            // the header's first icon.
+            BPopoverSide::BelowEnd => Self {
+                corner: Anchor::TopRight,
+                gap: 0.0,
+                vertical: true,
+                lift: 0.0,
+                trailing: true,
             },
             // A submenu opens beside its row, clear of the parent panel by
             // one gap: past the parent's frame (its pad and border) and
             // `gap_xs` beyond, its first row level with the row it came from.
             BPopoverSide::Right => {
                 let frame = style.spacing.pad_xs + style.strokes.border;
-                Self { corner: Anchor::TopLeft, gap: frame + style.spacing.gap_xs, vertical: false, lift: frame }
+                Self { corner: Anchor::TopLeft, gap: frame + style.spacing.gap_xs, vertical: false, lift: frame, trailing: false }
             }
         }
     }
@@ -71,10 +90,10 @@ impl BPlacement {
     /// The zero-size point on the anchor that the panel's corner meets.
     pub fn origin(&self) -> Div {
         let element = div().absolute();
-        if self.vertical {
-            element.top_full().left_0()
-        } else {
-            element.left_full().top_0()
+        match (self.vertical, self.trailing) {
+            (true, false) => element.top_full().left_0(),
+            (true, true) => element.top_full().right_0(),
+            (false, _) => element.left_full().top_0(),
         }
     }
 

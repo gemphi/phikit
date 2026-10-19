@@ -184,7 +184,15 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     // control takes. At half weight on a header the tile vanished, so the
     // transport read as loose glyphs beside one lit square; every square
     // button now shows its square by default (`tests/a_strip_icon_is_a_tile`).
-    let tile = label.is_none() && chrome::in_strip(ctx);
+    // EVERY icon-only button is a tile, not just one in a strip.
+    //
+    // The rule used to be "in a strip", so a header's transport showed its
+    // squares while the identical icon in a rail, a floating sidebar or the
+    // render window's side column showed none — same control, same glyph,
+    // two different objects depending on where it happened to sit. The
+    // squares are what make a bar read as a row of buttons instead of a row
+    // of marks, and they are what a pointer aims at.
+    let tile = label.is_none();
     let paint_ctx = if tile { BRenderCtx { floating: true, ..ctx.clone() } } else { ctx.clone() };
     let mut element = chrome::paint_state(element, ctl.active, ctl.muted, &paint_ctx).on_click(
         move |_event: &ClickEvent, window, app| {

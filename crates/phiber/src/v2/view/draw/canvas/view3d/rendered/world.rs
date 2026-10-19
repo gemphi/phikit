@@ -35,10 +35,20 @@ pub const ENV_IRRADIANCE_SLOT: u32 = 2;
 pub const ENV_PREFILTERED_SLOT: u32 = 3;
 
 /// The loaded world's environment image and the Mapping node's Z rotation,
-/// when the file has one and Blender would be lighting with it.
+/// when the file has one and Blender would be lighting with it — or, when
+/// the file names an HDRI that is not where it says
+/// (`BlendWorld::missing`), Blender's own studio light in its place: the
+/// `forest` world Material Preview lights with, at its default rotation.
+/// Blender would light the scene its missing-image magenta; the read
+/// report carries the warning instead (`phiphx scene/import.rs`).
 pub fn environment() -> Option<(crate::phiphx::scene::SceneEnvironment, f32)> {
     crate::v2::scene::source::with_loaded(|m| {
-        m.and_then(|m| m.world.environment.clone().map(|e| (e, m.world.background.rotation)))
+        let m = m?;
+        if let Some(env) = m.world.environment.clone() {
+            return Some((env, m.world.background.rotation));
+        }
+        m.world.background.missing.as_ref()?;
+        super::studio::environment().map(|e| ((*e).clone(), super::studio::ROTATION))
     })
 }
 

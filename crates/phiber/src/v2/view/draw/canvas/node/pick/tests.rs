@@ -6,7 +6,7 @@ use super::*;
 const UNIT: f32 = 20.0;
 
 fn row(side: BSocketSide, y: f32) -> BSocketRow {
-    BSocketRow { identifier: "s".into(), name: "s".into(), kind: 0, side, y, default: None, linked: false }
+    BSocketRow { identifier: "s".into(), name: "s".into(), kind: 0, shape: 0, side, y, default: None, linked: false }
 }
 
 /// A card at `(x, y)`, 200 wide, with one input and one output.

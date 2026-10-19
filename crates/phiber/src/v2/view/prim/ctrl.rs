@@ -35,10 +35,6 @@ pub enum BCtrlKind {
     /// properties' and popovers' rows (`BView::check_row`), so a column of
     /// them lines up whatever each label says.
     Switch,
-    /// A toggle button: lit when on — `Bool`.
-    Toggle,
-    /// One button per option, the chosen one lit — `Enum`.
-    Radio,
     /// A dropdown: the chosen option, a menu of the rest — `Enum`.
     Select,
     /// A whole number with a step either side — `Int`.
@@ -61,8 +57,8 @@ impl BCtrlKind {
     /// The category of value each widget edits.
     pub const fn value_kind(self) -> BValueKind {
         match self {
-            Self::Check | Self::Switch | Self::Toggle => BValueKind::Bool,
-            Self::Radio | Self::Select => BValueKind::Enum,
+            Self::Check | Self::Switch => BValueKind::Bool,
+            Self::Select => BValueKind::Enum,
             Self::Int { .. } => BValueKind::Int,
             Self::Number { .. } | Self::Slider { .. } => BValueKind::Float,
             Self::Text | Self::Search => BValueKind::Text,
@@ -80,7 +76,7 @@ pub struct BCtrl {
     pub value: BValue,
     pub label: Option<String>,
     pub tooltip: Option<String>,
-    /// The options of a `Radio` or `Select`.
+    /// The options of a `Select`.
     pub options: Vec<BOption>,
     /// Typed controls: whether the caret is in this one.
     pub editing: bool,
@@ -145,7 +141,17 @@ impl BCtrl {
     /// The write that moves a number control by `steps` steps, clamped.
     pub fn nudge(&self, steps: f32) -> Option<BAction> {
         let (min, max, step) = match self.kind {
-            BCtrlKind::Int { min, max } => (min as f32, max as f32, 1.0),
+            // Blender's number button steps by the property's own step,
+            // which is wider on a wider property. Ours stepped by ONE on
+            // every integer row, so Max Samples — range 0..100000 — moved
+            // a single sample a click: getting from 1024 to 64 by the
+            // arrows is 960 clicks. Four on a wide row, one where the
+            // range is small enough that single units are the point (a
+            // frame number, a count of a handful).
+            BCtrlKind::Int { min, max } => {
+                let step = if (max - min) > 100 { 4.0 } else { 1.0 };
+                (min as f32, max as f32, step)
+            }
             BCtrlKind::Number { min, max, step } => (min, max, step),
             BCtrlKind::Slider { min, max } => (min, max, (max - min) / 100.0),
             _ => return None,

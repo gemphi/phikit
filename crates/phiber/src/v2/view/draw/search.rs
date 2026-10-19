@@ -16,12 +16,37 @@ use super::color::to_hsla;
 use super::ctx::BRenderCtx;
 use super::button::element_id;
 use super::field;
+use super::flex::{BAlign, BFlex, BFlexed, BLen, BOverflow, BSpace, BType};
 use super::atom::icon_path;
 use super::text_input::BFieldText;
 use crate::v2::view::prim::BAction;
 use gpui::prelude::*;
-use gpui::{AnyElement, ClickEvent, MouseButton, MouseDownEvent, SharedString, div, px, svg};
+use gpui::{AnyElement, ClickEvent, MouseButton, MouseDownEvent, SharedString, px, svg};
 use std::rc::Rc;
+
+/// The search field's own containers, named once.
+///
+/// The typing field and the plain one built the SAME row and the SAME text
+/// cell — `flex row, items_center, gap_sm, flex_1` and `flex_1, min_w_0,
+/// overflow_hidden` — in two places, which is sixteen hand-written style
+/// calls for two containers and two chances for them to drift apart.
+enum BSearchPart {
+    /// The field's row: the lead icon, then the text, filling the shell.
+    Row,
+    /// The text cell: takes what the icon leaves and clips rather than
+    /// pushing the icon out when the text is long.
+    TextCell,
+}
+
+impl BFlexed for BSearchPart {
+    fn flex(&self, _ctx: &BRenderCtx) -> BFlex {
+        match self {
+            Self::Row => BFlex::row().align(BAlign::Center).gap(BSpace::GapSm).grows(),
+            Self::TextCell => BFlex::cell().grows().min_width(BLen::Zero).overflow(BOverflow::Clip),
+        }
+    }
+}
+
 
 /// The search icon that leads the field, tinted `color`.
 fn lead_icon(color: crate::v2::theme::BColor, ctx: &BRenderCtx) -> impl IntoElement {
@@ -43,32 +68,14 @@ pub fn view(
     // caret, selection and IME composition through `EntityInputHandler`
     // (`BFieldText`), and a click places the caret.
     if editing
-        && let Some((app, focus)) = ctx.input.clone()
+        && let Some(field_text) = BFieldText::of(value, placeholder, ctx)
     {
-        let caret = ctx.style.colors.accent;
-        let mut sel = ctx.style.colors.accent;
-        sel.3 = 0.30;
-        let mut placeholder_color = ctx.style.colors.text;
-        placeholder_color.3 = (placeholder_color.3 * 0.45).clamp(0.0, 1.0);
-        let field_text = BFieldText {
-            app: app.clone(),
-            focus,
-            content: SharedString::from(value.to_string()),
-            placeholder: SharedString::from(placeholder.to_string()),
-            text: to_hsla(ctx.style.colors.text),
-            placeholder_color: to_hsla(placeholder_color),
-            caret: to_hsla(caret),
-            selection: to_hsla(sel),
-            font_size: px(ctx.style.typography.body),
-        };
-        let inner = div()
-            .flex()
-            .flex_row()
-            .items_center()
-            .gap(px(ctx.style.spacing.gap_sm))
-            .flex_1()
+        let app = field_text.app.clone();
+        let inner = BSearchPart::Row
+            .flex(ctx)
+            .div(ctx)
             .child(lead_icon(ctx.style.colors.text, ctx))
-            .child(div().flex_1().min_w_0().overflow_hidden().child(field_text));
+            .child(BSearchPart::TextCell.flex(ctx).div(ctx).child(field_text));
         let id_str = element_id("search", Some(placeholder), on_change);
         return field::shell(true, ctx)
             .id(SharedString::from(id_str.clone()))
@@ -110,21 +117,17 @@ pub fn view(
         _ => None,
     };
 
-    let inner = div()
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(ctx.style.spacing.gap_sm))
-        .flex_1()
+    let inner = BSearchPart::Row
+        .flex(ctx)
+        .div(ctx)
         // Search icon on the left, matching Blender's `ICON_VIEWZOOM`.
         .child(lead_icon(text_color, ctx))
         .child(
-            div()
-                .flex_1()
-                .min_w_0()
-                .overflow_hidden()
+            BSearchPart::TextCell
+                .flex(ctx)
+                .type_size(BType::Body)
+                .div(ctx)
                 .text_color(to_hsla(text_color))
-                .text_size(px(ctx.style.typography.body))
                 .child(SharedString::from(display_text)),
         );
 

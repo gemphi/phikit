@@ -16,6 +16,11 @@ pub use phiphx::Result as PhxResult;
 
 pub mod app;
 pub mod v2;
+
+/// The browser entry point (`#[wasm_bindgen(start)]`). The desktop binary
+/// starts from `src/main.rs` instead.
+#[cfg(target_family = "wasm")]
+pub mod wasm;
 // The v1 view layer (`bui`, `state`, `store`, `services` and the app shell that
 // drove them) was retired to `_unused/phiber-v1/` once v2 drew every view;
 // git still has it.

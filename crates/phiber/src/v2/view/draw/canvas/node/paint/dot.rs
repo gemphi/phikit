@@ -21,19 +21,43 @@ pub(super) fn paint_socket(
     let (x, y) = card.socket_at(row);
     // `NODE_SOCKSIZE` is the radius, in widget units.
     let r = DOT * card.unit;
-    let dot = Bounds::new(
-        point(at.origin.x + px(x - r), at.origin.y + px(y - r)),
-        gpui::size(px(r * 2.0), px(r * 2.0)),
-    );
     let to_hsla = crate::v2::view::draw::color::to_hsla;
-    window.paint_quad(quad(
-        dot,
-        Corners::all(px(r)),
-        to_hsla(crate::v2::theme::socket_color(row.kind)),
-        gpui::Edges::all(px(ink.ring)),
-        to_hsla(ink.outline),
-        gpui::BorderStyle::Solid,
-    ));
+    // The shape the file says, not a circle for everything
+    // (`shape::outline`, Blender's `display_shape`): the ring is filled in
+    // the socket's own colour and stroked in the outline's, which is what
+    // the shader's two masks come to.
+    let fill = to_hsla(crate::v2::theme::socket_color(row.kind));
+    let edge = to_hsla(ink.outline);
+    let place = |p: &(f32, f32)| point(at.origin.x + px(x + p.0 * r), at.origin.y + px(y + p.1 * r));
+    let mut draw = |ring: &[(f32, f32)], color, stroke: Option<f32>| {
+        let Some(first) = ring.first() else { return };
+        let mut path = match stroke {
+            Some(w) => gpui::PathBuilder::stroke(px(w)),
+            None => gpui::PathBuilder::fill(),
+        };
+        path.move_to(place(first));
+        for p in &ring[1..] {
+            path.line_to(place(p));
+        }
+        if stroke.is_none() {
+            path.close();
+        }
+        if let Ok(path) = path.build() {
+            window.paint_path(path, color);
+        }
+    };
+    let outline = super::shape::outline(row.shape);
+    draw(&outline, fill, None);
+    draw(&outline, edge, Some(ink.ring));
+    // The grid and list shapes carry bars inside their box; the three `_DOT`
+    // variants carry one dot, drawn in the OUTLINE colour — Blender draws it
+    // as a hole in the socket rather than a mark on it.
+    for tile in super::shape::tiles(row.shape) {
+        draw(&tile, edge, Some(ink.ring));
+    }
+    if super::shape::dotted(row.shape) {
+        draw(&super::shape::circle(super::shape::DOT_FRACTION), edge, None);
+    }
     // The name, inside the card: an input reads from the left edge, an output
     // is pushed against the right one, which is Blender's
     // `LayoutAlign::Expand` for inputs against `LayoutAlign::Right` for

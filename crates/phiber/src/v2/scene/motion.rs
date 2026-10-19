@@ -53,6 +53,14 @@ pub fn scoped_frame() -> Option<f32> {
     FRAME.with(Cell::get)
 }
 
+/// Put a frame in scope directly, for a thread that has no `BState`.
+///
+/// The scene scope is thread-local and armed by the draw pass, so a worker
+/// thread starts with none of it (`scene::source::adopt_scope`).
+pub fn set_scoped_frame(frame: Option<f32>) {
+    FRAME.with(|cell| cell.set(frame));
+}
+
 /// `ctx.frame` as the timeline holds it, when it holds one.
 pub fn shown_frame(state: &BState) -> Option<f32> {
     state.get(CtxKey::Frame).and_then(|raw| raw.trim().parse().ok())

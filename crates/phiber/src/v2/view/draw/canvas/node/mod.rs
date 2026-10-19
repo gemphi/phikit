@@ -43,6 +43,8 @@ pub mod reroute;
 pub mod select;
 pub mod set;
 pub mod socket;
+/// The same graph as solids over a floor — a view, switched per editor.
+pub mod spatial;
 pub mod view;
 pub mod wire;
 
@@ -166,8 +168,13 @@ impl BNode {
         })
     }
 
+    /// Flat — Blender's editor, the parity path — unless this editor has
+    /// been switched to the spatial view (`spatial::BNodeMode`).
     pub fn render(&self, ctx: &BRenderCtx) -> AnyElement {
-        set::render(ctx)
+        match spatial::BNodeMode::of(ctx.state, ctx.host) {
+            spatial::BNodeMode::Spatial => spatial::BSpatial.render(ctx),
+            spatial::BNodeMode::Flat => set::render(ctx),
+        }
     }
 }
 

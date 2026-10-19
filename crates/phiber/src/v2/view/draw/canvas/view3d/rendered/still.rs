@@ -26,6 +26,15 @@ impl BStillLook {
         Self { shading, plain, matcap: None, texture: false }
     }
 
+    /// A look for MEASURING a scene (`scene_fit`), where the question is how
+    /// many bytes the built arrays come to. The colour reaches only the
+    /// palette's entries, never a count, so there is no shade to take from
+    /// the theme here — `Hsla::default()` says that, where a grey written out
+    /// in numbers looked like a choice nobody could trace.
+    pub fn measuring(shading: crate::v2::scene::BShading) -> Self {
+        Self::new(shading, Hsla::default())
+    }
+
     pub(super) fn palette(&self) -> BMeshPalette {
         let plain = self.plain;
         BMeshPalette { shading: self.shading, cube: plain, sphere: plain, gem: plain, loaded: plain, accent: plain, accent_active: plain, matcap: self.matcap, texture: self.texture }
@@ -48,9 +57,24 @@ impl BStillLook {
 /// failed with *"the pixels do not fill the frame"* while the app's own F12,
 /// which already banded, was fine (`bands.rs`, `Tracer::max_pixels`).
 /// One implementation now, so the command line and F12 cannot diverge again.
-pub fn still(objects: &[BObject3D], look: BStillLook, cam: phiray::Camera, w: u32, h: u32, samples: u32, denoise: bool) -> Option<(Vec<u8>, u32)> {
+pub fn still(
+    objects: &[BObject3D],
+    look: BStillLook,
+    cam: phiray::Camera,
+    w: u32,
+    h: u32,
+    samples: u32,
+    denoise: bool,
+    // Adaptive Sampling and the Time Limit as the plan resolved them
+    // (`BRenderPlan::adapt`, `time_limit`). This used to pass `[0.0; 4]`
+    // — adaptive off, always — so a headless render never had the
+    // settings the panel showed, and `--samples 4096` meant 4096 for
+    // every pixel.
+    adapt: [f32; 4],
+    time_limit: f32,
+) -> Option<(Vec<u8>, u32)> {
     let mut image: Option<Vec<u8>> = None;
-    let taken = still_stepwise(objects, look, cam, w, h, samples, denoise, super::region::BStillRegion::default(), |_, at| {
+    let taken = still_stepwise(objects, look, cam, w, h, samples, denoise, adapt, time_limit, super::region::BStillRegion::default(), |_, at| {
         if let Some(settled) = at.image() {
             image = Some(settled.rgba);
         }
@@ -112,160 +136,10 @@ impl BStillAt {
 /// is the slow part of a sample, so it is not done every one.
 pub const PEEK_EVERY: std::time::Duration = std::time::Duration::from_millis(350);
 
-/// The same render, one sample at a time: `step` is called after each with
-/// the samples taken so far and what was read back (`BStillAt`): usually
-/// nothing, every `PEEK_EVERY` the bytes as they stand, and once the frame
-/// has settled the finished image. Returning `false` from it stops the
-/// render early, which is how a job is cancelled: the image as far as it got
-/// — the bands finished and the one under way at its samples so far — is
-/// handed to `step` as the finished one, as Blender keeps a cancelled
-/// render's tiles.
-///
-/// A frame with more pixels than the device binds as one image
-/// (`Tracer::max_pixels`) is rendered in horizontal bands, each a tile of
-/// the frame (`Camera::tile`), and the bands are joined — so a 4K frame
-/// renders whole on a device that binds 128 MiB. The samples reported step
-/// over the bands together, so progress still ends at `samples`.
-///
-/// `still` is this without the reporting; a final render uses this one so the
-/// Rendering space can show progress rather than freeze (`scene/render_job.rs`).
+#[path = "stepwise.rs"]
+mod stepwise;
+pub use stepwise::{still_stepwise, with_studio};
 
-/// Why a render produced nothing, said once: the Info editor's report and
-/// the session journal both carry it, so a blank Render Result is never the
-/// only evidence that something went wrong.
-fn note_render_refused(why: String) {
-    let line = format!("Render failed: {why}");
-    crate::v2::state::log::push(line.clone());
-    crate::v2::app::journal::BJournal::note(line);
-}
-
-pub fn still_stepwise(
-    objects: &[BObject3D],
-    look: BStillLook,
-    cam: phiray::Camera,
-    w: u32,
-    h: u32,
-    samples: u32,
-    denoise: bool,
-    region: super::region::BStillRegion,
-    mut step: impl FnMut(u32, BStillAt) -> bool,
-) -> Option<u32> {
-    use crate::v2::scene::BShading;
-    let Some(gpu) = phiray::Ray::gpu() else {
-        note_render_refused("no GPU adapter".to_string());
-        return None;
-    };
-    let (shading, palette) = (look.shading, look.palette());
-    let cam = with_studio(cam, shading);
-    let built = scene::build(objects, &palette);
-    // A scene the device will not take is reported with its reason rather
-    // than leaving a blank Render Result behind: pose 26 declined here and
-    // the info bar still said "Finished" (`phiray::Tracer::why_not`).
-    if let Some(why) = phiray::Tracer::why_not(&built, gpu.max_binding(), phiray::Tracer::chunks_for(&gpu)) {
-        note_render_refused(format!("the GPU declined this scene — {why}"));
-        return None;
-    }
-    let mut tracer = phiray::Tracer::from_scene(&gpu, built)?;
-    // A Workbench render's `render_aa` is its anti-aliasing count; the
-    // path tracer's samples are its own.
-    tracer.set_samples(samples);
-    tracer.set_aa_samples(samples);
-    tracer.set_mode(match shading {
-        BShading::Wireframe => phiray::Mode::Wire,
-        BShading::Solid => phiray::Mode::Solid,
-        BShading::Material => phiray::Mode::Preview,
-        BShading::Rendered => phiray::Mode::Rendered,
-    });
-    // The pixels drawn: the region of the frame — two pixels wider each
-    // way, for the same reason as the bands' overlap, and cut back after —
-    // or the frame itself.
-    // A band is drawn some rows over into its neighbours and laid in
-    // without them, and the region with that margin around it: the effects
-    // and the anti-aliasing gather each read a pixel's neighbours and clamp
-    // at a tile's edge, and the overlap is what makes the seam invisible —
-    // two rows, or SMAA's reach when the single pass leaves it on the
-    // finished frame (`Tracer::seam_rows`).
-    // A final render keeps the GPU busy far longer than the viewport's
-    // five-second readback guard allows, and a readback that gives up
-    // returns an EMPTY buffer that every caller reads as "the GPU
-    // declined" — which is exactly how pose 26 came back blank while the
-    // card was working. The budget is the render's for as long as it runs
-    // (`phiray::PatienceFor`), and the viewport keeps its own.
-    let _patience = phiray::PatienceFor::render(std::time::Duration::from_secs(600));
-    let reach = tracer.seam_rows();
-    let (rx, ry, rw, rh) = region.drawn(w, h, reach);
-    let bands = BBandList::of(rw, rh, BBandList::most(&gpu), reach);
-    let mut drawn = BStill::empty(rw, rh);
-    // The first sample is shown at once, then one every `PEEK_EVERY`.
-    let mut peeked = std::time::Instant::now() - PEEK_EVERY;
-    for (k, (y0, rows)) in bands.list.iter().enumerate() {
-        let (over, under) = (reach.min(*y0), reach.min(rh - y0 - rows));
-        let tiled = bands.list.len() > 1 || region.pixels.is_some();
-        let band = phiray::Camera { tile: if tiled { [rx, ry + y0 - over, w, h] } else { [0; 4] }, ..cam };
-        loop {
-            let (taken, done) = tracer.sample(&gpu, band, rw, rows + over + under);
-            // Reading the image back is the slow part, so progress carries a
-            // count, the bytes now and then (`PEEK_EVERY`), and the whole
-            // picture only at the end.
-            let go_on = done || {
-                let at = if peeked.elapsed() >= PEEK_EVERY {
-                    peeked = std::time::Instant::now();
-                    let mut peek = drawn.rgba.clone();
-                    BStill::lay_rgba(&mut peek, &tracer.pixels(&gpu), *y0 as usize, *rows as usize, over as usize, rw as usize);
-                    BStillAt::Peek(BStill::peek(region.framed_rgba(peek, w, h, reach)))
-                } else {
-                    BStillAt::Counting
-                };
-                step(bands.progress(k, taken + 1, tracer.samples()), at)
-            };
-            if done || !go_on {
-                if denoise && done {
-                    tracer.denoise(&gpu);
-                }
-                if done {
-                    composite(&gpu, &mut tracer);
-                }
-                drawn.lay(&BStill::read(&tracer, &gpu), *y0 as usize, *rows as usize, over as usize, rw as usize);
-                if !go_on {
-                    step(bands.progress(k, taken + 1, tracer.samples()), BStillAt::Settled(region.framed(drawn, w, h, reach)));
-                    return Some(taken + 1);
-                }
-                break;
-            }
-        }
-    }
-    step(tracer.samples(), BStillAt::Settled(region.framed(drawn, w, h, reach)));
-    Some(tracer.samples())
-}
-
-/// The scene's compositor over the finished render, as Blender's render
-/// pipeline runs it: on the scene-linear pixels, before the view transform
-/// (`scene/composite.rs`). Nothing happens when the file has no tree, it is
-/// switched off, or nothing reaches its output. A band renders as its own
-/// image, so each band is composited on its own — which is sound only
-/// because every node that runs is per-pixel; a node that read a
-/// neighbourhood would see a seam, and those are exactly the ones
-/// `BCompTree::declined` refuses.
-fn composite(gpu: &phiray::Gpu, tracer: &mut phiray::Tracer) {
-    use crate::v2::scene::composite::BComposite;
-    if let Some(tree) = crate::v2::scene::composite::tree() {
-        let run = tracer.composite(gpu, &tree);
-        if run.any() {
-            crate::v2::app::journal::BJournal::note(run.line());
-        }
-    }
-}
-
-/// Material Preview is lit by the studio image `scene::build` puts in the
-/// atlas: a camera that was not told so (built by hand rather than by
-/// `lit`) gets the lighting words here, or every surface comes out a dark
-/// mirror of the raw image.
-pub(super) fn with_studio(mut cam: phiray::Camera, shading: crate::v2::scene::BShading) -> phiray::Camera {
-    if shading == crate::v2::scene::BShading::Material && cam.preview == [0; 4] && super::studio::environment().is_some() {
-        super::world::studio_lighting(&mut cam);
-    }
-    cam
-}
 
 impl BStill {
     /// The tracer's image as it stands, in every form.

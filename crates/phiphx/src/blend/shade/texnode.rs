@@ -219,6 +219,34 @@ impl BProcFinder<'_> {
                 normalize: self.stored(from, "NodeTexNoise", "normalize", 1).is_none_or(|n| n != 0),
                 ..base
             },
+            // Musgrave IS a Noise: Blender removed the node in 4.1 and kept
+            // `eNodeMusgrave_Type` in the header marked *"Deprecated
+            // Musgrave Texture. Keep for Versioning"* — and the two enums
+            // are value-for-value identical (`DNA_node_types.h:577` vs
+            // `:587`: MULTIFRACTAL 0, FBM 1, HYBRID 2, RIDGED 3, HETERO 4),
+            // so the type copies straight across.
+            //
+            // Three things differ from a Noise and all three are measured
+            // off the file rather than assumed:
+            //   * the roughness input is called **Dimension**;
+            //   * there is no Distortion input, and only a `Fac` output;
+            //   * `musgrave_type` is an `int` where Noise's `type` is a
+            //     `uchar`, hence the width 4.
+            // `normalize` is off because Musgrave had no such setting and
+            // never remapped its output to 0..1 — reading it as a Noise's
+            // default (on) would flatten every Musgrave in the file.
+            "Musgrave" => BlendProc {
+                kind: BlendProcKind::NoiseFac,
+                detail: self.float(from, "Detail", 2.0),
+                roughness: self.float(from, "Dimension", 2.0),
+                lacunarity: self.float(from, "Lacunarity", 2.0),
+                distortion: 0.0,
+                offset: self.float(from, "Offset", 0.0),
+                gain: self.float(from, "Gain", 1.0),
+                variant: self.stored(from, "NodeTexMusgrave", "musgrave_type", 4).unwrap_or(NOISE_FBM),
+                normalize: false,
+                ..base
+            },
             "Voronoi" => {
                 let variant = self.stored(from, "NodeTexVoronoi", "feature", 4).unwrap_or(0);
                 let kind = match (output, variant) {

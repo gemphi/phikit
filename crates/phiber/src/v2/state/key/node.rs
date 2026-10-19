@@ -130,6 +130,22 @@ pub enum NodeKey {
     /// (`canvas/node/remove/`). One key holds the whole set — deleting is one
     /// store write and one undo step, as adding is.
     Removed(BHostType),
+    /// `ctx.<host>.node.mode` — how this editor shows its tree: `flat`
+    /// (Blender's node editor, the parity path and the default) or `spatial`
+    /// (the same graph as solids over a floor, a VIEW only —
+    /// `canvas/node/spatial/`).
+    ///
+    /// Per host, as Blender keeps every `SpaceNode` setting per editor, so
+    /// Shading can be spatial while Compositing stays flat. Absent means flat.
+    Mode(BHostType),
+    /// `ctx.<host>.node.orbit` — the spatial view's camera angles, as
+    /// `"yaw, pitch"` in degrees (`canvas/node/spatial/camera.rs`).
+    ///
+    /// Only the angles. The camera's pivot and distance are the FLAT view's
+    /// rectangle (`View`): its centre and its width, so switching modes lands
+    /// on the same part of the graph in both directions, and a dolly or a pan
+    /// in spatial writes `View`, not a second copy of it.
+    Orbit(BHostType),
 }
 
 impl BKey for NodeKey {
@@ -146,6 +162,8 @@ impl BKey for NodeKey {
             Self::Values(host) => BPath::owned(vec![host.slug(), "node", "values"]),
             Self::Picking(host) => BPath::owned(vec![host.slug(), "node", "picking"]),
             Self::Removed(host) => BPath::owned(vec![host.slug(), "node", "removed"]),
+            Self::Mode(host) => BPath::owned(vec![host.slug(), "node", "mode"]),
+            Self::Orbit(host) => BPath::owned(vec![host.slug(), "node", "orbit"]),
         }
     }
 }

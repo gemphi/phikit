@@ -68,6 +68,8 @@ impl BStatusbarItem {
             // What the view layer shows, counted — the same line the
             // viewport's read-out draws (`scene::stats_line`), so the two
             // cannot disagree about how big the scene is.
+            // The viewport's read-out draws these too (`scene::stats_pairs`),
+            // so the two cannot disagree about how big the scene is.
             BStatusSegment::Stats => Some(crate::v2::scene::stats_line(s)),
             // The build, as Blender ends its status bar with its version.
             BStatusSegment::Version => Some(format!("v{}", env!("CARGO_PKG_VERSION"))),
@@ -80,13 +82,21 @@ impl BStatusbarItem {
 
 impl BViewItem for BStatusbarItem {
     fn build(&self, s: &BState) -> BView {
+        // Stats is three read-outs, not one, and each gets its own caption.
+        if self.spec.kind == BStatusSegment::Stats {
+            return BView::row(crate::v2::scene::stats_pairs(s).into_iter().map(|(label, value)| BView::pair(label, value)).collect());
+        }
         let path = BPath::owned(vec![Self::state_key(self.spec.kind)]);
-        match s.get(&path) {
-            Some(value) if !value.is_empty() => BView::label(value),
-            _ => match self.fallback(s) {
-                Some(value) => BView::label(value),
-                None => BView::empty(),
-            },
+        let value = match s.get(&path) {
+            Some(value) if !value.is_empty() => Some(value.to_string()),
+            _ => self.fallback(s),
+        };
+        match value {
+            // The version is the build, not a reading of anything, so it
+            // has no caption to recede behind.
+            Some(value) if self.spec.kind == BStatusSegment::Version => BView::label(value),
+            Some(value) => BView::pair(self.spec.label, value),
+            None => BView::empty(),
         }
     }
 }

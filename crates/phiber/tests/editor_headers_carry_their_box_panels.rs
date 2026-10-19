@@ -160,11 +160,24 @@ fn the_control_is_shut_until_it_is_clicked() {
     }
 }
 
+/// Every box in the table is a row in the popover — counted through the
+/// accordions, since a table with more than one heading is sub-panels now
+/// (`part::filter::fold`) and its rows sit one card deep.
+fn rows_in(views: &[BView]) -> usize {
+    views
+        .iter()
+        .map(|view| match view {
+            BView::Card(card) => rows_in(&card.body),
+            _ => 1,
+        })
+        .sum()
+}
+
 #[test]
 fn each_popover_draws_one_row_per_box() {
     for (host, _) in CARRIERS {
         let rows = opened(&open_for(host), host).expect("the open popover");
-        assert_eq!(rows.len(), overlay::table_for(host).unwrap().len(), "{host:?}");
+        assert_eq!(rows_in(&rows), overlay::table_for(host).unwrap().len(), "{host:?}");
     }
 }
 

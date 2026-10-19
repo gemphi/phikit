@@ -4,13 +4,25 @@
 use crate::v2::view::BView;
 use crate::v2::view::prim::BAction;
 
-/// Popover placement relative to its anchor. `Below` for menubar drops,
-/// `BelowEnd` for right-aligned host-switch drops, and `Right` for nested
-/// submenus (Blender's `TOPBAR_MT_file_recover` etc).
+/// Popover placement relative to its anchor, and with it how wide the panel
+/// starts: a side is the one thing a declaring site says about where its
+/// popover goes (`draw::popover::place`, `draw::popover::BPopoverWidth`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum BPopoverSide {
+    /// Below the trigger, leading edges flush: a menubar drop, a property
+    /// dropdown, an enum picker.
     Below,
+    /// Below the trigger, TRAILING edges flush: a header popover opened from
+    /// an icon at the header's right end, so the panel grows back across the
+    /// header instead of off the edge of the host. One side zone wide, which
+    /// is also the top of Blender's own header-popover band, so in a side
+    /// zone its leading edge lands on the header's first icon.
     BelowEnd,
+    /// The host switcher's picker: below the trigger, leading edges flush,
+    /// and up to two panels wide with its categories and hosts side by side.
+    Switcher,
+    /// Beside its row: a nested submenu (Blender's `TOPBAR_MT_file_recover`
+    /// etc).
     Right,
 }
 

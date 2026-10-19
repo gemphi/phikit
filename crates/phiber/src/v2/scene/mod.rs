@@ -20,7 +20,7 @@ pub mod source;
 pub use source::{
     clear_loaded_scene, clear_scene_objects, scene_actions, scene_cameras, scene_lights,
     object_builds, scene_objects, scene_render, scene_source, scene_timeline, scene_world, set_loaded_scene,
-    object_name, set_loaded_shared, stats_line, visible_metrics, with_loaded,
+    object_name, set_loaded_shared, stats_line, stats_pairs, visible_metrics, with_loaded,
 };
 
 pub mod keep;
@@ -38,11 +38,14 @@ pub use key::{
 pub mod project;
 pub mod mixdown;
 pub mod render_border;
+pub mod render_cast;
 pub mod render_engine;
 pub mod render_play;
 pub mod render_slot;
 pub mod render_job;
 pub mod render_fit;
+pub mod render_phase;
+pub use render_phase::{BRenderPhase, phase as render_phase};
 pub mod render_status;
 pub use render_job::{BRenderPlan, active_camera, camera_of, plan as render_plan, plan_at, render_size};
 pub mod output_set;
@@ -51,6 +54,8 @@ pub mod render_save;
 pub use render_save::{BSaveKind, kind_of as save_kind, save as save_render, save_to as save_render_to, written_pass};
 pub mod render_edit;
 pub mod render_set;
+pub mod render_adaptive;
+pub mod render_color;
 pub mod render_quality;
 pub mod video;
 pub use render_set::{BRenderSet, render_set};

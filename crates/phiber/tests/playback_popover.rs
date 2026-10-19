@@ -38,11 +38,13 @@ async fn the_playback_popover_opens_stays_open_for_its_boxes_and_closes_for_a_me
     }
     // The factory settings: 3D Viewport plays, Scrubbing is off.
     assert!(app.read_with(cx, |a, _| settings::is_on(&a.state, "use_play_3d_editors") && !settings::is_on(&a.state, "use_audio_scrub")));
-    // Tick Scrubbing: it turns on and the panel is still there.
-    click(cx, "btn-label-set-ctx.buts.use_audio_scrub-true-text");
+    // Tick Scrubbing: it turns on and the panel is still there. A boolean
+    // row's control is a switch over its key (`view/draw/ctrl/mod.rs`), so
+    // the target is `switch-<key>`, not a labelled button.
+    click(cx, "switch-ctx.buts.use_audio_scrub");
     assert!(app.read_with(cx, |a, _| settings::is_on(&a.state, "use_audio_scrub")));
     assert!(cx.debug_bounds("section-Sync").is_some(), "a panel stays open while its boxes are ticked");
-    assert!(cx.debug_bounds("btn-label-set-ctx.buts.use_audio_scrub-false-text").is_some(), "the box now offers to untick");
+    assert!(cx.debug_bounds("switch-ctx.buts.use_audio_scrub").is_some(), "and the box is still there to untick");
     // A menu opening takes the panel down.
     app.update(cx, |app, cx| app.handle_action(&BAction::Toggle(phiber::v2::state::MenuKey::Top("time", "View").path()), cx));
     cx.run_until_parked();

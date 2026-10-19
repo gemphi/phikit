@@ -162,6 +162,12 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
         warnings: {
             let mut w = missing;
             w.extend(skipped_warnings);
+            // The world's HDRI, when it is not where the file says: Blender
+            // would light the scene magenta; the renderer uses its studio
+            // light instead (`BlendWorld::missing`).
+            if let Some(hdri) = &p.world.missing {
+                w.push(format!("World: cannot read '{hdri}' — lit with Blender's studio light (forest) instead of the missing-image magenta"));
+            }
             w
         },
     };

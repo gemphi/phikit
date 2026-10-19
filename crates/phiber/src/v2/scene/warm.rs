@@ -47,6 +47,10 @@ impl BWarm {
         if self.meshes.is_empty() {
             return None;
         }
+        // Keeps `spawn`: the caller joins the handle, so this is not
+        // fire-and-forget and `offload` would lose it. It captures meshes,
+        // not GPU handles, so it still compiles for wasm — where `spawn`
+        // fails and this returns `None`, which the caller already handles.
         std::thread::Builder::new().name("phiber-warm".into()).spawn(move || self.run()).ok()
     }
 

@@ -3,10 +3,11 @@
 //! layout regions are transparent so their pane or specialized content owns
 //! the visible surface.
 
-use super::flex::{BAlign, BDim, BEdge, BFill, BFlex, BFlexed, BJustify, BLen, BPlace, BRadius, BSpace};
+use super::flex::{BAlign, BDim, BFill, BFlex, BFlexed, BJustify, BLen, BPlace, BRadius, BSpace};
 use super::ctx::BRenderCtx;
 use super::surface::{BChildCornerSupport, BSurfaceOpacity, child_surface_plan, compatible_inner_radius};
 use super::walk;
+mod pad;
 use crate::v2::host::BHostType;
 use crate::v2::part::strip;
 use crate::v2::region::BRegionType;
@@ -125,79 +126,7 @@ impl BFlexed for BRegionFrame {
         .fill(region_fill(kind))
         .gap(BSpace::GapXs);
 
-        // Every vertical strip is the topbar turned on its side, so every rail
-        // is flush horizontally — the cap owns the gap on its outer edge and
-        // runs into the pane on the other (`tab::cap`). Its vertical
-        // padding matches the content region beside it, so the first icon
-        // sits level with the first accordion header. Header strips stay
-        // vertically centred in their fixed height.
-        let flex = if rail_region(kind, ctx.host) {
-            // The rail's pinned cluster (or the activity bar's foot group)
-            // sits a cap gap off the region's bottom edge, the 2px every
-            // cap keeps off its strip's edge (`menu_top_gap`).
-            //
-            // The gap here is the one BETWEEN panes, and it stays: a rail's
-            // caps run flush inside their own pane — the cap owns that, as
-            // `tab::cap` says — but a pane boundary is a pane boundary. The
-            // activity bar's secondary column is the Center pane beside the
-            // rail's Left one, and zeroing this ran it into its parent when
-            // every other host's panes keep the gutter. A region with only a
-            // rail in it has no second pane, so this changes nothing there.
-            // The same lead top and bottom, so a rail's first and last caps
-            // sit off its strip's ends by the same amount.
-            //
-            // No horizontal padding: a rail tab spans the strip and meets the
-            // pane beside it, which is how the active Properties tab merges
-            // into the panel it selects (`layout_gutters`, and the
-            // pane-facing bleed in `tab::properties_layers`). Insetting it
-            // breaks that join.
-            let flex = flex.pad_top(BSpace::RailLead).pad_bottom(BSpace::RailLead);
-            // A NavBar or Tools region is only a rail, and runs to its area's
-            // edges. A *Center* region that leads with a rail carries content
-            // beside it — the activity bar's secondary column — and that
-            // content wants the gutter every other content region keeps, so
-            // its last row does not butt against the area's border.
-            if kind == BRegionType::Center { flex.pad_right(BSpace::PadSm) } else { flex }
-        } else if kind == BRegionType::ToolHeader && ctx.host.tools_hold_panels() {
-            // The file browser's path strip is the columns under it, read
-            // across: each pane pads itself as the region under it does
-            // (`pane`), so the strip itself pads nothing and leaves no gap.
-            flex.gap(BSpace::None)
-        } else if matches!(kind, BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute) {
-            let flex = flex.pad_x(BSpace::PadMd);
-            // A content header closes against what it heads with the same
-            // line an accordion draws around itself — one edge of
-            // `BEdge::All`, the same stroke and colour — so a header strip
-            // and a card heading read as the same kind of boundary. A footer
-            // keeps none: the area's own border closes it below.
-            if ruled_header(kind, ctx.host) { flex.border(BEdge::Bottom) } else { flex }
-        } else if kind == BRegionType::Tools && ctx.host.tools_hold_panels() {
-            // A column of panels, inset from the area as every content
-            // region is — but sharing its inner edge with the region beside
-            // it, which pads it once: two side-by-side regions are one
-            // `pad_md` apart, as an area's content is from its edge, not two.
-            flex.pad_left(BSpace::PadMd).pad_y(BSpace::PadMd)
-        } else if ctx.host == BHostType::Buts && kind == BRegionType::Center {
-            // Properties content: a small top/bottom pad so the first and last
-            // accordion don't touch the edges, and a right gutter so the last
-            // property row doesn't butt against the border. The rail beside
-            // it derives its lead from the same pad (`rail_lead`).
-            flex.pad_y(BSpace::ContentPad).pad_right(BSpace::PadSm)
-        } else if kind == BRegionType::Center && ctx.host.fills_content() {
-            // Content-fill hosts (3D viewport, node graphs, image / UV / seq /
-            // clip, timelines) paint wall to wall: the viewport's clear and the
-            // graph's grid must reach every edge. Their overlays are absolute,
-            // so they need no padded parent.
-            flex
-        } else if kind == BRegionType::Center && ctx.host.tools_hold_panels() {
-            // The file list beside the source list: the two columns are a
-            // seam apart, as two areas of a workspace are (`BSpace::Seam`,
-            // the zone gap) — not a content pad, which spaced them twice
-            // as far as any zone. The outer edges keep the content inset.
-            flex.pad_left(BSpace::Seam).pad_right(BSpace::PadMd).pad_y(BSpace::ContentPad)
-        } else {
-            flex.pad_x(BSpace::PadMd).pad_y(BSpace::ContentPad)
-        };
+        let flex = pad::padded(flex, kind, ctx);
 
         let expanded = |key| strip::is_expanded(ctx.state, ctx.host, key);
         let fixed = match kind {

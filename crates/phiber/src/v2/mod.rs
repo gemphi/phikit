@@ -19,12 +19,16 @@ pub mod view;
 
 pub mod area;
 pub mod host;
+/// The manual, declared as data rather than written as loose files.
+pub mod manual;
 pub mod modal;
 pub mod pane;
 pub mod part;
 pub mod region;
 pub mod scene;
 pub mod space;
+/// Spatial — the depth view's frame budget (`spatial/mod.rs`).
+pub mod spatial;
 pub mod zone;
 
 pub mod app;

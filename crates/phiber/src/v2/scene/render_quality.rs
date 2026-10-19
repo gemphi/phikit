@@ -9,10 +9,18 @@
 //!   exception, because Workbench is an engine phiber really does have
 //!   (`render_engine.rs`, `workbench_render.cc`) — a file saved under it
 //!   still rasterizes.
-//! - **2048 samples is the floor** for a final render, so the default is
-//!   the quality render rather than whatever count a file happened to be
-//!   saved with. Pose 26 asks for twenty; twenty is a turntable preview,
-//!   not a frame anyone would keep.
+//! - **2048 samples is the DEFAULT** for a final render — what it takes
+//!   when nothing says otherwise. It was a *floor* until 2026-10-19, and
+//!   a floor was the wrong shape: `asked.max(2048)` meant Max Samples
+//!   could only ever be raised, so typing 64 into the panel rendered
+//!   2048 and the row silently did nothing. Blender has no such rule —
+//!   Max Samples means Max Samples — and a person who asks for 64 wants
+//!   64, whether for a quick look or because they are denoising.
+//!
+//!   The original reasoning still holds for the *default*: pose 26 asks
+//!   for twenty, and twenty is a turntable preview rather than a frame
+//!   anyone would keep. So a file that never says gets 2048; a file or a
+//!   panel that does say is believed.
 //!
 //! The floor is a *final render's*. The viewport keeps `preview_samples`
 //! and stays as quick as it was (`BRenderSet::preview_samples`).
@@ -26,19 +34,20 @@ impl BRenderQuality {
     /// own tracer, named as itself rather than as Cycles.
     pub const ENGINE: &'static str = "PHIRAY";
 
-    /// The sample floor. A render takes at least this many samples;
-    /// `--draft` on the command line lifts it.
+    /// The samples a render takes when nothing asks for a count.
+    ///
+    /// Still named `SAMPLE_FLOOR` because that is what it was and what
+    /// the command line calls it; it is a default now, not a minimum.
     pub const SAMPLE_FLOOR: u32 = 2048;
 
-    /// The samples a render actually takes: what was asked for, never
-    /// below the floor unless the floor was lifted. `None` asked for
-    /// means the floor itself.
-    pub fn samples(asked: Option<u32>, draft: bool) -> u32 {
-        match (asked, draft) {
-            (Some(asked), true) => asked.max(1),
-            (Some(asked), false) => asked.max(Self::SAMPLE_FLOOR),
-            (None, _) => Self::SAMPLE_FLOOR,
-        }
+    /// The samples a render actually takes: **what was asked for**, and
+    /// the default only when nothing asked. A render takes at least one.
+    ///
+    /// `draft` no longer changes this. It existed to lift a floor that no
+    /// longer exists, and is kept as an argument so the command line does
+    /// not have to change.
+    pub fn samples(asked: Option<u32>, _draft: bool) -> u32 {
+        asked.map_or(Self::SAMPLE_FLOOR, |asked| asked.max(1))
     }
 
     /// The engine to render a file with when the Engine row has never been
@@ -57,12 +66,17 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_floor_holds_unless_draft_lifts_it() {
-        assert_eq!(BRenderQuality::samples(None, false), 2048, "nothing asked: the floor");
-        assert_eq!(BRenderQuality::samples(Some(20), false), 2048, "pose 26's twenty is lifted to the floor");
-        assert_eq!(BRenderQuality::samples(Some(4096), false), 4096, "more than the floor is kept");
-        assert_eq!(BRenderQuality::samples(Some(20), true), 20, "--draft renders what was asked");
-        assert_eq!(BRenderQuality::samples(Some(0), true), 1, "a render takes at least one sample");
+    fn a_count_that_was_asked_for_is_the_count_that_renders() {
+        assert_eq!(BRenderQuality::samples(None, false), 2048, "nothing asked: the default");
+        // The row is believed. This used to assert the opposite — that
+        // twenty was "lifted to the floor" — which is exactly why typing
+        // 64 into Max Samples rendered 2048 and looked like a dead
+        // control.
+        assert_eq!(BRenderQuality::samples(Some(20), false), 20, "pose 26's twenty is honoured");
+        assert_eq!(BRenderQuality::samples(Some(64), false), 64, "a 64-sample render takes 64");
+        assert_eq!(BRenderQuality::samples(Some(4096), false), 4096, "and a big count is kept");
+        assert_eq!(BRenderQuality::samples(Some(0), false), 1, "a render takes at least one sample");
+        assert_eq!(BRenderQuality::samples(Some(64), true), 64, "draft changes nothing now");
     }
 
     #[test]

@@ -32,7 +32,7 @@ fn fixture_renders_through_phiray() {
     for path in files.filter(|p| p.exists()) {
         let name = path.file_name().unwrap().to_str().unwrap().to_string();
         let name = name.as_str();
-        let opened = std::time::Instant::now();
+        let opened = web_time::Instant::now();
         let model = Phx::open(&path).expect("open");
         eprintln!("{name}: opened in {:?}, {} objects", opened.elapsed(), model.objects.len());
         let mut s = BState::default();
@@ -63,7 +63,7 @@ fn fixture_renders_through_phiray() {
         let (w, h) = (320u32, 180u32);
         let look = world::BRayLook { sky: black(), grid: white().opacity(GRID_ALPHA), grid_hide: 0, world: Some(model_world), lights: model_lights.clone(), wire: None, view: [0.0, 0.0, 1.0, 0.0], environment: None, set: Default::default(), studio: false };
         let cam = scene::camera(view_yaw(&s), view_pitch(&s), view_pan(&s), view_zoom(&s), setup, w as f32 / h as f32, &look);
-        let t = std::time::Instant::now();
+        let t = web_time::Instant::now();
         let mut px = tracer.render(&gpu, cam, w, h).0;
         for _ in 1..phiray::Tracer::SAMPLES {
             px = tracer.render(&gpu, cam, w, h).0;
@@ -108,8 +108,8 @@ fn render_thread_refines_latest_view() {
     worker.send(BRayJob::View(1, BRayShot { cam: cam(0.0), w: 32, h: 32, mode: phiray::Mode::Rendered, samples: 32, aa: 8, denoise_from: None, outline: std::sync::Arc::from([]) }));
     worker.send(BRayJob::View(2, BRayShot { cam: cam(45.0), w: 48, h: 48, mode: phiray::Mode::Rendered, samples: 32, aa: 8, denoise_from: None, outline: std::sync::Arc::from([]) }));
     let (mut seq, mut last, mut sizes) = (0, None, Vec::new());
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
-    while std::time::Instant::now() < deadline {
+    let deadline = web_time::Instant::now() + std::time::Duration::from_secs(60);
+    while web_time::Instant::now() < deadline {
         if let Some(f) = worker.take(seq) {
             seq = f.seq;
             let done = f.done && f.view == 2;
@@ -193,8 +193,8 @@ fn a_moved_object_draws_as_a_scene_built_there() {
     let setup = crate::v2::scene::camera::setup_from_state(&BState::default());
     let shot = BRayShot { cam: scene::camera(20.0, 30.0, (0.0, 0.0), 1.0, setup, 1.0, &look), w: 40, h: 40, mode: phiray::Mode::Solid, samples: 1, aa: 8, denoise_from: None, outline: std::sync::Arc::from([]) };
     let finished = |worker: &BRayWorker, after: u64| -> BRayFrame {
-        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
-        while std::time::Instant::now() < deadline {
+        let deadline = web_time::Instant::now() + std::time::Duration::from_secs(60);
+        while web_time::Instant::now() < deadline {
             if let Some(f) = worker.take(after).filter(|f| f.done) {
                 return f;
             }
