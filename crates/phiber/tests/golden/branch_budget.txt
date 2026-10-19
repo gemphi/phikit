@@ -29,9 +29,7 @@
 1 view/draw/canvas/view3d/mesh/paint.rs
 1 view/draw/canvas/view3d/mod.rs
 1 view/draw/canvas/view3d/rendered/mod.rs
-1 view/draw/ctrl/mod.rs
+1 view/draw/ctrl/complex.rs
 1 view/draw/modal/part.rs
-5 view/draw/pane.rs
-6 view/draw/region/mod.rs
 2 view/draw/row.rs
 2 view/draw/tab/mod.rs

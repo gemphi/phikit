@@ -13,13 +13,26 @@ workspace = true
 [lib]
 name = "phiber"
 path = "src/lib.rs"
+# `cdylib` is what wasm-bindgen needs to produce a module for the browser;
+# `rlib` keeps the desktop binary, the tests and the examples linking against
+# the same crate. Both, because the one lib section serves every target.
+crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 phiphx = { path = "../phiphx" }
 phiray = { path = "../phiray" }
 exr = "1.74"
 image = { workspace = true }
-dirs = { workspace = true }
+# The 5.5 MB of `assets/` a browser build carries in the binary
+# (`app/web_assets.rs`). Built on every target so the embedded bytes can be
+# checked against the files on disk by the host test suite.
+include_dir = "0.7.4"
+# `std::time::Instant::now()` PANICS on wasm32-unknown-unknown; so does
+# `SystemTime::now()`. `web-time` is `std::time` on every other target and
+# `performance.now()` / `Date.now()` on the web, so this is a swap, not a
+# fork. Phiber times frames, imports, playback and the journal, so a browser
+# build would panic within the first frame without it.
+web-time = { workspace = true }
 smallvec = { workspace = true }
 gpui = { workspace = true }
 gpui_platform = { workspace = true }
@@ -32,9 +45,21 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 bytemuck = { version = "1.18", features = ["derive"] }
-zstd = { workspace = true }
 flate2 = { workspace = true }
 base64 = { workspace = true }
+
+# `dirs` finds a local Blender install to borrow matcaps from
+# (`v2/scene/matcap.rs`). `dirs-sys` reaches for platform APIs that
+# wasm32-unknown-unknown does not have, and a browser has no Blender install
+# to find, so it is a desktop-only dependency. The dev-dependency stays
+# unconditional: tests do not run on wasm.
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+dirs = { workspace = true }
+
+
+# The browser entry point (`src/wasm.rs`).
+[target.'cfg(target_family = "wasm")'.dependencies]
+wasm-bindgen = { workspace = true }
 
 [features]
 default = ["phx-import"]

@@ -1,0 +1,55 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phiber</title>
+<!--
+  The page Phiber's wasm build loads into.
+
+  There is no <canvas> here on purpose: gpui_web creates one itself and
+  appends it to <body> (gpui_web/src/window.rs). All this page has to do is
+  give it a full-viewport body, load the module, and say something useful when
+  it cannot start — a wasm module that fails is otherwise a blank white page.
+
+  Build:
+    wasm-pack build crates/phiber --target web --out-dir web/pkg
+  Serve (a module script cannot be loaded from file://):
+    python -m http.server -d crates/phiber/web
+-->
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1d1d1d; }
+  #boot {
+    position: fixed; inset: 0; display: grid; place-content: center;
+    font: 14px/1.6 ui-sans-serif, system-ui, sans-serif; color: #c8c8c8;
+    text-align: center; padding: 24px;
+  }
+  #boot code { color: #e8a33d; }
+  #boot a { color: #7aa2d6; }
+</style>
+<body>
+  <div id="boot">Starting Phiber…</div>
+  <script type="module">
+    const boot = document.getElementById('boot');
+    const stop = (html) => { boot.innerHTML = html; };
+
+    // phiray's kernels and gpui_wgpu both run on WebGPU. Checking first turns
+    // the most common failure — a browser without it — from a blank page into
+    // a sentence. `navigator.gpu` is absent on Firefox by default and on
+    // older Safari.
+    if (!navigator.gpu) {
+      stop(`This build needs <strong>WebGPU</strong>, which this browser does not expose.
+            <br><br>Chrome or Edge 113+, or Safari 18+, will run it.`);
+    } else {
+      try {
+        // `start` is the #[wasm_bindgen(start)] in src/wasm.rs; wasm-bindgen
+        // runs it during init, so there is nothing to call afterwards.
+        const init = (await import('./pkg/phiber.js')).default;
+        await init();
+        boot.remove();
+      } catch (err) {
+        console.error(err);
+        stop(`Phiber failed to start. The browser console has the detail.
+              <br><br><code>${String(err).replace(/[<&]/g, c => c === '<' ? '&lt;' : '&amp;')}</code>`);
+      }
+    }
+  </script>
+</body>

@@ -21,7 +21,15 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 bytemuck = { version = "1.18", features = ["derive"] }
-zstd = { workspace = true }
+# Zstd decoding, pure Rust, forced on by the `pure-zstd` feature so the
+# wasm path is testable on a desktop host (`blend/file/zst.rs`).
+ruzstd = { version = "0.7", optional = true }
+# `std::time::Instant::now()` PANICS on wasm32-unknown-unknown ("time not
+# implemented on this platform"), and the open path times every read to fill
+# `report.duration_ms` — including `blend_bytes`, which exists for the
+# browser. `web-time` is `std::time` everywhere else and
+# `performance.now()` on the web, so this is a swap, not a fork.
+web-time = { workspace = true }
 flate2 = { workspace = true, features = ["rust_backend"] }
 image = { workspace = true }
 rayon = { workspace = true }
@@ -31,6 +39,20 @@ gpui = { workspace = true, optional = true }
 gltf = { version = "1.4", default-features = false, features = ["utils"], optional = true }
 zip = { version = "2.2", default-features = false, features = ["deflate"], optional = true }
 
+# Zstd: Blender has written compressed `.blend` files by default since 4.5,
+# so decoding is not optional on any target. The `zstd` crate binds
+# Facebook's C library and its build script needs clang — which a
+# wasm32-unknown-unknown build does not have, and which failed there with
+# `failed to find tool "clang"`. So the C library is a dependency only where
+# a C toolchain exists, and wasm gets the pure-Rust decoder instead. It must
+# not appear as a plain `[dependencies]` entry: that puts `zstd-sys` in the
+# wasm crate graph and the build fails before any of this code is reached.
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+zstd = { workspace = true }
+
+[target.'cfg(target_family = "wasm")'.dependencies]
+ruzstd = "0.7"
+
 [features]
 default = ["bui"]
 bui = ["dep:gpui"]
@@ -38,6 +60,11 @@ gltf-import = ["dep:gltf"]
 usdz-import = ["dep:zip"]
 usdc-parser = []
 proptest = []
+# Decode Zstd in Rust (`ruzstd`) rather than through the C library, on a
+# target that has both. The wasm targets take that path anyway; this feature
+# is how the Rust decoder gets exercised by the test suite on a desktop host,
+# so it is a tested path and not a guess.
+pure-zstd = ["dep:ruzstd"]
 
 [dev-dependencies]
 proptest = { workspace = true }

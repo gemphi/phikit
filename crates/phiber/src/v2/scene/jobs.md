@@ -2,7 +2,7 @@
 
 | State | Open | Done |
 |---|---|---|
-| 🟡 in progress | 1 | 9 |
+| 🟡 in progress | 1 | 11 |
 
 ## Todo
 
@@ -10,6 +10,8 @@
 
 ## Done
 
+- [x] A render is never handed nothing (`render_cast.rs`): F12 on pose 26 reached the tracer with an empty scene (995 objects in the file, 967 in the viewport, 0 in the render) and the window said "No render". `BRenderCast` counts what the render rules keep — objects, then objects with geometry — and when nothing would be drawn it names the step that emptied it (the collections with the camera off or excluded, by id) in the Info editor and renders what the viewport shows instead; a deliberate divergence from Blender's empty frame, logged every time (`render_cast::tests`)
+- [x] `BRenderPhase::Failed` (`render_phase.rs`): a job that ends with no picture is a failure, not an empty slot — the info bar prints `Render failed: <why>` from `render_job::failure()` (set by `still_stepwise`'s refusal) where it printed "No render" (`render_phase_tests`)
 - [x] Animation drives the scene from the frame (`scene::motion`, `scene::pose`, phiphx `SceneMotion`): objects, rig bones, rig-deformed meshes, lights and cameras all pose at the shown frame (`BPosed::exact`, `solved_at`), so playback at the file's fps actually moves the scene — `moving_frame`/`posed` re-solve only an animated scene, a still one never re-poses. The frame is per render pass like the loaded model. (phiphx motion/rig tests + `scene::motion`)
 - [x] Snap menu: Cursor to Grid, Selection to Grid and Selection to Active (`scene::cursor`, `view3d.snap_*`): the cursor rounds to the nearest world unit, and each selected object's origin snaps to the nearest grid point or onto the active object — the same transform machinery as Selection to Cursor, one per-object target. Replaces three `op()` placeholders. (`cursor_tests`)
 - [x] A render keeps its picture between readbacks (`render_job::start`): most samples report only a count (`BStillAt::Counting`), and the publish closure sent those with EMPTY bytes, wiping the peek published a moment before — the Render Result flashed on at each readback (3/s) and off at the very next sample, which reads as a blank canvas and makes an animation flicker. The closure now keeps the last image's planes and republishes them with the new count; only a readback replaces them. (`render_job` tests)

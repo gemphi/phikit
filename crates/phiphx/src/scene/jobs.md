@@ -2,7 +2,7 @@
 
 | State | Open | Done |
 |---|---|---|
-| 🟡 in progress | 2 | 10 |
+| 🟡 in progress | 1 | 14 |
 
 ## Todo
 
@@ -14,10 +14,12 @@
 
   **Still open: (2) the prefix, and (3) non-rigged objects.** (3) is the bigger one and it is where the remaining work is: `source.evaluate*` is reached only from `rig.rs`, so an object with no Armature still has no per-frame path at all — `MODDRIVERS` is exactly such a file, which is why its driven values are now correct per frame and no mesh moves yet. Blender does not special-case rigs: the depsgraph gives any object with a driven input a relation to its geometry component and re-evaluates it. Matching that needs the non-rigged stacks retained past the open, the way `BlendSkinSource` retains the rigged ones.
 
-- [ ] Split `tests_traversal.rs` (217 lines) into two files
-
 ## Done
 
+- [x] Missing textures are reported as an answer, not a wall (`texture_miss.rs`): pose 26 asks for 304 images and 289 are on another machine, which filled the Info editor with 289 near-identical Blender lines and no way to act. The tally now leads with the count and what to do, ranks the folders by how many images each owes, and keeps six of Blender's own lines as evidence — a recorded divergence, since Blender prints all 289 (`texture_miss::tests`)
+- [x] Find Missing Files (`texture_find.rs`): an image whose path is another machine's (`E:\…`, `//../../../…`) is looked for by file name under the `.blend`'s folder tree and its `textures/`, as `BKE_bpath_missing_files_find` does on command — automatically here, recorded as a divergence; `image_present` and `SceneTexture::candidates_in` read the same list so "present" and "found" agree (`texture_find::tests`)
+- [x] A missing world HDRI is recorded, not reproduced (`BlendWorld::missing`): Blender lights the scene magenta; the world now carries the file name, a white tint, and the read report's warning, and phiber lights with Blender's studio `forest` instead (`tests/world_truth.rs`, pose 26's `autumn_field_puresky_4k.exr`)
+- [x] Split `tests_traversal.rs` (275 lines) into `tests_traversal` (geometry, 123), `tests_material` (97) and a shared `tests_fixture` (61)
 - [x] `BFaces` (`blend/mesh/list.rs`): every face's corners in one array with a start per face, instead of a `Vec` per face — HEXA-COMBINED opens with 580 MB less (2009 MB peak) and 2.5 s faster
 - [x] `SceneModel::from_blend_owned`: each object's raw buffers are freed as it converts, so the raw file arrays and the runtime scene are not both held
 - [x] `SceneMesh::corners`: shading normal per triangle corner (split normals, else smooth vertex normals on smooth faces; zero = flat) (`tests/corners.rs`)
