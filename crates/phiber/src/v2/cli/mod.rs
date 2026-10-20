@@ -12,9 +12,9 @@
 //!   ([`BRenderQuality::ENGINE`]). A `.blend` saved by Blender names EEVEE
 //!   or Cycles, neither of which is ours to run, so the file's engine is a
 //!   preference here rather than an instruction.
-//! - **2048 samples is the floor** ([`BRenderQuality::SAMPLE_FLOOR`]), so
-//!   the default is the quality render rather than whatever the file was
-//!   saved with. `--draft` lifts the floor for a quick look.
+//! - **2048 samples is the default** ([`BRenderQuality::SAMPLE_FLOOR`]) when
+//!   `--samples` is not given, so the default is the quality render rather
+//!   than whatever the file was saved with. `--samples` is honoured as asked.
 //!
 //! Parsing is separated from doing: [`BCli::parse`] turns an argument list
 //! into a [`BCli`] and nothing else, which is why the grammar is testable
@@ -189,7 +189,7 @@ impl BCli {
         self.engine.as_deref().unwrap_or(BRenderQuality::ENGINE)
     }
 
-    /// The samples the render takes, floor applied.
+    /// The samples the render takes: `--samples`, else the default.
     pub fn sample_count(&self) -> u32 {
         BRenderQuality::samples(self.samples, self.draft)
     }

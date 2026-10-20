@@ -54,6 +54,11 @@ impl BTrack {
                 // One spelling for a colour, stated in `mod.rs`.
                 super::encode_hsla((h, s, l, a))
             }
+            BTrackWrite::Rgba { index, rgba } => {
+                let mut rgba = *rgba;
+                rgba[(*index).min(3)] = value;
+                crate::v2::state::BValue::Color(rgba).encode()
+            }
         }
     }
 

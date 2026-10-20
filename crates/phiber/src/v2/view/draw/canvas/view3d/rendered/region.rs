@@ -121,7 +121,7 @@ mod tests {
         let cam = super::super::scene::camera(20.0, 30.0, (0.0, 0.0), 1.0, setup, 1.0, &look);
         let render = |region: BStillRegion| {
             let mut out = None;
-            super::super::still_stepwise(&objects, super::super::BStillLook::new(BShading::Solid, gpui::white()), cam, 40, 40, 1, false, [0.0; 4], 0.0, region, |_, at| {
+            super::super::still_stepwise(&objects, super::super::BStillLook::new(BShading::Solid, gpui::white()), cam, 40, 40, 1, false, [0.0; 4], 0.0, region, None, |_, at| {
                 if out.is_none() && at.settled() { out = at.image(); }
                 true
             });

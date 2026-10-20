@@ -9,7 +9,7 @@ use crate::v2::part::text::info::{self, BReportLevel};
 use crate::v2::scene::mixdown::{BMixdown, BMixdownMade};
 use crate::v2::scene::render_job;
 use crate::v2::scene::render_play::BRenderedPlayback;
-use crate::v2::state::{CtxKey, ModalKey, log, val::{V_EMPTY, V_MODAL_RENDER}};
+use crate::v2::state::{CtxKey, ModalKey, log, val::V_MODAL_RENDER};
 use gpui::{AppContext as _, Context};
 
 impl BPhiberApp {
@@ -31,10 +31,10 @@ impl BPhiberApp {
     /// F11 — `render.view_show`: the render window with whatever the last
     /// render left, no new render; pressed on the open window, it closes.
     pub(super) fn render_view(&mut self) {
-        if self.state.get(ModalKey::Open) == Some(V_MODAL_RENDER) {
-            self.state.set(ModalKey::Open, V_EMPTY);
-        } else {
-            self.state.set(ModalKey::Open, V_MODAL_RENDER);
+        // `render.view_show`: an area F12 took goes back; otherwise the
+        // render is shown where F12 shows it.
+        if !super::render_open::render_view_close(&mut self.state) {
+            super::render_open::render_view_open(&mut self.state);
         }
     }
 

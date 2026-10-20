@@ -42,7 +42,7 @@ fn the_data_passes_are_read_for_the_eye() {
 fn the_info_bar_reads_as_blenders() {
     let mut view = BImageView { zoom: None, pan: (0.0, 0.0), channels: BChannels::Color, pass: "Combined".into(), slot_filled: true, status: None, saved: false, phase: crate::v2::scene::BRenderPhase::Rendering, shown: crate::v2::part::image::shown::BShownImage::RenderResult };
     assert_eq!(view.info_text(&("Scene".into(), "ViewLayer".into()), "1"), None, "no render, no bar");
-    view.status = Some(render_status::BRenderStatus { w: 4, h: 4, taken: 3, target: 8, done: false, has_image: true, depth: false, normal: false, albedo: false, bytes: 64, seq: 1 });
+    view.status = Some(render_status::BRenderStatus { w: 4, h: 4, taken: 3, target: 8, done: false, has_image: true, depth: false, normal: false, albedo: false, bytes: 64, peak: 64, seq: 1 });
     let text = view.info_text(&("Scene".into(), "ViewLayer".into()), "12").unwrap();
     assert!(text.starts_with("Frame:12 | Time:") && text.ends_with("| Mem:1M, Peak: 1M | Scene, ViewLayer | Sample 3/8"), "{text}");
     // The tail is the PHASE's line, not a re-reading of `done`, so a

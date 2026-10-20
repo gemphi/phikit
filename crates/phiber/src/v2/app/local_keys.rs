@@ -56,6 +56,7 @@ pub fn never_sent(encoded: &str) -> bool {
 pub fn never_resumed(encoded: &str) -> bool {
     let keys = [
         ModalKey::Open.path().encode(),
+        ModalKey::FileReturn.path().encode(),
         CtxKey::Selected.path().encode(),
         // The Image editor's shown name points into the session's image list,
         // which does not persist: resumed, it would dangle and paint nothing.

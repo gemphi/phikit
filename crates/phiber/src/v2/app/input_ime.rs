@@ -5,9 +5,8 @@
 //! model and the key-level editing stay there.
 
 use super::BPhiberApp;
-use super::text_edit::{self, BCaret};
-use crate::v2::state::{BKey as _, FileKey};
-use gpui::{App, Bounds, Context, EntityInputHandler, Pixels, Point, UTF16Selection, Window};
+use super::text_edit;
+use gpui::{Bounds, Context, EntityInputHandler, Pixels, Point, UTF16Selection, Window};
 use std::ops::Range;
 
 

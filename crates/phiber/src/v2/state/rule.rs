@@ -91,6 +91,7 @@ fn table() -> &'static [&'static dyn BRule] {
         &op::BSortRule,
         &op::BNavRule,
         &op::BPurposeRule,
+        &op::BFileReturnRule,
         &op::BBookmarkAddRule,
         &op::BSelectRule,
     ]

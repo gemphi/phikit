@@ -16,6 +16,10 @@ pub enum BOutlineMode {
     Libraries,
     DataApi,
     OrphanData,
+    /// What happened — renders and their settings, progress and outcome —
+    /// as a tree of key/value pairs (`state::event`). Not one of Blender's:
+    /// it is where the status bar's line leads.
+    Status,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -62,6 +66,10 @@ pub static MODES: &[BOutlineModeSpec] = &[
         kind: BOutlineMode::OrphanData,
         label: "Orphan Data",
     },
+    BOutlineModeSpec {
+        kind: BOutlineMode::Status,
+        label: "Status",
+    },
 ];
 
 impl BOutlineMode {
@@ -74,6 +82,7 @@ impl BOutlineMode {
             BOutlineMode::Libraries => "Libraries",
             BOutlineMode::DataApi => "DataApi",
             BOutlineMode::OrphanData => "OrphanData",
+            BOutlineMode::Status => "Status",
         }
     }
     /// Accepts either the compact slug (`"ViewLayer"`) or the UI label

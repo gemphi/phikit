@@ -8,7 +8,7 @@
 //! render uses — reading it instead of the graph is why our ambient light was
 //! wrong.
 
-use super::nodes::read_cstr;
+use super::links::BLink;
 use crate::blend::file::types::*;
 
 /// `NodeSkyType`: the two models this atmosphere is (`sky_single_scattering
@@ -70,12 +70,15 @@ impl BlendFile {
     /// The scene's world, read from its node tree.
     pub(crate) fn world(&self, wo: &BlendBlock, dna: &DnaType) -> BlendWorld {
         let nodes = self.tree_nodes(wo, "World", dna);
+        let links = self.tree_links(wo, "World", dna);
         let graph = super::eval::BGraph::owned(self, wo, "World", dna);
-        let named = |n: &BlendBlock| {
-            self.off("bNode", "idname", dna).map(|o| read_cstr(&n.data, o, 64)).unwrap_or_default()
-        };
         let mut world = BlendWorld { address: wo.old_address, ..Default::default() };
-        let Some(bg) = nodes.iter().copied().find(|n| named(n) == "ShaderNodeBackground") else {
+        // The Background the World Output's Surface reaches, not the first
+        // in the tree: a world holding spare Backgrounds and HDRIs (pose
+        // 23_2 has three of each, the one listed first linked to nothing)
+        // was lit by whichever the file happened to save first.
+        let reached = self.lighting_background(&nodes, &links, &graph, dna);
+        let Some(bg) = reached.or_else(|| nodes.iter().copied().find(|n| self.kind(n, dna) == "ShaderNodeBackground")) else {
             return world;
         };
         for sock in self.input_sockets(bg, dna) {
@@ -87,37 +90,95 @@ impl BlendFile {
                 _ => {}
             }
         }
-        let env = nodes.iter().copied().find(|n| named(n) == "ShaderNodeTexEnvironment");
+        // What feeds that Background's Color: an Environment or Sky Texture,
+        // through reroutes. A Background reached by the walk takes only
+        // what is linked to it; the fallback (no World Output) keeps the
+        // old reading of the first such node in the tree.
+        let feeding = |kind: &str| match reached {
+            Some(bg) => self.upstream(&nodes, &links, bg, "Color", dna).filter(|n| self.kind(n, dna) == kind),
+            None => nodes.iter().copied().find(|n| self.kind(n, dna) == kind),
+        };
+        let env = feeding("ShaderNodeTexEnvironment");
         if let Some(env) = env {
             let im = self.block_at(self.ptr(env, self.off("bNode", "*id", dna)));
             let present = im.is_none_or(|im| self.image_present(im, dna));
-            // An image replaces the socket, so Color is the tint it is
-            // multiplied by — white. A file Blender cannot find is magenta
-            // in Blender, the same `IMB` "invalid" colour every other
-            // missing image takes (`eval.rs`'s `ShaderNodeTexImage`), and it
-            // lights the whole scene that colour because the world is a
-            // dome. That is recorded in `missing` rather than reproduced:
-            // the renderer stands Blender's studio light in for the file
-            // the HDRI points at on another machine, and the read report
-            // names it (`SceneReadReport::warnings`).
             world.texture = im.filter(|_| present).map(|im| self.image_key(im, dna));
             world.missing = im.filter(|_| !present).map(|im| self.image_key(im, dna));
+            // An image replaces the socket, so Color is the tint it is
+            // multiplied by — white. A file Blender cannot find is magenta
+            // in Blender, and lights the whole scene that colour because
+            // the world is a dome. That is recorded in `missing` rather than
+            // reproduced: the renderer stands Blender's studio light in for
+            // the file the HDRI points at on another machine, and the read
+            // report names it (`SceneReadReport::warnings`).
             world.color = [1.0; 3];
         }
         // A Sky Texture takes the same place as an Environment Texture: it
         // replaces `Color`, so the socket's value becomes the white tint it
         // is multiplied by. Blender does not evaluate it per ray either —
         // `node_shader_tex_sky.cc` bakes it and the kernel samples the bake.
-        if let Some(node) = nodes.iter().copied().find(|n| named(n) == "ShaderNodeTexSky") {
+        if let Some(node) = feeding("ShaderNodeTexSky") {
             world.sky = self.sky(node, dna);
             if world.sky.is_some() {
                 world.color = [1.0; 3];
             }
         }
-        if let Some(map) = nodes.iter().copied().find(|n| named(n) == "ShaderNodeMapping") {
+        // The Mapping that turns the texture: the one on its Vector input,
+        // through reroutes (or, without a walk, the first in the tree).
+        let map = match reached {
+            Some(_) => env.and_then(|e| self.upstream(&nodes, &links, e, "Vector", dna)).filter(|n| self.kind(n, dna) == "ShaderNodeMapping"),
+            None => nodes.iter().copied().find(|n| self.kind(n, dna) == "ShaderNodeMapping"),
+        };
+        if let Some(map) = map {
             world.rotation = self.mapping_spin(map, dna);
         }
         world
+    }
+
+    /// The Background node that lights the scene: from the active World
+    /// Output's Surface, through reroutes and Add Shaders (first input) and
+    /// Mix Shaders. A Mix keyed on Light Path's `Is Camera Ray` — the usual
+    /// "one HDRI to see, another to light with" setup — takes its first
+    /// shader, the one every ray but the camera's meets, because that is
+    /// the one that lights. Any other Mix takes the side its folded factor
+    /// leans to.
+    fn lighting_background<'a>(&self, nodes: &[&'a BlendBlock], links: &[BLink], graph: &super::eval::BGraph, dna: &DnaType) -> Option<&'a BlendBlock> {
+        let out = self.active_output(nodes, "OutputWorld", dna)?;
+        let mut node = self.linked_named(nodes, links, out, "Surface", dna)?;
+        for _ in 0..32 {
+            let kind = self.kind(node, dna);
+            let next = match kind.as_str() {
+                "ShaderNodeBackground" => return Some(node),
+                "NodeReroute" | "ShaderNodeAddShader" => 0,
+                // Inputs: 0 Fac, 1 the shader at Fac 0, 2 the one at Fac 1.
+                "ShaderNodeMixShader" => {
+                    let fac = *self.input_sockets(node, dna).first()?;
+                    let camera = links.iter().find(|l| l.to_sock == fac).is_some_and(|l| {
+                        nodes.iter().any(|n| n.old_address == l.from && self.kind(n, dna) == "ShaderNodeLightPath")
+                            && self.socket_name(l.from_sock, dna) == "Is Camera Ray"
+                    });
+                    match camera {
+                        true => 1,
+                        false => if graph.input(fac, 0).map_or(0.5, |v| v.value()) < 0.5 { 1 } else { 2 },
+                    }
+                }
+                _ => return None,
+            };
+            node = self.linked_node(nodes, links, node, next, dna)?;
+        }
+        None
+    }
+
+    /// The node feeding `node`'s input `name`, through reroutes.
+    fn upstream<'a>(&self, nodes: &[&'a BlendBlock], links: &[BLink], node: &BlendBlock, name: &str, dna: &DnaType) -> Option<&'a BlendBlock> {
+        let mut up = self.linked_named(nodes, links, node, name, dna)?;
+        for _ in 0..16 {
+            if self.kind(up, dna) != "NodeReroute" {
+                return Some(up);
+            }
+            up = self.linked_node(nodes, links, up, 0, dna)?;
+        }
+        None
     }
 
     /// A Sky Texture node's settings (`NodeTexSky`). `None` for the two
@@ -169,7 +230,10 @@ impl BlendFile {
 
     /// A Mapping node's `Rotation` around Z, in radians.
     fn mapping_spin(&self, map: &BlendBlock, dna: &DnaType) -> f32 {
-        let Some(off) = self.off("bNodeSocketValueVector", "value[3]", dna) else { return 0.0 };
+        // `value[3]` until Blender 4.2 made vector sockets 2–4 wide and the
+        // field `value[4]`; asking for the old name alone read every newer
+        // file's HDRI spin as 0.
+        let Some(off) = self.off("bNodeSocketValueVector", "value[3]", dna).or_else(|| self.off("bNodeSocketValueVector", "value[4]", dna)) else { return 0.0 };
         for sock in self.input_sockets(map, dna) {
             if self.socket_name(sock, dna) != "Rotation" {
                 continue;

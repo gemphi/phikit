@@ -83,10 +83,22 @@ pub fn still_stepwise(
     // runs out (`Session::run_main_render_loop`).
     time_limit: f32,
     region: super::super::region::BStillRegion,
+    // How often the image so far is read back for someone watching
+    // (`PEEK_EVERY` for the Rendering space); `None` for a caller that only
+    // wants the finished frame. A readback stalls the device and copies the
+    // whole frame, so a headless render that drew nothing with them paid
+    // for one every sample.
+    peek: Option<std::time::Duration>,
     mut step: impl FnMut(u32, BStillAt) -> bool,
 ) -> Option<u32> {
     use crate::v2::scene::BShading;
-    let Some(gpu) = phiray::Ray::gpu() else {
+    // The process's device, not one of its own: a device opened per
+    // render compiled every kernel again before its first sample (seconds
+    // on a warm driver cache, half a minute on a cold one) and held a
+    // second copy of the scene beside the viewport's. The shared one has
+    // the kernels the viewport already built, and is the device Preferences
+    // ▸ System chose.
+    let Some(gpu) = phiray::Gpu::shared() else {
         note_render_refused("no GPU adapter".to_string());
         return None;
     };
@@ -145,7 +157,7 @@ pub fn still_stepwise(
     let bands = BBandList::of(rw, rh, BBandList::most(&gpu), reach);
     let mut drawn = BStill::empty(rw, rh);
     // The first sample is shown at once, then one every `PEEK_EVERY`.
-    let mut peeked = std::time::Instant::now() - PEEK_EVERY;
+    let mut peeked = std::time::Instant::now() - peek.unwrap_or_default();
     // How a sample is cut into dispatches. The viewport has always done
     // this (`BSlicer`); the final render did not, and that is what killed
     // the app: a compute dispatch that runs past the platform's GPU
@@ -216,7 +228,7 @@ pub fn still_stepwise(
             // count, the bytes now and then (`PEEK_EVERY`), and the whole
             // picture only at the end.
             let go_on = done || {
-                let at = if peeked.elapsed() >= PEEK_EVERY {
+                let at = if peek.is_some_and(|every| peeked.elapsed() >= every) {
                     peeked = std::time::Instant::now();
                     let mut peek = drawn.rgba.clone();
                     BStill::lay_rgba(&mut peek, &tracer.pixels(&gpu), *y0 as usize, *rows as usize, over as usize, rw as usize);

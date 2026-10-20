@@ -178,6 +178,7 @@ pub fn seed_output_props(state: &mut BState, model: &SceneModel) {
 }
 
 pub fn seed_view_layer(state: &mut BState, model: &SceneModel) {
+    clear_restrictions(state);
     if let Some(active) = &model.selection.active {
         state.set(CtxKey::Object, active.clone());
         // A plain `set` runs no rule, so the Object and Material tabs are
@@ -199,6 +200,18 @@ pub fn seed_view_layer(state: &mut BState, model: &SceneModel) {
     }
     for c in &model.collections {
         seed_collections(state, c, &c.name);
+    }
+}
+
+/// Every row's restriction flags from the file open before, dropped. The
+/// flags are the file's (`outliner::key::is_restriction`), and the seeding
+/// above only ever SETS one, so a flag the last file set — or a stale
+/// session wrote — would otherwise stay set under the same row name, and
+/// every file's master collection is named `col/Scene Collection`.
+fn clear_restrictions(state: &mut BState) {
+    let stale: Vec<String> = state.iter_keys().filter(|k| crate::v2::part::outliner::key::is_restriction(k.as_str())).cloned().collect();
+    for key in stale {
+        state.remove_encoded(&key);
     }
 }
 
@@ -234,4 +247,28 @@ pub fn report_failed(state: &mut BState, path: Option<&str>, message: &str) {
         None => message.to_string(),
     };
     push(state, BReportLevel::Error, text);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::v2::part::outliner::key::{is_render_hidden, is_restriction};
+
+    /// The bug on pose 26: a session had `col/Scene Collection.hide_render`
+    /// from an earlier file, the next file's master collection has the same
+    /// id, and the seed only ever sets flags — so every file opened with
+    /// its master camera off and every render was handed nothing.
+    #[test]
+    fn a_file_open_starts_every_restriction_from_the_file() {
+        let mut state = BState::new();
+        state.set(&k_restrict("col/Scene Collection", "hide_render"), V_TRUE);
+        state.set(&k_restrict("Camera.004", "hide_viewport"), V_TRUE);
+        state.set(&k_restrict("col", "hide_render"), V_TRUE);
+        let model = SceneModel { collections: vec![SceneCollection { name: "Scene Collection".into(), ..Default::default() }], ..Default::default() };
+        seed_view_layer(&mut state, &model);
+        assert!(!is_render_hidden(&state, "col/Scene Collection"), "the file says the master renders");
+        assert!(!state.has(&k_restrict("Camera.004", "hide_viewport"), V_TRUE), "another file's object is forgotten");
+        assert!(state.has(&k_restrict("col", "hide_render"), V_TRUE), "the column toggle is UI and stays");
+        assert!(is_restriction("ctx.outliner.col/Scene Collection/SHOES.exclude") && !is_restriction("ctx.outliner.search"));
+    }
 }

@@ -8,7 +8,7 @@
 use super::super::BSceneActions;
 use super::{BKeyGrab, BKeyPick, BKeySelection, BKeyTarget};
 use crate::phiphx::scene::SceneModel;
-use crate::v2::state::{BKey as _, BState, CtxKey, log};
+use crate::v2::state::{BState, CtxKey, log};
 use std::sync::Arc;
 
 /// Handle one grab sub-op. `Some(picks)` means the caller should write those

@@ -173,7 +173,7 @@ pub fn plan_at(model: &SceneModel, set: BRenderSet, look: &BRayLook, plain: gpui
     }
     lit(&mut camera, look);
     // Film ▸ Transparent is a final render's: the viewport keeps its sky.
-    camera.film = [u32::from(set.film_transparent), 0, 0, 0];
+    camera.film[0] = u32::from(set.film_transparent);
     let lens = super::BCameraLens::of(cam).focused_at(focus);
     let (still_look, samples, denoise) = crate::v2::view::draw::canvas::view3d::rendered::BStillLook::for_engine(model, set, lens, &mut camera, plain);
     let region = crate::v2::view::draw::canvas::view3d::rendered::BStillRegion { pixels: set.border.pixels(w, h), crop: set.border.crop };
@@ -421,6 +421,41 @@ pub fn forget() {
 /// The image is not returned: it arrives through [`shot`], which a painter
 /// polls. That is what lets the Rendering space show progress instead of
 /// freezing for the minutes a full-resolution render takes.
+/// The Status event the next render reports its progress to
+/// (`state::event`): opened by whoever asked for the render, with what it
+/// asked for, and filled in from the render's thread — Sample, Time,
+/// Remaining as it goes, then Status. `0` is none.
+static EVENT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Name the event the next `start` reports to.
+pub fn report_to(event: u64) {
+    EVENT.store(event, Ordering::Relaxed);
+}
+
+/// A sample in hand, into the render's Status event: `Sample n/N`, the
+/// `Time` so far and the `Remaining` Cycles would print. No event, nothing.
+pub fn report_sample(event: u64, elapsed: std::time::Duration, taken: u32, target: u32, done: bool) {
+    use crate::v2::scene::render_status::{remaining, timecode};
+    use crate::v2::state::event::BEvents;
+    if event == 0 {
+        return;
+    }
+    BEvents::set(event, "Sample", format!("{taken}/{target}"));
+    BEvents::set(event, "Time", timecode(elapsed));
+    BEvents::set(event, "Remaining", remaining(elapsed, taken, target, done).map_or_else(|| "-".to_string(), timecode));
+}
+
+/// How the render ended, into its Status event.
+pub fn report_end(event: u64, status: &str, elapsed: std::time::Duration) {
+    use crate::v2::state::event::BEvents;
+    if event == 0 {
+        return;
+    }
+    BEvents::set(event, "Status", status);
+    BEvents::set(event, "Time", crate::v2::scene::render_status::timecode(elapsed));
+    BEvents::set(event, "Remaining", "-");
+}
+
 pub fn start(objects: Vec<BObject3D>, plan: BRenderPlan) {
     start_in(objects, plan, super::source::BSceneScope::here());
 }
@@ -474,6 +509,7 @@ pub fn start_in(objects: Vec<BObject3D>, plan: BRenderPlan, scope: super::source
         // job must not stay "running" for ever (`BRunning`).
         let _running = super::render_fit::BRunning(j.clone());
         let began = web_time::Instant::now();
+        let event = EVENT.swap(0, Ordering::Relaxed);
         let (w, h) = plan.region.size(plan.w, plan.h);
         let mut kept: (Vec<u8>, Vec<[f32; 3]>, Vec<[f32; 3]>, Vec<[f32; 3]>, Vec<[f32; 3]>, Vec<f32>) = Default::default();
         let out = still_stepwise(
@@ -487,6 +523,7 @@ pub fn start_in(objects: Vec<BObject3D>, plan: BRenderPlan, scope: super::source
             plan.adapt,
             plan.time_limit,
             plan.region,
+            Some(crate::v2::view::draw::canvas::view3d::rendered::PEEK_EVERY),
             // The image KEPT between readbacks: most steps carry only a
             // count (`BStillAt::Counting`), and publishing those with empty
             // bytes wiped the peek published a moment before — the picture
@@ -494,6 +531,8 @@ pub fn start_in(objects: Vec<BObject3D>, plan: BRenderPlan, scope: super::source
             // is a blank canvas to a glance and a flicker to a stare.
             |taken, at| {
                 let done = at.settled();
+                // `taken` is a count already (`still_stepwise`'s step).
+                report_sample(event, began.elapsed(), taken, plan.samples, done);
                 let kept = &mut kept;
                 if let Some(still) = at.image() {
                     let mut bgra = still.rgba;
@@ -535,6 +574,12 @@ pub fn start_in(objects: Vec<BObject3D>, plan: BRenderPlan, scope: super::source
         if let Ok(mut took) = j.took.lock() {
             *took = Some(began.elapsed());
         }
+        let status = match (j.cancel.load(Ordering::Relaxed), out.is_none()) {
+            (true, _) => "Cancelled",
+            (false, true) => "Failed — no adapter, or a scene the GPU declined",
+            (false, false) => "Finished",
+        };
+        report_end(event, status, began.elapsed());
         if j.cancel.load(Ordering::Relaxed) {
             // The image as far as it got is the Render Result (Blender keeps
             // the tiles a cancelled render finished).

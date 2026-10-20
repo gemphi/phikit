@@ -111,6 +111,18 @@ pub fn elapsed() -> Duration {
     j.started.lock().ok().and_then(|started| started.map(|t| t.elapsed())).unwrap_or_default()
 }
 
+/// What is left of a render at the pace it has kept — Cycles'
+/// `Session::update_status_time`: `(1 − progress) · elapsed / progress`,
+/// which Blender prints as `Remaining:` while the render runs and drops
+/// once it is done. `None` before the first sample, and once finished.
+pub fn remaining(elapsed: Duration, taken: u32, target: u32, done: bool) -> Option<Duration> {
+    if done || taken == 0 || target == 0 || taken >= target {
+        return None;
+    }
+    let progress = taken as f64 / target as f64;
+    Some(Duration::from_secs_f64((1.0 - progress) * elapsed.as_secs_f64() / progress))
+}
+
 /// `BLI_timecode_string_from_time_simple`: `MM:SS.CC`.
 pub fn timecode(duration: Duration) -> String {
     let centis = duration.as_millis() / 10;
@@ -126,6 +138,15 @@ mod tests {
         assert_eq!(timecode(Duration::from_millis(0)), "00:00.00");
         assert_eq!(timecode(Duration::from_millis(12_340)), "00:12.34");
         assert_eq!(timecode(Duration::from_millis(61_500)), "01:01.50");
+    }
+
+    #[test]
+    fn remaining_is_cycles_pace_estimate_and_vanishes_when_done() {
+        let ten = Duration::from_secs(10);
+        assert_eq!(remaining(ten, 25, 100, false), Some(Duration::from_secs(30)), "a quarter done in 10 s leaves 30 s");
+        assert_eq!(remaining(ten, 0, 100, false), None, "no pace yet");
+        assert_eq!(remaining(ten, 100, 100, false), None);
+        assert_eq!(remaining(ten, 40, 100, true), None, "an adaptive render that settled early is done");
     }
 
     #[test]

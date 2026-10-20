@@ -57,6 +57,11 @@ static CONTEXT: &[BPropSpec] = &[
     e("cycles.device", "Device", DEVICE),
 ];
 
+// Defaults are Cycles' RNA (`intern/cycles/blender/addon/properties.py`,
+// `rna_scene.cc` for `render.*`), checked against it on 2026-10-20: a panel
+// that opened on 0.000 for a Volume step rate or 0 Curve Subdivisions was
+// showing the control's factory zero, not Blender's value.
+
 // `CYCLES_RENDER_PT_sampling` has no rows of its own; its sub-panels do.
 static SAMPLING_VIEWPORT: &[BPropSpec] = &[i("cycles.preview_samples", "Max Samples", 0, 100000).at(1024)];
 // `CYCLES_RENDER_PT_sampling_viewport_denoise`: the toggle is its header.
@@ -69,8 +74,8 @@ static VIEWPORT_DENOISE_HEADER: &[BPropSpec] = &[b("cycles.use_preview_denoising
 static VIEWPORT_DENOISE: &[BPropSpec] = &[i("cycles.preview_denoising_start_sample", "Start Sample", 0, 1 << 24).at(1)];
 static SAMPLING_VIEWPORT_SUBS: &[BSectionSpec] = &[sec("Denoise", VIEWPORT_DENOISE).closed().header(VIEWPORT_DENOISE_HEADER)];
 pub(crate) static SAMPLING_RENDER: &[BPropSpec] = &[
-    b("cycles.use_adaptive_sampling", "Adaptive Sampling"),
-    f("cycles.adaptive_threshold", "Noise Threshold", BUnit::None),
+    b("cycles.use_adaptive_sampling", "Adaptive Sampling").on(),
+    f("cycles.adaptive_threshold", "Noise Threshold", BUnit::None).about(0.01),
     i("cycles.samples", "Max Samples", 0, 100000).at(4096),
     i("cycles.adaptive_min_samples", "Min Samples", 0, 100000),
     f("cycles.time_limit", "Time Limit", BUnit::Time),
@@ -86,35 +91,42 @@ static SAMPLING_SUBS: &[BSectionSpec] = &[
 
 // `CYCLES_RENDER_PT_light_paths` — rows live in its sub-panels.
 static MAX_BOUNCES: &[BPropSpec] = &[
-    i("cycles.max_bounces", "Total", 0, 1024),
+    i("cycles.max_bounces", "Total", 0, 1024).at(12),
     i("cycles.diffuse_bounces", "Diffuse", 0, 1024).at(4),
-    i("cycles.glossy_bounces", "Glossy", 0, 1024),
-    i("cycles.transmission_bounces", "Transmission", 0, 1024),
+    i("cycles.glossy_bounces", "Glossy", 0, 1024).at(4),
+    i("cycles.transmission_bounces", "Transmission", 0, 1024).at(12),
     i("cycles.volume_bounces", "Volume", 0, 1024),
-    i("cycles.transparent_max_bounces", "Transparent", 0, 1024),
+    i("cycles.transparent_max_bounces", "Transparent", 0, 1024).at(8),
+];
+// `CYCLES_RENDER_PT_light_paths_clamping`: Cycles' `sample_clamp_direct`
+// (0, off) and `sample_clamp_indirect` (10).
+static CLAMPING: &[BPropSpec] = &[
+    f("cycles.sample_clamp_direct", "Direct Light", BUnit::None).about(0.0),
+    f("cycles.sample_clamp_indirect", "Indirect Light", BUnit::None).about(10.0),
 ];
 static CAUSTICS: &[BPropSpec] = &[
-    f("cycles.blur_glossy", "Filter Glossy", BUnit::None),
-    b("cycles.caustics_reflective", "Reflective"),
-    b("cycles.caustics_refractive", "Refractive"),
+    f("cycles.blur_glossy", "Filter Glossy", BUnit::None).about(1.0),
+    b("cycles.caustics_reflective", "Reflective").on(),
+    b("cycles.caustics_refractive", "Refractive").on(),
 ];
-static LIGHT_PATHS_SUBS: &[BSectionSpec] = &[sec("Max Bounces", MAX_BOUNCES), sec("Caustics", CAUSTICS)];
+static LIGHT_PATHS_SUBS: &[BSectionSpec] = &[sec("Max Bounces", MAX_BOUNCES), sec("Clamping", CLAMPING), sec("Caustics", CAUSTICS)];
 
 static VOLUMES: &[BPropSpec] = &[
-    f("cycles.volume_step_rate", "Step Rate Render", BUnit::None),
+    f("cycles.volume_step_rate", "Step Rate Render", BUnit::None).about(1.0),
     f(
         "cycles.volume_preview_step_rate",
         "Step Rate Viewport",
         BUnit::None,
-    ),
-    i("cycles.volume_max_steps", "Max Steps", 1, 65536),
+    )
+    .about(1.0),
+    i("cycles.volume_max_steps", "Max Steps", 1, 65536).at(1024),
 ];
 
 // `CYCLES_RENDER_PT_motion_blur`: enabled from its header.
 static MOTION_BLUR_HEADER: &[BPropSpec] = &[b("render.use_motion_blur", "Motion Blur")];
 static MOTION_BLUR: &[BPropSpec] = &[
     e("render.motion_blur_position", "Position", MOTION_BLUR_POS),
-    f("render.motion_blur_shutter", "Shutter", BUnit::None),
+    f("render.motion_blur_shutter", "Shutter", BUnit::None).about(0.5),
 ];
 
 // `CYCLES_RENDER_PT_film` and its sub-panels: Transparent is enabled from its
@@ -122,7 +134,9 @@ static MOTION_BLUR: &[BPropSpec] = &[
 pub(crate) static FILM_TRANSPARENT_HEADER: &[BPropSpec] = &[b("render.film_transparent", "Transparent")];
 static PIXEL_FILTER_ROWS: &[BPropSpec] = &[
     e("cycles.pixel_filter_type", "Type", PIXEL_FILTER).picked("BLACKMAN_HARRIS"),
-    f("render.filter_size", "Width", BUnit::None),
+    // `CYCLES_RENDER_PT_film_pixel_filter`: the Cycles add-on's own
+    // `filter_width` (`render.filter_size` is EEVEE's), in pixels.
+    f("cycles.filter_width", "Width", BUnit::None).about(1.5),
 ];
 static FILM_SUBS: &[BSectionSpec] = &[
     sec("Transparent", &[]).header(FILM_TRANSPARENT_HEADER),
@@ -139,7 +153,7 @@ static PERFORMANCE_SUBS: &[BSectionSpec] = &[sec("Threads", THREADS), sec("Final
 
 static CURVES: &[BPropSpec] = &[
     e("cycles_curves.shape", "Shape", CURVE_SHAPE),
-    i("cycles_curves.subdivisions", "Curve Subdivisions", 0, 24),
+    i("cycles_curves.subdivisions", "Curve Subdivisions", 0, 24).at(2),
 ];
 
 static COLOR_MANAGEMENT: &[BPropSpec] = &[
@@ -150,7 +164,7 @@ static COLOR_MANAGEMENT: &[BPropSpec] = &[
     ),
     e("view_settings.look", "Look", LOOK),
     f("view_settings.exposure", "Exposure", BUnit::None),
-    f("view_settings.gamma", "Gamma", BUnit::None),
+    f("view_settings.gamma", "Gamma", BUnit::None).about(1.0),
 ];
 
 /// The Render tab, as Blender with Cycles draws it: panel order, which

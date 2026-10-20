@@ -30,6 +30,9 @@ const INPUTS: &[(&[&str], Apply)] = &[
     (&["Metallic"], |b, v| if let BSocket::Float(f) = v { b.metallic = f }),
     (&["Alpha"], |b, v| if let BSocket::Float(f) = v { b.alpha = f }),
     (&["IOR"], |b, v| if let BSocket::Float(f) = v { b.ior = f }),
+    // 4.x only: 3.x's "Specular" is an F0 scale of its own (0.08 × value)
+    // and keeps the default level here.
+    (&["Specular IOR Level"], |b, v| if let BSocket::Float(f) = v { b.specular_level = f }),
     (&["Transmission Weight", "Transmission"], |b, v| if let BSocket::Float(f) = v { b.transmission = f }),
     (&["Emission Color", "Emission"], |b, v| if let BSocket::Rgba(c) = v { b.emission = [c[0], c[1], c[2]] }),
     (&["Emission Strength"], |b, v| if let BSocket::Float(f) = v { b.emission_strength = f }),

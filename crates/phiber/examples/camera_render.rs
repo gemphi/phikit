@@ -74,7 +74,7 @@ fn main() {
     );
     let t = std::time::Instant::now();
     // The engine's look: Workbench renders Solid with `Scene.display.shading`.
-    let (px, taken) = still(&objects, p.look, p.camera, p.w, p.h, p.samples, p.denoise)
+    let (px, taken) = still(&objects, p.look, p.camera, p.w, p.h, p.samples, p.denoise, p.adapt, p.time_limit, |_| {})
         .expect("gpu adapter and a scene that fits");
     image::RgbaImage::from_raw(p.w, p.h, px).expect("image").save(&out).expect("save");
     println!("rendered {taken} samples in {:.0} ms -> {out}", t.elapsed().as_secs_f64() * 1000.0);

@@ -25,7 +25,7 @@ fn plan(samples: u32) -> BRenderPlan {
         display_size: 1.0,
         dof: Default::default(),
     };
-    BRenderPlan { camera: camera_of(&cam, 32, 32), w: 32, h: 32, samples, denoise: false, adapt: [0.0; 4], look: BStillLook::new(BShading::Rendered, gpui::hsla(0.0, 0.0, 0.8, 1.0)), region: Default::default() }
+    BRenderPlan { camera: camera_of(&cam, 32, 32), w: 32, h: 32, samples, denoise: false, adapt: [0.0; 4], time_limit: 0.0, look: BStillLook::new(BShading::Rendered, gpui::hsla(0.0, 0.0, 0.8, 1.0)), region: Default::default() }
 }
 
 fn a_cube() -> Vec<BObject3D> {

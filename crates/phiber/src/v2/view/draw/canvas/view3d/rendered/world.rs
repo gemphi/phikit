@@ -127,6 +127,14 @@ pub fn lit(cam: &mut Camera, look: &BRayLook) {
     };
     cam.sky = sky;
     cam.env = [env[0], env[1], env[2], 1.0];
+    // A file's world is the background, as light: a ray that meets nothing
+    // takes the world's radiance into the pixel's mean and goes through the
+    // view transform with everything else, as Cycles averages it. Laid over
+    // as a display colour instead, a pixel half on an object and half on a
+    // black world came out at half the *display* value — 0.6 cover read 153
+    // where Blender writes 204 — so every silhouette had a dark rim. The
+    // theme's own canvas (no file, or Material Preview) stays an overlay.
+    cam.film[1] = u32::from(look.world.is_some() && !look.studio);
     cam.envmap = look.environment.map_or(0, |_| ENV_SLOT + 1);
     cam.env_rot = look.environment.unwrap_or(0.0);
     cam.env_cdf = look.environment.map_or(0, |_| ENV_CDF_SLOT + 1);
@@ -135,7 +143,15 @@ pub fn lit(cam: &mut Camera, look: &BRayLook) {
     if look.studio && look.environment.is_some() {
         studio_lighting(cam);
     }
-    cam.bounces = look.set.diffuse_bounces;
+    // Diffuse is capped by Total, as Cycles caps every kind by it.
+    cam.bounces = look.set.diffuse_bounces.min(look.set.max_bounces);
+    *cam = cam.with_depth(look.set.max_bounces, look.set.transparent_bounces, look.set.transmission_bounces, look.set.glossy_bounces);
+    cam.limit = [look.set.clamp_direct, look.set.clamp_indirect, 0.0, 0.0];
+    let set = &look.set;
+    // Box is one pixel whatever the Width row says (`blender/sync.cpp`, and
+    // the panel hides the row for it).
+    let width = if set.pixel_filter == phiray::PixelFilter::Box { 1.0 } else { set.filter_size };
+    *cam = cam.with_integrator(set.pixel_filter, width, set.filter_glossy, set.caustics_reflective, set.caustics_refractive);
     cam.count = usable.len() as u32;
     cam.lights = lights;
     cam.view = look.view;

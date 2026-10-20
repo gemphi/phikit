@@ -17,11 +17,11 @@
 //! of what a track needs. What a track looks like is `bar.rs`.
 
 mod bar;
-mod plane;
 mod scale;
+mod wheel;
 
 pub use bar::{share_of, view};
-pub use plane::{BPlane, BPlaneAxis, view as plane_view};
+pub use wheel::{BPickSpace, BWheel, rgb_to_hsla, view as wheel_view};
 
 use super::ctx::BRenderCtx;
 use crate::v2::state::BPath;
@@ -44,6 +44,8 @@ pub enum BTrackWrite {
     Value,
     /// Channel `index` of an HSLA colour, the rest of `color` carried along.
     Channel { index: usize, color: crate::v2::theme::BColor },
+    /// Channel `index` of a scene colour's RGBA, written `"r g b a"`.
+    Rgba { index: usize, rgba: [f32; 4] },
 }
 
 /// The drag in flight. A payload is cloned into the gesture, so it holds what the
@@ -72,6 +74,11 @@ impl BTrack {
     /// A horizontal track over one channel of `color`.
     pub fn channel(key: BPath, index: usize, color: crate::v2::theme::BColor, min: f32, max: f32) -> Self {
         Self { write: BTrackWrite::Channel { index, color }, ..Self::across(key, min, max) }
+    }
+
+    /// A horizontal track over one channel, 0..1, of a scene colour.
+    pub fn rgba(key: BPath, index: usize, rgba: [f32; 4]) -> Self {
+        Self { write: BTrackWrite::Rgba { index, rgba }, ..Self::across(key, 0.0, 1.0) }
     }
 
     /// Whole numbers only.

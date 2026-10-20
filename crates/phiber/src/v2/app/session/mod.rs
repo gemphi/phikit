@@ -154,7 +154,7 @@ impl BSession {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::v2::state::{BKey as _, CtxKey, View3dKey};
+    use crate::v2::state::{CtxKey, View3dKey};
     use std::time::Duration;
 
     #[test]

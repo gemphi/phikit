@@ -12,7 +12,6 @@
 //! Run with:  cargo run --release -p phiber --example manual_figures
 //! Writes to: crates/phiber/docs/manual/figures/<space>-<host>.svg
 
-use phiber::v2::host::BHostType;
 use phiber::v2::manual::{BDeck, figures};
 use phiber::v2::pane::BPaneType;
 use phiber::v2::region::BRegionType;

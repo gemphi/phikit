@@ -137,6 +137,23 @@ impl BViewList for BStatusbarList {
             out.push(BView::spacer());
         }
 
+        // The newest event, as its key/value pairs — `Render Image ·
+        // Status Rendering · Sample 12/256 · Time 00:31.20 · Remaining
+        // 02:10.00` — and a way in: clicking it turns the Outliner to its
+        // Status mode, where the event opens onto every pair and its parts
+        // (`part::outliner::status`).
+        if let Some(event) = crate::v2::state::event::BEvents::latest_root() {
+            out.push(BView::Button(
+                BControl::new()
+                    .with_label(event_summary(&event))
+                    .with_tooltip("Show this event in the Outliner (Status)")
+                    .with_action(BAction::Set(
+                        crate::v2::state::OutlinerKey::DisplayMode.path(),
+                        crate::v2::part::outliner::mode::BOutlineMode::Status.slug().to_string(),
+                    )),
+            ));
+        }
+
         out.extend(
             SEGMENTS
                 .iter()
@@ -144,6 +161,17 @@ impl BViewList for BStatusbarList {
         );
         out
     }
+}
+
+/// An event as the bar shows it: its title, then the pairs a glance wants —
+/// `Render Image · Status Rendering · Sample 12/256 · Time 00:31.20 ·
+/// Remaining 02:10.00`. A pair that reads `-` has nothing to say and is left
+/// out.
+pub fn event_summary(event: &crate::v2::state::event::BEvent) -> String {
+    std::iter::once(event.title.clone())
+        .chain(["Status", "Sample", "Time", "Remaining"].iter().filter_map(|k| event.get(k).filter(|v| *v != "-").map(|v| format!("{k} {v}"))))
+        .collect::<Vec<_>>()
+        .join(" · ")
 }
 
 #[derive(Clone, Copy, Debug)]

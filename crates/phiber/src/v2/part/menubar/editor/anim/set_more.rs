@@ -2,7 +2,6 @@
 //! Mirror / Keyframe / Action menus, split so each file sits under the
 //! 240-line read cap (`tests/level_structure.rs`).
 
-use super::super::super::super::item::set::*;
 use super::super::super::super::item::BMenuItem;
 use super::*;
 use crate::v2::state::OpKey;

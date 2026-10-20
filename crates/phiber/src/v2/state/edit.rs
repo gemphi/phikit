@@ -200,6 +200,9 @@ mod tests {
         for p in [FileKey::Search.path(), FileKey::Path.path(), crate::v2::state::AppKey::CommandQuery.path()] {
             assert_eq!(field_path(&p.encode()), Some(p));
         }
-        assert_eq!(field_path("ctx.not.a.field"), None);
+        // Any other `ctx.` key is rebuilt, so Return on a property field
+        // writes; what is not a key at all is still nothing.
+        assert_eq!(field_path("ctx.not.a.field").map(|p| p.encode()), Some("ctx.not.a.field".to_string()));
+        assert_eq!(field_path("not a key"), None);
     }
 }

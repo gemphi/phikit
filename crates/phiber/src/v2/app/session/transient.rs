@@ -71,6 +71,8 @@ pub fn is_transient(encoded: &str) -> bool {
     // THROTTLED families (the camera, the playhead) ARE resumable — they are
     // not transient, they just persist on a throttle (see `persist`).
     super::super::local_keys::never_resumed(encoded)
+        // A row's restriction flags are the file's, seeded on every open.
+        || crate::v2::part::outliner::key::is_restriction(encoded)
         // A toolbar's expansion (`ctx.<host>.tool.expanded`): Blender's
         // toolbar opens icon-only — labels only once it is dragged wide — so
         // the squares come back at launch whatever was left (`part::strip`).
@@ -90,6 +92,10 @@ mod tests {
         assert!(!is_transient("ctx.view3d.yaw"), "the camera now resumes (on a throttle)");
         assert!(!is_transient("ctx.time_view.dopesheet"), "and the timeline view resumes");
         assert!(!is_transient("ctx.frame"), "and the playhead resumes");
+        assert!(is_transient("ctx.outliner.col/Scene Collection.hide_render"), "a collection's camera is the file's");
+        assert!(is_transient("ctx.outliner.Camera.004.hide_viewport"), "an object's monitor is the file's");
+        assert!(!is_transient("ctx.outliner.col.hide_render"), "which columns show is UI");
+        assert!(!is_transient("ctx.outliner.expanded.col/Scene Collection"), "an unfolded row is UI");
 
         assert!(is_transient("ctx.playing"), "but the session reopens paused");
         assert!(is_transient("ctx.frame_start"), "the scene's range is the file's, not the session's");

@@ -197,10 +197,9 @@ pub enum BView {
         /// What the bar reads out, beside itself.
         text: String,
     },
-    /// A square you drag in: two of a colour's channels at once
-    /// (`view/draw/track/plane.rs`).
-    Plane {
-        plane: Box<crate::v2::view::draw::BPlane>,
+    /// Blender's colour wheel and its value bar (`view/draw/track/wheel`).
+    Wheel {
+        wheel: Box<crate::v2::view::draw::BWheel>,
     },
     Button(prim::BControl),
     /// Menu popover row — no bg by default, hover-only highlight.

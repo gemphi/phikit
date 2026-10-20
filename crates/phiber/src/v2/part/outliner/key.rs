@@ -18,6 +18,26 @@ pub fn k_restrict(object: &str, field: &'static str) -> BPath {
     OutlinerKey::Restrict(intern_name(object), field).path()
 }
 
+/// The restriction fields a row can carry (`k_restrict`'s `field`): the eye,
+/// the monitor, the arrow, the camera, the checkbox, holdout and indirect only.
+pub const RESTRICT_FIELDS: &[&str] = &["hide_get", "hide_viewport", "hide_select", "hide_render", "exclude", "holdout", "indirect_only"];
+
+/// Is `encoded` a restriction flag of some row (`ctx.outliner.<row>.<field>`)?
+///
+/// These are FILE data — Blender keeps them in the `.blend`, on the object
+/// (`Object.visibility_flag`), the collection (`Collection.flag`) and the view
+/// layer (`LayerCollection.flag`) — so they are seeded from the file on every
+/// open (`app::seed`) and never resumed from a session. A session that carried
+/// them put one file's "camera off" on the master collection of every file
+/// opened after it (every file's master is `col/Scene Collection`), which is
+/// how every render of pose 26 came to be handed an empty scene. The column
+/// toggles (`ctx.outliner.col.<field>`: which columns the Outliner shows) are
+/// UI and are not restrictions.
+pub fn is_restriction(encoded: &str) -> bool {
+    let Some(rest) = encoded.strip_prefix("ctx.outliner.") else { return false };
+    RESTRICT_FIELDS.iter().any(|field| rest.strip_suffix(field).is_some_and(|row| row.ends_with('.') && row != "col."))
+}
+
 /// Is `object` hidden in the viewport? Read by the 3D viewport, which is what
 /// turns the eye icon from decoration into a working control.
 pub fn is_hidden(s: &BState, object: &str) -> bool {

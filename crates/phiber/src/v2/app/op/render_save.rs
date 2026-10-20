@@ -6,7 +6,7 @@
 //! stays with its own render-related state.
 
 use super::super::BPhiberApp;
-use crate::v2::state::{BKey as _, log};
+use crate::v2::state::log;
 use crate::v2::part::text::info::{self, BReportLevel};
 use crate::v2::state::CtxKey;
 use crate::v2::scene::render_job;

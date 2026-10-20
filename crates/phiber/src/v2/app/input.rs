@@ -11,7 +11,7 @@
 
 use std::ops::Range;
 
-use gpui::{Bounds, Context, EntityInputHandler, Pixels, Point, ShapedLine, UTF16Selection, Window};
+use gpui::{Bounds, Pixels, Point, ShapedLine};
 
 use crate::v2::state::edit;
 use crate::v2::app::text_edit::{self, BCaret};

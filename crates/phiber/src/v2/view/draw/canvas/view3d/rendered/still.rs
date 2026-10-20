@@ -72,9 +72,13 @@ pub fn still(
     // every pixel.
     adapt: [f32; 4],
     time_limit: f32,
+    // Told each sample as it lands, with its number — what a headless
+    // render prints its progress from (`cli::render`).
+    mut on_sample: impl FnMut(u32),
 ) -> Option<(Vec<u8>, u32)> {
     let mut image: Option<Vec<u8>> = None;
-    let taken = still_stepwise(objects, look, cam, w, h, samples, denoise, adapt, time_limit, super::region::BStillRegion::default(), |_, at| {
+    let taken = still_stepwise(objects, look, cam, w, h, samples, denoise, adapt, time_limit, super::region::BStillRegion::default(), None, |taken, at| {
+        on_sample(taken);
         if let Some(settled) = at.image() {
             image = Some(settled.rgba);
         }
@@ -138,7 +142,9 @@ pub const PEEK_EVERY: std::time::Duration = std::time::Duration::from_millis(350
 
 #[path = "stepwise.rs"]
 mod stepwise;
-pub use stepwise::{still_stepwise, with_studio};
+pub use stepwise::still_stepwise;
+#[cfg(test)]
+pub use stepwise::with_studio;
 
 
 impl BStill {

@@ -13,7 +13,7 @@
 use crate::phiphx::Phx;
 use crate::v2::app::seed::{seed_output_props, seed_render_props, seed_view_layer};
 use crate::v2::part::outliner::key::BHidden;
-use crate::v2::scene::{BObject3D, current_scene, plan_at, render_set, source::set_loaded_scene};
+use crate::v2::scene::{BObject3D, current_scene, plan_at, render_set, source::set_loaded_shared};
 use crate::v2::state::{BState, CtxKey};
 use crate::v2::view::draw::canvas::view3d::rendered::{BMatStand, BRayLook, environment, still, view_words};
 
@@ -103,8 +103,7 @@ impl BHeadlessRender {
         out
     }
 
-    /// The samples every frame takes: the floor applied, as the command
-    /// line applies it.
+    /// The samples every frame takes, as the command line takes them.
     pub fn sample_count(&self) -> u32 {
         BRenderQuality::samples(self.samples, self.draft)
     }
@@ -158,7 +157,17 @@ impl BHeadlessRender {
         // seed; without it every render painted a background Blender
         // leaves out.
         seed_output_props(&mut state, &model);
-        set_loaded_scene(Some(model.clone()));
+        // What the render is given, and which of it Phiray reads
+        // (`render_audit`): printed, since a background render has no
+        // journal window to read it in.
+        for line in crate::v2::scene::render_audit::BRenderAudit::lines(&state) {
+            println!("{line}");
+        }
+        // Shared, not copied: a pose file's model is gigabytes once its
+        // meshes are read, and a second copy of it is what ran a 2 GB scene
+        // out of memory before a single sample.
+        let model = std::sync::Arc::new(model);
+        set_loaded_shared(Some(model.clone()));
         let hidden = BHidden::now(&state);
         let mut set = render_set(&state);
         set.samples = self.sample_count();
@@ -204,7 +213,25 @@ impl BHeadlessRender {
             plan.w = (plan.w / scale).max(1);
             plan.h = (plan.h / scale).max(1);
             let shot = web_time::Instant::now();
-            let (pixel, taken) = still(&objects, plan.look, plan.camera, plan.w, plan.h, plan.samples, plan.denoise, plan.adapt, plan.time_limit)
+            // Blender's `-b` prints a line a sample — `Fra:1 | Time:00:12.34 |
+            // Remaining:01:02.00 | Sample 3/256` — so a long render shows its
+            // pace and what is left; this printed nothing until the end.
+            let target = plan.samples;
+            // `still` reports the samples taken so far — already a count,
+            // and the last one twice (the final sample, then the settled
+            // frame) — so the line is printed once a count.
+            let mut last = 0;
+            let report = |done: u32| {
+                if done == last {
+                    return;
+                }
+                last = done;
+                let elapsed = shot.elapsed();
+                let left = crate::v2::scene::render_status::remaining(elapsed, done, target, false)
+                    .map_or(String::new(), |left| format!(" | Remaining:{}", crate::v2::scene::render_status::timecode(left)));
+                println!("Fra:{frame} | Time:{}{left} | Sample {done}/{target}", crate::v2::scene::render_status::timecode(elapsed));
+            };
+            let (pixel, taken) = still(&objects, plan.look, plan.camera, plan.w, plan.h, plan.samples, plan.denoise, plan.adapt, plan.time_limit, report)
                 // The tracer's own reason (`render_job::note_failure`), not a
                 // guess: headless has no Info editor and no journal, so the
                 // 2048-sample run of pose 26 ended after 30 minutes having
@@ -214,6 +241,14 @@ impl BHeadlessRender {
                         .unwrap_or_else(|| "no gpu adapter, or a scene that does not fit".to_string())
                 })?;
             let drew = shot.elapsed();
+            // Which device drew it, as Blender's `-b` names its Cycles
+            // device: a time means nothing without it (a laptop can hand an
+            // unlisted exe to its integrated GPU).
+            if cost.is_empty()
+                && let Some(device) = phiray::Gpu::in_use()
+            {
+                println!("Device: {} | {} | {} {}", device.name, device.kind_label(), device.backend_label(), device.driver);
+            }
             let (_, path) = Self::frame_path(&self.out, frame as i64);
             image::RgbaImage::from_raw(plan.w, plan.h, pixel)
                 .ok_or("the pixels do not fill the frame")?

@@ -9,6 +9,7 @@
 pub(crate) mod close;
 mod file;
 mod render;
+pub(crate) mod render_open;
 mod image;
 mod render_view;
 

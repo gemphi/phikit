@@ -55,3 +55,19 @@ fn a_world_without_an_image_reads_its_own_colour() {
     assert!(w.color.iter().all(|c| (*c - 0.05).abs() < 0.01), "Blender's default world grey: {:?}", w.color);
     assert_eq!(w.strength, 1.0);
 }
+
+/// The Background that lights is the one the World Output reaches, not the
+/// first the file saved. `WORLD-CAMERA-SPLIT.blend` (made in Blender 5.2)
+/// is pose 23_2's world in miniature: a spare Background and HDRI saved
+/// first and linked to nothing, then a Mix Shader keyed on Light Path ▸ Is
+/// Camera Ray choosing between the HDRI that lights (Strength 2.5, turned
+/// 1.25 rad by its own Mapping) and one the camera alone sees. None of the
+/// three images is shipped, so `missing` names the one that was read.
+#[test]
+fn the_world_is_lit_by_the_background_its_output_reaches() {
+    let w = model("WORLD-CAMERA-SPLIT.blend").world.background;
+    let read = w.missing.as_deref().expect("the lighting HDRI is named");
+    assert!(read.ends_with("lights_the_scene.exr"), "the Mix's Fac-0 side lights every ray but the camera's: {read}");
+    assert_eq!(w.strength, 2.5, "that Background's own Strength");
+    assert!((w.rotation - 1.25).abs() < 1e-6, "the Mapping on that texture, not the first in the tree: {}", w.rotation);
+}

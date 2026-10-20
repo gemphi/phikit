@@ -121,10 +121,10 @@ impl BAsciiRenderer {
             BView::Track { track, share, text } => {
                 o.push_str(&format!("{p}Track({}, {share:.2}, {:?})\n", track.key.encode(), text))
             }
-            // Where the colour sits in the square is the claim worth printing.
-            BView::Plane { plane } => {
-                let (across, down) = plane.marker();
-                o.push_str(&format!("{p}Plane({}, {across:.2}, {down:.2})\n", plane.key.encode()))
+            // Where the cursor sits on the wheel, and the value, are the claim.
+            BView::Wheel { wheel } => {
+                let (across, down) = wheel.marker();
+                o.push_str(&format!("{p}Wheel({}, {across:.2}, {down:.2}, v={:.2})\n", wheel.key.encode(), wheel.hsv[2]))
             }
             BView::Prose { role, text } => o.push_str(&format!("{p}Prose({role:?}, {:?})\n", text)),
             BView::VLabel { text } => o.push_str(&format!("{p}VLabel({:?})\n", text)),

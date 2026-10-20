@@ -14,6 +14,10 @@ pub enum ModalKey {
     ReaderDoc,
     /// The modal the reader covered, restored when it closes.
     ReaderReturn,
+    /// The modal the file browser covered — the render view, whose Image
+    /// menu opens it — restored when the browser closes
+    /// (`part::file::op::BFileReturnRule`).
+    FileReturn,
     /// What the "Save changes before closing?" dialog goes on to do once
     /// answered — `quit`, `new_file:<spec>`, `open`, `open:<path>`
     /// (`wm_close_file_dialog`'s `post_action`).
@@ -28,6 +32,7 @@ impl BKey for ModalKey {
             Self::Minimized => BPath::owned(vec!["modal", "minimized"]),
             Self::ReaderDoc => BPath::owned(vec!["reader", "doc"]),
             Self::ReaderReturn => BPath::owned(vec!["reader", "return"]),
+            Self::FileReturn => BPath::owned(vec!["modal", "file_return"]),
             Self::CloseThen => BPath::owned(vec!["modal", "file_close", "then"]),
         }
     }

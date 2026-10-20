@@ -32,6 +32,13 @@ pub struct BRenderSet {
     pub preview_samples: u32,
     /// `cycles.diffuse_bounces` — indirect diffuse depth.
     pub diffuse_bounces: u32,
+    /// Light Paths ▸ Max Bounces' other rows: `cycles.max_bounces`
+    /// (Total), `transparent_max_bounces`, `transmission_bounces` and
+    /// `glossy_bounces` (`phiray::Camera::with_depth`).
+    pub max_bounces: u32,
+    pub transparent_bounces: u32,
+    pub transmission_bounces: u32,
+    pub glossy_bounces: u32,
     /// `cycles.use_denoising`.
     pub denoise: bool,
     /// `cycles.use_adaptive_sampling`, `cycles.adaptive_threshold` and
@@ -49,6 +56,10 @@ pub struct BRenderSet {
     /// and saved and never applied, so 4096 samples at seven seconds each
     /// had no way to be told to stop.
     pub time_limit: f32,
+    /// Light Paths ▸ Clamping: the most one sample's direct and indirect
+    /// light may add, `0` for no limit (`phiray::Camera::limit`).
+    pub clamp_direct: f32,
+    pub clamp_indirect: f32,
     /// `cycles.use_preview_denoising` and `preview_denoising_start_sample`:
     /// the viewport shown filtered while it refines, from that sample on.
     pub preview_denoise: bool,
@@ -61,6 +72,16 @@ pub struct BRenderSet {
     /// Output ▸ Format's Render Region and Crop to Render Region with the
     /// rectangle set (`scene::render_border`).
     pub border: crate::phiphx::blend::BlendRenderBorder,
+    /// Film ▸ Pixel Filter: `cycles.pixel_filter_type` and
+    /// `cycles.filter_width` in pixels (`phiray::Camera::integrator`) —
+    /// Box always one pixel, as `blender/sync.cpp` sets it.
+    pub pixel_filter: phiray::PixelFilter,
+    pub filter_size: f32,
+    /// Light Paths ▸ Caustics: `cycles.blur_glossy` (Filter Glossy),
+    /// `caustics_reflective` and `caustics_refractive`.
+    pub filter_glossy: f32,
+    pub caustics_reflective: bool,
+    pub caustics_refractive: bool,
     /// Render ▸ Engine as the panel holds it, the file's when the panel has
     /// never held one (`scene::render_engine`). Workbench rasterizes; every
     /// other engine, `PHIRAY` among them, path-traces.
@@ -75,6 +96,10 @@ impl Default for BRenderSet {
             samples: 4096,
             preview_samples: 1024,
             diffuse_bounces: 4,
+            max_bounces: 12,
+            transparent_bounces: 8,
+            transmission_bounces: 12,
+            glossy_bounces: 4,
             denoise: true,
             // Cycles' own defaults (`scene/integrator.cpp`):
             //   SOCKET_BOOLEAN(use_adaptive_sampling, true)
@@ -85,11 +110,23 @@ impl Default for BRenderSet {
             adaptive_min_samples: 0,
             //   SOCKET_FLOAT(time_limit, 0.0f)
             time_limit: 0.0,
+            //   SOCKET_FLOAT(sample_clamp_direct, 0.0f)
+            //   SOCKET_FLOAT(sample_clamp_indirect, 10.0f)
+            clamp_direct: 0.0,
+            clamp_indirect: 10.0,
             preview_denoise: true,
             preview_denoise_from: 1,
             resolution: BResolution::default(),
             film_transparent: false,
             border: Default::default(),
+            //   SOCKET_ENUM(filter_type, …, FILTER_BLACKMAN_HARRIS) and
+            //   `RenderData.gauss` 1.5 (`DNA_scene_defaults.h`); Filter
+            //   Glossy 1 and both caustics on (`addon/properties.py`).
+            pixel_filter: phiray::PixelFilter::BlackmanHarris,
+            filter_size: 1.5,
+            filter_glossy: 1.0,
+            caustics_reflective: true,
+            caustics_refractive: true,
             engine: Default::default(),
         }
     }
@@ -144,16 +181,30 @@ pub fn render_set(s: &BState) -> BRenderSet {
         samples: int_at(s, "cycles.samples", d.samples),
         preview_samples: int_at(s, "cycles.preview_samples", d.preview_samples),
         diffuse_bounces: int_at(s, "cycles.diffuse_bounces", d.diffuse_bounces),
+        max_bounces: int_at(s, "cycles.max_bounces", d.max_bounces),
+        transparent_bounces: int_at(s, "cycles.transparent_max_bounces", d.transparent_bounces),
+        transmission_bounces: int_at(s, "cycles.transmission_bounces", d.transmission_bounces),
+        glossy_bounces: int_at(s, "cycles.glossy_bounces", d.glossy_bounces),
         denoise: bool_at(s, "cycles.use_denoising", d.denoise),
         adaptive: bool_at(s, "cycles.use_adaptive_sampling", d.adaptive),
         adaptive_threshold: float_at(s, "cycles.adaptive_threshold", d.adaptive_threshold),
         adaptive_min_samples: int_at(s, "cycles.adaptive_min_samples", d.adaptive_min_samples),
         time_limit: float_at(s, "cycles.time_limit", d.time_limit).max(0.0),
+        clamp_direct: float_at(s, "cycles.sample_clamp_direct", d.clamp_direct).max(0.0),
+        clamp_indirect: float_at(s, "cycles.sample_clamp_indirect", d.clamp_indirect).max(0.0),
         preview_denoise: bool_at(s, "cycles.use_preview_denoising", d.preview_denoise),
         preview_denoise_from: int_at(s, "cycles.preview_denoising_start_sample", d.preview_denoise_from),
         resolution: BResolution::now(s),
         film_transparent: bool_at(s, "render.film_transparent", d.film_transparent),
         border: super::render_border::BRenderBorder::now(s, super::source::with_loaded(|m| m.map(|m| m.render.border).unwrap_or_default())),
+        pixel_filter: match value_at(s, "cycles.pixel_filter_type", BValueKind::Enum) {
+            Some(BValue::Enum(name)) => phiray::PixelFilter::of(&name),
+            _ => d.pixel_filter,
+        },
+        filter_size: float_at(s, "cycles.filter_width", d.filter_size).clamp(0.01, 10.0),
+        filter_glossy: float_at(s, "cycles.blur_glossy", d.filter_glossy).max(0.0),
+        caustics_reflective: bool_at(s, "cycles.caustics_reflective", d.caustics_reflective),
+        caustics_refractive: bool_at(s, "cycles.caustics_refractive", d.caustics_refractive),
         // The panel's row, and the file's engine only until the panel holds
         // one — which is how every other row in this struct reads.
         engine: engine_at(s),

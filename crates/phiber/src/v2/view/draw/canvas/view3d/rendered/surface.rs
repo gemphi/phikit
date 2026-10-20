@@ -54,7 +54,10 @@ impl BSurface<'_> {
         if let Some(b) = bsdf {
             tri.color[3] = b.alpha;
             tri = tri
-                .with_optics(b.emitted(), b.transmission, b.ior)
+                // Glass refracts at its own IOR; anything else reflects at the
+                // IOR Specular IOR Level makes of it (`specular_eta`), which
+                // is the only thing `ior` does on an opaque surface.
+                .with_optics(b.emitted(), b.transmission, if b.transmission > 0.0 { b.ior } else { b.specular_eta() })
                 .with_subsurface(b.subsurface, b.scatter())
                 .with_sheen(b.sheen, b.sheen_roughness, b.sheen_tint)
                 .with_coat(b.coat, b.coat_roughness)

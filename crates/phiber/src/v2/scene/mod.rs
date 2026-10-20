@@ -37,6 +37,7 @@ pub use key::{
 
 pub mod project;
 pub mod mixdown;
+pub mod render_audit;
 pub mod render_border;
 pub mod render_cast;
 pub mod render_engine;

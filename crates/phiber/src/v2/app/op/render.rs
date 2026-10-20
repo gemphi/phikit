@@ -2,14 +2,8 @@
 //! each frame written where Output points.
 
 use super::super::BPhiberApp;
-use crate::v2::part::text::info::{self, BReportLevel};
 use crate::v2::scene::render_job;
-use crate::v2::state::{CtxKey, ModalKey, log, val::V_MODAL_RENDER};
-use gpui::Context;
-use std::time::Duration;
-
-/// How often the animation render looks for a finished frame.
-const FRAME_POLL_MS: u64 = 100;
+use crate::v2::state::log;
 
 impl BPhiberApp {
     /// Start a final render of the loaded scene at the shown frame. `false`
@@ -71,9 +65,16 @@ impl BPhiberApp {
         // has already applied it, so this no longer filters a second time.
         // When it leaves nothing, the cast says which rule did it and hands
         // over what the viewport shows instead.
+        let cast_note = cast.note.clone();
         if let Some(note) = cast.note {
             crate::v2::state::log::push(note);
         }
+        crate::v2::scene::render_audit::BRenderAudit::note(&self.state);
+        // The Status event this render reports to: what was asked for, the
+        // settings it was given, and — from the render's own thread — how
+        // far it has got and how it ended.
+        let event = crate::v2::scene::render_audit::BRenderAudit::open_event(&self.state, frame, (plan.w, plan.h), plan.samples, cast.objects.len(), cast_note.as_deref());
+        render_job::report_to(event);
         render_job::start(cast.objects, plan);
         true
     }
@@ -115,9 +116,10 @@ impl BPhiberApp {
         }
     }
 
-    /// F12: the render window opens and a render starts, every time.
+    /// F12: the render shows in the workspace's Image editor
+    /// (`render_open`) and a render starts, every time.
     pub(super) fn render_image(&mut self) {
-        self.state.set(ModalKey::Open, V_MODAL_RENDER);
+        super::render_open::render_view_open(&mut self.state);
         if render_job::rendering() {
             log::push("Already rendering".to_string());
             return;

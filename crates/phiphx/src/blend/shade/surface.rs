@@ -44,21 +44,27 @@ impl BlendFile {
 
     /// The active Material Output of `nodes`.
     pub(crate) fn material_output<'a>(&self, nodes: &[&'a BlendBlock], dna: &DnaType) -> Option<&'a BlendBlock> {
-        let outputs: Vec<&BlendBlock> = nodes.iter().copied().filter(|n| self.kind(n, dna).contains("OutputMaterial")).collect();
+        self.active_output(nodes, "OutputMaterial", dna)
+    }
+
+    /// The output node of kind `kind` (`OutputMaterial`, `OutputWorld`) in
+    /// use: the one flagged `NODE_DO_OUTPUT`, else the first.
+    pub(super) fn active_output<'a>(&self, nodes: &[&'a BlendBlock], kind: &str, dna: &DnaType) -> Option<&'a BlendBlock> {
+        let outputs: Vec<&BlendBlock> = nodes.iter().copied().filter(|n| self.kind(n, dna).contains(kind)).collect();
         let flag = self.off("bNode", "flag", dna);
         let active = outputs.iter().copied().find(|n| flag.and_then(|o| n.data.get(o..o + 4)).is_some_and(|b| self.read_i32(b) & NODE_DO_OUTPUT != 0));
         active.or(outputs.first().copied())
     }
 
     /// The node linked into `node`'s input socket `index`.
-    fn linked_node<'a>(&self, nodes: &[&'a BlendBlock], links: &[BLink], node: &BlendBlock, index: usize, dna: &DnaType) -> Option<&'a BlendBlock> {
+    pub(super) fn linked_node<'a>(&self, nodes: &[&'a BlendBlock], links: &[BLink], node: &BlendBlock, index: usize, dna: &DnaType) -> Option<&'a BlendBlock> {
         let sock = *self.input_sockets(node, dna).get(index)?;
         let link = links.iter().find(|l| l.to_sock == sock)?;
         nodes.iter().copied().find(|n| n.old_address == link.from)
     }
 
     /// The node linked into `node`'s input named `name`.
-    fn linked_named<'a>(&self, nodes: &[&'a BlendBlock], links: &[BLink], node: &BlendBlock, name: &str, dna: &DnaType) -> Option<&'a BlendBlock> {
+    pub(super) fn linked_named<'a>(&self, nodes: &[&'a BlendBlock], links: &[BLink], node: &BlendBlock, name: &str, dna: &DnaType) -> Option<&'a BlendBlock> {
         let sock = self.socket_named(node, name, dna)?;
         let link = links.iter().find(|l| l.to_sock == sock)?;
         nodes.iter().copied().find(|n| n.old_address == link.from)
@@ -154,7 +160,11 @@ impl BlendFile {
         let shader = |i: usize| self.linked_node(nodes, links, node, i, dna).and_then(|n| self.closure(ma, nodes, links, graph, n, dna, depth + 1));
         let white = [1.0, 1.0, 1.0, 1.0];
         let grey = [0.8, 0.8, 0.8, 1.0];
-        let plain = |base: [f32; 4], roughness: f32, metallic: f32| BlendBsdf { base, roughness, metallic, ..Default::default() };
+        // The closures that are not the Principled carry no dielectric
+        // reflection over their colour (Diffuse, Translucent, Toon, Sheen,
+        // Subsurface Scattering, Emission, Transparent are one lobe each in
+        // Cycles), so their Specular IOR Level is 0; a Glossy is all metal.
+        let plain = |base: [f32; 4], roughness: f32, metallic: f32| BlendBsdf { base, roughness, metallic, specular_level: 0.0, ..Default::default() };
         Some(match kind {
             "MixShader" => {
                 let fac = self.arg(graph, node, "Fac", dna, 0.5).clamp(0.0, 1.0);
@@ -170,9 +180,9 @@ impl BlendFile {
             "NodeReroute" => shader(0)?,
             "Emission" => {
                 let color = self.color(graph, node, "Color", dna, white);
-                BlendBsdf { base: [0.0, 0.0, 0.0, 1.0], roughness: 1.0, emission: [color[0], color[1], color[2]], emission_strength: self.arg(graph, node, "Strength", dna, 1.0), ..Default::default() }
+                BlendBsdf { base: [0.0, 0.0, 0.0, 1.0], roughness: 1.0, specular_level: 0.0, emission: [color[0], color[1], color[2]], emission_strength: self.arg(graph, node, "Strength", dna, 1.0), ..Default::default() }
             }
-            "BsdfTransparent" | "Holdout" => BlendBsdf { base: self.color(graph, node, "Color", dna, white), alpha: 0.0, ..Default::default() },
+            "BsdfTransparent" | "Holdout" => BlendBsdf { base: self.color(graph, node, "Color", dna, white), alpha: 0.0, specular_level: 0.0, ..Default::default() },
             "BsdfGlass" | "BsdfRefraction" => BlendBsdf {
                 base: self.color(graph, node, "Color", dna, white),
                 roughness: self.arg(graph, node, "Roughness", dna, 0.0),
@@ -206,6 +216,7 @@ impl BlendBsdf {
             metallic: l(self.metallic, other.metallic),
             alpha: l(self.alpha, other.alpha),
             ior: l(self.ior, other.ior),
+            specular_level: l(self.specular_level, other.specular_level),
             transmission: l(self.transmission, other.transmission),
             emission: l3(ea, eb),
             emission_strength: 1.0,

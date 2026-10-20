@@ -36,7 +36,7 @@ pub fn help() -> String {
     out.push_str(&format!(
         "\nDefaults that differ from Blender:\n  \
          The engine is {} unless -E names another.\n  \
-         The sample count is at least {}; --draft lifts that floor.\n",
+         The sample count is {} unless --samples names another.\n",
         BRenderQuality::ENGINE,
         BRenderQuality::SAMPLE_FLOOR
     ));
@@ -67,7 +67,7 @@ mod tests {
             assert!(text.contains(spec.help), "{spec:?}'s help line is missing");
         }
         assert!(text.contains("PHIRAY"), "the engine default is stated");
-        assert!(text.contains("2048"), "the sample floor is stated");
+        assert!(text.contains("2048"), "the sample default is stated");
         assert!(text.starts_with("Usage: phiber"));
     }
 

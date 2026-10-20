@@ -121,7 +121,12 @@ pub fn bindings(over: Option<BHostType>) -> Vec<BBinding> {
         // rendering ... no matter which operation is currently handling
         // events"), which the render's `test_break` reads.
         if crate::v2::scene::render_job::rendering() {
-            BAction::Set(OpKey::Render.path(), "cancel".to_string())
+            return BAction::Set(OpKey::Render.path(), "cancel".to_string());
+        }
+        if state.get(crate::v2::state::ImageKey::PrevSpace).is_some() {
+            // The area F12 turned into the Image editor goes back to what it
+            // was (`SI_PREVSPACE`: "Makes Escape go back to previous space").
+            BAction::Set(OpKey::Render.path(), "view".to_string())
         } else if crate::v2::scene::action::dope::BKeyGrab::active(state) {
             BAction::Set(OpKey::Keys.path(), "grab:cancel".to_string())
         } else if crate::v2::scene::grab::BMarkerGrab::active(state) {

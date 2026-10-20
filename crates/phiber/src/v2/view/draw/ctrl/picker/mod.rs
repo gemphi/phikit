@@ -1,21 +1,21 @@
-//! The body of a colour control's picker: one row per channel.
+//! The body of a colour control's picker: Blender's wheel, then one row per
+//! channel.
 //!
 //! A colour control was a swatch and a text field, and the swatch was inert: the
 //! only way to change a theme colour was to type four numbers into the field
 //! beside it, in the exact spelling the descriptor accepts. Clicking the colour
 //! did nothing, which is not what a swatch looks like it does.
 //!
-//! This is the picker that opens instead: hue, saturation, lightness and alpha,
-//! each a bar you sweep (`BView::Track`) with a step either side for the fine
-//! adjustment a drag is bad at — the pair Blender's own picker shows. Every write
-//! carries the whole colour with that one channel moved, in the spelling the
-//! descriptor parses back.
+//! This is the picker that opens instead, laid out as `block_colorpicker` lays
+//! Blender's out: the hue/saturation wheel with its value bar
+//! (`USER_CP_CIRCLE_HSV`, Blender's default — `track/wheel`), then a bar per
+//! channel, then Hex. A theme colour's bars are hue, saturation, lightness and
+//! alpha, each with a step either side for the fine adjustment a drag is bad at;
+//! a scene colour's are red, green, blue and alpha, the RGB tab Blender opens on.
+//! Every write carries the whole colour in the spelling its key was read in.
 //!
 //! It is `BView` and `BControl` throughout rather than renderer internals, so it
-//! composes the same atoms every other control does. The saturation/lightness
-//! square leads the rows (`BPlane::saturation_lightness`, Blender's `GRAD_SV`).
-//! Blender's own default is a hue/saturation *ring* instead, and not having one is
-//! a decision rather than a gap — `BPlane::saturation_lightness` records why.
+//! composes the same atoms every other control does.
 
 mod channel;
 mod hex;
@@ -23,49 +23,59 @@ mod hex;
 use self::channel::rows as channel_rows;
 use self::hex::row as hex_row;
 use super::swatch::BCtrlSwatch;
-use crate::v2::state::{BPath, BState};
+use crate::v2::state::{BPath, BState, BValue};
 use crate::v2::theme::BColor;
+use crate::v2::view::draw::{BTrack, BWheel};
 use crate::v2::view::prim::{BAction, BControl, BCtrl, BPopoverSide};
 use crate::v2::view::BView;
 
-/// The whole picker for `ctrl`: the swatch that opens it, and the channels
-/// inside. `None` when there is nothing to open — a colour that could not be
-/// read, or a control with nowhere to record being open.
+/// The whole picker for `ctrl`: the swatch that opens it, and what is inside.
+/// `None` when there is nothing to open — a colour that could not be read, or
+/// a control with nowhere to record being open.
 pub fn popover(ctrl: &BCtrl, swatch: BCtrlSwatch, s: &BState) -> Option<BView> {
-    let (Some(open_key), BCtrlSwatch::Hsl(color)) = (ctrl.open_key.clone(), swatch) else {
-        return None;
+    let open_key = ctrl.open_key.clone()?;
+    let (face, body) = match (swatch, &ctrl.value) {
+        (BCtrlSwatch::Hsl(color), _) => (color, rows(&ctrl.key, color, s)),
+        // Only a value that IS a colour: the half-black "unreadable" swatch is
+        // RGBA too, and a picker over it would write RGBA into a theme key.
+        (BCtrlSwatch::Rgba(rgba), BValue::Color(_)) => {
+            (crate::v2::view::draw::track::rgb_to_hsla([rgba[0], rgba[1], rgba[2]], rgba[3]), rgba_rows(&ctrl.key, rgba))
+        }
+        _ => return None,
     };
     let anchor = BView::Button(
         BControl::new()
             .with_active(ctrl.open)
             .with_action(BAction::Toggle(open_key.clone()))
-            .with_swatch(color),
+            .with_swatch(face),
     );
-    Some(BView::popover(
-        anchor,
-        rows(&ctrl.key, color, s),
-        ctrl.open,
-        BAction::Reset(open_key),
-        BPopoverSide::Below,
-    ))
+    Some(BView::popover(anchor, body, ctrl.open, BAction::Reset(open_key), BPopoverSide::Below))
 }
 
-/// The picker's rows for `color`, each step writing `key`.
+/// A theme colour's picker: the wheel, its four HSLA channels, and Hex.
 fn rows(key: &BPath, color: BColor, s: &BState) -> Vec<BView> {
-    // The square first: saturation across, lightness down — Blender's `GRAD_SV` —
-    // with hue on a bar below rather than inside it, because `colorpicker_square`
-    // pairs a `GRAD_SV` square with `GRAD_H` (`gradient_type = type + 3`) and draws
-    // that bar under it. The channel rows stay: a square is how you find a colour
-    // and a number is how you say which one, and Blender shows both.
-    let mut out = vec![BView::Plane {
-        plane: Box::new(crate::v2::view::draw::BPlane::saturation_lightness(key.clone(), color)),
-    }];
+    let mut out = vec![BView::Wheel { wheel: Box::new(BWheel::of_hsl(key.clone(), color)) }];
     out.extend(channel_rows(key, color));
     out.push(hex_row(key, color, s));
     out
 }
 
-
+/// A scene colour's picker: the wheel, then red, green, blue and alpha.
+fn rgba_rows(key: &BPath, rgba: [f32; 4]) -> Vec<BView> {
+    let mut out = vec![BView::Wheel { wheel: Box::new(BWheel::of_rgba(key.clone(), rgba)) }];
+    out.extend(["R", "G", "B", "A"].iter().enumerate().map(|(index, label)| {
+        let now = rgba[index];
+        BView::row(vec![
+            BView::Label { text: label.to_string() },
+            BView::Track {
+                track: Box::new(BTrack::rgba(key.clone(), index, rgba)),
+                share: crate::v2::view::draw::track::share_of(now, 0.0, 1.0),
+                text: format!("{now:.3}"),
+            },
+        ])
+    }));
+    out
+}
 
 #[cfg(test)]
 mod tests {
@@ -174,51 +184,45 @@ mod tests {
     }
 
     #[test]
-    fn the_picker_leads_with_a_square_over_the_two_channels_a_square_is_for() {
-        use crate::v2::view::draw::BPlane;
-
+    fn the_picker_leads_with_blenders_wheel() {
         let key = BPath::owned(vec!["ui_style", "colors", "bg_app"]);
-        let color = (210.0, 40.0, 60.0, 1.0);
-        let views = rows(&key, color, &BState::new());
-        let BView::Plane { plane } = &views[0] else {
-            panic!("the square comes first, got {:?}", &views[0])
-        };
-        assert_eq!(plane.key, key, "it writes the colour's own key");
-        // Blender's `GRAD_SV`: saturation across, lightness down, hue on the bar
-        // under it (`GRAD_H`, which is `GRAD_SV + 3`).
-        assert_eq!((plane.x.channel, plane.y.channel), (1, 2), "saturation across, lightness down");
-        assert_eq!((plane.x.max, plane.y.max), (100.0, 100.0), "both are percent");
-        // The pairing Blender does not ship: a square whose axes are hue and
-        // saturation has a VALUE bar (`GRAD_HS + 3 == GRAD_V`), never a lightness
-        // one — `GRAD_L_ALT` belongs to the circle alone. This square took those
-        // axes for a round, so the guard names what it must not go back to.
-        assert_ne!(plane.x.channel, 0, "hue is not an axis of this square");
-        assert_ne!(plane.y.channel, 0, "hue is not an axis of this square");
-        // Hue and alpha keep their own rows, because a square cannot show four
-        // channels and pretending otherwise is how a picker loses one.
-        assert_eq!(views.len(), 6, "the square, four channel rows and Hex");
-        assert_eq!(**plane, BPlane::saturation_lightness(key, color));
+        let views = rows(&key, (210.0, 40.0, 60.0, 1.0), &BState::new());
+        let BView::Wheel { wheel } = &views[0] else { panic!("the wheel comes first, got {:?}", &views[0]) };
+        assert_eq!(wheel.key, key, "it writes the colour's own key");
+        assert_eq!(wheel.space, crate::v2::view::draw::BPickSpace::Hsl);
+        assert_eq!(views.len(), 6, "the wheel, four channel rows and Hex");
     }
 
-    /// What the square shows is what dropping the pointer there writes.
-    ///
-    /// The reason it is a grid of cells rather than stacked gradients: a 2-stop
-    /// linear gradient cannot express a saturation sweep crossed with a lightness
-    /// one, so an approximated square would show one colour and set another.
     #[test]
-    fn a_cell_is_the_colour_that_cell_sets() {
-        let key = BPath::owned(vec!["c"]);
-        let BView::Plane { plane } = &rows(&key, (120.0, 50.0, 50.0, 1.0), &BState::new())[0] else { panic!() };
-        // A cell's fill is `color_at` of its own centre, and so is the write for a
-        // pointer dropped there — same function, so they cannot disagree.
-        for (across, down) in [(0.025, 0.025), (0.5, 0.5), (0.975, 0.975)] {
-            let shown = plane.color_at(across, down);
-            assert!(
-                crate::v2::theme::parse_hsla(&crate::v2::view::draw::track::encode_hsla(shown)).is_ok(),
-                "{shown:?} is a colour the field would accept"
-            );
-        }
+    fn a_scene_colour_opens_a_picker_that_writes_rgba() {
+        use crate::v2::state::BValue;
+        use crate::v2::view::prim::BCtrlKind;
+        let key = BPath::owned(vec!["buts", "value", "color"]);
+        let s = BState::new();
+        let ctrl = BCtrl::read(BCtrlKind::Color, key.clone(), BValue::Color([1.0, 0.5, 0.25, 1.0]), &s);
+        let Some(BView::Popover { body, .. }) = popover(&ctrl, BCtrlSwatch::of(&ctrl.value), &s) else {
+            panic!("a scene colour opens a picker")
+        };
+        let BView::Wheel { wheel } = &body[0] else { panic!("{:?}", body[0]) };
+        assert_eq!(wheel.space, crate::v2::view::draw::BPickSpace::Rgba);
+        assert_eq!(body.len(), 5, "the wheel, then R, G, B and A");
     }
 
-
+    #[test]
+    fn every_colour_control_has_somewhere_to_record_its_picker_open() {
+        // `BCtrl::read` gave none of them an open key, so the picker above was
+        // never reached: clicking a swatch in Preferences, Properties, the
+        // Shading popover or New Image did nothing.
+        use crate::v2::state::BValue;
+        use crate::v2::view::prim::BCtrlKind;
+        let s = BState::new();
+        for value in [BValue::Color([0.2, 0.2, 0.2, 1.0]), BValue::Text("0, 0, 24, 1".to_string())] {
+            let ctrl = BCtrl::read(BCtrlKind::Color, BPath::owned(vec!["k"]), value, &s);
+            assert!(ctrl.open_key.is_some(), "{:?}", ctrl.value);
+            assert!(popover(&ctrl, BCtrlSwatch::of(&ctrl.value), &s).is_some());
+        }
+        // An unreadable theme colour still has no picker to open onto.
+        let ctrl = BCtrl::read(BCtrlKind::Color, BPath::owned(vec!["k"]), BValue::Text("nope".to_string()), &s);
+        assert!(popover(&ctrl, BCtrlSwatch::of(&ctrl.value), &s).is_none());
+    }
 }

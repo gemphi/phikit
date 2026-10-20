@@ -74,10 +74,10 @@ impl BRenderCast {
         use crate::v2::scene::links::{BCollectionNode, BSceneTree};
         fn walk(c: &BCollectionNode, state: &BState, out: &mut Vec<String>) {
             let id = collection_id(&c.path);
-            if is_render_hidden(state, id) {
-                out.push(format!("{id} (camera off)"));
-            } else if is_excluded(state, id) {
-                out.push(format!("{id} (excluded)"));
+            match (is_render_hidden(state, id), is_excluded(state, id)) {
+                (true, _) => out.push(format!("{id} (camera off)")),
+                (false, true) => out.push(format!("{id} (excluded)")),
+                (false, false) => {}
             }
             for k in &c.children {
                 walk(k, state, out);

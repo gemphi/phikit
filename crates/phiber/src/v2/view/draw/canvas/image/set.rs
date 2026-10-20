@@ -154,20 +154,52 @@ impl BImageView {
         }
     }
 
-    /// `make_renderinfo_string` then the engine's status: `Frame:1 | Time:00:12.34
-    /// | Mem:12M, Peak: 12M | Scene, ViewLayer | Sample 12/128`, `Finished` once
-    /// the render is done.
-    pub fn info_text(&self, scene: &(String, String), frame: &str) -> Option<String> {
-            let view = self;
-        let status = view.status?;
-        let time = render_status::timecode(render_status::elapsed());
+    /// The render's status as key/value pairs, in the order Blender's
+    /// `make_renderinfo_string` prints them: Frame, Time, Remaining (while it
+    /// runs), Mem, Peak, Scene, View Layer, then the engine's status. The
+    /// bar is these joined; anything that wants one value reads the pair.
+    pub fn info_pairs(&self, scene: &(String, String), frame: &str) -> Option<Vec<(&'static str, String)>> {
+        self.info_pairs_at(scene, frame, render_status::elapsed())
+    }
+
+    /// The same pairs for a render `elapsed` in — the clock passed in
+    /// rather than read, so a figure or a test can say when it is.
+    pub fn info_pairs_at(&self, scene: &(String, String), frame: &str, elapsed: std::time::Duration) -> Option<Vec<(&'static str, String)>> {
+        let status = self.status?;
+        let mut pairs = vec![("Frame", frame.to_string()), ("Time", render_status::timecode(elapsed))];
+        if let Some(left) = render_status::remaining(elapsed, status.taken, status.target, status.done) {
+            pairs.push(("Remaining", render_status::timecode(left)));
+        }
+        pairs.push(("Mem", format!("{}M", status.megabytes())));
+        pairs.push(("Peak", format!("{}M", status.peak_megabytes())));
+        pairs.push(("Scene", scene.0.clone()));
+        pairs.push(("View Layer", scene.1.clone()));
         // The tail is the phase's own line, so the bar cannot disagree with
         // the canvas or the header about what the screen is showing
         // (`scene::render_phase` lists the eight and what each is grounded
-        // in). It read `(done, paused())` here and had three answers for
-        // eight states.
-        let progress = view.phase.info(status.taken, status.target);
-        Some(format!("Frame:{frame} | Time:{time} | Mem:{m}M, Peak: {m}M | {}, {} | {progress}", scene.0, scene.1, m = status.megabytes()))
+        // in).
+        pairs.push(("Status", self.phase.info(status.taken, status.target)));
+        Some(pairs)
+    }
+
+    /// The pairs as Blender's bar reads: `Frame:1 | Time:00:12.34 |
+    /// Remaining:00:30.00 | Mem:12M, Peak: 14M | Scene, ViewLayer | Sample
+    /// 12/128`.
+    pub fn info_text(&self, scene: &(String, String), frame: &str) -> Option<String> {
+        Self::info_line(&self.info_pairs(scene, frame)?)
+    }
+
+    /// Pairs from [`Self::info_pairs`] joined the way the bar prints them.
+    pub fn info_line(pairs: &[(&'static str, String)]) -> Option<String> {
+        let get = |k: &str| pairs.iter().find(|(key, _)| *key == k).map(|(_, v)| v.as_str());
+        let mut groups = vec![format!("Frame:{}", get("Frame")?), format!("Time:{}", get("Time")?)];
+        if let Some(left) = get("Remaining") {
+            groups.push(format!("Remaining:{left}"));
+        }
+        groups.push(format!("Mem:{}, Peak: {}", get("Mem")?, get("Peak")?));
+        groups.push(format!("{}, {}", get("Scene")?, get("View Layer")?));
+        groups.push(get("Status")?.to_string());
+        Some(groups.join(" | "))
     }
 
     /// `draw_render_info`: the bar across the top of the window.

@@ -11,7 +11,7 @@ use std::path::Path;
 
 use super::{history, listing, sidebar};
 use crate::v2::modal::splash::recent;
-use crate::v2::state::val::{V_EMPTY, V_FALSE, V_MODAL_FILE_BROWSER};
+use crate::v2::state::val::{V_EMPTY, V_FALSE, V_MODAL_FILE_BROWSER, V_MODAL_RENDER};
 use crate::v2::state::{BKey, BPath, BState, FileKey, ModalKey, rule::BRule};
 
 /// Operator names written into `file.nav` by the nav buttons.
@@ -114,8 +114,50 @@ impl BRule for BPurposeRule {
             Some(super::purpose::BFilePurpose::SaveAs | super::purpose::BFilePurpose::SaveCopy) => seed_blend_target(s),
             _ => {}
         }
-        if !value.is_empty() && s.get(ModalKey::Open).filter(|m| !m.is_empty()).is_none() {
-            s.set(ModalKey::Open, V_MODAL_FILE_BROWSER);
+        if value.is_empty() {
+            return;
+        }
+        match s.get(ModalKey::Open).filter(|m| !m.is_empty()) {
+            None => s.set(ModalKey::Open, V_MODAL_FILE_BROWSER),
+            // Blender's render window carries the Image editor's own menus,
+            // and Image ▸ Save As there opens the file browser over it
+            // (`IMAGE_OT_save_as` invokes a file select like any operator).
+            // The render view is a modal here and modals are one at a time,
+            // so the browser remembers it and `BFileReturnRule` puts it
+            // back once the browser closes — committed or cancelled. This
+            // was the whole of "Image ▸ Save As does nothing": the purpose
+            // was set, the browser never raised, no PNG ever reached disk.
+            Some(V_MODAL_RENDER) => {
+                s.set(ModalKey::FileReturn, V_MODAL_RENDER);
+                s.set(ModalKey::Open, V_MODAL_FILE_BROWSER);
+            }
+            Some(_) => {}
+        }
+    }
+}
+
+/// Close the browser: the modal it covered comes back, or none. A commit
+/// calls this itself (a rule's own `set` runs no rule); a cancel is the
+/// action `modal = ""`, which `BFileReturnRule` answers.
+pub fn close_browser(s: &mut BState) {
+    // A field of the browser left in edit mode would go on taking the keys
+    // — Escape among them — after the browser is gone.
+    crate::v2::state::edit::stop(s);
+    let back = s.get(ModalKey::FileReturn).map(str::to_string);
+    s.remove(ModalKey::FileReturn);
+    s.set(ModalKey::Open, back.unwrap_or_else(|| V_EMPTY.to_string()));
+}
+
+/// `modal = ""` → put back the modal the file browser covered, if any.
+pub struct BFileReturnRule;
+
+impl BRule for BFileReturnRule {
+    fn wants(&self, path: &BPath) -> bool {
+        *path == ModalKey::Open.path()
+    }
+    fn after(&self, _: &BPath, value: &str, s: &mut BState) {
+        if value.is_empty() && s.get(ModalKey::FileReturn).is_some() {
+            close_browser(s);
         }
     }
 }
@@ -197,7 +239,34 @@ impl BRule for BSelectRule {
             // A mixdown or an image names no `.blend` for the recent list.
             recent::push_recent(s, value);
         }
-        s.set(ModalKey::Open, V_EMPTY);
+        close_browser(s);
     }
 }
 
+
+#[cfg(test)]
+mod stacking_tests {
+    use super::*;
+    use crate::v2::state::action::apply_action as apply;
+    use crate::v2::view::prim::BAction;
+
+    /// Image ▸ Save As from the render view: the browser opens over it and
+    /// the render view is back when the browser goes, whichever way it goes.
+    #[test]
+    fn the_browser_opens_over_the_render_view_and_gives_it_back() {
+        let mut s = BState::new();
+        s.set(ModalKey::Open, V_MODAL_RENDER);
+        apply(&mut s, &BAction::Set(FileKey::Purpose.path(), "save_image".to_string()));
+        assert_eq!(s.get(ModalKey::Open), Some(V_MODAL_FILE_BROWSER), "the browser is up");
+        // Cancelled: the action `modal = ""`.
+        apply(&mut s, &BAction::Set(ModalKey::Open.path(), String::new()));
+        assert_eq!(s.get(ModalKey::Open), Some(V_MODAL_RENDER), "the render view is back");
+        assert!(s.get(ModalKey::FileReturn).is_none());
+        // Opened from a menu with nothing up: plain.
+        s.set(ModalKey::Open, V_EMPTY);
+        apply(&mut s, &BAction::Set(FileKey::Purpose.path(), "open".to_string()));
+        assert_eq!(s.get(ModalKey::Open), Some(V_MODAL_FILE_BROWSER));
+        apply(&mut s, &BAction::Set(ModalKey::Open.path(), String::new()));
+        assert_eq!(s.get(ModalKey::Open), Some(""));
+    }
+}

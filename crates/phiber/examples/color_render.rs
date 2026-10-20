@@ -138,7 +138,7 @@ fn main() {
         ..Default::default()
     };
     let t = Instant::now();
-    let (px, samples) = still(&objects, BStillLook::new(shading, gpui::hsla(0.0, 0.0, 0.8, 1.0)), cam, W, H, samples, denoise).expect("gpu adapter and a scene that fits");
+    let (px, samples) = still(&objects, BStillLook::new(shading, gpui::hsla(0.0, 0.0, 0.8, 1.0)), cam, W, H, samples, denoise, [0.0; 4], 0.0, |_| {}).expect("gpu adapter and a scene that fits");
     let render = t.elapsed();
     image::RgbaImage::from_raw(W, H, px).expect("image").save(&out).expect("save");
     let ms = |d: std::time::Duration| d.as_secs_f64() * 1000.0;

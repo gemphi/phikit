@@ -59,8 +59,8 @@ pub static ARG: &[BArgSpec] = &[
     arg("-h", "--help", BArgTake::Nothing, "Print this help text and exit."),
     arg("-v", "--version", BArgTake::Nothing, "Print Phiber version and exit."),
     // ── Phiber's own, long-form only.
-    arg("", "--samples", BArgTake::Word, "Set the sample count for the render. Clamped up to the quality floor (2048)."),
-    arg("", "--draft", BArgTake::Nothing, "Lift the quality floor, so --samples below it is honoured."),
+    arg("", "--samples", BArgTake::Word, "Set the sample count for the render (default 2048)."),
+    arg("", "--draft", BArgTake::Nothing, "Accepted for older scripts; the sample count is --samples as given."),
 ];
 
 /// The engines `-E` accepts, in the order `-E help` lists them. Phiray is

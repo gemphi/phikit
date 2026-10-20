@@ -62,15 +62,18 @@ fn fixture_renders_through_phiray() {
         let setup = crate::v2::scene::camera::setup_from_state(&s);
         let (w, h) = (320u32, 180u32);
         let look = world::BRayLook { sky: black(), grid: white().opacity(GRID_ALPHA), grid_hide: 0, world: Some(model_world), lights: model_lights.clone(), wire: None, view: [0.0, 0.0, 1.0, 0.0], environment: None, set: Default::default(), studio: false };
-        let cam = scene::camera(view_yaw(&s), view_pitch(&s), view_pan(&s), view_zoom(&s), setup, w as f32 / h as f32, &look);
+        let mut cam = scene::camera(view_yaw(&s), view_pitch(&s), view_pan(&s), view_zoom(&s), setup, w as f32 / h as f32, &look);
+        // What met an object, by the film's alpha: with the file's world as
+        // the background (`world::lit`), a dim object on a dim world is the
+        // background's colour give or take, and that is Blender's picture.
+        cam.film[0] = 1;
         let t = web_time::Instant::now();
         let mut px = tracer.render(&gpu, cam, w, h).0;
         for _ in 1..phiray::Tracer::SAMPLES {
             px = tracer.render(&gpu, cam, w, h).0;
         }
         eprintln!("{name}: {count} tris, {vert} verts, frame {:?}", t.elapsed());
-        let sky = [px[0], px[1], px[2]];
-        let covered = px.chunks(4).filter(|p| p[..3].iter().zip(&sky).map(|(a, b)| a.abs_diff(*b) as u32).sum::<u32>() > 40).count();
+        let covered = px.chunks(4).filter(|p| p[3] > 0).count();
         assert!(covered > (w * h / 50) as usize, "{name}: only {covered} object pixels");
         if let Ok(dir) = std::env::var("PHIRAY_DUMP") {
             let mut ppm = format!("P6 {w} {h} 255\n").into_bytes();

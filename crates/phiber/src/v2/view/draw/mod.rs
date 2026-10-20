@@ -61,7 +61,7 @@ pub mod vlabel;
 use crate::v2::view::BView;
 pub use backend::BGpuiRenderer;
 pub use ctx::{BActionHandler, BRenderCtx, BResizeHandler};
-pub use track::{BPlane, BPlaneAxis, BTrack, BTrackWrite};
+pub use track::{BPickSpace, BTrack, BTrackWrite, BWheel};
 use gpui::AnyElement;
 
 pub(crate) fn walk(v: &BView, ctx: &BRenderCtx) -> AnyElement {
@@ -137,7 +137,7 @@ pub(crate) fn walk(v: &BView, ctx: &BRenderCtx) -> AnyElement {
         BView::Avatar { path, size } => avatar::view(path, *size, ctx),
         BView::Badge { icon, count } => badge::view(icon, *count, ctx),
         BView::Track { track, share, text } => track::view(track, *share, text, ctx),
-        BView::Plane { plane } => track::plane_view(plane, ctx),
+        BView::Wheel { wheel } => track::wheel_view(wheel, ctx),
         BView::Empty => atom::empty(),
     }
 }

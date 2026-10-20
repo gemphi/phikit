@@ -24,6 +24,18 @@ impl BPhiberApp {
         cx: &mut Context<Self>,
     ) -> bool {
         use crate::v2::state::edit::{BEdit, editing};
+        // Escape stops a render under way whoever has the keyboard — a
+        // field left in edit mode (the Save As name, typed into before the
+        // render) used to take it, and the render ran on. Blender's
+        // `wm_event_do_handlers` sets `G.is_break` before any handler sees
+        // the key: "we can always cancel operations such as rendering".
+        if key == "escape" && crate::v2::scene::render_job::rendering() {
+            crate::v2::state::edit::stop(&mut self.state);
+            crate::v2::scene::render_job::cancel();
+            crate::v2::state::log::push("Render cancelled (Escape)".to_string());
+            cx.notify();
+            return true;
+        }
         let Some(target) = editing(&self.state) else {
             let Some((stroke, window)) = stroke else { return false };
             let Some((action, name)) = super::super::keymap::action_for(&stroke, &self.state) else { return false };

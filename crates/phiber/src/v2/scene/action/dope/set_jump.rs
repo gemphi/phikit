@@ -4,7 +4,7 @@
 //! as they are and `picks.write` never runs.
 
 use super::BKeySelection;
-use crate::v2::state::{BKey as _, BState, CtxKey, log};
+use crate::v2::state::{BState, CtxKey, log};
 
 pub(super) fn jump(s: &mut BState, picks: &BKeySelection) {
     let current = s.get(CtxKey::Frame).and_then(|v| v.parse::<f32>().ok()).unwrap_or(1.0);

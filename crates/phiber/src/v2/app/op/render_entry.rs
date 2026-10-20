@@ -6,7 +6,7 @@
 
 use super::super::BPhiberApp;
 use crate::v2::scene::render_job;
-use crate::v2::state::{BKey as _, CtxKey, ModalKey, log, val::V_MODAL_RENDER};
+use crate::v2::state::{CtxKey, log};
 use gpui::Context;
 use std::time::Duration;
 
@@ -45,7 +45,7 @@ pub(crate) fn render_on_entry(&mut self) {
 /// A cancelled movie render still encodes the frames it has, as
 /// Blender's incremental writer leaves them in the file.
 pub(crate) fn render_animation(&mut self, cx: &mut Context<Self>) {
-    self.state.set(ModalKey::Open, V_MODAL_RENDER);
+    crate::v2::app::op::render_open::render_view_open(&mut self.state);
     if render_job::rendering() {
         log::push("Already rendering".to_string());
         return;
@@ -114,7 +114,7 @@ pub(crate) fn render_animation(&mut self, cx: &mut Context<Self>) {
 /// six `view3d.view_axis` + `render.render` presses, done at once.
 pub(crate) fn render_turnaround(&mut self, cx: &mut Context<Self>) {
     use crate::v2::scene::startup_camera::BStartupCamera;
-    self.state.set(ModalKey::Open, V_MODAL_RENDER);
+    crate::v2::app::op::render_open::render_view_open(&mut self.state);
     if render_job::rendering() {
         log::push("Already rendering".to_string());
         return;

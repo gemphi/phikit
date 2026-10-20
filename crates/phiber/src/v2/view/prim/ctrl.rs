@@ -92,7 +92,7 @@ impl BCtrl {
     pub fn read(kind: BCtrlKind, key: BPath, default: BValue, s: &BState) -> Self {
         let value = s.value(&key, kind.value_kind()).unwrap_or(default);
         let editing = crate::v2::state::edit::is_editing(s, &key);
-        Self {
+        let ctrl = Self {
             kind,
             key,
             value,
@@ -102,7 +102,27 @@ impl BCtrl {
             editing,
             open: false,
             open_key: None,
+        };
+        // A colour opens its picker from its swatch, and the picker has to
+        // record that it is open somewhere. Without a key nothing could, so
+        // no colour control anywhere — Preferences, Properties, the Shading
+        // popover, New Image — ever opened one: the swatch was a picture of
+        // a button. The key sits under the colour's own, so two colours never
+        // share one and opening one is not opening another.
+        match kind {
+            BCtrlKind::Color => {
+                let open_key = Self::picker_key(&ctrl.key);
+                ctrl.with_menu(open_key, s)
+            }
+            _ => ctrl,
         }
+    }
+
+    /// Where a colour control records that its picker is open.
+    fn picker_key(key: &BPath) -> BPath {
+        let mut segs = key.segs.to_vec();
+        segs.push("picker");
+        BPath::owned(segs)
     }
 
     pub fn with_label(mut self, label: impl Into<String>) -> Self {

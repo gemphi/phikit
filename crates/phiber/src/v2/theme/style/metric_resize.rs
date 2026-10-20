@@ -2,7 +2,6 @@
 //! from `metric.rs` so each file sits under the 240-line read cap
 //! (`tests/level_structure.rs`).
 
-use super::*;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct BResizeStyle {

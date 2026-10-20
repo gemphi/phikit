@@ -46,6 +46,10 @@ pub enum BRowKind {
     Object,
     /// An object's data-block (mesh).
     Data,
+    /// An event of the Status mode (`status.rs`).
+    Event,
+    /// One of an event's key/value pairs.
+    Field,
 }
 
 /// One flattened, drawable row.
@@ -100,6 +104,9 @@ fn sort_key(name: &str) -> String {
 
 /// Flatten the View Layer hierarchy into drawable rows.
 pub fn flatten(s: &BState) -> Vec<BOutlineRow> {
+    if display_mode(s) == super::mode::set::BOutlineMode::Status {
+        return super::status::rows(s);
+    }
     let filter = super::filter::BOutlineFilter::now(s);
     let filtering = filter.searching();
 

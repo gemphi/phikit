@@ -3,13 +3,15 @@
 //! picker instead of selecting the node. The geometry is `hit.rs`; this is only
 //! the GPUI wiring and the write actions (`overlay::BNodeOverlay`).
 
-use super::hit::{swatch_hits, value_targets};
+use super::hit::{BSwatchHit, swatch_hits, value_targets};
 use super::super::link;
 use super::super::overlay::BNodeOverlay;
 use super::super::plan::BCardSize;
 use super::super::view::BNodeView;
 use super::BValueEdits;
 use crate::phiphx::blend::shade::graph::{BlendNode, BlendNodeLink};
+use crate::phiphx::blend::shade::socket::BSocketDefault;
+use crate::v2::view::draw::{BPickSpace, BWheel};
 use crate::v2::state::{BKey as _, NodeKey};
 use crate::v2::view::draw::ctx::BRenderCtx;
 use crate::v2::view::prim::BAction;
@@ -30,6 +32,25 @@ fn target(id: String, at: (f32, f32), size: (f32, f32), action: BAction, ctx: &B
             cx.stop_propagation();
             (Rc::clone(&handler))(&action, w, cx);
         })
+        .into_any_element()
+}
+
+/// The open swatch's wheel, hung under the four channel rows the card
+/// draws below the swatch — the popup Blender opens on a colour socket,
+/// `block_colorpicker`'s wheel. It writes the editor's value overlay.
+fn wheel(node: &BlendNode, sh: &BSwatchHit, edits: &BValueEdits, ctx: &BRenderCtx) -> AnyElement {
+    let rgba = match node.inputs.iter().find(|s| s.identifier == sh.socket).and_then(|s| s.default.as_ref()) {
+        Some(BSocketDefault::Color(c)) => *c,
+        _ => [0.8, 0.8, 0.8, 1.0],
+    };
+    let space = BPickSpace::Socket { node: node.name.clone(), socket: sh.socket.clone(), edits: edits.clone() };
+    let wheel = BWheel::of_socket(NodeKey::Values(ctx.host).path(), rgba, space);
+    // Below the swatch and its R, G, B, A rows: five rows of the swatch's height.
+    let below = (sh.at.0, sh.at.1 + 5.0 * sh.size.1);
+    BFlex::cell()
+        .place(BPlace::Fraction { x: below.0, y: below.1, w: sh.size.0, h: sh.size.1 })
+        .div(ctx)
+        .child(crate::v2::view::draw::track::wheel_view(&wheel, ctx))
         .into_any_element()
 }
 
@@ -65,7 +86,11 @@ pub fn value_layer(
         // Colour swatches: a click opens the picker, a second click closes it.
         for sh in swatch_hits(node, *at, size, view, &linked) {
             let open = format!("{}/{}", node.name, sh.socket);
-            let next = if picking == Some(open.as_str()) { String::new() } else { open.clone() };
+            let is_open = picking == Some(open.as_str());
+            if is_open {
+                out.push(wheel(node, &sh, edits, ctx));
+            }
+            let next = if is_open { String::new() } else { open.clone() };
             let action = BAction::Set(NodeKey::Picking(ctx.host).path(), next);
             out.push(target(format!("swatch-{open}"), sh.at, sh.size, action, ctx));
         }

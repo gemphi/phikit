@@ -1,5 +1,5 @@
 //! The parts of a headless render that need no GPU: the frame walk, the
-//! sample floor, and the `times.txt` line the comparisons parse.
+//! sample default, and the `times.txt` line the comparisons parse.
 
 use super::*;
 
@@ -28,11 +28,11 @@ fn render(samples: Option<u32>, draft: bool) -> BHeadlessRender {
 }
 
 #[test]
-fn a_headless_render_takes_the_same_sample_floor_the_command_line_takes() {
-    assert_eq!(render(None, false).sample_count(), 2048, "silent: the floor");
-    assert_eq!(render(Some(64), false).sample_count(), 2048, "below it: still the floor");
-    assert_eq!(render(Some(4096), false).sample_count(), 4096, "above it: honoured");
-    assert_eq!(render(Some(64), true).sample_count(), 64, "--draft lifts it");
+fn a_headless_render_takes_the_samples_the_command_line_takes() {
+    assert_eq!(render(None, false).sample_count(), 2048, "silent: the default");
+    assert_eq!(render(Some(64), false).sample_count(), 64, "asked: honoured");
+    assert_eq!(render(Some(4096), false).sample_count(), 4096, "asked: honoured");
+    assert_eq!(render(Some(64), true).sample_count(), 64, "--draft changes nothing");
 }
 
 #[test]

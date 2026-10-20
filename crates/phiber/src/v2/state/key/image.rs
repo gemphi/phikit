@@ -50,6 +50,10 @@ pub enum ImageKey {
     /// between `Finished` and `Saved` (`scene::render_phase`). A new render
     /// clears it, since the picture it described is gone.
     SavedTo,
+    /// `sima->flag & SI_PREVSPACE`: the area F12 turned into the Image
+    /// editor, and the editor it was — `<area key>=<host slug>` — so Escape
+    /// or F11 gives it back (`app::op::render_open`).
+    PrevSpace,
 }
 
 impl BKey for ImageKey {
@@ -70,6 +74,7 @@ impl BKey for ImageKey {
             Self::Channels => "channels",
             Self::Gizmo => "gizmo",
             Self::SavedTo => "saved_to",
+            Self::PrevSpace => "prev_space",
         };
         BPath::owned(vec!["image", tail])
     }

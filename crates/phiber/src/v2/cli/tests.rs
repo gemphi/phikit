@@ -91,18 +91,17 @@ fn phiray_is_the_engine_unless_the_line_says_otherwise() {
 }
 
 #[test]
-fn the_sample_floor_is_two_thousand_and_forty_eight() {
+fn the_samples_asked_for_are_the_samples_taken() {
     assert_eq!(set::BRenderQuality::SAMPLE_FLOOR, 2048);
-    // Silent: the floor.
+    // Silent: the default.
     assert_eq!(parse("-b s.blend -f 1").expect("parses").sample_count(), 2048);
-    // Asked for less: still the floor.
-    assert_eq!(parse("-b s.blend -f 1 --samples 64").expect("parses").sample_count(), 2048);
-    // Asked for more: honoured.
+    // Asked for less or more: honoured, as Blender's `--samples` is.
+    assert_eq!(parse("-b s.blend -f 1 --samples 64").expect("parses").sample_count(), 64);
     assert_eq!(parse("-b s.blend -f 1 --samples 4096").expect("parses").sample_count(), 4096);
-    // `--draft` lifts it, which is the only way below.
+    // `--draft` changes nothing about the count any more.
     assert_eq!(parse("-b s.blend -f 1 --samples 64 --draft").expect("parses").sample_count(), 64);
     assert_eq!(parse("-b s.blend -f 1 --draft").expect("parses").sample_count(), 2048, "draft alone changes nothing");
-    assert_eq!(parse("-b s.blend -f 1 --samples 0 --draft").expect("parses").sample_count(), 1, "never zero");
+    assert_eq!(parse("-b s.blend -f 1 --samples 0").expect("parses").sample_count(), 1, "never zero");
 }
 
 #[test]

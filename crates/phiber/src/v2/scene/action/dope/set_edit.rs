@@ -10,9 +10,9 @@
 use super::super::BSceneActions;
 use super::super::keys::{BKeyInsert, BKeyed};
 use super::super::retime::BKeyStep;
-use super::{BKeyGrab, BKeyPick, BKeySelection, BKeyTarget};
+use super::{BKeyPick, BKeySelection, BKeyTarget};
 use crate::phiphx::scene::SceneModel;
-use crate::v2::state::{BKey as _, BState, CtxKey, log};
+use crate::v2::state::{BState, CtxKey, log};
 use std::sync::Arc;
 
 pub(super) fn edit(

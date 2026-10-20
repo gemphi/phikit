@@ -11,6 +11,7 @@ pub mod filter;
 pub mod mode;
 pub mod row_type;
 pub mod set;
+pub mod status;
 pub mod toggle;
 pub mod tree;
 pub mod type_set;
@@ -211,7 +212,11 @@ impl BOutlinerItem {
     /// What the list is built from, as one pair.
     fn built_from(s: &BState) -> (u64, usize) {
         let model = crate::v2::scene::source::loaded_shared().map_or(0, |m| std::sync::Arc::as_ptr(&m) as usize);
-        (s.scene_revision(), model)
+        // The Status mode's rows are the event tree, which moves on another
+        // thread without touching the state: its revision is folded in so a
+        // render's progress shows as it happens.
+        let events = if self::tree::display_mode(s) == self::mode::set::BOutlineMode::Status { crate::v2::state::event::BEvents::revision() } else { 0 };
+        (s.scene_revision() ^ events.rotate_left(32), model)
     }
 
     fn build_rows(s: &BState) -> BView {

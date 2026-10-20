@@ -85,7 +85,7 @@ fn main() {
     }
     println!("== RENDERING {} x {} at {} samples, denoise {}", p.w, p.h, p.samples, p.denoise);
     let t = std::time::Instant::now();
-    let shot = still(&objects, p.look, p.camera, p.w, p.h, p.samples, p.denoise);
+    let shot = still(&objects, p.look, p.camera, p.w, p.h, p.samples, p.denoise, p.adapt, p.time_limit, |_| {});
     println!("== RENDER in {:.2?}", t.elapsed());
     match shot {
         Some((px, taken)) => {
