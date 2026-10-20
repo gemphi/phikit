@@ -127,6 +127,21 @@ pub fn visible_in_viewport(s: &crate::v2::state::BState, objects: Vec<BObject3D>
     objects.into_iter().filter(|o| !hidden.hides(s, o.name())).collect()
 }
 
+/// The lights a **render** is lit by: the camera toggle and excluded
+/// collections take a lamp out of the light exactly as they take a mesh
+/// out of the frame (Blender evaluates a render-disabled light not at all).
+pub fn lights_in_render(s: &crate::v2::state::BState, lights: Vec<crate::phiphx::scene::SceneLight>) -> Vec<crate::phiphx::scene::SceneLight> {
+    let hidden = crate::v2::part::outliner::key::BHidden::for_render(s);
+    lights.into_iter().filter(|l| !hidden.hides(s, &l.name)).collect()
+}
+
+/// The lights the **viewport** is lit by: the eye (a hidden light goes out
+/// in Blender's viewport, unlike a hidden mesh in a render).
+pub fn lights_in_viewport(s: &crate::v2::state::BState, lights: Vec<crate::phiphx::scene::SceneLight>) -> Vec<crate::phiphx::scene::SceneLight> {
+    let hidden = crate::v2::part::outliner::key::BHidden::now(s);
+    lights.into_iter().filter(|l| !hidden.hides(s, &l.name)).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

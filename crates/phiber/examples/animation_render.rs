@@ -42,6 +42,7 @@ fn main() {
         frame: BHeadlessRender::range(start, end, step, file_end),
         samples,
         draft: samples.is_some(),
+        camera: None,
         look: BLookOverride::from_env(),
     };
     let first = render.frame.first().copied().unwrap_or(start);

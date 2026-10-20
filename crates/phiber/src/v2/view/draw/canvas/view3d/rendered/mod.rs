@@ -112,7 +112,7 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
             (true, _) => self::studio::environment().map(|_| self::studio::ROTATION),
             (false, _) => self::world::environment().map(|(_, rot)| rot),
         },
-        lights: if view.studio { Vec::new() } else { crate::v2::scene::scene_lights() },
+        lights: view.lights.clone(),
         wire: (view.mode == phiray::Mode::Wire).then_some(view.wire),
         view: view.view,
         studio: view.studio,

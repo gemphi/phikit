@@ -18,6 +18,10 @@ pub(in crate::v2::view::draw::canvas::view3d) struct BRayView {
     pub grid: Hsla,
     /// Material Preview: studio lighting, file lights and world ignored.
     pub studio: bool,
+    /// The scene's lamps the viewport's eye leaves on, where they stand
+    /// this frame (`pose::lights_in_viewport`): what the Rendered mode is
+    /// lit by. Empty for Material Preview.
+    pub lights: Vec<crate::phiphx::scene::SceneLight>,
     /// Wireframe: the wire's colour.
     pub wire: Hsla,
     /// Which phiray kernel draws it — Workbench for Solid, the tracer
@@ -97,9 +101,10 @@ impl BRayView {
         // drew them. Nothing is marked as being transformed here yet, so
         // the transform colour is the selected one — a class the host
         // never sets.
+        let lights = if studio { Vec::new() } else { crate::v2::scene::pose::lights_in_viewport(ctx.state, crate::v2::scene::scene_lights()) };
         let pick = super::scene::rgba(crate::v2::view::draw::color::to_hsla(ctx.style.colors.accent));
         let lit = super::scene::rgba(crate::v2::view::draw::color::to_hsla(ctx.style.step(ctx.style.colors.accent, 2)));
-        Self { yaw, pitch, pan, zoom, setup, sky, grid, studio, wire, mode, set, see_through, grid_hide, view, fx, outline, cavity, ssao, shadow, shadow_fade, shade: solid_fx.shade_words(shade.shade_words()), matcap: shade.matcap_words(), single: shade.single_words(), dof, border: None, aa, outline_fx: [0.0, 0.0, 0.35, 1.0], outline_pick: pick, outline_active: lit, outline_move: pick, outline_class: Arc::from([]) }
+        Self { yaw, pitch, pan, zoom, setup, sky, grid, studio, lights, wire, mode, set, see_through, grid_hide, view, fx, outline, cavity, ssao, shadow, shadow_fade, shade: solid_fx.shade_words(shade.shade_words()), matcap: shade.matcap_words(), single: shade.single_words(), dof, border: None, aa, outline_fx: [0.0, 0.0, 0.35, 1.0], outline_pick: pick, outline_active: lit, outline_move: pick, outline_class: Arc::from([]) }
     }
 
     /// With the objects the overlay outlines (`BGuide::outlined`), one

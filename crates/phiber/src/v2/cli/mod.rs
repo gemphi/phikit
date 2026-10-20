@@ -63,6 +63,8 @@ pub struct BCli {
     /// `--samples` and `--draft`.
     pub samples: Option<u32>,
     pub draft: bool,
+    /// `--camera`: render through this camera object, not the scene's.
+    pub camera: Option<String>,
 }
 
 /// Why a command line was refused, in Blender's own wording.
@@ -174,6 +176,7 @@ impl BCli {
             ("-v", _) => self.version = true,
             (_, "--samples") => self.samples = Some(self.number(spec, &word)?),
             (_, "--draft") => self.draft = true,
+            (_, "--camera") => self.camera = Some(word),
             _ => {}
         }
         Ok(())

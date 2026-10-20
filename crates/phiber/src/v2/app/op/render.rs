@@ -107,7 +107,7 @@ impl BPhiberApp {
             grid: to_hsla(style.viewport_grid_stroke().color),
             grid_hide: 0,
             world: Some(model.world.background.radiance()),
-            lights: crate::v2::scene::scene_lights(),
+            lights: crate::v2::scene::pose::lights_in_render(&self.state, crate::v2::scene::scene_lights()),
             wire: None,
             view: crate::v2::scene::render_set::BColorManagement::now(&self.state, Some(model)).words(),
             environment: environment().map(|(_, rot)| rot),

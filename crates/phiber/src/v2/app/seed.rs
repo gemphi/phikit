@@ -130,6 +130,7 @@ pub fn seed_output_props(state: &mut BState, model: &SceneModel) {
     // file's and the views read the panel (`render_set::BColorManagement`).
     let view = [
         ("view_settings.view_transform", render.view_transform.clone()),
+        ("view_settings.look", render.look.clone()),
         ("view_settings.exposure", BValue::Float(render.exposure).encode()),
         ("view_settings.gamma", BValue::Float(render.gamma).encode()),
         // Film ▸ Transparent (`Scene.r.alphamode`), on the Render tab.

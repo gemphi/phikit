@@ -208,5 +208,24 @@ mod digest {
             for k in &c.children { walk(k, &format!("{path}/{}", k.name), model, kept); }
         }
         for c in &model.collections { walk(c, &c.name, &model, &kept); }
+        // Ground contact at the probed frame: lowest world-space vertex of
+        // the contact suspects vs the floor's surface.
+        state.set(crate::v2::state::CtxKey::Frame, "1".to_string());
+        let posed = crate::v2::scene::current_scene(&state, Some(&model));
+        for o in &posed {
+            let crate::v2::scene::BObject3D::Loaded { name, mesh, matrix_world: m, .. } = o else { continue };
+            let n = name.to_lowercase();
+            if !["floor_geo", "heel", "shoe", "bag", "foot", "toe"].iter().any(|k| n.contains(k)) {
+                continue;
+            }
+            let mut z = (f32::INFINITY, f32::NEG_INFINITY);
+            for v in &mesh.vertices {
+                let w = m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2] + m[3][2];
+                z = (z.0.min(w), z.1.max(w));
+            }
+            if z.0.is_finite() {
+                println!("contact {} z [{:.4}, {:.4}] kept {}", name, z.0, z.1, kept.contains(name.as_str()));
+            }
+        }
     }
 }

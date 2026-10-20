@@ -61,6 +61,7 @@ pub static ARG: &[BArgSpec] = &[
     // ── Phiber's own, long-form only.
     arg("", "--samples", BArgTake::Word, "Set the sample count for the render (default 2048)."),
     arg("", "--draft", BArgTake::Nothing, "Accepted for older scripts; the sample count is --samples as given."),
+    arg("", "--camera", BArgTake::Word, "Render through the named camera object instead of the scene's active one."),
 ];
 
 /// The engines `-E` accepts, in the order `-E help` lists them. Phiray is

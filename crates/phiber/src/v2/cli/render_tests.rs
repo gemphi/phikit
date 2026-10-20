@@ -23,6 +23,7 @@ fn render(samples: Option<u32>, draft: bool) -> BHeadlessRender {
         frame: vec![1.0],
         samples,
         draft,
+        camera: None,
         look: Default::default(),
     }
 }

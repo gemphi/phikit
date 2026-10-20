@@ -83,6 +83,10 @@ pub struct BHeadlessRender {
     /// quality one unless it was asked to be otherwise.
     pub samples: Option<u32>,
     pub draft: bool,
+    /// `--camera`: render through this camera object instead of the
+    /// scene's active one (there is no Blender flag for this; it saves a
+    /// headless probe from having to edit the file).
+    pub camera: Option<String>,
     pub look: BLookOverride,
 }
 
@@ -136,6 +140,12 @@ impl BHeadlessRender {
         let (outdir, _) = Self::frame_path(&self.out, 1);
         std::fs::create_dir_all(&outdir).map_err(|e| format!("outdir: {e}"))?;
         let mut model = Phx::open(std::path::Path::new(&self.file)).map_err(|e| format!("open: {e:?}"))?;
+        if let Some(camera) = &self.camera {
+            if !model.cameras.iter().any(|c| &c.name == camera) {
+                return Err(format!("--camera: no camera object named {camera:?} in the scene"));
+            }
+            model.render.camera = camera.clone();
+        }
         if let Some(albedo) = self.look.material {
             BMatStand::set(Some(BMatStand::grey(albedo)));
         }
@@ -201,7 +211,7 @@ impl BHeadlessRender {
                 sky: gpui::hsla(0.0, 0.0, 0.14, 1.0),
                 grid: gpui::hsla(0.0, 0.0, 0.3, 1.0),
                 world: Some(model.world.background.radiance()),
-                lights: crate::v2::scene::motion::lights_at(&model, Some(frame)),
+                lights: crate::v2::scene::pose::lights_in_render(&state, crate::v2::scene::motion::lights_at(&model, Some(frame))),
                 wire: None,
                 view: view_words(&state),
                 grid_hide: 0,

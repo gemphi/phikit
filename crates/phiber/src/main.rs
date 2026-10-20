@@ -106,6 +106,7 @@ fn render(cli: &BCli) -> i32 {
         frame: frame.iter().map(|f| *f as f32).collect(),
         samples: cli.samples,
         draft: cli.draft,
+        camera: cli.camera.clone(),
         look: BLookOverride::from_env(),
     };
     if !cli.quiet {
