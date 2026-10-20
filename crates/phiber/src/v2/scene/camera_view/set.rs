@@ -93,7 +93,7 @@ mod tests {
             matrix_world: [[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, -1.0, 0.0, 0.0], [0.0, -10.0, 0.0, 1.0]],
             kind: kind.into(),
             focal_length_mm: 50.0,
-            sensor_width: 36.0,
+            sensor_width: 36.0, sensor_height: 24.0, sensor_fit: "AUTO".into(), shift: [0.0, 0.0], 
             ortho_scale: 6.0,
             clip_start: 0.1,
             clip_end: 100.0,

@@ -14,6 +14,13 @@ pub struct SceneCamera {
     /// Focal length in millimetres (`Camera.lens`).
     pub focal_length_mm: f32,
     pub sensor_width: f32,
+    /// `Camera.sensor_y`: read only when `sensor_fit` is `"VERTICAL"` —
+    /// `"AUTO"` always spans `sensor_width` (`BKE_camera_sensor_size`).
+    pub sensor_height: f32,
+    /// `"AUTO"`, `"HORIZONTAL"` or `"VERTICAL"` (`Camera.sensor_fit`).
+    pub sensor_fit: String,
+    /// Lens shift (`Camera.shiftx / shifty`), fractions of the fitted side.
+    pub shift: [f32; 2],
     pub ortho_scale: f32,
     /// Near / far clip distances.
     pub clip_start: f32,

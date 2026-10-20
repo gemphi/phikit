@@ -40,6 +40,15 @@ pub struct SceneMaterial {
     pub normal_map: Option<super::texture::SceneTexture>,
     /// Roughness / Metallic / Emission Color images (keys, then decoded).
     pub maps: SceneMaps,
+    /// The Base Color chain compiled to a bake (`blend::shade::bake`);
+    /// `texture` holds its result once textures attach.
+    pub bake: Option<crate::blend::shade::bake::BlendBake>,
+    /// A baked single image's Mapping, to apply to the mesh's UVs —
+    /// `u' = m[0]·(u, v, 1)`, `v' = m[1]·(u, v, 1)`.
+    pub uv_affine: Option<[[f32; 3]; 2]>,
+    /// Whether `texture` came from the bake: it then carries the whole base
+    /// colour, so the tint over it is white, not `base_color`.
+    pub baked: bool,
 }
 
 /// One Principled input driven by an image: its key and, once attached, the
@@ -103,6 +112,9 @@ impl SceneMaterial {
             normal_texture: None,
             normal_map: None,
             maps: SceneMaps::default(),
+            bake: None,
+            uv_affine: None,
+            baked: false,
         }
     }
 }
@@ -134,6 +146,9 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
                 normal_texture: m.normal_map.as_ref().map(|n| (n.image.clone(), n.strength)),
                 normal_map: None,
                 maps: SceneMaps::of(&m.maps),
+                bake: m.bake.clone(),
+                uv_affine: None,
+                baked: false,
             })
             .collect();
     }
@@ -162,5 +177,8 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
         normal_texture: None,
         normal_map: None,
         maps: SceneMaps::default(),
+        bake: None,
+        uv_affine: None,
+        baked: false,
     }]
 }

@@ -75,9 +75,9 @@ fn an_untouched_row_is_the_files_engine_and_a_chosen_one_overrides_it() {
 
 /// The two rules the command line already had and the app did not: a file
 /// that names an engine phiber cannot run is rendered by the tracer, and a
-/// final render takes at least the sample floor whatever the file saved.
-/// Pose 26 (`CHATTY-POSES-RENDER-SCENE-03_Duo pose 26_1.blend`) is the case
-/// that found this: `CYCLES` at **20 samples**, which rendered as twenty.
+/// final render takes the default sample count only when nothing asked for
+/// one. Pose 26 (`CHATTY-POSES-RENDER-SCENE-03_Duo pose 26_1.blend`) saved
+/// `CYCLES` at **20 samples**; the count it saved is the count it renders.
 #[test]
 fn a_files_engine_and_sample_count_meet_the_quality_policy() {
     use phiber::phiphx::scene::SceneModel;
@@ -90,9 +90,9 @@ fn a_files_engine_and_sample_count_meet_the_quality_policy() {
     assert_eq!(render_set(&s).engine, BRenderEngine::Phiray, "a Cycles file is traced by phiray, and says so");
     phiber::v2::scene::source::set_loaded_scene(None);
 
-    // The floor itself, where both the CLI and F12 now read it.
+    // The default, where both the CLI and F12 read it.
     assert_eq!(BRenderQuality::ENGINE, "PHIRAY");
     assert_eq!(BRenderQuality::SAMPLE_FLOOR, 2048);
-    assert_eq!(BRenderQuality::samples(Some(20), false), 2048, "pose 26's twenty is lifted");
-    assert_eq!(BRenderQuality::samples(Some(20), true), 20, "--draft still renders twenty");
+    assert_eq!(BRenderQuality::samples(None, false), 2048, "nothing asked: the default");
+    assert_eq!(BRenderQuality::samples(Some(20), false), 20, "pose 26's twenty is believed");
 }

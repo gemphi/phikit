@@ -52,6 +52,13 @@ impl MenuKey<'_> {
             .is_some_and(|rest| rest.matches('.').count() == 1)
     }
 
+    /// The editor a menu key's host segment names: the segment itself, or
+    /// its slug before the `@` that a second area showing the same editor
+    /// adds (`area::current::menu_scope`).
+    pub fn host_of(segment: &str) -> &str {
+        segment.split('@').next().unwrap_or(segment)
+    }
+
     /// Whether `path` is a menu key at all.
     pub fn owns(path: &BPath) -> bool {
         path.segs.first() == Some(&MENU)

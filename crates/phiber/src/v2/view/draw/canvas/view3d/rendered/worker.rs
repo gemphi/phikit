@@ -78,10 +78,13 @@ impl BRayWorker {
         self.refused.lock().is_ok_and(|r| r.contains(&key))
     }
 
-    /// Take the newest frame if it is newer than `seq`.
-    pub fn take(&self, seq: u64) -> Option<BRayFrame> {
+    /// Take the newest frame if it is newer than `seq` and of `view` — the
+    /// viewport that posted the view takes its frames, and no other one, so
+    /// an image is never replaced (and its texture dropped) after another
+    /// viewport has already painted it this frame.
+    pub fn take(&self, view: u64, seq: u64) -> Option<BRayFrame> {
         let mut slot = self.latest.lock().ok()?;
-        if slot.as_ref().is_some_and(|f| f.seq > seq) { slot.take() } else { None }
+        if slot.as_ref().is_some_and(|f| f.seq > seq && f.view == view) { slot.take() } else { None }
     }
 }
 

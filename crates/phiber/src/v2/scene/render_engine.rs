@@ -83,10 +83,10 @@ impl BStillLook {
     /// other engine renders through the path tracer at the panel's settings.
     pub fn for_engine(model: &SceneModel, set: BRenderSet, lens: super::BCameraLens, camera: &mut Camera, plain: gpui::Hsla) -> (Self, u32, bool) {
         if set.engine.traces() {
-            // The sample floor is applied where the panel is seeded
+            // The sample default is applied where the panel is seeded
             // (`app::seed::seed_render_props`), not here: that way Max
-            // Samples *shows* 2048 and a count typed into the panel is
-            // still the count that renders.
+            // Samples *shows* what will render, and a count the file saved
+            // or the panel was given is the count that renders.
             return (Self::new(crate::v2::scene::BShading::Rendered, plain), set.samples.max(1), set.denoise);
         }
         let d = &model.render.display;

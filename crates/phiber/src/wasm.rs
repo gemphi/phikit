@@ -21,5 +21,5 @@ use wasm_bindgen::prelude::wasm_bindgen;
 /// reason.
 #[wasm_bindgen(start)]
 pub fn start() {
-    crate::app::run();
+    crate::app::run(None);
 }

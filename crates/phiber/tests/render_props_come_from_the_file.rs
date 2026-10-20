@@ -54,23 +54,24 @@ fn the_engine_comes_from_the_file() {
     );
 }
 
-/// The quality floor reaches the panel when a file opens, so Max Samples
-/// shows the number that will actually render. Pose 26
-/// (`CHATTY-POSES-RENDER-SCENE-03_Duo pose 26_1.blend`) is saved at **20**
-/// samples — a turntable preview — and rendered as twenty, which is what
-/// sent its Render Result out noisy.
+/// The sample count a file saved is the one it opens at and renders, as
+/// Blender believes Max Samples; only a file that never set it opens at the
+/// quality default (`BRenderQuality::SAMPLE_FLOOR`), and the panel shows
+/// that number, so the panel and the render agree.
 #[test]
-fn a_files_sample_count_opens_at_the_quality_floor_and_a_typed_one_still_wins() {
+fn a_files_sample_count_is_believed_and_a_missing_one_opens_at_the_default() {
     use phiber::phiphx::blend::{BIdGroup, BIdValue};
     use phiber::phiphx::scene::SceneModel;
     use phiber::v2::scene::render_quality::BRenderQuality;
     use phiber::v2::scene::render_set;
     use phiber::v2::state::{BState, ButsKey, val::BValue};
 
-    let seeded = |saved: i32| {
+    let seeded = |saved: Option<i32>| {
         let mut model = SceneModel::default();
         let mut cycles = BIdGroup::default();
-        cycles.set("samples", BIdValue::Int(saved));
+        if let Some(saved) = saved {
+            cycles.set("samples", BIdValue::Int(saved));
+        }
         model.render.cycles = cycles;
         let mut s = BState::new();
         phiber::v2::app::seed::seed_render_props(&mut s, &model);
@@ -80,21 +81,18 @@ fn a_files_sample_count_opens_at_the_quality_floor_and_a_typed_one_still_wins() 
         (s, samples)
     };
 
-    // Below the floor: lifted, and the panel holds the lifted value.
-    let (s, samples) = seeded(20);
-    assert_eq!(samples, BRenderQuality::SAMPLE_FLOOR, "pose 26's twenty opens at the floor");
-    assert_eq!(
-        s.get(ButsKey::Value("cycles.samples")),
-        Some(BValue::Int(i64::from(BRenderQuality::SAMPLE_FLOOR)).encode()).as_deref(),
-        "and Max Samples SHOWS it, so the panel and the render agree",
-    );
+    let (_, samples) = seeded(Some(20));
+    assert_eq!(samples, 20, "pose 26's twenty is the count it saved");
+    let (_, samples) = seeded(Some(4096));
+    assert_eq!(samples, 4096);
 
-    // Above the floor: the file's own count is kept, not lowered.
-    let (_, samples) = seeded(4096);
-    assert_eq!(samples, 4096, "a file that asks for more than the floor keeps it");
+    // Never set: the default, and Max Samples SHOWS it.
+    let (s, samples) = seeded(None);
+    assert_eq!(samples, BRenderQuality::SAMPLE_FLOOR);
+    assert_eq!(s.get(ButsKey::Value("cycles.samples")), Some(BValue::Int(i64::from(BRenderQuality::SAMPLE_FLOOR)).encode()).as_deref());
 
-    // Typed over afterwards: the panel wins, so a quick look is still possible.
-    let (mut s, _) = seeded(20);
+    // Typed over afterwards: the panel wins.
+    let (mut s, _) = seeded(Some(20));
     s.set(ButsKey::Value("cycles.samples"), BValue::Int(64).encode());
     assert_eq!(render_set(&s).samples, 64, "a count typed into the panel is the count that renders");
 }

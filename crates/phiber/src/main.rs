@@ -50,11 +50,11 @@ fn main() {
             }
             // `-b … -f` / `-b … -a`: render and exit, through the same
             // `BHeadlessRender` the examples run. Without a render flag a
-            // file argument just opens the app, as Blender does.
+            // file argument opens that file in the window, as Blender does.
             if cli.renders() {
                 std::process::exit(render(&cli));
             }
-            app::run();
+            app::run(cli.file.clone());
         }
         Err(error) => {
             eprintln!("{}", error.message());

@@ -113,7 +113,7 @@ fn render_thread_refines_latest_view() {
     let (mut seq, mut last, mut sizes) = (0, None, Vec::new());
     let deadline = web_time::Instant::now() + std::time::Duration::from_secs(60);
     while web_time::Instant::now() < deadline {
-        if let Some(f) = worker.take(seq) {
+        if let Some(f) = worker.take(2, seq) {
             seq = f.seq;
             let done = f.done && f.view == 2;
             if f.view == 2 && sizes.last() != Some(&(f.w, f.h)) {
@@ -198,7 +198,7 @@ fn a_moved_object_draws_as_a_scene_built_there() {
     let finished = |worker: &BRayWorker, after: u64| -> BRayFrame {
         let deadline = web_time::Instant::now() + std::time::Duration::from_secs(60);
         while web_time::Instant::now() < deadline {
-            if let Some(f) = worker.take(after).filter(|f| f.done) {
+            if let Some(f) = worker.take(1, after).filter(|f| f.done) {
                 return f;
             }
             std::thread::sleep(std::time::Duration::from_millis(5));

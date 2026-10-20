@@ -71,12 +71,26 @@ pub fn paint_state(element: Stateful<Div>, active: bool, muted: bool, ctx: &BRen
     }
     let fill = |state| ctx.style.control_fill(state, ctx.floating).map(to_hsla).map(faded);
     if active {
-        let on = fill(BControlState::Active).unwrap_or_else(|| faded(to_hsla(ctx.style.colors.accent)));
-        return element.bg(on);
+        return element.bg(faded(active_fill(ctx)));
     }
     let hover = fill(BControlState::Hover).unwrap_or_else(|| faded(to_hsla(ctx.style.colors.bg_hover)));
     match fill(BControlState::Rest).filter(|_| rests(ctx)) {
         Some(rest) => element.bg(rest).hover(move |s| s.bg(hover)),
         None => element.hover(move |s| s.bg(hover)),
+    }
+}
+
+/// The fill an active control takes outside a strip ([`paint_state`]).
+pub fn active_fill(ctx: &BRenderCtx) -> gpui::Hsla {
+    ctx.style.control_fill(BControlState::Active, ctx.floating).map(to_hsla).unwrap_or_else(|| to_hsla(ctx.style.colors.accent))
+}
+
+/// Ink that reads on `fill`: the theme's `text`, or white where both are
+/// dark — a light theme's text on its accent — as Blender draws a selected
+/// widget's text in its own `text_sel` rather than the resting text.
+pub fn ink_on(fill: gpui::Hsla, text: gpui::Hsla) -> gpui::Hsla {
+    match fill.l < 0.5 && text.l < 0.5 {
+        true => gpui::Hsla { a: text.a, ..gpui::white() },
+        false => text,
     }
 }

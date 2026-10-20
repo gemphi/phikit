@@ -86,6 +86,15 @@ impl BlendFile {
                             all_textures.push(p.clone());
                         }
                     }
+                    // The Base Color chain as a bake (`shade/bake.rs`):
+                    // images that drive mix factors stay per-texel instead
+                    // of folding to white.
+                    let bake = self.base_bake(ma, dna);
+                    for img in bake.iter().flat_map(|b| b.images.iter()) {
+                        if !all_textures.contains(&img.key) {
+                            all_textures.push(img.key.clone());
+                        }
+                    }
                     let graph = self.material_graph(ma, dna).unwrap_or_default();
                     materials.push(crate::blend::file::types::BlendMaterial {
                         name,
@@ -101,6 +110,7 @@ impl BlendFile {
                         procedural: self.surface_procedural(ma, dna),
                         normal_map: self.normal_map(ma, dna),
                         maps: self.shade_maps(ma, dna),
+                        bake,
                     });
                 });
             }
@@ -123,6 +133,7 @@ impl BlendFile {
                 graph: Default::default(),
                 normal_map: None,
                 maps: Default::default(),
+                bake: None,
             });
         }
 

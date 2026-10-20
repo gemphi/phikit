@@ -83,7 +83,7 @@ impl BUvHeader {
     /// An enum setting as an icon-only dropdown (`icon_only=True`).
     fn pick(&self, s: &BState, setting: &BUvSetting) -> BView {
         let chosen = Self::value(s, setting);
-        let pick = BPick::new(MenuKey::Top(self.host.slug(), setting.tooltip).path(), BControl::new().with_icon(setting.icon).with_tooltip(setting.tooltip));
+        let pick = BPick::new(MenuKey::Top(crate::v2::area::current::menu_scope(s, self.host), setting.tooltip).path(), BControl::new().with_icon(setting.icon).with_tooltip(setting.tooltip));
         setting.options.iter().fold(pick, |pick, option| pick.item(option, *option == chosen, BAction::Set(setting.key.path(), option.to_string()))).view(s)
     }
 

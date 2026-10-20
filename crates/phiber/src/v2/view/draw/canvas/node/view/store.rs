@@ -36,15 +36,21 @@ thread_local! {
 }
 
 /// The paint pass reporting the canvas's size, for the next frame to place
-/// against.
-pub fn measured(host: BHostType, region: (f32, f32)) {
+/// against. Answers whether the size is new — then the frame just painted
+/// was placed against another size (or none, the first time an editor is
+/// shown), and the caller asks for the next frame at once rather than leave
+/// the cards drawn at the wrong zoom until something else redraws.
+pub fn measured(host: BHostType, region: (f32, f32)) -> bool {
     if region.0 <= 0.0 || region.1 <= 0.0 {
-        return;
+        return false;
     }
     MEASURED.with_borrow_mut(|seen| match seen.iter_mut().find(|(h, _)| *h == host) {
-        Some(entry) => entry.1 = region,
-        None => seen.push((host, region)),
-    });
+        Some(entry) => std::mem::replace(&mut entry.1, region) != region,
+        None => {
+            seen.push((host, region));
+            true
+        }
+    })
 }
 
 /// What the last paint pass measured for `host`, if it has painted.

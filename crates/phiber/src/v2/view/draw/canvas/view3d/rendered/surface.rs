@@ -84,11 +84,17 @@ impl BSurface<'_> {
     /// — and the normal map.
     fn textured(&self, mut tri: Tri, out: &mut Scene, ids: &mut BAtlasIds) -> Tri {
         let Some(m) = self.slot else { return tri };
+        // A baked single image's Mapping lands on the UVs here, so a
+        // pattern tiled across a floor tiles on the mesh too
+        // (`phiphx::blend::shade::bake`).
+        let uvs = m.uv_affine.map_or(self.uvs, |a| self.uvs.map(|uv| crate::phiphx::blend::shade::bake::apply(a, uv)));
         let mut add = |t: &SceneTexture| *ids.entry(std::sync::Arc::as_ptr(&t.rgba)).or_insert_with(|| out.atlas.add_bounded(t.width, t.height, &t.rgba, TEXTURE_LIMIT));
         if let (Some(tex), true) = (m.texture.as_ref(), self.has_base_image()) {
-            let tint = m.base_color;
+            // A baked texture carries the whole base colour; the folded
+            // tint is only for an image folded to white.
+            let tint = if m.baked { [1.0; 4] } else { m.base_color };
             tri.color = [tint[0], tint[1], tint[2], tri.color[3]];
-            tri = tri.with_texture(add(tex), self.uvs);
+            tri = tri.with_texture(add(tex), uvs);
         }
         let images = m.maps.images();
         if self.has_uv() && images.iter().any(Option::is_some) {
@@ -98,10 +104,10 @@ impl BSurface<'_> {
             if images[2].is_some() {
                 tri.emit = [m.bsdf.emission_strength; 3];
             }
-            tri = tri.with_maps(maps, self.uvs);
+            tri = tri.with_maps(maps, uvs);
         }
         if let (Some(map), Some((_, strength)), true) = (m.normal_map.as_ref(), m.normal_texture.as_ref(), self.has_uv()) {
-            tri = tri.with_normal_map(add(map), *strength, self.uvs);
+            tri = tri.with_normal_map(add(map), *strength, uvs);
         }
         tri
     }
@@ -116,7 +122,9 @@ impl BSurface<'_> {
     /// colour's and the Bump's.
     fn procedural(&self, tri: Tri, out: &mut Scene, ids: &mut BAtlasIds) -> Tri {
         let Some(m) = self.shaded() else { return tri };
-        let base = m.procedural.base.as_ref().map(|p| p.slot(1, out, ids));
+        // A baked base already folded its procedurals to their mean;
+        // driving it again would apply them twice.
+        let base = m.procedural.base.as_ref().filter(|_| !m.baked).map(|p| p.slot(1, out, ids));
         let bump = m.procedural.bump.as_ref().map(|b| b.height.slot(0, out, ids).bump(b.strength, b.distance));
         tri.with_procs(base.or(Some(tri.color_proc)), bump)
     }

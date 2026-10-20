@@ -42,6 +42,15 @@ pub(crate) static FORMAT: &[BPropSpec] = &[
     f("fps_base", "Frame Rate Base", BUnit::None),
 ];
 
+/// `RENDER_PT_frame_range`: Frame Start, End, Step. Start and End are the
+/// timeline's own range (`prop_view`'s `value_key` stores them there), so
+/// the panel, the Timeline header and Render Animation read one pair.
+pub(crate) static FRAME_RANGE: &[BPropSpec] = &[
+    i("frame_start", "Frame Start", -1_048_574, 1_048_574).at(1),
+    i("frame_end", "End", -1_048_574, 1_048_574).at(250),
+    i("frame_step", "Step", 1, 1_048_574).at(1),
+];
+
 static STEREOSCOPY: &[BPropSpec] = &[
     b("use_multiview", "Stereoscopy"),
     e(
@@ -136,9 +145,27 @@ static POST_PROCESSING: &[BPropSpec] = &[
 
 pub static SECTIONS: &[BSectionSpec] = &[
     sec("Format", FORMAT),
+    sec("Frame Range", FRAME_RANGE),
     sec("Stereoscopy", STEREOSCOPY).closed(),
     sec("Output", OUTPUT),
     sec("Encoding", ENCODING).closed(),
     sec("Metadata", METADATA).closed(),
     sec("Post Processing", POST_PROCESSING).closed(),
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::v2::state::{BKey as _, ButsKey, CtxKey};
+
+    /// Blender's Output tab: Format, Frame Range, then the rest
+    /// (`properties_output.py`); the range is the timeline's own keys.
+    #[test]
+    fn frame_range_follows_format_and_is_the_timelines_range() {
+        let titles: Vec<_> = SECTIONS.iter().map(|s| s.title).collect();
+        assert_eq!(&titles[..3], ["Format", "Frame Range", "Stereoscopy"]);
+        assert_eq!(FRAME_RANGE[0].value_key(), CtxKey::FrameStart.path());
+        assert_eq!(FRAME_RANGE[1].value_key(), CtxKey::FrameEnd.path());
+        assert_eq!(FRAME_RANGE[2].value_key(), ButsKey::Value("frame_step").path(), "Step is the panel's own");
+    }
+}

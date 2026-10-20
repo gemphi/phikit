@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-pub const MAX_TEXTURE: u32 = 256;
+pub const MAX_TEXTURE: u32 = 1024;
 
 /// Widest environment map kept, in pixels. A world image lights every ray, so
 /// it keeps more detail than a surface texture — but not 4K, which would cost
@@ -146,14 +146,19 @@ pub fn candidates(key: &str, blend: Option<&Path>) -> Vec<PathBuf> {
 /// resolved against the folder), the file name beside the `.blend`, and —
 /// Find Missing Files — the file name anywhere under the folder's tree or
 /// its `textures/` (`texture_find.rs`).
+///
+/// A tiled image's path carries a `<UDIM>` token (`BKE_image_get_tile_*`);
+/// the first tile, 1001, is the one UV square the kernel samples, so the
+/// token resolves to it here.
 pub fn candidates_in(key: &str, dir: Option<&Path>) -> Vec<PathBuf> {
+    let key = key.replace("<UDIM>", "1001");
     let mut out = Vec::new();
     match (key.strip_prefix("//"), dir) {
         (Some(rel), Some(d)) => out.push(d.join(rel.replace('\\', "/"))),
-        (None, _) => out.push(PathBuf::from(key)),
+        (None, _) => out.push(PathBuf::from(&key)),
         _ => {}
     }
-    let name = key.rsplit(['/', '\\']).next().unwrap_or(key);
+    let name = key.rsplit(['/', '\\']).next().unwrap_or(&key);
     if let (Some(d), false) = (dir, name.is_empty()) {
         out.push(d.join(name));
         if let Some(found) = super::texture_find::find(d, name) {
@@ -289,9 +294,71 @@ pub(super) fn attach(objects: &mut [super::SceneObject], p: &crate::blend::Blend
                 missing.note(&map.key, map.image.is_some());
             }
         }
+        // The Base Color chain baked over its decoded images
+        // (`blend::shade::bake`): the result carries the whole base colour,
+        // so a pattern that only drives a Mix's factor still shows.
+        if let Some(bake) = m.bake.clone() {
+            for img in &bake.images {
+                missing.note(&img.key, cache.get(&img.key).is_some());
+            }
+            if let Some((tex, affine)) = run_bake(&bake, &mut cache) {
+                m.texture = Some(tex);
+                m.uv_affine = affine;
+                m.baked = true;
+                continue;
+            }
+        }
         let Some(key) = m.base_color_texture.clone() else { continue };
         m.texture = cache.get(&key);
         missing.note(&key, m.texture.is_some());
     }
     missing.lines()
+}
+
+/// Linear back to the sRGB bytes `SceneTexture` stores.
+fn linear_to_srgb(v: f32) -> u8 {
+    let v = v.clamp(0.0, 1.0);
+    let s = if v <= 0.003_130_8 { v * 12.92 } else { 1.055 * v.powf(1.0 / 2.4) - 0.055 };
+    (s * 255.0 + 0.5) as u8
+}
+
+/// How wide a several-image bake's grid is at most.
+const BAKE_GRID: u32 = 512;
+
+/// Run a compiled Base Color bake over its decoded images.
+///
+/// One source image: every texel of that image through the program — a
+/// recolour at the image's own resolution — with its Mapping answered
+/// separately for the mesh's UVs. Several: the program over the UV unit
+/// square, each image sampled through its own affine. `None` when no source
+/// image resolved, so the caller falls back to the folded tint.
+fn run_bake(bake: &crate::blend::shade::bake::BlendBake, cache: &mut TextureCache) -> Option<(SceneTexture, Option<[[f32; 3]; 2]>)> {
+    use crate::blend::shade::bake as b;
+    let srcs: Vec<Option<SceneTexture>> = bake.images.iter().map(|i| cache.get(&i.key)).collect();
+    srcs.iter().any(Option::is_some).then_some(())?;
+    if let (Some(one), Some(Some(src))) = (bake.single(), srcs.first()) {
+        let (w, h) = (src.width.max(1), src.height.max(1));
+        let mut out = Vec::with_capacity((w * h * 4) as usize);
+        for i in 0..(w * h) as usize {
+            let p = src.rgba.get(i * 4..i * 4 + 4)?;
+            let texel = [srgb_to_linear(p[0]), srgb_to_linear(p[1]), srgb_to_linear(p[2]), p[3] as f32 / 255.0];
+            let c = b::run(&bake.ops, &|_| texel);
+            out.extend([linear_to_srgb(c[0]), linear_to_srgb(c[1]), linear_to_srgb(c[2]), (c[3].clamp(0.0, 1.0) * 255.0 + 0.5) as u8]);
+        }
+        return Some((SceneTexture { width: w, height: h, rgba: Arc::new(out) }, Some(one.affine)));
+    }
+    let side = srcs.iter().flatten().map(|t| t.width.max(t.height)).max().unwrap_or(BAKE_GRID).clamp(64, BAKE_GRID);
+    let mut out = Vec::with_capacity((side * side * 4) as usize);
+    for y in 0..side {
+        for x in 0..side {
+            let uv = [(x as f32 + 0.5) / side as f32, 1.0 - (y as f32 + 0.5) / side as f32];
+            let c = b::run(&bake.ops, &|i| match srcs.get(i as usize).and_then(Option::as_ref) {
+                Some(t) => t.sample_smooth(b::apply(bake.images[i as usize].affine, uv)),
+                // A missing source draws Blender's missing-image magenta.
+                None => [1.0, 0.0, 1.0, 1.0],
+            });
+            out.extend([linear_to_srgb(c[0]), linear_to_srgb(c[1]), linear_to_srgb(c[2]), (c[3].clamp(0.0, 1.0) * 255.0 + 0.5) as u8]);
+        }
+    }
+    Some((SceneTexture { width: side, height: side, rgba: Arc::new(out) }, None))
 }

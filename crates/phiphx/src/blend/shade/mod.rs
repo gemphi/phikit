@@ -6,6 +6,7 @@ pub mod image;
 pub mod socket;
 pub(crate) mod material;
 pub(crate) mod nodes;
+pub mod bake;
 pub(crate) mod blend;
 pub mod driver;
 pub(crate) mod driver_read;

@@ -4,7 +4,7 @@
 //! `section-…` names the old `Section` panel role had.
 
 use super::ctx::BRenderCtx;
-use super::flex::{BAlign, BDim, BFill, BFlex, BFlexed, BJustify, BLen, BSpace};
+use super::flex::{BAlign, BDim, BFill, BFlex, BFlexed, BJustify, BLen, BOverflow, BSpace};
 use super::walk;
 use crate::v2::theme::BSurfaceTone;
 use crate::v2::view::BView;
@@ -78,10 +78,12 @@ impl BFlexed for BSplitPart {
             // that clipped "Limit to Frame Range" to "Limit to Frame R", and
             // five rows beside it. A heading is one or two words; what stands
             // opposite it is a tick and a sentence.
+            // The label column clips its text at its edge, as Blender's
+            // split cuts a long label rather than letting it run under the
+            // control beside it ("Adaptive Sampling" over its checkbox).
             Self::Column { value } => {
-                return BFlex::row()
-                    .width(BLen::Share(if value { VALUE_SHARE } else { 1.0 - VALUE_SHARE }))
-                    .min_width(BLen::Zero);
+                let column = BFlex::row().width(BLen::Share(if value { VALUE_SHARE } else { 1.0 - VALUE_SHARE })).min_width(BLen::Zero);
+                return if value { column } else { column.overflow(BOverflow::Clip) };
             }
             Self::Row { toned } => toned,
         };

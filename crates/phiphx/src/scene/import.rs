@@ -178,6 +178,7 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
         timeline: SceneTimeline {
             frame_start: p.frame_start,
             frame_end: p.frame_end,
+            frame_step: p.frame_step,
             current_frame: p.frame_current,
             fps: p.fps,
         },
@@ -194,6 +195,7 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
             resolution_percent: p.resolution_percent,
             engine: p.engine.clone(),
             view_transform: p.view_transform.clone(),
+            look: p.look.clone(),
             exposure: p.exposure,
             gamma: p.gamma,
             film_transparent: p.film_transparent,

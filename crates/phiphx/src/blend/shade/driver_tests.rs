@@ -22,6 +22,7 @@ fn material() -> BlendMaterial {
         normal_map: None,
         maps: Default::default(),
         procedural: Default::default(),
+        bake: None,
     }
 }
 

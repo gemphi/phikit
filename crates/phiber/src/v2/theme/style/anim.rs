@@ -165,7 +165,10 @@ impl BResolvedUiStyle {
             scrub_text: colors.text_dim,
             playhead: colors.accent,
             playhead_shadow: colors.bg_app,
-            playhead_text: colors.text,
+            // `TH_HEADER_TEXT_HI`, white in Blender's theme: the number sits
+            // on the accent, and the palette's text — dark in a light mode —
+            // vanished into it.
+            playhead_text: (0.0, 0.0, 100.0, 1.0),
             cursor_value: with_alpha(self.shade(colors.accent, CURSOR_VALUE_SHADE), CURSOR_ALPHA),
             cursor_time: with_alpha(self.shade(colors.accent, CURSOR_TIME_SHADE), CURSOR_ALPHA),
             channel_back: colors.bg_left,

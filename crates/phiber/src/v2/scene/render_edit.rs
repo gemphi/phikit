@@ -93,20 +93,16 @@ impl BRenderEdits {
     /// `name`'s panel value, when it differs from the file's (or, with none
     /// there, the property's default).
     fn cycles_edit(s: &BState, model: &SceneModel, name: &str, spec: &BPropSpec) -> Option<(String, BIdValue)> {
-        // The sample floor is phiber's policy, not a value the user chose.
-        // `seed_render_props` lifts a file saved below it up to the floor so
-        // the panel SHOWS what will render; reading that back as an edit
-        // would write phiber's floor into the user's `.blend` on the next
-        // save, over a count they had deliberately set low
-        // (`render_quality::BRenderQuality::SAMPLE_FLOOR`). A count they type
-        // themselves is still an edit — including one that happens to equal
-        // the floor on a file already at or above it, which the seed leaves
-        // alone.
-        if name == "samples" {
-            let floor = i64::from(super::render_quality::BRenderQuality::SAMPLE_FLOOR);
-            let saved = model.render.cycles.get("samples").and_then(BIdValue::as_int).unwrap_or(0);
+        // The sample default is phiber's policy, not a value the user chose.
+        // `seed_render_props` writes it into the panel for a file that never
+        // set Max Samples, so the panel SHOWS what will render; reading that
+        // back as an edit would write phiber's default into the user's
+        // `.blend` on the next save (`render_quality::BRenderQuality`). A
+        // count they type themselves is still an edit.
+        if name == "samples" && model.render.cycles.get("samples").is_none() {
+            let default = i64::from(super::render_quality::BRenderQuality::SAMPLE_FLOOR);
             let shown = BValue::parse(BValueKind::Int, s.get(ButsKey::Value(spec.key))?)?;
-            if shown == BValue::Int(floor) && i64::from(saved) < floor {
+            if shown == BValue::Int(default) {
                 return None;
             }
         }

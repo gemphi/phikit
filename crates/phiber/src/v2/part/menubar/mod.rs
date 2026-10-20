@@ -45,7 +45,7 @@ impl BMenubarItem {
 
 impl BViewItem for BMenubarItem {
     fn build(&self, s: &BState) -> BView {
-        let host = self.host.slug();
+        let host = crate::v2::area::current::menu_scope(s, self.host);
         if let Some(body) = self.spec.panel {
             // A panel popover: its own key, so ticking a box inside keeps it
             // open; the anchor is the same button a menu has.

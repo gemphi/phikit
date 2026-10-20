@@ -30,9 +30,10 @@ const INPUTS: &[(&[&str], Apply)] = &[
     (&["Metallic"], |b, v| if let BSocket::Float(f) = v { b.metallic = f }),
     (&["Alpha"], |b, v| if let BSocket::Float(f) = v { b.alpha = f }),
     (&["IOR"], |b, v| if let BSocket::Float(f) = v { b.ior = f }),
-    // 4.x only: 3.x's "Specular" is an F0 scale of its own (0.08 × value)
-    // and keeps the default level here.
-    (&["Specular IOR Level"], |b, v| if let BSocket::Float(f) = v { b.specular_level = f }),
+    // 3.x's "Specular" renames to "Specular IOR Level" unchanged
+    // (`version_principled_bsdf_rename_sockets`): both are the same
+    // 0.08 × value F0 scale.
+    (&["Specular IOR Level", "Specular"], |b, v| if let BSocket::Float(f) = v { b.specular_level = f }),
     (&["Transmission Weight", "Transmission"], |b, v| if let BSocket::Float(f) = v { b.transmission = f }),
     (&["Emission Color", "Emission"], |b, v| if let BSocket::Rgba(c) = v { b.emission = [c[0], c[1], c[2]] }),
     (&["Emission Strength"], |b, v| if let BSocket::Float(f) = v { b.emission_strength = f }),
@@ -43,7 +44,10 @@ const INPUTS: &[(&[&str], Apply)] = &[
     // 3.x spells Sheen Tint as a float (white → base colour); only the 4.x
     // colour socket lands here, so a 3.x file keeps the white default.
     (&["Sheen Tint"], |b, v| if let BSocket::Rgba(c) = v { b.sheen_tint = [c[0], c[1], c[2]] }),
-    (&["Coat Weight", "Clearcoat"], |b, v| if let BSocket::Float(f) = v { b.coat = f }),
+    // "Clearcoat" became "Coat" with the ×0.25 rescale, then "Coat Weight"
+    // as a plain rename — so a file spelling it "Coat" already carries the
+    // 4.x scale and only "Clearcoat" takes the legacy factor below.
+    (&["Coat Weight", "Coat", "Clearcoat"], |b, v| if let BSocket::Float(f) = v { b.coat = f }),
     (&["Coat Roughness", "Clearcoat Roughness"], |b, v| if let BSocket::Float(f) = v { b.coat_roughness = f }),
     (&["Anisotropic"], |b, v| if let BSocket::Float(f) = v { b.anisotropic = f }),
     (&["Anisotropic Rotation"], |b, v| if let BSocket::Float(f) = v { b.anisotropic_rotation = f }),
@@ -79,7 +83,16 @@ impl BlendFile {
                 continue;
             }
             let ty = self.block_at(sock).and_then(|b| b.data.get(type_o..type_o + 2)).map(|b| self.read_u16(b));
-            apply(&mut bsdf, if ty == Some(SOCK_RGBA) { BSocket::Rgba(v.rgba) } else { BSocket::Float(v.value()) });
+            // A 3.x socket still holds the 3.x scale; Blender rescales it on
+            // load when renaming (versioning_400.cc): "Clearcoat" is 4× the
+            // 4.x Coat Weight (`version_principled_bsdf_coat`), "Sheen" 5×
+            // the Sheen Weight (`version_principled_bsdf_sheen`).
+            let legacy = match name.as_str() {
+                "Clearcoat" => 0.25,
+                "Sheen" => 0.2,
+                _ => 1.0,
+            };
+            apply(&mut bsdf, if ty == Some(SOCK_RGBA) { BSocket::Rgba(v.rgba) } else { BSocket::Float(v.value() * legacy) });
         }
         // Subsurface Radius is a vector socket; the colour fold reduces vectors
         // to their mean, which would throw away the red bleed skin depends on.

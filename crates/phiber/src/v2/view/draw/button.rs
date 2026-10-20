@@ -61,10 +61,11 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     // `text_dim`, which is the shade an INACTIVE tab's label takes, so "off" and
     // "not available" were one look; a weight on the normal ink keeps them two.
     let ink = to_hsla(ctx.style.colors.text);
-    let ink = if ctl.muted {
-        gpui::Hsla { a: ink.a * ctx.style.effects.control_muted_alpha, ..ink }
-    } else {
-        ink
+    let ink = match (ctl.muted, ctl.active && !chrome::in_strip(ctx)) {
+        (true, _) => gpui::Hsla { a: ink.a * ctx.style.effects.control_muted_alpha, ..ink },
+        // On the active fill, an ink that reads on it.
+        (false, true) => chrome::ink_on(chrome::active_fill(ctx), ink),
+        (false, false) => ink,
     };
     let mut row = div()
         .flex()

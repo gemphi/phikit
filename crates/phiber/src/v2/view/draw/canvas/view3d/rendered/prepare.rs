@@ -35,7 +35,7 @@ pub(in crate::v2::view::draw::canvas::view3d) fn prepare(scene: &std::rc::Rc<Vec
         let refused = w.refused(key);
         if fresh {
             s.scene = key;
-            s.view = 0;
+            s.repost();
         }
         if refused { Err(BRayDeclined::TooLarge) } else { Ok(()) }
     })

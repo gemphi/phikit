@@ -12,6 +12,9 @@ pub(super) fn camera_from_blend(obj: &BlendSceneObject) -> SceneCamera {
         kind: "PERSP".into(),
         focal_length_mm: 50.0,
         sensor_width: 36.0,
+        sensor_height: 24.0,
+        sensor_fit: "AUTO".into(),
+        shift: [0.0, 0.0],
         ortho_scale: 6.0,
         clip_start: 0.1,
         clip_end: 1000.0,
@@ -22,6 +25,9 @@ pub(super) fn camera_from_blend(obj: &BlendSceneObject) -> SceneCamera {
         cam.kind = ["PERSP", "ORTHO", "PANO"].get(c.kind as usize).unwrap_or(&"PERSP").to_string();
         cam.focal_length_mm = c.lens;
         cam.sensor_width = c.sensor_x;
+        cam.sensor_height = c.sensor_y;
+        cam.sensor_fit = ["AUTO", "HORIZONTAL", "VERTICAL"].get(c.sensor_fit as usize).unwrap_or(&"AUTO").to_string();
+        cam.shift = c.shift;
         cam.ortho_scale = c.ortho_scale;
         cam.clip_start = c.clip_start;
         cam.clip_end = c.clip_end;

@@ -119,3 +119,49 @@ pub fn active_host(
         .and_then(BHostType::from_slug)
         .unwrap_or(area.default_host)
 }
+
+/// The host segment of a header's menu keys (`ctx.menu.<segment>.<Label>`)
+/// for `host` in the area being built.
+///
+/// Menus are keyed by host so two editors' View menus open apart. Two areas
+/// showing the same editor — the Animation workspace's camera view and its
+/// 3D Viewport — would still share every key, and Object opened in one
+/// would open in both, where Blender opens the header that was clicked. So
+/// the first area showing `host` keeps the bare slug (a shortcut that opens
+/// a menu by host lands there) and any later one adds its slot:
+/// `view3d@Left-view3d`. [`MenuKey::host_of`] reads the editor back.
+///
+/// [`MenuKey::host_of`]: crate::v2::state::MenuKey::host_of
+pub fn menu_scope(s: &crate::v2::state::BState, host: BHostType) -> &'static str {
+    let (Some(space), Some(area)) = (current_space(), current_area()) else {
+        return host.slug();
+    };
+    let showing = |a: &&BAreaSpec| active_host(space, a, |k| s.get(k).map(str::to_string)) == host;
+    match space.spec().areas.iter().find(showing) {
+        Some(first) if first.kind != area.kind || first.default_host != area.default_host => {
+            crate::v2::state::intern(&format!("{}@{}-{}", host.slug(), area.kind.label(), area.default_host.slug()))
+        }
+        _ => host.slug(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::v2::state::{BState, MenuKey};
+
+    /// The Animation workspace shows the 3D Viewport twice; opening Object
+    /// in one must not open it in the other.
+    #[test]
+    fn a_second_area_showing_the_same_editor_keeps_its_own_menus() {
+        let s = BState::new();
+        let space = BSpaceType::Animation;
+        let views: Vec<&BAreaSpec> = space.spec().areas.iter().filter(|a| a.default_host == BHostType::View3D).collect();
+        assert!(views.len() >= 2, "Animation shows two 3D Viewports");
+        let scope = |a: &BAreaSpec| with_space(space, || with_area(*a, || menu_scope(&s, BHostType::View3D)));
+        assert_eq!(scope(views[0]), "view3d", "the first keeps the bare slug a shortcut opens");
+        assert_ne!(scope(views[1]), scope(views[0]), "the second has keys of its own");
+        assert_eq!(MenuKey::host_of(scope(views[1])), "view3d", "and still names its editor");
+        assert_eq!(menu_scope(&s, BHostType::View3D), "view3d", "outside an area: the slug");
+    }
+}

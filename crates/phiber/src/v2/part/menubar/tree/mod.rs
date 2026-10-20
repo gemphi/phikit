@@ -29,19 +29,19 @@ pub fn leaf_action(host: &'static str, labels: &[&'static str], it: &BMenuItem) 
         // not name — the palette walks every table as the top bar — reports
         // the entry instead of flipping a stranger's region.
         BMenuKind::HostToggle(key, on_by_default) => {
-            if let Some(h) = crate::v2::host::BHostType::from_slug(host) {
+            if let Some(h) = crate::v2::host::BHostType::from_slug(MenuKey::host_of(host)) {
                 return BAction::Set(OpKey::Flip.path(), format!("{}{}", if on_by_default { "!" } else { "" }, key(h).encode()));
             }
         }
         // Ctrl Space carries the editor whose menu fired it, so the rule can
         // grow that editor's area (`area::maximize`) — a shared table cannot
         // write a host into a static value.
-        BMenuKind::Fire(OpKey::AreaMaximize, _) => return BAction::Set(OpKey::AreaMaximize.path(), host.to_string()),
+        BMenuKind::Fire(OpKey::AreaMaximize, _) => return BAction::Set(OpKey::AreaMaximize.path(), MenuKey::host_of(host).to_string()),
         // The showing editor's slug in the value: `node_view` with
         // `<host>:all`. A host the slug does not name (the palette) falls
         // through to the report, as `HostToggle` does.
         BMenuKind::HostFire(key, suffix) => {
-            if let Some(h) = crate::v2::host::BHostType::from_slug(host) {
+            if let Some(h) = crate::v2::host::BHostType::from_slug(MenuKey::host_of(host)) {
                 return BAction::Set(key.path(), format!("{}{suffix}", h.slug()));
             }
         }
@@ -184,7 +184,7 @@ pub fn item_view(host: &'static str, labels: &[&'static str], it: &BMenuItem, s:
         }
         // Checked against the showing editor's own key (a shared table).
         BMenuKind::HostToggle(key, on_by_default) => {
-            let on = crate::v2::host::BHostType::from_slug(host).is_some_and(|h| {
+            let on = crate::v2::host::BHostType::from_slug(MenuKey::host_of(host)).is_some_and(|h| {
                 let k = key(h);
                 if on_by_default { s.get(&k) != Some(V_FALSE) } else { s.get(&k) == Some(V_TRUE) }
             });

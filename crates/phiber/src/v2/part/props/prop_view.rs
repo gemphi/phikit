@@ -104,8 +104,18 @@ impl BPropSpec {
     /// State key that stores the value of `self`. Segments live under `buts` so
     /// all Property-panel values share one root and can be introspected
     /// uniformly.
+    ///
+    /// Frame Start and End are the exceptions: they are the scene's frame
+    /// range, which the Timeline's header and Render Animation already keep
+    /// at `ctx.frame_start` / `ctx.frame_end`, and a second copy under
+    /// `buts` would be a panel that disagrees with the header beside it.
     pub fn value_key(&self) -> BPath {
-        ButsKey::Value(self.key).path()
+        use crate::v2::state::{BKey as _, CtxKey};
+        match self.key {
+            "frame_start" => CtxKey::FrameStart.path(),
+            "frame_end" => CtxKey::FrameEnd.path(),
+            key => ButsKey::Value(key).path(),
+        }
     }
 
     /// State key gating whether the dropdown for `self` is open.

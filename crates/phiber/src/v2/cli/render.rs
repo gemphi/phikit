@@ -12,8 +12,7 @@
 
 use crate::phiphx::Phx;
 use crate::v2::app::seed::{seed_output_props, seed_render_props, seed_view_layer};
-use crate::v2::part::outliner::key::BHidden;
-use crate::v2::scene::{BObject3D, current_scene, plan_at, render_set, source::set_loaded_shared};
+use crate::v2::scene::{BObject3D, plan_at, render_set, source::set_loaded_shared};
 use crate::v2::state::{BState, CtxKey};
 use crate::v2::view::draw::canvas::view3d::rendered::{BMatStand, BRayLook, environment, still, view_words};
 
@@ -168,7 +167,6 @@ impl BHeadlessRender {
         // out of memory before a single sample.
         let model = std::sync::Arc::new(model);
         set_loaded_shared(Some(model.clone()));
-        let hidden = BHidden::now(&state);
         let mut set = render_set(&state);
         set.samples = self.sample_count();
 
@@ -180,10 +178,15 @@ impl BHeadlessRender {
             // The frame the scene stands at: `current_scene` poses the rig
             // and the objects, `plan_at` puts the camera where it is.
             state.set(CtxKey::Frame, format!("{frame}"));
-            let objects: Vec<BObject3D> = current_scene(&state, Some(&model))
-                .into_iter()
-                .filter(|o| !matches!(o, BObject3D::Loaded { name, .. } if hidden.hides(&state, name)))
-                .collect();
+            // The render's own restrictions — the camera toggle and excluded
+            // collections, not the viewport's eye: Blender renders what the
+            // viewport hides and leaves out what the camera disables
+            // (`render_cast.rs`, the same cast F12 in the app draws).
+            let cast = crate::v2::scene::render_cast::BRenderCast::of(&state, Some(&model));
+            if let Some(note) = &cast.note {
+                println!("{note}");
+            }
+            let objects: Vec<BObject3D> = cast.objects;
             let posed = began.elapsed();
             // An empty list here is the headless twin of the app's blank
             // Render Result, and was just as silent (`scene::render_cast`).

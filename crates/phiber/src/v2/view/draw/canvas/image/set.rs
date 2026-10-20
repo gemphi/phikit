@@ -159,13 +159,8 @@ impl BImageView {
     /// runs), Mem, Peak, Scene, View Layer, then the engine's status. The
     /// bar is these joined; anything that wants one value reads the pair.
     pub fn info_pairs(&self, scene: &(String, String), frame: &str) -> Option<Vec<(&'static str, String)>> {
-        self.info_pairs_at(scene, frame, render_status::elapsed())
-    }
-
-    /// The same pairs for a render `elapsed` in — the clock passed in
-    /// rather than read, so a figure or a test can say when it is.
-    pub fn info_pairs_at(&self, scene: &(String, String), frame: &str, elapsed: std::time::Duration) -> Option<Vec<(&'static str, String)>> {
         let status = self.status?;
+        let elapsed = render_status::elapsed();
         let mut pairs = vec![("Frame", frame.to_string()), ("Time", render_status::timecode(elapsed))];
         if let Some(left) = render_status::remaining(elapsed, status.taken, status.target, status.done) {
             pairs.push(("Remaining", render_status::timecode(left)));

@@ -9,6 +9,8 @@
 pub struct SceneTimeline {
     pub frame_start: i32,
     pub frame_end: i32,
+    /// `Scene.r.frame_step`.
+    pub frame_step: i32,
     pub current_frame: i32,
     /// Frames per second, resolved from `frs_sec / frs_sec_base`.
     pub fps: f32,
@@ -20,6 +22,7 @@ impl Default for SceneTimeline {
         Self {
             frame_start: 1,
             frame_end: 250,
+            frame_step: 1,
             current_frame: 1,
             fps: 24.0,
         }
@@ -70,6 +73,8 @@ pub struct SceneRender {
     pub engine: String,
     /// `Scene.view_settings.view_transform` ("Standard", "Filmic", "AgX" …).
     pub view_transform: String,
+    /// `Scene.view_settings.look` ("None", "Very High Contrast", …).
+    pub look: String,
     /// `Scene.view_settings.exposure` (stops) and `.gamma`.
     pub exposure: f32,
     pub gamma: f32,
@@ -171,6 +176,7 @@ impl Default for SceneRender {
             resolution_percent: 100,
             engine: String::from("BLENDER_EEVEE_NEXT"),
             view_transform: String::from("Standard"),
+            look: String::from("None"),
             output: Default::default(),
             border: Default::default(),
             movie: Default::default(),

@@ -138,7 +138,9 @@ pub fn element(painting: BSpatialPainting, ctx: &BRenderCtx) -> (gpui::Canvas<()
             let (w, h) = (f32::from(bounds.size.width), f32::from(bounds.size.height));
             // The size the next frame fits the flat view to (`view/store.rs`)
             // — the camera is built on that view, so both modes measure once.
-            view_store::measured(host, (w, h));
+            if view_store::measured(host, (w, h)) {
+                window.request_animation_frame();
+            }
             let camera = BSpatialCamera::of(&painting.view, painting.orbit, (w, h));
             window.paint_quad(fill(bounds, to_hsla(painting.ink.floor)));
             painting.grid(&camera, bounds, window);

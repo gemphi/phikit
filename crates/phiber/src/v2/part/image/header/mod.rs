@@ -40,7 +40,7 @@ impl BViewItem for BImageBlock {
         // The browse dropdown and the name: the Render Result while a slot
         // holds a render, and the session's images (`template_ID`).
         if self.host == BHostType::Image && !names.is_empty() {
-            let pick = BPick::new(MenuKey::Top(self.host.slug(), "image").path(), BControl::new().with_icon("image").with_label(shown.name()).with_tooltip("Image"));
+            let pick = BPick::new(MenuKey::Top(crate::v2::area::current::menu_scope(s, self.host), "image").path(), BControl::new().with_icon("image").with_label(shown.name()).with_tooltip("Image"));
             row.push(names.iter().fold(pick, |pick, name| pick.item(name, *name == shown.name(), BAction::Set(ImageKey::Shown.path(), name.clone()))).view(s));
             // While the render runs, its progress, a Pause and a Cancel
             // beside the image it is drawing — Blender keeps the job's bar

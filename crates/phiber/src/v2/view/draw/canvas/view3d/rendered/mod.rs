@@ -79,8 +79,13 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
     let live = ((bw * dpr * fit) as u32, (bh * dpr * fit) as u32);
     // While the viewport is being dragged, trace at the size already in hand
     // and stretch it; take the new size once the drag stops (`settle`).
-    let ((w, h), waiting) =
-        STATE.with(|s| s.borrow_mut().settle.size(live, std::time::Instant::now()));
+    // This viewport's slot (`state::BRaySlot`), found by where it is painted.
+    let (slot, ((w, h), waiting)) = STATE.with(|s| {
+        let mut s = s.borrow_mut();
+        let (slot, gone) = s.slot((f32::from(bounds.origin.x), f32::from(bounds.origin.y)));
+        gone.into_iter().for_each(|img| drop(window.drop_image(img)));
+        (slot, s.slots[slot].settle.size(live, std::time::Instant::now()))
+    });
     // The viewport's own render region: the frame is still `w × h`, the
     // image traced is the region's pixels of it (`Camera::tile`), drawn in
     // its place and nothing outside (`ED_view3d_calc_render_border`).
@@ -145,7 +150,6 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
         (s.scene, w, h, view.mode as u32, bytemuck::bytes_of(&cam), view.set.preview_samples, view.aa, view.set.preview_denoise, view.set.preview_denoise_from, &*view.outline_class)
             .hash(&mut hasher);
         let key = hasher.finish();
-        let Some(Some(worker)) = s.worker.as_ref() else { return (None, true) };
         let shot = |aspect| self::reframe::BShotView {
             zoom: view.zoom,
             pan: view.pan,
@@ -153,18 +157,21 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
             orbit: (view.yaw, view.pitch, view.setup.pivot, view.setup.perspective),
             part: part.map(|(x, y, rw, rh)| (x as f32 / w as f32, y as f32 / h as f32, rw as f32 / w as f32, rh as f32 / h as f32)),
         };
-        if key != s.view {
-            s.shots.note(key, shot(w as f32 / h.max(1) as f32));
-            s.clock.posted(key);
-            POSTED.with(|n| n.set(n.get() + 1));
+        let post = s.should_post(slot, key);
+        let Some(Some(worker)) = s.worker.as_ref() else { return (None, true) };
+        if post {
             worker.send(BRayJob::View(
                 key,
                 BRayShot { cam, w: tw, h: th, mode: view.mode, samples: view.set.preview_samples, aa: view.aa, denoise_from: view.set.preview_denoise.then_some(view.set.preview_denoise_from), outline: Arc::clone(&view.outline_class) },
             ));
         }
-        let seq = s.image.as_ref().map_or(0, |i| i.0);
-        let frame = worker.take(seq);
-        s.view = key;
+        let frame = worker.take(s.slots[slot].view, s.taken);
+        if post {
+            s.shots.note(key, shot(w as f32 / h.max(1) as f32));
+            s.clock.posted(key);
+            POSTED.with(|n| n.set(n.get() + 1));
+            s.posted(slot, key);
+        }
         // An empty frame is one the kernel never wrote (`worker`): nothing to
         // show, but the view has settled — the theme canvas stays.
         let mut blank = false;
@@ -172,18 +179,15 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
             if let Some(line) = s.clock.landed(f.view, f.done) {
                 crate::v2::app::journal::BJournal::note(line);
             }
-            if f.bgra.is_empty() {
-                blank = f.done && f.view == key;
-            } else if let Some(buf) = image::RgbaImage::from_raw(f.w, f.h, f.bgra) {
-                let img = Arc::new(RenderImage::new(smallvec::smallvec![image::Frame::new(buf)]));
-                if let Some((.., old)) = s.image.replace((f.seq, f.view, f.done, img)) {
-                    let _ = window.drop_image(old);
-                }
+            blank = f.bgra.is_empty() && f.done && f.view == key;
+            let img = image::RgbaImage::from_raw(f.w, f.h, f.bgra).map(|buf| Arc::new(RenderImage::new(smallvec::smallvec![image::Frame::new(buf)])));
+            if let Some(old) = s.land(f.seq, f.view, f.done, img) {
+                let _ = window.drop_image(old);
             }
         }
         // The image where its own view puts it in this one (`reframe.rs`).
         let place = |v: u64| s.shots.get(v).map_or(bounds, |old| old.place(&BShotView { part: None, ..shot(bw / bh) }, bounds));
-        match &s.image {
+        match &s.slots[slot].image {
             Some((_, v, done, img)) => (Some((img.clone(), place(*v))), *done && *v == key),
             None => (None, blank),
         }

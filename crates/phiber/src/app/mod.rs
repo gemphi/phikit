@@ -17,17 +17,17 @@ pub mod web_assets;
 mod web_assets_tests;
 
 /// Launch the Phiber GPUI application.
-pub fn run() {
+pub fn run(file: Option<String>) {
     #[cfg(not(target_family = "wasm"))]
-    desktop();
+    desktop(file);
     #[cfg(target_family = "wasm")]
-    web();
+    web(file);
 }
 
 /// The desktop app: journal and GPU skinning armed first, then the window on
 /// a thread with a stack big enough for the view tree.
 #[cfg(not(target_family = "wasm"))]
-fn desktop() {
+fn desktop(file: Option<String>) {
     // Journal first, with the `log` crate bridged into it, so the GPU adapter
     // and backend each context picks is on disk from the very first line —
     // before phiray's skinning context and before the window's GPU context.
@@ -37,10 +37,10 @@ fn desktop() {
     crate::v2::scene::RaySkin::install();
     std::thread::Builder::new()
         .stack_size(8 * 1024 * 1024)
-        .spawn(|| {
+        .spawn(move || {
             gpui_platform::application()
                 .with_assets(fs_assets::PhiberAssets::beside_the_crate())
-                .run(|cx: &mut App| boot(cx, Persist::Yes));
+                .run(move |cx: &mut App| boot(cx, Persist::Yes, file));
         })
         .unwrap()
         .join()
@@ -58,11 +58,11 @@ fn desktop() {
 /// session and the health log all write files, so they stay off: see
 /// [`Persist`].
 #[cfg(target_family = "wasm")]
-fn web() {
+fn web(file: Option<String>) {
     gpui_platform::web_init();
     gpui_platform::single_threaded_web()
         .with_assets(web_assets::WebAssets)
-        .run(|cx: &mut App| boot(cx, Persist::No));
+        .run(move |cx: &mut App| boot(cx, Persist::No, file));
 }
 
 /// Whether this build has a disk to write to.
@@ -81,8 +81,9 @@ enum Persist {
     No,
 }
 
-/// Open the window and wire it up — the part both builds share.
-fn boot(cx: &mut App, persist: Persist) {
+/// Open the window and wire it up — the part both builds share. `file` is
+/// the command line's `.blend`, opened as `blender file.blend` opens it.
+fn boot(cx: &mut App, persist: Persist, file: Option<String>) {
     // gpui's theme globals plus our font / density settings.
     crate::v2::theme::vendor::install(cx);
 
@@ -121,8 +122,12 @@ fn boot(cx: &mut App, persist: Persist) {
         w.on_window_should_close(cx, move |window, cx| {
             app.update(cx, |app, cx| app.may_close(window, cx))
         });
-        if persist == Persist::Yes {
-            view.restore_session(cx);
+        // A file on the command line is opened as Blender opens it — its
+        // own UI, no splash — instead of resuming the last session.
+        match file {
+            Some(path) => view.open_argument(path, cx),
+            None if persist == Persist::Yes => view.restore_session(cx),
+            None => {}
         }
     });
 

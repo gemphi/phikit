@@ -52,21 +52,38 @@ pub fn camera_of(cam: &SceneCamera, w: u32, h: u32) -> Camera {
     let back = m.z_axis.truncate().normalize_or_zero();
     let eye = m.w_axis.truncate();
     let aspect = w.max(1) as f32 / h.max(1) as f32;
-    // AUTO sensor fit: the sensor spans the longer side.
-    let wide = w >= h;
+    // Which side the sensor spans (`BKE_camera_sensor_fit`): AUTO fits the
+    // longer one, ties horizontal; HORIZONTAL / VERTICAL say so outright.
+    let wide = match cam.sensor_fit.as_str() {
+        "HORIZONTAL" => true,
+        "VERTICAL" => false,
+        _ => w >= h,
+    };
+    // Which sensor side spans it (`BKE_camera_sensor_size`): AUTO always
+    // reads `sensor_x`, whichever way it fits; only VERTICAL reads `sensor_y`.
+    let sensor = match cam.sensor_fit.as_str() {
+        "VERTICAL" => cam.sensor_height,
+        _ => cam.sensor_width,
+    };
     let ortho = cam.kind == "ORTHO";
     let dist = 1.0f32;
     let scale = if ortho {
-        // `ortho_scale` is the longer side's span in world units.
+        // `ortho_scale` is the fitted side's span in world units.
         let span = cam.ortho_scale.max(1e-6);
         if wide { 1.0 / span } else { 1.0 / (span * aspect) }
     } else {
-        let half = (cam.sensor_width.max(1e-6) * 0.5) / cam.focal_length_mm.max(1e-6);
+        let half = (sensor.max(1e-6) * 0.5) / cam.focal_length_mm.max(1e-6);
         let s = 0.5 / (dist * half);
         // The kernel's vertical half-extent is `0.5 / (aspect * scale)`, so
         // spanning the sensor over the *height* divides rather than multiplies.
         if wide { s } else { s / aspect }
     };
+    // Lens shift moves the viewplane by `shift · viewfac · pixsize`
+    // (`BKE_camera_params_compute_viewplane`) — in the kernel's screen
+    // units, `shiftx` straight when the sensor fits the width (viewfac is
+    // the width), over the aspect when it fits the height. The kernel's
+    // screen y runs down and its x subtracts the pan, hence the signs.
+    let pan = if wide { [-cam.shift[0], cam.shift[1]] } else { [-cam.shift[0] / aspect, cam.shift[1] / aspect] };
     Camera {
         right: right.to_array(),
         up: up.to_array(),
@@ -79,6 +96,7 @@ pub fn camera_of(cam: &SceneCamera, w: u32, h: u32) -> Camera {
         aspect,
         scale,
         dist,
+        pan,
         // Depth of field. `focus` is the distance the camera itself names;
         // a camera that focuses on an *object* is resolved in `plan`, where
         // the other objects are known.

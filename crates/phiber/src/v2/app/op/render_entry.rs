@@ -52,10 +52,16 @@ pub(crate) fn render_animation(&mut self, cx: &mut Context<Self>) {
     }
     let start = crate::v2::state::key::int_or(&self.state, CtxKey::FrameStart, 1);
     let end = crate::v2::state::key::int_or(&self.state, CtxKey::FrameEnd, 250).max(start);
-    log::push(format!("Rendering animation: frames {start}–{end}"));
+    // Output ▸ Frame Range ▸ Step: every n-th frame, as Blender's
+    // `render.render(animation=True)` steps by `scene.frame_step`.
+    let step = crate::v2::state::key::int_or(&self.state, crate::v2::state::ButsKey::Value("frame_step"), 1).max(1) as usize;
+    log::push(match step {
+        1 => format!("Rendering animation: frames {start}–{end}"),
+        n => format!("Rendering animation: frames {start}–{end}, every {n}"),
+    });
     let mut movie = self.movie_job(start, end);
     cx.spawn(async move |this, cx| {
-        for frame in start..=end {
+        for frame in (start..=end).step_by(step) {
             let started = this
                 .update(cx, |app, cx| {
                     app.state.set(CtxKey::Frame, frame.to_string());

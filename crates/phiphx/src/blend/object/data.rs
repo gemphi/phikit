@@ -11,6 +11,13 @@ pub struct BlendCameraData {
     pub lens: f32,
     pub ortho_scale: f32,
     pub sensor_x: f32,
+    /// `Camera.sensor_y`: the sensor's height, read when `sensor_fit` is
+    /// vertical (`BKE_camera_sensor_size`).
+    pub sensor_y: f32,
+    /// `Camera.sensor_fit`: 0 AUTO, 1 HORIZONTAL, 2 VERTICAL.
+    pub sensor_fit: u8,
+    /// `Camera.shiftx / shifty`: lens shift, fractions of the fitted side.
+    pub shift: [f32; 2],
     pub clip_start: f32,
     pub clip_end: f32,
     pub drawsize: f32,
@@ -120,6 +127,9 @@ impl BlendFile {
                         ortho_scale: f("ortho_scale", 6.0),
                         dof: self.extract_dof(ca, dna),
                         sensor_x: f("sensor_x", 36.0),
+                        sensor_y: f("sensor_y", 24.0),
+                        sensor_fit: self.uint_field(ca, "Camera", "sensor_fit", dna).unwrap_or(0) as u8,
+                        shift: [f("shiftx", 0.0), f("shifty", 0.0)],
                         clip_start: f("clip_start", 0.1),
                         clip_end: f("clip_end", 1000.0),
                         drawsize: f("drawsize", 1.0),
@@ -152,6 +162,88 @@ impl BlendFile {
                 draw_size: self.float_field(ob, "Object", "empty_drawsize", dna, 1.0),
             }),
             _ => BlendObjectData::None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod digest {
+    /// Not a fixture test: point `SCENE_CAM_DIGEST` at a `.blend` and this
+    /// prints the extracted scene's camera objects and `Scene.camera`, for
+    /// checking which camera a render picks. Does nothing without the var.
+    #[test]
+    fn scene_cam_digest_of_env_file() {
+        let Ok(path) = std::env::var("SCENE_CAM_DIGEST") else { return };
+        let bytes = std::fs::read(&path).expect("read");
+        let f = crate::blend::file::types::BlendFile::parse_bytes(&bytes).expect("parse");
+        let scene = f.extract_scene().expect("scene");
+        println!("Scene.camera = {:?} cfra {} range {}..{}", scene.props.camera, scene.props.frame_current, scene.props.frame_start, scene.props.frame_end);
+        println!("motion tracks: {}", scene.props.motion.list.len());
+        for o in scene.objects.iter().filter(|o| o.object_type == "CAMERA") {
+            println!("camera object {:?} loc {:?}", o.name, o.location);
+        }
+        println!("{} objects in all", scene.objects.len());
+        let rh = scene.objects.iter().filter(|o| o.visibility.hide_render).count();
+        let hv = scene.objects.iter().filter(|o| o.visibility.hide_viewport).count();
+        println!("objects hide_render {rh}, hide_viewport {hv}");
+        fn walk(c: &crate::blend::BlendCollection, depth: usize) {
+            println!(
+                "col {}{:?}: {} objs, exclude {} hide_v {} vis(hv {} hs {} hr {})",
+                "  ".repeat(depth), c.name, c.object_names.len(), c.exclude, c.hide_viewport,
+                c.visibility.hide_viewport, c.visibility.hide_select, c.visibility.hide_render
+            );
+            for k in &c.children { walk(k, depth + 1); }
+        }
+        for c in &scene.collections { walk(c, 0); }
+    }
+
+    /// Not a fixture test: point `CAM_DIGEST` at a `.blend` and this prints
+    /// every camera's framing fields and the scene's render size, for
+    /// checking a real file against Blender. Does nothing without the var.
+    #[test]
+    fn cam_digest_of_env_file() {
+        let Ok(path) = std::env::var("CAM_DIGEST") else { return };
+        let bytes = std::fs::read(&path).expect("read");
+        let f = crate::blend::file::types::BlendFile::parse_bytes(&bytes).expect("parse");
+        let dna = f.dna.clone().expect("dna");
+        for ca in f.blocks.iter().filter(|b| b.code_str == "CA") {
+            let name = f.extract_name_from_block(ca, "id.name").unwrap_or_default();
+            let g = |n: &str| f.float_field(ca, "Camera", n, &dna, f32::NAN);
+            println!(
+                "CA {name} at {:#x}: lens {} sensor {}x{} fit {} shift ({}, {}) type {}",
+                ca.old_address,
+                g("lens"),
+                g("sensor_x"),
+                g("sensor_y"),
+                f.uint_field(ca, "Camera", "sensor_fit", &dna).unwrap_or(99),
+                g("shiftx"),
+                g("shifty"),
+                f.uint_field(ca, "Camera", "type", &dna).unwrap_or(99),
+            );
+        }
+        let ps = f.header.pointer_size as usize;
+        let cams: std::collections::HashSet<u64> = f.blocks.iter().filter(|b| b.code_str == "CA").map(|b| b.old_address).collect();
+        let data_off = crate::blend::file::types::BlendFile::struct_field_offset_exact("Object", "*data", &dna, ps).unwrap();
+        for ob in f.blocks.iter().filter(|b| b.code_str == "OB") {
+            let data = crate::blend::file::types::BlendFile::read_ptr(&ob.data, data_off, ps, f.header.little_endian);
+            if cams.contains(&data) {
+                println!("OB {} -> CA {data:#x} at {:#x}", f.extract_name_from_block(ob, "id.name").unwrap_or_default(), ob.old_address);
+            }
+        }
+        let r_off = crate::blend::file::types::BlendFile::struct_field_offset_exact("Scene", "r", &dna, ps).expect("Scene.r");
+        for sc in f.blocks.iter().filter(|b| b.code_str == "SC") {
+            let name = f.extract_name_from_block(sc, "id.name").unwrap_or_default();
+            let r = |n: &str| {
+                let o = r_off + crate::blend::file::types::BlendFile::struct_field_offset_exact("RenderData", n, &dna, ps)?;
+                (o + 4 <= sc.data.len()).then(|| f.read_i32(&sc.data[o..o + 4]))
+            };
+            println!("SC {name}: res {:?}x{:?}", r("xsch"), r("ysch"));
+            if let Some(o) = crate::blend::file::types::BlendFile::struct_field_offset_exact("Scene", "*camera", &dna, ps) {
+                let addr = crate::blend::file::types::BlendFile::read_ptr(&sc.data, o, ps, f.header.little_endian);
+                let ob = f.blocks.iter().find(|b| b.code_str == "OB" && b.old_address == addr);
+                let cam_name = ob.map(|b| f.extract_name_from_block(b, "id.name").unwrap_or_default());
+                println!("SC {name}: camera -> {addr:#x} {cam_name:?}");
+            }
         }
     }
 }

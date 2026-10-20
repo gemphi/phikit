@@ -34,16 +34,11 @@ pub struct BOutlineToggleSpec {
     pub icon_on: &'static str,
     pub tooltip: &'static str,
     pub state_key: &'static str,
-    /// Whether this column is shown without being asked.
-    ///
-    /// A deliberate divergence from Blender, which shows only the eye
-    /// (`show_restrict_column_hide`) and the camera
-    /// (`show_restrict_column_render`) by default and leaves the rest opt-in:
-    /// phiber shows the whole restriction cluster on every row, so each row
-    /// carries its full set of toggles at a glance. Any column can still be
-    /// hidden from the Filter popover (`ctx.outliner.col.<flag>` = false), and
-    /// the two View-Layer-only columns (holdout, indirect-only) still appear
-    /// only in View Layer mode.
+    /// Whether this column is shown without being asked: Blender's factory
+    /// `SpaceOutliner` shows the eye (`show_restrict_column_hide`) and the
+    /// camera (`show_restrict_column_render`) and leaves the rest opt-in from
+    /// the Filter popover (`ctx.outliner.col.<flag>`). Showing all six at
+    /// once left a default-width Outliner no room for the names.
     pub default_on: bool,
 }
 
@@ -81,7 +76,7 @@ pub static TOGGLES: &[BOutlineToggleSpec] = &[
         icon_on: "mouse_pointer_off",
         tooltip: "Disable Selection",
         state_key: "hide_select",
-        default_on: true,
+        default_on: false,
     },
     BOutlineToggleSpec {
         kind: BOutlineToggle::Hide,
@@ -97,7 +92,7 @@ pub static TOGGLES: &[BOutlineToggleSpec] = &[
         icon_on: "monitor_off",
         tooltip: "Disable in Viewports",
         state_key: "hide_viewport",
-        default_on: true,
+        default_on: false,
     },
     BOutlineToggleSpec {
         kind: BOutlineToggle::Render,
@@ -113,7 +108,7 @@ pub static TOGGLES: &[BOutlineToggleSpec] = &[
         icon_on: "circle_off",
         tooltip: "Holdout",
         state_key: "holdout",
-        default_on: true,
+        default_on: false,
     },
     BOutlineToggleSpec {
         kind: BOutlineToggle::IndirectOnly,
@@ -121,7 +116,7 @@ pub static TOGGLES: &[BOutlineToggleSpec] = &[
         icon_on: "lightbulb_off",
         tooltip: "Indirect Only",
         state_key: "indirect_only",
-        default_on: true,
+        default_on: false,
     },
 ];
 
@@ -137,11 +132,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_whole_restriction_cluster_shows_by_default() {
-        assert!(
-            TOGGLES.iter().all(|t| t.default_on),
-            "every restriction column is on by default now, so a row shows its full set"
-        );
+    fn the_eye_and_the_camera_show_by_default_as_blenders_do() {
+        let shown: Vec<&str> = TOGGLES.iter().filter(|t| t.default_on).map(|t| t.state_key).collect();
+        assert_eq!(shown, ["hide_get", "hide_render"], "Blender's factory Outliner: the eye and the camera");
         assert_eq!(TOGGLES.len(), 6, "select, hide, viewport, render, holdout, indirect-only");
         let view_layer_only = TOGGLES.iter().filter(|t| t.kind.view_layer_only()).count();
         assert_eq!(view_layer_only, 2, "holdout and indirect-only remain View-Layer-only");

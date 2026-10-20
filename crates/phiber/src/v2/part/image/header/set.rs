@@ -61,7 +61,7 @@ pub fn chosen<'a>(s: &'a BState, key: impl BKey, default: &'a str) -> &'a str {
 /// options and marks the chosen one, as `layout.prop(…, text="")` does.
 pub fn dropdown(s: &BState, host: BHostType, name: &'static str, icon: &'static str, key: impl BKey, options: &[&'static str], default: &'static str) -> BView {
     let chosen = chosen(s, &key, default).to_string();
-    let pick = BPick::new(MenuKey::Top(host.slug(), name).path(), BControl::new().with_icon(icon).with_label(chosen.as_str()));
+    let pick = BPick::new(MenuKey::Top(crate::v2::area::current::menu_scope(s, host), name).path(), BControl::new().with_icon(icon).with_label(chosen.as_str()));
     options.iter().fold(pick, |pick, option| pick.item(option, *option == chosen, BAction::Set(key.path(), option.to_string()))).view(s)
 }
 

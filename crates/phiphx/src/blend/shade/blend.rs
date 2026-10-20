@@ -152,6 +152,12 @@ pub(crate) fn rgb_to_hsv(c: [f32; 4]) -> [f32; 3] {
 
 /// `BKE_colorband_evaluate` for linear / ease / constant interpolation.
 pub(crate) fn ramp(f: &BlendFile, dna: &DnaType, band: &BlendBlock, at: f32) -> Option<[f32; 4]> {
+    let (stops, ipo) = ramp_stops(f, dna, band)?;
+    ramp_eval(&stops, ipo, at)
+}
+
+/// A Color Ramp's sorted stops and its `ipotype`, read from the `ColorBand`.
+pub(crate) fn ramp_stops(f: &BlendFile, dna: &DnaType, band: &BlendBlock) -> Option<(Vec<(f32, [f32; 4])>, u8)> {
     let tot = f.read_u16(band.data.get(f.off("ColorBand", "tot", dna)?..)?.get(..2)?) as usize;
     let ipo = *band.data.get(f.off("ColorBand", "ipotype", dna)?)?;
     let base = f.off("ColorBand", "data[32]", dna)?;
@@ -164,6 +170,11 @@ pub(crate) fn ramp(f: &BlendFile, dna: &DnaType, band: &BlendBlock, at: f32) -> 
         })
         .collect();
     stops.sort_by(|a, b| a.0.total_cmp(&b.0));
+    (!stops.is_empty()).then_some((stops, ipo))
+}
+
+/// The band at `at`, over stops from [`ramp_stops`].
+pub fn ramp_eval(stops: &[(f32, [f32; 4])], ipo: u8, at: f32) -> Option<[f32; 4]> {
     let (first, last) = (stops.first()?, stops.last()?);
     if at <= first.0 {
         return Some(first.1);

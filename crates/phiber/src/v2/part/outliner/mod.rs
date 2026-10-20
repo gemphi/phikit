@@ -91,11 +91,10 @@ impl BOutlinerItem {
     /// row's right edge and stops it shrinking, so the toggles stay in a
     /// clean column however long the object names get.
     ///
-    /// The whole cluster is shown by default (`BOutlineToggleSpec::default_on`,
-    /// a recorded divergence from Blender's eye-and-camera-only default); a
-    /// column is dropped only when the Filter popover turns it off
-    /// (`ctx.outliner.col.<flag>` = false), and the two View-Layer-only columns
-    /// appear only in View Layer mode.
+    /// The eye and the camera show by default, as Blender's do
+    /// (`BOutlineToggleSpec::default_on`); the Filter popover turns any column
+    /// on or off (`ctx.outliner.col.<flag>`), and the two View-Layer-only
+    /// columns appear only in View Layer mode.
     fn restrictions(s: &BState, object: &str, view_layer: bool) -> Vec<BView> {
         let mut out = Vec::new();
         for t in TOGGLES {
@@ -289,6 +288,10 @@ mod tests {
         };
 
         let mut state = BState::new();
+        // Every column turned on from the Filter popover.
+        for t in TOGGLES {
+            state.set(&OutlinerKey::Column(t.state_key).path(), V_TRUE);
+        }
         let clear = icons(&state);
         // Restrict the Cube every way the columns allow.
         for t in TOGGLES {

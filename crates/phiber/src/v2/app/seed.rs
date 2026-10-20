@@ -96,17 +96,15 @@ pub fn seed_render_props(state: &mut BState, model: &SceneModel) {
         };
         state.set(ButsKey::Value(spec.key), encoded);
     }
-    // The quality floor, applied once as the file is read
-    // (`scene::render_quality::BRenderQuality`): a `.blend` saved at a
-    // turntable's sample count opens at the floor instead, and the Render
-    // panel SHOWS that number — so what is on screen is what will render,
-    // and a count typed over it afterwards is still honoured.
-    let floor = crate::v2::scene::render_quality::BRenderQuality::SAMPLE_FLOOR;
-    let saved = cycles.get("samples").and_then(BIdValue::as_int).unwrap_or(0).max(0) as u32;
-    if saved < floor {
-        if let Some(spec) = spec_of("cycles.samples") {
-            state.set(ButsKey::Value(spec.key), BValue::Int(i64::from(floor)).encode());
-        }
+    // The quality default (`scene::render_quality::BRenderQuality`): a file
+    // that never set Max Samples opens at the default, and the Render panel
+    // SHOWS that number, so what is on screen is what will render. A count
+    // the file did save is believed, as Blender believes it.
+    if cycles.get("samples").is_none()
+        && let Some(spec) = spec_of("cycles.samples")
+    {
+        let default = crate::v2::scene::render_quality::BRenderQuality::SAMPLE_FLOOR;
+        state.set(ButsKey::Value(spec.key), BValue::Int(i64::from(default)).encode());
     }
 }
 
@@ -148,7 +146,15 @@ pub fn seed_output_props(state: &mut BState, model: &SceneModel) {
         ("ffmpeg.gop_size", BValue::Int(i64::from(movie.gop)).encode()),
         ("ffmpeg.video_bitrate", BValue::Int(i64::from(movie.bitrate)).encode()),
     ];
-    let pair: [(&str, String); 7] = [
+    // Format ▸ Frame Rate as Blender stores it, `frs_sec / frs_sec_base`,
+    // from the rate the file resolves to: 24 is 24 / 1, 23.98 is 24 / 1.001.
+    let fps = model.timeline.fps.max(1.0);
+    let frs_sec = fps.ceil();
+    let pair: [(&str, String); 10] = [
+        ("fps", BValue::Int(frs_sec as i64).encode()),
+        ("fps_base", BValue::Float(frs_sec / fps).encode()),
+        // Output ▸ Frame Range ▸ Step (Start and End are the timeline's).
+        ("frame_step", BValue::Int(i64::from(model.timeline.frame_step.max(1))).encode()),
         ("resolution_x", BValue::Int(i64::from(render.resolution_x)).encode()),
         ("resolution_y", BValue::Int(i64::from(render.resolution_y)).encode()),
         ("resolution_percentage", BValue::Int(i64::from(render.resolution_percent)).encode()),
@@ -270,5 +276,22 @@ mod tests {
         assert!(!state.has(&k_restrict("Camera.004", "hide_viewport"), V_TRUE), "another file's object is forgotten");
         assert!(state.has(&k_restrict("col", "hide_render"), V_TRUE), "the column toggle is UI and stays");
         assert!(is_restriction("ctx.outliner.col/Scene Collection/SHOES.exclude") && !is_restriction("ctx.outliner.search"));
+    }
+
+    /// Format ▸ Frame Rate shows the file's rate as Blender stores it; it
+    /// read 1 and 0 whatever the file said.
+    #[test]
+    fn frame_rate_shows_the_files_rate() {
+        let rate = |fps: f32| {
+            let mut state = BState::new();
+            let mut model = SceneModel::default();
+            model.timeline.fps = fps;
+            seed_output_props(&mut state, &model);
+            (state.get(ButsKey::Value("fps")).map(str::to_string), state.get(ButsKey::Value("fps_base")).and_then(|v| v.parse::<f32>().ok()))
+        };
+        assert_eq!(rate(24.0), (Some("24".to_string()), Some(1.0)));
+        let (frs, base) = rate(24.0 / 1.001);
+        assert_eq!(frs.as_deref(), Some("24"));
+        assert!(base.is_some_and(|b| (b - 1.001).abs() < 1e-4), "23.98 is 24 over 1.001: {base:?}");
     }
 }

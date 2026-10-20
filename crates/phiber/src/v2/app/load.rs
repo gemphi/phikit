@@ -33,6 +33,20 @@ enum ImportMsg {
 }
 
 impl BPhiberApp {
+    /// The command line's file (`phiber file.blend`): opened as File ▸ Open
+    /// opens it, with the welcome window closed, as Blender's
+    /// `WM_file_read` from `main` skips the splash. A path that is not a
+    /// `.blend` on disk is reported and the welcome window stays.
+    pub(crate) fn open_argument(&mut self, path: String, cx: &mut Context<Self>) {
+        if !crate::v2::scene::is_blend_path(&path) || !Path::new(&path).exists() {
+            crate::v2::state::log::push(format!("Cannot open '{path}': not a .blend file on disk"));
+            return;
+        }
+        self.state.set(crate::v2::state::ModalKey::Open, crate::v2::state::val::V_EMPTY);
+        self.state.set(&crate::v2::scene::selected_key(), path.clone());
+        self.start_import(path, cx);
+    }
+
     /// Begin importing `path` (caller has already checked `should_import`).
     pub(crate) fn start_import(&mut self, path: String, cx: &mut Context<Self>) {
         // Loading flag + first readout show on this render pass. From

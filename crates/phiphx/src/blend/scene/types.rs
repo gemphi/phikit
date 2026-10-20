@@ -111,6 +111,9 @@ pub struct BlendMaterial {
     /// The procedural textures the surface reads per pixel
     /// (`shade/procedural.rs`) — what the colour fold can only average.
     pub procedural: crate::blend::shade::procedural::BlendProcedural,
+    /// The Base Color chain compiled to a bake (`shade/bake.rs`), when it
+    /// holds images; run over the decoded images when textures attach.
+    pub bake: Option<crate::blend::shade::bake::BlendBake>,
 }
 
 pub use super::bsdf::BlendBsdf;

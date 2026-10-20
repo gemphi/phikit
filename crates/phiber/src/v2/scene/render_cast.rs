@@ -168,3 +168,45 @@ mod tests {
         assert_eq!(BRenderCast::count_geometry(&scene), 1);
     }
 }
+
+#[cfg(test)]
+mod digest {
+    use super::*;
+
+    /// Not a fixture test: point `CAST_DIGEST` at a `.blend` and this prints
+    /// what the render cast keeps and drops there, for checking a real
+    /// file's restrictions. Does nothing without the var.
+    #[test]
+    fn cast_digest_of_env_file() {
+        let Ok(path) = std::env::var("CAST_DIGEST") else { return };
+        let model = crate::phiphx::Phx::open(std::path::Path::new(&path)).expect("open");
+        let mut state = BState::new();
+        crate::v2::app::seed::seed_view_layer(&mut state, &model);
+        let model = std::sync::Arc::new(model);
+        crate::v2::scene::source::set_loaded_shared(Some(model.clone()));
+        let all = crate::v2::scene::current_scene(&state, Some(&model));
+        let cast = BRenderCast::of(&state, Some(&model));
+        println!("total {} cast {} note {:?}", all.len(), cast.objects.len(), cast.note);
+        let kept: std::collections::HashSet<String> = cast.objects.iter().map(|o| o.name().to_string()).collect();
+        let dropped: Vec<String> = all.iter().map(|o| o.name().to_string()).filter(|n| !kept.contains(n)).collect();
+        println!("dropped {}: {:?}", dropped.len(), &dropped[..dropped.len().min(40)]);
+        println!("render_disabled {}: {:?}", model.selection.render_disabled.len(), &model.selection.render_disabled[..model.selection.render_disabled.len().min(10)]);
+        // Floor / ground / rig-prop suspects: where they are and what keeps them.
+        fn walk(c: &crate::phiphx::scene::SceneCollection, path: &str, model: &SceneModel, kept: &std::collections::HashSet<String>) {
+            for &i in &c.object_indices {
+                if let Some(o) = model.objects.get(i) {
+                    let n = o.name.to_lowercase();
+                    if ["floor", "plane", "ground", "pole", "boom", "stage", "plat"].iter().any(|k| n.contains(k)) {
+                        let m = o.matrix_world;
+                        println!(
+                            "  {} in {:?}: z {:.3} kept {} tris {}",
+                            o.name, path, m[3][2], kept.contains(&o.name), o.mesh.indices.len() / 3
+                        );
+                    }
+                }
+            }
+            for k in &c.children { walk(k, &format!("{path}/{}", k.name), model, kept); }
+        }
+        for c in &model.collections { walk(c, &c.name, &model, &kept); }
+    }
+}

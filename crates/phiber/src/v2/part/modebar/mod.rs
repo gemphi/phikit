@@ -118,7 +118,7 @@ impl BViewItem for BModebar {
     fn build(&self, s: &BState) -> BView {
         // Host-scoped like every other menubar popover, so opening the mode
         // dropdown in one editor does not open it in the rest.
-        let key = MenuKey::Top(self.host.slug(), "mode").path();
+        let key = MenuKey::Top(crate::v2::area::current::menu_scope(s, self.host), "mode").path();
         let open = s.get(&key) == Some(V_TRUE);
         let toggle = BAction::Toggle(key.clone());
         let close = BAction::Set(key, V_EMPTY.to_string());

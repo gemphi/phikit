@@ -12,6 +12,8 @@ pub struct BlendSceneProps {
     pub frame_current: i32,
     pub frame_start: i32,
     pub frame_end: i32,
+    /// `Scene.r.frame_step`: Render Animation renders every n-th frame.
+    pub frame_step: i32,
     pub fps: f32,
     pub resolution_x: i32,
     pub resolution_y: i32,
@@ -20,6 +22,8 @@ pub struct BlendSceneProps {
     /// Colour management (`Scene.view_settings`): view transform name
     /// ("Standard", "Filmic", "AgX" …), exposure (stops) and gamma.
     pub view_transform: String,
+    /// `Scene.view_settings.look` ("None", "Very High Contrast", …).
+    pub look: String,
     pub exposure: f32,
     pub gamma: f32,
     /// Film ▸ Transparent (`Scene.r.alphamode == R_ALPHAPREMUL`): the
@@ -114,12 +118,14 @@ impl Default for BlendSceneProps {
             frame_current: 1,
             frame_start: 1,
             frame_end: 250,
+            frame_step: 1,
             fps: 24.0,
             resolution_x: 1920,
             resolution_y: 1080,
             resolution_percent: 100,
             engine: "BLENDER_EEVEE".to_string(),
             view_transform: "Standard".to_string(),
+            look: "None".to_string(),
             exposure: 0.0,
             gamma: 1.0,
             film_transparent: false,
@@ -214,6 +220,15 @@ impl BlendFile {
             })
             .filter(|v| !v.is_empty())
             .unwrap_or(dflt.view_transform.clone());
+        let look = vs("look[64]")
+            .map(|o| {
+                let end = (o + 64).min(d.len());
+                let b = &d[o.min(end)..end];
+                let n = b.iter().position(|&c| c == 0).unwrap_or(b.len());
+                String::from_utf8_lossy(&b[..n]).to_string()
+            })
+            .filter(|v| !v.is_empty())
+            .unwrap_or(dflt.look.clone());
         // `Scene.display` is an embedded `SceneDisplay`.
         let disp = |field: &str| {
             Some(Self::struct_field_offset_exact("Scene", "display", dna, ps)? + Self::struct_field_offset_exact("SceneDisplay", field, dna, ps)?)
@@ -247,12 +262,14 @@ impl BlendFile {
             frame_current: self.sp_i32(d, self.rd_off("cfra", dna), 1),
             frame_start: self.sp_i32(d, self.rd_off("sfra", dna), 1),
             frame_end: self.sp_i32(d, self.rd_off("efra", dna), 250),
+            frame_step: self.sp_i32(d, self.rd_off("frame_step", dna), 1).max(1),
             fps: frs_sec / frs_sec_base,
             resolution_x: self.sp_i32(d, self.rd_off("xsch", dna), 1920),
             resolution_y: self.sp_i32(d, self.rd_off("ysch", dna), 1080),
             resolution_percent: self.sp_i16(d, self.rd_off("size", dna), 100),
             engine,
             view_transform,
+            look,
             exposure: self.sp_f32(d, vs("exposure"), 0.0),
             gamma: self.sp_f32(d, vs("gamma"), 1.0),
             // `R_ADDSKY` 0, `R_ALPHAPREMUL` 1.

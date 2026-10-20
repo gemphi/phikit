@@ -58,7 +58,9 @@ pub fn element(
             // The size the next frame places its cards against — the view has
             // to be shaped like the canvas, and this is where the canvas is
             // finally known (`view/store.rs`).
-            view_store::measured(host, (w, h));
+            if view_store::measured(host, (w, h)) {
+                window.request_animation_frame();
+            }
             let (cards, mut links) = plan(
                 &painting.graph,
                 &painting.wired,

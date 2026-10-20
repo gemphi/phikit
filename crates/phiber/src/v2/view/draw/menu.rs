@@ -27,7 +27,7 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     // line down the whole menu. A row without an icon used to start its label
     // where the icon would have been, which put the labels of one menu on two
     // different left edges — Blender reserves the slot the same way.
-    let icon = BMenuPart::IconSlot.flex(ctx).div(ctx);
+    let icon = BMenuPart::IconSlot { glyph: !ic.is_empty() }.flex(ctx).div(ctx);
     row = row.child(if ic.is_empty() { icon } else { icon.child(glyph(ic, ctx)) });
     // The label hugs the slot and reads left-aligned; `flex_1` lets the
     // shortcut sit at the far end.
@@ -115,7 +115,7 @@ enum BMenuPart {
     /// line down the whole menu. A row without an icon used to start its
     /// label where the icon would have been, which put one menu's labels on
     /// two different left edges — Blender reserves the slot the same way.
-    IconSlot,
+    IconSlot { glyph: bool },
     /// The label hugs the slot and reads left-aligned; taking the slack is
     /// what lets the shortcut sit at the far end.
     Label,
@@ -165,17 +165,15 @@ impl BFlexed for BMenuPart {
                 .type_size(BType::Body),
             // The glyph sits on a faint tile of its own, as a button's does
             // — the label beside it does not, so the row reads as an icon
-            // and its name rather than as one long block.
-            Self::IconSlot => {
+            // and its name rather than as one long block. An empty slot has
+            // no tile: on a lit row it showed as a blank square.
+            Self::IconSlot { glyph } => {
                 let slot = BLen::Measured(ctx.style.dimensions.icon_size_sm);
-                BFlex::row()
-                    .width(slot)
-                    .height(slot)
-                    .keeps_size()
-                    .align(BAlign::Center)
-                    .justify(BJustify::Center)
-                    .fill(BFill::Tone(BSurfaceTone::Card))
-                    .radius(BRadius::Role(BStyleRole::Button))
+                let cell = BFlex::row().width(slot).height(slot).keeps_size().align(BAlign::Center).justify(BJustify::Center);
+                match glyph {
+                    true => cell.fill(BFill::Tone(BSurfaceTone::Card)).radius(BRadius::Role(BStyleRole::Button)),
+                    false => cell,
+                }
             }
             Self::Label => BFlex::row().fills().min_width(BLen::Zero),
             Self::Shortcut => BFlex::row().dim_ink().type_size(BType::Caption),

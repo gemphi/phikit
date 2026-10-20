@@ -59,7 +59,7 @@ mod tests {
     fn camera(on: bool) -> SceneCamera {
         let eye = [[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, -1.0, 0.0, 0.0], [0.0, -10.0, 0.0, 1.0]];
         let dof = crate::phiphx::blend::BlendDof { on, fstop: 2.0, focus_distance: 5.0, ..Default::default() };
-        SceneCamera { name: "Camera".into(), location: [0.0, -10.0, 0.0], matrix_world: eye, kind: "PERSP".into(), focal_length_mm: 50.0, sensor_width: 36.0, ortho_scale: 6.0, clip_start: 0.1, clip_end: 100.0, display_size: 1.0, dof }
+        SceneCamera { name: "Camera".into(), location: [0.0, -10.0, 0.0], matrix_world: eye, kind: "PERSP".into(), focal_length_mm: 50.0, sensor_width: 36.0, sensor_height: 24.0, sensor_fit: "AUTO".into(), shift: [0.0, 0.0],  ortho_scale: 6.0, clip_start: 0.1, clip_end: 100.0, display_size: 1.0, dof }
     }
 
     #[test]
