@@ -1,3 +1,0 @@
-# phiray is a submodule of gemphi/phikit and builds inside that workspace.
-/target/
-*.blend1

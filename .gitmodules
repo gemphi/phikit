@@ -1,0 +1,6 @@
+[submodule "crates/phiber"]
+	path = crates/phiber
+	url = https://github.com/gemphi/phiber.git
+[submodule "crates/phiray"]
+	path = crates/phiray
+	url = https://github.com/gemphi/phiray.git
