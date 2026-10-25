@@ -139,7 +139,8 @@ fn the_shared_builders_say_both() {
         "`BPick::item` is THE picker row; it had picked the glyph alone, so every picker built on it was quieter than the same dropdown built through `BCtrlKind::Select`"
     );
     let ctrl = include_str!("../src/v2/view/draw/ctrl/mod.rs");
-    assert!(ctrl.contains(".with_active(on)"), "`flag` — the checkbox — lights");
+    // The checkbox is a glyph, not a tile: it lights by taking the accent.
+    assert!(ctrl.contains("if on { (on_icon, ctx.style.colors.accent) }"), "`flag` — the checkbox — lights");
     let tree = include_str!("../src/v2/part/menubar/tree/mod.rs");
     assert!(tree.contains(".with_active(on)"), "a checkable menu row lights");
 }

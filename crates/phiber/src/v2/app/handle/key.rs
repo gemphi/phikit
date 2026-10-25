@@ -92,6 +92,38 @@ impl BPhiberApp {
             "home" => self.consume(|a| a.caret_home()),
             "end" => self.consume(|a| a.caret_end()),
             "a" if ks.control => self.consume(|a| a.caret_select_all()),
+            // The clipboard, Blender's `ui_textedit_copypaste`: Ctrl V
+            // pastes over the selection (or at the caret), Ctrl C copies the
+            // selection, Ctrl X cuts it. None of these existed — a key the
+            // caret ladder did not name fell through to the platform text
+            // handler as a printable, and "v" with Control held types
+            // nothing, so Ctrl V did nothing in any field.
+            "v" if ks.control => {
+                let pasted = cx.read_from_clipboard().and_then(|item| item.text());
+                match pasted {
+                    Some(text) if !text.is_empty() => {
+                        // One line: a field holds one line, as Blender's text
+                        // button does (`ui_textedit_insert_buf` cuts at '\n').
+                        let line: String = text.lines().next().unwrap_or("").to_string();
+                        self.caret_insert(&line);
+                        true
+                    }
+                    _ => true,
+                }
+            }
+            "c" if ks.control => {
+                if let Some(text) = self.caret_selected_text() {
+                    cx.write_to_clipboard(gpui::ClipboardItem::new_string(text));
+                }
+                true
+            }
+            "x" if ks.control => {
+                if let Some(text) = self.caret_selected_text() {
+                    cx.write_to_clipboard(gpui::ClipboardItem::new_string(text));
+                    self.caret_insert("");
+                }
+                true
+            }
             "backspace" => {
                 self.caret_backspace();
                 true
@@ -116,7 +148,19 @@ impl BPhiberApp {
     pub(super) fn commit_edit(&mut self, target: &str, cx: &mut Context<Self>) {
         if let Some(path) = crate::v2::state::edit::field_path(target) {
             let value = self.state.get_encoded(target).unwrap_or("").to_string();
-            self.handle_action(&BAction::Set(path, value), cx);
+            self.handle_action(&BAction::Set(path.clone(), value.clone()), cx);
+            // Return in Menu Search runs the first item found, as Blender's
+            // search menu does with its highlighted row.
+            use crate::v2::modal::command::{find, palette};
+            use crate::v2::state::{AppKey, BKey as _, ModalKey};
+            let open = self.state.get(ModalKey::Open) == Some(crate::v2::state::val::V_MODAL_COMMAND);
+            if path == AppKey::CommandQuery.path() && open && !value.trim().is_empty() {
+                let kind = find::BFindKind::of(&self.state);
+                if let Some(hit) = find::hits(&value, kind, palette::host(&self.state)).into_iter().next() {
+                    self.state.set(ModalKey::Open, crate::v2::state::val::V_EMPTY);
+                    self.handle_action(&hit.action, cx);
+                }
+            }
         }
     }
 }

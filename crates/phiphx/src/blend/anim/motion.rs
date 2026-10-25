@@ -51,6 +51,8 @@ pub struct BlendMotion {
     /// properties, with those properties as saved (`anim::driver`) — run
     /// after the actions as Blender's depsgraph runs them.
     pub drivers: super::driver::BlendDriverSet,
+    /// Motion played from code, read before the curves (`play.rs`).
+    pub play: Option<super::play::BPlayRef>,
 }
 
 /// A curve's path and its evaluation time over the frames.
@@ -100,6 +102,7 @@ impl BlendMotion {
             track: [1, 2],
             path: None,
             drivers: Default::default(),
+            play: None,
         }
     }
 
@@ -108,7 +111,7 @@ impl BlendMotion {
     /// key on it at all, which is why a driven object has to be re-solved
     /// per frame rather than placed once.
     pub fn animated(&self) -> bool {
-        if self.path.as_ref().is_some_and(|p| p.animated()) || !self.drivers.is_empty() {
+        if self.play.is_some() || self.path.as_ref().is_some_and(|p| p.animated()) || !self.drivers.is_empty() {
             return true;
         }
         let clips = self.nla.iter().filter(|t| t.flag & super::nla::TRACK_MUTED == 0).flat_map(|t| &t.clips);
@@ -124,6 +127,9 @@ impl BlendMotion {
     /// The rest transform with every curve written over it at `frame`: the
     /// values the object's properties hold there — what `I` keys.
     pub fn raw_at(&self, frame: f32) -> ObjectTransformRaw {
+        if let Some(raw) = self.play.as_ref().and_then(|p| p.0.object(frame)) {
+            return raw;
+        }
         let mut raw = self.transform;
         super::nla_eval::BMotionTrack::play(&self.nla, self.solo, &mut raw, frame);
         // Only the object's own channels: a bone's curves in the same
@@ -134,6 +140,9 @@ impl BlendMotion {
 
     /// The first and last keyed frame, when keyed.
     pub fn range(&self) -> Option<(f32, f32)> {
+        if let Some(play) = &self.play {
+            return Some(play.0.range());
+        }
         let strips = self.nla.iter().flat_map(|t| &t.clips).flat_map(|c| [c.strip.start, c.strip.end]);
         let frames = self.curves.iter().flat_map(|curve| curve.keys.iter().map(|key| key.co[0])).chain(strips);
         frames.clone().map(|f| (f, f)).reduce(|(lo, hi), (f, _)| (lo.min(f), hi.max(f)))
@@ -260,7 +269,10 @@ impl BlendFile {
                     .and_then(|block| self.binding(block, dna))
                     .and_then(|binding| actions.get(&binding.action).map(|action| action.curves(binding.slot).to_vec()))
                     .unwrap_or_default();
-                let transform = block.map(|block| self.read_object_transform_raw(block, dna)).unwrap_or_default();
+                // An object with no block of its own — a collection
+                // instance (`object/instance.rs`) — stands at its own rest
+                // transform.
+                let transform = block.map_or_else(|| ObjectTransformRaw { loc: object.location, quat: object.quaternion, size: object.scale, rotmode: 0, ..Default::default() }, |block| self.read_object_transform_raw(block, dna));
                 let parent = index_of.get(&object.parent_address).copied().filter(|&p| objects[p].name != object.name);
                 let (nla, solo) = block.map(|block| self.motion_tracks(block, actions, dna)).unwrap_or_default();
                 let constraints = block.map(|block| self.object_constraints(block, dna)).unwrap_or_default();
@@ -268,7 +280,7 @@ impl BlendFile {
                 let track = block.map_or([1, 2], |block| ["trackflag", "upflag"].map(|f| self.int_field(block, "Object", f, dna) as i16));
                 let path = block.filter(|_| object.object_type == "CURVE").and_then(|block| self.motion_path(block, actions, dna)).map(Arc::new);
                 let drivers = block.map(|block| self.object_driver_set(block, dna)).unwrap_or_default();
-                BlendMotion { name: object.name.clone(), transform, curves, parent, nla, solo, address: object.block_address, constraints, parent_bone, track, path, drivers }
+                BlendMotion { name: object.name.clone(), transform, curves, parent, nla, solo, address: object.block_address, constraints, parent_bone, track, path, drivers, play: None }
             })
             .collect();
         BlendMotionList { list }

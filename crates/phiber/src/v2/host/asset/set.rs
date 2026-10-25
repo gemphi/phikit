@@ -5,27 +5,10 @@
 //! catalog tree (`tools`), the asset grid (`window`) and the asset details
 //! sidebar. No execute region: assets are dragged, not opened.
 
-use crate::v2::host::header;
 use crate::v2::pane::{BPaneSpec, BPaneType};
 use crate::v2::part::BPartType;
 use crate::v2::region::{BRegionSpec, BRegionType};
 
-// The same strip as the file browser's (`host/file`): the folder moves and
-// the refresh over the source list, the fields over the grid.
-static PATH_PANES: &[BPaneSpec] = &[
-    BPaneSpec {
-        kind: BPaneType::Left,
-        parts: &[BPartType::FileNav, BPartType::FileRefresh],
-    },
-    BPaneSpec {
-        kind: BPaneType::Center,
-        parts: &[BPartType::PathBar],
-    },
-    BPaneSpec {
-        kind: BPaneType::Right,
-        parts: &[BPartType::TypeFilter],
-    },
-];
 static TOOLS_PANES: &[BPaneSpec] = &[BPaneSpec {
     kind: BPaneType::Center,
     parts: &[BPartType::SourceList],
@@ -41,11 +24,11 @@ static CENTER_PANES: &[BPaneSpec] = &[BPaneSpec {
 pub static REGIONS: &[BRegionSpec] = &[
     BRegionSpec {
         kind: BRegionType::Header,
-        panes: header::EDITOR,
+        panes: crate::v2::host::file::set::HEADER_PANES,
     },
     BRegionSpec {
         kind: BRegionType::ToolHeader,
-        panes: PATH_PANES,
+        panes: crate::v2::host::file::set::PATH_PANES,
     },
     BRegionSpec {
         kind: BRegionType::Tools,

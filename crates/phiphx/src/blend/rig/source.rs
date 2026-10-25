@@ -3,8 +3,10 @@
 //! (`modifier/armature.rs`), from a solved pose rather than the saved one.
 
 use super::math::BMat4;
-use super::{BONE_NO_DEFORM, BRig, BRigPose, BSceneView};
+use super::{BONE_NO_DEFORM, BRig, BRigAnim, BRigPose, BSceneView};
 use crate::blend::anim::fcurve::BFCurve;
+use crate::blend::anim::nla::TRACK_MUTED;
+use crate::blend::anim::nla_eval::BMotionTrack;
 use crate::blend::file::types::*;
 use crate::blend::modifier::armature::BDeformBone;
 use crate::blend::modifier::bbone;
@@ -12,7 +14,8 @@ use glam::Mat4;
 use std::collections::HashMap;
 
 /// An armature object whose pose moves — or that an object follows a bone
-/// of: its rig, its action's curves, and its bones' B-Bone shapes.
+/// of: its rig, its NLA and its action's curves, and its bones' B-Bone
+/// shapes.
 #[derive(Clone, Debug)]
 pub struct BlendRigSource {
     /// Index into the scene's objects.
@@ -20,6 +23,10 @@ pub struct BlendRigSource {
     /// The armature object's block address (what an Armature modifier names).
     pub address: u64,
     pub rig: BRig,
+    /// Its NLA tracks, bottom first, and whether one is soloed — played
+    /// under `curves` (`nla_eval.rs`).
+    pub nla: Vec<BMotionTrack>,
+    pub solo: bool,
     pub curves: Vec<BFCurve>,
     pub(crate) shapes: bbone::Pose,
     /// Whether the pose moves with the frame: keys, drivers, or constraints
@@ -28,11 +35,14 @@ pub struct BlendRigSource {
     pub moves: bool,
     /// How the viewport draws it (`display.rs`).
     pub look: Option<std::sync::Arc<super::BRigLook>>,
+    /// Motion played from code, read before the NLA and the action
+    /// (`anim/play.rs`).
+    pub play: Option<crate::blend::anim::play::BPlayRef>,
 }
 
 impl BlendFile {
-    /// Every armature object as a rig to pose: it moves with an action,
-    /// drivers or constraints on other objects; otherwise it keeps its
+    /// Every armature object as a rig to pose: it moves with an action or
+    /// NLA strips, drivers, or constraints on other objects; otherwise it keeps its
     /// saved pose, which the viewport draws and objects may follow.
     pub(crate) fn rig_sources(
         &self,
@@ -48,10 +58,12 @@ impl BlendFile {
                 let ob = self.block_at_code(o.block_address, "OB")?;
                 let rig = self.rig(ob)?;
                 let curves = self.binding(ob, dna).and_then(|b| actions.get(&b.action).map(|a| a.curves(b.slot).to_vec())).unwrap_or_default();
+                let (nla, solo) = self.motion_tracks(ob, actions, dna);
                 let reads = rig.bones.iter().flat_map(|b| &b.constraints).any(|c| c.reads().next().is_some());
-                let moves = !curves.is_empty() || !rig.drivers.is_empty() || reads;
+                let strips = nla.iter().filter(|t| t.flag & TRACK_MUTED == 0).flat_map(|t| &t.clips).any(|c| !c.curves.is_empty());
+                let moves = !curves.is_empty() || strips || !rig.drivers.is_empty() || reads;
                 let look = self.rig_look(ob, &rig, dna).map(std::sync::Arc::new);
-                Some(BlendRigSource { object: i, address: o.block_address, rig, curves, shapes: self.pose_shapes(ob, dna), moves, look })
+                Some(BlendRigSource { object: i, address: o.block_address, rig, nla, solo, curves, shapes: self.pose_shapes(ob, dna), moves, look, play: None })
             })
             .collect()
     }
@@ -61,7 +73,15 @@ impl BlendRigSource {
     /// The pose at `frame`, the rig object standing at `world`, `scene` the
     /// objects and rigs around it.
     pub fn pose_at(&self, frame: f32, world: Mat4, scene: &dyn BSceneView) -> BRigPose {
-        self.rig.pose_at(&self.curves, frame, world, scene)
+        match self.play.as_ref().and_then(|p| p.0.rig(&self.rig, frame)) {
+            Some(state) => self.rig.solve(&state, world, scene),
+            None => self.rig.pose_at(self.anim(), frame, world, scene),
+        }
+    }
+
+    /// What it plays: its NLA, then its action.
+    pub fn anim(&self) -> BRigAnim<'_> {
+        BRigAnim { nla: &self.nla, solo: self.solo, curves: &self.curves }
     }
 
     /// Each deforming bone's deform in `pose`, by name — what the Armature

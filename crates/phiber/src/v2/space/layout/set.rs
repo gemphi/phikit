@@ -9,7 +9,7 @@ use crate::v2::host::BHostType;
 use crate::v2::zone::BZoneType;
 
 pub const LABEL: &str = "Layout";
-pub const ICON: &str = "layout-grid";
+pub const ICON: &str = "entity";
 
 pub static AREAS: &[BAreaSpec] = &[
     BAreaSpec {
@@ -49,6 +49,8 @@ pub static AREAS: &[BAreaSpec] = &[
         default_host: BHostType::Time,
         hosts: &[
             BHostType::Time,
+            BHostType::Play,
+            BHostType::Project,
             BHostType::Action,
             BHostType::Ipo,
             BHostType::Drivers,

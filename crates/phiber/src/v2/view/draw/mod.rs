@@ -11,6 +11,7 @@ pub mod host;
 pub mod modal;
 pub mod pair;
 pub mod pane;
+mod floor;
 pub mod part;
 pub mod popover;
 pub mod prim;
@@ -28,6 +29,7 @@ pub mod button;
 pub mod canvas;
 pub mod caption;
 pub mod card;
+mod slot;
 pub mod chrome;
 pub mod column;
 pub mod ctrl;
@@ -43,6 +45,7 @@ pub mod resize;
 pub mod row;
 pub mod scroller;
 pub mod search;
+pub mod crumb;
 pub mod text_input;
 pub mod sidebar;
 pub mod sort;
@@ -110,7 +113,8 @@ pub(crate) fn walk(v: &BView, ctx: &BRenderCtx) -> AnyElement {
         BView::Prose { role, text } => prose::view(*role, text, ctx),
         BView::VLabel { text } => vlabel::view(text, ctx),
         BView::Field { text } => field::view(text, ctx),
-        BView::SearchField { placeholder, value, editing, on_change } => search::view(placeholder, value, *editing, on_change, ctx),
+        BView::SearchField { placeholder, value, editing, on_change, searches } => search::view(placeholder, value, (*editing, *searches), on_change, ctx),
+        BView::Crumbs { trail, edit } => crumb::view(trail, edit, ctx),
         BView::Icon { name } => atom::icon(name, ctx),
         BView::Button(ctl) => atom::button(ctl, ctx),
         BView::Ctrl(ctrl) => ctrl::view(ctrl, ctx),

@@ -1,6 +1,11 @@
 use super::*;
 use gpui::{Size, px};
 
+/// A pointer at (`x`, `y`) px.
+fn at(x: f32, y: f32) -> Point<Pixels> {
+    Point { x: px(x), y: px(y) }
+}
+
 fn bounds(x: f32, y: f32, w: f32, h: f32) -> Bounds<Pixels> {
     Bounds { origin: Point { x: px(x), y: px(y) }, size: Size { width: px(w), height: px(h) } }
 }
@@ -41,13 +46,13 @@ fn a_scene_colour_is_written_back_as_rgba_and_a_theme_colour_as_hsl() {
     let b = bounds(10.0, 20.0, 100.0, 100.0);
     // The right edge, full saturation: hue 0.75 at the value the colour had.
     let scene = BWheel::of_rgba(BPath::owned(vec!["light"]), [0.5, 0.5, 0.5, 1.0]);
-    let raw = written(scene.adjust_at(b, Point { x: px(110.0), y: px(70.0) }));
+    let raw = written(scene.adjust_at(b, at(110.0, 70.0)));
     let Some(crate::v2::state::BValue::Color([r, g, bl, a])) = crate::v2::state::BValue::parse(crate::v2::state::val::BValueKind::Color, &raw) else {
         panic!("{raw:?} is not an RGBA the control reads")
     };
     assert!((r - 0.25).abs() < 1e-4 && g.abs() < 1e-4 && (bl - 0.5).abs() < 1e-4 && a == 1.0, "{raw}");
     let theme = BWheel::of_hsl(BPath::owned(vec!["ui_style", "colors", "bg_app"]), (210.0, 40.0, 60.0, 1.0));
-    let raw = written(theme.adjust_at(b, Point { x: px(60.0), y: px(70.0) }));
+    let raw = written(theme.adjust_at(b, at(60.0, 70.0)));
     assert!(crate::v2::theme::parse_hsla(&raw).is_ok(), "{raw:?} is a colour the theme field accepts");
 }
 
@@ -55,9 +60,9 @@ fn a_scene_colour_is_written_back_as_rgba_and_a_theme_colour_as_hsl() {
 fn the_value_bar_is_black_at_the_bottom_and_keeps_the_hue() {
     let b = bounds(0.0, 0.0, 16.0, 100.0);
     let w = BWheel::of_rgba(BPath::owned(vec!["c"]), [1.0, 0.0, 0.0, 0.5]);
-    let bottom = written(w.value_at(b, Point { x: px(8.0), y: px(100.0) }));
+    let bottom = written(w.value_at(b, at(8.0, 100.0)));
     assert_eq!(bottom, "0 0 0 0.5");
-    let half = written(w.value_at(b, Point { x: px(8.0), y: px(50.0) }));
+    let half = written(w.value_at(b, at(8.0, 50.0)));
     assert_eq!(half, "0.5 0 0 0.5", "red at half value, the alpha untouched");
 }
 
@@ -87,7 +92,7 @@ fn a_node_socket_colour_is_written_into_the_editors_value_overlay() {
     edits.set("Mix", "Factor", BSocketDefault::Float(0.25));
     let space = BPickSpace::Socket { node: "Principled BSDF".to_string(), socket: "Base Color".to_string(), edits };
     let w = BWheel::of_socket(BPath::owned(vec!["shader", "node", "values"]), [0.8, 0.8, 0.8, 1.0], space);
-    let raw = written(w.value_at(bounds(0.0, 0.0, 16.0, 100.0), Point { x: px(8.0), y: px(100.0) }));
+    let raw = written(w.value_at(bounds(0.0, 0.0, 16.0, 100.0), at(8.0, 100.0)));
     let back = decode(&raw);
     assert_eq!(back.get("Mix", "Factor"), Some(&BSocketDefault::Float(0.25)), "the other edit survives");
     assert_eq!(back.get("Principled BSDF", "Base Color"), Some(&BSocketDefault::Color([0.0, 0.0, 0.0, 1.0])), "value 0 is black");

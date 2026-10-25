@@ -5,7 +5,7 @@
 
     /// Root of Blender's upstream test files (`tests/files`) inside REFS.
     fn tests_files() -> PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../REFS/blender/blender/tests/files")
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../ext/REFS/blender/blender/tests/files")
     }
 
     fn load(rel: &str) -> BlendScene {

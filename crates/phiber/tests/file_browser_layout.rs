@@ -48,7 +48,8 @@ const RULE: f32 = phiber::v2::theme::style::metric::DEFAULT_STROKES.border;
 /// the rule under it and the menu gap above it. Every control sits on it.
 fn line(strip: gpui::Bounds<px_t>) -> f32 {
     let band = f32::from(strip.size.height) - RULE;
-    f32::from(strip.origin.y) + METRICS.menu_top_gap + (band - METRICS.menu_top_gap) / 2.0
+    // The band's own centre: every control clears its top and bottom alike.
+    f32::from(strip.origin.y) + band / 2.0
 }
 
 fn mid(b: gpui::Bounds<px_t>) -> f32 {
@@ -76,56 +77,74 @@ async fn the_strips_are_one_height_and_the_content_sits_a_gutter_below(cx: &mut 
 
     let files = bounds(cx, "panel-body-surface");
     let sources = bounds(cx, "panel-sidebar-column");
-    assert_eq!(top(files) - bottom(path), METRICS.pad_md, "the file list sits a gutter under the strips");
+    // A browser's columns stand a seam from everything round them, the gap
+    // between the columns themselves (`region::pad`).
+    let seam = phiber::v2::theme::ui_style_defaults(phiber::v2::theme::BPaletteName::DEFAULT).resize.gap;
+    assert_eq!(top(files) - bottom(path), seam, "the file list sits a seam under the strips");
     assert_eq!(top(sources), top(files), "the source list and the file list start on one line");
     assert_eq!(bottom(sources), bottom(files), "and end on one line");
-    assert_eq!(top(execute) - bottom(files), METRICS.pad_md, "the execute bar sits a gutter below them");
+    assert_eq!(top(execute) - bottom(files), seam, "the execute bar sits a seam below them");
 }
 
 #[gpui::test]
 async fn the_fields_and_buttons_sit_on_the_strips_centre_line(cx: &mut TestAppContext) {
     let cx = dialog(cx, false).await;
+    let header = bounds(cx, "region-Header-File");
     let path = bounds(cx, "region-ToolHeader-File");
-    let directory = bounds(cx, "btn-label-set-ctx.edit-ctx.file.path-text");
+    // The header is the columns under it read across, as Explorer's address
+    // bar: the directory as breadcrumbs over the file list, the search over
+    // the details column.
+    let directory = bounds(cx, "crumbs");
     let search = bounds(cx, "btn-label-set-ctx.edit-ctx.file.search-text");
     let up = bounds(cx, "btn-icon-set-ctx.file.nav-file.parent-arrow_up");
-    for (name, control) in [("directory", directory), ("search", search), ("up", up)] {
-        assert!((mid(control) - line(path)).abs() < 0.51, "the {name} control is centred on the strip's line");
+    for (name, control) in [("directory", directory), ("search", search)] {
+        assert!((mid(control) - line(header)).abs() < 0.51, "the {name} control is centred on the header's line");
     }
-    // The display-mode radio sits in the header's right pane; the
-    // hidden-files eye, the filter toggle and its popover in the path
-    // strip's right pane — each centred on its strip, right of the fields.
-    let header = bounds(cx, "region-Header-File");
+    assert!((mid(up) - line(path)).abs() < 0.51, "the folder moves are centred on the strip's line");
+    // The strip's right pane is the details column: the display modes, the
+    // filter toggle and its popover and the region gear spread across it,
+    // from where the search over them starts.
     let radio = bounds(cx, "btn-icon-set-ctx.file.display-Vertical List-list");
-    assert!((mid(radio) - line(header)).abs() < 0.51, "the display-mode radio sits on the header's line");
-    // A header toggle is a button like the switcher beside it: one height.
-    let switcher = bounds(cx, "btn-label-toggle-ctx.switcher.file_browser.Center.file-text");
-    assert_eq!(radio.size.height, switcher.size.height, "the display-mode toggles are as tall as the editor switcher");
-    // The strip reads as the columns under it: the refresh ends where the
-    // source list does, and the directory field starts where the file list does.
+    let details = bounds(cx, "panel-info-column");
+    assert!((mid(radio) - line(path)).abs() < 0.51, "the display-mode radio sits on the path strip's line");
+    assert!((f32::from(radio.origin.x) - f32::from(search.origin.x)).abs() < 0.51, "and starts where the search does");
+    assert!((f32::from(search.origin.x) - f32::from(details.origin.x)).abs() < 0.51, "the search starts where the details column's cards do");
+    // A header toggle is a tile, as every button on a strip is: the button
+    // less its inset, so its fill clears the strip's edges. (The editor
+    // switcher beside it is a menu cap, which meets the strip's bottom edge
+    // for its dropdown to open out of, as a tab does.)
+    let tile = phiber::v2::theme::style::metric::DEFAULT_DIMENSIONS.tile_size();
+    assert_eq!(f32::from(radio.size.height), tile, "the display-mode toggles are tiles");
+    // The strip reads as the columns under it: the folder tools (refresh,
+    // then New Folder, as Blender's) end where the source list does, and the
+    // directory field starts where the file list does.
     let tools = bounds(cx, "region-Tools-File");
     let list = bounds(cx, "panel-body-surface");
     let refresh = bounds(cx, "btn-icon-set-ctx.file.nav-file.refresh-refresh");
+    let new_folder = bounds(cx, "btn-icon-set-ctx.file.nav-file.directory_new-folder_plus");
+    assert!(new_folder.origin.x > refresh.origin.x, "New Folder follows the refresh");
     let pane = bounds(cx, "pane-Left-File");
     let source = bounds(cx, "panel-sidebar-column");
     assert_eq!(pane.origin.x, tools.origin.x, "the strip's left pane is the tools region");
     assert_eq!(pane.size.width, tools.size.width);
-    assert!((f32::from(pane.origin.x) + METRICS.pad_md - f32::from(source.origin.x)).abs() < 0.51, "the folder moves start where the source list does");
-    assert!((f32::from(refresh.origin.x) + f32::from(refresh.size.width) - (f32::from(source.origin.x) + f32::from(source.size.width))).abs() < 0.51, "the refresh ends where the source list does");
+    let seam = phiber::v2::theme::ui_style_defaults(phiber::v2::theme::BPaletteName::DEFAULT).resize.gap;
+    assert!((f32::from(pane.origin.x) + seam - f32::from(source.origin.x)).abs() < 0.51, "the folder moves start where the source list does");
+    assert!((f32::from(new_folder.origin.x) + f32::from(new_folder.size.width) - (f32::from(source.origin.x) + f32::from(source.size.width))).abs() < 0.51, "the folder tools end where the source list does");
     assert!((f32::from(directory.origin.x) - f32::from(list.origin.x)).abs() < 0.51, "the directory field starts where the file list does");
     assert!(f32::from(tools.origin.x) + f32::from(tools.size.width) <= f32::from(list.origin.x) + 0.51);
-    let hidden = bounds(cx, "btn-icon-set-ctx.file.show_hidden-true-eye_off");
-    assert!((mid(hidden) - line(path)).abs() < 0.51, "the hidden-files eye is centred on the path strip's line");
-    assert!(f32::from(hidden.origin.x) > f32::from(search.origin.x) + f32::from(search.size.width), "and right of the search");
     assert!(
         f32::from(directory.size.width) > 120.0 && f32::from(search.size.width) > 120.0,
         "the directory and the search take the strip's slack"
     );
     let execute = bounds(cx, "region-Execute-File");
-    let filename = bounds(cx, "btn-label-set-ctx.edit-ctx.file.filename-text");
+    // Opening names no file, so the bar leads with what is picked, not a
+    // name field (`file::execute`); Cancel stands in the right group.
+    let cancel = bounds(cx, "btn-label-set-ctx.modal--text");
     // The execute bar carries no menu caps, so it has no cap band: its
     // controls centre on the bar itself.
-    assert!((mid(filename) - mid(execute)).abs() < 0.51, "the file name field is centred on the bar");
+    assert!((mid(cancel) - mid(execute)).abs() < 0.51, "Cancel is centred on the bar");
+    let centre = f32::from(execute.origin.x) + f32::from(execute.size.width) / 2.0;
+    assert!(f32::from(cancel.origin.x) > centre, "and stands right of its centre, in the right group");
 }
 
 #[gpui::test]
@@ -154,11 +173,14 @@ fn geometry(cx: &mut gpui::VisualTestContext) -> [f32; 5] {
     // The file list's first column heading: `panel-body-surface` is not
     // unique once other editors share the window.
     let list = bounds(cx, "file-sort-name");
+    // Its top is the heading row's: the heading itself is a tile inset
+    // within that row (`sort.rs`), so its own top sits below the line.
+    let heading_row = bounds(cx, "table-header");
     let path = bounds(cx, "region-ToolHeader-File");
     [
         f32::from(source.origin.x) - f32::from(tools.origin.x),
         f32::from(list.origin.x) - (f32::from(source.origin.x) + f32::from(source.size.width)),
-        top(list) - bottom(path),
+        top(heading_row) - bottom(path),
         top(source) - bottom(path),
         f32::from(source.size.width) + (f32::from(source.origin.x) - f32::from(tools.origin.x)),
     ]
@@ -172,7 +194,8 @@ fn geometry(cx: &mut gpui::VisualTestContext) -> [f32; 5] {
 async fn the_columns_are_one_gutter_apart_and_a_workspace_area_matches_the_dialog(cx: &mut TestAppContext) {
     let dialog_cx = dialog(cx, false).await;
     let in_dialog = geometry(dialog_cx);
-    assert_eq!(in_dialog[0], METRICS.pad_md, "the source cards sit one gutter in from the host");
+    let edge = phiber::v2::theme::ui_style_defaults(phiber::v2::theme::BPaletteName::DEFAULT).resize.gap;
+    assert_eq!(in_dialog[0], edge, "the source cards sit a seam in from the host");
     // The two columns are a seam apart — the gap between two areas of a
     // workspace — not a content pad, which spaced them twice as far.
     let seam = phiber::v2::theme::ui_style_defaults(phiber::v2::theme::BPaletteName::DEFAULT).resize.gap;

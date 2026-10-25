@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <clipPath id="tri-clip">
+      <path d="M64 12 L112 104 Q112 112 104 112 L24 112 Q16 112 16 104 Z" />
+    </clipPath>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Layer 1: Blue triangle (back, offset left) -->
+  <path d="M64 18 L104 100 Q104 106 98 106 L30 106 Q24 106 24 100 Z"
+        fill="#4A90D9" opacity="0.85" filter="url(#shadow)" />
+
+  <!-- Layer 2: Teal/Green triangle (middle, offset right) -->
+  <path d="M64 14 L110 102 Q110 108 104 108 L24 108 Q18 108 18 102 Z"
+        fill="#2EC4B6" opacity="0.80" filter="url(#shadow)" />
+
+  <!-- Layer 3: Orange/Amber triangle (front, centered) -->
+  <path d="M64 10 L114 104 Q114 112 106 112 L22 112 Q14 112 14 104 Z"
+        fill="#F77F00" opacity="0.90" filter="url(#shadow)" />
+
+  <!-- Inner cutout creating the "effect" — a smaller inverted rounded triangle -->
+  <path d="M64 52 L88 92 Q88 96 84 96 L44 96 Q40 96 40 92 Z"
+        fill="#1a1a2e" opacity="0.12" />
+</svg>

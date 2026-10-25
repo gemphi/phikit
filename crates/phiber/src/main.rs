@@ -54,7 +54,7 @@ fn main() {
             if cli.renders() {
                 std::process::exit(render(&cli));
             }
-            app::run(cli.file.clone());
+            app::run(cli.file.clone(), cli.playback);
         }
         Err(error) => {
             eprintln!("{}", error.message());
@@ -70,7 +70,7 @@ fn render(cli: &BCli) -> i32 {
         eprintln!("Error: no blend loaded. cannot use '-f / --render-frame'");
         return 1;
     };
-    let model = match phiber::phiphx::Phx::open(std::path::Path::new(&file)) {
+    let model = match phiber::v2::cli::open::open(&file) {
         Ok(model) => model,
         Err(why) => {
             eprintln!("Error: cannot read '{file}': {why:?}");

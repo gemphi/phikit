@@ -40,10 +40,9 @@ impl BlendFile {
     pub(crate) fn pose_deform_mats(&self, arm: &BlendBlock, dna: &DnaType) -> HashMap<String, BDeformBone> {
         let shapes = self.pose_shapes(arm, dna);
         let mut out = HashMap::new();
-        let (Some(pose_o), Some(name_o), Some(bone_o), Some(pose_mat_o)) = (
+        let (Some(pose_o), Some(name_o), Some(pose_mat_o)) = (
             self.off("Object", "*pose", dna),
             self.off("bPoseChannel", "name[64]", dna),
-            self.off("bPoseChannel", "*bone", dna),
             self.off("bPoseChannel", "pose_mat[4][4]", dna),
         ) else {
             return out;
@@ -51,10 +50,11 @@ impl BlendFile {
         let (Some(arm_mat_o), Some(chan_o)) = (self.off("Bone", "arm_mat[4][4]", dna), self.off("bPose", "chanbase", dna)) else {
             return out;
         };
+        let rest_bones = self.bones_by_name(arm, dna);
         self.scoped(arm, || {
             let Some(pose) = self.block_at(self.ptr(arm, Some(pose_o))) else { return };
             for pc in self.list(self.ptr(pose, Some(chan_o)), self.off("bPoseChannel", "*next", dna)) {
-                let bone = self.block_at(self.ptr(pc, Some(bone_o)));
+                let bone = self.pchan_bone(pc, dna, &rest_bones);
                 let rest = bone.and_then(|b| m4(&b.data, arm_mat_o, self));
                 let posed = m4(&pc.data, pose_mat_o, self);
                 let deforms = bone.is_some_and(|b| self.int_field(b, "Bone", "flag", dna) & BONE_NO_DEFORM == 0);

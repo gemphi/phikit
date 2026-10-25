@@ -33,7 +33,7 @@ impl ThemeSettingsProvider for BThemeSettings {
 
 fn sans() -> Font {
     Font {
-        family: "sans-serif".into(),
+        family: super::style::font::BFontFamily::PhiSoft.family().into(),
         features: FontFeatures::default(),
         weight: FontWeight::NORMAL,
         style: FontStyle::Normal,
@@ -44,6 +44,23 @@ fn sans() -> Font {
 /// Register the gpui theme globals and our settings provider, once at start-up
 /// before any window opens.
 pub fn install(cx: &mut App) {
+    // Phi-Soft Condensed, the interface's face, from inside the binary:
+    // registered before the theme so the first frame already draws in it.
+    let faces = super::style::font::PHI_SOFT_FACES.iter().map(|face| std::borrow::Cow::Borrowed(*face));
+    if let Err(error) = cx.text_system().add_fonts(faces.collect()) {
+        log::warn!("Phi-Soft Condensed could not be registered: {error}");
+    }
+    // Ask under which name the faces were filed: a name the text system does
+    // not know draws every letter in the fallback face instead.
+    let known = cx.text_system().all_font_names();
+    let filed = super::style::font::PHI_SOFT_NAMES.into_iter().find(|name| known.iter().any(|seen| seen == name));
+    match filed {
+        Some(name) => {
+            let _ = super::style::font::PHI_SOFT_FILED.set(name);
+            log::info!("Phi-Soft Condensed is filed as {name:?}");
+        }
+        None => log::warn!("Phi-Soft Condensed is not among the faces this machine knows"),
+    }
     theme_init(LoadThemes::JustBase, cx);
     set_theme_settings_provider(Box::new(BThemeSettings { ui: sans(), buffer: sans() }), cx);
 }

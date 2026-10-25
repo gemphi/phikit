@@ -25,6 +25,9 @@ impl BCard<'_> {
         // height, as an editor does; a form keeps its declared height. Both
         // are half the window wide.
         let elevates_a_host = !spec.areas.is_empty();
+        if spec.shape == BModalShape::Palette {
+            return palette(self, ctx);
+        }
         let part = match spec.shape {
             BModalShape::Sheet { share } if !maximized => BModalPart::Sheet { share },
             _ => BModalPart::Card { fills: maximized, tall: elevates_a_host, height: spec.height },
@@ -78,6 +81,27 @@ impl BCard<'_> {
             .child(deferred(wrap))
             .into_any_element()
     }
+}
+
+/// The search palette: no title bar (its field is its heading), hung under
+/// the top bar, on the same dismissible backdrop as every modal.
+fn palette(modal: &BCard<'_>, ctx: &BRenderCtx) -> AnyElement {
+    let id = format!("modal-card-{:?}", modal.kind);
+    let card = BModalPart::Palette
+        .flex(ctx)
+        .div(ctx)
+        .id(SharedString::from(id.clone()))
+        .debug_selector(move || id)
+        .child(BModalPart::CardBody { flush: true, bounded: true }.flex(ctx).div(ctx).child(walk(modal.body, ctx)));
+    let close_h = ctx.handler.clone();
+    let close_a = close_action();
+    let backdrop = BModalPart::Backdrop
+        .flex(ctx)
+        .div(ctx)
+        .id(SharedString::from(format!("modal-backdrop-{:?}", modal.kind)))
+        .on_click(move |_e: &ClickEvent, w: &mut gpui::Window, cx: &mut gpui::App| (Rc::clone(&close_h))(&close_a, w, cx));
+    let wrap = BModalPart::Above.flex(ctx).div(ctx).child(BModalPart::AboveGap.flex(ctx).div(ctx)).child(card);
+    BModalPart::Layer.flex(ctx).div(ctx).child(deferred(backdrop)).child(deferred(wrap)).into_any_element()
 }
 
 /// A modal that elevates a whole host (Preferences is the Prefs editor in a

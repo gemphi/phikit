@@ -4,7 +4,7 @@
 
 use super::element::BFlex;
 use super::paint::shadowed;
-use super::token::{BAlign, BBasis, BEdge, BJustify, BLen, BRadius, BSelf};
+use super::token::{BAlign, BBasis, BEdge, BJustify, BLen, BSelf};
 use super::super::color::to_hsla;
 use super::super::ctx::BRenderCtx;
 
@@ -16,8 +16,26 @@ use gpui::{Div, div, px};
 /// revealed by hover. Not design values, so not theme tokens.
 const HIDDEN: f32 = 0.0;
 const SHOWN: f32 = 1.0;
+/// A list entry's state weight: whole, or a muted control's.
+pub(super) fn listed_weight(muted: bool, ctx: &BRenderCtx) -> f32 {
+    if muted { ctx.style.effects.control_muted_alpha } else { 1.0 }
+}
 
 impl BFlex {
+    /// What `div` adds under the pointer, for an element built elsewhere —
+    /// a control made stateful for its click before its state was painted:
+    /// a resting list entry shows its border under the pointer.
+    pub fn hovered_on(&self, element: gpui::Stateful<Div>, ctx: &BRenderCtx) -> gpui::Stateful<Div> {
+        match self.border {
+            Some(BEdge::Listed { chosen: false, muted }) => {
+                let edge = to_hsla(ctx.style.colors.border);
+                let edge = gpui::Hsla { a: edge.a * listed_weight(muted, ctx), ..edge };
+                element.hover(move |style| style.border_color(edge))
+            }
+            _ => element,
+        }
+    }
+
     /// The container, styled. The only place in the renderer that turns a
     /// layout decision into GPUI style.
     pub fn div(&self, ctx: &BRenderCtx) -> Div {
@@ -29,6 +47,7 @@ impl BFlex {
             let fill = hover.background(ctx);
             element = element.hover(move |style| style.bg(fill));
         }
+        if self.border == Some(BEdge::Active) { let edge = to_hsla(ctx.style.colors.border); element = element.hover(move |style| style.border_color(edge)); }
         if self.occludes {
             element = element.occlude();
         }
@@ -150,56 +169,11 @@ impl BFlex {
         if let Some(fill) = self.fill {
             element = element.bg(fill.background(ctx));
         }
-        match self.border {
-            Some(BEdge::All) => {
-                element = element
-                    .border(px(ctx.style.strokes.border))
-                    .border_color(to_hsla(ctx.style.colors.border))
-            }
-            Some(BEdge::Bottom) => {
-                element = element
-                    .border_b(px(ctx.style.strokes.border))
-                    .border_color(to_hsla(ctx.style.colors.border))
-            }
-            Some(BEdge::Guide) => {
-                let guide = ctx.style.separator_stroke();
-                element = element.border_l(px(guide.width)).border_color(to_hsla(guide.color))
-            }
-            Some(BEdge::Ink(ink)) => {
-                element = element.border(px(ctx.style.strokes.hairline)).border_color(ink.color(ctx))
-            }
-            Some(BEdge::Ring(ink)) => {
-                element = element.border(px(ctx.style.strokes.border * 2.0)).border_color(ink.color(ctx))
-            }
-            None => {}
-        }
-        match self.radius {
-            Some(BRadius::Role(role)) => element = element.rounded(px(ctx.style.radius_for(role))),
-            Some(BRadius::All(r)) => element = element.rounded(px(r)),
-            Some(BRadius::Top(r)) => element = element.rounded_t(px(r)),
-            Some(BRadius::Pill) => element = element.rounded_full(),
-            Some(BRadius::Corners { tl, tr, bl, br, radius }) => {
-                let r = px(radius);
-                if tl {
-                    element = element.rounded_tl(r);
-                }
-                if tr {
-                    element = element.rounded_tr(r);
-                }
-                if bl {
-                    element = element.rounded_bl(r);
-                }
-                if br {
-                    element = element.rounded_br(r);
-                }
-            }
-            None => {}
-        }
+        element = self.edged(element, ctx);
         element = shadowed(element, ctx.style.shadow_for(self.elevation));
         if let Some(ink) = self.ink {
             element = element.text_color(ink.color(ctx));
         }
-        element = self.placed(element, ctx);
-        element
+        self.placed(element, ctx)
     }
 }

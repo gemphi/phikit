@@ -48,7 +48,7 @@ pub fn never_sent(encoded: &str) -> bool {
 }
 
 /// Keys a resumed session does not come back to: an open dialog, menu or
-/// header popover, an area-resize drag, the import machinery or scene data,
+/// header popover, the text caret, an area-resize drag, the import machinery or scene data,
 /// and the file-browser keys that are about the current browse rather than a
 /// preference — what is selected, an error, the nav intent and its history,
 /// the add-bookmark intent, the open filter popover. A resumed browser sits
@@ -63,12 +63,18 @@ pub fn never_resumed(encoded: &str) -> bool {
         ImageKey::Shown.path().encode(),
         AreaKey::Maximized.path().encode(),
         FileKey::Selected.path().encode(),
+        FileKey::Picked.path().encode(),
         FileKey::Error.path().encode(),
         FileKey::Nav.path().encode(),
         FileKey::HistBack.path().encode(),
         FileKey::HistFwd.path().encode(),
         FileKey::BookmarkAdd.path().encode(),
         FileKey::FilterOpen.path().encode(),
+        // The field holding the caret, and what it held: an interaction in
+        // progress. Resumed, a field typed into last session took the caret
+        // at launch and swallowed the first keys — F3 among them.
+        AppKey::Edit.path().encode(),
+        AppKey::EditUndo.path().encode(),
     ];
     let families = [
         MenuKey::Top("", "").family(),

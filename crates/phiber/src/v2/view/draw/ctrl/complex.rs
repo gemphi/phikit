@@ -81,7 +81,7 @@ pub(super) fn text(&self, ctx: &BRenderCtx) -> AnyElement {
     let ctrl = self.0;
     let placeholder = ctrl.label.clone().unwrap_or_default();
     let shown = ctrl.value.display();
-    search::view(&placeholder, &shown, ctrl.editing, &ctrl.set(ctrl.value.clone()), ctx)
+    search::view(&placeholder, &shown, (ctrl.editing, false), &ctrl.set(ctrl.value.clone()), ctx)
 }
 
 /// A swatch of the value, and the value as text beside it.

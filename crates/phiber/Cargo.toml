@@ -21,6 +21,10 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 phiphx = { path = "../phiphx" }
 phiray = { path = "../phiray" }
+# The game the Play host picks and plays (`scene::play`).
+phiplay = { path = "../phiplay" }
+# The Project Browser's asset database (`part::project::db`).
+phiecs = { path = "../../../phinet/crates/phiecs" }
 exr = "1.74"
 image = { workspace = true }
 # The 5.5 MB of `assets/` a browser build carries in the binary

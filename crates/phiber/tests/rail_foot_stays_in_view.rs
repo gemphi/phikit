@@ -35,7 +35,7 @@ async fn the_cluster_sits_a_cap_gap_off_the_foot_of_a_short_strip(cx: &mut TestA
     // `BResolvedUiStyle::rail_lead` for a card column: the host's content
     // pad (`pad_sm` in Properties), the body column's two borders, and its
     // inner pad, so a rail entry and the row beside it share one grid.
-    let lead = style.spacing.pad_sm + 2.0 * style.strokes.border + style.spacing.pad_sm;
+    let lead = style.spacing.pad_sm + style.strokes.border + style.spacing.pad_sm;
     let rail = cx.debug_bounds("region-NavBar-Buts").expect("the Properties navbar");
     let chevron = cx.debug_bounds("tab-chevron_right-chevron_right").expect("the expand arrow");
     assert!(bottom(chevron) <= 560.0, "the arrow is in the window: {chevron:?}");

@@ -4,7 +4,8 @@
 
 use super::coarse::BCoarse;
 use phiray::Mode;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use web_time::Instant;
 
 /// How a sample is cut (`Tracer::sample_in`): into enough slices that one
 /// takes about [`SLICE_MS`], from how long the last sample at this size took

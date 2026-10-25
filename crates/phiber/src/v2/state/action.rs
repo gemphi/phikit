@@ -28,6 +28,7 @@ pub fn apply_action(state: &mut BState, action: &BAction) {
             rule::after_set(state, path, value);
         }
         BAction::Toggle(path) if super::MenuKey::owns(path) => apply_toggle(state, path),
+        BAction::Toggle(path) if menu::is_colour_picker(&path.encode()) => menu::toggle_colour_picker(state, path),
         BAction::Toggle(path) => {
             let next = if state.get(path) == Some(V_TRUE) { V_FALSE } else { V_TRUE };
             state.set(path, next);

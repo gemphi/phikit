@@ -19,6 +19,8 @@ use crate::v2::view::BViewList;
 // `BRegionType` — DNA region kind. Mirrors `eRegion_Type` in Blender 5.2.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum BRegionType {
+    /// A bottom area's editor tabs (`part::areatabs`), over its header.
+    Tabs,
     Header,
     Center, // WINDOW: the primary work canvas
     Footer,
@@ -149,11 +151,10 @@ impl BRegionItem {
         ] {
             Self::strip(panes, part);
         }
-        if crate::v2::part::search::search_key(self.host).is_some()
-            && !self.host.searches_in_tool_header()
-            && !header_too_narrow_for_search(self.host)
-        {
-            Self::ensure_part(panes, BPaneType::Center, BPartType::Search, self.host, state);
+        if crate::v2::part::search::search_key(self.host).is_some() && !header_too_narrow_for_search(self.host) {
+            // Over the details column in a browser; mid-header elsewhere.
+            let pane = if self.host.heads_its_columns() { BPaneType::Right } else { BPaneType::Center };
+            Self::ensure_part(panes, pane, BPartType::Search, self.host, state);
         }
         if crate::v2::part::filter::has_filter(self.host) {
             Self::ensure_part(panes, BPaneType::Right, BPartType::Filter, self.host, state);
@@ -161,7 +162,12 @@ impl BRegionItem {
         if !modes_for(self.host).is_empty() {
             Self::ensure_first_part(panes, BPaneType::Left, BPartType::Modebar, self.host, state);
         }
-        Self::ensure_first_part(panes, BPaneType::Left, BPartType::Switcher, self.host, state);
+        // The window's own bars (top bar, status bar) are not editors: there
+        // is no editor type to switch them to, so they lead with what they
+        // are — the brand and menus, the status read-out — not a switcher.
+        if !self.host.is_fixed_bar() {
+            Self::ensure_first_part(panes, BPaneType::Left, BPartType::Switcher, self.host, state);
+        }
     }
 }
 
@@ -289,7 +295,8 @@ impl BRegionLayout for BRegionType {
 
     fn placement(&self) -> BPlacement {
         match self {
-            BRegionType::Header
+            BRegionType::Tabs
+            | BRegionType::Header
             | BRegionType::ToolHeader
             | BRegionType::HUD
             | BRegionType::Scrubbing => BPlacement::Top,

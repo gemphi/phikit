@@ -1,7 +1,7 @@
 //! The Render menu's entries do what Blender's do — on a fresh session
 //! with no file open as well: Render Image renders the default scene
-//! through the startup camera, View Render shows the window without a new
-//! render and puts it away again, View Animation plays the frames an
+//! through the startup camera into the Image editor, View Render shows the
+//! Render Result there without a new render and gives the area back again, View Animation plays the frames an
 //! animation render wrote, Render Audio… writes the mixdown the browser
 //! names, and Lock Interface holds edits back while a render runs. Its
 //! own binary, since the render job is one per process.
@@ -10,7 +10,8 @@ use gpui::{TestAppContext, px, size};
 use phiber::v2::app::BPhiberApp;
 use phiber::v2::part::file::purpose::BFilePurpose;
 use phiber::v2::scene::render_job;
-use phiber::v2::state::{BKey as _, ButsKey, CtxKey, ModalKey, OpKey, ScreenKey, val::{V_MODAL_RENDER, V_TRUE}};
+use phiber::v2::part::image::shown::BShownImage;
+use phiber::v2::state::{BKey as _, ButsKey, CtxKey, ImageKey, ModalKey, OpKey, ScreenKey, val::{V_MODAL_RENDER, V_TRUE}};
 use phiber::v2::view::BAction;
 
 fn render(value: &str) -> BAction {
@@ -51,20 +52,26 @@ async fn the_render_menu_works_on_a_fresh_session(cx: &mut TestAppContext) {
     });
     cx.run_until_parked();
 
-    // View Render (F11) with nothing rendered: the window, empty, and no
-    // render started; F11 again puts it away.
+    // View Render (F11) with nothing rendered: Render In ▸ Image Editor
+    // (`app/op/render_open.rs`) — the Center becomes an Image editor showing
+    // the (empty) Render Result, no render starts, and F11 again gives the
+    // area its editor back.
+    let shows_result = |app: &gpui::Entity<BPhiberApp>, cx: &gpui::VisualTestContext| {
+        app.read_with(cx, |a, _| BShownImage::now(&a.state) == BShownImage::RenderResult && a.state.get(ImageKey::PrevSpace).is_some())
+    };
     app.update(cx, |app, cx| app.handle_action(&render("view"), cx));
     cx.run_until_parked();
-    assert_eq!(modal(&app, cx).as_deref(), Some(V_MODAL_RENDER));
+    assert!(shows_result(&app, cx), "F11 shows the Render Result in the Center");
+    assert_eq!(modal(&app, cx), None, "in the workspace, not over it");
     assert!(render_job::shot().0.is_none() && !render_job::rendering(), "View Render renders nothing");
     app.update(cx, |app, cx| app.handle_action(&render("view"), cx));
-    assert_eq!(modal(&app, cx), None, "F11 on the open window closes it");
+    assert!(app.read_with(cx, |a, _| a.state.get(ImageKey::PrevSpace).is_none()), "F11 again gives the area back");
 
     // Render Image (F12) with no file open: the default scene through the
-    // startup camera, into the window.
+    // startup camera, into the Image editor.
     app.update(cx, |app, cx| app.handle_action(&render("image"), cx));
     cx.run_until_parked();
-    assert_eq!(modal(&app, cx).as_deref(), Some(V_MODAL_RENDER));
+    assert!(shows_result(&app, cx), "F12 renders into the Image editor");
     let (shot, _) = render_job::shot();
     let shot = shot.expect("F12 renders the default scene");
     assert!(shot.w > 0 && shot.h > 0);
@@ -95,7 +102,6 @@ async fn the_render_menu_works_on_a_fresh_session(cx: &mut TestAppContext) {
     // two can be told apart — and Slot 1 keeps the first render. J and
     // Alt J step between the two slots that hold one.
     use phiber::v2::scene::render_slot::BRenderSlot;
-    use phiber::v2::state::ImageKey;
     app.update(cx, |app, cx| app.handle_action(&BAction::Set(ImageKey::Slot.path(), "Slot 2".into()), cx));
     assert_eq!(BRenderSlot::active(), 1);
     assert!(render_job::shot().0.is_none() && BRenderSlot::any_filled(), "an empty slot of an existing Render Result");

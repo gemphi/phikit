@@ -6,13 +6,14 @@
 
 pub mod action;
 pub mod edit;
-pub mod event;
 pub mod key;
 pub use key::{
     ActivityKey, AppKey, AreaKey, BKey, ButsKey, CtxKey, FileKey, MenuKey, ModalKey, OutlinerKey,
     ImageKey, SceneKey, TimeViewKey, UvKey, View3dKey, ZoneKey,
 };
 pub mod log;
+/// The event tree lives with the log it is the structured half of.
+pub use log::event;
 pub mod menu;
 pub mod path;
 pub mod rule;

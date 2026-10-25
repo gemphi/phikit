@@ -64,39 +64,77 @@ const MENU: &[(&str, &str)] = &[
     ("TOPBAR_MT_help", "Help"),
 ];
 
-/// Entries phiber adds that Blender's menu does not have.
-///
-/// Each is a decision, and writing it down is what keeps it one: an extra
-/// that stops being wanted shows up here rather than in a diff nobody runs.
-/// `(menu, label, why)`.
+/// Entries phiber adds that Blender's menu does not have. `(menu, label, why)`.
 const EXTRA: &[(&str, &str, &str)] = &[
+    ("File", "Versions", "Save Incremental, Save Copy and Revert one level down, so File holds eight"),
     ("Render", "Render Turnaround", "a turntable of the scene, which Blender has no menu entry for"),
-    ("Edit", "Operator Search...", "Blender dropped it in 2.9x; phiber keeps both searches"),
+    ("Window", "Space Tabs", "the top bar's space tabs as labels, icons, or labels while they fit"),
+    ("Help", "About Phiber", "where a reader looks for it, as well as in the Phiber menu"),
 ];
 
 /// Entries phiber shows under another name. `(menu, Blender's, phiber's, why)`.
 const RENAMED: &[(&str, &str, &str, &str)] = &[
-    ("Window", "Save Screenshot", "Save Screenshot...", "it opens the file browser, so it takes an ellipsis"),
-    ("Window", "Save Screenshot (Editor)", "Save Screenshot (Editor)...", "likewise"),
-    ("Help", "Save System Info", "Save System Info...", "likewise"),
+    ("Edit", "Menu Search...", "Search...", "one palette finds menus, operators, files and settings"),
+];
+
+/// Blender's entries this menu does not show: moved to where they fit, or
+/// left out because nothing is behind them — shown, they could only say
+/// "not available". `(menu, label, why)`.
+const DROPPED: &[(&str, &str, &str)] = &[
+    ("File", "Recover", "no auto-saves are kept; Welcome ▸ Recent Files reopens the last file"),
+    ("File", "Link...", "no .blend libraries are read"),
+    ("File", "Append...", "no .blend libraries are read"),
+    ("File", "Data Previews", "no previews to make or clear"),
+    ("File", "External Data", "nothing is packed and no paths are kept"),
+    ("File", "Clean Up", "no orphan data is kept"),
+    ("File", "Defaults", "no startup file; Load Factory Settings is in the Phiber menu"),
+    ("File", "Export All Collections", "the last entry of File ▸ Export"),
+    ("File", "Quit", "in the Phiber menu, the app's own"),
+    ("Edit", "Adjust Last Operation...", "operators keep no redo panel"),
+    ("Edit", "Repeat Last", "operators are not repeated"),
+    ("Edit", "Repeat History...", "operators are not repeated"),
+    ("Edit", "Batch Rename...", "renaming is one item at a time (F2)"),
+    ("Edit", "Lock Object Modes", "nothing reads it"),
+    ("Window", "New Window", "phiber runs one window"),
+    ("Window", "New Main Window", "phiber runs one window"),
+    ("Window", "Save Screenshot", "no window capture"),
+    ("Window", "Save Screenshot (Editor)", "no window capture"),
+    ("Help", "Support", "blender.org's page, not phiber's"),
+    ("Help", "User Communities", "blender.org's page, not phiber's"),
+    ("Help", "Get Involved", "blender.org's page, not phiber's"),
+    ("Help", "Release Notes", "blender.org's page, not phiber's"),
+    ("Help", "Save System Info", "no system report is written"),
 ];
 
 /// The phiber menu of that name, flattened to the entries a comparison can
-/// see: a label and the shortcut beside it, with separators kept because
-/// their *positions* are half of what a menu reads like.
+/// see: a label and the shortcut beside it. A sub-menu is an entry, as
+/// Blender's `layout.menu` is; one phiber made to keep a menu at eight
+/// (an [`EXTRA`]) is also opened, since what it holds are Blender's entries.
 fn phiber(menu: &str) -> Vec<(&'static str, &'static str)> {
-    TOPBAR
-        .iter()
-        .find(|spec| spec.label == menu)
-        .map(|spec| spec.items.iter().map(entry).collect())
-        .unwrap_or_default()
+    let mut out = Vec::new();
+    if let Some(spec) = TOPBAR.iter().find(|spec| spec.label == menu) {
+        flatten(menu, spec.items, &mut out);
+    }
+    out
 }
 
-fn entry(item: &BMenuItem) -> (&'static str, &'static str) {
-    match item.kind {
-        BMenuKind::Sep => ("", ""),
-        _ => (item.label, item.shortcut),
+fn flatten(menu: &str, items: &'static [BMenuItem], out: &mut Vec<(&'static str, &'static str)>) {
+    for item in items {
+        match item.kind {
+            BMenuKind::Sep => {}
+            BMenuKind::Sub(subs) => {
+                out.push((item.label, item.shortcut));
+                if EXTRA.iter().any(|(of, label, _)| *of == menu && *label == item.label) {
+                    flatten(menu, subs, out);
+                }
+            }
+            _ => out.push((item.label, item.shortcut)),
+        }
     }
+}
+
+fn dropped(menu: &str, label: &str) -> bool {
+    DROPPED.iter().any(|(of, seen, _)| *of == menu && *seen == label)
 }
 
 /// What phiber calls the entry Blender calls `label`.
@@ -119,6 +157,9 @@ fn every_entry_blenders_topbar_holds_phibers_holds_too() {
         assert!(!want.is_empty(), "{blender} is in the dump");
         for row in want {
             if row.kind == "sep" {
+                continue;
+            }
+            if dropped(mine, &row.label) {
                 continue;
             }
             let label = expected(mine, &row.label);
@@ -149,7 +190,7 @@ fn every_entry_phiber_adds_is_one_it_means_to_add() {
             .filter(|row| row.menu == *blender && row.kind != "sep")
             .map(|row| expected(mine, &row.label))
             .collect();
-        for (label, _) in phiber(mine).iter().filter(|(label, _)| !label.is_empty()) {
+        for (label, _) in phiber(mine).iter() {
             let extra = EXTRA.iter().any(|(of, seen, _)| of == mine && seen == label);
             if !known.contains(*label) && !extra {
                 unrecorded.push(format!("{mine} ▸ {label:?}"));
@@ -203,6 +244,36 @@ fn a_recorded_extra_or_rename_is_one_the_menu_really_has() {
             "{menu} ▸ {mine:?} is recorded as the rename of {blender:?} but phiber's menu does not have it"
         );
     }
+}
+
+#[test]
+fn a_dropped_entry_is_blenders_and_not_phibers() {
+    let truth = truth();
+    for (menu, label, why) in DROPPED {
+        let class = MENU.iter().find(|(_, name)| name == menu).map(|(class, _)| *class);
+        assert!(truth.iter().any(|row| Some(row.menu.as_str()) == class && row.label == *label), "{menu} ▸ {label:?} is recorded as dropped ({why}) but Blender's menu has no such entry");
+        assert!(!phiber(menu).iter().any(|(seen, _)| seen == label), "{menu} ▸ {label:?} is recorded as dropped ({why}) but the menu shows it");
+    }
+}
+
+#[test]
+fn no_menu_holds_more_than_eight_entries() {
+    fn count(items: &'static [BMenuItem], trail: &str, wrong: &mut Vec<String>) {
+        let shown = items.iter().filter(|item| !matches!(item.kind, BMenuKind::Sep)).count();
+        if shown > 8 {
+            wrong.push(format!("{trail}: {shown}"));
+        }
+        for item in items {
+            if let BMenuKind::Sub(subs) = item.kind {
+                count(subs, &format!("{trail} ▸ {}", item.label), wrong);
+            }
+        }
+    }
+    let mut wrong = Vec::new();
+    for spec in TOPBAR {
+        count(spec.items, spec.label, &mut wrong);
+    }
+    assert!(wrong.is_empty(), "menus over eight entries:\n  {}", wrong.join("\n  "));
 }
 
 #[test]

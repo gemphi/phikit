@@ -17,7 +17,7 @@ fn every_theme_owns_its_radius_scale_effects_and_seam() {
         (BPaletteName::Grey, ROUND_RADII, GREY_EFFECTS, 6.0),
         (BPaletteName::Silver, MEDIUM_RADII, SILVER_EFFECTS, 6.0),
         (BPaletteName::Apple, MEDIUM_RADII, APPLE_EFFECTS, 4.0),
-        (BPaletteName::AppleDark, MEDIUM_RADII, APPLE_DARK_EFFECTS, 4.0),
+        (BPaletteName::Phiber, OCTA_RADII, PHIBER_EFFECTS, 4.0),
         (BPaletteName::Swift, SOFT_RADII, SWIFT_EFFECTS, 4.0),
         (BPaletteName::Barbie, PILL_RADII, BARBIE_EFFECTS, 8.0),
         (BPaletteName::Fenty, ROUND_RADII, FENTY_EFFECTS, 6.0),
@@ -41,11 +41,11 @@ fn every_theme_owns_its_radius_scale_effects_and_seam() {
         assert_eq!(light.colors.ladder, super::super::palette::palette_in(name, BThemeMode::Light).ladder, "{name:?}");
         // The default theme's scale is the one the interface was drawn on,
         // so it is pinned here and cannot drift unnoticed. It followed the
-        // default from Sphere (SOFT) to Silver; the scale is read from the
+        // default from Sphere (SOFT) to Silver to Phiber; the scale is read from the
         // name rather than spelled out, so moving the default again fails
         // here instead of silently redrawing every corner in the app.
         if name == BPaletteName::DEFAULT {
-            assert_eq!(radii, MEDIUM_RADII, "the default theme is {:?}", BPaletteName::DEFAULT);
+            assert_eq!(radii, OCTA_RADII, "the default theme is {:?}", BPaletteName::DEFAULT);
         }
     }
 }

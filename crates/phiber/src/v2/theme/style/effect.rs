@@ -180,7 +180,9 @@ pub const ONYX_EFFECTS: BEffects = effects(true, 0.02, BShadowStyle::Large);
 pub const GREY_EFFECTS: BEffects = effects(true, 0.03, BShadowStyle::Medium);
 pub const SILVER_EFFECTS: BEffects = effects(false, 0.0, BShadowStyle::Small);
 pub const APPLE_EFFECTS: BEffects = effects(false, 0.0, BShadowStyle::Medium);
-pub const APPLE_DARK_EFFECTS: BEffects = effects(false, 0.0, BShadowStyle::Medium);
+/// Phiber is spatial by default: its surfaces sweep and lifted things cast
+/// at the deepest shadow, so under `Auto` it already wears the virtual world.
+pub const PHIBER_EFFECTS: BEffects = effects(true, 0.04, BShadowStyle::ExtraLarge);
 pub const SWIFT_EFFECTS: BEffects = effects(true, 0.03, BShadowStyle::Large);
 pub const BARBIE_EFFECTS: BEffects = effects(true, 0.04, BShadowStyle::ExtraLarge);
 pub const FENTY_EFFECTS: BEffects = effects(true, 0.035, BShadowStyle::Large);

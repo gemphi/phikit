@@ -73,6 +73,9 @@ fn table() -> &'static [&'static dyn BRule] {
         &menu::BReportRule,
         &menu::BFlipRule,
         &crate::v2::modal::command::palette::BPaletteDismissRule,
+        &crate::v2::modal::command::palette::BPaletteOpenRule,
+        &crate::v2::modal::command::find::BFindGoRule,
+        &crate::v2::modal::command::find::BFindFromBarRule,
         &crate::v2::view::draw::canvas::image::zoom::BImageZoomStepRule,
         &crate::v2::scene::render_slot::BRenderSlotRule,
         &crate::v2::scene::render_border::BRenderBorderRule,
@@ -94,6 +97,7 @@ fn table() -> &'static [&'static dyn BRule] {
         &op::BFileReturnRule,
         &op::BBookmarkAddRule,
         &op::BSelectRule,
+        &op::BPickRule,
     ]
 }
 

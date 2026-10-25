@@ -95,13 +95,20 @@ fn settings_modal_is_the_preferences_host() {
 
 #[test]
 fn command_palette_searches_every_menu_leaf() {
-    let hits = phiber::v2::modal::command::palette::hits("open");
+    use phiber::v2::modal::command::palette;
+    let hits = palette::hits("open", None);
     assert!(hits.iter().any(|h| h.path == "File ▸ Open…" || h.path.starts_with("File ▸ Open")), "{:?}", hits.iter().map(|h| &h.path).collect::<Vec<_>>());
-    assert!(phiber::v2::modal::command::palette::hits("").len() > 30);
+    assert!(palette::hits("", None).len() > 30);
     // Render ▸ Render Turnaround is a leaf the palette finds, firing the op.
-    let turnaround = phiber::v2::modal::command::palette::hits("turnaround");
+    let turnaround = palette::hits("turnaround", None);
     let hit = turnaround.iter().find(|h| h.path == "Render ▸ Render Turnaround").expect("the turnaround command is in the Render menu");
     assert_eq!(hit.action, BAction::Set(phiber::v2::state::OpKey::Render.path(), "turnaround".to_string()));
+    // Over an editor, its menus are searched after the Topbar's: the
+    // Timeline's Marker menu is found there and nowhere else.
+    let over = phiber::v2::host::BHostType::Time;
+    assert!(palette::hits("", Some(over)).len() > palette::hits("", None).len());
+    assert!(palette::hits("marker", Some(over)).iter().any(|h| h.path.starts_with("Marker ▸")), "the Timeline's Marker menu");
+    assert!(!palette::hits("marker", None).iter().any(|h| h.path.starts_with("Marker ▸")), "not without the Timeline");
 }
 
 #[test]

@@ -31,6 +31,15 @@ impl BView {
             value: value.into(),
             editing: false,
             on_change,
+            searches: true,
+        }
+    }
+
+    /// A filter typed into: the same field, led by the magnifier.
+    pub fn filter_field(placeholder: impl Into<String>, value: impl Into<String>, editing: bool, on_change: BAction) -> Self {
+        match Self::text_field(placeholder, value, editing, on_change) {
+            Self::SearchField { placeholder, value, editing, on_change, .. } => Self::SearchField { placeholder, value, editing, on_change, searches: true },
+            other => other,
         }
     }
 
@@ -46,6 +55,7 @@ impl BView {
             value: value.into(),
             editing,
             on_change,
+            searches: false,
         }
     }
 }

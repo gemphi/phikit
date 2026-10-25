@@ -40,14 +40,17 @@ pub fn is_narrow(s: &BState) -> bool {
 
 /// Below this the top bar's three cells no longer fit one line: the left
 /// cell (the brand and the File… menus) keeps the first line and the
-/// workspace tabs and the right-hand controls go under it.
+/// workspace tabs and the right-hand controls go under it. Measured at 11 px
+/// text; the menus' labels grow with the text, so the width does too.
 const TOPBAR_WRAP: f32 = 960.0;
+const TOPBAR_WRAP_TEXT: f32 = 11.0;
 
 /// True when the top bar wraps to two lines.
 pub fn topbar_wraps(s: &BState) -> bool {
+    let text = crate::v2::theme::resolve_ui_style(crate::v2::theme::ui_style_defaults_for(s), s).typography.body;
     s.get(AppKey::WindowWidth)
         .and_then(|w| w.parse::<f32>().ok())
-        .is_some_and(|w| w < TOPBAR_WRAP)
+        .is_some_and(|w| w < TOPBAR_WRAP * text / TOPBAR_WRAP_TEXT)
 }
 
 /// `ctx.header.<host>.filters` — whether the folded control set is open.
@@ -89,7 +92,7 @@ pub fn has_filter(host: BHostType) -> bool {
     !draws_its_own_right_end(host)
         && (matches!(
             host,
-            BHostType::Outliner | BHostType::View3D | BHostType::Buts | BHostType::File | BHostType::Asset
+            BHostType::Outliner | BHostType::View3D | BHostType::Buts
         ) || filters_channels(host)
             || overlay::has_overlay(host))
 }
@@ -158,11 +161,8 @@ impl BViewItem for BFilter {
             // and the Spreadsheet end their headers with a popover of boxes, as
             // every other editor does (`overlay`).
             host if overlay::has_overlay(host) => overlay::view(s, host),
-            // The file browsers: display mode, hidden files, the filter and
-            // its popover — Blender's header, right of the spacer.
-            BHostType::File | BHostType::Asset => {
-                crate::v2::part::file::path_bar::header_icons(s)
-            }
+            // The file browsers keep theirs on the path strip under the
+            // header (`file::path_bar`), as Blender's File View does.
             _ => BView::empty(),
         }
     }

@@ -100,8 +100,11 @@ fn a_hosts_filters_sit_at_the_right_end_of_its_header() {
         region.contains("BPaneType::Right, BPartType::Filter"),
         "filters are placed at the right end of the header"
     );
+    // The search is the header's middle, except in a browser, whose header
+    // is the columns under it: there it stands over the details column.
     assert!(
-        region.contains("BPaneType::Center, BPartType::Search"),
-        "search is placed in the middle of the header"
+        region.contains("if self.host.heads_its_columns() { BPaneType::Right } else { BPaneType::Center }")
+            && region.contains("Self::ensure_part(panes, pane, BPartType::Search"),
+        "search is placed in the middle of the header, or over a browser's details"
     );
 }

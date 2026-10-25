@@ -13,7 +13,9 @@ use crate::v2::state::BState;
 pub mod shape;
 pub use shape::BShape;
 
+#[cfg(not(target_family = "wasm"))]
 pub mod skin;
+#[cfg(not(target_family = "wasm"))]
 pub use skin::RaySkin;
 
 pub mod source;
@@ -71,6 +73,8 @@ pub mod edit;
 pub mod export;
 pub mod extra;
 pub mod parent;
+pub mod play;
+pub mod wear;
 pub mod composite;
 pub mod uv_edit;
 pub mod image_gen;

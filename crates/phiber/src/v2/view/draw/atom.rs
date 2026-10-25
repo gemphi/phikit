@@ -18,6 +18,28 @@ pub(super) fn icon_path(name: &str) -> String {
 }
 
 pub fn label(text: &str, ctx: &BRenderCtx) -> AnyElement {
+    if ctx.clips {
+        // One line to the cell's edge, the rest under an ellipsis and on a
+        // tooltip.
+        let tip = text.to_string();
+        let style = ctx.style.clone();
+        // A block, not a flex row: the text is laid out to the block's width,
+        // which is what lets it end in the ellipsis.
+        return super::flex::BFlex::cell()
+            .min_width(super::flex::BLen::Zero)
+            .ink()
+            .type_size(super::flex::BType::Body)
+            .div(ctx)
+            .id(SharedString::from(format!("label-{text}")))
+            .debug_selector({
+                let id = format!("label-{text}");
+                move || id
+            })
+            .truncate()
+            .tooltip(move |_, cx| cx.new(|_| super::tab::cap::BTabTooltip::of(&tip, &style)).into())
+            .child(SharedString::from(text.to_string()))
+            .into_any_element();
+    }
     let mut element = div()
         .text_color(to_hsla(ctx.style.colors.text))
         .text_size(px(ctx.style.typography.body));
@@ -31,17 +53,23 @@ pub fn label(text: &str, ctx: &BRenderCtx) -> AnyElement {
 }
 
 pub fn icon(name: &str, ctx: &BRenderCtx) -> AnyElement {
-    if name.is_empty() {
-        return div().into_any_element();
-    }
     if let Some(mark) = super::brand::view(name, ctx) {
         return mark;
+    }
+    icon_in(name, ctx.style.colors.text, ctx)
+}
+
+/// An icon in `color` — the text colour for an ordinary icon, the accent for
+/// a box that is ticked (`ctrl::flag`).
+pub fn icon_in(name: &str, color: crate::v2::theme::BColor, ctx: &BRenderCtx) -> AnyElement {
+    if name.is_empty() {
+        return div().into_any_element();
     }
     svg()
         .path(icon_path(name))
         .size(px(ctx.style.dimensions.icon_size))
         .flex_shrink_0()
-        .text_color(to_hsla(ctx.style.colors.text))
+        .text_color(to_hsla(color))
         .into_any_element()
 }
 

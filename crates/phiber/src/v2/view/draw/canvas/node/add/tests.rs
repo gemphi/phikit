@@ -136,3 +136,37 @@ fn an_instantiated_node_carries_no_file_identity() {
     assert_eq!(node.address, 0);
     assert!(!node.frame() && !node.reroute());
 }
+
+/// A link dropped on empty canvas opens the Add menu narrowed to what can
+/// take it; long, it is grouped like the plain one (`menu::body`).
+#[test]
+fn a_pending_link_in_state_makes_the_header_body_a_link_drag_menu() {
+    use crate::v2::host::BHostType;
+    use crate::v2::state::{BState, NodeKey};
+    use crate::v2::view::BView;
+    use crate::v2::view::prim::{BAction, BControl};
+    // The wiring the release handler relies on: with `AddLink` set, `body`
+    // reads it and the menu narrows + wires, with nothing else loaded.
+    let mut s = BState::new();
+    let pend = BPendingLink { node: "Principled BSDF".into(), socket: "BSDF".into(), from_output: true };
+    s.set(NodeKey::AddLink(BHostType::Shader), store::encode_pending(&pend));
+    let rows = menu::body(&s);
+    // Long, so grouped: each category a submenu holding only the
+    // compatible types.
+    fn items(v: &BView, out: &mut Vec<BControl>) {
+        match v {
+            BView::MenuItem(c) => out.push(c.clone()),
+            BView::Popover { body, .. } => body.iter().for_each(|b| items(b, out)),
+            _ => {}
+        }
+    }
+    let mut all = Vec::new();
+    rows.iter().for_each(|r| items(r, &mut all));
+    let labels: Vec<_> = all.iter().filter_map(|c| c.label.clone()).collect();
+    assert!(!labels.contains(&"Color".to_string()), "RGB (no input) is not offered to a dropped output");
+    assert!(labels.contains(&"Material Output".to_string()));
+    let picked = all.iter().find(|c| c.label.as_deref() == Some("Material Output")).unwrap();
+    let BAction::Set(_, v) = picked.action.clone().unwrap() else { panic!() };
+    assert!(store::decode(&v)[0].link.is_some(), "the pick is wired to the drop");
+}
+

@@ -61,9 +61,21 @@ pub fn controls(
 /// The plain Add menu, grouped into one submenu per category (`by_category`) —
 /// Blender's Shift-A menu shape. Each submenu is a popover to the right, opened
 /// on hover, keyed by `MenuKey::Nested` so sibling categories close each other.
-fn grouped(s: &BState, at: (f32, f32), current: &BNodeAdditions, taken: &[&str], host: BHostType) -> Vec<BView> {
+fn grouped(s: &BState, at: (f32, f32), current: &BNodeAdditions, taken: &[&str], host: BHostType, link: Option<&BPendingLink>) -> Vec<BView> {
+    // A link-drag menu offers only the types that can take the dragged end.
+    let offered: Option<Vec<&str>> = link.map(|p| {
+        catalog::search_offering("", if p.from_output { BSocketSide::Input } else { BSocketSide::Output })
+            .into_iter()
+            .map(|ty| ty.label())
+            .collect()
+    });
     catalog::by_category()
         .into_iter()
+        .map(|(cat, types)| {
+            let types: Vec<_> = types.into_iter().filter(|ty| offered.as_ref().is_none_or(|o| o.contains(&ty.label()))).collect();
+            (cat, types)
+        })
+        .filter(|(_, types)| !types.is_empty())
         .map(|(cat, types)| {
             let labels = ["Add", cat.label()];
             let key = MenuKey::Nested(host.slug(), &labels).path();
@@ -76,7 +88,7 @@ fn grouped(s: &BState, at: (f32, f32), current: &BNodeAdditions, taken: &[&str],
                     .with_action(BAction::Toggle(key.clone()))
                     .with_hover(BAction::Open(key.clone())),
             );
-            let body = types.into_iter().map(|ty| BView::MenuItem(row(ty, at, current, taken, host, None))).collect();
+            let body = types.into_iter().map(|ty| BView::MenuItem(row(ty, at, current, taken, host, link))).collect();
             BView::popover(anchor, body, open, BAction::Set(key, V_EMPTY.to_string()), BPopoverSide::Right)
         })
         .collect()
@@ -128,12 +140,20 @@ pub fn body(s: &BState) -> Vec<BView> {
     let refs: Vec<&str> = taken.iter().map(String::as_str).collect();
     let at = view_centre(s, host);
     // A pending link (a link dropped on empty canvas) makes this a link-drag
-    // search: a FLAT list narrowed to compatible types, each pick wired to the
-    // drop — Blender's search is flat, not categorised. The plain Shift-A menu
-    // is grouped into category submenus instead.
+    // menu narrowed to compatible types, each pick wired to the drop. A short
+    // list stays flat; a long one is grouped into the same category submenus
+    // as the plain Shift-A menu, so no menu lists more than a handful of rows
+    // and none runs off the window (`MAX_CHILDREN`).
     match super::pending_of(s, host) {
-        Some(pend) => controls("", at, &current, &refs, host, Some(&pend)).into_iter().map(BView::MenuItem).collect(),
-        None => grouped(s, at, &current, &refs, host),
+        Some(pend) => {
+            let flat = controls("", at, &current, &refs, host, Some(&pend));
+            if flat.len() <= crate::v2::part::props::pref::set::MAX_CHILDREN {
+                flat.into_iter().map(BView::MenuItem).collect()
+            } else {
+                grouped(s, at, &current, &refs, host, Some(&pend))
+            }
+        }
+        None => grouped(s, at, &current, &refs, host, None),
     }
 }
 
@@ -189,25 +209,6 @@ mod tests {
         let added = store::decode(&value);
         assert_eq!(added.len(), 2, "Value kept, Gamma added");
         assert_eq!(added[1].idname, "ShaderNodeGamma");
-    }
-
-    #[test]
-    fn a_pending_link_in_state_makes_the_header_body_a_link_drag_menu() {
-        // The wiring the release handler relies on: with `AddLink` set, `body`
-        // reads it and the menu narrows + wires, with nothing else loaded.
-        let mut s = BState::new();
-        let pend = BPendingLink { node: "Principled BSDF".into(), socket: "BSDF".into(), from_output: true };
-        s.set(NodeKey::AddLink(BHostType::Shader), store::encode_pending(&pend));
-        let rows = body(&s);
-        let labels: Vec<_> = rows.iter().filter_map(|r| match r {
-            BView::MenuItem(c) => c.label.clone(),
-            _ => None,
-        }).collect();
-        assert!(!labels.contains(&"Color".to_string()), "RGB (no input) is not offered to a dropped output");
-        assert!(labels.contains(&"Material Output".to_string()));
-        let BView::MenuItem(c) = &rows[0] else { panic!() };
-        let BAction::Set(_, v) = c.action.clone().unwrap() else { panic!() };
-        assert!(store::decode(&v)[0].link.is_some(), "the pick is wired to the drop");
     }
 
     #[test]

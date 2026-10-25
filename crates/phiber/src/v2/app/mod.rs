@@ -14,6 +14,8 @@ pub mod trace;
 pub mod undo;
 pub mod import;
 pub mod load;
+mod owner;
+mod adopt;
 mod playback;
 pub mod load_ui;
 pub mod health;
@@ -66,6 +68,13 @@ pub struct BPhiberApp {
     /// The document is a fresh startup file with no path of its own yet
     /// (`wm.read_homefile`): Save asks where, and the read is not recorded.
     pub(crate) untitled: bool,
+    /// The read under way, if any: its cancel flag, and the generation it
+    /// belongs to (`load.rs`). One read owns the file at a time — opening
+    /// another cancels this one and its result is dropped when it lands,
+    /// where before two reads raced and the second to finish replaced the
+    /// scene, once in the middle of a finished render.
+    pub(crate) load_owner: Option<std::sync::Arc<std::sync::atomic::AtomicBool>>,
+    pub(crate) load_gen: u64,
     /// The "Save changes?" dialog was answered: the action it held runs
     /// once without asking again.
     pub(crate) answered_close: bool,
@@ -88,6 +97,8 @@ impl BPhiberApp {
             ray_ticker: false,
             history: Default::default(),
             untitled: false,
+            load_owner: None,
+            load_gen: 0,
             answered_close: false,
             closing: false,
             title: String::new(),

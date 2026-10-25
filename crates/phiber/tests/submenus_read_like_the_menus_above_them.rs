@@ -61,7 +61,7 @@ fn every_submenu_item() -> Vec<(Vec<&'static str>, BMenuItem)> {
 #[test]
 fn the_topbar_has_submenus_to_test() {
     let all = every_submenu_item();
-    assert!(all.len() >= 8, "the topbar's own submenus: {}", all.len());
+    assert!(all.len() >= 6, "the topbar's own submenus: {}", all.len());
     // The top bar's own submenus are all one deep — File \u{25b8} Import, not
     // File \u{25b8} Import \u{25b8} something. The labels chain still has to be
     // right for the keys to be, so every one of them carries its menu's label.

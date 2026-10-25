@@ -16,7 +16,7 @@ impl BViewItem for BRevertModal {
     fn build(&self, _: &BState) -> BView {
         BView::column(vec![
             BView::row(vec![BView::icon("alert_triangle"), BView::label(set::MESSAGE)]),
-            BView::row(set::buttons().into()),
+            BView::row(std::iter::once(BView::spacer()).chain(set::buttons()).collect()),
         ])
     }
 }

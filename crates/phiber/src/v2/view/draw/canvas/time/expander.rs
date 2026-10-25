@@ -36,14 +36,21 @@ pub(crate) fn expander_write(
     // subtracting it here — which this used to do — took it off twice and found
     // the row below the one under the pointer.
     let index = BTimeRow::index_at(y, row_height, scrub)?;
-    let BRowKind::Object { name, expanded } = &rows.get(index)?.kind else { return None };
-    let slot = super::WIDGET_UNIT * 0.5;
+    // An object's widget sits half a unit in; a group's one group step in
+    // (`row::set::GROUP_OFFSET`). The fold key is the object's name, or the
+    // object and group together (`BTimeRow::group_key`).
+    let (fold, expanded, slot) = match &rows.get(index)?.kind {
+        BRowKind::Object { name, expanded } => (name.clone(), *expanded, super::WIDGET_UNIT * 0.5),
+        BRowKind::Slot { action, identifier, expanded, .. } => (BTimeRow::slot_key(action, identifier), *expanded, super::WIDGET_UNIT * 0.5),
+        BRowKind::Group { object, name, expanded } => (BTimeRow::group_key(object, name), *expanded, super::row::set::GROUP_OFFSET),
+        _ => return None,
+    };
     if x < slot || x >= slot + 0.85 * super::WIDGET_UNIT {
         return None;
     }
-    let next = if *expanded { V_FALSE } else { V_TRUE };
+    let next = if expanded { V_FALSE } else { V_TRUE };
     Some(BAction::Set(
-        crate::v2::state::DopeKey::Expanded(crate::v2::state::intern(name)).path(),
+        crate::v2::state::DopeKey::Expanded(crate::v2::state::intern(&fold)).path(),
         next.to_string(),
     ))
 }
@@ -61,7 +68,7 @@ mod tests {
         vec![
             BTimeRow { kind: BRowKind::Summary { expanded: true }, keys: Vec::new() },
             BTimeRow { kind: BRowKind::Object { name: "Rig".into(), expanded: false }, keys: Vec::new() },
-            BTimeRow { kind: BRowKind::Curve { name: "X Location".into(), color: [0.0; 3] }, keys: Vec::new() },
+            BTimeRow { kind: BRowKind::Curve { name: "X Location".into(), color: [0.0; 3], grouped: false }, keys: Vec::new() },
         ]
     }
 

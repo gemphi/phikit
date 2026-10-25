@@ -67,10 +67,10 @@ pub static SILVER_LIGHT: BPalette = BPalette::accented(BPaletteName::Silver, sha
 pub static APPLE: BPalette = BPalette::accented(BPaletteName::Apple, shade::APPLE, (210.1, 100.0, 52.0));
 pub static APPLE_LIGHT: BPalette = BPalette::accented(BPaletteName::Apple, shade::APPLE_LIGHT, (211.3, 100.0, 50.0));
 
-/// Apple Dark: the dark window grey and the dark-mode blue on both sides —
-/// its light mode is that grey lifted, and keeps `#0A84FF`.
-pub static APPLE_DARK: BPalette = BPalette::accented(BPaletteName::AppleDark, shade::APPLE_DARK, (210.1, 100.0, 52.0));
-pub static APPLE_DARK_LIGHT: BPalette = BPalette::accented(BPaletteName::AppleDark, shade::APPLE_DARK_LIGHT, (210.1, 100.0, 52.0));
+/// Phiber: the 3D logo — Phi-Pill Blue's face, `#3B82F6`, on its deep navy;
+/// in light mode the Phiegg site's blue, `#007AFF`, on its blue-white.
+pub static PHIBER: BPalette = BPalette::accented(BPaletteName::Phiber, shade::PHIBER, (217.2, 91.2, 59.8));
+pub static PHIBER_LIGHT: BPalette = BPalette::accented(BPaletteName::Phiber, shade::PHIBER_LIGHT, (211.3, 100.0, 50.0));
 
 /// Swift: a warm dark ladder with Swift's orange, `#FF5933`.
 pub static SWIFT: BPalette = BPalette::accented(BPaletteName::Swift, shade::SWIFT, (11.2, 100.0, 60.0));

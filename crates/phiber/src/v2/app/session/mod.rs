@@ -25,7 +25,7 @@
 //! Blender ref: `wm.read_homefile` restoring the UI, and the recent-files
 //! reopen — Phiber keeps it to the last file rather than a list, for now.
 
-mod snapshot;
+pub mod snapshot;
 mod transient;
 
 pub use snapshot::{apply, last_file, snapshot};
@@ -34,7 +34,7 @@ pub use transient::{is_transient, loaded_path, resume_frame};
 use crate::v2::state::BState;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use std::time::Instant;
+use web_time::Instant;
 use transient::{THROTTLE, THROTTLED, VOLATILE};
 
 struct BOpen {

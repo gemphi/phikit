@@ -20,7 +20,7 @@ fn filename(s: &BState) -> BView {
         .filter(|n| !n.is_empty())
         .map(str::to_string)
         .or_else(|| {
-            s.get(&FileKey::Selected.path())
+            Some(super::op::picked(s)).filter(|p| !p.is_empty())
                 .map(|p| p.rsplit(['/', '\\']).next().unwrap_or(p).to_string())
         })
         .unwrap_or_default();
@@ -35,8 +35,7 @@ fn filename(s: &BState) -> BView {
 /// the action reducer turns into an import + recent-list entry.
 fn execute_btn(s: &BState) -> BView {
     let dir = listing::current_dir(s);
-    let target = s
-        .get(&FileKey::Selected.path())
+    let target = Some(super::op::picked(s))
         .filter(|p| !p.is_empty())
         .map(str::to_string)
         .unwrap_or_else(|| {
@@ -47,10 +46,11 @@ fn execute_btn(s: &BState) -> BView {
                 listing::join(&dir, name)
             }
         });
+    // Blender's execute button is the dialog's one lit button.
     BView::Button(
         BControl::new()
-            .with_icon("check")
             .with_label(purpose(s).exec_label())
+            .with_active(true)
             .with_action(BAction::Set(FileKey::Selected.path(), target)),
     )
 }
@@ -69,12 +69,7 @@ fn cancel_btn(host: BExecuteHost) -> BView {
         BExecuteHost::Modal => BAction::Set(ModalKey::Open.path(), V_EMPTY.to_string()),
         BExecuteHost::Area => BAction::Reset(FileKey::Purpose.path()),
     };
-    BView::Button(
-        BControl::new()
-            .with_icon("x")
-            .with_label("Cancel")
-            .with_action(action),
-    )
+    BView::Button(BControl::new().with_label("Cancel").with_action(action))
 }
 
 /// The execute bar for the browser wherever it is: in the dialog it is
@@ -106,8 +101,27 @@ pub fn has_purpose(s: &BState) -> bool {
         )
 }
 
+/// Whether the purpose names a new file (Save As, Export…), so the bar
+/// carries a name field; opening only needs the pick.
+fn names_a_file(s: &BState) -> bool {
+    use super::purpose::BFilePurpose;
+    matches!(purpose(s), BFilePurpose::SaveAs | BFilePurpose::SaveCopy | BFilePurpose::Export | BFilePurpose::SaveImage | BFilePurpose::Mixdown)
+}
+
+/// The bar in three groups, as every strip is: on the left what will be
+/// acted on — the name being typed when the purpose names a file, else the
+/// file picked; in the middle what the dialog does; on the right Cancel and
+/// the action. The buttons hug their words rather than the bar's width, and
+/// a path to open is typed into the directory field or found with the search
+/// at the top, not into a field the width of the window here.
 pub fn view_in(s: &BState, host: BExecuteHost) -> BView {
-    let mut list = vec![filename(s), BView::spacer()];
+    let picked = Some(super::op::picked(s)).filter(|p| !p.is_empty()).map(|p| p.rsplit(['/', '\\']).next().unwrap_or(p).to_string());
+    let lead = if names_a_file(s) {
+        filename(s)
+    } else {
+        BView::pair("Selected", picked.unwrap_or_else(|| "nothing yet".to_string()))
+    };
+    let mut list = vec![lead, BView::spacer(), BView::label(purpose(s).title().to_string()), BView::spacer()];
     if cfg!(windows) {
         list.push(execute_btn(s));
         list.push(cancel_btn(host));

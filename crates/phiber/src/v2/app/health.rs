@@ -75,8 +75,10 @@ mod tests {
 
     #[test]
     fn the_startup_lines_name_the_build_and_the_frame_log() {
+        // The debug warning leads in a debug build and is absent in a release
+        // one — `cargo test --release` runs these too.
         let lines = BHealth::at_start();
-        assert!(lines[0].starts_with("Debug build"), "tests are debug builds: {lines:?}");
+        assert_eq!(lines[0].starts_with("Debug build"), cfg!(debug_assertions), "{lines:?}");
         assert!(lines.last().unwrap().contains("phiber-session.log"));
     }
 

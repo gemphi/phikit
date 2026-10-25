@@ -6,7 +6,7 @@
 
 use super::history;
 use super::listing;
-use super::op::{NAV_NEXT, NAV_PARENT, NAV_PREVIOUS, NAV_REFRESH};
+use super::op::{NAV_NEW_FOLDER, NAV_NEXT, NAV_PARENT, NAV_PREVIOUS, NAV_REFRESH};
 use super::set::{BFileNavSpec, NAV};
 use crate::v2::state::BKey as _;
 use crate::v2::state::{BState, FileKey};
@@ -29,6 +29,7 @@ fn button(s: &BState, spec: &BFileNavSpec) -> BView {
 }
 
 /// Previous, next and parent — the start of the strip's left column.
+/// Refresh and the new folder close it (`BFileRefresh`).
 pub struct BFileNav;
 
 impl BFileNav {
@@ -40,13 +41,13 @@ impl BFileNav {
 impl crate::v2::view::BViewItem for BFileNav {
     fn build(&self, s: &BState) -> BView {
         BView::row(
-            NAV.iter().filter(|spec| spec.action != NAV_REFRESH).map(|spec| button(s, spec)).collect(),
+            NAV.iter().filter(|spec| ![NAV_REFRESH, NAV_NEW_FOLDER].contains(&spec.action)).map(|spec| button(s, spec)).collect(),
         )
     }
 }
 
-/// Refresh — the end of the strip's left column, flush with the source
-/// list's edge under it.
+/// Refresh and New Folder — the end of the strip's left column, flush with
+/// the source list's edge under it.
 pub struct BFileRefresh;
 
 impl BFileRefresh {
@@ -57,8 +58,7 @@ impl BFileRefresh {
 
 impl crate::v2::view::BViewItem for BFileRefresh {
     fn build(&self, s: &BState) -> BView {
-        let spec =
-            NAV.iter().find(|spec| spec.action == NAV_REFRESH).expect("the nav list carries a refresh");
-        button(s, spec)
+        // Refresh, then Blender's new-folder button beside it.
+        BView::row(NAV.iter().filter(|spec| [NAV_REFRESH, NAV_NEW_FOLDER].contains(&spec.action)).map(|spec| button(s, spec)).collect())
     }
 }

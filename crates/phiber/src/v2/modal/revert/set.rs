@@ -14,7 +14,7 @@ pub const CONFIRMED: &str = "confirm";
 
 /// Revert, and Cancel — Revert first on Windows, last elsewhere.
 pub fn buttons() -> [BView; 2] {
-    let revert = BView::Button(BControl::new().with_label("Revert").with_action(BAction::Set(OpKey::Revert.path(), CONFIRMED.to_string())));
+    let revert = BView::Button(BControl::new().with_label("Revert").with_active(true).with_action(BAction::Set(OpKey::Revert.path(), CONFIRMED.to_string())));
     let cancel = BView::Button(BControl::new().with_label("Cancel").with_action(BAction::Set(ModalKey::Open.path(), V_EMPTY.to_string())));
     if cfg!(windows) { [revert, cancel] } else { [cancel, revert] }
 }

@@ -15,6 +15,9 @@ path = "src/zlog.rs"
 default = []
 
 [dependencies]
+# `std::time::Instant::now` panics on wasm32-unknown-unknown; web-time is
+# std::time on every other target and performance.now() in the browser.
+web-time.workspace = true
 collections.workspace = true
 chrono.workspace = true
 log.workspace = true

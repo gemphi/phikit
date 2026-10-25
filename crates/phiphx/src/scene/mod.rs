@@ -217,6 +217,7 @@ mod heap;
 
 #[cfg(test)]
 mod bytes_tests;
+pub mod build;
 mod collection;
 mod corners;
 pub mod motion;

@@ -203,7 +203,7 @@ impl BFlexed for BZoneTogglePart {
                 .keeps_size()
                 .gap(BSpace::GapXs),
             Self::Button => {
-                let size = BLen::Dim(BDim::ButtonHeight);
+                let size = BLen::Dim(BDim::Tile);
                 BFlex::row()
                     .align(BAlign::Center)
                     .justify(BJustify::Center)

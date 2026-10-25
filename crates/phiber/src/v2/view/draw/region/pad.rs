@@ -10,7 +10,7 @@ use crate::v2::region::BRegionType;
 
 /// `flex` with the padding its region kind calls for.
 pub(super) fn padded(flex: BFlex, kind: BRegionType, ctx: &BRenderCtx) -> BFlex {
-    use BRegionType::{Center, Execute, Footer, Header, ToolHeader, Tools};
+    use BRegionType::{Center, Execute, Footer, Header, ToolHeader, Tools, UI};
     let panelled = ctx.host.tools_hold_panels();
     match (kind, rail_region(kind, ctx.host), panelled) {
         // Every vertical strip is the topbar turned on its side, so every
@@ -41,6 +41,9 @@ pub(super) fn padded(flex: BFlex, kind: BRegionType, ctx: &BRenderCtx) -> BFlex 
         // each pane pads itself as the region under it does (`pane`), so the
         // strip itself pads nothing and leaves no gap.
         (ToolHeader, _, true) => flex.gap(BSpace::None),
+        // So is a browser's header, over the same columns; it keeps the rule
+        // every content header closes with.
+        (Header, _, true) if ctx.host.heads_its_columns() => flex.gap(BSpace::None).border(BEdge::Bottom),
         // A content header closes against what it heads with the same line an
         // accordion draws around itself — one edge of `BEdge::All`, the same
         // stroke and colour — so a header strip and a card heading read as the
@@ -54,7 +57,11 @@ pub(super) fn padded(flex: BFlex, kind: BRegionType, ctx: &BRenderCtx) -> BFlex 
         // but sharing its inner edge with the region beside it, which pads it
         // once: two side-by-side regions are one `pad_md` apart, as an area's
         // content is from its edge, not two.
-        (Tools, _, true) => flex.pad_left(BSpace::PadMd).pad_y(BSpace::PadMd),
+        //
+        // A browser's columns stand a seam from everything round them — the
+        // area's edges, the strips above, the bar below — the gap between
+        // the columns themselves, so no edge of the host has a wider margin.
+        (Tools, _, true) => flex.pad_left(BSpace::Seam).pad_y(BSpace::Seam),
         // Properties content: a small top/bottom pad so the first and last
         // accordion don't touch the edges, and a right gutter so the last
         // property row doesn't butt against the border. The rail beside it
@@ -69,7 +76,10 @@ pub(super) fn padded(flex: BFlex, kind: BRegionType, ctx: &BRenderCtx) -> BFlex 
         // apart, as two areas of a workspace are (`BSpace::Seam`, the zone
         // gap) — not a content pad, which spaced them twice as far as any
         // zone. The outer edges keep the content inset.
-        (Center, _, true) => flex.pad_left(BSpace::Seam).pad_right(BSpace::PadMd).pad_y(BSpace::ContentPad),
+        // A details column beside it is the source list's mirror: a seam
+        // from the list, the content inset from the area's outer edge.
+        (Center, _, true) => flex.pad_x(BSpace::Seam).pad_y(BSpace::Seam),
+        (UI, _, true) => flex.pad_right(BSpace::Seam).pad_y(BSpace::Seam),
         _ => flex.pad_x(BSpace::PadMd).pad_y(BSpace::ContentPad),
     }
 }

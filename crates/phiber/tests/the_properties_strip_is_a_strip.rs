@@ -70,17 +70,6 @@ fn the_active_tab_is_the_accordion_heading_beside_it() {
 }
 
 #[test]
-fn the_tab_keeps_the_headings_own_axis() {
-    // The paint used to be turned towards the pane (`along(side.gradient_axis())`),
-    // which ran its sweep the other way from the accordion's: two materials.
-    let tab = include_str!("../src/v2/view/draw/tab/mod.rs");
-    let paint = tab.split("fn properties_layers").nth(1).expect("the Properties paint layer");
-    let paint = &paint[..paint.find("} else {").unwrap_or(paint.len())];
-    assert!(paint.contains("tab_active_gradient(ctx.host))"), "the heading's gradient as it is");
-    assert!(!paint.contains("gradient_axis"), "not re-aimed at the pane");
-}
-
-#[test]
 fn the_strip_is_the_column_beside_it() {
     // The step has moved three times, and this is where it landed: nowhere.
     //
@@ -162,22 +151,19 @@ fn the_strip_steps_by_the_same_pitch_as_the_panels_beside_it() {
 }
 
 #[test]
-fn the_clusters_bar_keeps_off_the_strips_sides() {
-    // The expand / paging bar is a control, not a cap: a tab spans the rail
-    // and meets the pane (`layout_gutters`), but a button keeps its gap.
+fn the_clusters_holder_paints_nothing() {
+    // The foot cluster's holder is not clickable, so it must not light up
+    // under the pointer: it paints nothing, and its controls are the rail's
+    // own square tiles.
     let rail = include_str!("../src/v2/view/draw/rail.rs");
-    let bar = rail
-        .split("fn bar(")
-        .nth(1)
-        .expect("the actions bar");
-    assert!(
-        bar.contains(".margin_x(BSpace::PadXs)"),
-        "the bar is inset from the strip's edges"
-    );
+    let bar = rail.split("fn bar(").nth(1).expect("the foot holder");
+    let bar = &bar[..bar.find("\n    }").unwrap_or(bar.len())];
+    assert!(!bar.contains("paint"), "the holder takes no paint: {bar}");
+    assert!(!bar.contains("hover"), "and no hover");
 }
 
 #[gpui::test]
-async fn the_cluster_clears_both_sides_while_a_tab_still_spans_them(cx: &mut TestAppContext) {
+async fn the_tabs_and_the_cluster_are_one_tile(cx: &mut TestAppContext) {
     let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
     cx.simulate_resize(size(px(1400.0), px(560.0)));
     app.update(cx, |app, cx| {
@@ -192,16 +178,13 @@ async fn the_cluster_clears_both_sides_while_a_tab_still_spans_them(cx: &mut Tes
     let arrow = cx.debug_bounds("tab-chevron_right-chevron_right").expect("the expand arrow");
     let span = |b: &gpui::Bounds<gpui::Pixels>| (f32::from(b.origin.x), f32::from(b.origin.x + b.size.width));
     let (sl, sr) = span(&strip);
-
-    // A tab is a cap cut into the strip: it spans it and meets the pane.
-    assert_eq!(span(&tab), (sl, sr), "a tab spans the strip: {tab:?} in {strip:?}");
-
-    // The cluster's bar is a control, so it keeps a button's gap — the same
-    // on both sides, and inside the strip rather than added to its width.
-    // `width(Full)` plus a margin is what ran it 4px past the right edge.
-    let (al, ar) = span(&arrow);
     let inset = phiber::v2::theme::style::metric::DEFAULT_SPACING.pad_xs;
-    assert_eq!(al - sl, inset, "the bar clears the strip's left edge");
-    assert_eq!(sr - ar, inset, "and its right edge by the same");
-    assert!(ar <= sr, "and never runs past it: {arrow:?} in {strip:?}");
+    // A tab and the expand arrow are the same tile, the same pad in from both
+    // edges of the strip.
+    for (name, b) in [("tab", tab), ("arrow", arrow)] {
+        let (l, r) = span(&b);
+        assert_eq!(l - sl, inset, "the {name} clears the strip's left edge: {b:?} in {strip:?}");
+        assert_eq!(sr - r, inset, "and its right edge by the same: {b:?} in {strip:?}");
+    }
+    assert_eq!(tab.size, arrow.size, "one tile size");
 }

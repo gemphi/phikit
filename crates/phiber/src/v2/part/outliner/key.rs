@@ -34,7 +34,8 @@ pub const RESTRICT_FIELDS: &[&str] = &["hide_get", "hide_viewport", "hide_select
 /// toggles (`ctx.outliner.col.<field>`: which columns the Outliner shows) are
 /// UI and are not restrictions.
 pub fn is_restriction(encoded: &str) -> bool {
-    let Some(rest) = encoded.strip_prefix("ctx.outliner.") else { return false };
+    let family = OutlinerKey::Search.family();
+    let Some(rest) = encoded.strip_prefix(family.as_str()) else { return false };
     RESTRICT_FIELDS.iter().any(|field| rest.strip_suffix(field).is_some_and(|row| row.ends_with('.') && row != "col."))
 }
 

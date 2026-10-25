@@ -105,7 +105,9 @@ fn sub_panels_hang_where_blender_parents_them() {
     assert_eq!(denoise.header[0].key, "cycles.use_denoising", "its toggle is its header");
     assert_eq!(section("Render", "Motion Blur").header[0].key, "render.use_motion_blur");
     let light: Vec<&str> = section("Render", "Light Paths").list.iter().map(|c| c.title).collect();
-    assert_eq!(light, ["Max Bounces", "Caustics"]);
+    // Cycles parents Max Bounces, Clamping and Caustics under Light Paths
+    // (`CYCLES_RENDER_PT_light_paths_*`).
+    assert_eq!(light, ["Max Bounces", "Clamping", "Caustics"]);
     let object = sections_for(BHostType::Buts, "Object");
     assert!(object.iter().all(|s| s.title != "Delta Transform"), "not a top-level panel in Blender");
     let delta = section("Object", "Transform").list[0];

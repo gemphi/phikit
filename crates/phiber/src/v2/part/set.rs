@@ -53,5 +53,10 @@ pub static SET: &[BPartSpec] = &[
     BPartSpec { kind: BPartType::Activity },
     BPartSpec { kind: BPartType::CaptionLead },
     BPartSpec { kind: BPartType::CaptionTrail },
+    BPartSpec { kind: BPartType::AreaTabs },
+    BPartSpec { kind: BPartType::ProjectNav },
+    BPartSpec { kind: BPartType::ProjectBar },
+    BPartSpec { kind: BPartType::ProjectInfo },
+    BPartSpec { kind: BPartType::FileInfo },
     BPartSpec { kind: BPartType::Custom },
 ];

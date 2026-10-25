@@ -56,6 +56,8 @@ fn file_host_declares_blenders_regions_in_order() {
             BRegionType::ToolHeader,
             BRegionType::Tools,
             BRegionType::Center,
+            // The details column of the picked file (`part::file::info`).
+            BRegionType::UI,
             BRegionType::Execute
         ]
     );
@@ -67,9 +69,12 @@ fn file_host_declares_blenders_regions_in_order() {
             .unwrap_or_default()
     };
     use phiber::v2::part::BPartType;
-    // The path strip is the columns under it: the folder moves and the refresh
-    // over the source list, the fields over the file list, the filters at the end.
-    assert_eq!(parts_of(BRegionType::ToolHeader), [BPartType::FileNav, BPartType::FileRefresh, BPartType::PathBar, BPartType::TypeFilter]);
+    // Both strips are the columns under them: the menus over the source
+    // list, the path over the files (the search over the details is added
+    // by `complete_header`); the folder moves over the source list and the
+    // display modes and filters over the details.
+    assert_eq!(parts_of(BRegionType::Header), [BPartType::Switcher, BPartType::Modebar, BPartType::Menubar, BPartType::PathBar]);
+    assert_eq!(parts_of(BRegionType::ToolHeader), [BPartType::FileNav, BPartType::FileRefresh, BPartType::TypeFilter]);
     assert_eq!(parts_of(BRegionType::Tools), [BPartType::SourceList]);
     assert_eq!(parts_of(BRegionType::Execute), [BPartType::Execute]);
     assert!(parts_of(BRegionType::Center).contains(&BPartType::Custom));

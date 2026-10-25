@@ -125,6 +125,14 @@ impl BPhiberApp {
         //    for a Save As, Link or Export that happened to name a `.blend`.
         match commit {
             Some((file, crate::v2::part::file::purpose::BFilePurpose::Open)) => {
+                // A file chosen from the welcome window closes it, whether or
+                // not a read follows: Blender's splash goes on any open
+                // (`wm_splash` ends on `WM_file_read`). It stayed up before,
+                // over the scene it had just opened, and a second click on it
+                // started a second read of the same file.
+                if self.state.get(crate::v2::state::ModalKey::Open) == Some(crate::v2::state::val::V_MODAL_SPLASH) {
+                    self.state.set(crate::v2::state::ModalKey::Open, crate::v2::state::val::V_EMPTY);
+                }
                 if should_import(self.state.get(&loaded_path_key()), Some(&file)) {
                     self.start_import(file, cx);
                 }

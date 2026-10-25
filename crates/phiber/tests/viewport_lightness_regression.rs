@@ -80,7 +80,7 @@ fn the_sweep_lift_is_never_painted_as_an_opacity() {
     // and the line under the box / circle / lasso were painted with it, and
     // painted means the alpha IS an opacity: about 0.07 in a theme with a
     // sweep, and exactly 0.0 in every flat one — Graphite, Silver, Apple,
-    // AppleDark, Ember, Cyberpunk, where `gradients: false` zeroes the lift.
+    // Ember, Cyberpunk, where `gradients: false` zeroes the lift.
     // Those two lines were invisible in six of eleven themes, and choosing a
     // flat theme is exactly when a camera frame still has to be there.
     let src = include_str!("../src/v2/view/draw/canvas/view3d/mod.rs");
@@ -98,7 +98,7 @@ fn the_sweep_lift_is_never_painted_as_an_opacity() {
     assert!(!src.contains("BGestureInk::now(ctx.state, vp"), "neither takes the tracer's sky");
     // And the thing that makes this matter: a flat theme's lift is zero, so
     // an opacity taken from it is full transparency.
-    for name in [BPaletteName::Apple, BPaletteName::AppleDark, BPaletteName::Graphite] {
+    for name in [BPaletteName::Apple, BPaletteName::Graphite] {
         let style = resolve_ui_style(ui_style_defaults(name), &BState::new());
         assert_eq!(style.viewport_sweep_lift(), 0.0, "{name:?} is flat");
         assert_eq!(style.viewport_surface().3, 1.0, "but its canvas shade is opaque");

@@ -36,7 +36,12 @@ fn an_object_s_keys_are_its_slot_s_columns() {
     assert_eq!(BKeyTarget::columns(&model.actions, "Camera"), [1.0, 40.0]);
     let mut s = BState::new();
     s.set(CtxKey::Object, "Cube");
-    assert_eq!(BKeyTarget::shown(&s, &model), ["Cube"], "the Camera is neither selected nor active");
+    assert_eq!(BKeyTarget::shown(&s, &model), ["Cube"], "the Camera is neither selected nor active, and the Cube is listed once");
+    // Only Show Selected off: every animated object, selected or not.
+    s.set(&crate::v2::part::filter::dope::INLINE[0].key(), crate::v2::state::V_FALSE);
+    let mut all = BKeyTarget::shown(&s, &model);
+    all.sort();
+    assert_eq!(all, ["Camera", "Cube"], "unticked, the Camera's keys show too");
 }
 
 #[test]

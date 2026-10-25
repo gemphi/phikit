@@ -19,7 +19,8 @@ use phiber::v2::zone::BZoneType;
 fn walk(host: BHostType, trail: &mut Vec<&'static str>, items: &'static [BMenuItem], out: &mut Vec<(String, BAction)>) {
     for item in items {
         match item.kind {
-            BMenuKind::Sep | BMenuKind::Recent => {}
+            // Lists drawn from the state, not entries of their own.
+            BMenuKind::Sep | BMenuKind::Recent | BMenuKind::History | BMenuKind::Live(_) => {}
             BMenuKind::Sub(subs) => {
                 trail.push(item.label);
                 walk(host, trail, subs, out);
@@ -62,6 +63,10 @@ fn no_menu_item_is_silent_and_most_run_an_operator() {
         let own_reported = reports(&own);
         assert!(own_reported * 2 < own.len(), "{host} mostly works: {own_reported} of {} report", own.len());
     }
+    // The top bar shows nothing it cannot do: an entry with nothing behind
+    // it is left out (`tests/menu_truth.rs` records which), not refused.
+    let refused: Vec<&str> = leaves.iter().filter(|(n, a)| n.starts_with("topbar") && matches!(a, BAction::Set(p, _) if *p == OpKey::Report.path())).map(|(n, _)| n.as_str()).collect();
+    assert!(refused.is_empty(), "the top bar offers entries that only say they are not available:\n  {}", refused.join("\n  "));
 }
 
 fn names(state: &BState) -> Vec<String> {

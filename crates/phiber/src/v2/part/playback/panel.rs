@@ -92,7 +92,9 @@ mod tests {
         let headings: Vec<String> = rows
             .iter()
             .filter_map(|row| match row {
-                BView::Split { list } => match list.first() {
+                // A property row's heading is its label column; a switch
+                // group's heading is the line above its first switch.
+                BView::Split { list } | BView::Column { list } => match list.first() {
                     Some(BView::Label { text }) if !text.is_empty() => Some(text.clone()),
                     _ => None,
                 },

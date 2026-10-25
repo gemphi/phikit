@@ -2,38 +2,48 @@
 //!
 //! File Browser host. Blender ref: `space_file/space_file.cc:1043-`.
 //!
-//! Blender's regions, declared as ours, in Blender's order:
+//! Three columns, read down — the source list, the files, the details —
+//! and the two strips over them are those columns read across, as
+//! Explorer's address bar and tool bar are:
 //! ```text
-//! ┌─ header      View / Select menus ──────────────────────────────────┐
-//! ├─ ui          [← → ↑ ⟳] /directory/ [search] [≡][⊞][⊠] [👁][⛛▾]   ┤
-//! ├─ tools ────────────┬─ window ──────────────────────────────────────┤
-//! │ ▾ Volumes          │  Name        Modified      Size               │
-//! │ ▾ System           │  … file rows …                                │
-//! │ ▾ Bookmarks        │                                               │
-//! ├─ execute     [file name]               [Cancel] [Open Phiber] ────┤
-//! └────────────────────────────────────────────────────────────────────┘
+//! ┌─ header      File Browser View Select │ This PC › C: › Users …   │ [search]  ┐
+//! ├─ ui          ← → ↑  ⟳ +               │                          │ ≡ ⊞ ⛛ ▾ ⚙ ┤
+//! ├─ tools ──────────────────────────────┬─ window ──────────────────┬─ details ─┤
+//! │ ▾ Bookmarks                           │  Name     Modified   Size │ preview   │
+//! │ ▾ System                              │  … file rows …            │ name …    │
+//! ├─ execute     Selected: …            Open Blender File      [Cancel] [Open] ──┤
+//! └──────────────────────────────────────────────────────────────────────────────┘
 //! ```
 //! The same declaration serves the editor in a workspace and the Open /
 //! Save As dialog (`modal::file_browser`), which raises this host in a card.
 
-use crate::v2::host::header;
 use crate::v2::pane::{BPaneSpec, BPaneType};
 use crate::v2::part::BPartType;
 use crate::v2::region::{BRegionSpec, BRegionType};
 
-/// Blender's `ui` region at the top: the directory strip.
-// The path strip is the columns under it, read across: the folder moves
-// and the refresh span the source list's width (`pane`: a Left pane over a
-// tools column takes that column's width, its two parts at either end), so
-// the directory field starts where the file list does.
-static PATH_PANES: &[BPaneSpec] = &[
+/// The header, over the three columns: the switcher and menus over the
+/// source list, the path over the files, the search (`complete_header`)
+/// over the details. Each pane is its column's width (`pane`, `columns`).
+pub static HEADER_PANES: &[BPaneSpec] = &[
     BPaneSpec {
         kind: BPaneType::Left,
-        parts: &[BPartType::FileNav, BPartType::FileRefresh],
+        parts: &[BPartType::Switcher, BPartType::Modebar, BPartType::Menubar],
     },
     BPaneSpec {
         kind: BPaneType::Center,
         parts: &[BPartType::PathBar],
+    },
+    BPaneSpec {
+        kind: BPaneType::Right,
+        parts: &[],
+    },
+];
+/// Blender's `ui` region: the folder moves and refresh over the source list,
+/// the display modes and filters spread over the details column.
+pub static PATH_PANES: &[BPaneSpec] = &[
+    BPaneSpec {
+        kind: BPaneType::Left,
+        parts: &[BPartType::FileNav, BPartType::FileRefresh],
     },
     BPaneSpec {
         kind: BPaneType::Right,
@@ -52,6 +62,11 @@ static CENTER_PANES: &[BPaneSpec] = &[BPaneSpec {
     kind: BPaneType::Center,
     parts: &[BPartType::Custom],
 }];
+/// The details column at the right: the picked file (`file::info`).
+static INFO_PANES: &[BPaneSpec] = &[BPaneSpec {
+    kind: BPaneType::Center,
+    parts: &[BPartType::FileInfo],
+}];
 static EXECUTE_PANES: &[BPaneSpec] = &[BPaneSpec {
     kind: BPaneType::Center,
     parts: &[BPartType::Execute],
@@ -60,7 +75,7 @@ static EXECUTE_PANES: &[BPaneSpec] = &[BPaneSpec {
 pub static REGIONS: &[BRegionSpec] = &[
     BRegionSpec {
         kind: BRegionType::Header,
-        panes: header::EDITOR,
+        panes: HEADER_PANES,
     },
     BRegionSpec {
         kind: BRegionType::ToolHeader,
@@ -73,6 +88,10 @@ pub static REGIONS: &[BRegionSpec] = &[
     BRegionSpec {
         kind: BRegionType::Center,
         panes: CENTER_PANES,
+    },
+    BRegionSpec {
+        kind: BRegionType::UI,
+        panes: INFO_PANES,
     },
     BRegionSpec {
         kind: BRegionType::Execute,

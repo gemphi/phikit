@@ -21,5 +21,6 @@ use wasm_bindgen::prelude::wasm_bindgen;
 /// reason.
 #[wasm_bindgen(start)]
 pub fn start() {
-    crate::app::run(None);
+    // The page boots into the demo, playing (`app::boot`).
+    crate::app::run(None, true);
 }

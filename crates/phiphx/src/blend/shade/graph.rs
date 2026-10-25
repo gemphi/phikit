@@ -7,7 +7,7 @@
 //! it drew two hardcoded cards — the same "Principled BSDF" and "Material Output"
 //! for every file ever opened.
 //!
-//! Ported from Blender 5.2.0 in `crates/phiber/refs/blender`,
+//! Ported from Blender 5.2.0 in `gemphi/ext/phiber-refs/blender`,
 //! `makesdna/DNA_node_types.h:1620`:
 //!
 //! | field | what it gives |

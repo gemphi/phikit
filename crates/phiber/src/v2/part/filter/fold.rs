@@ -33,6 +33,11 @@ use crate::v2::view::prim::{BCard, with_peers};
 /// One heading and the rows under it, as a table splits them.
 pub type BGroup = (&'static str, Vec<BView>);
 
+/// The most rows one group shows. A group with more is split into
+/// sub-groups, each a folding card inside it (`sub_cards`), so no list in a
+/// popover runs past eight before it is grouped.
+pub const MOST: usize = 8;
+
 /// `ctx.<scope…>.<group>.expanded` — the key one heading folds on.
 pub fn expand_key(scope: &[&'static str], group: &str) -> BPath {
     let mut segs: Vec<&'static str> = scope.to_vec();
@@ -63,16 +68,74 @@ pub fn cards(s: &BState, scope: &[&'static str], groups: Vec<BGroup>, closed: fn
     with_peers(
         groups
             .into_iter()
-            .map(|(title, rows)| {
-                let open = is_open(s, scope, title, closed(title));
+            .enumerate()
+            .map(|(n, (title, rows))| {
+                // A popover opens short: its first heading open, the rest
+                // shut until asked for, so a long filter set is a column of
+                // titles to choose from rather than a wall of boxes. What
+                // the user opens or shuts is remembered over that.
+                let open = is_open(s, scope, title, closed(title) || n > 0);
                 let body = match open {
-                    true => rows,
+                    true => grouped(s, scope, title, rows),
                     false => Vec::new(),
                 };
-                BCard::panel(title).fold(expand_key(scope, title), open).body(body).into()
+                BCard::panel(title).fold(expand_key(scope, title), open).accordion().body(body).into()
             })
             .collect(),
     )
+}
+
+/// `groups` as folding sub-panels of the card `parent` heads — an
+/// accordion, the first open, each on a key under its parent's.
+pub fn sub_cards(s: &BState, scope: &[&'static str], parent: &str, groups: Vec<(String, Vec<BView>)>) -> Vec<BView> {
+    let mut scope = scope.to_vec();
+    scope.push(slug(parent));
+    let cards = groups
+        .into_iter()
+        .enumerate()
+        .map(|(n, (title, rows))| {
+            let open = is_open(s, &scope, &title, n > 0);
+            let body = if open { rows } else { Vec::new() };
+            BCard::panel(title.clone()).fold(expand_key(&scope, &title), open).accordion().body(body).into()
+        })
+        .collect();
+    with_peers(cards)
+        .into_iter()
+        .map(|view| match view {
+            BView::Card(card) => BView::from(card.sub()),
+            view => view,
+        })
+        .collect()
+}
+
+/// A group's rows as they are drawn: as they come when there are at most
+/// `MOST` (or they are already sub-groups), else split into runs of at most
+/// `MOST`, each named by its first and last row.
+fn grouped(s: &BState, scope: &[&'static str], title: &str, rows: Vec<BView>) -> Vec<BView> {
+    if rows.len() <= MOST || rows.iter().any(|row| matches!(row, BView::Card(_))) {
+        return rows;
+    }
+    let runs = rows.len().div_ceil(MOST);
+    let size = rows.len().div_ceil(runs);
+    let groups = rows
+        .chunks(size)
+        .map(|run| {
+            let name = |row: Option<&BView>| row.and_then(label_of).unwrap_or_default();
+            (format!("{} \u{2013} {}", name(run.first()), name(run.last())), run.to_vec())
+        })
+        .collect();
+    sub_cards(s, scope, title, groups)
+}
+
+/// The first label a row carries: its control's, else its own text.
+fn label_of(row: &BView) -> Option<String> {
+    match row {
+        BView::Ctrl(ctrl) => ctrl.label.clone(),
+        BView::Button(ctl) => ctl.label.clone(),
+        BView::Label { text } => Some(text.clone()),
+        BView::Split { list } | BView::Row { list } => list.iter().rev().find_map(label_of),
+        _ => None,
+    }
 }
 
 /// What a popover draws: its headings as folding cards when Blender makes
@@ -84,9 +147,9 @@ pub fn body(s: &BState, scope: &[&'static str], groups: Vec<BGroup>, closed: fn(
     }
 }
 
-/// Every heading open, which is what Blender ships for these sub-panels —
-/// only `VIEW3D_PT_overlay_motion_tracking` carries `DEFAULT_CLOSED`, and
-/// phiber has no motion-tracking overlays to put under it yet.
+/// No heading closed on its own account (Blender's `DEFAULT_CLOSED` is only
+/// on `VIEW3D_PT_overlay_motion_tracking`, which phiber has no rows for);
+/// `cards` still opens only the first, so the popover opens short.
 pub fn all_open(_: &str) -> bool {
     false
 }
@@ -127,8 +190,13 @@ mod tests {
         let shut = built(&s, |g| g == "Guides");
         let BView::Card(first) = &shut[0] else { panic!("a card") };
         assert!(first.body.is_empty(), "closed: the header alone");
-        let BView::Card(second) = &shut[1] else { panic!("a card") };
-        assert_eq!(second.body.len(), 6, "and only that one");
+        // The headings after the first open shut, so the popover opens short.
+        let BView::Card(second) = &open[1] else { panic!("a card") };
+        assert!(second.body.is_empty(), "only the first heading opens by default");
+        s.set(&expand_key(&SCOPE, "Objects"), V_TRUE);
+        let asked = built(&s, all_open);
+        let BView::Card(second) = &asked[1] else { panic!("a card") };
+        assert_eq!(second.body.len(), 6, "opened, it shows its rows");
         // Opening it is remembered over the default.
         s.set(&expand_key(&SCOPE, "Guides"), V_TRUE);
         let reopened = built(&s, |g| g == "Guides");

@@ -46,11 +46,11 @@ pub static SET: &[BModalSpec] = &[
     },
     BModalSpec {
         kind: BModalType::Command,
-        label: "Command Palette",
-        icon: "command",
-        width: 640.0,
-        height: 420.0,
-        shape: BModalShape::Card,
+        label: "Search",
+        icon: "search",
+        width: 0.0,
+        height: 0.0,
+        shape: BModalShape::Palette,
         areas: &[],
     },
     BModalSpec {

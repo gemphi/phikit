@@ -44,6 +44,10 @@ pub struct BPalette {
 
     // Structural
     pub border: BColor,
+    /// The rule under a heading — a header strip, a card's title, a
+    /// section: two steps past the outline, so a heading is closed by a line
+    /// you see rather than a shade you find by looking for it.
+    pub rule: BColor,
     pub sep: BColor,
 
     // Rows (outliner / file list / any `ListRow`)
@@ -160,6 +164,7 @@ impl BPalette {
             accent_soft: (hue, saturation, lightness, ACCENT_SOFT_ALPHA),
             online: meanings.online,
             border: ladder.color(SHADE_OUTLINE),
+            rule: ladder.color(SHADE_GRID),
             sep: ladder.color(SHADE_APP),
             row_alt: ladder.color(SHADE_CARD),
             row_selected: (hue, saturation, lightness, ROW_SELECTED_ALPHA),

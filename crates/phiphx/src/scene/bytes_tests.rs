@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 
 fn fixture() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../REFS/blender/blender/tests/files/modeling/operators.blend")
+        .join("../../../ext/REFS/blender/blender/tests/files/modeling/operators.blend")
 }
 
 #[test]

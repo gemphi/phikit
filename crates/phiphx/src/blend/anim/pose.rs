@@ -32,13 +32,15 @@ impl BlendFile {
             self.off("Bone", "arm_mat[4][4]", dna),
         );
         let (Some(name_o), Some(arm_o)) = (name_o, arm_o) else { return out };
+        let _ = bone_o;
+        let rest = self.bones_by_name(arm_ob, dna);
         self.scoped(arm_ob, || {
             let Some(pose) = self.block_at(self.ptr(arm_ob, Some(pose_o))) else { return };
             let chans = self.list(self.ptr(pose, Some(chan_o)), self.off("bPoseChannel", "*next", dna));
             let index: HashMap<u64, usize> = chans.iter().enumerate().map(|(i, c)| (c.old_address, i)).collect();
             for pc in &chans {
                 let arm = self
-                    .block_at(self.ptr(pc, bone_o))
+                    .pchan_bone(pc, dna, &rest)
                     .and_then(|b| b.data.get(arm_o..arm_o + 64))
                     .map(|s| Mat4::from_cols_array(&std::array::from_fn(|i| self.read_f32(&s[i * 4..i * 4 + 4]))))
                     .unwrap_or(Mat4::IDENTITY);

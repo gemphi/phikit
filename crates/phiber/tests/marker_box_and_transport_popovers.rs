@@ -60,7 +60,9 @@ async fn a_drag_over_the_empty_band_box_selects_the_markers_it_spans(cx: &mut Te
 #[gpui::test]
 async fn the_time_jump_popover_sets_how_far_the_jump_buttons_go(cx: &mut TestAppContext) {
     let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
-    cx.simulate_resize(size(px(1400.0), px(800.0)));
+    // Wide enough that the Timeline's header holds every control on one line
+    // at the interface's 13 px text.
+    cx.simulate_resize(size(px(1700.0), px(800.0)));
     app.update(cx, |app, cx| {
         app.state.remove(ModalKey::Open);
         app.state.set(CtxKey::Frame, "100");

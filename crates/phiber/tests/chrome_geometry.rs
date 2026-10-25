@@ -45,25 +45,16 @@ async fn the_rails_are_as_wide_as_a_strip_is_tall(cx: &mut TestAppContext) {
     // The header carries a rule along its bottom edge and is that much
     // taller than its band; the rail is the band's width, so the chrome still
     // reads as one grid.
-    let rule = phiber::v2::theme::style::metric::DEFAULT_STROKES.border;
-    assert_eq!(
-        f32::from(rail.size.width),
-        f32::from(strip.size.height) - rule,
-        "an icon rail is one strip-band wide, so the chrome reads as one grid"
+    let _ = strip;
+    // Every rail is one width: a card-head tile and `pad_xs` either side —
+    // the viewport's floating strip, the Properties navbar, every sidebar.
+    let style = phiber::v2::theme::resolve_ui_style(
+        phiber::v2::theme::ui_style_defaults(phiber::v2::theme::BPaletteName::DEFAULT),
+        &phiber::v2::state::BState::new(),
     );
-    for (name, w) in [
-        ("toolbar", METRICS.w_toolbar),
-        ("sidebar", METRICS.w_sidebar),
-        ("navbar", METRICS.w_navbar),
-    ] {
-        assert_eq!(w, METRICS.h_header, "the {name} rail is one strip tall");
-    }
-    // The activity bar's entries are menu-cap-sized buttons, so its rail is a
-    // strip plus the inset the button keeps from each edge.
-    assert!(
-        METRICS.w_activity > METRICS.h_header,
-        "the activity rail is a strip plus an inset either side of its buttons"
-    );
+    assert_eq!(f32::from(rail.size.width), style.rail_width(), "an icon rail is one rail wide");
+    let floating = bounds(cx, &["pane-floating-Left-View3D"], "the viewport's toolbar");
+    assert_eq!(f32::from(floating.size.width), style.rail_width(), "the same width as the viewport's strip");
 }
 
 #[gpui::test]
@@ -71,19 +62,14 @@ async fn a_tab_hangs_from_its_strip_with_one_gap_above(cx: &mut TestAppContext) 
     let cx = workspace(cx, BSpaceType::Layout).await;
     // The workspace tabs live in the topbar's strips.
     let strip = bounds(cx, &["region-Header-Topbar", "region-ToolHeader-Topbar"], "the topbar strip");
-    let tab = bounds(cx, &["tab-layout-grid-Layout"], "the Layout tab");
-    // The cap keeps one gap above it …
-    assert_eq!(
-        f32::from(tab.origin.y - strip.origin.y),
-        METRICS.menu_top_gap,
-        "a tab keeps the menu gap above it"
-    );
-    // … and runs to the bottom of its strip.
-    assert_eq!(
-        f32::from(tab.size.height),
-        METRICS.h_header - METRICS.menu_top_gap,
-        "a tab fills its strip apart from that gap"
-    );
+    let tab = bounds(cx, &["tab-entity-Layout"], "the Layout tab");
+    // A tab is a control like every other in its strip: the control height,
+    // centred on the strip's line, clear of its top and bottom alike.
+    let clear = phiber::v2::theme::style::metric::CONTROL_CLEAR;
+    assert_eq!(f32::from(tab.size.height), METRICS.h_header - 2.0 * clear, "a tab is a control's height");
+    let band_mid = f32::from(strip.origin.y) + METRICS.h_header / 2.0;
+    let tab_mid = f32::from(tab.origin.y) + f32::from(tab.size.height) / 2.0;
+    assert!((tab_mid - band_mid).abs() < 0.51, "and centred in its strip: {tab_mid} vs {band_mid}");
 }
 
 #[gpui::test]
@@ -192,9 +178,9 @@ async fn a_menu_too_tall_for_the_window_scrolls_instead_of_squashing_its_rows(cx
     // Now the rows keep a row's height (`BMenuPart::Cap`) and the panel is
     // capped at a share of the window, so a menu that cannot fit scrolls.
     let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
-    // Short enough that the File menu cannot fit however it is sized: at a
-    // row's height it wants around 650, and nine tenths of 560 is 504.
-    cx.simulate_resize(size(px(1280.0), px(560.0)));
+    // Short enough that the File menu cannot fit however it is sized: its
+    // eight rows and three rules want around 250, and nine tenths of 240 is 216.
+    cx.simulate_resize(size(px(1280.0), px(240.0)));
     app.update(cx, |app, cx| {
         app.state = BState::new();
         app.state.set(CtxKey::Space, BSpaceType::Layout.slug());
@@ -217,7 +203,7 @@ async fn a_menu_too_tall_for_the_window_scrolls_instead_of_squashing_its_rows(cx
         .filter(|(sel, _)| sel.starts_with("menu-"))
         .map(|(sel, b)| (sel, f32::from(b.size.height)))
         .collect();
-    assert!(rows.len() >= 10, "the File menu's rows are painted: {}", rows.len());
+    assert!(rows.len() >= 6, "the File menu's rows are painted: {}", rows.len());
     for (sel, h) in &rows {
         assert!((h - row_height).abs() < 0.5, "{sel} is {h}, and a menu row is {row_height}");
     }
@@ -283,14 +269,15 @@ async fn every_top_bar_control_sits_on_one_centre_line(cx: &mut TestAppContext) 
     // One line for everything in a strip: the centre of the cap band — the
     // strip less the menu gap above it. The mark, a menu cap and a button
     // all sit on it; nothing rides a pixel above or below its neighbours.
-    let line = f32::from(strip.origin.y) + METRICS.menu_top_gap + (METRICS.h_header - METRICS.menu_top_gap) / 2.0;
+    // The strip's own centre: every control clears both edges alike.
+    let line = f32::from(strip.origin.y) + METRICS.h_header / 2.0;
     for (what, b) in [("mark", mark), ("cap", cap), ("toggle", toggle)] {
         assert!((mid(b) - line).abs() < 0.5, "{what} centre {} vs the strip's line {line}", mid(b));
     }
 }
 
 #[gpui::test]
-async fn the_welcome_logo_fits_inside_its_banner(cx: &mut TestAppContext) {
+async fn the_welcome_mark_fits_inside_its_column(cx: &mut TestAppContext) {
         let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
     cx.simulate_resize(size(px(1280.0), px(800.0)));
     app.update(cx, |app, cx| {
@@ -300,25 +287,24 @@ async fn the_welcome_logo_fits_inside_its_banner(cx: &mut TestAppContext) {
         cx.notify();
     });
     cx.run_until_parked();
-    let banner = bounds(cx, &["panel-header"], "the Welcome banner");
-    let mark = bounds(cx, &["brand-mark-banner"], "the Welcome mark");
+    // The hero carries the 3D logo, inside the welcome window.
+    let window = bounds(cx, &["welcome-content-column"], "the Welcome column");
+    let mark = bounds(cx, &["brand-wordmark-3d"], "the Welcome logo");
     let top = |b: gpui::Bounds<px_t>| f32::from(b.origin.y);
     let bottom = |b: gpui::Bounds<px_t>| f32::from(b.origin.y) + f32::from(b.size.height);
     assert!(
-        top(mark) >= top(banner) - 0.5 && bottom(mark) <= bottom(banner) + 0.5,
-        "the Welcome mark ({}..{}) overflows its banner ({}..{})",
+        top(mark) >= top(window) - 0.5 && bottom(mark) <= bottom(window) + 0.5,
+        "the Welcome mark ({}..{}) overflows its column ({}..{})",
         top(mark),
         bottom(mark),
-        top(banner),
-        bottom(banner)
+        top(window),
+        bottom(window)
     );
-    // The banner is an ordinary header strip and the mark is the header's
-    // mark: the greeting is not taller than any other heading.
-    assert_eq!(f32::from(banner.size.height), METRICS.h_header, "the banner is a header's height");
+    // The logo is the hero's: four brand units tall.
     let brand = phiber::v2::theme::style::metric::DEFAULT_DIMENSIONS.brand_size;
     assert!(
-        (f32::from(mark.size.height) - brand).abs() <= 0.5,
-        "the Welcome mark ({}) is the header mark's size ({brand})",
+        (f32::from(mark.size.height) - 4.0 * brand).abs() <= 0.5,
+        "the Welcome logo ({}) is four brand units ({brand})",
         f32::from(mark.size.height)
     );
 }

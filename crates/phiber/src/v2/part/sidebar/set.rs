@@ -6,6 +6,7 @@
 //! of tabs, same visual as the Buts navbar — icon-only with the label used
 //! as a hover tooltip.
 
+use super::editor;
 use crate::v2::host::BHostType;
 use crate::v2::part::BPartType;
 use crate::v2::part::props::set::{BSectionSpec, sec};
@@ -21,8 +22,9 @@ pub enum BSidebarBody {
     Object(&'static [BSectionSpec]),
     /// Panels that are always there.
     Props(&'static [BSectionSpec]),
-    /// `VIEW3D_PT_view`: the area's own view — its focal length.
-    View,
+    /// `VIEW3D_PT_view`: the area's own view — its focal length — then the
+    /// View tab's other panels (`editor::VIEW3D_VIEW`).
+    View(&'static [BSectionSpec]),
     /// `DOPESHEET_PT_action` / `_action_slot`: the active object's action.
     Action,
     /// `TIME_PT_playback` and `TIME_PT_playhead_snapping` — the transport's
@@ -73,19 +75,17 @@ const fn t(icon: &'static str, label: &'static str) -> BSidebarTabSpec {
 /// `VIEW3D_PT_transform` — the Object tab's Transform, over the same keys,
 /// so typing into either moves the object (`scene::transform`).
 static VIEW3D_ITEM: &[BSectionSpec] = &[sec("Transform", crate::v2::part::props::object::TRANSFORM)];
-/// `VIEW3D_PT_tools_active`'s header: the active tool.
-static VIEW3D_TOOL: &[BSectionSpec] = &[sec("Active Tool", crate::v2::part::props::tool::ACTIVE_TOOL)];
 
 static VIEW3D: &[BSidebarTabSpec] = &[
     t("object", "Item").with(BSidebarBody::Object(VIEW3D_ITEM)),
-    t("tool", "Tool").with(BSidebarBody::Props(VIEW3D_TOOL)),
-    t("view_layer", "View").with(BSidebarBody::View),
+    t("tool", "Tool").with(BSidebarBody::Props(editor::VIEW3D_TOOL)),
+    t("view_layer", "View").with(BSidebarBody::View(editor::VIEW3D_VIEW)),
 ];
 /// The Image and UV editors are one space in two modes, so they share one
 /// tab set and one table of panels (`sidebar::image`, `space_image.py`).
 static IMAGE_UV: &[BSidebarTabSpec] = &[
     t("image", "Image").with(BSidebarBody::Props(super::image::IMAGE)),
-    t("tool", "Tool").with(BSidebarBody::Props(VIEW3D_TOOL)),
+    t("tool", "Tool").with(BSidebarBody::Props(editor::VIEW3D_TOOL)),
     t("view_layer", "View").with(BSidebarBody::Props(super::image::VIEW)),
     // Phiber's own: the render's settings beside the render (`image::RENDER`).
     t("render", "Render").with(BSidebarBody::Props(super::image::RENDER)),
@@ -116,15 +116,15 @@ static COMPOSITOR: &[BSidebarTabSpec] = &[
     t("options", "Options").with(BSidebarBody::Props(super::node::OPTIONS)),
 ];
 static SEQ: &[BSidebarTabSpec] = &[
-    t("strip", "Strip"),
-    t("modifier", "Modifiers"),
-    t("preview", "Preview"),
+    t("strip", "Strip").with(BSidebarBody::Props(editor::SEQ_STRIP)),
+    t("modifier", "Modifiers").with(BSidebarBody::Props(editor::SEQ_MODIFIERS)),
+    t("preview", "Preview").with(BSidebarBody::Props(editor::SEQ_PREVIEW)),
 ];
 /// The Movie Clip editor. Its View tab is `CLIP_PT_display`, the same panel
 /// its header opens — Marker Display and Clip Display, one card each.
 static CLIP: &[BSidebarTabSpec] = &[
-    t("track", "Track"),
-    t("solve", "Solve"),
+    t("track", "Track").with(BSidebarBody::Props(editor::CLIP_TRACK)),
+    t("solve", "Solve").with(BSidebarBody::Props(editor::CLIP_SOLVE)),
     t("view_layer", "View").with(BSidebarBody::Overlay),
 ];
 /// `space_text.py` registers both of its panels under one `bl_category`,
@@ -135,12 +135,15 @@ static TEXT: &[BSidebarTabSpec] = &[t("text", "Text").with(BSidebarBody::Props(s
 // `DOPESHEET_PT_action` / `DOPESHEET_PT_action_slot`: one tab, Action; the
 // View tab is Grease Pencil mode's alone.
 static ACTION: &[BSidebarTabSpec] = &[t("action", "Action").with(BSidebarBody::Action)];
-static NLA: &[BSidebarTabSpec] = &[t("action", "Edited Action"), t("object", "Item")];
+static NLA: &[BSidebarTabSpec] = &[
+    t("action", "Edited Action").with(BSidebarBody::Props(editor::NLA_EDITED)),
+    t("object", "Item").with(BSidebarBody::Props(editor::NLA_ITEM)),
+];
 static IPO: &[BSidebarTabSpec] = &[
-    t("view_layer", "View"),
-    t("curve", "F-Curve"),
-    t("modifier", "Modifiers"),
-    t("driver", "Drivers"),
+    t("view_layer", "View").with(BSidebarBody::Props(editor::IPO_VIEW)),
+    t("curve", "F-Curve").with(BSidebarBody::Props(editor::IPO_FCURVE)),
+    t("modifier", "Modifiers").with(BSidebarBody::Props(editor::IPO_MODIFIERS)),
+    t("driver", "Drivers").with(BSidebarBody::Props(editor::IPO_DRIVERS)),
 ];
 /// The Spreadsheet's one tab is `SPREADSHEET_PT_filter`, which its header
 /// carries too.

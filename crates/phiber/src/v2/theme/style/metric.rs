@@ -15,9 +15,9 @@ pub struct BTypography {
 
 pub const DEFAULT_TYPOGRAPHY: BTypography = BTypography {
     family: BFontFamily::DEFAULT,
-    body: 11.0,
-    header: 12.0,
-    caption: 10.0,
+    body: 13.0,
+    header: 14.0,
+    caption: 12.0,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -66,6 +66,9 @@ pub struct BDimensions {
     pub scrubbing_height: f32,
     pub asset_shelf_height: f32,
     pub bottom_strip_height: f32,
+    /// The bottom panel while it shows a browser — Play's cards, the
+    /// Project Browser — as tall as Reality Composer Pro opens its own.
+    pub bottom_panel_height: f32,
     /// The action log's drawer when unfolded above the status bar.
     pub status_log_height: f32,
     /// The Welcome banner: a strip tall enough to carry the large mark.
@@ -80,6 +83,8 @@ pub struct BDimensions {
     /// A number control's floor: below it the value clips. One for all, so a column lines up.
     pub number_min_width: f32,
     pub panel_width: f32,
+    /// The least width of a drop-down menu: it hugs its rows past that.
+    pub menu_width: f32,
     pub navbar_width: f32,
     pub channels_width: f32,
     pub tool_props_width: f32,
@@ -126,10 +131,12 @@ pub const DEFAULT_DIMENSIONS: BDimensions = BDimensions {
     button_height: BUTTON_HEIGHT,
     scrubbing_height: 24.0,
     asset_shelf_height: 120.0,
-    // The Timeline's header and its window (the scrub strip, the summary
-    // row and room for the grid — Blender's default Layout gives it about
+    // The bottom panel's editor tabs (Reality Composer Pro's strip), the
+    // Timeline's header and its window (the scrub strip, the summary row
+    // and room for the grid — Blender's default Layout gives it about
     // seventy pixels), over the status bar.
-    bottom_strip_height: 140.0,
+    bottom_strip_height: 168.0,
+    bottom_panel_height: 340.0,
     // Six rows of the log and a little air, over the status bar.
     status_log_height: 168.0,
     // Two modules: the mark inside it is the strip less a small gutter
@@ -145,9 +152,12 @@ pub const DEFAULT_DIMENSIONS: BDimensions = BDimensions {
     toolbar_width: MODULE,
     menu_top_gap: 2.0,
     sidebar_width: MODULE,
-    sidebar_min_width: 160.0,
+    // `UI_SIDEBAR_PANEL_WIDTH`: a sidebar opens as wide as Blender's N panel,
+    // so a vector's X / Y / Z fields show their values.
+    sidebar_min_width: 240.0,
     number_min_width: 120.0,
     panel_width: 240.0,
+    menu_width: 176.0,
     navbar_width: MODULE,
     channels_width: 200.0,
     tool_props_width: 200.0,
@@ -176,13 +186,30 @@ pub const DEFAULT_DIMENSIONS: BDimensions = BDimensions {
 /// units over a 1-unit button). What this replaced, and why a strip tab is the
 /// one heading that is still shorter, is in `tests/a_row_is_one_height.rs`.
 pub const HEAD_ROOM: f32 = 4.0;
-pub const BUTTON_HEIGHT: f32 = MODULE - HEAD_ROOM;
-pub const MENU_ROW: f32 = BUTTON_HEIGHT - HEAD_ROOM;
+/// What every control keeps clear of the row or header it stands in, above
+/// and below: a button, a field, a dropdown, an icon tile, a menu in a header
+/// never reaches its row's edges, so the row reads as the container and the
+/// control as the thing in it. One number for every control, so a button in
+/// a panel heading, the file browser's sort header and the top bar are one
+/// height and one inset.
+pub const CONTROL_CLEAR: f32 = 5.0;
+pub const BUTTON_HEIGHT: f32 = MODULE - 2.0 * CONTROL_CLEAR;
+pub const MENU_ROW: f32 = MODULE - 2.0 * HEAD_ROOM;
+
 
 impl BDimensions {
     /// Every row: [`Self::row_height`], the sum this used to compute itself.
     pub const fn card_head_height(&self) -> f32 {
         self.row_height
+    }
+
+    /// An icon tile's side: the control height ([`CONTROL_CLEAR`]), so
+    /// its fill clears a tree row (a step under the button) and a property
+    /// row alike.
+    pub const fn tile_size(&self) -> f32 {
+        // A tile IS a control: the same height as the button beside it, so
+        // every square in a row matches every labelled button in it.
+        self.button_height
     }
 }
 

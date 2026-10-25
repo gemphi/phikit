@@ -1,16 +1,42 @@
-//! The interface's typeface — one of eight families, chosen in Preferences
+//! The interface's typeface — one of nine families, chosen in Preferences
 //! (*Typography ▸ Family*) and applied to every letter the window draws.
 //!
-//! Four are text faces and four are code faces: the system's own face
+//! The default is Phi-Soft Condensed, the platform's own face, set at its
+//! Regular weight (Light read thin and grey at interface sizes); it
+//! ships inside the app (`assets/phi-fonts`, registered by `theme::vendor`)
+//! so every machine draws it. The rest are four text faces and four code
+//! faces: the system's own face
 //! (Segoe UI on Windows, Helvetica Neue on a Mac), the two macOS faces
 //! Blender users know from its menus, Inter, and the four monospace faces
 //! VS Code ships with or recommends. A face the machine does not have falls
 //! back down its own stack, then to the system's (`Font.fallbacks`), so a
 //! choice never leaves the window blank.
 
-/// One of the eight families Preferences offers.
+/// The family name Phi-Soft Condensed answers to once registered (its typographic
+/// family, name ID 16, shared by every weight the app loads).
+pub const PHI_SOFT_FAMILY: &str = "Phi-Soft Condensed";
+
+/// The names the faces may be filed under, in the order asked: Windows'
+/// DirectWrite files a face by its weight-stretch-style family, which takes
+/// "Condensed" as a width and leaves "Phi-Soft"; fontconfig and Core Text
+/// keep the typographic family.
+pub const PHI_SOFT_NAMES: [&str; 2] = [PHI_SOFT_FAMILY, "Phi-Soft"];
+
+/// The name this machine's text system filed the faces under, once
+/// `theme::vendor` has registered them and asked.
+pub static PHI_SOFT_FILED: std::sync::OnceLock<&'static str> = std::sync::OnceLock::new();
+
+/// Phi-Soft Condensed (1.100) Regular, the one weight every letter is set in —
+/// the face's heavier weights fill in at interface sizes, so nothing is set
+/// bold. Compiled into the binary so the window never waits on a file and the
+/// browser build carries it too.
+pub const PHI_SOFT_FACES: [&[u8]; 1] = [include_bytes!("../../../../assets/phi-fonts/Phi-Soft/PhiSoftCondensed-Regular.otf")];
+
+/// One of the nine families Preferences offers.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum BFontFamily {
+    /// Phi-Soft Condensed: the Phi platform's face, bundled with the app.
+    PhiSoft,
     /// The platform's interface face: Segoe UI, Helvetica Neue, or whatever
     /// the system names as `sans-serif`.
     System,
@@ -32,7 +58,8 @@ pub enum BFontFamily {
 
 impl BFontFamily {
     /// Declaration order — the order Preferences lists them.
-    pub const ALL: [BFontFamily; 8] = [
+    pub const ALL: [BFontFamily; 9] = [
+        BFontFamily::PhiSoft,
         BFontFamily::System,
         BFontFamily::HelveticaNeue,
         BFontFamily::SegoeUi,
@@ -42,10 +69,11 @@ impl BFontFamily {
         BFontFamily::CascadiaCode,
         BFontFamily::JetBrainsMono,
     ];
-    pub const DEFAULT: BFontFamily = BFontFamily::System;
+    pub const DEFAULT: BFontFamily = BFontFamily::PhiSoft;
 
     pub const fn label(self) -> &'static str {
         match self {
+            BFontFamily::PhiSoft => "Phi-Soft",
             BFontFamily::System => "System",
             BFontFamily::HelveticaNeue => "Helvetica Neue",
             BFontFamily::SegoeUi => "Segoe UI",
@@ -60,6 +88,7 @@ impl BFontFamily {
     /// The value `ctx.typography.family` holds.
     pub const fn slug(self) -> &'static str {
         match self {
+            BFontFamily::PhiSoft => "phi_soft",
             BFontFamily::System => "system",
             BFontFamily::HelveticaNeue => "helvetica_neue",
             BFontFamily::SegoeUi => "segoe_ui",
@@ -78,6 +107,7 @@ impl BFontFamily {
     /// The family name the text system is asked for.
     pub fn family(self) -> &'static str {
         match self {
+            BFontFamily::PhiSoft => PHI_SOFT_FILED.get().copied().unwrap_or(PHI_SOFT_FAMILY),
             BFontFamily::System => "sans-serif",
             BFontFamily::HelveticaNeue => "Helvetica Neue",
             BFontFamily::SegoeUi => "Segoe UI",
@@ -94,6 +124,7 @@ impl BFontFamily {
     /// stays a code face.
     pub fn fallbacks(self) -> &'static [&'static str] {
         match self {
+            BFontFamily::PhiSoft => &["Segoe UI", "Helvetica Neue", "Inter", "sans-serif"],
             BFontFamily::System => &["Segoe UI", "Helvetica Neue", "Inter"],
             BFontFamily::HelveticaNeue => &["Helvetica", "Segoe UI", "Inter", "sans-serif"],
             BFontFamily::SegoeUi => &["Helvetica Neue", "Inter", "sans-serif"],
@@ -108,7 +139,7 @@ impl BFontFamily {
     /// Whether the face is a code face — every glyph the same width.
     pub fn monospace(self) -> bool {
         match self {
-            BFontFamily::System | BFontFamily::HelveticaNeue | BFontFamily::SegoeUi | BFontFamily::Inter => false,
+            BFontFamily::PhiSoft | BFontFamily::System | BFontFamily::HelveticaNeue | BFontFamily::SegoeUi | BFontFamily::Inter => false,
             BFontFamily::Menlo | BFontFamily::Consolas | BFontFamily::CascadiaCode | BFontFamily::JetBrainsMono => true,
         }
     }

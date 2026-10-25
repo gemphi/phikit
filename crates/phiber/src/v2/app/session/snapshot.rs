@@ -4,6 +4,7 @@
 //! state the file is byte-identical.
 
 use super::transient::{is_transient, loaded_path};
+use crate::v2::state::BKey as _;
 use crate::v2::state::BState;
 use std::collections::BTreeMap;
 
@@ -28,13 +29,26 @@ pub fn apply(state: &mut BState, json: &str) {
     let Ok(map) = serde_json::from_str::<BTreeMap<String, String>>(json) else {
         return;
     };
+    // A session from before the current look keeps everything but its
+    // theme: once, every window opens on the default theme (Phiber), and the
+    // look it is on is written, so the user's next choice sticks.
+    let stale_look = map.get(LOOK_KEY).map(String::as_str) != Some(LOOK);
     for (k, v) in map {
-        if k == loaded_path() || is_transient(&k) {
+        if k == loaded_path() || is_transient(&k) || (stale_look && LOOK_KEYS.iter().any(|key| key.path().encode() == k)) {
             continue;
         }
         state.set_encoded(&k, v);
     }
+    state.set_encoded(LOOK_KEY, LOOK);
 }
+
+/// Which look a session was saved under (`apply`). Raised when the default
+/// theme changes, so every user is moved onto it once.
+pub const LOOK_KEY: &str = "ctx.look";
+/// The current look: 2, the Phiber theme as the default.
+pub const LOOK: &str = "2";
+/// What a stale look does not carry over: the theme, its mode and its coat.
+const LOOK_KEYS: [crate::v2::state::AppKey; 3] = [crate::v2::state::AppKey::Theme, crate::v2::state::AppKey::ThemeMode, crate::v2::state::AppKey::Flavour];
 
 /// The file that was open when the snapshot was written, if any.
 pub fn last_file(json: &str) -> Option<String> {
@@ -48,7 +62,23 @@ pub fn last_file(json: &str) -> Option<String> {
 mod tests {
     use super::*;
     use super::super::resume_frame;
-    use crate::v2::state::{BKey as _, CtxKey, FileKey, SceneKey, View3dKey};
+    use crate::v2::state::{CtxKey, FileKey, SceneKey, View3dKey};
+
+    #[test]
+    fn a_session_from_an_older_look_opens_on_the_default_theme_once() {
+        let mut old = BState::new();
+        old.set_encoded("ctx.theme", "Silver");
+        old.set(CtxKey::Space, "Shading");
+        let mut s = BState::new();
+        apply(&mut s, &snapshot(&old));
+        assert_eq!(s.get_encoded("ctx.theme"), None, "the old theme is not restored");
+        assert_eq!(s.get(CtxKey::Space), Some("Shading"), "everything else is");
+        // Chosen again under the current look, it sticks.
+        s.set_encoded("ctx.theme", "Silver");
+        let mut again = BState::new();
+        apply(&mut again, &snapshot(&s));
+        assert_eq!(again.get_encoded("ctx.theme"), Some("Silver"));
+    }
 
     #[test]
     fn a_snapshot_round_trips_the_resumable_state() {

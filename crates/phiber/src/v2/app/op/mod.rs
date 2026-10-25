@@ -12,6 +12,7 @@ mod render;
 pub(crate) mod render_open;
 mod image;
 mod render_view;
+mod play;
 
 use super::BPhiberApp;
 use crate::v2::part::file::purpose::{BFilePurpose, purpose};
@@ -74,6 +75,8 @@ impl BPhiberApp {
                 _ => self.render_image(),
             },
             Some(OpKey::ImageCopy) => self.image_copy(cx),
+            Some(OpKey::Play) => self.play_match(cx),
+            Some(OpKey::Wear) => self.open_wear(value.clone(), cx),
             // Only the window can do these; without one they are reported.
             Some(OpKey::Quit | OpKey::Fullscreen) => log::push("This needs the window".to_string()),
             _ => return false,
@@ -148,10 +151,10 @@ impl BPhiberApp {
         self.state.set(ModalKey::Open, crate::v2::state::val::V_EMPTY);
         let name = crate::v2::space::BSpaceType::from_slug(template).map_or(template.to_string(), |s| s.label().to_string());
         log::push(format!("New file ({name}, Blender {} layout)", startup.blender()));
-        match startup.startup_path() {
+        match startup.source() {
             Ok(path) => {
                 self.untitled = true;
-                self.start_import(path.to_string_lossy().to_string(), cx);
+                self.start_import(path, cx);
             }
             Err(why) => log::push(format!("The startup file could not be written: {why}")),
         }

@@ -35,18 +35,20 @@ impl BSpec for BFileCategorySpec {
     }
 }
 
+/// In Blender 5.2's draw order (its File View): Bookmarks, System,
+/// Volumes, Recent.
 pub static CATEGORIES: &[BFileCategorySpec] = &[
     BFileCategorySpec {
-        kind: BFileCategory::System,
-        label: "Volumes",
+        kind: BFileCategory::Bookmarks,
+        label: "Bookmarks",
     },
     BFileCategorySpec {
         kind: BFileCategory::SystemBookmarks,
         label: "System",
     },
     BFileCategorySpec {
-        kind: BFileCategory::Bookmarks,
-        label: "Bookmarks",
+        kind: BFileCategory::System,
+        label: "Volumes",
     },
     BFileCategorySpec {
         kind: BFileCategory::Recent,
@@ -308,5 +310,10 @@ pub static NAV: &[BFileNavSpec] = &[
         icon: "refresh",
         tooltip: "Refresh File List",
         action: "file.refresh",
+    },
+    BFileNavSpec {
+        icon: "folder_plus",
+        tooltip: "Create New Directory",
+        action: "file.directory_new",
     },
 ];

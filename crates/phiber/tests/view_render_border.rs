@@ -56,7 +56,8 @@ async fn ctrl_b_outside_the_camera_view_sets_the_viewports_own_region(cx: &mut T
     let view = cx.debug_bounds("tab-view_layer-view_layer").expect("the View tab").center();
     cx.simulate_click(view, gpui::Modifiers::none());
     cx.run_until_parked();
-    let id: &'static str = Box::leak(format!("btn-icon-set-{}-false-check_square", View3dKey::BorderUse.path().encode()).into_boxed_str());
+    // A checkbox row is `check-<key>` (`ctrl::flag`); on, a click turns it off.
+    let id: &'static str = Box::leak(format!("check-{}", View3dKey::BorderUse.path().encode()).into_boxed_str());
     assert!(cx.debug_bounds(id).is_some(), "View ▸ Render Region, on, offers to turn it off");
     app.update(cx, |app, cx| app.handle_action(&BAction::Set(View3dKey::BorderUse.path(), "false".into()), cx));
     cx.run_until_parked();

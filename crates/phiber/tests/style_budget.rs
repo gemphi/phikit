@@ -90,10 +90,10 @@ const NO_ARG: &[&str] = &[
 ];
 
 /// The layout element itself, where the style calls belong: `BFlex::div`,
-/// the two stateful containers built on it, and the one function that turns
-/// an elevation into a GPUI shadow rung.
+/// its edges and corners, the two stateful containers built on it, and the
+/// one function that turns an elevation into a GPUI shadow rung.
 const THE_ELEMENT: &[&str] =
-    &["flex/apply.rs", "flex/place.rs", "flex/stateful.rs", "flex/paint.rs"];
+    &["flex/apply.rs", "flex/edge.rs", "flex/place.rs", "flex/stateful.rs", "flex/paint.rs"];
 
 fn raw_calls(src: &str) -> usize {
     let src = match src.find("#[cfg(test)]") {

@@ -30,6 +30,23 @@ pub enum AppKey {
     EditUndo,
     /// The command palette's filter text.
     CommandQuery,
+    /// The editor the palette was opened over (its host slug): Menu Search
+    /// lists its menus after the Topbar's, as Blender's F3 searches the
+    /// area under the pointer.
+    CommandHost,
+    /// The palette's tab: what it searches — everything, the spaces, the
+    /// editors, the panels or the menus (`modal::command::find::BFindKind`).
+    CommandTab,
+    /// How the palette lays its results out: lines, or cards of three sizes
+    /// (`modal::command::layout::BFindLayout`).
+    CommandLayout,
+    /// Where a picked palette result goes: the keys to set, one
+    /// `ctx.path=value` per line (`find::BFindGoRule`), so a pick can open a
+    /// space, then an editor's tab, then one of its panels in one step.
+    CommandGo,
+    /// The Welcome window's tab: New File, Recent Files or Learn
+    /// (`modal::splash::tab::BWelcomeTab`).
+    WelcomeTab,
     /// The rename dialog's field (`TOPBAR_PT_name`): the name being typed.
     RenameText,
     /// The frame of the marker the dialog renames (`marker.rename`); absent
@@ -37,6 +54,9 @@ pub enum AppKey {
     RenameMarker,
     /// Whether the status bar's action log is unfolded.
     StatusLogOpen,
+    /// Which column the unfolded log is ordered by, and which way.
+    StatusLogOrder,
+    StatusLogAscending,
     /// A profile field: `ctx.profile.<field>`.
     Profile(&'static str),
     /// The collaboration session's status (`online` / `offline`).
@@ -68,9 +88,16 @@ impl BKey for AppKey {
             Self::Edit => BPath::owned(vec!["edit"]),
             Self::EditUndo => BPath::owned(vec!["edit_undo"]),
             Self::CommandQuery => BPath::owned(vec!["command", "query"]),
+            Self::CommandHost => BPath::owned(vec!["command", "host"]),
+            Self::CommandTab => BPath::owned(vec!["command", "tab"]),
+            Self::CommandLayout => BPath::owned(vec!["command", "layout"]),
+            Self::CommandGo => BPath::owned(vec!["command", "go"]),
+            Self::WelcomeTab => BPath::owned(vec!["welcome", "tab"]),
             Self::RenameText => BPath::owned(vec!["rename", "text"]),
             Self::RenameMarker => BPath::owned(vec!["rename", "marker"]),
             Self::StatusLogOpen => BPath::owned(vec!["status", "log", "open"]),
+            Self::StatusLogOrder => BPath::owned(vec!["status", "log", "order"]),
+            Self::StatusLogAscending => BPath::owned(vec!["status", "log", "ascending"]),
             Self::Profile(field) => BPath::owned(vec!["profile", field]),
             Self::CollabStatus => BPath::owned(vec!["collab", "status"]),
             Self::CollabServer => BPath::owned(vec!["collab", "server"]),

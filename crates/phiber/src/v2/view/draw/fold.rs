@@ -35,15 +35,12 @@ impl Render for BSweepGhost {
 pub(super) fn gestures(strip: Stateful<gpui::Div>, fold: &BFold, ctx: &BRenderCtx) -> Stateful<gpui::Div> {
     let click = {
         let handler = ctx.handler.clone();
-        let flip = fold.flip();
+        let click = fold.click();
         let solo = fold.solo();
         move |event: &ClickEvent, window: &mut Window, app: &mut App| {
-            if event.modifiers().control {
-                for action in &solo {
-                    (Rc::clone(&handler))(action, window, app);
-                }
-            } else {
-                (Rc::clone(&handler))(&flip, window, app);
+            let actions = if event.modifiers().control { &solo } else { &click };
+            for action in actions {
+                (Rc::clone(&handler))(action, window, app);
             }
         }
     };

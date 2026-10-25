@@ -23,7 +23,8 @@ fn alternate(descriptor: &BStyleDescriptor, current: BStyleValue) -> BStyleValue
         }),
         (BStyleParser::Font, BStyleValue::Font(family)) => BStyleValue::Font(match family {
             BFontFamily::System => BFontFamily::JetBrainsMono,
-            BFontFamily::HelveticaNeue
+            BFontFamily::PhiSoft
+            | BFontFamily::HelveticaNeue
             | BFontFamily::SegoeUi
             | BFontFamily::Inter
             | BFontFamily::Menlo

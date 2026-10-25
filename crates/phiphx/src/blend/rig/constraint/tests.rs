@@ -44,7 +44,7 @@ fn every_constrained_bone_poses_where_blender_poses_it() {
     for f in FRAMES {
         let aim_world = want[&(f, "OB".into(), "Aim".into())];
         let others = |address: u64| (address == aim).then_some(aim_world);
-        let pose = rig.pose_at(&curves, f as f32, world, &others);
+        let pose = rig.pose_at(crate::blend::rig::BRigAnim::action(&curves), f as f32, world, &others);
         for (i, bone) in rig.bones.iter().enumerate() {
             let theirs = want[&(f, "PM".into(), bone.name.clone())];
             let d = pose.pose[i].to_cols_array().iter().zip(theirs.to_cols_array()).map(|(a, b)| (a - b).abs()).fold(0.0, f32::max);

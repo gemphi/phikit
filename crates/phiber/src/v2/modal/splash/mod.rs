@@ -1,52 +1,47 @@
 //! Welcome window — the Phiber home screen.
 //!
 //! This was Blender's splash (`WM_OT_splash`, `WM_MT_splash`): a banner
-//! over New File | Recent Files and Open… | links. It is a **home** now,
-//! and the three changes are deliberate:
+//! over New File | Recent Files and Open… | links. It is a **home** now:
 //!
 //! ```text
-//! ┌──────────── the mark: two bands, then the face ────────────┐
-//! │                    ▂▂▂▂▂▂▂▂▂▂▂▂                            │
-//! │                 ▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂▂                         │
-//! │              ▂▂▂▂▂▂  ⬡ Phiber  ▂▂▂▂▂▂                      │
-//! ├─ Quick access ──┬─ Upcoming ──┬─ Quests ──┬─ Center ───────┤
-//! │  Recent         │             │           │  the library   │
-//! │  Favourites     │             │           │                │
-//! │  Shared         │             │           │                │
-//! └─────────────────┴─────────────┴───────────┴────────────────┘
+//!                 P H I B E R            ← on the window's own backdrop
+//!      Model, shade, animate and render — the Phi way.
+//!          ( New File | Recent Files | Learn )   ← one ground, the tabs
+//!        ┌──┐ ┌──┐ ┌──┐ ┌──┐                  ← the tab's cards
+//!        └──┘ └──┘ └──┘ └──┘
 //! ```
 //!
-//! 1. **The mark is the layers** (`mark.rs`) — the same `BDeck` the manual
-//!    draws every figure with, read as a cascade: two bands, then the face
-//!    carrying the logo. Half a hexagon above, the face below; the shape is
-//!    the bands and there is no outline.
-//! 2. **No header backgrounds.** Every card is `BCard::headless()` and its
-//!    title is a label in the body. A filled header bar across the top of
-//!    the brand is the one chrome shade this window must not have.
-//! 3. **Four groups** (`home.rs`) — Quick access, Upcoming, Quests and
-//!    Center, the library.
+//! 1. **The logo stands on the backdrop.** Nothing is painted under it or
+//!    its line: it is the window's name, not a card.
+//! 2. **The tabs are the only bar.** One ground holds them
+//!    (`BStrip::Tabs`); no other background is drawn above the cards.
+//! 3. **The tab changes what is under it** (`tab::BWelcomeTab`): New File's
+//!    workspaces; Open…, Recover and the recent files; or Learn.
+//! 4. **Every choice is a card**, four to a row, centred
+//!    (`BView::Thumbnail`).
 //!
-//! Opened by `Phiber ▸ Splash Screen`, and shown once at startup (the seed
+//! Opened by `Phiber ▸ Welcome…`, and shown once at startup (the seed
 //! writes `ctx.modal = "splash"`). Dismissed like any modal.
 
 pub mod home;
-pub mod mark;
 /// Six terrains traced off the welcome video's frames.
 pub mod terrain;
 pub mod recent;
 pub mod set;
+pub mod tab;
 
 use crate::v2::state::BKey as _;
-use crate::v2::state::CtxKey;
+use crate::v2::state::OpKey;
 use crate::v2::state::ModalKey;
 use crate::v2::state::FileKey;
 use crate::v2::state::BState;
 use crate::v2::state::val::V_EMPTY;
+pub use tab::BWelcomeTab;
 use crate::v2::state::val::V_MODAL_FILE_BROWSER;
 use crate::v2::view::prim::BAction;
 use crate::v2::view::prim::BCard;
-use crate::v2::view::prim::BControl;
-use crate::v2::view::prim::BRowShade;
+use crate::v2::view::prim::BStrip;
+use crate::v2::view::BThumb;
 use crate::v2::view::BView;
 use crate::v2::view::BViewItem;
 pub use set::APP_NAME;
@@ -62,125 +57,109 @@ pub use set::TEMPLATES;
 #[derive(Clone, Copy, Debug, Default)]
 pub struct BSplashModal;
 
-/// A titled group of the welcome window.
-///
-/// Headless, with the title as a label in the body: this window draws no
-/// filled header bar anywhere (`mark.rs`), so a titled `BCard::panel`
-/// would be the one shade out of place on it.
-fn card(title: &'static str, rows: Vec<BView>) -> BView {
-    let mut body = vec![BView::label(title.to_string())];
-    body.extend(rows);
-    BCard::headless().body(body).into()
+/// A card's edge on the Welcome window, in px: four to a row fit the
+/// window's column with room either side.
+pub const CARD: f32 = 112.0;
+/// How many cards stand in one row.
+pub const ACROSS: usize = 4;
+
+/// One choice as a card: its icon (or the file's own preview), its name,
+/// and a line under it.
+fn tile(icon: &str, label: &str, subtitle: &str, preview: &str, action: Option<BAction>) -> BView {
+    BView::thumbnail(BThumb {
+        preview_path: preview.to_string(),
+        icon: icon.to_string(),
+        label: label.to_string(),
+        subtitle: subtitle.to_string(),
+        size: CARD,
+        selected: false,
+        action,
+    })
 }
 
-fn link_button(l: &BSplashEntry) -> BView {
-    BView::Button(
-        BControl::new()
-            .with_icon(l.icon)
-            .with_label(l.label)
-            .with_action(l.link_action()),
-    )
+fn link_tile(l: &BSplashEntry) -> BView {
+    tile(l.icon, l.label, "", "", Some(l.link_action()))
 }
 
-/// "New File" — one row per workspace template.
-fn new_file() -> BView {
-    card(
-        "New File",
-        TEMPLATES
-            .iter()
-            .map(|t| {
-                BView::Button(
-                    BControl::new()
-                        .with_icon(t.icon)
-                        .with_label(t.label)
-                        .with_action(BAction::Set(CtxKey::Space.path(), t.target.to_string())),
-                )
-            })
-            .collect(),
-    )
+/// `views` centred on their own line, as tall as they are: a row of three
+/// groups (`draw::row`) — an empty one either side and these between — so
+/// the middle group sits on the window's centre.
+fn centred(views: Vec<BView>) -> BView {
+    BView::row([vec![BView::indent(0), BView::spacer()], views, vec![BView::spacer(), BView::indent(0)]].concat())
 }
 
-/// "Recent Files" (5 rows + More…), or "Getting Started" when there are none.
-fn recent_or_getting_started(s: &BState) -> BView {
+/// `tiles`, `ACROSS` to a row, each row centred.
+fn grid(tiles: Vec<BView>) -> Vec<BView> {
+    tiles.chunks(ACROSS).map(|row| centred(row.to_vec())).collect()
+}
+
+/// New File: one card per workspace a file can start in. A card starts the
+/// file (`wm.read_homefile`), which closes this window, as File ▸ New does.
+fn new_file() -> Vec<BView> {
+    TEMPLATES.iter().map(|t| tile(t.icon, t.label, "", "", Some(BAction::Set(OpKey::NewFile.path(), t.target.to_string())))).collect()
+}
+
+/// Recent Files: Open… and Recover Last Session (the file opened last, open
+/// again), then the files opened
+/// last, each on its own preview with the folder it is in under its name —
+/// or Getting Started when nothing has been opened yet.
+fn recent(s: &BState) -> Vec<BView> {
+    let mut tiles = vec![tile("folder_open", "Open\u{2026}", "", "", Some(BAction::Set(ModalKey::Open.path(), V_MODAL_FILE_BROWSER.to_string())))];
     let paths = recent::recent_paths(s);
-    if paths.is_empty() {
-        return card("Getting Started", GETTING_STARTED.iter().map(link_button).collect());
-    }
-    let mut rows: Vec<BView> = paths
-        .iter()
-        .take(RECENT_ROWS)
-        .enumerate()
-        .map(|(i, path)| {
-            let shade = if i % 2 == 1 { BRowShade::Alt } else { BRowShade::Flat };
-            BView::list_row(
-                vec![
-                    BView::Button(
-                        BControl::new()
-                            .with_icon("file_blend")
-                            .with_label(recent::display_name(path).to_string())
-                            .with_action(BAction::Set(FileKey::Selected.path(), path.clone())),
-                    ),
-                    BView::label(recent::parent_dir(path).to_string()),
-                ],
-                shade,
-            )
-        })
-        .collect();
+    let Some(last) = paths.first() else {
+        tiles.extend(GETTING_STARTED.iter().map(link_tile));
+        return tiles;
+    };
+    // The file the last session had open, opened again.
+    let name = recent::display_name(last);
+    tiles.push(tile("history", "Recover Last Session", name, "", Some(BAction::Set(FileKey::Selected.path(), last.clone()))));
+    tiles.extend(paths.iter().take(RECENT_ROWS).map(|path| {
+        let name = recent::display_name(path);
+        let folder = recent::display_name(recent::parent_dir(path));
+        tile("file_blend", name, folder, path, Some(BAction::Set(FileKey::Selected.path(), path.clone())))
+    }));
     if paths.len() > RECENT_ROWS {
-        rows.push(BView::Button(
-            BControl::new()
-                .with_icon("viewzoom")
-                .with_label("More\u{2026}")
-                .with_action(BAction::Set(ModalKey::Open.path(), V_MODAL_FILE_BROWSER.to_string())),
-        ));
+        tiles.push(tile("viewzoom", "More\u{2026}", "", "", Some(BAction::Set(ModalKey::Open.path(), V_MODAL_FILE_BROWSER.to_string()))));
     }
-    card("Recent Files", rows)
+    tiles
 }
 
-/// Second split, left: Open… and Recover Last Session.
-fn open_card() -> BView {
-    BCard::headless()
-        .body(vec![
-            BView::Button(
-                BControl::new()
-                    .with_icon("file_folder")
-                    .with_label("Open\u{2026}")
-                    .with_action(BAction::Set(ModalKey::Open.path(), V_MODAL_FILE_BROWSER.to_string())),
-            ),
-            BView::Button(
-                BControl::new()
-                    .with_icon("history")
-                    .with_label("Recover Last Session")
-                    .with_action(BAction::Set(
-                        FileKey::RecoverLastSession.path(),
-                        "true".to_string(),
-                    )),
-            ),
-        ])
-        .into()
+/// Learn: the quests, the library, the manual and the links.
+fn learn() -> Vec<BView> {
+    let rows = home::GROUPS.iter().flat_map(|group| group.rows.iter());
+    let mut tiles: Vec<BView> = rows.map(|r| tile(r.icon, r.label, "", "", r.goes.map(home::BHomeTarget::action))).collect();
+    tiles.extend(FOOT_LINKS.iter().map(link_tile));
+    tiles
 }
 
-/// Second split, right: What's New and the support link.
-fn links_card() -> BView {
-    let mut rows: Vec<BView> = FOOT_LINKS.iter().map(link_button).collect();
-    rows.push(BView::label(format!("Phiber v{}", env!("CARGO_PKG_VERSION"))));
-    BCard::headless().body(rows).into()
-}
+/// What Phiber is, in one line under the logo.
+pub const TAGLINE: &str = "Model, shade, animate and render \u{2014} the Phi way.";
 
 impl BViewItem for BSplashModal {
+    /// The logo and its line on the backdrop, the tabs on their one ground,
+    /// then the open tab's cards.
     fn build(&self, s: &BState) -> BView {
-        // The mark first, then the groups across, then what the file
-        // actions and links were. Recent keeps its own card because it
-        // reads the store rather than a static table.
-        let mut rows = vec![mark::card(), BView::row(home::GROUPS.iter().map(home::BHomeGroup::view).collect())];
-        // New File sits with Open… rather than in its own split: the four
-        // groups took the top row, and a template is a file action like the
-        // two beside it. Dropping it would have taken the workspace
-        // templates off the welcome window altogether, which is what the
-        // dead-code warning on `new_file` was actually reporting.
-        rows.push(BView::row(vec![recent_or_getting_started(s), new_file(), open_card()]));
-        rows.push(links_card());
-        BView::column(rows)
+        let open = BWelcomeTab::of(s);
+        let tabs = BWelcomeTab::ALL.into_iter().map(|t| t.view(open)).collect();
+        let mut cards: Vec<BView> = match open {
+            BWelcomeTab::New => grid(new_file()),
+            BWelcomeTab::Recent => grid(recent(s)),
+            BWelcomeTab::Learn => grid(learn()),
+        };
+        // Learn ends on the version, one more line under the cards.
+        if open == BWelcomeTab::Learn {
+            cards.push(centred(vec![BView::label(format!("{APP_NAME} v{}", env!("CARGO_PKG_VERSION")))]));
+        }
+        // Every row of cards is a line of the window's own column, as tall
+        // as its cards (`draw::modal::welcome`): a column of rows inside it
+        // shared its height out between them and squashed them together.
+        let mut lines = vec![
+            centred(vec![BView::icon(crate::v2::view::draw::brand::WORDMARK_3D)]),
+            centred(vec![BView::label(TAGLINE.to_string())]),
+            BCard::strip(BStrip::Tabs, tabs).into(),
+        ];
+        lines.extend(cards);
+        BView::column(lines)
     }
 }
 

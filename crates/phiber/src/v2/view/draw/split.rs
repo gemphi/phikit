@@ -4,13 +4,13 @@
 //! `section-…` names the old `Section` panel role had.
 
 use super::ctx::BRenderCtx;
-use super::flex::{BAlign, BDim, BFill, BFlex, BFlexed, BJustify, BLen, BOverflow, BSpace};
+use super::flex::{BAlign, BDim, BFlex, BFlexed, BJustify, BLen, BOverflow, BSpace};
 use super::walk;
-use crate::v2::theme::BSurfaceTone;
 use crate::v2::view::BView;
 
 /// Blender's `use_property_split`: the value column takes 60% of the row and
-/// the label the other 40% (`UI_ITEM_PROP_SEP_DIVIDE`).
+/// the label the other 40% (`UI_ITEM_PROP_SEP_DIVIDE`). Two thirds clipped a
+/// checkbox's label in a sidebar ("Outline Sele…") for a field no wider.
 const VALUE_SHARE: f32 = 0.6;
 use gpui::prelude::*;
 use gpui::AnyElement;
@@ -24,7 +24,7 @@ impl BSplit<'_> {
             _ => "section".to_string(),
         };
         let row_id = selector.clone();
-        let mut element = BSplitPart::Row { toned: ctx.host != crate::v2::host::BHostType::Buts }
+        let mut element = BSplitPart::Row
             .flex(ctx)
             .div(ctx)
             .id(gpui::SharedString::from(selector.clone()))
@@ -59,9 +59,11 @@ impl BSplit<'_> {
 /// other level states its parts (`BCardPart`, `BTablePart`).
 enum BSplitPart {
     /// A property row is a card row: the card-head module, so the field or
-    /// button in it has room over and under it. Outside Properties it carries
-    /// the section tone; inside, the card it sits in already does.
-    Row { toned: bool },
+    /// button in it has room over and under it. No tone of its own, in any
+    /// host: a label/value row is text and a control on whatever it sits on
+    /// — the section tone it carried outside Properties put a box behind
+    /// every label.
+    Row,
     /// One column of the row. The first and last are the two a reader lines
     /// up: the label under the heading title, the value under its chevron.
     Column { value: bool },
@@ -69,7 +71,7 @@ enum BSplitPart {
 
 impl BFlexed for BSplitPart {
     fn flex(&self, _ctx: &BRenderCtx) -> BFlex {
-        let toned = match *self {
+        match *self {
             // Blender's own split, not equal halves: `use_property_split`
             // gives the label 40% of the row and the value 60%
             // (`UI_ITEM_PROP_SEP_DIVIDE`). Two `fills()` columns made it
@@ -85,15 +87,15 @@ impl BFlexed for BSplitPart {
                 let column = BFlex::row().width(BLen::Share(if value { VALUE_SHARE } else { 1.0 - VALUE_SHARE })).min_width(BLen::Zero);
                 return if value { column } else { column.overflow(BOverflow::Clip) };
             }
-            Self::Row { toned } => toned,
-        };
-        let row = BFlex::row()
-            .align(BAlign::Center)
-            .justify(BJustify::Between)
-            .gap(BSpace::GapXs)
-            .width(BLen::Full)
-            .height(BLen::Dim(BDim::CardHead))
-            .pad_x(BSpace::PadSm);
-        if toned { row.fill(BFill::Tone(BSurfaceTone::Section)) } else { row }
+            Self::Row => BFlex::row()
+                .align(BAlign::Center)
+                .justify(BJustify::Between)
+                .gap(BSpace::GapXs)
+                .width(BLen::Full)
+                // At least the module tall; a vector's stacked X / Y / Z
+                // grow it, rather than spilling over the rows under it.
+                .min_height(BLen::Dim(BDim::CardHead))
+                .pad_x(BSpace::PadSm),
+        }
     }
 }

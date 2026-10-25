@@ -56,7 +56,8 @@ pub const fn category(host: BHostType) -> BHostCategory {
         | BHostType::Nla
         | BHostType::Seq
         | BHostType::Drivers
-        | BHostType::Ipo => BHostCategory::Animation,
+        | BHostType::Ipo
+        | BHostType::Play => BHostCategory::Animation,
         BHostType::Text | BHostType::Info | BHostType::Console => BHostCategory::Scripting,
         BHostType::Outliner
         | BHostType::Buts
@@ -67,6 +68,7 @@ pub const fn category(host: BHostType) -> BHostCategory {
         | BHostType::Shader
         | BHostType::GeoNode
         | BHostType::Clip
+        | BHostType::Project
         | BHostType::Asset
         | BHostType::Spreadsheet
         | BHostType::Prefs => BHostCategory::Data,

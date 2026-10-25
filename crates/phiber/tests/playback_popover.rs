@@ -33,8 +33,11 @@ async fn the_playback_popover_opens_stays_open_for_its_boxes_and_closes_for_a_me
     let anchor = "btn-label-set-ctx.header.time.panel.Playback-true-text";
     assert!(cx.debug_bounds("section-Sync").is_none(), "closed until asked");
     click(cx, anchor);
-    for heading in ["section-Sync", "section-Audio", "section-Playback", "section-Loop", "section-Play In", "section-Show"] {
-        assert!(cx.debug_bounds(heading).is_some(), "the {heading} row is painted");
+    // Sync is a dropdown row (a split row); the switch groups' headings are
+    // a line over their first switch, so the switches are what is painted.
+    assert!(cx.debug_bounds("section-Sync").is_some(), "the Sync row is painted");
+    for switch in ["switch-ctx.buts.use_audio_scrub", "switch-ctx.buts.use_play_3d_editors"] {
+        assert!(cx.debug_bounds(switch).is_some(), "the {switch} row is painted");
     }
     // The factory settings: 3D Viewport plays, Scrubbing is off.
     assert!(app.read_with(cx, |a, _| settings::is_on(&a.state, "use_play_3d_editors") && !settings::is_on(&a.state, "use_audio_scrub")));

@@ -27,8 +27,11 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     // line down the whole menu. A row without an icon used to start its label
     // where the icon would have been, which put the labels of one menu on two
     // different left edges — Blender reserves the slot the same way.
-    let icon = BMenuPart::IconSlot { glyph: !ic.is_empty() }.flex(ctx).div(ctx);
-    row = row.child(if ic.is_empty() { icon } else { icon.child(glyph(ic, ctx)) });
+    // A menu with no glyph anywhere keeps no slot at all (`ctx.glyphs`).
+    if ctx.glyphs {
+        let icon = BMenuPart::IconSlot { glyph: !ic.is_empty() }.flex(ctx).div(ctx);
+        row = row.child(if ic.is_empty() { icon } else { icon.child(glyph(ic, ctx)) });
+    }
     // The label hugs the slot and reads left-aligned; `flex_1` lets the
     // shortcut sit at the far end.
     row = row.child(
@@ -160,7 +163,10 @@ impl BFlexed for BMenuPart {
                 .keeps_size()
                 .align(BAlign::Center)
                 .gap(BSpace::GapSm)
-                .pad_x(BSpace::PadSm)
+                // One small step in from the panel's own gutter: the label
+                // (or the glyph's tile) starts close to the edge, as a
+                // macOS menu's does, not a slot and two gutters in.
+                .pad_x(BSpace::PadXs)
                 .ink()
                 .type_size(BType::Body),
             // The glyph sits on a faint tile of its own, as a button's does

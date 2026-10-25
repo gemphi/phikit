@@ -27,6 +27,7 @@ mod vert;
 mod view;
 mod wake;
 mod worker;
+mod thread;
 mod lamp;
 mod slot;
 mod stand;
@@ -84,7 +85,7 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
         let mut s = s.borrow_mut();
         let (slot, gone) = s.slot((f32::from(bounds.origin.x), f32::from(bounds.origin.y)));
         gone.into_iter().for_each(|img| drop(window.drop_image(img)));
-        (slot, s.slots[slot].settle.size(live, std::time::Instant::now()))
+        (slot, s.slots[slot].settle.size(live, web_time::Instant::now()))
     });
     // The viewport's own render region: the frame is still `w × h`, the
     // image traced is the region's pixels of it (`Camera::tile`), drawn in
@@ -158,6 +159,13 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
             part: part.map(|(x, y, rw, rh)| (x as f32 / w as f32, y as f32 / h as f32, rw as f32 / w as f32, rh as f32 / h as f32)),
         };
         let post = s.should_post(slot, key);
+        // Playing: this frame's image, waited for (`BRayView::sync`), so the
+        // slot is told what it posts first. Otherwise whatever has landed,
+        // the slot's previous view included, while the new one traces.
+        let wait = view.sync.filter(|_| !s.slots[slot].image.as_ref().is_some_and(|(_, v, _, _)| *v == key));
+        if post && wait.is_some() {
+            s.posted(slot, key);
+        }
         let Some(Some(worker)) = s.worker.as_ref() else { return (None, true) };
         if post {
             worker.send(BRayJob::View(
@@ -165,7 +173,10 @@ pub(super) fn paint(bounds: Bounds<Pixels>, view: BRayView, corners: Corners<Pix
                 BRayShot { cam, w: tw, h: th, mode: view.mode, samples: view.set.preview_samples, aa: view.aa, denoise_from: view.set.preview_denoise.then_some(view.set.preview_denoise_from), outline: Arc::clone(&view.outline_class) },
             ));
         }
-        let frame = worker.take(s.slots[slot].view, s.taken);
+        let frame = match wait {
+            Some(cap) => worker.take_within(key, s.taken, cap),
+            None => worker.take(s.slots[slot].view, s.taken),
+        };
         if post {
             s.shots.note(key, shot(w as f32 / h.max(1) as f32));
             s.clock.posted(key);

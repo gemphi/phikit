@@ -104,13 +104,17 @@ pub struct BFCurve {
     pub generator: Option<Vec<f32>>,
     /// `FCurve.extend`: how the curve continues past its keys.
     pub extend: u8,
+    /// `FCurve.grp → bActionGroup.name`: the channel group the editors list
+    /// it under — a bone's name for its pose curves, `Object Transforms` for
+    /// the object's own. `None` for an ungrouped curve.
+    pub group: Option<String>,
 }
 
 impl BFCurve {
     /// A curve with Blender's defaults for everything but its keys:
     /// unselected, rainbow-coloured.
     pub fn new(path: impl Into<String>, index: u32, keys: Vec<BKey>) -> Self {
-        Self { path: path.into(), index, keys, flag: 0, color_mode: COLOR_AUTO_RAINBOW, color: [0.0; 3], generator: None, extend: EXTRAPOLATE_CONSTANT }
+        Self { path: path.into(), index, keys, flag: 0, color_mode: COLOR_AUTO_RAINBOW, color: [0.0; 3], generator: None, extend: EXTRAPOLATE_CONSTANT, group: None }
     }
 
     /// The generator polynomial at `x`, when the curve carries one

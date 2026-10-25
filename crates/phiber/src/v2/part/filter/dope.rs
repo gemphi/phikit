@@ -86,6 +86,24 @@ pub static TYPES: [BDopeFilterSpec; 23] = [
 
 
 
+/// The type boxes in kinds, none past `fold::MOST` — the sub-groups Filters
+/// opens into, one open at a time, rather than twenty-three rows in a run.
+pub static KINDS: [(&str, &[&str]); 4] = [
+    ("Animation", &["show_transforms", "show_modifiers", "show_shapekeys", "show_armatures", "show_cache_files"]),
+    ("Geometry", &["show_meshes", "show_curves", "show_lattices", "show_gpencil", "show_hair_curves", "show_pointclouds", "show_volumes", "show_particles"]),
+    ("Shading", &["show_materials", "show_textures", "show_nodes", "show_linestyles"]),
+    ("Scene", &["show_cameras", "show_lights", "show_speakers", "show_worlds", "show_scenes", "show_movieclips"]),
+];
+
+/// Filters' rows: one folding sub-group per kind (`KINDS`).
+fn kinds(state: &BState) -> Vec<BView> {
+    let groups = KINDS
+        .iter()
+        .map(|(name, keys)| (name.to_string(), group(state, "", TYPES.iter().filter(|spec| keys.contains(&spec.key)))))
+        .collect();
+    super::fold::sub_cards(state, &SCOPE, "Filters", groups)
+}
+
 /// What a box answers: what the user ticked, or what Blender ships with.
 pub fn is_on(state: &BState, spec: &BDopeFilterSpec) -> bool {
     match state.get(&spec.key()) {
@@ -145,7 +163,8 @@ pub fn groups(state: &BState, is_nla: bool) -> Vec<super::fold::BGroup> {
 /// The popover's body, in Blender's order: four folding cards
 /// (`filter::fold`), `is_nla` swapping the one box that differs there.
 pub fn body(state: &BState, is_nla: bool) -> Vec<BView> {
-    super::fold::cards(state, &SCOPE, groups(state, is_nla), closed)
+    let groups = groups(state, is_nla).into_iter().map(|(title, rows)| (title, if title == "Filters" { kinds(state) } else { rows })).collect();
+    super::fold::cards(state, &SCOPE, groups, closed)
 }
 
 /// The header's right-hand control: the icon that opens the popover.

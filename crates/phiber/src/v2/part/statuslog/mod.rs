@@ -82,13 +82,13 @@ pub fn is_open(s: &BState) -> bool {
 
 /// `status.log.order` — which column the table is ordered by.
 pub fn order_key() -> BPath {
-    BPath::owned(vec!["status", "log", "order"])
+    AppKey::StatusLogOrder.path()
 }
 
 /// `status.log.ascending` — the direction. Newest first is the default,
 /// because the newest line is the one the folded bar was showing.
 pub fn ascending_key() -> BPath {
-    BPath::owned(vec!["status", "log", "ascending"])
+    AppKey::StatusLogAscending.path()
 }
 
 pub fn order(s: &BState) -> BLogOrder {

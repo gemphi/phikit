@@ -20,12 +20,29 @@ impl BPopover<'_> {
         match two_column.then(|| self.switcher_columns(ctx)).flatten() {
             Some(columns) => content = content.child(columns),
             None => {
-                for item in self.body {
-                    content = content.child(walk(item, ctx));
+                // A menu with no glyph in it reserves no icon slot.
+                let glyphs = !self.body.iter().any(|v| matches!(v, BView::MenuItem(_)))
+                    || self.body.iter().any(|v| matches!(v, BView::MenuItem(c) if c.icon.as_deref().is_some_and(|i| !i.is_empty())));
+                let ctx = &BRenderCtx { glyphs, ..ctx.clone() };
+                // A divider splits a menu into groups; each group stands on a
+                // ground of its own and the divider itself becomes the gap
+                // between them. With no divider the rows sit on the panel.
+                let groups: Vec<&[BView]> = self.body.split(|v| matches!(v, BView::MenuSep)).filter(|g| !g.is_empty()).collect();
+                if groups.len() > 1 {
+                    for group in groups {
+                        let ground = group
+                            .iter()
+                            .fold(BPopoverPart::Group.flex(ctx).div(ctx), |ground, item| ground.child(walk(item, ctx)));
+                        content = content.child(ground);
+                    }
+                } else {
+                    for item in self.body {
+                        content = content.child(walk(item, ctx));
+                    }
                 }
             }
         }
-        let panel = BPopoverPart::Panel { two_column, width: BPopoverWidth::of(self.side) }
+        let panel = BPopoverPart::Panel { two_column, width: BPopoverWidth::of(self.side), side: self.side }
             .flex(ctx)
             .div(ctx)
             .id(gpui::SharedString::from("popover-panel"))

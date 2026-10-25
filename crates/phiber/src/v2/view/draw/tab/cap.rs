@@ -8,32 +8,19 @@
 
 use super::super::color::to_hsla;
 use crate::v2::theme::{BResolvedUiStyle, BStyleRole};
-use crate::v2::view::prim::BRailSide;
 use gpui::prelude::*;
 use gpui::{Context, Hsla, Render, SharedString, Styled, Window, div, px};
 
 /// Which edge of a tab runs flush into the pane it belongs to — or `Free`
-/// when it belongs to no pane at all.
+/// when it belongs to no pane at all. Every rail entry is `Free`: a tile on
+/// its own ground, docked or floating, never a cap cut into its strip.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum BCapSide {
-    /// Floating chrome: the control connects to nothing, so it is a button,
-    /// not a cap — rounded on every side, with no gap to any edge.
+    /// A control that connects to nothing — every rail entry, a floating
+    /// button: rounded on every side, with no gap to any edge.
     Free,
     /// The topbar and editor tab strips: the pane is below.
     Below,
-    /// A left-hand rail: the pane is to the right.
-    Right,
-    /// A right-hand rail: the pane is to the left.
-    Left,
-}
-
-impl From<BRailSide> for BCapSide {
-    fn from(side: BRailSide) -> Self {
-        match side {
-            BRailSide::Left => BCapSide::Right,
-            BRailSide::Right => BCapSide::Left,
-        }
-    }
 }
 
 impl BCapSide {
@@ -43,7 +30,7 @@ impl BCapSide {
     pub fn of(ctx: &super::super::ctx::BRenderCtx) -> Self {
         use crate::v2::region::BRegionType;
         match ctx.region {
-            Some(BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute) => Self::Below,
+            Some(BRegionType::Tabs | BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute) => Self::Below,
             _ => Self::Free,
         }
     }
@@ -53,13 +40,8 @@ impl BCapSide {
     /// than two boxes that happen to match.
     pub fn gradient_axis(self) -> crate::v2::theme::BGradientAxis {
         use crate::v2::theme::BGradientAxis;
-        match self {
-            // The pane is to the right, so the sweep runs left to right.
-            BCapSide::Right => BGradientAxis::Trailing,
-            // The pane is to the left, so it runs right to left.
-            BCapSide::Left => BGradientAxis::Leading,
-            BCapSide::Free | BCapSide::Below => BGradientAxis::Down,
-        }
+        let _ = self;
+        BGradientAxis::Down
     }
 
     /// Whether this cap belongs to a vertical rail (a toolbar, a sidebar, a
@@ -73,10 +55,9 @@ impl BCapSide {
     /// continuous surface.
     pub fn round<E: Styled>(self, element: E, r: gpui::Pixels) -> E {
         match self {
-            BCapSide::Free => element.rounded(r),
-            BCapSide::Below => element.rounded_t(r),
-            BCapSide::Right => element.rounded_l(r),
-            BCapSide::Left => element.rounded_r(r),
+            // A strip's tab is a control too: rounded all round, clear of
+            // the strip's edges like every button in it.
+            BCapSide::Free | BCapSide::Below => element.rounded(r),
         }
     }
 
@@ -84,23 +65,10 @@ impl BCapSide {
     /// horizontal strip fills the strip's cap band — the header pane pads the
     /// gap off the top (`pane::BPaneCell`) so every control shares its
     /// centre — and pins itself to the bottom edge.
-    pub fn gap<E: Styled>(self, element: E, gap: f32) -> E {
+    pub fn gap<E: Styled>(self, element: E) -> E {
         match self {
             BCapSide::Free => element,
-            BCapSide::Below => element.self_end(),
-            BCapSide::Right => element.ml(px(gap)),
-            BCapSide::Left => element.mr(px(gap)),
-        }
-    }
-
-    /// Place a Properties-style paint layer: inset on the far edge, bleeding
-    /// past the pane-facing edge so the two surfaces meet.
-    pub fn paint<E: Styled>(self, element: E, inset: f32, overlap: f32) -> E {
-        match self {
-            BCapSide::Free => element.left(px(inset)).right(px(inset)),
-            BCapSide::Below => element.left(px(inset)).right(px(inset)).bottom(px(-overlap)),
-            BCapSide::Right => element.left(px(inset)).right(px(-overlap)),
-            BCapSide::Left => element.right(px(inset)).left(px(-overlap)),
+            BCapSide::Below => element.self_center(),
         }
     }
 }

@@ -95,6 +95,32 @@ impl BPhiberApp {
         self.input.caret.place(c.len());
     }
 
+    /// Put `text` in place of the selection (or at the caret), the caret
+    /// after it: what a paste, a cut (with `""`) and a typed replacement
+    /// all are. The same splice `replace_text_in_range` makes for the
+    /// platform's own inserts, without the UTF-16 round trip.
+    pub(crate) fn caret_insert(&mut self, text: &str) {
+        let Some(path) = self.edit_path() else { return };
+        let content = self.fresh_content();
+        let range = self.input.caret.selected.clone();
+        let range = text_edit::floor_boundary(&content, range.start)..text_edit::floor_boundary(&content, range.end);
+        let next = text_edit::splice(&content, range.clone(), text);
+        self.input.caret.place(range.start + text.len());
+        self.input.caret.marked = None;
+        self.state.set_encoded(&path, next);
+    }
+
+    /// The selected text, `None` when nothing is selected.
+    pub(crate) fn caret_selected_text(&mut self) -> Option<String> {
+        let content = self.fresh_content();
+        let range = self.input.caret.selected.clone();
+        if range.is_empty() {
+            return None;
+        }
+        let range = text_edit::floor_boundary(&content, range.start)..text_edit::floor_boundary(&content, range.end);
+        Some(content[range].to_string())
+    }
+
     pub(crate) fn caret_select_all(&mut self) {
         let c = self.fresh_content();
         self.input.caret.place(0);

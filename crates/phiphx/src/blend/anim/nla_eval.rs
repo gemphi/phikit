@@ -103,21 +103,55 @@ impl BMotionTrack {
         }
     }
 
-    /// Every track over `raw` at `frame`, bottom to top.
-    pub fn play(tracks: &[BMotionTrack], solo: bool, raw: &mut ObjectTransformRaw, frame: f32) {
-        for track in tracks {
-            let skip = if solo { track.flag & TRACK_SOLO == 0 } else { track.flag & TRACK_MUTED != 0 };
-            let Some((clip, at)) = (!skip).then(|| track.playing(frame)).flatten() else { continue };
+    /// Every track over `target` at `frame`, bottom to top. As Blender's
+    /// NLA does (`animsys_evaluate_nla_domain`), each channel a playing
+    /// track's strips animate starts from its default — not the value
+    /// saved in the file — so a frame no strip covers rests it there, and
+    /// a strip blending in mixes over the default.
+    pub fn play<T: BNlaTarget + ?Sized>(tracks: &[BMotionTrack], solo: bool, target: &mut T, frame: f32) {
+        let live = |track: &&BMotionTrack| if solo { track.flag & TRACK_SOLO != 0 } else { track.flag & TRACK_MUTED == 0 };
+        for curve in tracks.iter().filter(live).flat_map(|t| &t.clips).flat_map(|c| &c.curves) {
+            if let Some(slot) = target.slot(curve) {
+                *slot = channel_default(curve.property(), curve.index as usize);
+            }
+        }
+        for track in tracks.iter().filter(live) {
+            let Some((clip, at)) = track.playing(frame) else { continue };
             let influence = clip.strip.influence_at(at);
             if influence <= 0.0 {
                 continue;
             }
             let time = clip.strip.action_frame(at);
             for curve in clip.curves.iter().filter(|c| !c.muted()) {
-                let (Some(value), Some(slot)) = (curve.eval(time), curve.own_property().and_then(|p| channel_mut(raw, p, curve.index as usize))) else { continue };
-                *slot = Self::blend(clip.strip.blend, curve.property(), *slot, value, influence);
+                let Some(value) = curve.eval(time) else { continue };
+                if let Some(slot) = target.slot(curve) {
+                    *slot = Self::blend(clip.strip.blend, curve.property(), *slot, value, influence);
+                }
             }
         }
+    }
+}
+
+/// What the NLA writes into: the channel a curve drives, when it drives
+/// one here.
+pub trait BNlaTarget {
+    fn slot(&mut self, curve: &BFCurve) -> Option<&mut f32>;
+}
+
+/// An object's own transform: its own-property curves (a bone's curves in
+/// the same action are its rig's).
+impl BNlaTarget for ObjectTransformRaw {
+    fn slot(&mut self, curve: &BFCurve) -> Option<&mut f32> {
+        channel_mut(self, curve.own_property()?, curve.index as usize)
+    }
+}
+
+/// `nlaevalchan_get_default_values`: RNA's default of a transform channel —
+/// the identity rotation, unit scale, zero elsewhere.
+fn channel_default(property: &str, index: usize) -> f32 {
+    match (property, index) {
+        ("rotation_quaternion", 0) | ("scale", _) | ("rotation_axis_angle", 2) => 1.0,
+        _ => 0.0,
     }
 }
 

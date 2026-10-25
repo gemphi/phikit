@@ -117,7 +117,14 @@ impl BActionTemplate {
     /// Manual Frame Range, Start / End, Cyclic) and the Slot panel (its
     /// name and type), over the object's action.
     pub fn cards(&self, tab: &'static str, s: &BState) -> Vec<BView> {
-        let Some((action, slot)) = BActionView::now(s).and_then(|v| v.current) else { return Vec::new() };
+        // No action on the active object — one played by NLA strips alone,
+        // or none at all: the panel still stands, holding the selector to
+        // browse to an action or make one (the rows Properties ▸ Object ▸
+        // Animation shows), rather than leaving the sidebar a blank column.
+        let Some((action, slot)) = BActionView::now(s).and_then(|v| v.current) else {
+            let rows = self.rows(s);
+            return if rows.is_empty() { Vec::new() } else { vec![self.card(tab, "Action", rows, s)] };
+        };
         let (range, cyclic) = crate::v2::scene::source::with_loaded(|m| m.map_or((action.manual_range, action.cyclic), |m| BSceneActions::now(s).range_of(&action.name, m)));
         let (start, end) = range.unwrap_or((action.frame_start, action.frame_end));
         let check = |key: OpKey, label: &str, on: bool| BView::ctrl(BCtrl::read(BCtrlKind::Check, key.path(), BValue::Bool(on), s).with_label(label));

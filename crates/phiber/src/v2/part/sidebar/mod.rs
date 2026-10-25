@@ -1,6 +1,7 @@
 //! Sidebar — the vertical tab strip and, while it is open, the region of
 //! panels beside it (`show.rs`, `panel.rs`).
 
+pub mod editor;
 pub mod image;
 pub mod node;
 pub mod panel;

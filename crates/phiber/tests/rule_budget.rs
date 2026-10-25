@@ -87,7 +87,7 @@ fn the_reader_gives_back_the_modal_it_covered() {
 #[test]
 fn state_holds_only_the_store_the_keys_and_the_rules() {
     const ALLOWED: &[&str] = &[
-        "action.rs", "edit.rs", "key", "log.rs", "menu.rs", "mod.rs", "path.rs",
+        "action.rs", "edit.rs", "key", "log", "menu.rs", "mod.rs", "path.rs",
         "rule.rs", "seed.rs", "val.rs",
     ];
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/v2/state");

@@ -1,17 +1,10 @@
-//! Focused table family: cells, body rows, and headers.
-//! Header and body consume the same semantic column model.
-//!
-//! ## Public compatibility wrappers (Gate 1, task 6.2)
-//!
-//! `view_row` and `view_header` are the public named entry points consumed by
-//! `prim/mod.rs`. The `view_row` function is placed before `BTableRow::render`
-//! so the source-text characterization test captures the selection logic in
-//! the split between the two wrapper markers.
+//! Focused table family: cells, body rows, and headers, on one column model.
+//! `view_row` and `view_header` are the named entry points; `view_row` sits
+//! before `BTableRow::render` so the source-text test sees the selection
+//! logic between the two wrappers.
 
 use super::ctx::BRenderCtx;
-use super::flex::{
-    BAlign, BDim, BFill, BFlex, BFlexed, BJustify, BLen, BOverflow, BRadius, BSpace, BType,
-};
+use super::flex::{BAlign, BDim, BFill, BFlex, BFlexed, BJustify, BLen, BOverflow, BRadius, BSpace, BType};
 use super::walk;
 use crate::v2::theme::{BStyleRole, BSurfaceTone};
 use crate::v2::view::prim::{BAction, BColAlign, BColWidth, BRowShade, BTableCell};
@@ -28,17 +21,8 @@ pub struct BTableHeader<'a>(pub &'a [BTableCell]);
 
 struct BTableCellView<'a>(&'a BTableCell);
 
-// ── Public compatibility wrappers ──────────────────────────────────────────
-// `view_row` is placed BEFORE `BTableRow::render` so the existing test's
-// source-text characterization test captures the selection logic
-// `selected.then_some(c.style.colors.row_selected)` in the slice between
-// the two wrapper functions.
-
-/// Public compatibility wrapper — renders a table body row.
-///
-/// Constructs `BTableRow` and delegates to `BTableRow::render`. The selection
-/// logic (`selected.then_some(c.style.colors.row_selected)`) lives below in
-/// `BTableRow::render` so the dispatcher never owns GPUI composition.
+/// Renders a table body row through `BTableRow::render`, which owns the
+/// selection logic, so the dispatcher never owns GPUI composition.
 #[allow(dead_code)]
 pub fn view_row(
     cell_list: &[BTableCell],
@@ -79,9 +63,6 @@ impl BTableRow<'_> {
     }
 }
 
-
-// ── Public compatibility wrapper: table header ────────────────────────────
-
 /// Public compatibility wrapper — renders a table header row.
 #[allow(dead_code)]
 pub fn view_header(cell_list: &[BTableCell], ctx: &BRenderCtx) -> AnyElement {
@@ -96,23 +77,24 @@ impl BTableHeader<'_> {
             .flex(ctx)
             .div(ctx)
             .debug_selector(|| "table-header".to_string());
-        for cell in self.0 {
-            element = element.child(BTableCellView(cell).render(ctx));
+        // Each heading cell is its column and the gap before it, with no
+        // divider: hovered, the whole cell takes the hover, and its label
+        // starts (or, for a right-aligned column, ends) where the values do.
+        let last = self.0.len().saturating_sub(1);
+        for (n, cell) in self.0.iter().enumerate() {
+            let head = BTablePart::HeadCell(cell.width, n == 0, n == last).flex(ctx).div(ctx).child(walk(&cell.view, ctx));
+            element = element.child(head);
         }
         element.into_any_element()
     }
 }
-
-// ── BFocusedRenderer impls ─────────────────────────────────────────────────
-
-// ── BTableCellView (private) ───────────────────────────────────────────────
 
 impl BTableCellView<'_> {
     fn render(&self, ctx: &BRenderCtx) -> AnyElement {
         BTablePart::Cell(self.0.width, self.0.align)
             .flex(ctx)
             .div(ctx)
-            .child(walk(&self.0.view, ctx))
+            .child(walk(&self.0.view, &ctx.clipping()))
             .into_any_element()
     }
 }
@@ -153,11 +135,13 @@ enum BTablePart {
     /// The clickable is the row: its height is the row's, so the hover and
     /// selection fills cover the whole band rather than a strip of it.
     Clickable,
-    /// A column heading is a card heading: same radius, same fill as a panel
-    /// header, so the file list reads as one more rounded section rather than
-    /// a table of its own. No rule under it — the tone change is the seam, as
-    /// it is under a panel header.
+    /// A column heading is a band over the rows, laid as they are: the same
+    /// inset from the list's edge, the same rounding, a heading's fill.
     Header,
+    /// A column's heading cell: the body cell's column, the gap before it
+    /// (after the first), and the row's inset at either end (first, last) —
+    /// so its hover covers all of it and its label sits over its values.
+    HeadCell(BColWidth, bool, bool),
     /// A cell fills the row's height and centres its content in it. Sizing to
     /// content left the columns short of the row, so a value sat at whatever
     /// height its own text happened to be.
@@ -182,22 +166,46 @@ impl BFlexed for BTablePart {
                 .margin_y(BSpace::Stroke)
                 .ink()
                 .type_size(BType::Body),
-            Self::Clickable => {
-                BFlex::row().width(BLen::Full).height(BLen::Measured(row_band(ctx)))
-            }
+            Self::Clickable => BFlex::row().width(BLen::Full).height(BLen::Measured(row_band(ctx))),
             Self::Header => BFlex::row()
                 .width(BLen::Full)
                 .height(BLen::Dim(BDim::CardHead))
                 .align(BAlign::Center)
-                // `CardInset + PadSm == PadMd`, so a heading's text lands in
-                // the same column as the row text under it while its fill
-                // still spans the whole column.
-                .pad_x(BSpace::CardInset)
+                .margin_x(BSpace::Stroke)
                 .gap(BSpace::None)
-                .radius(BRadius::Top(ctx.style.radius_for(BStyleRole::Card)))
+                .radius(BRadius::Role(BStyleRole::MenuItem))
                 .fill(BFill::Heading(BSurfaceTone::Card))
                 .ink()
                 .type_size(BType::Body),
+            Self::HeadCell(width, lead, last) => {
+                let cell = BFlex::row()
+                    .align(BAlign::Center)
+                    .height(BLen::Full)
+                    .min_height(BLen::Zero)
+                    .overflow(BOverflow::Clip)
+                    .radius(BRadius::Role(BStyleRole::MenuItem))
+                    .hovered(BFill::ItemHover)
+                    .hover_group(super::sort::HEADING);
+                let w = match width {
+                    BColWidth::Fixed(w) => Some(w),
+                    BColWidth::FileDate => Some(ctx.style.dimensions.file_date_column_width),
+                    BColWidth::FileSize => Some(ctx.style.dimensions.file_size_column_width),
+                    BColWidth::Flex => None,
+                };
+                let inset = BSpace::CardInset.px(ctx);
+                let gap = ctx.style.spacing.gap_md;
+                let cell = match lead {
+                    true => cell.pad_left(BSpace::CardInset),
+                    false => cell.pad_left(BSpace::GapMd),
+                };
+                let cell = if last { cell.pad_right(BSpace::CardInset) } else { cell };
+                // The cell's span beyond its column: gap before, row's inset.
+                let extra = [(!lead, gap), (lead, inset), (last, inset)].iter().filter(|(on, _)| *on).map(|(_, px)| px).sum::<f32>();
+                match w {
+                    None => cell.fills().min_width(BLen::Zero),
+                    Some(w) => cell.width(BLen::Measured(w + extra)).keeps_size(),
+                }
+            }
             Self::Cell(width, align) => {
                 let cell = BFlex::row()
                     .align(BAlign::Center)
@@ -208,6 +216,9 @@ impl BFlexed for BTablePart {
                         BColAlign::Start => BJustify::Start,
                         BColAlign::End => BJustify::End,
                     });
+                // A right-aligned column ends where its heading's word does,
+                // short of the heading's sort arrow.
+                let cell = if align == BColAlign::End { cell.pad_right(BSpace::ArrowSlot) } else { cell };
                 let fixed = |w: f32| cell.width(BLen::Measured(w)).keeps_size();
                 match width {
                     BColWidth::Fixed(w) => fixed(w),

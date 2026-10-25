@@ -162,6 +162,13 @@ impl std::fmt::Debug for BlendSkinSource {
 }
 
 impl BlendSkinSource {
+    /// A mesh deformed by the armature at `armature` alone — no modifier
+    /// after the Armature: what a mesh built in code (a garment cut from a
+    /// body, a hairstyle) is skinned with (`scene/build.rs`).
+    pub fn bare(object: usize, armature: u64, base: BlendEvalMesh, groups: Vec<String>) -> Self {
+        Self { object, object_address: 0, armature, base, groups, tail: Vec::new() }
+    }
+
     /// The modifiers after the Armature over `deformed` (the base's
     /// vertices, posed) — the mesh the viewport draws at that pose.
     pub fn evaluate(&self, deformed: Vec<[f32; 3]>, world: Mat4) -> BlendEvalMesh {

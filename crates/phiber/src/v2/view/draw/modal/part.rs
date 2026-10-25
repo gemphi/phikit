@@ -22,6 +22,13 @@ pub enum BModalPart {
     Card { fills: bool, tall: bool, height: f32 },
     /// A reading sheet: `share` of the window's width, the whole height.
     Sheet { share: f32 },
+    /// The search palette: half the window wide, most of its height, on the
+    /// floating chrome's see-through ground, bordered and rounded.
+    Palette,
+    /// Hangs the palette under the top bar, centred across the window.
+    Above,
+    /// The top bar's height, kept clear above the palette.
+    AboveGap,
     /// The card's content. `flush` for bodies that compose their own
     /// edge-to-edge regions (file browser, render) — every other modal keeps
     /// the large inner gutter so form content doesn't butt against the border.
@@ -58,6 +65,19 @@ impl BFlexed for BModalPart {
                 .pad(BSpace::Seam),
             Self::Card { fills, tall, height } => card(fills, tall, height),
             Self::Sheet { share } => card(false, true, 0.0).width(BLen::Share(share)),
+            Self::Palette => BFlex::column()
+                .width(BLen::Share(0.5))
+                .height(BLen::Share(0.6))
+                .min_width(BLen::Dim(BDim::SideZoneDefaultWidth))
+                .fill(BFill::Floating)
+                .ink()
+                .border(BEdge::All)
+                .radius(BRadius::Role(BStyleRole::Modal))
+                .overflow(BOverflow::Clip)
+                .occludes()
+                .elevated(BElevation::Modal),
+            Self::Above => BFlex::column().place(BPlace::Overlay).align(BAlign::Center).pad(BSpace::Seam),
+            Self::AboveGap => BFlex::cell().height(BLen::Dim(BDim::HeaderHeight)).keeps_size(),
             Self::CardBody { flush, bounded } => card_body(flush, bounded),
             Self::Fullscreen => BFlex::column()
                 .place(BPlace::Overlay)
@@ -90,6 +110,9 @@ impl BFlexed for BModalPart {
     }
 }
 
+/// How much of the window's width an editor in a dialog takes.
+const EDITOR_SHARE: f32 = 2.0 / 3.0;
+
 fn card(fills: bool, tall: bool, height: f32) -> BFlex {
     let card = BFlex::column()
         .fill(BFill::Tone(BSurfaceTone::Modal))
@@ -102,14 +125,17 @@ fn card(fills: bool, tall: bool, height: f32) -> BFlex {
         .overflow(BOverflow::Auto)
         .occludes()
         .elevated(BElevation::Modal);
-    // Every dialog is half the window wide; an editor in a dialog takes the
-    // window's height, a form keeps its own.
+    // An editor in a dialog is two thirds of the window wide and the
+    // window's height — the file browser is three columns (sources, files,
+    // details), and at half the window its files were two to a row; a form
+    // — a question, a name, a short list — takes the middle third, never
+    // narrower than a side zone, and its own height.
     if fills {
         card.fills().full()
     } else if tall {
-        card.width(BLen::Share(0.5)).height(BLen::Full)
+        card.width(BLen::Share(EDITOR_SHARE)).height(BLen::Full)
     } else {
-        card.width(BLen::Share(0.5)).height(BLen::Measured(height))
+        card.width(BLen::Share(1.0 / 3.0)).min_width(BLen::Dim(BDim::SideZoneDefaultWidth)).height(BLen::Measured(height))
     }
 }
 

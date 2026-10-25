@@ -45,42 +45,23 @@ impl BSidebarPanels {
         tabs.iter().find(|t| Some(t.label) == picked).or(tabs.first())
     }
 
-    /// The panels of the tab showing, top to bottom — drawn plain.
-    ///
-    /// A sidebar is a LIST of panels, not a stack of objects, so its panels
-    /// are a menu: a fold triangle, a title, the rows under it, and nothing
-    /// behind them (`BCard::plain`). As cards they each carried a border, a
-    /// card fill and a heading fill a shade off it, and a sub-panel carried
-    /// another shade again — so a column of them was boxes inside a box, each
-    /// with its own heading colour, and by the second level the panel you
-    /// wanted sat three tones from the region holding it. The triangle says
-    /// what folds and the indent says what belongs to what, which is all a
-    /// menu uses and all this needs.
-    ///
-    /// Every tab's panels come through here, so this is the one place it is
-    /// said; the Properties editor and the Preferences modal build their own
-    /// and keep their cards, where a card is the right answer — there a panel
-    /// IS a thing with edges, holding one object's settings.
+    /// The panels of the tab showing, top to bottom, as the Properties
+    /// editor draws its own: each a card on its light ground, so every
+    /// group in a sidebar stands on a shade of its own rather than floating
+    /// as bare text on the region. (They were drawn plain, as a menu; a
+    /// sidebar is read the way the Inspector is, and they now look alike.)
     pub fn views(&self, s: &BState) -> Vec<BView> {
         let Some(tab) = self.tab(s) else { return Vec::new() };
         let built = match tab.body {
             BSidebarBody::None => Vec::new(),
             BSidebarBody::Object(_) if s.get(CtxKey::Object).is_none_or(str::is_empty) => Vec::new(),
             BSidebarBody::Object(sections) | BSidebarBody::Props(sections) => self.cards(tab.label, sections, s),
-            BSidebarBody::View => vec![self.view_card(tab.label, s)],
+            BSidebarBody::View(sections) => [vec![self.view_card(tab.label, s)], self.cards(tab.label, sections, s)].concat(),
             BSidebarBody::Action => crate::v2::part::action::template::BActionTemplate::new(self.host).cards(tab.label, s),
             BSidebarBody::Playback => self.folded(tab.label, &PLAYBACK_PANELS, s),
             BSidebarBody::Overlay => self.overlay_cards(tab.label, s),
         };
-        built.into_iter().map(Self::plain).collect()
-    }
-
-    /// A panel drawn plain, and anything that is not a card left alone.
-    fn plain(view: BView) -> BView {
-        match view {
-            BView::Card(card) => BView::Card(Box::new(card.plain())),
-            other => other,
-        }
+        built
     }
 
     /// The host's box panel as folding cards, one per sub-panel

@@ -52,6 +52,8 @@ pub static AREAS: &[BAreaSpec] = &[
         hosts: &[
             BHostType::Action,
             BHostType::Time,
+            BHostType::Play,
+            BHostType::Project,
             BHostType::Ipo,
             BHostType::Drivers,
             BHostType::Nla,

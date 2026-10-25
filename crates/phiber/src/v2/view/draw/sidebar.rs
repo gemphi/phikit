@@ -1,13 +1,11 @@
 //! The sidebar column (`BColumn::Sidebar`) — a fixed-width column the user
 //! can drag wider or narrower by its inner edge (`prim/resize.rs`).
 
-use super::color::to_hsla;
 use super::ctx::BRenderCtx;
-use super::flex::BFill;
+use super::flex::{BFill, BFlex, BLen, BRadius, BSpace};
 use super::walk;
 use super::resize::{BPanelEdge, handle, k_sidebar_width};
 use super::scroller::{scroll_id, scroller};
-use crate::v2::theme::{BStyleRole, BSurfaceTone};
 use crate::v2::view::BView;
 use gpui::prelude::*;
 use gpui::{AnyElement, div, px};
@@ -26,20 +24,32 @@ impl BSidebar<'_> {
     pub fn render_at(&self, edge: BPanelEdge, ctx: &BRenderCtx) -> AnyElement {
         // Dragged shut (`view::size`): only the edge is left, and clicking
         // it brings the sidebar back — Blender's hidden-region arrow.
-        if !edge.leading && crate::v2::view::size::sidebar_hidden(ctx.state) {
+        // A details column (a UI region: the file browser's, the Project
+        // Browser's inspector) is its own column: it does not share the
+        // source list's dragged width or its shut state, and has no grip.
+        let info = ctx.region == Some(crate::v2::region::BRegionType::UI);
+        if !edge.leading && !info && crate::v2::view::size::sidebar_hidden(ctx.state) {
             return restore(ctx);
         }
-        // Outer surface owns paint and geometry; the bounded inner child scrolls.
-        let outer_padding = ctx.style.spacing.pad_sm;
+        // The outer column owns geometry; the bounded inner child scrolls.
         // The dragged width, or the metric default until the user drags.
-        let width = crate::v2::view::size::sidebar_column_width(ctx.state, ctx.style.sidebar_min_width(), ctx.style.dimensions.sidebar_min_width);
+        // In the timing editors the sidebar opens as wide as their channel
+        // list on the other side, so the two columns either side of the keys
+        // match.
+        use crate::v2::host::BHostType as H;
+        let default = match ctx.host {
+            H::Action | H::Time | H::Nla | H::Ipo | H::Drivers => super::canvas::time::row::CHANNEL_WIDTH,
+            _ => ctx.style.sidebar_min_width(),
+        };
+        let width = crate::v2::view::size::sidebar_column_width(ctx.state, default, ctx.style.dimensions.sidebar_min_width);
         // Inside a Tools region the region owns the column's width (the
         // file browser's source list, `region.rs`), so the panel fills it.
         let in_tools = ctx.region == Some(crate::v2::region::BRegionType::Tools);
+        let column_id = if info { "panel-info-column" } else { "panel-sidebar-column" };
         let outer = div()
             .relative()
-            .id(gpui::SharedString::from("panel-sidebar-column"))
-            .debug_selector(|| "panel-sidebar-column".to_string())
+            .id(gpui::SharedString::from(column_id))
+            .debug_selector(move || column_id.to_string())
             // Over a canvas (the N panel) a click on the column is the
             // column's, never a pick in the viewport under it.
             .occlude()
@@ -52,17 +62,30 @@ impl BSidebar<'_> {
         // are the surfaces, as Properties' cards sit in their region: no
         // frame of its own round them (that drew a box in a box), and the
         // region's pad is the only inset.
-        let outer = if in_tools {
-            outer.w_full()
-        } else {
-            outer
-                .w(px(width))
-                .bg(BFill::Tone(BSurfaceTone::Body).background(ctx))
-                .border(px(ctx.style.strokes.border))
-                .border_color(to_hsla(ctx.style.colors.border))
-                .rounded(px(ctx.style.radius_for(BStyleRole::Panel)))
+        // Its sections have no surface of their own (`BCardKind::Section`),
+        // so the column is one: the sidebar's tone, a step under the listing
+        // beside it, as Properties' and the N panel's columns are.
+        // Beside a rail (the N panel) the column paints nothing either: its
+        // cards are the surfaces, standing at the top of the column. A
+        // full-height box of its own round them was a panel left dangling —
+        // an empty well under the last card all the way down the column.
+        // In a Tools region (the file browser's source list, the Project
+        // Browser's navigator) the column is a rail: the same rounded ground,
+        // in the floating chrome's shade and padded the same, that the
+        // viewport's toolbar and every docked rail stand on (`rail.rs`).
+        // A details column is its region's width less the region's pad, as
+        // the source list is its own region's: at a fixed width it ran a pad
+        // past the region and its cards met the window's edge.
+        let outer = match (in_tools, info) {
+            (true, _) => BFlex::column()
+                .width(BLen::Full)
+                .pad(BSpace::PadXs)
+                .radius(BRadius::Role(crate::v2::theme::BStyleRole::Panel))
+                .fill(BFill::Floating)
+                .styled(outer, ctx),
+            (false, true) => BFlex::column().width(BLen::Full).styled(outer, ctx),
+            (false, false) => outer.w(px(width)),
         };
-        let outer_padding = if in_tools { 0.0 } else { outer_padding };
         let id = scroll_id("panel-sidebar", self.0);
         let mut inner = div()
             .id(id.clone())
@@ -72,7 +95,6 @@ impl BSidebar<'_> {
             .w_full()
             .min_h_0()
             .min_w_0()
-            .p(px(outer_padding))
             .gap(px(ctx.style.spacing.gap_xs))
             .overflow_y_scroll();
         for child in self.0 {
@@ -82,10 +104,11 @@ impl BSidebar<'_> {
         // sitting beside it, so the sidebar costs exactly its own width and
         // the gap to the pane is the boundary gap, not a handle. In a Tools
         // region the drag writes the same key, which the region reads.
-        outer
-            .child(scroller(inner, &id, ctx))
-            .child(handle(k_sidebar_width(), width, edge, ctx))
-            .into_any_element()
+        let outer = outer.child(scroller(inner, &id, ctx));
+        match info {
+            true => outer.into_any_element(),
+            false => outer.child(handle(k_sidebar_width(), width, edge, ctx)).into_any_element(),
+        }
     }
 }
 
@@ -95,7 +118,7 @@ fn restore(ctx: &BRenderCtx) -> AnyElement {
     use crate::v2::view::prim::BAction;
     let show = BAction::Set(crate::v2::view::size::k_sidebar_hidden(), crate::v2::state::val::V_FALSE.to_string());
     let handler = ctx.handler.clone();
-    use super::flex::{BAlign, BFlex, BSpace};
+    use super::flex::BAlign;
     BFlex::column()
         .align(BAlign::Center)
         .full()

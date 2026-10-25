@@ -24,7 +24,7 @@ enum BZonePart {
     /// holds is a fixed strip, and whether all it holds is a fixed bar (the
     /// status bar's zone, which is one bar tall whatever the Timeline's band
     /// was dragged to).
-    Frame { kind: BZoneType, dragged: Option<f32>, fixed_strip: bool, fixed_bar: bool },
+    Frame { kind: BZoneType, dragged: Option<f32>, fixed_strip: bool, fixed_bar: bool, browsing: bool },
     /// One area's slot in a zone: its share of the zone's length, or — for an
     /// area that is one bar tall — exactly the bar's height.
     Slot { share: f32, fixed_bar: bool },
@@ -36,14 +36,19 @@ impl BFlexed for BZonePart {
         match *self {
             Self::Slot { fixed_bar: true, .. } => BFlex::column().unclamped().keeps_size(),
             Self::Slot { share, .. } => BFlex::column().unclamped().shares(share),
-            Self::Frame { kind, dragged, fixed_strip, fixed_bar } => {
+            Self::Frame { kind, dragged, fixed_strip, fixed_bar, browsing } => {
                 let base = BFlex::along(kind.axis())
                     .fill(BFill::Clear)
                     .radius(BRadius::Role(BStyleRole::Zone))
                     .gap(BSpace::Seam);
                 let sized = match kind {
+                    // A top bar wrapping onto a second line (`filter::topbar_wraps`)
+                    // grows with it: at one bar's height the second line was
+                    // painted under the editors below and could not be seen.
+                    Top if crate::v2::part::filter::topbar_wraps(_c.state) => base.min_height(BLen::Dim(BDim::HeaderHeight)).width(BLen::Full).keeps_size(),
                     Top => base.height(BLen::Dim(BDim::HeaderHeight)).width(BLen::Full),
                     Bottom if fixed_bar => return base.width(BLen::Full).keeps_size(),
+                    Bottom if browsing => base.height(BLen::Dim(BDim::BottomPanelHeight)).width(BLen::Full),
                     Bottom => base.height(BLen::Dim(BDim::BottomStripHeight)).width(BLen::Full),
                     Center | Full => base.fills().height(BLen::Full).min_height(BLen::Zero),
                     Left | Right | Rail => base.height(BLen::Full).min_height(BLen::Zero),
@@ -123,6 +128,7 @@ pub fn view(kind: BZoneType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
         dragged: crate::v2::zone::zone_size(ctx.state, space, kind),
         fixed_strip: fixed_strip_zone(list),
         fixed_bar: fixed_bar_zone(list),
+        browsing: list.iter().filter_map(area_host).any(|host| host.browses()),
     };
     let mut element = frame.flex(ctx).div(ctx);
     // The top zone is the window's title bar (the native one is hidden):

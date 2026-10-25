@@ -87,13 +87,15 @@ fn header_ids() -> (&'static str, &'static str) {
 #[gpui::test]
 async fn heading_triangle_and_row_labels_share_a_column(cx: &mut TestAppContext) {
     let cx = layout(cx).await;
-    let (fold_id, _) = header_ids();
-    let fold = bounds(cx, fold_id);
+    let key = "ctx-buts-active_tool-active_tool-expanded";
+    let title = bounds(cx, Box::leak(format!("card-title-{key}").into_boxed_str()));
     let label = bounds(cx, "section-Tool-label");
 
+    // A folding card's rows are its children: they stand under its title,
+    // one step in from the fold triangle, so the tree reads.
     assert_eq!(
-        label.x, fold.x,
-        "the heading's fold triangle and the property labels start in the same column"
+        label.x, title.x,
+        "the property labels start under the heading's title"
     );
 }
 
@@ -112,6 +114,8 @@ async fn row_values_end_under_the_heading_grip(cx: &mut TestAppContext) {
 
 #[gpui::test]
 async fn properties_rail_tab_state_changes_only_paint(cx: &mut TestAppContext) {
+    // A Properties tab is the rail's one tile: selecting it or hovering it
+    // changes its fill, never its box or where its icon sits.
     let (app, cx) = cx.add_window_view(|_, _| BPhiberApp::new());
     cx.simulate_resize(size(px(1280.0), px(800.0)));
     app.update(cx, |app, cx| {
@@ -121,25 +125,8 @@ async fn properties_rail_tab_state_changes_only_paint(cx: &mut TestAppContext) {
     });
     cx.run_until_parked();
 
-    let rail = bounds(cx, "region-NavBar-Buts");
-    let pane = bounds(cx, "region-Center-Buts");
     let active_tab = bounds(cx, "tab-tool-tool");
-    let active_paint = bounds(cx, "tab-tool-tool-background");
     let active_icon = bounds(cx, "tab-icon-tool-tool");
-    let style = resolve_ui_style(ui_style_defaults(BPaletteName::DEFAULT), &BState::new());
-
-    assert_eq!(active_tab.x, rail.x, "tab allocation starts at rail edge");
-    assert_eq!(active_tab.right, pane.x, "tab allocation does not widen");
-    assert_eq!(
-        active_paint.x - rail.x,
-        style.properties_tab_background_inset(),
-        "paint begins at the resolved 2px-compatible inset"
-    );
-    assert_eq!(
-        active_paint.right - pane.x,
-        style.properties_tab_overlap(),
-        "paint alone overlaps the content-facing edge"
-    );
 
     app.update(cx, |app, cx| {
         app.state
@@ -148,52 +135,35 @@ async fn properties_rail_tab_state_changes_only_paint(cx: &mut TestAppContext) {
     });
     cx.run_until_parked();
     let resting_tab = bounds(cx, "tab-tool-tool");
-    let resting_paint = bounds(cx, "tab-tool-tool-background");
     let resting_icon = bounds(cx, "tab-icon-tool-tool");
 
     cx.simulate_mouse_move(resting_tab.center(), None, Modifiers::none());
     cx.run_until_parked();
     let hovered_tab = bounds(cx, "tab-tool-tool");
-    let hovered_paint = bounds(cx, "tab-tool-tool-background");
     let hovered_icon = bounds(cx, "tab-icon-tool-tool");
 
-    assert_eq!(
-        active_tab.size(),
-        resting_tab.size(),
-        "selection changed tab allocation size"
-    );
-    assert_eq!(resting_tab, hovered_tab, "hover changed tab allocation");
-    assert_eq!(
-        active_paint.relative_to(active_tab),
-        resting_paint.relative_to(resting_tab),
-        "selection changed paint geometry within the tab"
-    );
-    assert_eq!(resting_paint, hovered_paint, "hover changed paint geometry");
-    assert_eq!(
-        active_icon.relative_to(active_tab),
-        resting_icon.relative_to(resting_tab),
-        "selection moved the tab icon within its allocation"
-    );
-    assert_eq!(resting_icon, hovered_icon, "hover moved the tab icon");
+    assert_eq!(active_tab, resting_tab, "selection changed the tile's box");
+    assert_eq!(resting_tab, hovered_tab, "hover changed the tile's box");
+    assert_eq!(active_icon, resting_icon, "selection moved the icon");
+    assert_eq!(resting_icon, hovered_icon, "hover moved the icon");
 }
 
 #[gpui::test]
-async fn rail_tabs_span_the_rail_and_meet_the_pane(cx: &mut TestAppContext) {
+async fn rail_tabs_are_the_viewport_tiles(cx: &mut TestAppContext) {
+    // Every rail is one element: its tiles are card-head squares, `pad_xs`
+    // in from both edges, so the rail is `rail_width` wide — the Properties
+    // navbar exactly as the viewport's floating strips.
     let cx = layout(cx).await;
+    let style = resolve_ui_style(ui_style_defaults(BPaletteName::DEFAULT), &BState::new());
     let rail = bounds(cx, "region-NavBar-Buts");
-    let pane = bounds(cx, "region-Center-Buts");
     let tab = bounds(cx, "tab-tool-tool");
+    let side = style.dimensions.card_head_height();
 
-    assert_eq!(tab.x, rail.x, "a rail tab starts at the rail's left edge");
-    assert_eq!(
-        tab.right - tab.x,
-        METRICS.w_navbar,
-        "a rail tab is exactly as wide as the rail"
-    );
-    assert_eq!(
-        tab.right, pane.x,
-        "tab allocation must meet the pane without changing strip width"
-    );
+    assert_eq!(rail.right - rail.x, style.rail_width(), "the navbar is a rail wide");
+    assert_eq!(tab.right - tab.x, side, "a rail tile is the card-head module wide");
+    assert_eq!(tab.bottom - tab.y, side, "and as tall: a square");
+    assert_eq!(tab.x - rail.x, style.spacing.pad_xs, "a pad in from the rail's left edge");
+    assert_eq!(rail.right - tab.right, style.spacing.pad_xs, "and from its right");
 }
 
 #[gpui::test]
@@ -296,11 +266,12 @@ async fn card_rows_start_under_their_heading_in_every_host(cx: &mut TestAppConte
         METRICS.pad_md,
         "a heading's fold triangle sits one surface gutter in from the card edge"
     );
+    let title = bounds(cx, Box::leak(format!("card-title-{key}").into_boxed_str()));
     assert_eq!(
-        row.x - header.x,
-        METRICS.pad_md - METRICS.pad_sm,
-        "card rows sit one content inset in, so their own pad_sm lands them \
-         in the triangle's column"
+        row.x - header.x + METRICS.pad_sm,
+        title.x - header.x,
+        "card rows sit under the heading's title: with their own pad_sm their \
+         text starts where the title does"
     );
     assert_eq!(
         header.right - row.right,

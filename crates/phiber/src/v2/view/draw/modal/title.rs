@@ -2,7 +2,6 @@
 
 use crate::v2::state::{BKey as _, ModalKey};
 use super::super::flex::BFlexed;
-use super::super::color::to_hsla;
 use super::super::ctx::BRenderCtx;
 use super::super::surface::compatible_inner_radius;
 use super::BModalPart;
@@ -13,7 +12,7 @@ use crate::v2::state::{
 use crate::v2::theme::BStyleRole;
 use crate::v2::view::prim::BAction;
 use gpui::prelude::*;
-use gpui::{AnyElement, ClickEvent, SharedString, px, svg};
+use gpui::{AnyElement, ClickEvent, SharedString};
 use std::rc::Rc;
 
 pub struct BTitle {
@@ -44,13 +43,9 @@ impl BTitle {
         let title_row = BModalPart::TitleGroup
             .flex(ctx)
             .div(ctx)
-            .child(
-                svg()
-                    .path(format!("icons/{icon}.svg"))
-                    .size(px(ctx.style.dimensions.icon_size))
-                    .flex_shrink_0()
-                    .text_color(to_hsla(ctx.style.colors.text)),
-            )
+            // `atom::icon` resolves the brand slugs, so a modal titled with
+            // the app's mark shows the mark, not a flattened copy of it.
+            .child(super::super::atom::icon(icon, ctx))
             .child(SharedString::from(label.to_string()));
         // A card modal's bar rounds its top corners to sit inside the card's
         // border; a fullscreen modal's bar is square to the window.

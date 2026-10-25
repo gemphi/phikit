@@ -96,6 +96,9 @@ impl BlendFile {
         // (re-suffixing here renamed legitimately unique objects).
         scene.objects = unique_objs;
         Self::resolve_world_matrices(&mut scene.objects);
+        // Collection instances join after every object of the scene, so the
+        // view layer's indices below still name the scene's own.
+        self.expand_collection_instances(&mut scene.objects, dna);
 
         // View layer (selection / hidden / active / collection flags) and the
         // scene-level properties Blender shows on open.

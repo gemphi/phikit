@@ -67,10 +67,10 @@ pub(crate) const SHADOW_CHOICES: &[BStyleChoice] = &[
 ];
 
 /// One choice per `BFontFamily`, in its order (`BFontFamily::ALL`).
-pub(crate) const FONT_CHOICES: [BStyleChoice; 8] = {
-    let mut choices = [BStyleChoice { value: "", label: "" }; 8];
+pub(crate) const FONT_CHOICES: [BStyleChoice; BFontFamily::ALL.len()] = {
+    let mut choices = [BStyleChoice { value: "", label: "" }; BFontFamily::ALL.len()];
     let mut index = 0;
-    while index < 8 {
+    while index < BFontFamily::ALL.len() {
         let family = BFontFamily::ALL[index];
         choices[index] = BStyleChoice { value: family.slug(), label: family.label() };
         index += 1;

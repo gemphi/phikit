@@ -62,7 +62,7 @@ fn saved_views_match_blender_renders() {
     let cases = [
         ("tests/fixtures/THYMUS-BOLDROID-WAVE-003.blend", "THYMUS-BOLDROID-WAVE-003.png"),
         ("tests/fixtures/FLORIS_BOLDRIOD_RIG.blend", "FLORIS_BOLDRIOD_RIG.png"),
-        ("../../REFS/blender/blender/tests/files/modeling/operators.blend", "operators.png"),
+        ("../../../ext/REFS/blender/blender/tests/files/modeling/operators.blend", "operators.png"),
     ];
     let mut checked = 0;
     for (file, truth) in cases {

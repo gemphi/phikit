@@ -27,7 +27,12 @@ impl BRow<'_> {
         // search, the execute bar's file name — gives the field the slack:
         // its group grows and the field with it, the way Blender's path
         // strip stretches the directory across the region.
-        let has_field = self.0.iter().any(|v| matches!(v, BView::SearchField { .. }));
+        // The file browser's execute bar spans its strip the same way: it is
+        // three groups across the dialog (`file::execute`) — what is picked,
+        // what the dialog does, Cancel and the action — not a run of
+        // controls hugging its start.
+        let has_field = self.0.iter().any(|v| matches!(v, BView::SearchField { .. }))
+            || ctx.region == Some(crate::v2::region::BRegionType::Execute);
         // A content row holds columns (panels, a column, a grid) and stretches
         // them across its height. A row of atoms — an icon beside a name in a
         // file row, a label beside a value — is a line of controls: they sit
@@ -61,8 +66,12 @@ impl BRow<'_> {
             // A header row passes the strip's height straight through and
             // centres its controls on the strip's line; a cap's `self_end`
             // still measures against the strip rather than against the row.
+            // A row its author split into groups (`Spacer`) spans its pane,
+            // so the groups land at its start, middle and end — the file
+            // browser's display icons across the details column.
+            let spreads = self.0.iter().any(|v| matches!(v, BView::Spacer));
             let element = element.h_full().items_center();
-            if has_field { element.w_full() } else { element }
+            if has_field || spreads { element.w_full() } else { element }
         } else {
             element.items_stretch().w_full().h_full()
         };

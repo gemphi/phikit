@@ -117,7 +117,8 @@ async fn menubar_anchor_fills_the_header_down_to_its_border(cx: &mut TestAppCont
     // approved mock-ups draw them (Blender's pulldowns are `UI_UNIT_Y`
     // buttons too). It no longer hangs from the strip's bottom edge.
     assert_eq!(f32::from(b.size.height), METRICS.h_button, "a menu anchor is the button height");
-    let line = f32::from(strip.origin.y) + METRICS.menu_top_gap + (METRICS.h_header - METRICS.menu_top_gap) / 2.0;
+    // The strip's own centre: every control clears both of its edges alike.
+    let line = f32::from(strip.origin.y) + METRICS.h_header / 2.0;
     let mid = f32::from(b.origin.y) + f32::from(b.size.height) / 2.0;
     assert!((mid - line).abs() < 0.51, "the anchor sits on the strip's line: {mid} vs {line}");
 }

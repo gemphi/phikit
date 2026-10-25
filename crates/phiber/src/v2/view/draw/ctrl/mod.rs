@@ -13,7 +13,7 @@ mod picker;
 mod swatch;
 
 use self::swatch::BCtrlSwatch;
-use super::flex::{BAlign, BEdge, BFill, BFlex, BFlexed, BJustify, BLen, BRadius, BSpace, BType};
+use super::flex::{BAlign, BDim, BEdge, BFill, BFlex, BFlexed, BJustify, BLen, BRadius, BSpace, BType};
 use super::ctx::BRenderCtx;
 use super::{walk, button, search, track};
 use super::track::BTrack;
@@ -39,6 +39,11 @@ enum BCtrlPart {
     Track(bool),
     /// The knob: a white disc with a hairline, so it reads on either fill.
     Knob,
+    /// A checkbox's row: the box, then its label, a control's height.
+    CheckRow,
+    /// The box's cell: a tile's square, so the box sits where an icon
+    /// button's glyph would.
+    CheckBox,
 }
 
 /// The switch's track and knob, in pixels — `UISwitch`'s proportions at the
@@ -46,6 +51,11 @@ enum BCtrlPart {
 /// track's padding either side.
 const SWITCH_TRACK: (f32, f32) = (34.0, 20.0);
 const SWITCH_KNOB: f32 = 16.0;
+
+/// An off track: `ink` at the strength that reads on any surface.
+const fn switch_off(ink: crate::v2::theme::BColor) -> crate::v2::theme::BColor {
+    (ink.0, ink.1, ink.2, 0.35)
+}
 
 impl BFlexed for BCtrlPart {
     fn flex(&self, _c: &BRenderCtx) -> BFlex {
@@ -59,6 +69,8 @@ impl BFlexed for BCtrlPart {
                 .gap(BSpace::GapSm)
                 .min_width(BLen::Zero),
             Self::SwitchLabel => BFlex::row().fills().min_width(BLen::Zero).ink().type_size(BType::Body),
+            Self::CheckRow => BFlex::row().align(BAlign::Center).self_align(super::flex::BSelf::Center).gap(BSpace::GapSm).height(BLen::Dim(BDim::ButtonHeight)),
+            Self::CheckBox => BFlex::cell().width(BLen::Dim(BDim::Tile)).height(BLen::Dim(BDim::Tile)).keeps_size().align(BAlign::Center).justify(BJustify::Center),
             Self::Track(on) => BFlex::row()
                 .width(BLen::Measured(SWITCH_TRACK.0))
                 .height(BLen::Measured(SWITCH_TRACK.1))
@@ -67,7 +79,10 @@ impl BFlexed for BCtrlPart {
                 .align(BAlign::Center)
                 .justify(if *on { BJustify::End } else { BJustify::Start })
                 .pad_x(BSpace::GapXs)
-                .fill(if *on { BFill::SwatchHsl(_c.style.colors.accent) } else { BFill::Tone(crate::v2::theme::BSurfaceTone::Card) }),
+                // Off, the track is still drawn — the dimmed ink at a third —
+                // so a switch keeps its shape either way and only the knob
+                // moves; on the card tone it vanished and the knob sat alone.
+                .fill(if *on { BFill::SwatchHsl(_c.style.colors.accent) } else { BFill::SwatchHsl(switch_off(_c.style.colors.text_dim)) }),
             Self::Knob => BFlex::cell()
                 .width(BLen::Measured(SWITCH_KNOB))
                 .height(BLen::Measured(SWITCH_KNOB))
@@ -119,14 +134,30 @@ impl BCtrlView<'_> {
     /// state, no glyph — for `BCtrlKind::Toggle`, which no caller ever
     /// produced. The glyphs are glyphs again now that the fallback has gone
     /// with that variant.
+    /// A checkbox: the box glyph, the accent when ticked and the dim text
+    /// when not, the same size either way, then its label. It is a mark, not
+    /// a button — no tile behind it and no fill when on — so a column of
+    /// boxes reads as one column whichever are ticked.
     fn flag(&self, on_icon: &str, off_icon: &str, ctx: &BRenderCtx) -> AnyElement {
         let ctrl = self.0;
         let on = matches!(ctrl.value, BValue::Bool(true));
-        let mut ctl = BControl::new().with_active(on).with_action(ctrl.flip());
+        let (glyph, color) = if on { (on_icon, ctx.style.colors.accent) } else { (off_icon, ctx.style.colors.text_dim) };
+        let mut row = BCtrlPart::CheckRow
+            .flex(ctx)
+            .div(ctx)
+            .child(BCtrlPart::CheckBox.flex(ctx).div(ctx).child(super::atom::icon_in(glyph, color, ctx)));
         if let Some(label) = &ctrl.label {
-            ctl = ctl.with_label(label.clone());
+            row = row.child(BCtrlPart::SwitchLabel.flex(ctx).div(ctx).child(gpui::SharedString::from(label.clone())));
         }
-        button::view(&ctl.with_icon(if on { on_icon } else { off_icon }), ctx)
+        let id = gpui::SharedString::from(format!("check-{}", ctrl.key.encode()));
+        let (handler, action) = (ctx.handler.clone(), ctrl.flip());
+        row.id(id.clone())
+            .debug_selector(move || id.to_string())
+            .cursor_pointer()
+            .on_click(move |_e: &gpui::ClickEvent, w: &mut gpui::Window, cx: &mut gpui::App| {
+                (std::rc::Rc::clone(&handler))(&action, w, cx);
+            })
+            .into_any_element()
     }
 
     /// A switch (`UISwitch`): the label fills the row and the pill track sits

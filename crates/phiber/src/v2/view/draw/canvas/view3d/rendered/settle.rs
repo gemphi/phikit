@@ -23,7 +23,8 @@
 //! The camera is untouched by any of this: an orbit or a zoom still posts at
 //! once. Only the size waits.
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use web_time::Instant;
 
 /// How long the size must hold still before a burst is over.
 pub(super) const SETTLE: Duration = Duration::from_millis(150);

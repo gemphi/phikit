@@ -9,7 +9,7 @@
 use crate::v2::state::BKey as _;
 use crate::v2::state::FileKey;
 use std::fs;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::UNIX_EPOCH;
 
 use super::kind::BFileKind;
 use crate::v2::state::{
@@ -102,9 +102,47 @@ pub fn join(dir: &str, name: &str) -> String {
     }
 }
 
-/// The parent of `dir`, or `None` at a filesystem root.
+/// The folder above every drive, as Explorer's address bar starts: its
+/// listing is the volumes (`read_dir`), and a drive's root goes up to it.
+pub const THIS_PC: &str = "This PC";
+
+/// A drive letter's root ("C:" once trimmed).
+fn is_drive(trimmed: &str) -> bool {
+    trimmed.len() == 2 && trimmed.ends_with(':')
+}
+
+/// The folders `dir` runs through, each named and with its own path, from
+/// the top: This PC › Local Disk (C:) › Users › … on Windows, / › home › …
+/// elsewhere. The path bar draws them as breadcrumbs.
+pub fn trail(dir: &str) -> Vec<(String, String)> {
+    let crumb = |name: &str, path: &str| (name.to_string(), path.to_string());
+    if dir == THIS_PC {
+        return vec![crumb(THIS_PC, THIS_PC)];
+    }
+    let drive = dir.get(..2).filter(|head| is_drive(head));
+    let (mut out, mut at, rest) = match drive {
+        Some(drive) => {
+            let root = format!("{drive}\\");
+            let volume = super::fsmenu::volumes().into_iter().find(|v| v.path.eq_ignore_ascii_case(&root));
+            let label = volume.map_or_else(|| drive.to_string(), |v| v.label);
+            (vec![crumb(THIS_PC, THIS_PC), crumb(&label, &root)], root, &dir[2..])
+        }
+        None => (vec![crumb("/", "/")], "/".to_string(), dir),
+    };
+    for part in rest.split(['/', '\\']).filter(|part| !part.is_empty()) {
+        at = join(&at, part);
+        out.push(crumb(part, &at));
+    }
+    out
+}
+
+/// The parent of `dir`, or `None` at the top. A drive's root goes up to
+/// This PC.
 pub fn parent_of(dir: &str) -> Option<String> {
     let trimmed = dir.trim_end_matches(['/', '\\']);
+    if is_drive(trimmed) {
+        return Some(THIS_PC.to_string());
+    }
     let cut = trimmed.rfind(['/', '\\'])?;
     // Keep the trailing separator on a drive root ("C:\") and on "/".
     let head = &trimmed[..cut];
@@ -143,6 +181,10 @@ pub fn home_dir() -> String {
 /// can show Blender's "Directory does not exist" style message instead of an
 /// empty list that looks like a bug.
 pub fn read_dir(dir: &str) -> Result<Vec<BFileRow>, String> {
+    if dir == THIS_PC {
+        let drive = |v: super::fsmenu::BFsEntry| BFileRow { kind: BFileKind::of(&v.label, true), name: v.label, path: v.path, size: 0, modified: None };
+        return Ok(super::fsmenu::volumes().into_iter().map(drive).collect());
+    }
     let entries = fs::read_dir(dir).map_err(|e| format!("{dir}: {e}"))?;
     let mut out = Vec::new();
     for entry in entries.flatten() {
@@ -183,6 +225,14 @@ impl BFileSort {
             Self::Extension => "Extension",
             Self::Time => "Modified Date",
             Self::Size => "Size",
+        }
+    }
+    /// The column's heading in the list — Blender's file list heads its
+    /// time column "Date Modified" (the sort menu says "Modified Date").
+    pub fn heading(self) -> &'static str {
+        match self {
+            Self::Time => "Date Modified",
+            other => other.label(),
         }
     }
     pub fn from_label(s: &str) -> Option<Self> {
@@ -287,8 +337,8 @@ const MONTHS: [&str; 12] = [
 
 /// Timestamp of "now", for tests and for the modal's default sort.
 pub fn now_secs() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
+    web_time::SystemTime::now()
+        .duration_since(web_time::UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0)
 }

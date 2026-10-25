@@ -38,7 +38,7 @@ fn header_cell(
 ) -> BTableCell {
     BTableCell::new(
         BView::sort_header(
-            column.label(),
+            column.heading(),
             sort_direction(state, column),
             align,
             sort_action(state, column),
@@ -61,16 +61,17 @@ pub fn header(state: &BState) -> BView {
     ])
 }
 
-pub fn row(file: &BFileRow, selected_path: &str) -> BView {
-    let shade = if file.path == selected_path {
-        BRowShade::Selected
-    } else {
-        BRowShade::Flat
+/// One file's row; `odd` rows take the stripe, as Blender's list does.
+pub fn row(state: &BState, file: &BFileRow, selected_path: &str, odd: bool) -> BView {
+    let shade = match (file.path == selected_path, odd) {
+        (true, _) => BRowShade::Selected,
+        (false, true) => BRowShade::Alt,
+        (false, false) => BRowShade::Flat,
     };
     let action = if file.is_dir() {
         BAction::Set(FileKey::Path.path(), file.path.clone())
     } else {
-        BAction::Set(FileKey::Selected.path(), file.path.clone())
+        super::op::pick_or_commit(state, &file.path)
     };
     let name = BView::row(vec![
         BView::icon(file.icon()),
@@ -103,15 +104,15 @@ pub fn view(state: &BState) -> BView {
     if super::thumb::active(state) {
         return super::thumb::view(state);
     }
-    let selected = state.get(&FileKey::Selected.path()).unwrap_or("");
+    let selected = super::op::picked(state);
     let mut list: Vec<BView> = vec![header(state)];
     match listing::rows_for(state) {
         Ok(entries) if entries.is_empty() => {
             list.push(single(BView::label("No files in this directory")));
         }
         Ok(entries) => {
-            for file in &entries {
-                list.push(row(file, selected));
+            for (n, file) in entries.iter().enumerate() {
+                list.push(row(state, file, selected, n % 2 == 1));
             }
         }
         Err(why) => {

@@ -70,18 +70,26 @@ fn normal_file_rows_are_flat_and_keep_full_row_selection_identity() {
         cell_list,
         shade,
         action,
-    } = table::row(&row, "")
+    } = table::row(&BState::new(), &row, "", false)
     else {
         panic!("file entries must use TableRow")
     };
     assert_eq!(shade, BRowShade::Flat);
+    // A first click picks the file (lit, previewed) — it does not open it.
     assert_eq!(
         action,
-        Some(BAction::Set(FileKey::Selected.path(), row.path.clone()))
+        Some(BAction::Set(FileKey::Picked.path(), row.path.clone()))
     );
     assert_eq!(cell_list.len(), 3);
+    // A click on the file already picked commits it: a double click opens.
+    let mut picked = BState::new();
+    picked.set(&FileKey::Picked.path(), row.path.clone());
+    let BView::TableRow { action, .. } = table::row(&picked, &row, &row.path, false) else {
+        panic!()
+    };
+    assert_eq!(action, Some(BAction::Set(FileKey::Selected.path(), row.path.clone())));
 
-    let BView::TableRow { shade, .. } = table::row(&row, &row.path) else {
+    let BView::TableRow { shade, .. } = table::row(&BState::new(), &row, &row.path, false) else {
         panic!()
     };
     assert_eq!(shade, BRowShade::Selected);
@@ -111,7 +119,7 @@ fn normal_file_rows_are_flat_and_keep_full_row_selection_identity() {
 fn shared_header_and_body_keep_flexible_name_and_fixed_metadata_geometry() {
     let state = BState::new();
     let header = header_cells(&state);
-    let BView::TableRow { cell_list: body, .. } = table::row(&file("wide-name.txt", 4, 5), "") else {
+    let BView::TableRow { cell_list: body, .. } = table::row(&BState::new(), &file("wide-name.txt", 4, 5), "", false) else {
         panic!()
     };
     assert_eq!(header.len(), 3);
@@ -180,13 +188,18 @@ fn all_headers_sort_and_repeated_clicks_toggle_a_stable_direction_slot() {
     // The heading is described with `BFlex`, not hand-written GPUI: the
     // arrow slot is a `BFlexed` sized from the theme, reserved whether or
     // not this is the sorted column, and the hover is the shared token
-    // rather than a `.hover(|s| s.bg(…))` of its own.
+    // rather than a `.hover(|s| s.bg(…))` of its own. As Blender's File
+    // View, the sorted column is told by its arrow alone: no lit fill.
     let focused = source("src/v2/view/draw/sort.rs");
-    assert!(focused.contains("Self::Indicator =>"), "the arrow slot is a part of the heading enum");
+    assert!(focused.contains("Self::Indicator {"), "the arrow slot is a part of the heading enum");
     assert!(focused.contains(".size(px(size))"));
-    assert!(focused.contains("let Some(direction) = self.direction else"));
-    assert!(focused.contains(".hovered(BFill::ItemHover)"));
-    assert!(focused.contains("BFill::ControlActive"));
+    // Every heading has its arrow: the sorted one always, the others while
+    // hovered (the order a click would give), revealed by the cell's group.
+    assert!(focused.contains("None => (BSortDirection::Ascending, true)"));
+    assert!(focused.contains("slot.revealed_by(HEADING)"));
+    // The hover is the cell's, the column and the gap before it alike.
+    assert!(source("src/v2/view/draw/table.rs").contains(".hovered(BFill::ItemHover)"));
+    assert!(!focused.contains("BFill::ControlActive"), "the sorted heading is not lit");
     assert!(!focused.contains("div()"), "the heading no longer builds a bare div");
 }
 
@@ -259,10 +272,10 @@ fn the_card_heading_is_blenders_panel_header() {
     assert!(focused.contains("BDim::CardHead"), "a card heading is the card-head module, not the area header's");
     assert!(!focused.contains("BDim::HeaderHeight"));
     let style = phiber::v2::theme::ui_style_defaults(phiber::v2::theme::BPaletteName::DEFAULT);
-    // The card-head module: the button plus `HEAD_ROOM`, so a lit button in a
-    // heading or a row has room over and under it.
-    assert_eq!(style.dimensions.card_head_height(), style.dimensions.button_height + phiber::v2::theme::HEAD_ROOM, "a heading is the button plus its head room");
-    assert_eq!(phiber::v2::theme::HEAD_ROOM, 4.0);
+    // The card-head module: the button plus `CONTROL_CLEAR` above and below,
+    // so a button in a heading or a row never reaches its edges.
+    let clear = phiber::v2::theme::style::metric::CONTROL_CLEAR;
+    assert_eq!(style.dimensions.card_head_height(), style.dimensions.button_height + 2.0 * clear, "a heading is the button plus its clearance");
     let fold = focused.find("card-fold-").unwrap();
     let title = focused.find("card-title-").unwrap();
     let grip = focused.find("card-grip-").unwrap();
@@ -276,17 +289,17 @@ fn properties_keep_transparent_rows_outer_border_and_bounded_scroll_owner() {
     };
     assert_eq!(column.kind, phiber::v2::view::prim::BCardKind::Column(phiber::v2::view::prim::BColumn::Body));
 
-    // The property-split row (transparent in Properties) is `split.rs`: the
-    // condition is a named part now — `BSplitPart::Row { toned }` — rather
-    // than an `if` around a fill.
+    // The property-split row (`split.rs`) is transparent in every host, not
+    // just Properties: a label/value row is text and a control on whatever
+    // it sits on, with no section tone boxed behind its label.
     let section = source("src/v2/view/draw/split.rs");
-    assert!(section.contains("toned: ctx.host != crate::v2::host::BHostType::Buts"));
-    assert!(section.contains("if toned { row.fill(BFill::Tone(BSurfaceTone::Section)) } else { row }"));
+    assert!(section.contains("    Row,\n"), "the row part carries no tone");
+    assert!(!section.contains("BSurfaceTone::Section"), "no section tone behind a row");
 
-    // A panel's outline, rounding and surface are the card's frame, and it
-    // does not clip (a row's dropdown escapes it).
+    // A panel's rounding and surface are the card's frame — a ground, with no
+    // border round it — and it does not clip (a row's dropdown escapes it).
     let card = source("src/v2/view/draw/card.rs");
-    assert!(card.contains(".border(BEdge::All)"));
+    assert!(!card.contains("BCardKind::Panel => column.radius(BRadius::Role(BStyleRole::Card)).border(BEdge::All)"), "a panel is a ground, not a box");
     assert!(card.contains(".radius(BRadius::Role(BStyleRole::Card))"));
     // The frame still fills from the panel tone — through `panel_fill`, which
     // chooses how that tone is painted: swept for a card lying on a region,
@@ -296,10 +309,10 @@ fn properties_keep_transparent_rows_outer_border_and_bounded_scroll_owner() {
     assert!(card.contains("BFill::Tone(BSurfaceTone::Card)") && card.contains("fn panel_fill("));
     let frame = card.split("Self::Frame { kind, open } =>").nth(1).unwrap().split("Self::Head").next().unwrap();
     assert!(!frame.contains("BOverflow::Clip"));
-    // The open-accordion border is the *folding* bare card's, not every bare
-    // card's: Properties' transparent rows are bare cards with no fold, and
-    // `open` is false without one, so they keep their outer border alone.
-    assert!(frame.contains("BCardKind::Bare if *open => column.border(BEdge::All)"));
+    // An open folding bare card takes a ground, not a border: a group is a
+    // BG (Properties' transparent rows are bare cards with no fold, so they
+    // stay clear).
+    assert!(frame.contains("BCardKind::Bare if *open => column.radius(BRadius::Role(BStyleRole::Card)).fill("));
 
     // Body scroll ownership is in body.rs.
     let body = source("src/v2/view/draw/body.rs");
@@ -328,11 +341,6 @@ fn bounded_content_keeps_paint_on_outer_surfaces() {
             "Body",
             "src/v2/view/draw/body.rs",
             "BFill::Tone(if headed { BSurfaceTone::Card } else { BSurfaceTone::Body }).background(ctx)",
-        ),
-        (
-            "Sidebar",
-            "src/v2/view/draw/sidebar.rs",
-            "BFill::Tone(BSurfaceTone::Body).background(ctx)",
         ),
     ] {
         let renderer = source(relative);
@@ -387,7 +395,8 @@ fn bounded_content_keeps_paint_on_outer_surfaces() {
         .expect("area surface end");
     for paint in [
         ".fill(BFill::HostBody)",
-        ".border(BEdge::All)",
+        // No border at rest: only the active area shows its edge.
+        ".border(BEdge::Active)",
         ".radius(BRadius::Role(BStyleRole::Area))",
     ] {
         assert!(area_surface.contains(paint), "area outer lost {paint}");
@@ -414,11 +423,12 @@ fn bounded_content_keeps_paint_on_outer_surfaces() {
     for paint in [
         // Through `panel_fill`, which picks swept or flat from the panel tone.
         ".fill(panel_fill(ctx))",
-        ".border(BEdge::All)",
         ".radius(BRadius::Role(BStyleRole::Card))",
     ] {
         assert!(card.contains(paint), "card outer lost {paint}");
     }
+    // A card is a ground, not a box: no border of its own.
+    assert!(!card.contains(".border(BEdge::All)"), "a card draws no border");
     assert!(!card.contains("scroller("));
 
     // A row is a strip along the horizontal axis, so its bounds live with the
@@ -557,7 +567,6 @@ fn gate1_bounded_scroll_ownership_is_characterized() {
     // Applies to both BBody and BSidebar.
     for (name, path) in [
         ("BBody",    "src/v2/view/draw/body.rs"),
-        ("BSidebar", "src/v2/view/draw/sidebar.rs"),
     ] {
         let src = source(path);
         // Outer surface: must own all paint properties.
@@ -589,6 +598,26 @@ fn gate1_bounded_scroll_ownership_is_characterized() {
                 "{name} inner div must own `{bound}`"
             );
         }
+    }
+}
+
+/// The sidebar column (the N panel, a dialog's source list) is the other
+/// way round: its cards are the surfaces, standing at the top of the column,
+/// so the column draws no frame of its own — a full-height box round them
+/// was a panel left dangling, an empty well under the last card. Its
+/// bounded inner child still owns the scrolling.
+#[test]
+fn the_sidebar_column_frames_nothing_and_its_inner_child_scrolls() {
+    let src = source("src/v2/view/draw/sidebar.rs");
+    let outer = src.split("let outer = div()").nth(1).expect("outer column")
+        .split("let mut inner = div()").next().expect("outer end");
+    for frame in [".border(px(", ".border_color(", ".rounded("] {
+        assert!(!outer.contains(frame), "the sidebar column draws no frame: {frame}");
+    }
+    assert!(!outer.contains(".overflow_y_scroll()"), "the column does not scroll");
+    let inner = src.split("let mut inner = div()").nth(1).expect("inner scroller");
+    for bound in [".flex_1()", ".min_h_0()", ".min_w_0()", ".overflow_y_scroll()"] {
+        assert!(inner.contains(bound), "the inner child owns `{bound}`");
     }
 }
 

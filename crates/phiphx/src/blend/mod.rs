@@ -61,13 +61,16 @@ pub(crate) fn progressive_open() -> bool {
     PROGRESSIVE.with(std::cell::Cell::get)
 }
 pub use object::kind::ObjectKind;
-pub use object::light_driver::AREA_ENERGY_SCALE;
+pub use object::light_driver::{AREA_ENERGY_SCALE, BLightProp, LA_AREA, SPOT_SIZE_MIN};
 pub use object::data::{BlendCameraData, BlendEmptyData, BlendLightData, BlendObjectData};
 pub use object::dof::BlendDof;
 pub use anim::fcurve::{BFCurve, BKey, COLOR_AUTO_RAINBOW, COLOR_AUTO_RGB, COLOR_AUTO_YRGB, COLOR_CUSTOM, FLAG_ACTIVE, FLAG_MUTED, FLAG_PROTECTED, FLAG_SELECTED, HANDLE_ALIGN, HANDLE_AUTO, HANDLE_AUTO_ANIM, HANDLE_FREE, HANDLE_VECT, IPO_BEZ, IPO_CONST, IPO_LIN};
 pub use anim::easing::{EASE_AUTO, EASE_IN, EASE_IN_OUT, EASE_OUT, IPO_BACK, IPO_BOUNCE, IPO_CIRC, IPO_CUBIC, IPO_ELASTIC, IPO_EXPO, IPO_QUAD, IPO_QUART, IPO_QUINT, IPO_SINE};
 pub use anim::fcurve::{EXTRAPOLATE_CONSTANT, EXTRAPOLATE_LINEAR};
 pub use anim::drivers::BlendDrivers;
+pub use anim::driver::chan::TRANSCHAN_SCALE_AVG;
+pub use anim::driver::space::BDriverSpace;
+pub use anim::driver::BlendDriverRead;
 pub use anim::nla_eval::{BMotionClip, BMotionTrack};
 pub use anim::nla_edit::{BNlaAt, BNlaPick, BNlaStacks, NEW_TRACK};
 pub use anim::nla_stack::{BNlaPlaced, STASH_TRACK};
@@ -75,6 +78,7 @@ pub use anim::nla::{BLEND_ADD, BLEND_COMBINE, BLEND_MULTIPLY, BLEND_REPLACE, BLE
 pub use anim::summary::{BlendActionSlot, BlendActionSummary};
 pub use anim::follow::BMotionAt;
 pub use anim::motion::{BlendMotion, BlendMotionList};
+pub use anim::play::{BPlay, BPlayRef};
 pub use scene::cursor::BlendCursor;
 pub use scene::marker::BlendMarker;
 pub use scene::overlay::BlendOverlay;

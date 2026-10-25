@@ -61,7 +61,7 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     // `text_dim`, which is the shade an INACTIVE tab's label takes, so "off" and
     // "not available" were one look; a weight on the normal ink keeps them two.
     let ink = to_hsla(ctx.style.colors.text);
-    let ink = match (ctl.muted, ctl.active && !chrome::in_strip(ctx)) {
+    let ink = match (ctl.muted, ctl.active && !chrome::in_strip(ctx) && !ctx.listed) {
         (true, _) => gpui::Hsla { a: ink.a * ctx.style.effects.control_muted_alpha, ..ink },
         // On the active fill, an ink that reads on it.
         (false, true) => chrome::ink_on(chrome::active_fill(ctx), ink),
@@ -96,6 +96,9 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
         } else {
             ctx.style.spacing.pad_sm
         }))
+        // Every button is the control height, in a strip or a panel alike: it
+        // clears its row's top and bottom by `CONTROL_CLEAR`, and an icon
+        // tile beside it is the same height.
         .h(px(ctx.style.dimensions.button_height))
         .rounded(radius)
         .text_color(ink)
@@ -103,9 +106,12 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     if label.is_none() {
         // Said as a `BFlex`, not three raw calls: the style budget refused the
         // raw version and was right to — a width and a centring are exactly
-        // what the design system is for, and it already carries both.
+        // what the design system is for, and it already carries both. A
+        // tile, not the full button: its fill clears the row top and bottom
+        // (`tile_size`).
         row = BFlex::cell()
-            .width(BLen::Dim(BDim::ButtonHeight))
+            .width(BLen::Dim(BDim::Tile))
+            .height(BLen::Dim(BDim::Tile))
             .keeps_size()
             .justify(BJustify::Center)
             .styled(row, ctx);
@@ -116,8 +122,21 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     // whole row, the way a rail's active tab does. In a strip it hugs like
     // every other control. A property row's value column also fills, with
     // the label leading and the hint trailing.
-    let is_row = label.is_some() && !chrome::in_strip(ctx);
-    if ctx.fill {
+    // A button that only says what it does — Save, Cancel, Open — is an
+    // action, not a row: it hugs its word and stands on a ground of its own,
+    // in a dialog, a panel or the execute bar alike. Rows lead with an icon
+    // (a bookmark, a folder, an option) and stay flat until hovered, as an
+    // accordion's entries do.
+    let action_button = label.is_some()
+        && icon.is_empty()
+        && ctl.swatch.is_none()
+        && !ctx.fill
+        && !ctx.listed
+        && (!chrome::in_strip(ctx) || ctx.region == Some(crate::v2::region::BRegionType::Execute));
+    let is_row = label.is_some() && !chrome::in_strip(ctx) && !action_button;
+    // A value column fills — but an icon tile is a square wherever it sits:
+    // stretched, a checkbox's fill became a pill the height of the row.
+    if ctx.fill && label.is_some() {
         row = row.w_full().min_w_0().justify_between();
     } else if is_row {
         row = row.w_full().min_w_0().justify_start();
@@ -166,11 +185,15 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
         .overflow_hidden()
         .child(row);
     if is_row {
-        element = element.w_full();
+        // A row in a list keeps its height: it clips its hover fill
+        // (`overflow_hidden`), which lets a flex column squash it to a
+        // sliver — the Project Browser's All Files row drew as a 4px bar.
+        element = BFlex::cell().keeps_size().styled(element.w_full(), ctx);
     }
-    if chrome::in_strip(ctx) {
-        // Shorter than the strip, so it sits on the strip's centre line while
-        // the full-height caps beside it stay pinned to the bottom edge.
+    if chrome::in_strip(ctx) || label.is_none() {
+        // Shorter than its strip or row, so it sits on the centre line (in a
+        // strip, while the full-height caps beside it stay pinned to the
+        // bottom edge).
         element = element.self_center();
     }
     // On AND not in force now stack, because there IS a rule for what that
@@ -193,7 +216,10 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     // two different objects depending on where it happened to sit. The
     // squares are what make a bar read as a row of buttons instead of a row
     // of marks, and they are what a pointer aims at.
-    let tile = label.is_none();
+    // So is a row in a list — a bookmark, a folder, a navigator entry: each
+    // stands on the same light shade at rest, as a field in the Inspector
+    // does, so a sidebar reads as items rather than words on a wall.
+    let tile = label.is_none() || action_button || is_row;
     let paint_ctx = if tile { BRenderCtx { floating: true, ..ctx.clone() } } else { ctx.clone() };
     let mut element = chrome::paint_state(element, ctl.active, ctl.muted, &paint_ctx).on_click(
         move |_event: &ClickEvent, window, app| {

@@ -8,6 +8,7 @@
 
 use super::color::{resolved_gradient, to_hsla};
 use super::ctx::BRenderCtx;
+use super::flex::{BEdge, BFlex};
 use crate::v2::host::BHostType;
 use crate::v2::theme::BControlState;
 use gpui::prelude::*;
@@ -68,6 +69,12 @@ pub fn paint_state(element: Stateful<Div>, active: bool, muted: bool, ctx: &BRen
     let faded = move |c: gpui::Hsla| gpui::Hsla { a: c.a * weight, ..c };
     if active && in_strip(ctx) && !muted {
         return element.bg(resolved_gradient(ctx.style.host_item_active_gradient(ctx.host)));
+    }
+    // An entry of a source list (`BEdge::Listed`): a border on hover and
+    // when chosen, a faint tint of the accent under the chosen one.
+    if ctx.listed && !in_strip(ctx) {
+        let entry = BFlex::cell().border(BEdge::Listed { chosen: active, muted });
+        return entry.hovered_on(entry.styled(element, ctx), ctx);
     }
     let fill = |state| ctx.style.control_fill(state, ctx.floating).map(to_hsla).map(faded);
     if active {

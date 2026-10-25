@@ -1,9 +1,5 @@
-//! What the welcome window offers, as one table.
-//!
-//! The window stopped being Blender's splash (New File | Recent Files,
-//! Open… | links) and became a home: four groups, each a headless card so
-//! **no filled header bar is drawn anywhere** — a title here is a label in
-//! the body, not a chrome shade across the top.
+//! What the welcome window's Learn tab offers, as one table: each row is
+//! one card on the tab's grid.
 //!
 //! | group | rows | where it goes |
 //! |---|---|---|
@@ -26,11 +22,9 @@
 //! it, and Blender's own empty editors are drawn empty rather than filled
 //! with invitations.
 
-use super::set::BSplashEntry;
 use crate::v2::state::val::V_MODAL_FILE_BROWSER;
 use crate::v2::state::{BKey as _, ModalKey};
-use crate::v2::view::BView;
-use crate::v2::view::prim::{BAction, BCard, BControl};
+use crate::v2::view::prim::BAction;
 
 /// One group of the home screen.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -73,74 +67,33 @@ const fn row(icon: &'static str, label: &'static str, goes: Option<BHomeTarget>)
     BHomeRow { icon, label, goes }
 }
 
-static QUICK: &[BHomeRow] = &[
-    row("history", "Recent", Some(BHomeTarget::Modal(V_MODAL_FILE_BROWSER))),
-    row("bookmark", "Favourites", Some(BHomeTarget::Modal(V_MODAL_FILE_BROWSER))),
-    // No collab file source yet — the channels carry people, not files.
-    row("users", "Shared", None),
-];
-
-static UPCOMING: &[BHomeRow] = &[row("calendar", "Nothing scheduled", None)];
-
 /// Every slug here is a page `manual/set.rs` actually declares. Two of the
 /// first three I wrote — `render` and `shading` — were not pages at all.
 static QUESTS: &[BHomeRow] = &[
-    row("graduation_cap", "Open a file and look around", Some(BHomeTarget::Doc("splash"))),
+    row("eye", "Open a file and look around", Some(BHomeTarget::Doc("splash"))),
     row("material", "Read a material", Some(BHomeTarget::Doc("materials"))),
     row("shader_graph", "Follow a shader graph", Some(BHomeTarget::Doc("shader_nodes"))),
 ];
 
 static CENTER: &[BHomeRow] = &[row("asset", "Browse the library", Some(BHomeTarget::Modal(V_MODAL_FILE_BROWSER)))];
 
-/// The four groups, in the order the window stacks them.
+/// The groups the Learn column draws, in order: what to try, then the
+/// library. Quick access (Recent, Favourites) repeated the Recent Files
+/// column and Upcoming held one line saying it held nothing, so neither is
+/// a group any more.
 pub static GROUPS: &[BHomeGroup] = &[
-    BHomeGroup { title: "Quick access", rows: QUICK },
-    BHomeGroup { title: "Upcoming", rows: UPCOMING },
     BHomeGroup { title: "Quests", rows: QUESTS },
     BHomeGroup { title: "Center", rows: CENTER },
 ];
-
-impl BHomeRow {
-    /// The row as a control: a button where it goes somewhere, a dimmed
-    /// label where it does not.
-    pub fn view(&self) -> BView {
-        match self.goes {
-            Some(target) => BView::Button(
-                BControl::new().with_icon(self.icon).with_label(self.label).with_action(target.action()),
-            ),
-            None => BView::Button(
-                BControl::new().with_icon(self.icon).with_label(self.label).with_muted(true),
-            ),
-        }
-    }
-}
-
-impl BHomeGroup {
-    /// The group as a headless card — the title is a label in the body, so
-    /// no header background is drawn.
-    pub fn view(&self) -> BView {
-        let mut body = vec![BView::label(self.title.to_string())];
-        body.extend(self.rows.iter().map(BHomeRow::view));
-        BCard::headless().body(body).into()
-    }
-}
-
-/// An entry of the old splash table, as a button — kept so the window can
-/// still carry the links (`FOOT_LINKS`) under the groups.
-pub fn link(entry: &BSplashEntry) -> BView {
-    BView::Button(
-        BControl::new().with_icon(entry.icon).with_label(entry.label).with_action(entry.link_action()),
-    )
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn the_four_groups_are_in_order_and_every_row_is_one_or_the_other() {
+    fn the_groups_are_in_order_and_every_row_is_one_or_the_other() {
         let titles: Vec<&str> = GROUPS.iter().map(|g| g.title).collect();
-        assert_eq!(titles, vec!["Quick access", "Upcoming", "Quests", "Center"]);
+        assert_eq!(titles, vec!["Quests", "Center"]);
         for group in GROUPS {
             assert!(!group.rows.is_empty(), "{} has nothing in it", group.title);
             for r in group.rows {
@@ -167,13 +120,5 @@ mod tests {
                 }
             }
         }
-    }
-
-    #[test]
-    fn a_group_card_has_no_header() {
-        // The whole point of the rewrite: no filled header bar above a
-        // title anywhere on this window.
-        let BView::Card(card) = GROUPS[0].view() else { panic!("a group is a card") };
-        assert!(card.title().is_none(), "the title is a body label, not a header");
     }
 }

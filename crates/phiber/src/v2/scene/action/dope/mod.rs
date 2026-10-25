@@ -114,13 +114,25 @@ impl BKeyTarget {
         out
     }
 
-    /// The objects the Dope Sheet lists under its summary, in order: the
-    /// selected, then the active, each with a key.
+    /// The objects the Dope Sheet lists under its summary, in order, each
+    /// with a key: with Only Show Selected on (Blender's default,
+    /// `ADS_FILTER_ONLYSEL`) the selected, then the active; with it off,
+    /// every animated object in the scene.
     pub fn shown(s: &BState, model: &SceneModel) -> Vec<String> {
-        let mut names: Vec<String> = model.selection.selected.clone();
-        names.extend(s.get(CtxKey::Object).map(str::to_string));
-        names.dedup();
-        names.retain(|n| !Self::columns(&model.actions, n).is_empty());
+        use crate::v2::part::filter::dope::{INLINE, is_on};
+        let only_selected = INLINE.iter().find(|f| f.key == "show_only_selected").is_some_and(|f| is_on(s, f));
+        let mut names: Vec<String> = if only_selected {
+            let mut names = model.selection.selected.clone();
+            names.extend(s.get(CtxKey::Object).map(str::to_string));
+            names
+        } else {
+            // Every object an action is bound to — a camera or a lamp as
+            // much as a mesh — in the file's order of actions.
+            model.actions.iter().flat_map(|a| a.users.iter().cloned()).collect()
+        };
+        // Once each, first place kept: the active is usually also selected.
+        let mut seen = std::collections::HashSet::new();
+        names.retain(|n| seen.insert(n.clone()) && !Self::columns(&model.actions, n).is_empty());
         names
     }
 

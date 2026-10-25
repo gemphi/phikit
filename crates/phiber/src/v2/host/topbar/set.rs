@@ -8,20 +8,20 @@ use crate::v2::part::BPartType;
 use crate::v2::region::{BRegionSpec, BRegionType};
 
 static HEADER_PANES: &[BPaneSpec] = &[
+    // Left: what the window is — the space switcher, the brand, the menus.
+    // Centre: the search that finds anything in it (`find`). Right: the
+    // spaces, what can be hidden, then the window controls.
     BPaneSpec {
         kind: BPaneType::Left,
         parts: &[BPartType::CaptionLead, BPartType::Menubar],
     },
     BPaneSpec {
         kind: BPaneType::Center,
-        parts: &[BPartType::Spacebar],
+        parts: &[BPartType::Search],
     },
-    // Right pane: what can be hidden (the Zone-visibility toggles, Blender's
-    // per-area show/hide), then the window controls. The scene read-out lives
-    // in the status bar at the bottom, where Blender keeps it.
     BPaneSpec {
         kind: BPaneType::Right,
-        parts: &[BPartType::Zonebar, BPartType::CaptionTrail],
+        parts: &[BPartType::Spacebar, BPartType::Zonebar, BPartType::CaptionTrail],
     },
 ];
 

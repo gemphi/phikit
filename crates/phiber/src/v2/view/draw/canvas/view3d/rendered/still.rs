@@ -142,6 +142,8 @@ pub const PEEK_EVERY: std::time::Duration = std::time::Duration::from_millis(350
 
 #[path = "stepwise.rs"]
 mod stepwise;
+#[path = "slices.rs"]
+mod slices;
 pub use stepwise::still_stepwise;
 #[cfg(test)]
 pub use stepwise::with_studio;

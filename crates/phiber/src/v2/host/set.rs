@@ -13,7 +13,7 @@
 use super::{BHostSpec, BHostType};
 use super::{
     action, activity, asset, buts, clip, compositor, console, drivers, file, geonode, image,
-    info, ipo, logic, nla, node, outliner, pref, seq, shader, spreadsheet, statusbar, text,
+    info, ipo, logic, nla, node, outliner, play, pref, project, seq, shader, spreadsheet, statusbar, text,
     time, topbar, uv, view3d,
 };
 use crate::v2::region::BRegionSpec;
@@ -59,6 +59,8 @@ impl BHostType {
             BHostType::Spreadsheet => &spreadsheet::SPEC,
             BHostType::Ipo => &ipo::SPEC,
             BHostType::Prefs => &pref::SPEC,
+            BHostType::Play => &play::SPEC,
+            BHostType::Project => &project::SPEC,
             BHostType::Activity => &activity::SPEC,
             BHostType::Empty => &EMPTY,
         }
@@ -95,6 +97,8 @@ impl BHostType {
             BHostType::Spreadsheet => spreadsheet::SLUG,
             BHostType::Ipo => ipo::SLUG,
             BHostType::Prefs => pref::SLUG,
+            BHostType::Play => play::SLUG,
+            BHostType::Project => project::SLUG,
             BHostType::Activity => activity::SLUG,
             BHostType::Empty => "empty",
         }

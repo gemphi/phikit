@@ -13,7 +13,7 @@ use super::color::to_hsla;
 use super::ctx::BRenderCtx;
 use super::walk;
 use super::scroller::{scroll_id, scroller};
-use super::flex::BFill;
+use super::flex::{BFill, BFlex, BSpace};
 use crate::v2::theme::BSurfaceTone;
 use crate::v2::theme::BStyleRole;
 use crate::v2::view::BView;
@@ -73,11 +73,11 @@ impl BBody<'_> {
         };
 
         // Sticky headers sit inside the outer surface div but above the scroll
-        // container, so the column geometry aligns with the scrolling rows.
-        // Build the outer with sticky headers chained before the inner scroll div.
+        // container, inset sideways as the rows under them are (the
+        // scroller's own pad), so a heading's columns are its rows' columns.
         let outer = sticky
             .iter()
-            .fold(outer, |acc, header| acc.child(walk(header, ctx)));
+            .fold(outer, |acc, header| acc.child(BFlex::column().pad_x(BSpace::PadSm).div(ctx).child(walk(header, ctx))));
 
         // Bounded scroll container: content spacing and overflow only, and
         // Blender's drawn scroller over its edge (`prim/scroller.rs`).

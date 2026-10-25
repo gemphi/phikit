@@ -14,6 +14,7 @@
 //! `tests/style_budget.rs` holds the rest of the renderer to it.
 
 mod apply;
+mod edge;
 mod element;
 mod fill;
 mod ink;

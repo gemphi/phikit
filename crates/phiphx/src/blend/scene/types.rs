@@ -2,7 +2,7 @@
 //! `BlendSceneObject`, `BlendMaterial`.
 
 /// Scene object extracted from .blend
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct BlendSceneObject {
     pub name: String,
     pub object_type: String,

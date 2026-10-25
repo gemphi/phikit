@@ -24,12 +24,12 @@ impl BObject3D {
     /// Solid → `Material.r/g/b` (viewport display colour, Blender's default
     /// `color_type = MATERIAL`); Material Preview / Rendered → the base
     /// colour texture sampled at the triangle's UV centroid, else Base Color.
+    ///
+    /// Solid's other colour types (Single, Random, Object, Attribute) are the
+    /// kernel's to apply (`solid.wgsl`, `Camera::shade`) over this colour;
+    /// Texture shows the base image where there is one and this colour where
+    /// there is none, as Workbench does.
     pub fn triangle_color(&self, tri: usize, shading: BShading) -> Option<[f32; 4]> {
-        // Solid paints every mesh in the theme's one solid shade (Blender's
-        // Solid with `color_type = SINGLE`): no colour of the object's own.
-        if shading == BShading::Solid {
-            return None;
-        }
         let m = self.triangle_slot(tri)?;
         if shading.uses_viewport_color() {
             return Some(m.viewport_color);

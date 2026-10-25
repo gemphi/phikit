@@ -8,9 +8,12 @@ use crate::v2::state::BPath;
 pub enum FileKey {
     /// Current directory (`FileSelectParams::dir`).
     Path,
-    /// Absolute path of the highlighted row (`FileSelectParams::file`,
-    /// resolved). Always a full path — the importer opens exactly this.
+    /// The file committed to — set, it is opened, saved over or imported
+    /// (`FileSelectParams::file`, resolved). Always a full path.
     Selected,
+    /// The file picked in the list: lit, previewed in the details column,
+    /// named in the name field — not yet opened. Picking it again commits.
+    Picked,
     /// Text in the file name field.
     Filename,
     /// Search glob (`FileSelectParams::filter_search`).
@@ -46,10 +49,11 @@ pub enum FileKey {
     BookmarkAdd,
     /// Open/closed state of the type-filter popover (`FILEBROWSER_PT_filter`).
     FilterOpen,
+    /// `FileSelectParams.thumbnail_size`: how big a thumbnail card is
+    /// (`file::thumb::BThumbSize`).
+    ThumbSize,
     /// `WM_OT_open_mainfile.load_ui` — default on, stored as `"false"` when off.
     LoadUi,
-    /// The welcome window's Recover Last Session: an intent the app consumes.
-    RecoverLastSession,
 }
 
 impl BKey for FileKey {
@@ -57,6 +61,7 @@ impl BKey for FileKey {
         let tail: &'static str = match self {
             Self::Path => "path",
             Self::Selected => "selected",
+            Self::Picked => "picked",
             Self::Filename => "filename",
             Self::Search => "search",
             Self::Display => "display",
@@ -76,8 +81,8 @@ impl BKey for FileKey {
             Self::Bookmark(slot) => return BPath::owned(vec!["file", "bookmark", slot]),
             Self::BookmarkAdd => "bookmark_add",
             Self::FilterOpen => "filter_open",
+            Self::ThumbSize => "thumb_size",
             Self::LoadUi => "load_ui",
-            Self::RecoverLastSession => "recover_last_session",
         };
         BPath::owned(vec!["file", tail])
     }

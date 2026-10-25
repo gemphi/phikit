@@ -63,3 +63,22 @@ fn a_click_without_painted_geometry_places_the_caret_at_the_end() {
     app.place_caret_at_point(gpui::point(gpui::px(999.0), gpui::px(0.0)), false);
     assert_eq!(app.input.caret.cursor(), 4, "no line captured yet → caret rests at the end");
 }
+
+/// Ctrl V's splice: over a selection it replaces, at a caret it inserts, and
+/// the caret lands after what went in. Ctrl C / X read the same selection.
+#[test]
+fn a_paste_replaces_the_selection_or_lands_at_the_caret() {
+    let mut app = editing("2048");
+    app.caret_select_all();
+    assert_eq!(app.caret_selected_text().as_deref(), Some("2048"));
+    app.caret_insert("64");
+    assert_eq!((search(&app).as_str(), app.input.caret.cursor()), ("64", 2));
+    app.caret_left();
+    app.caret_insert("1");
+    assert_eq!((search(&app).as_str(), app.input.caret.cursor()), ("614", 2));
+    assert!(app.caret_selected_text().is_none(), "nothing selected after an insert");
+    // A cut: the selection out, the clipboard's text is the caller's.
+    app.caret_select_all();
+    app.caret_insert("");
+    assert_eq!(search(&app), "");
+}

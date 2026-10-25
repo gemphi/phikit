@@ -81,7 +81,7 @@ pub fn gizmos(state: &BState) -> BView {
 
 /// The overlay popover.
 pub fn overlays(state: &BState) -> BView {
-    popover(state, "Overlays", "layers", overlay_body(state))
+    popover(state, "Overlays", "overlays", overlay_body(state))
 }
 
 #[cfg(test)]

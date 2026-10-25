@@ -67,6 +67,8 @@ pub static UI_STYLE_DESCRIPTORS: &[BStyleDescriptor] = &[
     number!(DIMENSION_SCRUBBING_HEIGHT, dimensions.scrubbing_height, "Dimensions", "Scrubbing Height", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_ASSET_SHELF_HEIGHT, dimensions.asset_shelf_height, "Dimensions", "Asset Shelf Height", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_BOTTOM_STRIP_HEIGHT, dimensions.bottom_strip_height, "Dimensions", "Bottom Strip Height", 0.0, 4096.0, Some("px")),
+    number!(DIMENSION_MENU_WIDTH, dimensions.menu_width, "Dimensions", "Menu Width", 0.0, 4096.0, Some("px")),
+    number!(DIMENSION_BOTTOM_PANEL_HEIGHT, dimensions.bottom_panel_height, "Dimensions", "Bottom Panel Height", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_STATUS_LOG_HEIGHT, dimensions.status_log_height, "Dimensions", "Status Log Height", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_BANNER_HEIGHT, dimensions.banner_height, "Dimensions", "Banner Height", 0.0, 4096.0, Some("px")),
     number!(DIMENSION_ACTIVITY_WIDTH, dimensions.activity_width, "Dimensions", "Activity Width", 0.0, 4096.0, Some("px")),

@@ -46,7 +46,9 @@ fn card(kind: BAreaType, flex: BFlex, ctx: &BRenderCtx) -> BFlex {
     // corner and the radius is decorative — the timeline's background
     // bleeding past its card is this. A popover escapes anyway, painting in
     // the window-root overlay layer rather than in the area.
-    flex.border(BEdge::All).radius(BRadius::Role(BStyleRole::Area)).overflow(BOverflow::Auto)
+    // No border at rest: an area is its ground. The one under the pointer is
+    // the active one, and only it is outlined (`BEdge::Active`).
+    flex.border(BEdge::Active).radius(BRadius::Role(BStyleRole::Area)).overflow(BOverflow::Auto)
 }
 
 /// The parts of an area — one enum for the level, as every other level
@@ -67,7 +69,9 @@ impl BFlexed for BAreaPart {
             // same card as every other area. One rail wide normally; rail
             // plus a panel while a primary icon's secondary strip is open.
             Self::Frame { kind, host } if host == BHostType::Activity => {
-                let width = ctx.style.dimensions.activity_width
+                // One rail wide, like every rail (`rail_width`), inside the
+                // area card's border.
+                let width = ctx.style.rail_width() + 2.0 * ctx.style.strokes.border
                     + match crate::v2::part::activity::option::open_group(ctx.state) {
                         Some(_) => ctx.style.dimensions.panel_width,
                         None => 0.0,

@@ -24,8 +24,8 @@ pub enum BSpace {
     /// insets its content by exactly what the stroke takes, so the content
     /// does not shift when the stroke appears on hover.
     Stroke,
-    /// The lead above a vertical rail's first icon, level with the first
-    /// accordion header beside it.
+    /// The pad above a rail's first icon (level with the first heading
+    /// beside it), and the same below its last.
     RailLead,
     /// A content region's vertical pad above its first card (`content_pad`).
     ContentPad,
@@ -35,10 +35,17 @@ pub enum BSpace {
     /// the row's text one surface gutter (`PadMd`) in — the column the
     /// heading's fold triangle starts in.
     CardInset,
+    /// A folding card's rows, in to where its title starts less a row's own
+    /// `PadSm`: children stand under the parent's word. `sub`: a nested head.
+    FoldBody { sub: bool },
+    /// What a column heading's sort arrow takes at its end — the arrow and
+    /// the gap before it — so a right-aligned column's values end where its
+    /// heading's word does.
+    ArrowSlot,
 }
 
 impl BSpace {
-    pub(super) fn px(self, ctx: &BRenderCtx) -> f32 {
+    pub(crate) fn px(self, ctx: &BRenderCtx) -> f32 {
         let s = &ctx.style.spacing;
         match self {
             Self::None => s.gap_none,
@@ -56,6 +63,11 @@ impl BSpace {
             Self::ContentPad => ctx.style.content_pad(ctx.host),
             Self::MenuTopGap => ctx.style.dimensions.menu_top_gap,
             Self::CardInset => (s.pad_md - s.pad_sm).max(0.0),
+            Self::FoldBody { sub } => {
+                let head = if sub { s.pad_sm } else { s.pad_md };
+                head + ctx.style.dimensions.icon_size + s.gap_sm - s.pad_sm
+            }
+            Self::ArrowSlot => ctx.style.dimensions.icon_size_sm + s.gap_xs,
         }
     }
 }
@@ -69,6 +81,8 @@ pub enum BDim {
     CardHead,
     FooterHeight,
     ButtonHeight,
+    /// An icon tile: the button less its inset (`tile_size`).
+    Tile,
     RowHeight,
     /// A tree's row (`tree_row_height`).
     TreeRow,
@@ -77,11 +91,15 @@ pub enum BDim {
     ScrubbingHeight,
     AssetShelfHeight,
     BottomStripHeight,
+    BottomPanelHeight,
     StatusLogHeight,
     ToolbarWidth,
+    /// Every rail's collapsed width (`BResolvedUiStyle::rail_width`).
+    RailWidth,
     NavbarWidth,
     SidebarMinWidth,
     PanelWidth,
+    MenuWidth,
     ChannelsWidth,
     ToolPropsWidth,
     SideZoneDefaultWidth,
@@ -95,17 +113,21 @@ impl BDim {
             Self::CardHead => d.card_head_height(),
             Self::FooterHeight => d.footer_height,
             Self::ButtonHeight => d.button_height,
+            Self::Tile => d.tile_size(),
             Self::RowHeight => d.row_height,
             Self::TreeRow => d.tree_row_height,
             Self::MenuRow => d.menu_row_height,
             Self::ScrubbingHeight => d.scrubbing_height,
             Self::AssetShelfHeight => d.asset_shelf_height,
             Self::BottomStripHeight => d.bottom_strip_height,
+            Self::BottomPanelHeight => d.bottom_panel_height,
             Self::StatusLogHeight => d.status_log_height,
             Self::ToolbarWidth => d.toolbar_width,
+            Self::RailWidth => ctx.style.rail_width(),
             Self::NavbarWidth => d.navbar_width,
             Self::SidebarMinWidth => d.sidebar_min_width,
             Self::PanelWidth => d.panel_width,
+            Self::MenuWidth => d.menu_width,
             Self::ChannelsWidth => d.channels_width,
             Self::ToolPropsWidth => d.tool_props_width,
             Self::SideZoneDefaultWidth => d.side_zone_default_width,
@@ -145,21 +167,11 @@ pub enum BBasis {
 
 /// How children line up across the axis.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum BAlign {
-    Start,
-    Center,
-    End,
-    Stretch,
-}
+pub enum BAlign { Start, Center, End, Stretch }
 
 /// How children spread along the axis.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum BJustify {
-    Start,
-    Center,
-    End,
-    Between,
-}
+pub enum BJustify { Start, Center, End, Between }
 
 /// How one child sits across its parent's axis, overriding the parent's
 /// `BAlign` for itself — a cap pinned to the strip's bottom edge, a button
@@ -188,6 +200,15 @@ pub enum BEdge {
     /// Blender outlines a selected node more heavily than an unselected one
     /// (`node_draw_basis`'s selected outline); this is that weight.
     Ring(BInk),
+    /// An entry of a source list: a border-weight stroke on every side,
+    /// clear at rest and the theme's border under the pointer; when
+    /// `chosen`, the accent with a faint tint of it beneath, so the list
+    /// stays a list rather than a column of lit bars. The stroke is there
+    /// at rest, only clear, so the entry's text does not move when it
+    /// shows. `muted` weighs it as a muted control's state is weighed.
+    Listed { chosen: bool, muted: bool },
+    /// An area's edge: clear at rest, the border under the pointer.
+    Active,
 }
 
 /// Which corners are rounded, and by how much.

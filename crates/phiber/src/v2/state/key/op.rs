@@ -81,6 +81,11 @@ pub enum OpKey {
     Rename,
     /// `image.clipboard_copy`: the shown image to the clipboard.
     ImageCopy,
+    /// The Play host's button: `start` builds the picked match and opens it.
+    Play,
+    /// The Project Browser's footwear: a set's slug (or empty for one of
+    /// each set) builds its stage and opens it (`scene::wear`).
+    Wear,
     /// The render region's operators (`scene::render_border`): `arm`,
     /// `arm_image`, `set:…`, `off`, `clear`.
     RenderBorder,

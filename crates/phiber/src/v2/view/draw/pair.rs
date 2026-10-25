@@ -19,36 +19,43 @@
 //! punctuation at full strength competes with the figures either side of
 //! it.
 
-use super::color::to_hsla;
 use super::ctx::BRenderCtx;
+use super::flex::{BAlign, BDim, BFill, BFlex, BInk, BLen, BRadius, BSpace, BType};
 use gpui::prelude::*;
-use gpui::{AnyElement, SharedString, div, px};
+use gpui::{AnyElement, SharedString};
 
-/// How much dimmer the separator is than a label, as a share of its alpha.
-const SEPARATOR_FADE: f32 = 0.55;
+/// The separator's ink: dim text faded seven sixteenths further (0.56 of a
+/// label's alpha) — punctuation, quieter than the captions either side.
+const SEPARATOR: BInk = BInk::Faded(7);
 
-/// One `label: value`.
+/// Words in one ink.
+fn inked(ink: BInk, text: String, ctx: &BRenderCtx) -> gpui::Div {
+    BFlex::row().ink_tone(ink).div(ctx).child(SharedString::from(text))
+}
+
+/// One `label: value`. In the status bar each one stands on a chip of its
+/// own — a light, rounded ground, a control's height — so the bar reads as
+/// a row of read-outs that can come and go, not a sentence.
+///
+/// Elsewhere — a details card — a pair takes the line, and a value longer
+/// than it (a folder's path) ends in an ellipsis inside the card rather
+/// than running out of it.
 pub fn pair(label: &str, value: &str, ctx: &BRenderCtx) -> AnyElement {
-    let dim = ctx.style.colors.text_dim;
-    let bright = ctx.style.colors.text;
-    row_of(ctx)
-        .child(
-            div()
-                .text_color(to_hsla(dim))
-                .child(SharedString::from(format!("{label}:"))),
-        )
-        .child(div().text_color(to_hsla(bright)).child(SharedString::from(value.to_string())))
-        .into_any_element()
+    let chip = ctx.host == crate::v2::host::BHostType::Statusbar;
+    let flex = if chip { CHIP } else { PAIR };
+    let value = match chip {
+        true => inked(BInk::Text, value.to_string(), ctx),
+        false => BFlex::row().fills().min_width(BLen::Zero).ink_tone(BInk::Text).div(ctx).truncate().child(SharedString::from(value.to_string())),
+    };
+    flex.div(ctx).child(inked(BInk::Dim, format!("{label}:"), ctx)).child(value).into_any_element()
 }
 
 /// Several pairs on one line, `|` between them.
 pub fn strip(pairs: &[(String, String)], ctx: &BRenderCtx) -> AnyElement {
-    let mut sep = ctx.style.colors.text_dim;
-    sep.3 *= SEPARATOR_FADE;
-    let mut line = row_of(ctx).gap(px(ctx.style.spacing.gap_sm));
+    let mut line = STRIP.div(ctx);
     for (i, (label, value)) in pairs.iter().enumerate() {
         if i > 0 {
-            line = line.child(div().text_color(to_hsla(sep)).child(SharedString::from("|")));
+            line = line.child(inked(SEPARATOR, "|".to_string(), ctx));
         }
         line = line.child(pair(label, value, ctx));
     }
@@ -60,17 +67,18 @@ pub fn strip(pairs: &[(String, String)], ctx: &BRenderCtx) -> AnyElement {
 /// ("(Scene) Collection | Cube"), which keep their wording and still get
 /// the two shades.
 pub fn phrase(lead: &str, tail: &str, ctx: &BRenderCtx) -> AnyElement {
-    row_of(ctx)
-        .child(div().text_color(to_hsla(ctx.style.colors.text_dim)).child(SharedString::from(lead.to_string())))
-        .child(div().text_color(to_hsla(ctx.style.colors.text)).child(SharedString::from(tail.to_string())))
+    PAIR.div(ctx)
+        .child(inked(BInk::Dim, lead.to_string(), ctx))
+        .child(inked(BInk::Text, tail.to_string(), ctx))
         .into_any_element()
 }
 
-fn row_of(ctx: &BRenderCtx) -> gpui::Div {
-    div()
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(ctx.style.spacing.gap_xs))
-        .text_size(px(ctx.style.typography.caption))
-}
+/// A pair: caption-sized, centred, its label and value a small gap apart.
+const LINE: BFlex = BFlex::row().align(BAlign::Center).gap(BSpace::GapXs).type_size(BType::Caption);
+/// A pair in a card: the line's width, its label on the value's first line.
+const PAIR: BFlex = LINE.fills().min_width(BLen::Zero).align(BAlign::Start);
+/// A pair on its chip: the pair, padded, on the floating chrome's light
+/// shade, rounded all round.
+const CHIP: BFlex = LINE.pad_x(BSpace::PadSm).height(BLen::Dim(BDim::ButtonHeight)).radius(BRadius::Pill).fill(BFill::Floating);
+/// A line of pairs: the same, the pairs a wider gap apart.
+const STRIP: BFlex = BFlex::row().align(BAlign::Center).gap(BSpace::GapSm).type_size(BType::Caption);

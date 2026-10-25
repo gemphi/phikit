@@ -69,6 +69,63 @@ impl BPreferenceSection {
     pub fn is_empty(self) -> bool {
         self.rows().next().is_none()
     }
+
+    /// The section's rows in groups of at most [`MAX_CHILDREN`], or `None`
+    /// when it is short enough to stand as one list. A long section is never
+    /// one run of thirty rows: it folds into named groups, each a nested
+    /// accordion under it ([`GROUPS`]).
+    pub fn groups(self) -> Option<Vec<(&'static str, Vec<BPreferenceRow>)>> {
+        if self.len() <= MAX_CHILDREN {
+            return None;
+        }
+        let mut out: Vec<(&'static str, Vec<BPreferenceRow>)> = Vec::new();
+        for row in self.rows() {
+            let group = group_of(self.title, row.metadata().label);
+            match out.iter_mut().find(|(name, _)| *name == group) {
+                Some((_, rows)) => rows.push(row),
+                None => out.push((group, vec![row])),
+            }
+        }
+        Some(out)
+    }
+}
+
+/// The most children one accordion lists before its rows are grouped.
+pub const MAX_CHILDREN: usize = 8;
+
+/// Which group a long section's row belongs to: `(section, group, labels)`.
+/// One table for every long section, each group at most [`MAX_CHILDREN`]
+/// rows; a row it does not name falls into "Other".
+pub static GROUPS: &[(&str, &str, &[&str])] = &[
+    ("Colors", "Window", &["Application Background", "Activity Background", "Top Background", "Bottom Background",
+        "Left Background", "Right Background", "Header Background", "Panel Background"]),
+    ("Colors", "Controls", &["Viewport Background", "Control Background", "Hover Background", "Active Background", "Modal Dim"]),
+    ("Colors", "Text & Accent", &["Text", "Dimmed Text", "Accent", "Soft Accent", "Online"]),
+    ("Colors", "Lines & Rows", &["Border", "Separator", "Alternate Row", "Selected Row", "Active Row", "Matching Row"]),
+    ("Colors", "Viewport", &["Viewport Grid", "X Axis", "Y Axis", "Z Axis", "Active Wire"]),
+    ("Dimensions", "Bars", &["Header Height", "Footer Height", "Row Height", "Button Height", "Scrubbing Height",
+        "Asset Shelf Height", "Bottom Strip Height", "Bottom Panel Height"]),
+    ("Dimensions", "Panels", &["Menu Width", "Status Log Height", "Banner Height", "Panel Width", "Channels Width",
+        "Tool Properties Width", "Number Field Minimum Width"]),
+    ("Dimensions", "Rails & Areas", &["Activity Width", "Toolbar Width", "Sidebar Width", "Sidebar Minimum Width",
+        "Navigation Width", "Area Left Width", "Area Right Width"]),
+    ("Dimensions", "Columns", &["File Date Column Width", "File Size Column Width", "Indent Unit", "Restriction Column Width"]),
+    ("Dimensions", "Icons", &["Icon Size", "Icon Size Small", "Brand Mark Size", "Gizmo Button Size", "Gizmo Icon Size",
+        "Object Icon Size", "Object Glyph Size"]),
+    ("Effects", "Gradients", &["Gradients", "Gradient Lift", "Sheen Lift", "Selected Hover Lift", "Strip Gradient Lift"]),
+    ("Effects", "Surfaces", &["Footer Lift", "Sidebar Lift", "Card Lift", "Section Lift", "Strip Recess", "Surface Shadow"]),
+    ("Effects", "Tabs", &["Tab Accent Mix", "Tab Saturation Lift", "Tab Top Lift"]),
+    ("Effects", "Viewport & Nodes", &["Viewport Lightness Delta", "Viewport Grid Alpha", "Axis Alpha", "Node Grid Lift", "Node Grid Alpha"]),
+    ("Effects", "Images & Motion", &["Image Light Lift", "Image Dark Lift", "Grip Alpha", "Motion Duration"]),
+];
+
+/// The group [`GROUPS`] puts `label` in within `section`.
+pub fn group_of(section: &str, label: &str) -> &'static str {
+    GROUPS
+        .iter()
+        .find(|(s, _, labels)| *s == section && labels.contains(&label))
+        .map(|(_, group, _)| *group)
+        .unwrap_or("Other")
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -125,6 +182,22 @@ mod tests {
             ]
         );
         assert!(SECTIONS.iter().all(|section| !section.is_empty()));
+    }
+
+    #[test]
+    fn no_group_lists_more_than_the_most_children() {
+        for section in SECTIONS.iter() {
+            let Some(groups) = section.groups() else {
+                assert!(section.len() <= MAX_CHILDREN, "{} is short", section.title());
+                continue;
+            };
+            let total: usize = groups.iter().map(|(_, rows)| rows.len()).sum();
+            assert_eq!(total, section.len(), "{}: every row lands in a group", section.title());
+            for (name, rows) in groups {
+                assert!(rows.len() <= MAX_CHILDREN, "{} / {name} lists {} rows", section.title(), rows.len());
+                assert_ne!(name, "Other", "{}: every row is named in GROUPS", section.title());
+            }
+        }
     }
 
     #[test]

@@ -1,0 +1,15 @@
+# phiber is a submodule of gemphi/phikit and builds inside that workspace.
+/target/
+
+# Blender files and heavy 3D assets stay on disk, never in git.
+# Exception: assets/blend/ holds the startup templates and the demo the build
+# compiles in (include_bytes! in src/v2/scene/template.rs).
+*.blend
+*.blend1
+!/assets/blend/*.blend
+/assets/production/
+/assets/CW-Fashion/
+
+# Reference trees live in gemphi/ext (moved by gemphi/move-refs.ps1).
+/refs/
+/docs/blender-manual/

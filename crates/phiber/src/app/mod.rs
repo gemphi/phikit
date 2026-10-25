@@ -16,18 +16,19 @@ pub mod web_assets;
 #[cfg(test)]
 mod web_assets_tests;
 
-/// Launch the Phiber GPUI application.
-pub fn run(file: Option<String>) {
+/// Launch the Phiber GPUI application: open `file` (else resume the last
+/// session; the browser opens the demo), playing when `play`.
+pub fn run(file: Option<String>, play: bool) {
     #[cfg(not(target_family = "wasm"))]
-    desktop(file);
+    desktop(file, play);
     #[cfg(target_family = "wasm")]
-    web(file);
+    web(file, play);
 }
 
 /// The desktop app: journal and GPU skinning armed first, then the window on
 /// a thread with a stack big enough for the view tree.
 #[cfg(not(target_family = "wasm"))]
-fn desktop(file: Option<String>) {
+fn desktop(file: Option<String>, play: bool) {
     // Journal first, with the `log` crate bridged into it, so the GPU adapter
     // and backend each context picks is on disk from the very first line —
     // before phiray's skinning context and before the window's GPU context.
@@ -40,7 +41,7 @@ fn desktop(file: Option<String>) {
         .spawn(move || {
             gpui_platform::application()
                 .with_assets(fs_assets::PhiberAssets::beside_the_crate())
-                .run(move |cx: &mut App| boot(cx, Persist::Yes, file));
+                .run(move |cx: &mut App| boot(cx, Persist::Yes, file, play));
         })
         .unwrap()
         .join()
@@ -58,11 +59,24 @@ fn desktop(file: Option<String>) {
 /// session and the health log all write files, so they stay off: see
 /// [`Persist`].
 #[cfg(target_family = "wasm")]
-fn web(file: Option<String>) {
+fn web(file: Option<String>, play: bool) {
     gpui_platform::web_init();
-    gpui_platform::single_threaded_web()
+    let app = gpui_platform::single_threaded_web()
         .with_assets(web_assets::WebAssets)
-        .run(move |cx: &mut App| boot(cx, Persist::No, file));
+        .run_embedded(move |cx: &mut App| boot(cx, Persist::No, file, play));
+    // On the desktop `run` blocks for the app's lifetime and its stack frame
+    // keeps the app alive. In the browser it returns as soon as launching is
+    // queued, so the app lives exactly as long as this handle — which is the
+    // page's lifetime. Dropping it frees the App and the window with it (the
+    // canvas vanishes and every callback logs "app was released").
+    WEB_APP.with(|slot| *slot.borrow_mut() = Some(app));
+}
+
+#[cfg(target_family = "wasm")]
+thread_local! {
+    /// The running browser app; see [`web`].
+    static WEB_APP: std::cell::RefCell<Option<gpui::ApplicationHandle>> =
+        const { std::cell::RefCell::new(None) };
 }
 
 /// Whether this build has a disk to write to.
@@ -82,12 +96,19 @@ enum Persist {
 }
 
 /// Open the window and wire it up — the part both builds share. `file` is
-/// the command line's `.blend`, opened as `blender file.blend` opens it.
-fn boot(cx: &mut App, persist: Persist, file: Option<String>) {
+/// the command line's `.blend`, opened as `blender file.blend` opens it;
+/// `play` starts its timeline (`-a file.blend`, `BCli::playback`).
+fn boot(cx: &mut App, persist: Persist, file: Option<String>, play: bool) {
     // gpui's theme globals plus our font / density settings.
     crate::v2::theme::vendor::install(cx);
 
-    let bounds = Bounds::centered(None, size(px(1024.0), px(768.0)), cx);
+    // `PHIBER_WINDOW=1600x900` opens the window at that size (screenshots,
+    // demos); otherwise 1024 × 768.
+    let (w, h) = std::env::var("PHIBER_WINDOW")
+        .ok()
+        .and_then(|v| v.split_once('x').and_then(|(w, h)| Some((w.parse::<f32>().ok()?, h.parse::<f32>().ok()?))))
+        .unwrap_or((1024.0, 768.0));
+    let bounds = Bounds::centered(None, size(px(w), px(h)), cx);
     let window = cx
         .open_window(
             WindowOptions {
@@ -127,7 +148,29 @@ fn boot(cx: &mut App, persist: Persist, file: Option<String>) {
         match file {
             Some(path) => view.open_argument(path, cx),
             None if persist == Persist::Yes => view.restore_session(cx),
-            None => {}
+            // A browser with nothing to open boots into the animation demo
+            // (`template::DEMO`) rather than an empty page — there is no
+            // session to restore and no disk to open from.
+            None => view.open_argument(format!("embedded:{}", crate::v2::scene::template::DEMO), cx),
+        }
+        // `-a file.blend` (and the browser's demo): the timeline runs from
+        // the start. Play is normally pressed, and the press starts the
+        // ticker (`handle_action`); setting the state alone would show the
+        // pause button over a timeline that never moves.
+        if play {
+            view.state.set(crate::v2::state::CtxKey::Playing, "true");
+            view.ensure_playback(cx);
+        }
+        // `PHIBER_STATE`: keys to set once the window is up, one
+        // `ctx.path=value` per line (or `;`-separated) — the palette's own
+        // form (`modal::command::find`) — to open the window on a given
+        // space, menu or dialog for a screenshot or a demo.
+        if let Ok(sets) = std::env::var("PHIBER_STATE") {
+            for line in sets.split(['\n', ';']) {
+                if let Some((path, value)) = line.trim().split_once('=') {
+                    view.state.set_encoded(path, value.to_string());
+                }
+            }
         }
     });
 

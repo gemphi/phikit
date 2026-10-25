@@ -63,6 +63,15 @@ impl Default for ObjectTransformRaw {
     }
 }
 
+impl ObjectTransformRaw {
+    /// An object's own channels from a location, a quaternion (`w, x, y,
+    /// z`) and a scale, in quaternion rotation mode — what a transform built
+    /// in code (a game's ball) hands the motion.
+    pub fn from_parts(loc: [f32; 3], quat: [f32; 4], size: [f32; 3]) -> Self {
+        Self { loc, quat, size, rotmode: 0, ..Self::default() }
+    }
+}
+
 pub(crate) const IDENTITY4: [[f32; 4]; 4] = [
     [1.0, 0.0, 0.0, 0.0],
     [0.0, 1.0, 0.0, 0.0],

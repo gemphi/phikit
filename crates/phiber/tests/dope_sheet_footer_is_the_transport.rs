@@ -47,7 +47,7 @@ async fn the_animation_workspaces_dope_sheet_carries_the_transport_in_its_footer
     let play = cx.debug_bounds("btn-icon-set-ctx.playing-true-play").expect("play in the footer");
     let reverse = cx.debug_bounds("btn-icon-set-ctx.playing-reverse-play_back").expect("play reverse in the footer");
     let frame = cx.debug_bounds("btn-icon-set-ctx.edit-ctx.frame-number").expect("the current-frame field");
-    let line = f32::from(footer.origin.y) + METRICS.menu_top_gap + (METRICS.h_header - METRICS.menu_top_gap) / 2.0;
+    let line = f32::from(footer.origin.y) + METRICS.h_header / 2.0;
     for (name, b) in [("play", play), ("reverse", reverse), ("frame", frame)] {
         assert!(f32::from(b.origin.y) >= f32::from(footer.origin.y) && f32::from(b.origin.y + b.size.height) <= f32::from(footer.origin.y + footer.size.height), "{name} sits in the footer");
         assert!((mid(b) - line).abs() < 0.51, "{name} sits on the footer's line: {} vs {line}", mid(b));

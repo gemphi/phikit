@@ -71,6 +71,10 @@ impl BAsciiRenderer {
                     self.write(&cell.view, s, d + 1, o);
                 }
             }
+            BView::Crumbs { trail, .. } => {
+                let names: Vec<&str> = trail.iter().map(|(name, _)| name.as_str()).collect();
+                o.push_str(&format!("{p}Crumbs({})\n", names.join(" › ")));
+            }
             BView::SortHeader {
                 label, direction, ..
             } => o.push_str(&format!("{p}SortHeader({label:?} {direction:?})\n")),

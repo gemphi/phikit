@@ -515,7 +515,9 @@ pub fn start_in(objects: Vec<BObject3D>, plan: BRenderPlan, scope: super::source
     };
     let (ow, oh) = plan.region.size(plan.w, plan.h);
     publish(BRenderShot { w: ow, h: oh, target: plan.samples, ..Default::default() });
-    std::thread::spawn(move || {
+    let flag = j.clone();
+    let target = plan.samples;
+    let work = move || {
         use crate::v2::view::draw::canvas::view3d::rendered::still_stepwise;
         // The draw pass's scene scope, carried over: without it the build
         // on this thread sees no loaded model, uploads no environment
@@ -611,7 +613,25 @@ pub fn start_in(objects: Vec<BObject3D>, plan: BRenderPlan, scope: super::source
                 if out.is_none() { " — no image (no adapter, or a scene the GPU declined)" } else { "" }
             ));
         }
-    });
+    };
+    // A browser has no thread to put this on. `offload` declines without
+    // running it there (`v2/app/offload.rs`), and running it inline is not
+    // the fallback: the one thread a page has is the thread that draws, so a
+    // full-resolution frame would freeze the tab for the minutes it takes
+    // instead of reporting progress. The viewport's own progressive refine
+    // (`rendered::stepwise`) is what the web build renders with until this
+    // runs as a worker task.
+    //
+    // The flag has to come back down by hand here: `BRunning` resets it when
+    // the closure's frame drops, and the closure never ran.
+    if !crate::v2::app::offload::offload("phiber-render", work) {
+        flag.running.store(false, Ordering::SeqCst);
+        note_failure("a final render needs a worker thread, which this build does not have");
+        // Finished and empty, so the Rendering space shows an end rather than
+        // a progress bar that never moves.
+        flag.put(into, Some(BRenderShot { w: ow, h: oh, target, done: true, ..Default::default() }));
+        crate::v2::view::draw::canvas::view3d::rendered::landed();
+    }
 }
 
 #[cfg(test)]

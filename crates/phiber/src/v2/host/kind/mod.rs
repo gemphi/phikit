@@ -58,5 +58,7 @@ hosts! {
     Spreadsheet => spreadsheet,
     Ipo => ipo,
     Prefs => pref,
+    Play => play,
+    Project => project,
     Activity => activity,
 }

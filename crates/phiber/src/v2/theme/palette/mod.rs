@@ -17,8 +17,8 @@ pub use theme::{palette_for, palette_in};
 /// (`BThemeMode`). Sphere, Graphite and Tokyo are phiber's own; Moss, Ember
 /// and Plum its three warm ones; Onyx and Grey are black and grey (Grey's
 /// light mode the silver); Silver is the show's blue-grey with its dark blue;
-/// Apple is macOS's window greys with its blue, and Apple Dark its dark grey
-/// on both sides; the last five are the `phi` appkit's variants.
+/// Apple is macOS's window greys with its blue; Phiber is the brand's own —
+/// the 3D logo's blue (Phi-Pill Blue) on a deep navy, spatial by default; the last five are the `phi` appkit's variants.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum BPaletteName {
     Sphere,
@@ -31,7 +31,7 @@ pub enum BPaletteName {
     Grey,
     Silver,
     Apple,
-    AppleDark,
+    Phiber,
     Swift,
     Barbie,
     Fenty,
@@ -90,7 +90,7 @@ impl BPaletteName {
         BPaletteName::Grey,
         BPaletteName::Silver,
         BPaletteName::Apple,
-        BPaletteName::AppleDark,
+        BPaletteName::Phiber,
         BPaletteName::Swift,
         BPaletteName::Barbie,
         BPaletteName::Fenty,
@@ -102,13 +102,10 @@ impl BPaletteName {
     /// a list nobody reads to the end.
     pub const MAX: usize = 16;
 
-    /// The palette applied when no theme has been chosen.
-    ///
-    /// Silver, because it is the grey the manual's figures are drawn in
-    /// (`manual::wave::BWave::SILVER`): a figure and the screen it was
-    /// taken from are then the same colour, and the cascade that makes
-    /// phiber's wave series reads the same on the page as in the editor.
-    pub const DEFAULT: BPaletteName = BPaletteName::Silver;
+    /// The palette applied when no theme has been chosen: Phiber, the
+    /// brand's own — the 3D logo's blue on the Phiegg site's light ground,
+    /// spatial by default.
+    pub const DEFAULT: BPaletteName = BPaletteName::Phiber;
 
     pub fn label(self) -> &'static str {
         match self {
@@ -122,7 +119,7 @@ impl BPaletteName {
             BPaletteName::Grey => "Grey",
             BPaletteName::Silver => "Silver",
             BPaletteName::Apple => "Apple",
-            BPaletteName::AppleDark => "Apple Dark",
+            BPaletteName::Phiber => "Phiber",
             BPaletteName::Swift => "Swift",
             BPaletteName::Barbie => "Barbie",
             BPaletteName::Fenty => "Fenty",
@@ -142,7 +139,7 @@ impl BPaletteName {
             BPaletteName::Grey => "Grey",
             BPaletteName::Silver => "Silver",
             BPaletteName::Apple => "Apple",
-            BPaletteName::AppleDark => "AppleDark",
+            BPaletteName::Phiber => "Phiber",
             BPaletteName::Swift => "Swift",
             BPaletteName::Barbie => "Barbie",
             BPaletteName::Fenty => "Fenty",

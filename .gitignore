@@ -1,0 +1,91 @@
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+*.log.*
+logs/
+
+# Build artifacts
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test artifacts
+*.profraw
+*.profdata
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+ENV/
+
+# Documentation build
+/docs/_build/
+/target/doc/
+#/REFS/
+#/crates/phiber/refs/
+
+# Benchmarks
+/target/criterion/
+
+/crates/apple/
+
+# App render output (rendered videos / image sequences, keep the folder)
+crates/apple/apps/phiray/output/*
+!crates/apple/apps/phiray/output/.gitkeep
+
+# Coverage
+*.gcda
+*.gcno
+*.gcov
+tarpaulin-report.html
+cobertura.xml
+
+# Custom build target
+/target_custom/
+
+# Loose output/debug files in root
+/*.txt
+/*.log
+
+# Large production .blend assets (copied from phi/crates/phiphx/assets)
+#crates/phiber/assets/production/
+
+# Reference trees live outside the repo, in gemphi/ext (moved by gemphi/move-refs.ps1).
+/REFS/
+/crates/phiber/refs/
+/crates/phiber/docs/blender-manual/
+
+# phiber never commits Blender files or heavy 3D assets: they stay on disk only.
+# Exception: assets/blend/ holds the startup templates the build compiles in
+# (include_bytes! in src/v2/scene/template.rs); without them a clone does not build.
+*.blend1
+/crates/phiber/**/*.blend
+!/crates/phiber/assets/blend/*.blend
+/crates/phiber/assets/production/
+/crates/phiber/assets/CW-Fashion/

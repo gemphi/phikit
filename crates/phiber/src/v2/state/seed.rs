@@ -21,6 +21,9 @@ pub fn default_state() -> BState {
     // a theme here as well meant two, and they disagreed: the constant
     // said Silver and the seed wrote Sphere over it on every fresh state.
     s.set(AppKey::Theme, crate::v2::theme::BPaletteName::DEFAULT.slug());
+    // The look this window was born on, so a session it saves is not taken
+    // for an older one and reset (`session::snapshot::apply`).
+    s.set_encoded(crate::v2::app::session::snapshot::LOOK_KEY, crate::v2::app::session::snapshot::LOOK);
     // Boot into the welcome window (Blender's splash). Any click dismisses
     // it; `Blender ▸ Splash Screen` brings it back.
     s.set(ModalKey::Open, V_MODAL_SPLASH);

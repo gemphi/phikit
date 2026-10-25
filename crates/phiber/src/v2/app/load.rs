@@ -6,15 +6,12 @@
 
 use std::path::Path;
 use crate::phiphx::Phx;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, mpsc};
+use std::sync::atomic::Ordering;
+use std::sync::{Mutex, mpsc};
 use std::time::Duration;
-
 use super::BPhiberApp;
 use super::import::{ImportOutcome, settle_import};
-use crate::phiphx::scene::{
-    SceneLoadError, SceneModel,
-};
+use crate::phiphx::scene::{SceneLoadError, SceneModel};
 use crate::v2::scene::{LoadStage, load_cancel_key, load_progress_key, load_stage_key, loaded_path_key, loading_key};
 use gpui::{AppContext, Context};
 
@@ -38,6 +35,12 @@ impl BPhiberApp {
     /// `WM_file_read` from `main` skips the splash. A path that is not a
     /// `.blend` on disk is reported and the welcome window stays.
     pub(crate) fn open_argument(&mut self, path: String, cx: &mut Context<Self>) {
+        if path.starts_with("embedded:") {
+            self.state.set(crate::v2::state::ModalKey::Open, crate::v2::state::val::V_EMPTY);
+            self.untitled = true;
+            self.start_import(path, cx);
+            return;
+        }
         if !crate::v2::scene::is_blend_path(&path) || !Path::new(&path).exists() {
             crate::v2::state::log::push(format!("Cannot open '{path}': not a .blend file on disk"));
             return;
@@ -57,13 +60,14 @@ impl BPhiberApp {
         self.state.set(&load_stage_key(), "Reading file");
         self.state.set(&load_progress_key(), "0");
         self.state.remove(&load_cancel_key());
+        // This read owns the file; one under way is cancelled (`owner`).
+        let (generation, cancel) = self.take_load();
 
         cx.spawn(async move |this, cx| {
             // Kept for the deferred-modifier swap below (the import consumes
             // `path` when it settles).
             let loaded = path.clone();
             let (tx, rx) = mpsc::channel::<ImportMsg>();
-            let cancel = Arc::new(AtomicBool::new(false));
 
             // Reader thread. No watchdog: Blender never times out a
             // file read; the user cancels via the progress bar instead.
@@ -80,7 +84,17 @@ impl BPhiberApp {
                     };
                     // Progressive: the base scene comes back now; its modifier
                     // work is finished off this thread and swapped in after.
-                    let result = Phx::open_progressive(Path::new(&load_path), &sink);
+                    // An `embedded:` path is a template or the demo carried
+                    // inside the binary (`scene::template::embedded_bytes`)
+                    // — the only kind a browser, which has no disk, can
+                    // open; its modifiers are evaluated in the open.
+                    let result = match load_path.strip_prefix("embedded:") {
+                        Some(name) => crate::v2::scene::template::embedded_bytes(name)
+                            .ok_or_else(|| crate::phiphx::scene::SceneLoadError::Inaccessible(format!("no embedded file {name:?}")))
+                            .and_then(|bytes| Phx::open_bytes_with(name, bytes, &sink))
+                            .map(|model| (model, None)),
+                        None => Phx::open_progressive(Path::new(&load_path), &sink),
+                    };
                     if let Ok(tx) = tx.lock() {
                         let _ = tx.send(ImportMsg::Done(result));
                     }
@@ -149,10 +163,14 @@ impl BPhiberApp {
                     .await;
             };
 
-            // Back on the UI thread: settle the scalar scene keys, cache the
-            // model, then notify so the Viewport/Outliner re-render from the
-            // new Scene_Source.
+            // Back on the UI thread: settle, cache and notify — unless another
+            // read has taken the file over since (`owner`); then this one lost.
+            if !this.update(cx, |this, _| this.load_gen == generation).unwrap_or(false) {
+                super::journal::BJournal::note(format!("Open: the read of {loaded} finished after another took over; dropped"));
+                return;
+            }
             this.update(cx, |this, cx| {
+                this.load_owner = None;
                 if let Some(model) = settle_import(&mut this.state, outcome) {
                     crate::v2::state::log::push(format!(
                         "Opened {} ({}): {} objects, {} vertices, {} faces in {} ms",
@@ -169,19 +187,9 @@ impl BPhiberApp {
                         .map(str::to_string)
                         .or_else(|| model.source_path.clone())
                         .unwrap_or(path);
-                    this.scene_cache = Some((key, std::sync::Arc::new(model)));
-                    // Its large meshes' pick trees and outline points, on a
-                    // thread, before the first click or orbit asks for them.
-                    if let Some((_, model)) = &this.scene_cache {
-                        crate::v2::scene::warm::BWarm::of(model).start();
-                    }
                     super::op::close::tag_saved(&mut this.state);
-                    // Another document: its Render Result is not the old one's.
-                    crate::v2::scene::render_job::forget();
-                    crate::v2::scene::image_list::BImageList::forget();
-                    this.render_on_entry();
-                    // A startup file is untitled: no path to save over, and
-                    // none in the recent list.
+                    this.adopt_scene(key, std::sync::Arc::new(model));
+                    // A startup file is untitled: no path, no recent entry.
                     if this.untitled {
                         this.untitled = false;
                         this.state.remove(&loaded_path_key());
@@ -198,6 +206,9 @@ impl BPhiberApp {
             if let Some(deferred) = deferred.filter(|d| !d.is_empty()) {
                 let swaps = cx.background_spawn(async move { deferred.finish() }).await;
                 this.update(cx, |this, cx| {
+                    if this.load_gen != generation {
+                        return; // a newer read owns the file and its modifiers
+                    }
                     let Some((key, model)) = this.scene_cache.take() else { return };
                     // Only swap when the same file is still shown (the user may
                     // have opened another while this evaluated).

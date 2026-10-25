@@ -6,7 +6,7 @@ use crate::blend::file::types::*;
 /// Byte offsets (within a Mesh block) of the geometry pointers and counts.
 ///
 /// Two layouts are supported. The **modern (Blender 4.x)** layout — grounded in
-/// `REFS/blender/blender/source/blender/makesdna/DNA_mesh_types.h` — stores
+/// `gemphi/ext/REFS/blender/blender/source/blender/makesdna/DNA_mesh_types.h` — stores
 /// geometry as four consecutive `int` counts (`verts_num`, `edges_num`,
 /// `faces_num`, `corners_num`), an `int *face_offset_indices` array of length
 /// `faces_num + 1`, an `AttributeStorage attribute_storage`, and the CustomData

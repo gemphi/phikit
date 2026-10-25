@@ -6,7 +6,9 @@ use crate::phiphx::phx::{Peek, Phx};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
-use web_time::SystemTime;
+// std's, not web_time's: the key stores what `fs::metadata` returns, which
+// is std's type on every target (web_time's is a distinct type on wasm).
+use std::time::SystemTime;
 
 type Key = (String, Option<SystemTime>);
 

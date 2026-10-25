@@ -8,8 +8,7 @@
 //! overlays on top of the content so the canvas fills the full host area
 //! (Blender's floating panel behaviour).
 
-use super::flex::{BAlign, BFill, BFlex, BFlexed, BJustify, BLen, BOverflow, BPlace, BRadius, BSide, BSpace, BDim};
-use crate::v2::theme::BStyleRole;
+use super::flex::{BAlign, BFlex, BFlexed, BJustify, BLen, BOverflow, BPlace, BSide, BSpace, BDim};
 use super::color::to_hsla;
 use super::ctx::BRenderCtx;
 use super::walk;
@@ -17,6 +16,7 @@ use crate::v2::pane::BPaneType;
 use crate::v2::view::BView;
 use crate::v2::view::layout::BPaneLayout;
 use gpui::prelude::*;
+use super::floor::control_floor;
 use gpui::{AnyElement, Hsla, hsla};
 
 /// True when this pane lives inside a floating-side-panel host's center
@@ -77,35 +77,6 @@ pub fn strip_width(is_right: bool, ctx: &BRenderCtx) -> f32 {
     }
 }
 
-/// A floor for a pinned header cell that must not clip: one icon slot per
-/// control it holds, plus the gaps between them.
-///
-/// A flex cell with a zero basis has no content size of its own to fall back
-/// on, so a narrow window shrank the top bar's right-hand cell straight
-/// through its icons. Counting the controls gives that cell a real minimum
-/// without measuring text — everything in it is a square icon button.
-fn control_floor(list: &[BView], ctx: &BRenderCtx) -> f32 {
-    fn count(v: &BView) -> usize {
-        match v {
-            BView::Button(_) | BView::MenuAnchor(_) | BView::Icon { .. } => 1,
-            BView::Row { list } | BView::Column { list } | BView::Split { list } => list.iter().map(count).sum(),
-            BView::Card(card) => card.body.iter().chain(&card.foot).map(count).sum(),
-            BView::Part { body, .. } => count(body),
-            BView::Popover { anchor, .. } => count(anchor),
-            BView::ZoneToggleGroup { controls } => controls.len(),
-            BView::WindowControls { .. } => super::caption::WINDOW_CONTROLS.len(),
-            _ => 0,
-        }
-    }
-    let n: usize = list.iter().map(count).sum();
-    if n == 0 {
-        return 0.0;
-    }
-    let slot = ctx.style.dimensions.button_height;
-    let gap = ctx.style.spacing.gap_xs;
-    n as f32 * slot + (n.saturating_sub(1)) as f32 * gap
-}
-
 /// The parts of a pane — one enum for the level, as every other level
 /// states its parts (`BAreaPart`, `BCardPart`, `BModalPart`, `BTablePart`).
 enum BPanePart {
@@ -157,10 +128,10 @@ impl BFlexed for BPanePart {
                 // region's (`region`).
                 .place(BPlace::Float { side, inset: BSpace::PadSm, foot: BSpace::MenuTopGap })
                 .gap(BSpace::GapXs)
-                .pad(BSpace::PadXs)
-                .width(BLen::Measured(strip + 2.0 * ctx.style.spacing.pad_xs))
-                .radius(BRadius::Role(BStyleRole::Panel))
-                .fill(BFill::Floating),
+                // No ground of its own: the rail paints its bar (`rail.rs`)
+                // and the panels beside it are their own cards, so an open N
+                // panel is not a full-height box behind its cards.
+                .width(BLen::Measured(strip + 2.0 * ctx.style.spacing.pad_xs)),
             Self::Cell { kind, in_header, pinned, floor, fielded, columns, wraps } => {
             let base = BFlex::row().gap(BSpace::GapXs);
             // A strip centres its controls on one line — a cap, a button, a
@@ -172,7 +143,9 @@ impl BFlexed for BPanePart {
             // same line rather than on the strip's — the pixel that had fields
             // riding a step below the menus beside them.
             let base = match in_header {
-                true => base.align(BAlign::Center).height(BLen::Full).pad_top(BSpace::MenuTopGap),
+                // Every control in a strip is centred on the strip's own centre
+                // line, clear of both edges by `CONTROL_CLEAR`.
+                true => base.align(BAlign::Center).height(BLen::Full),
                 false => base.align(BAlign::Center),
             };
             // Three cells in every strip — what the editor IS on the left,
@@ -216,19 +189,28 @@ impl BFlexed for BPanePart {
                 (_, _, true, _) => {
                     let cell = base.fills().height(BLen::Full).min_height(BLen::Zero);
                     let cell = match columns {
-                        true => cell.pad_left(BSpace::Seam),
+                        true => cell.pad_x(BSpace::Seam),
                         false => cell,
                     };
-                    match in_header && !fielded {
-                        true => cell.justify(BJustify::Center),
-                        false => cell.min_width(BLen::Zero),
+                    // In a header the cell is never narrower than what it
+                    // holds (`grows`): centred in a cell too narrow for
+                    // them, its controls spilled over the panes both ways —
+                    // the Timeline's frame field lay across its transport.
+                    // Too long a header runs off its end instead.
+                    match (in_header && !columns, fielded) {
+                        (true, false) => cell.grows().justify(BJustify::Center),
+                        (true, true) => cell.grows(),
+                        (false, _) => cell.min_width(BLen::Zero),
                     }
                 }
+                // Over a details column the right pane is that column: its
+                // width, its inset, its controls spread across it.
                 (_, _, _, true) => {
                     let cell = base.keeps_size().justify(BJustify::End);
-                    match columns {
-                        true => cell.pad_x(BSpace::PadMd),
-                        false => cell,
+                    match (columns, ctx.host.has_details_column()) {
+                        (true, true) => cell.width(BLen::Dim(BDim::PanelWidth)).pad_right(BSpace::Seam).justify(BJustify::Between),
+                        (true, false) => cell.pad_x(BSpace::Seam),
+                        (false, _) => cell,
                     }
                 }
                 // The left pane of a strip laid out as the columns under it
@@ -240,11 +222,13 @@ impl BFlexed for BPanePart {
                 // is the strip's body instead: it grows, and the field grows
                 // with it. Otherwise a left pane shrinks to fit and never
                 // expands.
+                // The header's menus read from the column's start; the folder
+                // moves and the refresh stand at its two ends.
                 _ if columns => base
                     .keeps_size()
                     .width(BLen::Measured(super::region::tools_column_width(ctx)))
-                    .pad_left(BSpace::PadMd)
-                    .justify(BJustify::Between),
+                    .pad_left(BSpace::Seam)
+                    .justify(if ctx.region == Some(crate::v2::region::BRegionType::Header) { BJustify::Start } else { BJustify::Between }),
                 _ if fielded => base.fills().min_width(BLen::Zero),
                 _ => base.keeps_size(),
             }
@@ -315,7 +299,12 @@ pub fn view(kind: BPaneType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
     let center = kind.is_center();
     let dbg = format!("pane-{:?}-{:?}", kind, ctx.host);
     let fielded = in_header && list.iter().any(holds_field);
-    let columns = ctx.region == Some(crate::v2::region::BRegionType::ToolHeader) && ctx.host.tools_hold_panels();
+    // The strips over a browser's columns are those columns read across.
+    let columns = match ctx.region {
+        Some(crate::v2::region::BRegionType::ToolHeader) => ctx.host.tools_hold_panels(),
+        Some(crate::v2::region::BRegionType::Header) => ctx.host.heads_its_columns(),
+        _ => false,
+    };
     let wraps = pinned && ctx.region == Some(crate::v2::region::BRegionType::Header) && crate::v2::part::filter::topbar_wraps(ctx.state);
     let mut element = BPanePart::Cell { kind, in_header, pinned, floor, fielded, columns, wraps }
         .flex(ctx)

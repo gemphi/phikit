@@ -1575,7 +1575,6 @@ impl Window {
                 // branch is unreachable there in practice: only Windows pumps
                 // platform events (and thus requests frames) mid-draw.
                 if draw_in_progress() {
-                    log::debug!("deferring re-entrant window draw request");
                     deferred_force_render |= request_frame_options.force_render;
                     return;
                 }

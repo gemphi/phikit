@@ -27,7 +27,10 @@ fn search_fields(v: &BView, out: &mut Vec<BAction>) {
 
 #[test]
 fn the_filter_popover_carries_the_search_field_bound_to_the_outliner_search() {
-    let s = BState::new();
+    // The popover opens short — only its first heading open — so open the
+    // Search heading, as a user does, before looking for its field.
+    let mut s = BState::new();
+    s.set(&phiber::v2::part::filter::fold::expand_key(&["outliner", "filter"], "Search"), "true");
     let mut fields = Vec::new();
     for row in phiber::v2::part::outliner::filter::popover::body(&s) {
         search_fields(&row, &mut fields);

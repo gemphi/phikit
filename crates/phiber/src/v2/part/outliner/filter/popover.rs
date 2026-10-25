@@ -36,7 +36,7 @@ pub fn groups(s: &BState) -> Vec<crate::v2::part::filter::fold::BGroup> {
     // its two modifiers. Carrying the field here is what lets a narrow
     // side-panel header drop its crushed inline copy and still search.
     let search = OutlinerKey::Search.path();
-    let mut searching = vec![BView::text_field("", s.get(&search).unwrap_or("").to_string(), edit::is_editing(s, &search), crate::v2::view::prim::BAction::Set(search, String::new()))];
+    let mut searching = vec![BView::filter_field("", s.get(&search).unwrap_or("").to_string(), edit::is_editing(s, &search), crate::v2::view::prim::BAction::Set(search, String::new()))];
     searching.extend(group(s, "", &set::SEARCH));
     out.push(("Search", searching));
     if display_mode(s) != BOutlineMode::ViewLayer {
@@ -72,7 +72,7 @@ fn body_flat(s: &BState) -> Vec<BView> {
     // side-panel header drop its crushed inline copy (`region::complete_header`)
     // and still search — the popover is self-sufficient.
     let search = OutlinerKey::Search.path();
-    rows.push(BView::text_field("Search", s.get(&search).unwrap_or("").to_string(), edit::is_editing(s, &search), crate::v2::view::prim::BAction::Set(search, String::new())));
+    rows.push(BView::filter_field("Search", s.get(&search).unwrap_or("").to_string(), edit::is_editing(s, &search), crate::v2::view::prim::BAction::Set(search, String::new())));
     rows.extend(group(s, "Search", &set::SEARCH));
     if display_mode(s) != BOutlineMode::ViewLayer {
         return rows;

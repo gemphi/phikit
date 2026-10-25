@@ -111,12 +111,32 @@ pub fn close_overlays(state: &mut BState) {
     let pickers = super::ButsKey::dropdown_prefix();
     let keys: Vec<String> = state
         .iter_keys()
-        .filter(|k| k.starts_with(&menus) || k.starts_with(&switchers) || k.starts_with(&pickers))
+        // And every colour picker (`<colour key>.picker`, `BCtrl::picker_key`):
+        // they were the one popover no sweep named, so a picker stayed up
+        // after its colour was set, reset or another was opened.
+        .filter(|k| k.starts_with(&menus) || k.starts_with(&switchers) || k.starts_with(&pickers) || is_colour_picker(k))
         .cloned()
         .collect();
     for key in keys {
         state.set_encoded(&key, V_FALSE);
     }
+}
+
+/// Whether an encoded key is a colour picker's open flag.
+pub fn is_colour_picker(encoded: &str) -> bool {
+    encoded.ends_with(".picker")
+}
+
+/// Open one colour picker: every other picker closes first, so at most one is
+/// ever up — opening a second used to stack it over the first.
+pub fn toggle_colour_picker(state: &mut BState, path: &crate::v2::state::BPath) {
+    let opening = state.get(path) != Some(V_TRUE);
+    let encoded = path.encode();
+    let others: Vec<String> = state.iter_keys().filter(|k| is_colour_picker(k) && **k != encoded).cloned().collect();
+    for key in others {
+        state.set_encoded(&key, V_FALSE);
+    }
+    state.set(path, if opening { V_TRUE } else { V_FALSE });
 }
 
 /// Close every header panel popover (`MenuKey::Panel`): a menu opening
@@ -187,5 +207,31 @@ fn close_all_siblings(state: &mut BState, key: &BPath) {
         .collect();
     for k in victims {
         close_encoded(state, &k);
+    }
+}
+
+#[cfg(test)]
+mod colour_picker_tests {
+    use super::*;
+    use crate::v2::state::BPath;
+    use crate::v2::state::action::apply_action;
+    use crate::v2::view::prim::BAction;
+
+    fn picker(name: &'static str) -> BPath {
+        BPath::owned(vec!["ui_style", "colors", name, "picker"])
+    }
+
+    #[test]
+    fn one_colour_picker_at_a_time_and_a_set_closes_it() {
+        let mut state = BState::new();
+        apply_action(&mut state, &BAction::Toggle(picker("accent")));
+        assert_eq!(state.get(&picker("accent")), Some(V_TRUE));
+        // Opening a second closes the first.
+        apply_action(&mut state, &BAction::Toggle(picker("text")));
+        assert_eq!(state.get(&picker("text")), Some(V_TRUE));
+        assert_ne!(state.get(&picker("accent")), Some(V_TRUE), "the first picker closed");
+        // A committed write anywhere takes it down, as it does every overlay.
+        apply_action(&mut state, &BAction::Set(BPath::owned(vec!["ui_style", "colors", "text"]), "0, 0, 80, 1".into()));
+        assert_ne!(state.get(&picker("text")), Some(V_TRUE), "a set closed the picker");
     }
 }

@@ -72,11 +72,12 @@ fn expanded(s: &BState, label: &'static str) -> bool {
     s.get(&k_expanded(label)) != Some(V_FALSE)
 }
 
-/// One folder of the source list. The folder the browser is in is lit, the
-/// way the active tab of a rail is: the control fill, the parent's width.
+/// One folder of the source list: a list row with no ground of its own —
+/// its section is the ground — lit only on hover and when the browser is in
+/// it. Rows on their own fills read as a stack of buttons.
 fn entry_button(e: &BFsEntry, s: &BState) -> BView {
-    let here = listing::current_dir(s) == e.path;
-    BView::Button(
+    let here = listing::current_dir(s) == e.path || super::op::picked(s) == e.path;
+    BView::MenuItem(
         BControl::new()
             .with_icon(e.icon)
             .with_label(e.label.clone())
@@ -88,22 +89,15 @@ fn entry_button(e: &BFsEntry, s: &BState) -> BView {
 /// One collapsible panel (`FILEBROWSER_PT_bookmarks_*`).
 pub(super) fn panel(s: &BState, label: &'static str, rows: Vec<BView>) -> BView {
     let body = if rows.is_empty() { vec![BView::label("Nothing here yet")] } else { rows };
-    BCard::panel(label).fold(k_expanded(label), expanded(s, label)).body(body).into()
+    // Shut, a section is its heading alone, on nothing; open, the whole
+    // section stands on one ground (`BCardKind::Bare` folded open) — the
+    // group is what is lit, not each row in it.
+    BCard::panel(label).bare().fold(k_expanded(label), expanded(s, label)).body(body).into()
 }
 
 fn bookmark_rows(s: &BState) -> Vec<BView> {
-    let mut rows: Vec<BView> = bookmarks(s)
-        .into_iter()
-        .map(|p| {
-            entry_button(&BFsEntry {
-                icon: "bookmark",
-                label: recent::display_name(&p).to_string(),
-                path: p,
-            }, s)
-        })
-        .collect();
-    // Blender's `+` (file.bookmark_add) beside the list.
-    rows.push(BView::Button(
+    // Blender's `file.bookmark_add` heads the panel, over the list.
+    let mut rows = vec![BView::MenuItem(
         BControl::new()
             .with_icon("plus")
             .with_label("Add Bookmark")
@@ -111,24 +105,42 @@ fn bookmark_rows(s: &BState) -> Vec<BView> {
                 FileKey::BookmarkAdd.path(),
                 V_TRUE.to_string(),
             )),
-    ));
+    )];
+    rows.extend(bookmarks(s)
+        .into_iter()
+        .map(|p| {
+            entry_button(&BFsEntry {
+                icon: "bookmark",
+                label: recent::display_name(&p).to_string(),
+                path: p,
+            }, s)
+        }));
     rows
 }
 
 fn recent_rows(s: &BState) -> Vec<BView> {
+    // A recent entry is a FILE. Opening, it is the file itself that is
+    // picked — `goto` sees a file and selects it, as the row in the listing
+    // does. Saving, the entry only takes the browser to the file's folder,
+    // so a Save As cannot land on a recent file by one click. It used to
+    // navigate for every purpose and leave the name field as it was, so
+    // Open then resolved the old name against the new folder and did
+    // nothing.
+    let opening = super::purpose::purpose(s) == super::purpose::BFilePurpose::Open;
     recent::recent_paths(s)
         .into_iter()
         .map(|p| {
             entry_button(&BFsEntry {
                 icon: "history",
                 label: recent::display_name(&p).to_string(),
-                path: recent::parent_dir(&p).to_string(),
+                path: if opening { p.clone() } else { recent::parent_dir(&p).to_string() },
             }, s)
         })
         .collect()
 }
 
-/// Files mode — the four `Bookmarks` panels in Blender's draw order.
+/// Files mode — the four `Bookmarks` panels in Blender's draw order
+/// (`CATEGORIES`).
 pub fn view(s: &BState) -> BView {
     let mut panels: Vec<BView> = CATEGORIES
         .iter()

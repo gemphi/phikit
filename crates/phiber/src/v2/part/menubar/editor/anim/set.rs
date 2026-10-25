@@ -42,12 +42,13 @@ impl BAnimMenu {
     }
 }
 
-/// `INFO_MT_area`, at the foot of every View menu.
+/// `INFO_MT_area`, at the foot of every View menu. Maximize grows the
+/// editor whose menu it is (`area::maximize`), as Ctrl Space over it does.
 pub static AREA: &[BMenuItem] = &[
     op("Horizontal Split", ""),
     op("Vertical Split", ""),
     SEP,
-    op("Maximize Area", "Ctrl Space"),
+    fire("Maximize Area", "Ctrl Space", OpKey::AreaMaximize, ""),
     op("Focus Mode", "Ctrl Alt Space"),
     op("Duplicate Area into New Window", ""),
     SEP,

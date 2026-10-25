@@ -127,7 +127,7 @@ fn the_mark_keeps_its_own_colours() {
 fn the_backdrop_is_written_as_rungs_not_as_hexes() {
     let src = include_str!("../src/v2/view/draw/brand.rs");
     assert!(src.contains("const BACKDROP_GROUND: u8"), "the ground is a step");
-    assert!(src.contains("const BACKDROP_LAYERS: [(&str, u8); 4]"), "and so are the layers");
+    assert!(src.contains("const BACKDROP_RIDGE_STEPS: (u8, u8)"), "and so are the ridges");
     assert!(!src.contains("BACKDROP_BG"), "the frozen ground is gone");
     for frozen in ["0x12151A", "0x232A34", "0x2F3846", "0x1E232C"] {
         assert!(!src.contains(frozen), "{frozen} is gone from the source");

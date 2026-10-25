@@ -11,12 +11,16 @@ static OBJECT_TYPE_ICONS: &[(&str, &str)] = &[
     ("EMPTY", "empty"),
     ("CURVE", "curve"),
     ("SURFACE", "curve"),
-    ("FONT", "curve"),
+    ("FONT", "text"),
     ("CURVES", "curve"),
     ("SPEAKER", "speaker"),
-    ("ARMATURE", "empty"),
-    ("LATTICE", "empty"),
+    ("ARMATURE", "bone"),
+    ("LATTICE", "grid_3x3"),
     ("LIGHT_PROBE", "light"),
+    ("GREASEPENCIL", "pencil"),
+    ("GPENCIL", "pencil"),
+    ("VOLUME", "volume"),
+    ("META", "mesh"),
 ];
 
 impl BOutlineIcon {

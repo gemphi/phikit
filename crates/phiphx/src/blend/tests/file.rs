@@ -4,7 +4,7 @@
     use std::path::Path;
 
     fn tests_files() -> std::path::PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../REFS/blender/blender/tests/files")
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../ext/REFS/blender/blender/tests/files")
     }
 
     /// #26: packed image bytes and `//`-relative external images reach the

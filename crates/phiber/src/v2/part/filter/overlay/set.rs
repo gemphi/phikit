@@ -138,10 +138,10 @@ pub fn panel_for(host: BHostType) -> Option<BOverlayPanel> {
     let panel = |title, icon, family, boxes| BOverlayPanel { title, icon, family, boxes };
     Some(match host {
         BHostType::Shader | BHostType::Node | BHostType::GeoNode | BHostType::Compositor => {
-            panel("Overlays", "layers", "node", &NODE)
+            panel("Overlays", "overlays", "node", &NODE)
         }
-        BHostType::Seq => panel("Overlays", "layers", "seq", &SEQ),
-        BHostType::Image | BHostType::Uv => panel("Overlays", "layers", "image", &IMAGE),
+        BHostType::Seq => panel("Overlays", "overlays", "seq", &SEQ),
+        BHostType::Image | BHostType::Uv => panel("Overlays", "overlays", "image", &IMAGE),
         BHostType::Clip => panel("Display", "eye", "clip", &CLIP),
         BHostType::Spreadsheet => panel("Filters", "filter", "spreadsheet", &SHEET),
         _ => return None,

@@ -172,6 +172,16 @@ pub enum BView {
         editing: bool,
         /// Names the state key being edited. Must be `BAction::Set(path, _)`.
         on_change: BAction,
+        /// True for a filter, which leads with the magnifier; a field that
+        /// names something (a file, a path) does not.
+        searches: bool,
+    },
+    /// A path read as the folders it runs through, Explorer's address bar:
+    /// each crumb its folder's link, the box around them a click into
+    /// typing the path (`edit`, run in order).
+    Crumbs {
+        trail: Vec<(String, BAction)>,
+        edit: Vec<BAction>,
     },
     Icon {
         name: String,

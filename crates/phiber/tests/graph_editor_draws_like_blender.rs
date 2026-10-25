@@ -139,8 +139,8 @@ async fn loaded_keys_are_painted_as_vertices_on_the_value_axis(cx: &mut TestAppC
     // The mode the window drew in, not a dark-pinned table: `ui_style_defaults`
     // is Dark, and `BThemeMode::DEFAULT` is Light, so pinning here compared the
     // painted keys against a different theme than the one that painted them.
-    let (_, mode) = phiber::v2::theme::theme_in_force(&state);
-    let colors = phiber::v2::theme::resolve_ui_style(phiber::v2::theme::style::ui_style_defaults_in(phiber::v2::theme::BPaletteName::Sphere, mode), &state).anim();
+    let (palette, mode) = phiber::v2::theme::theme_in_force(&state);
+    let colors = phiber::v2::theme::resolve_ui_style(phiber::v2::theme::style::ui_style_defaults_in(palette, mode), &state).anim();
     let hue = |fill: &str| fill.split("h: ").nth(1).and_then(|rest| rest.split(',').next()).and_then(|h| h.trim().parse::<f32>().ok()).unwrap_or(-1.0);
     let lightness = |fill: &str| fill.split("l: ").nth(1).and_then(|rest| rest.split(',').next()).and_then(|l| l.trim().parse::<f32>().ok()).unwrap_or(-1.0);
     assert!((hue(&orange.2) - colors.vertex_select.0 / 360.0).abs() < 1e-3, "selected key in the theme's vertex_select: {}", orange.2);

@@ -20,7 +20,9 @@
 //! into a [`BCli`] and nothing else, which is why the grammar is testable
 //! without a window, a GPU or a file.
 
+pub mod cost;
 pub mod frame;
+pub mod open;
 pub mod help;
 pub mod render;
 pub mod set;
@@ -40,7 +42,10 @@ pub struct BCli {
     pub frame: Option<String>,
     /// `-a`, **after** a file: render the scene's whole range.
     pub animation: bool,
-    /// `-a`, **before** a file: play back a rendered sequence instead.
+    /// `-a`, **before** a file: play it. Blender opens its animation
+    /// player here; Phiber opens the file in the window with the timeline
+    /// running (`app::run`'s `play`), which is the same ask — "show me this
+    /// moving" — for a file whose motion is in the scene, not a sequence.
     pub playback: bool,
     /// `-S`, `-s`, `-e`, `-j`.
     pub scene: Option<String>,

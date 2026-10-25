@@ -1,4 +1,4 @@
-//! Every icon-only button in a strip is a square tile — the transport's
+//! Every icon-only button is a square tile — in a strip as anywhere else — the transport's
 //! record, jump and play buttons, a header's filter and overlay toggles —
 //! the same size as each other and painted with the control shade at rest
 //! (`view/draw/button.rs`). Half-weight on a header the tile vanished, so a
@@ -41,8 +41,9 @@ fn a_tile_at_rest_is_the_whole_control_shade_not_a_wash() {
     let wash = style.control_fill(BControlState::Rest, false).unwrap();
     assert_eq!((tile.0, tile.1, tile.2), (wash.0, wash.1, wash.2), "one shade");
     assert!(tile.3 > wash.3 * 1.5, "at its whole weight, not the wash: {} vs {}", tile.3, wash.3);
-    // And the button draws a strip icon with that fill (`button.rs`).
+    // And the button draws every icon-only button — in a strip, a panel or
+    // a list alike — as a tile with that fill (`button.rs`).
     let button = include_str!("../src/v2/view/draw/button.rs");
-    assert!(button.contains("let tile = label.is_none() && chrome::in_strip(ctx);"));
+    assert!(button.contains("let tile = label.is_none() || action_button || is_row;"));
     assert!(button.contains("BRenderCtx { floating: true, ..ctx.clone() }"));
 }

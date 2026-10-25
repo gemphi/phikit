@@ -26,6 +26,9 @@ pub const MEDIUM_RADII: BRadiusScale = BRadiusScale::rungs(2.0, 4.0, 6.0, 9.0, 1
 pub const ROUND_RADII: BRadiusScale = BRadiusScale::rungs(6.0, 10.0, 14.0, 20.0, 26.0);
 pub const SQUARE_RADII: BRadiusScale = BRadiusScale::rungs(0.0, 0.0, 2.0, 3.0, 4.0);
 pub const PILL_RADII: BRadiusScale = BRadiusScale::rungs(8.0, 12.0, 16.0, 22.0, 30.0);
+/// Phiber's: tight, so a control reads as the 3D font's squashed octagon —
+/// a clipped corner rather than a soft pill.
+pub const OCTA_RADII: BRadiusScale = BRadiusScale::rungs(2.0, 3.0, 5.0, 7.0, 10.0);
 
 /// A semantic reference to one rung of [`BRadiusScale`].
 ///

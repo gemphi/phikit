@@ -138,11 +138,12 @@ fn topbar_chrome_and_main_tabs_use_the_requested_rest_hover_active_mapping() {
 
 #[test]
 fn topbar_zone_controls_use_resolved_rounded_stable_geometry() {
-    // The button is square at the button module, rounded as every button is,
-    // and its group is pushed to the strip's end — all of it stated as
-    // `BZoneTogglePart` rather than measured at the call site.
+    // The button is a square tile — the button module less its inset, as
+    // every icon-only button is — rounded as every button is, and its group
+    // is pushed to the strip's end: all of it stated as `BZoneTogglePart`
+    // rather than measured at the call site.
     let toggles = renderer("toggle.rs");
-    assert!(toggles.contains("let size = BLen::Dim(BDim::ButtonHeight);"));
+    assert!(toggles.contains("let size = BLen::Dim(BDim::Tile);"));
     assert!(toggles.contains(".width(size)") && toggles.contains(".height(size)"));
     assert!(toggles.contains("BRadius::Role(BStyleRole::Button)"));
     assert!(toggles.contains("BJustify::End"));
@@ -177,75 +178,16 @@ fn zone_assets_have_exact_directional_thirds_and_outline_only_inactive_forms() {
 }
 
 #[test]
-fn properties_rail_tab_uses_one_inset_paint_layer_for_active_and_hover() {
-    for palette in BPaletteName::ALL.iter().copied() {
-        let style = resolve_ui_style(ui_style_defaults(palette), &BState::new());
-        let inset = style.properties_tab_background_inset();
-        let overlap = style.properties_tab_overlap();
-        assert_eq!(inset, style.strokes.border * 2.0, "{palette:?}");
-        assert_eq!(inset, 2.0, "default rail paint inset changed");
-        assert!(overlap > 0.0, "{palette:?}");
-        assert_eq!(overlap, style.spacing.gap_xs.max(style.strokes.border));
-        assert!(overlap <= style.spacing.gap_sm, "{palette:?}");
-    }
-
-    // Which cap this is, is one named question (`tab/shape.rs`), and the
-    // Properties tab is the one that paints on its own layer.
+fn every_rail_entry_is_one_tile() {
+    // There is one rail entry shape, in every host and every rail — the
+    // Properties tab is not a kind of its own any more (`tab/shape.rs`).
     let shape = renderer("tab/shape.rs");
-    assert!(shape.contains("(false, _) if host == BHostType::Buts => Self::PropertiesTab"));
-    assert!(shape.contains("matches!(self, Self::PropertiesTab)"), "only the Properties tab paints separately");
-
+    assert!(!shape.contains("PropertiesTab"), "no Properties-only tab");
+    assert!(!shape.contains("RailIcon"), "no docked-only icon cap");
+    assert!(shape.contains("(false, _) => Self::RailButton"), "every unlabelled rail entry is the tile");
     let tab = renderer("tab/mod.rs");
-    let properties = tab
-        .split("fn properties_layers(")
-        .nth(1)
-        .expect("Properties rail paint layer");
-    for geometry in [
-        "ctx.style.properties_tab_background_inset()",
-        "ctx.style.properties_tab_overlap()",
-        "side.round(paint, r)",
-    ] {
-        assert!(properties.contains(geometry), "paint layer lost {geometry}");
-    }
-    // The layer spans the cap top to bottom; its left and right come from
-    // `BCapSide::paint`.
-    assert!(tab.contains("BFlex::row().place(BPlace::Overlay)"), "the paint layer covers its cap");
-
-    // The per-side arms live in the cap module, so a right-hand rail mirrors
-    // the left-hand shape instead of repeating it.
-    let cap = renderer("tab/cap.rs");
-    for arm in [
-        "BCapSide::Below => element.rounded_t(r)",
-        "BCapSide::Right => element.rounded_l(r)",
-        "BCapSide::Left => element.rounded_r(r)",
-        "BCapSide::Below => element.self_end()",
-        "BCapSide::Right => element.ml(px(gap))",
-        "BCapSide::Left => element.mr(px(gap))",
-        "BCapSide::Right => element.left(px(inset)).right(px(-overlap))",
-        "BCapSide::Left => element.right(px(inset)).left(px(-overlap))",
-    ] {
-        assert!(cap.contains(arm), "cap geometry lost {arm}");
-    }
-    let state_only = properties
-        .split("paint = if active {")
-        .nth(1)
-        .expect("active/hover paint switch");
-    assert!(state_only.contains("paint.bg(resolved_gradient"));
-    assert!(state_only.contains("paint.group_hover"));
-    for forbidden_layout_change in [".left(", ".right(", ".w(", ".mx(", ".px(", ".border_l("] {
-        assert!(
-            !state_only.contains(forbidden_layout_change),
-            "state branch changes layout with {forbidden_layout_change}"
-        );
-    }
-    assert!(!properties.contains("colors.accent"));
-    // The paint goes under the row, so state paints without moving the icon.
-    assert!(properties.contains(".child(paint)\n        .child(row)"));
-    assert!(!tab.contains(".left(px(ctx.style.properties_tab_overlap()))"));
-    // A Properties tab's rest and hover live on its paint layer, so the cap
-    // itself takes no `chrome::paint` fill — that is what keeps the two from
-    // painting over each other.
-    assert!(tab.contains("if !shape.paints_separately() && !active"));
+    assert!(!tab.contains("fn properties_layers("), "no separate paint layer");
+    assert!(tab.contains("cap_view(ctl, BCapSide::Free, &ctx.floating())"), "a rail entry rests on its tile, docked or floating");
 }
 
 #[test]
@@ -303,7 +245,9 @@ fn every_menu_row_reserves_its_icon_slot_so_labels_share_one_left_edge() {
     // the icon only when it had one, which put one menu's labels on two
     // different left edges.
     let item = renderer("menu.rs");
-    let slot = item.find("let icon = BMenuPart::IconSlot.flex(ctx).div(ctx);").expect("the slot is built unconditionally");
+    // The slot is built for every row; whether it carries a glyph is a
+    // flag on it, not a condition around it.
+    let slot = item.find("let icon = BMenuPart::IconSlot { glyph: !ic.is_empty() }.flex(ctx).div(ctx);").expect("the slot is built unconditionally");
     let branch = item.find("if ic.is_empty() {").expect("the icon is optional, the slot is not");
     assert!(slot < branch, "the slot must exist before the icon decision, not inside it");
     assert!(item.contains(".text_left()"), "labels read from the slot's edge");
@@ -321,15 +265,14 @@ fn the_activity_bar_takes_the_toolbars_treatment() {
     // like a button wherever it is, docked or floating, rather than being a
     // tile on the canvas and a bare glyph in a rail. They still part under
     // the pointer — floating takes the hover shade, docked washes the accent
-    // over its rail at an alpha. The rail renderer hands the activity kind to
-    // the free-button cap rather than the activity part inventing a
-    // treatment.
+    // over its rail at an alpha. The activity bar is no kind of its own any
+    // more: every rail entry, in every rail, goes through the one rail tile.
     let rail = renderer("rail.rs");
-    assert!(rail.contains("if kind == BRailKind::Activity {"));
-    assert!(rail.contains("return tab::rail_button(&ctl, ctx);"));
+    assert!(!rail.contains("BRailKind::Activity {"), "no activity-only branch");
+    assert!(rail.contains("tab::rail(&ctl, ctx)"));
     let tab = renderer("tab/mod.rs");
-    assert!(tab.contains("pub fn rail_button(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {"));
-    assert!(tab.contains("cap_view(ctl, BCapSide::Free, ctx)"));
+    assert!(tab.contains("pub fn rail(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {"));
+    assert!(tab.contains("cap_view(ctl, BCapSide::Free, &ctx.floating())"));
     let semantic = std::fs::read_to_string(
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("src/v2/theme/semantic/set.rs"),
     )

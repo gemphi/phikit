@@ -2,6 +2,7 @@
 //! budget (`level_structure`).
 
 use super::*;
+use crate::phiphx::blend::BNlaTrack;
 
 /// The band the tests measure past — Blender's own number, so these stay
 /// readable while the live view takes its height from the theme.
@@ -136,4 +137,83 @@ fn the_rows_start_below_whatever_band_the_theme_gives_them() {
         assert_eq!(BTimeRow::index_at(band - 1.0, ROW, band), None, "band {band}");
         assert_eq!(BTimeRow::index_at(BTimeRow::center(3, ROW, band), ROW, band), Some(3), "band {band}");
     }
+}
+
+#[test]
+fn an_open_object_lists_its_groups_and_an_open_group_its_curves() {
+    use crate::v2::state::{DopeKey, intern, val::V_TRUE};
+    // `animfilter_act_group`: Blender nests a rig's curves under one group a
+    // bone (and `Object Transforms`), each summarising its curves' keys.
+    let key = |frame: f32| crate::phiphx::blend::BKey::new([frame, 0.0], [frame, 0.0], [frame, 0.0], 2);
+    let grouped = |path: &str, group: Option<&str>, frames: &[f32]| crate::phiphx::blend::BFCurve {
+        group: group.map(str::to_string),
+        ..BFCurve::new(path, 0, frames.iter().map(|&f| key(f)).collect())
+    };
+    let actions = vec![SceneAction {
+        name: "Walk".into(),
+        users: vec!["Rig".into()],
+        curves: vec![
+            grouped("location", Some("Object Transforms"), &[1.0]),
+            grouped(r#"pose.bones["chest"].rotation_euler"#, Some("chest"), &[1.0, 5.0]),
+            grouped(r#"pose.bones["chest"].location"#, Some("chest"), &[9.0]),
+            grouped("hide_viewport", None, &[3.0]),
+        ],
+        ..Default::default()
+    }];
+    let mut state = BState::default();
+    let rows = BTimeRow::channels(&state, "Rig", &actions);
+    let names: Vec<&str> = rows.iter().map(BTimeRow::name).collect();
+    assert_eq!(names, ["Object Transforms", "chest", "Disable in Viewports"], "groups closed, then the ungrouped curve");
+    assert_eq!(rows[1].keys, [1.0, 5.0, 9.0], "a closed group summarises its curves' keys");
+    state.set(DopeKey::Expanded(intern(&BTimeRow::group_key("Rig", "chest"))), V_TRUE);
+    let rows = BTimeRow::channels(&state, "Rig", &actions);
+    assert_eq!(rows.len(), 5, "the open group lists its two curves under it");
+    assert!(matches!(rows[2].kind, BRowKind::Curve { grouped: true, .. }));
+    assert!(matches!(rows[4].kind, BRowKind::Curve { grouped: false, .. }));
+}
+
+/// One action keying a camera object and its camera data through two
+/// slots, the object bound to the first.
+fn camera_action() -> SceneAction {
+    let key = |frame: f32| crate::phiphx::blend::BKey::new([frame, 0.0], [frame, 0.0], [frame, 0.0], 2);
+    let curve = |path: &str, group: &str, frames: &[f32]| crate::phiphx::blend::BFCurve {
+        group: Some(group.to_string()),
+        ..BFCurve::new(path, 0, frames.iter().map(|&f| key(f)).collect())
+    };
+    let slot = |handle: i32, identifier: &str, curves: std::ops::Range<usize>| crate::phiphx::blend::BlendActionSlot { handle, identifier: identifier.into(), curves };
+    SceneAction {
+        name: "CameraAction".into(),
+        users: vec!["Camera".into()],
+        bindings: vec![("Camera".into(), 1)],
+        curves: vec![curve("location", "Object Transforms", &[1.0, 20.0]), curve("lens", "Camera", &[1.0, 40.0])],
+        slots: vec![slot(1, "OBCamera", 0..1), slot(2, "CACamera", 1..2)],
+        ..Default::default()
+    }
+}
+
+#[test]
+fn the_action_editor_lists_each_slot_of_the_active_action_over_its_groups() {
+    use crate::v2::state::{CtxKey, DopeKey, intern, val::V_FALSE};
+    let model = crate::phiphx::scene::SceneModel { actions: vec![camera_action()], ..Default::default() };
+    crate::v2::scene::source::set_loaded_scene(Some(model));
+    let mut s = BState::default();
+    s.set(CtxKey::Object, "Camera");
+    s.set(&crate::v2::part::modebar::set::mode_key(BHostType::Action), crate::v2::part::action::template::ACTION_EDITOR);
+    let axis = super::super::curve::BAxisColors { x: [1.0; 3], y: [1.0; 3], z: [1.0; 3], w: [1.0; 3], other: [1.0; 3] };
+    let rows = BTimeRow::list(&s, BHostType::Action, axis);
+    let names: Vec<&str> = rows.iter().map(BTimeRow::name).collect();
+    assert_eq!(names, ["Summary", "Camera", "Object Transforms", "Camera", "Camera"], "each slot open over its group");
+    assert!(matches!(&rows[1].kind, BRowKind::Slot { identifier, object, .. } if identifier == "OBCamera" && object == "Camera"));
+    assert!(matches!(&rows[3].kind, BRowKind::Slot { identifier, .. } if identifier == "CACamera"));
+    assert_eq!(rows[1].keys, [1.0, 20.0], "a slot carries its own curves' keys");
+    assert_eq!(rows[3].keys, [1.0, 40.0]);
+    assert_eq!(rows[0].keys, [1.0, 20.0, 40.0], "the summary, every slot's");
+    // Shut, a slot keeps its row and drops its groups.
+    s.set(DopeKey::Expanded(intern(&BTimeRow::slot_key("CameraAction", "CACamera"))), V_FALSE);
+    assert_eq!(BTimeRow::list(&s, BHostType::Action, axis).len(), 4);
+    // The Dope Sheet lists the object, whose curves are its own slot's only.
+    s.set(&crate::v2::part::modebar::set::mode_key(BHostType::Action), "Dope Sheet");
+    let curves: Vec<String> = BTimeRow::curves("Camera", &[camera_action()]).iter().map(|r| r.name().to_string()).collect();
+    assert_eq!(curves, ["X Location"], "not the camera data's lens");
+    crate::v2::scene::source::set_loaded_scene(None);
 }

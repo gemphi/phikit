@@ -7,6 +7,7 @@ pub mod assetshelf;
 pub mod caption;
 pub mod channels;
 pub mod custom;
+pub mod display;
 pub mod action;
 pub mod buts;
 pub mod clip;
@@ -14,6 +15,9 @@ pub mod file;
 pub mod image;
 pub mod node;
 pub mod outliner;
+pub mod play;
+pub mod project;
+pub mod areatabs;
 pub mod pref;
 pub mod seq;
 pub mod spreadsheet;
@@ -134,6 +138,16 @@ pub enum BPartType {
     Activity,
     CaptionLead,
     CaptionTrail,
+    /// The bottom area's editor tabs (`areatabs`), Reality Composer Pro's.
+    AreaTabs,
+    /// The Project Browser's navigator, its cards' toolbar and its
+    /// inspector (`project`).
+    ProjectNav,
+    ProjectBar,
+    ProjectInfo,
+    /// The file browser's details column: the picked file's name, place,
+    /// size, date and preview (`file::info`).
+    FileInfo,
     Custom,
 }
 
@@ -182,6 +196,11 @@ impl BPartType {
         Self::Activity,
         Self::CaptionLead,
         Self::CaptionTrail,
+        Self::AreaTabs,
+        Self::ProjectNav,
+        Self::ProjectBar,
+        Self::ProjectInfo,
+        Self::FileInfo,
         Self::Custom,
     ];
 }
@@ -225,6 +244,11 @@ impl BPartType {
             BPartType::Activity => "Activity",
             BPartType::CaptionLead | BPartType::CaptionTrail => "Window Controls",
             BPartType::StatusLog => "Action Log",
+            BPartType::AreaTabs => "Editor Tabs",
+            BPartType::ProjectNav => "Project Navigator",
+            BPartType::ProjectBar => "Project Toolbar",
+            BPartType::ProjectInfo => "Project Inspector",
+            BPartType::FileInfo => "File Details",
             BPartType::Custom => "Custom",
         }
     }
@@ -338,6 +362,11 @@ impl BPartItem {
             BPartType::CaptionTrail => BCaption { host: h, side: BCaptionSide::Trail }.build(s),
             BPartType::StatusLog => crate::v2::part::statuslog::BStatusLog::new(h).build(s),
             BPartType::Custom => BCustomItem::new(h).build(s),
+            BPartType::AreaTabs => crate::v2::part::areatabs::BAreaTabs::new(h).build(s),
+            BPartType::ProjectNav => crate::v2::part::project::BProjectNav.build(s),
+            BPartType::ProjectBar => crate::v2::part::project::BProjectBar.build(s),
+            BPartType::ProjectInfo => crate::v2::part::project::BProjectInfo.build(s),
+            BPartType::FileInfo => crate::v2::part::file::info::BFileInfo.build(s),
             BPartType::Playback => crate::v2::part::playback::BPlayback::new(h).build(s),
             BPartType::FrameRange => crate::v2::part::framerange::BFrameRange::new(h).build(s),
             BPartType::ImageBlock => crate::v2::part::image::header::BImageBlock::new(h).build(s),

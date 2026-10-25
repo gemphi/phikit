@@ -59,21 +59,6 @@ const NO_PANELS_YET: &[(BHostType, &str)] = &[
     (BHostType::Shader, "Options"),
     (BHostType::Node, "Options"),
     (BHostType::GeoNode, "Attributes"),
-    (BHostType::Seq, "Strip"),
-    (BHostType::Seq, "Modifiers"),
-    (BHostType::Seq, "Preview"),
-    (BHostType::Clip, "Track"),
-    (BHostType::Clip, "Solve"),
-    (BHostType::Nla, "Edited Action"),
-    (BHostType::Nla, "Item"),
-    (BHostType::Ipo, "View"),
-    (BHostType::Ipo, "F-Curve"),
-    (BHostType::Ipo, "Modifiers"),
-    (BHostType::Ipo, "Drivers"),
-    (BHostType::Drivers, "View"),
-    (BHostType::Drivers, "F-Curve"),
-    (BHostType::Drivers, "Modifiers"),
-    (BHostType::Drivers, "Drivers"),
 ];
 
 #[test]

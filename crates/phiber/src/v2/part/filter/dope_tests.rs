@@ -65,7 +65,19 @@ fn opening_filter_by_type_brings_every_box_back() {
     state.set(&super::super::fold::expand_key(&SCOPE, "Filters"), V_TRUE);
     let cards = body(&state, false);
     let BView::Card(filters) = &cards[3] else { panic!("a card") };
-    assert_eq!(filters.body.len(), TYPES.len(), "shut hides them, it does not drop them");
+    assert_eq!(filters.body.len(), KINDS.len(), "the boxes come back in their kinds");
+    assert!(filters.body.iter().all(|v| matches!(v, BView::Card(_))), "each kind a folding sub-group");
+}
+
+#[test]
+fn every_type_box_is_in_one_kind_and_no_kind_runs_past_eight() {
+    for spec in &TYPES {
+        let homes = KINDS.iter().filter(|(_, keys)| keys.contains(&spec.key)).count();
+        assert_eq!(homes, 1, "{} is in {homes} kinds", spec.key);
+    }
+    for (name, keys) in &KINDS {
+        assert!(keys.len() <= super::super::fold::MOST, "{name} has {} boxes", keys.len());
+    }
 }
 
 #[test]

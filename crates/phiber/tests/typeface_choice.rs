@@ -1,6 +1,7 @@
-//! The typeface is a Preferences choice — *Typography ▸ Family*, eight
-//! faces: the system's, two Mac faces, Inter, and VS Code's four code faces
-//! — resolved like every other style value and applied once at the root.
+//! The typeface is a Preferences choice — *Typography ▸ Family*, nine
+//! faces: Phi-Soft (the platform's own, bundled, and the default), the
+//! system's, two Mac faces, Inter, and VS Code's four code faces — resolved
+//! like every other style value and applied once at the root.
 
 use phiber::v2::{
     state::{BState, key::ui_style as key},
@@ -8,10 +9,10 @@ use phiber::v2::{
 };
 
 #[test]
-fn eight_faces_each_with_a_name_a_stack_behind_it_and_a_slug_that_round_trips() {
-    assert_eq!(BFontFamily::ALL.len(), 8);
+fn nine_faces_each_with_a_name_a_stack_behind_it_and_a_slug_that_round_trips() {
+    assert_eq!(BFontFamily::ALL.len(), 9);
     let code: Vec<_> = BFontFamily::ALL.iter().filter(|family| family.monospace()).collect();
-    assert_eq!(code.len(), 4, "four text faces, four code faces");
+    assert_eq!(code.len(), 4, "five text faces, four code faces");
     for family in BFontFamily::ALL {
         assert!(!family.family().is_empty() && !family.label().is_empty());
         assert!(!family.fallbacks().is_empty(), "{family:?} has a stack to fall back down");
@@ -24,7 +25,7 @@ fn eight_faces_each_with_a_name_a_stack_behind_it_and_a_slug_that_round_trips() 
             "{family:?} ends on the generic {generic}"
         );
     }
-    assert_eq!(BFontFamily::DEFAULT, BFontFamily::System);
+    assert_eq!(BFontFamily::DEFAULT, BFontFamily::PhiSoft, "the platform's own face, which ships in the app");
     assert_eq!(BFontFamily::from_slug("comic_sans"), None);
 }
 
@@ -41,13 +42,13 @@ fn the_family_is_a_typography_choice_that_resolves_from_state() {
 
     let defaults = ui_style_defaults(BPaletteName::Sphere);
     let mut state = BState::new();
-    assert_eq!(resolve_ui_style(defaults, &state).typography.family, BFontFamily::System, "the system face until chosen");
+    assert_eq!(resolve_ui_style(defaults, &state).typography.family, BFontFamily::PhiSoft, "Phi-Soft until another is chosen");
     state.set(&key::TYPOGRAPHY_FAMILY, "menlo");
     assert_eq!(resolve_ui_style(defaults, &state).typography.family, BFontFamily::Menlo);
     state.set(&key::TYPOGRAPHY_FAMILY, "papyrus");
-    assert_eq!(resolve_ui_style(defaults, &state).typography.family, BFontFamily::System, "an unknown face is ignored");
+    assert_eq!(resolve_ui_style(defaults, &state).typography.family, BFontFamily::PhiSoft, "an unknown face is ignored");
     for palette in BPaletteName::ALL.iter().copied() {
-        assert_eq!(ui_style_defaults(palette).typography.family, BFontFamily::System, "{palette:?}: every theme starts on the system face");
+        assert_eq!(ui_style_defaults(palette).typography.family, BFontFamily::PhiSoft, "{palette:?}: every theme starts on Phi-Soft");
     }
 }
 

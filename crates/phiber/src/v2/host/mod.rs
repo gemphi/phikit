@@ -25,6 +25,8 @@ pub mod logic;
 pub mod nla;
 pub mod node;
 pub mod outliner;
+pub mod play;
+pub mod project;
 pub mod pref;
 pub mod seq;
 pub mod shader;
@@ -76,6 +78,10 @@ pub enum BHostType {
     Spreadsheet,
     Ipo,
     Prefs,
+    // The game picker (`phiplay`), beside the Timeline.
+    Play,
+    // Reality Composer Pro's browser over the scene's assets.
+    Project,
     // Phiber-native global navigation rail (lives in a Left zone).
     Activity,
     Empty,
@@ -110,6 +116,8 @@ impl BHostType {
         Self::Spreadsheet,
         Self::Ipo,
         Self::Prefs,
+        Self::Play,
+        Self::Project,
         Self::Activity,
         Self::Empty,
     ];
@@ -128,6 +136,8 @@ impl BHostType {
         Self::Action,
         Self::Nla,
         Self::Time,
+        Self::Play,
+        Self::Project,
         Self::Node,
         Self::Logic,
         Self::Console,
@@ -176,6 +186,12 @@ impl BHostType {
         matches!(self, Self::Statusbar | Self::Topbar)
     }
 
+    /// A browser — Play's cards, the Project Browser — that wants the
+    /// bottom panel opened up to Reality Composer Pro's height.
+    pub const fn browses(self) -> bool {
+        matches!(self, Self::Play | Self::Project)
+    }
+
     pub const fn fills_content(self) -> bool {
         matches!(
             self,
@@ -193,6 +209,9 @@ impl BHostType {
                 | Self::Ipo
                 | Self::Drivers
                 | Self::Time
+                // The Project Browser's cards fill the room between its
+                // navigator and its inspector, as the canvases do.
+                | Self::Project
         )
     }
 
@@ -210,13 +229,21 @@ impl BHostType {
     /// Hosts whose Tools region is a column of panels (the file browser's
     /// source list, the asset browser's libraries) rather than an icon rail.
     pub const fn tools_hold_panels(self) -> bool {
+        matches!(self, Self::File | Self::Asset | Self::Project)
+    }
+
+    /// Hosts whose header and tool header are laid out as the columns under
+    /// them — the source list, the file list, the details — as Explorer's
+    /// address bar is: the menus over the source list, the path over the
+    /// files, the search over the details (`host/file`).
+    pub const fn heads_its_columns(self) -> bool {
         matches!(self, Self::File | Self::Asset)
     }
 
-    /// Hosts whose search field sits in their tool header (the file
-    /// browser's path strip), not in the header's middle.
-    pub const fn searches_in_tool_header(self) -> bool {
-        matches!(self, Self::File | Self::Asset)
+    /// Hosts with a details column at the right (`RGN_TYPE_UI` holding the
+    /// picked item's card): the strips over it end in a pane its width.
+    pub const fn has_details_column(self) -> bool {
+        matches!(self, Self::File | Self::Project)
     }
 
     /// Hosts that keep their own header when raised in a dialog: the file
@@ -345,10 +372,14 @@ impl BHostItem {
 
 impl BViewItem for BHostItem {
     fn build(&self, state: &BState) -> BView {
-        BView::Host {
-            kind: self.host,
-            list: BRegionList::new(self.host).items(state),
+        let mut list = BRegionList::new(self.host).items(state);
+        // A bottom area's editors as Reality Composer Pro's tabs, a strip
+        // over the editor's own header.
+        if crate::v2::part::areatabs::BAreaTabs::shown() {
+            let tabs = crate::v2::part::BPartItem::new(self.host, crate::v2::part::BPartType::AreaTabs).build(state);
+            list.insert(0, BView::Region { kind: crate::v2::region::BRegionType::Tabs, list: vec![BView::Pane { kind: crate::v2::pane::BPaneType::Center, list: vec![tabs] }] });
         }
+        BView::Host { kind: self.host, list }
     }
 }
 

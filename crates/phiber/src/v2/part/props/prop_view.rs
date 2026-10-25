@@ -81,9 +81,13 @@ fn value(spec: &BPropSpec, s: &BState) -> BView {
         BPropKind::Vec4 { .. } => &["r", "g", "b", "a"],
         _ => return BView::ctrl(control(spec, spec.value_key(), s)),
     };
-    BView::row(
+    // Blender's `uiItemR` on a vector: one field per axis, stacked, each
+    // naming its axis inside the field ("X  0 m"). Side by side they were
+    // three fields in half a panel's width, and a narrow panel (the N panel)
+    // clipped them to the first — Location showed one number.
+    BView::column(
         axes.iter()
-            .map(|axis| BView::ctrl(control(spec, ButsKey::Axis(spec.key, axis).path(), s)))
+            .map(|axis| BView::ctrl(control(spec, ButsKey::Axis(spec.key, axis).path(), s).with_label(axis.to_uppercase())))
             .collect(),
     )
 }

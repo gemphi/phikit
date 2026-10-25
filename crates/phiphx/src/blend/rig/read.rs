@@ -81,6 +81,47 @@ impl<'a> BFields<'a> {
     }
 }
 
+
+impl BlendFile {
+    /// The armature's bones by name: `bArmature.bonebase` walked with every
+    /// bone's `childbase`. Blender 5.2 stopped writing `bPoseChannel.*bone`
+    /// to the file — the link is rebuilt by name on load
+    /// (`BKE_pose_rebuild`) — so a channel whose saved pointer is absent or
+    /// dangling finds its bone here.
+    pub(crate) fn bones_by_name(&self, arm_ob: &BlendBlock, dna: &DnaType) -> HashMap<String, &BlendBlock> {
+        let mut out = HashMap::new();
+        let Some(data) = self.block_at(self.ptr(arm_ob, self.off("Object", "*data", dna))) else { return out };
+        let first = self.ptr(data, self.off("bArmature", "bonebase", dna));
+        let (Some(name_o), child_o, next_o) = (
+            self.off("Bone", "name[64]", dna),
+            self.off("Bone", "childbase", dna),
+            self.off("Bone", "*next", dna),
+        ) else {
+            return out;
+        };
+        let mut stack = vec![first];
+        while let Some(mut addr) = stack.pop() {
+            while addr != 0 {
+                let Some(bone) = self.block_at(addr) else { break };
+                out.insert(name64(&bone.data, name_o), bone);
+                stack.push(self.ptr(bone, child_o));
+                addr = self.ptr(bone, next_o);
+            }
+        }
+        out
+    }
+
+    /// A pose channel's `Bone`: the saved pointer where the file still has
+    /// one, else the armature's bone of the channel's name.
+    pub(crate) fn pchan_bone<'a>(&'a self, pc: &BlendBlock, dna: &DnaType, bones: &HashMap<String, &'a BlendBlock>) -> Option<&'a BlendBlock> {
+        let saved = self.off("bPoseChannel", "*bone", dna).and_then(|o| self.block_at(Self::read_ptr(&pc.data, o, self.header.pointer_size as usize, self.header.little_endian)));
+        saved.or_else(|| {
+            let name_o = self.off("bPoseChannel", "name[64]", dna)?;
+            bones.get(&name64(&pc.data, name_o)).copied()
+        })
+    }
+}
+
 /// `BONE_NO_SCALE` (before `inherit_scale_mode`): read as
 /// `BONE_INHERIT_SCALE_NONE_LEGACY`, as Blender's versioning does.
 const BONE_NO_SCALE: u32 = 1 << 15;
@@ -97,7 +138,8 @@ impl BlendFile {
             let by_name: HashMap<String, usize> = chans.iter().enumerate().map(|(i, pc)| (BFields::new(self, dna, pc, "bPoseChannel").name("name[64]"), i)).collect();
             let by_address: HashMap<u64, usize> = chans.iter().enumerate().map(|(i, pc)| (pc.old_address, i)).collect();
             let names = BTargetNames { object: ob.old_address, bones: &by_name };
-            let bones = chans.iter().map(|pc| self.rig_bone(pc, dna, &by_address, &names)).collect();
+            let rest = self.bones_by_name(ob, dna);
+            let bones = chans.iter().map(|pc| self.rig_bone(pc, dna, &by_address, &names, &rest)).collect();
             let drivers = self.rig_drivers(ob, dna);
             let mut rig = BRig { object: ob.old_address, bones, by_name, drivers };
             rig.resolve_drivers();
@@ -105,9 +147,9 @@ impl BlendFile {
         })
     }
 
-    fn rig_bone(&self, pc: &BlendBlock, dna: &DnaType, by_address: &HashMap<u64, usize>, names: &BTargetNames) -> BRigBone {
+    fn rig_bone(&self, pc: &BlendBlock, dna: &DnaType, by_address: &HashMap<u64, usize>, names: &BTargetNames, rest: &HashMap<String, &BlendBlock>) -> BRigBone {
         let c = BFields::new(self, dna, pc, "bPoseChannel");
-        let bone = self.block_at(c.ptr("*bone"));
+        let bone = self.pchan_bone(pc, dna, rest);
         let b = bone.map(|b| BFields::new(self, dna, b, "Bone"));
         let flag = b.as_ref().map_or(0, |b| b.int("flag"));
         let inherit_scale = match &b {

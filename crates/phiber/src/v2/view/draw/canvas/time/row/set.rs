@@ -15,6 +15,14 @@ const ICON_SIZE: f32 = super::super::WIDGET_UNIT * 0.5;
 const ICON_WIDTH: f32 = 0.85 * super::super::WIDGET_UNIT;
 const CURVE_OFFSET: f32 = 0.7 * super::super::WIDGET_UNIT;
 const NAME_PAD: f32 = 3.0;
+/// A group sits one `acf_generic_group_offset` step in from its object, and
+/// a curve in a group one step further than an ungrouped one.
+pub(in crate::v2::view::draw::canvas::time) const GROUP_OFFSET: f32 = CURVE_OFFSET;
+
+/// How much further in a curve row starts: one step under a group.
+fn curve_step(kind: &BRowKind) -> f32 {
+    if matches!(kind, BRowKind::Curve { grouped: true, .. }) { CURVE_OFFSET } else { 0.0 }
+}
 
 /// The backdrops, then the diamonds, of every Dope Sheet row, in the
 /// window `at` (`x_of` maps a frame to a pixel across it); a picked column
@@ -27,7 +35,8 @@ pub fn paint_rows(rows: &[BTimeRow], colors: &BAnimColors, at: Bounds<Pixels>, x
         let back = match &row.kind {
             BRowKind::Summary { expanded: true } => Some(colors.summary_back),
             BRowKind::Summary { expanded: false } => None,
-            BRowKind::Object { .. } => Some(colors.object_back),
+            BRowKind::Object { .. } | BRowKind::Slot { .. } => Some(colors.object_back),
+            BRowKind::Group { .. } => Some(colors.group_back),
             BRowKind::Curve { .. } => Some(colors.curve_back),
             BRowKind::Action { .. } | BRowKind::Track(_) | BRowKind::Driver { .. } => None,
         };
@@ -100,6 +109,8 @@ pub fn paint_channels(rows: &[BTimeRow], row_height: f32, scrub: f32, colors: &B
             BRowKind::Action { name, tweaking } => Some(super::super::strip::set::action_color(name.is_some(), *tweaking, colors)),
             BRowKind::Track(_) => Some(colors.track_back),
             BRowKind::Driver { .. } | BRowKind::Curve { .. } => Some(colors.curve_back),
+            BRowKind::Group { .. } => Some(colors.group_back),
+            BRowKind::Slot { .. } => Some(colors.object_back),
             BRowKind::Summary { .. } | BRowKind::Object { .. } => None,
         };
         if let Some(back) = back {
@@ -109,14 +120,17 @@ pub fn paint_channels(rows: &[BTimeRow], row_height: f32, scrub: f32, colors: &B
         // swatch, then its visibility toggle's width, before the name.
         if let BRowKind::Driver { color, .. } | BRowKind::Curve { color, .. } = &row.kind {
             let swatch = gpui::Rgba { r: color[0], g: color[1], b: color[2], a: 1.0 };
-            window.paint_quad(fill(rect(CURVE_OFFSET, top, CURVE_OFFSET + ICON_WIDTH, top + row_height, at), swatch));
+            let x = CURVE_OFFSET + curve_step(&row.kind);
+            window.paint_quad(fill(rect(x, top, x + ICON_WIDTH, top + row_height, at), swatch));
         }
         // `ANIM_channel_draw` step 2: a channel that CAN expand reserves
         // `ICON_WIDTH` for its widget; one that cannot, and is not an F-curve,
         // pads `0.2 × widget_unit` instead; an F-curve gets neither, because
         // "F-Curves are not containers" (`acf_fcurve_setting_valid`).
-        if let BRowKind::Object { expanded, .. } = &row.kind {
-            expander(*expanded, indent, BTimeRow::center(index, row_height, scrub), colors, at, window);
+        match &row.kind {
+            BRowKind::Object { expanded, .. } | BRowKind::Slot { expanded, .. } => expander(*expanded, indent, BTimeRow::center(index, row_height, scrub), colors, at, window),
+            BRowKind::Group { expanded, .. } => expander(*expanded, GROUP_OFFSET, BTimeRow::center(index, row_height, scrub), colors, at, window),
+            _ => {}
         }
         let ink = match &row.kind {
             BRowKind::Track(track) if track.flag & crate::phiphx::blend::TRACK_SELECTED != 0 => colors.strip_select,
@@ -124,16 +138,43 @@ pub fn paint_channels(rows: &[BTimeRow], row_height: f32, scrub: f32, colors: &B
         };
         let line = shape(row.name(), ink, window);
         let x = match row.kind {
-            BRowKind::Summary { .. } | BRowKind::Object { .. } if row_height > ROW_HEIGHT => indent,
             BRowKind::Summary { .. } => indent,
-            // Past the expander widget this row reserves, then its gap.
-            BRowKind::Object { .. } => indent + ICON_WIDTH + NAME_PAD,
+            // Past the expander widget this row reserves, then its gap — in
+            // the NLA's taller rows too, where the triangle is drawn as well.
+            BRowKind::Object { .. } | BRowKind::Slot { .. } => indent + ICON_WIDTH + NAME_PAD,
             BRowKind::Action { .. } | BRowKind::Track(_) => indent * 2.0,
             // `acf_generic_group_offset`: a curve under an ID sits one step in
             // from the channel it belongs to, past its swatch and toggle.
-            BRowKind::Driver { .. } | BRowKind::Curve { .. } => CURVE_OFFSET + ICON_WIDTH * 2.0 + NAME_PAD,
+            BRowKind::Driver { .. } | BRowKind::Curve { .. } => CURVE_OFFSET + curve_step(&row.kind) + ICON_WIDTH * 2.0 + NAME_PAD,
+            BRowKind::Group { .. } => GROUP_OFFSET + ICON_WIDTH + NAME_PAD,
         };
         text_at(&line, x, BTimeRow::center(index, row_height, scrub), at, window, cx);
+        // A slot's ID type at the channel's right edge, where Blender draws
+        // its icon (what tells a camera's slot from its data's).
+        if let BRowKind::Slot { identifier, .. } = &row.kind {
+            let kind = shape(id_type(identifier.get(..2).unwrap_or("")), colors.muted, window);
+            let right = CHANNEL_WIDTH - f32::from(kind.width) - indent;
+            text_at(&kind, right, BTimeRow::center(index, row_height, scrub), at, window, cx);
+        }
+    }
+}
+
+/// The ID type an action slot's identifier leads with (`ID_OB`, `ID_CA`, …)
+/// as a word.
+fn id_type(code: &str) -> &'static str {
+    match code {
+        "OB" => "Object",
+        "CA" => "Camera",
+        "LA" => "Light",
+        "ME" => "Mesh",
+        "MA" => "Material",
+        "WO" => "World",
+        "SC" => "Scene",
+        "AR" => "Armature",
+        "KE" => "Shape Keys",
+        "NT" => "Node Tree",
+        "CU" => "Curve",
+        _ => "",
     }
 }
 

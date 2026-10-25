@@ -117,11 +117,12 @@ fn a_field_is_a_control_not_a_row() {
 
 #[test]
 fn a_row_is_a_control_plus_the_room_around_it() {
-    use phiber::v2::theme::style::metric::{BUTTON_HEIGHT, HEAD_ROOM};
+    use phiber::v2::theme::style::metric::{BUTTON_HEIGHT, CONTROL_CLEAR};
     for name in BPaletteName::ALL.iter().copied() {
         for mode in BThemeMode::ALL {
             let d = ui_style_defaults_in(name, mode).dimensions;
-            assert_eq!(d.row_height, BUTTON_HEIGHT + HEAD_ROOM, "{name:?}/{mode:?}: a row is its control plus room");
+            // A control clears its row by `CONTROL_CLEAR` above and below.
+            assert_eq!(d.row_height, BUTTON_HEIGHT + 2.0 * CONTROL_CLEAR, "{name:?}/{mode:?}: a row is its control plus room");
             assert_eq!(d.button_height, BUTTON_HEIGHT, "{name:?}/{mode:?}: and a control is a control");
             assert!(d.row_height > d.button_height, "{name:?}/{mode:?}: the room is real");
         }

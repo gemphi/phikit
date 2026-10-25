@@ -7,10 +7,6 @@ use crate::v2::state::BPath;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum ScreenKey {
-    /// `File ▸ External Data ▸ Automatically Pack Resources`.
-    Autopack,
-    /// `Edit ▸ Lock Object Modes`.
-    LockObjectModes,
     /// `Render ▸ Lock Interface`.
     LockInterface,
     /// `Preferences ▸ Auto-Save Preferences`.
@@ -20,8 +16,6 @@ pub enum ScreenKey {
 impl BKey for ScreenKey {
     fn path(&self) -> BPath {
         let tail: &'static str = match self {
-            Self::Autopack => "autopack",
-            Self::LockObjectModes => "lock_object_modes",
             Self::LockInterface => "lock_interface",
             Self::AutoSavePrefs => "auto_save_prefs",
         };

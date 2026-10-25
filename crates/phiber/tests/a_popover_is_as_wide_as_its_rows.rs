@@ -49,39 +49,33 @@ async fn the_panel_grows_to_its_widest_row(cx: &mut TestAppContext) {
         ),
         &BState::new(),
     );
-    let floor = style.dimensions.panel_width;
     let width = f32::from(panel.size.width);
-    assert!(
-        width > floor,
-        "the panel takes what its rows need ({width}), not the minimum it may be ({floor})"
-    );
 
-    // And the widest row's value column really can hold its label. Measured
-    // against a conservative lower bound for the text — no proportional UI
-    // face averages under 0.45 em per character — plus the tick beside it,
-    // because the shaper's own extents are not in the painted scene.
+    // Every switch row is the panel's width, its label from the left edge
+    // and its switch at the right (`BView::check_row`): so the row, not a
+    // value column 60% of it, has to hold the longest label and the track.
+    // Measured against a conservative lower bound for the text — no
+    // proportional UI face averages under 0.45 em per character.
     let longest = "Limit to Frame Range";
-    let needed = longest.len() as f32 * 0.45 * style.typography.body + style.dimensions.icon_size_sm;
-    // Only this popover's own rows: `section-*` is every split row in the
-    // window, and a popover floats over the rest of them.
+    let needed = longest.len() as f32 * 0.45 * style.typography.body + 34.0;
+    assert!(width > needed, "the panel takes what its rows need ({width} for {needed:.0})");
     let inside = |b: &gpui::Bounds<gpui::Pixels>| {
         f32::from(b.origin.x) >= f32::from(panel.origin.x) - 0.5
             && f32::from(b.origin.x) + f32::from(b.size.width) <= f32::from(panel.origin.x + panel.size.width) + 0.5
             && f32::from(b.origin.y) >= f32::from(panel.origin.y) - 0.5
             && f32::from(b.origin.y) + f32::from(b.size.height) <= f32::from(panel.origin.y + panel.size.height) + 0.5
     };
-    let columns: Vec<(&str, f32)> = bounds
+    let rows: Vec<(&str, f32)> = bounds
         .iter()
-        .filter(|(s, b)| s.ends_with("-value") && s.starts_with("section-") && inside(b))
+        .filter(|(s, b)| s.starts_with("switch-") && inside(b))
         .map(|(s, b)| (s.as_str(), f32::from(b.size.width)))
         .collect();
-    // Sync, Audio, Playback, Loop, Play In, Show, and the unheaded one.
-    assert_eq!(columns.len(), 7, "the Playback popover's heading rows: {columns:?}");
-    let narrow: Vec<&(&str, f32)> = columns.iter().filter(|(_, w)| *w < needed).collect();
-    assert!(
-        narrow.is_empty(),
-        "a value column narrower than {needed:.0}, which is what \"{longest}\" needs: {narrow:?}"
-    );
+    assert!(rows.len() > 7, "the Playback popover's switches: {rows:?}");
+    let narrow: Vec<&(&str, f32)> = rows.iter().filter(|(_, w)| *w < needed).collect();
+    assert!(narrow.is_empty(), "a switch row narrower than {needed:.0}, which is what \"{longest}\" needs: {narrow:?}");
+    // And they are one width: a column of switches lines up.
+    let first = rows[0].1;
+    assert!(rows.iter().all(|(_, w)| (w - first).abs() < 0.51), "the switch rows are one width: {rows:?}");
 }
 
 #[gpui::test]

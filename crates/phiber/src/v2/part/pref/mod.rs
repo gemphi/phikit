@@ -104,7 +104,7 @@ fn palette_card(state: &BState) -> BView {
     if !open {
         return BCard::panel("Theme").preset(switch).fold(key, false).into();
     }
-    let rows = BPaletteName::ALL.iter().map(|palette| {
+    let row = |palette: &BPaletteName| {
         BView::split(vec![
             BView::label(palette.label()),
             BView::Button(
@@ -115,9 +115,36 @@ fn palette_card(state: &BState) -> BView {
                     .with_action(BAction::Set(AppKey::Theme.path(), palette.slug().to_string())),
             ),
         ])
-    });
-    BCard::panel("Theme").preset(switch).fold(key, true).body(rows.collect()).into()
+    };
+    // Sixteen themes are two groups of eight, never one list of sixteen
+    // (`MAX_CHILDREN`); the group holding the theme in force opens.
+    let groups = THEME_GROUPS
+        .iter()
+        .map(|(group, palettes)| {
+            let sub = BPanelItem::expand_key(BHostType::Prefs, "Appearance", &format!("Theme {group}"));
+            let open = match state.get(&sub) {
+                Some(v) => v != V_FALSE,
+                None => palettes.contains(&active),
+            };
+            let card = BCard::panel(*group).sub().fold(sub, open);
+            if open { card.body(palettes.iter().map(row).collect()).into() } else { card.into() }
+        })
+        .collect();
+    BCard::panel("Theme").preset(switch).fold(key, true).body(groups).into()
 }
+
+/// The themes in Preferences, in two groups of at most eight: Phiber's own
+/// studio themes, and the signature looks.
+pub const THEME_GROUPS: &[(&str, &[BPaletteName])] = &[
+    ("Studio", &[
+        BPaletteName::Phiber, BPaletteName::Sphere, BPaletteName::Graphite, BPaletteName::Tokyo,
+        BPaletteName::Silver, BPaletteName::Onyx, BPaletteName::Grey, BPaletteName::Apple,
+    ]),
+    ("Signature", &[
+        BPaletteName::Moss, BPaletteName::Ember, BPaletteName::Plum, BPaletteName::Swift,
+        BPaletteName::Barbie, BPaletteName::Fenty, BPaletteName::Cyberpunk, BPaletteName::Chanel,
+    ]),
+];
 
 /// The dimensional coat — a *Dimension* section beside Theme, folding the
 /// same way. One switch over the whole window: `Auto` keeps each theme's own
@@ -181,13 +208,33 @@ fn section_view(
     if !open {
         return BCard::panel(section.title()).fold(key, false).into();
     }
-    let rows = section.rows().map(|row| {
+    let row_view = |row: crate::v2::part::props::pref::BPreferenceRow| {
         BView::split(vec![
                 BView::label(row.metadata().label),
                 BPreferenceControls::for_row(row, state, defaults).view(state),
             ],)
-    });
-    BCard::panel(section.title()).fold(key, true).body(rows.collect()).into()
+    };
+    // A long section folds into named groups, each a nested accordion of at
+    // most eight rows (`BPreferenceSection::groups`).
+    let Some(groups) = section.groups() else {
+        return BCard::panel(section.title()).fold(key, true).body(section.rows().map(row_view).collect()).into();
+    };
+    let body = groups
+        .into_iter()
+        .enumerate()
+        .map(|(n, (group, rows))| {
+            let sub = BPanelItem::expand_key(BHostType::Prefs, category, &format!("{} {group}", section.title()));
+            // The first group opens; the rest wait folded, so a long section
+            // shows one group's rows at a time until asked for more.
+            let open = match state.get(&sub) {
+                Some(v) => v != V_FALSE,
+                None => n == 0,
+            };
+            let card = BCard::panel(group).sub().fold(sub, open);
+            if open { card.body(rows.into_iter().map(row_view).collect()).into() } else { card.into() }
+        })
+        .collect();
+    BCard::panel(section.title()).fold(key, true).body(body).into()
 }
 
 #[cfg(test)]
@@ -213,16 +260,17 @@ mod tests {
             .unwrap_or_else(|| panic!("missing preference section {title}"))
     }
 
+    /// A row by its label, looked for through the section's groups too.
+    fn find_row<'a>(card: &'a [BView], label: &str) -> Option<&'a [BView]> {
+        card.iter().find_map(|row| match row {
+            BView::Split { list } => matches!(&list[0], BView::Label { text } if text == label).then_some(&list[..]),
+            BView::Card(sub) => find_row(&sub.body, label),
+            _ => None,
+        })
+    }
+
     fn row_for<'a>(card: &'a [BView], label: &str) -> &'a [BView] {
-        card.iter()
-            .find_map(|row| {
-                let BView::Split { list } = row else {
-                    return None;
-                };
-                matches!(&list[0], BView::Label { text } if text == label)
-                    .then_some(&list[..])
-            })
-            .unwrap_or_else(|| panic!("missing preference row {label}"))
+        find_row(card, label).unwrap_or_else(|| panic!("missing preference row {label}"))
     }
 
     /// A state showing one settings category, the way the nav bar leaves it.
@@ -236,6 +284,15 @@ mod tests {
             ]),
             category,
         );
+        // Every group of a long section open, so a test can reach any row.
+        for (group, _) in THEME_GROUPS {
+            state.set(&BPanelItem::expand_key(BHostType::Prefs, "Appearance", &format!("Theme {group}")), "true");
+        }
+        for c in CATEGORIES {
+            for (section, group, _) in crate::v2::part::props::pref::set::GROUPS {
+                state.set(&BPanelItem::expand_key(BHostType::Prefs, c.label, &format!("{section} {group}")), "true");
+            }
+        }
         state
     }
 
@@ -275,9 +332,11 @@ mod tests {
                 category.label
             );
             for section in SECTIONS.iter().filter(|s| category.sections.contains(&s.title())) {
+                // A long section lists its groups, each at most eight rows;
+                // a short one its rows.
                 assert_eq!(
                     section_card(&view, section.title()).len(),
-                    section.len()
+                    section.groups().map(|g| g.len()).unwrap_or(section.len())
                 );
             }
         }
@@ -294,10 +353,23 @@ mod tests {
         let BView::Card(first) = &column.body[0] else { panic!("the picker leads") };
         assert_eq!(first.title(), Some("Theme"));
         assert!(first.fold.is_some(), "the picker folds like the sections under it");
-        assert_eq!(first.body.len(), BPaletteName::ALL.len(), "every theme is listed");
-        let lit: Vec<&str> = first
+        // Two groups of eight, every theme in exactly one.
+        assert_eq!(first.body.len(), THEME_GROUPS.len(), "the themes come in groups");
+        let mut every: Vec<BPaletteName> = THEME_GROUPS.iter().flat_map(|(_, p)| p.iter().copied()).collect();
+        assert!(THEME_GROUPS.iter().all(|(_, p)| p.len() <= crate::v2::part::props::pref::set::MAX_CHILDREN));
+        every.sort_by_key(|p| p.label());
+        every.dedup();
+        assert_eq!(every.len(), BPaletteName::ALL.len(), "every theme is listed once");
+        let rows: Vec<&BView> = first
             .body
             .iter()
+            .flat_map(|group| match group {
+                BView::Card(sub) => sub.body.iter().collect::<Vec<_>>(),
+                other => vec![other],
+            })
+            .collect();
+        let lit: Vec<&str> = rows
+            .into_iter()
             .filter_map(|row| {
                 let BView::Split { list } = row else { return None };
                 let BView::Label { text } = &list[0] else { return None };

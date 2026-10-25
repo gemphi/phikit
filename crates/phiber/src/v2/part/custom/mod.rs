@@ -44,6 +44,8 @@ impl BViewItem for BCustomItem {
             BHostType::Spreadsheet => super::spreadsheet::BSpreadsheetItem::new().build(s),
             BHostType::Clip => super::clip::BClipItem::new().build(s),
             BHostType::Prefs => super::pref::BPrefsItem::new().build(s),
+            BHostType::Play => super::play::BPlayItem.build(s),
+            BHostType::Project => super::project::BProjectItem.build(s),
             // The rail itself is the `Activity` part in the Left pane; this
             // is the secondary strip beside it, carrying the options of
             // whichever primary icon is open.

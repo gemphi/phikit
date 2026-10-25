@@ -1,10 +1,13 @@
 //! The Profile panel — laid out as Discord lays out a profile: the picture
-//! first, large and round, the name and handle beside it, then the
-//! sections under them as accordions, the first one open: **Profile** (the
-//! fields), **Settings**, **Channels** (the ones they own) and
-//! **Followers**. Everything shown is read from `profile.*` and
-//! `collab.*`; nothing is invented — with no account the panel says
-//! "Not signed in" and the lists say they are empty.
+//! first, large and round, with the name, the handle and the presence beside
+//! it; the presence picker (Online, Idle, Do Not Disturb, Invisible) and the
+//! one action that matters — Sign In, or Edit Profile once signed in — under
+//! it; then the sections as accordions, the first open: **About Me**,
+//! **Account** (the fields, each opening the profile dialog), **Channels**
+//! (the ones they own) and **Followers**. Settings are not repeated here:
+//! they have their own entry on the rail. Everything shown is read from
+//! `profile.*` and `collab.*`; nothing is invented — with no account the
+//! panel says "Not signed in" and the lists say they are empty.
 
 use super::option::{channels, peers};
 use crate::v2::host::BHostType;
@@ -18,7 +21,15 @@ use crate::v2::view::prim::{BAction, BCard, BControl};
 pub const AVATAR: f32 = 80.0;
 
 /// The sections, in order; the first is open until folded.
-pub const SECTIONS: [&str; 4] = ["Profile", "Settings", "Channels", "Followers"];
+pub const SECTIONS: [&str; 4] = ["About Me", "Account", "Channels", "Followers"];
+
+/// Discord's four presences: (slug stored at `profile.status`, label, icon).
+pub const PRESENCES: [(&str, &str, &str); 4] = [
+    ("online", "Online", "record"),
+    ("idle", "Idle", "time"),
+    ("dnd", "Do Not Disturb", "circle_off"),
+    ("invisible", "Invisible", "circle_dashed"),
+];
 
 fn read<'a>(s: &'a BState, key: &'static str) -> Option<&'a str> {
     s.get(AppKey::Profile(key)).filter(|v| !v.is_empty())
@@ -55,31 +66,52 @@ fn row(icon: &str, label: impl Into<String>, action: Option<BAction>) -> BView {
 /// in the strip without the card's border and heading. One place builds the
 /// container now; this returns what goes in it.
 pub fn body(s: &BState) -> Vec<BView> {
-    let name = read(s, "display_name").unwrap_or("Not signed in").to_string();
+    let signed_in = read(s, "handle").is_some();
+    let name = read(s, "display_name").or(read(s, "handle")).unwrap_or("Not signed in").to_string();
     let handle = read(s, "handle").map(|h| format!("@{h}")).unwrap_or_else(|| "Sign in to sync your work".to_string());
+    let presence = read(s, "status").unwrap_or(if signed_in { "online" } else { "invisible" });
+    let presence_label = PRESENCES.iter().find(|(slug, ..)| *slug == presence).map(|(_, label, _)| *label).unwrap_or("Online");
     let identity = BView::row(vec![
         BView::Avatar { path: read(s, "avatar").unwrap_or("").to_string(), size: AVATAR },
-        BView::column(vec![BView::label(name), BView::label(handle)]),
+        BView::column(vec![BView::label(name), BView::label(handle), BView::label(format!("● {presence_label}"))]),
     ]);
 
-    // Profile: the fields, each a row that opens the profile dialog to edit.
+    // The one action: sign in, or edit the profile once signed in.
     let open_profile = BAction::Set(ModalKey::Open.path(), crate::v2::state::val::V_MODAL_PROFILE.to_string());
-    let profile: Vec<BView> = FIELDS
+    let action = BView::Button(
+        BControl::new()
+            .with_icon(if signed_in { "edit" } else { "user" })
+            .with_label(if signed_in { "Edit Profile" } else { "Sign In" })
+            .with_action(open_profile.clone()),
+    );
+    // The presence picker: four tiles, the one in force lit, each writing
+    // `profile.status` — what the dot beside the name reads.
+    let presences = BView::row(
+        PRESENCES
+            .iter()
+            .map(|(slug, label, icon)| {
+                let mut control = BControl::new()
+                    .with_icon(*icon)
+                    .with_active(*slug == presence)
+                    .with_action(BAction::Set(AppKey::Profile("status").path(), slug.to_string()));
+                control.tooltip = Some(label.to_string());
+                BView::Button(control)
+            })
+            .collect(),
+    );
+
+    // About Me: the status line and the theme they work in, as Discord's
+    // "About Me" and "Member Since" read — each opening the profile dialog.
+    let about: Vec<BView> = [("info", "Status", "status"), ("preferences", "Theme", "theme"), ("chat", "Email", "email")]
+        .into_iter()
+        .map(|(icon, label, key)| row(icon, format!("{label}  ·  {}", read(s, key).unwrap_or("—")), Some(open_profile.clone())))
+        .collect();
+    // Account: every field, each a row that opens the profile dialog to edit.
+    let account: Vec<BView> = FIELDS
         .iter()
         .map(|field| {
             let value = read(s, field.key).unwrap_or("—");
             row(field.icon, format!("{}  ·  {value}", field.label), Some(open_profile.clone()))
-        })
-        .collect();
-    // Settings: the categories the Preferences screen has, each opening it there.
-    let settings: Vec<BView> = crate::v2::modal::setting::CATEGORIES
-        .iter()
-        .map(|category| {
-            let action = BAction::Set(
-                crate::v2::state::ActivityKey::Pick.path(),
-                format!("Settings:{}", category.label),
-            );
-            row(category.icon, category.label, Some(action))
         })
         .collect();
     let _ = V_MODAL_SETTINGS;
@@ -101,8 +133,10 @@ pub fn body(s: &BState) -> Vec<BView> {
 
     vec![
         identity,
-        section(SECTIONS[0], s, profile),
-        section(SECTIONS[1], s, settings),
+        presences,
+        action,
+        section(SECTIONS[0], s, about),
+        section(SECTIONS[1], s, account),
         section(SECTIONS[2], s, channels),
         section(SECTIONS[3], s, followers),
     ]
@@ -135,10 +169,10 @@ mod tests {
         assert!(matches!(&identity[0], BView::Avatar { path, size } if path == "/pictures/me.png" && *size == AVATAR));
         assert_eq!(
             cards(&view),
-            [("Profile".to_string(), true), ("Settings".to_string(), false), ("Channels".to_string(), false), ("Followers".to_string(), false)]
+            [("About Me".to_string(), true), ("Account".to_string(), false), ("Channels".to_string(), false), ("Followers".to_string(), false)]
         );
         // Fold the first, open the third: the keys decide.
-        state.set(&fold_key("Profile"), V_FALSE);
+        state.set(&fold_key("About Me"), V_FALSE);
         state.set(&fold_key("Channels"), "true");
         let opened = cards(&body(&state));
         assert!(!opened[0].1 && opened[2].1);
@@ -156,5 +190,25 @@ mod tests {
         }
         let text = crate::v2::view::layout::BRenderer::render(&crate::v2::view::text::BAsciiRenderer, &BView::column(body(&state)), &state);
         assert!(text.contains("Not signed in") && text.contains("No channels yet") && text.contains("No followers yet"), "{text}");
+    }
+}
+
+#[cfg(test)]
+mod presence_tests {
+    use super::*;
+
+    #[test]
+    fn the_presence_picker_writes_the_status_and_lights_the_one_in_force() {
+        let mut state = BState::new();
+        state.set(AppKey::Profile("handle"), "ann");
+        state.set(AppKey::Profile("status"), "dnd");
+        let view = body(&state);
+        let BView::Row { list } = &view[1] else { panic!("the presences follow the identity") };
+        assert_eq!(list.len(), PRESENCES.len());
+        let lit: Vec<bool> = list.iter().map(|b| matches!(b, BView::Button(c) if c.active)).collect();
+        assert_eq!(lit, [false, false, true, false], "Do Not Disturb is lit");
+        assert!(matches!(&view[2], BView::Button(c) if c.label.as_deref() == Some("Edit Profile")), "signed in: Edit Profile");
+        let out = body(&BState::new());
+        assert!(matches!(&out[2], BView::Button(c) if c.label.as_deref() == Some("Sign In")), "signed out: Sign In");
     }
 }

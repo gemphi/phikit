@@ -41,6 +41,11 @@ pub enum BCardKind {
     /// A card with no surface of its own — content grouped under a heading
     /// on whatever it sits on (a floating region's panel, `RGN_ALIGN_FLOAT`).
     Bare,
+    /// A section of a source list — the File Browser's Volumes, System,
+    /// Bookmarks: no surface and no box, its heading over its rows and a
+    /// divider under it, as a macOS sidebar's sections; its rows take a
+    /// border on hover and when chosen rather than a fill.
+    Section,
     /// A one-row strip of controls: a header, footer or tool bar region
     /// (`RGN_TYPE_HEADER`, `RGN_TYPE_FOOTER`, `RGN_TYPE_TOOL_HEADER`). Its
     /// controls are the `body`; it has no heading of its own.
@@ -71,6 +76,10 @@ pub enum BStrip {
     Footer,
     /// Header height, square.
     Toolbar,
+    /// Tabs on one ground: a pill that hugs them, centred on its line, with
+    /// nothing painted either side — the Welcome window's and the search
+    /// palette's tabs. The tabs change what is shown under it.
+    Tabs,
 }
 
 /// The heading strip — `PNL_HEADER` tall (1.25 units).
@@ -93,6 +102,9 @@ pub struct BFold {
     /// The fold keys of the other top-level panels in the same region, for
     /// Ctrl-click (`panels_collapse_all`). Filled by [`with_peers`].
     pub peers: Vec<BPath>,
+    /// An accordion's heading: opening it shuts its peers, so one group is
+    /// open at a time (a header popover's groups — `filter::fold`).
+    pub accordion: bool,
 }
 
 impl BFold {
@@ -101,6 +113,15 @@ impl BFold {
     /// click rather than being "toggled" to open.
     pub fn flip(&self) -> BAction {
         BAction::Set(self.key.clone(), if self.open { V_FALSE } else { V_TRUE }.to_string())
+    }
+
+    /// What a plain click does: flip — or, on a shut accordion heading,
+    /// open it and shut its peers (`solo`).
+    pub fn click(&self) -> Vec<BAction> {
+        match self.accordion && !self.open {
+            true => self.solo(),
+            false => vec![self.flip()],
+        }
     }
 
     /// Ctrl-click on a header (`panels_collapse_all`): this panel open,
@@ -189,36 +210,6 @@ impl BCard {
         self
     }
 
-    /// This card and every card under it drawn plain: no card fill, no
-    /// border, no heading fill — the fold triangle, the title and the body,
-    /// and nothing behind them.
-    ///
-    /// For a region that is a LIST of panels rather than a stack of objects:
-    /// the sidebar. A card says "this is a thing with edges"; a sidebar full
-    /// of them is a column of boxes inside a box, each with its own heading
-    /// colour, and the shading piles up a shade per level until the panel you
-    /// want is three tones from the region it sits in. A menu does not do
-    /// this and is no harder to read for it — the triangle says what folds
-    /// and the indent says what belongs to what.
-    ///
-    /// `BCardKind::Bare` already drew exactly this (`BCardPart::Frame` and
-    /// `::Head` both fall through to the plain column and plain strip); it
-    /// had no way to reach a card that was built as a panel.
-    pub fn plain(mut self) -> Self {
-        self.bare_tree();
-        self
-    }
-
-    /// `plain`, in place, so it can walk the tree as `nest` does.
-    fn bare_tree(&mut self) {
-        self.kind = BCardKind::Bare;
-        for row in &mut self.body {
-            if let BView::Card(child) = row {
-                child.bare_tree();
-            }
-        }
-    }
-
     /// One level deeper in its card tree, with every sub-panel under it.
     fn nest(&mut self) {
         if let BCardKind::Sub { depth } = &mut self.kind {
@@ -235,12 +226,18 @@ impl BCard {
     pub fn depth(&self) -> u8 {
         match self.kind {
             BCardKind::Sub { depth } => depth,
-            BCardKind::Panel | BCardKind::Bare | BCardKind::Strip(_) | BCardKind::Column(_) => 0,
+            BCardKind::Panel | BCardKind::Bare | BCardKind::Section | BCardKind::Strip(_) | BCardKind::Column(_) => 0,
         }
     }
 
     pub fn bare(mut self) -> Self {
         self.kind = BCardKind::Bare;
+        self
+    }
+
+    /// This card as a section of a source list ([`BCardKind::Section`]).
+    pub fn section(mut self) -> Self {
+        self.kind = BCardKind::Section;
         self
     }
 
@@ -287,7 +284,15 @@ impl BCard {
 
     /// Collapsible, open or closed as `key` says.
     pub fn fold(mut self, key: BPath, open: bool) -> Self {
-        self.fold = Some(BFold { key, open, peers: Vec::new() });
+        self.fold = Some(BFold { key, open, peers: Vec::new(), accordion: false });
+        self
+    }
+
+    /// This card's fold as an accordion heading (`BFold::accordion`).
+    pub fn accordion(mut self) -> Self {
+        if let Some(fold) = self.fold.as_mut() {
+            fold.accordion = true;
+        }
         self
     }
 

@@ -13,6 +13,7 @@ use super::view::BSceneView;
 use super::{BONE_CONNECTED, BRig, BRigState};
 use crate::blend::anim::channels::channel_mut;
 use crate::blend::anim::fcurve::BFCurve;
+use crate::blend::anim::nla_eval::{BMotionTrack, BNlaTarget};
 use crate::blend::object::transform::ObjectTransformRaw;
 use glam::{Mat3, Mat4, Vec3};
 
@@ -70,10 +71,49 @@ pub struct BPoseWork<'a> {
     tree_of: Vec<Option<usize>>,
 }
 
+/// The animation a rig plays: its NLA tracks (bottom first, and whether
+/// one is soloed), then its action's slot over them.
+#[derive(Clone, Copy, Default)]
+pub struct BRigAnim<'a> {
+    pub nla: &'a [BMotionTrack],
+    pub solo: bool,
+    pub curves: &'a [BFCurve],
+}
+
+impl<'a> BRigAnim<'a> {
+    /// An action alone, no NLA.
+    pub fn action(curves: &'a [BFCurve]) -> Self {
+        Self { curves, ..Default::default() }
+    }
+}
+
+/// The bones' channels as the NLA writes them: a curve's when its path is
+/// a pose bone's transform (`pose.bones["arm"].location`) — not one of its
+/// constraints' settings or custom properties.
+struct BBoneChannels<'r> {
+    rig: &'r BRig,
+    raw: &'r mut [ObjectTransformRaw],
+}
+
+impl BNlaTarget for BBoneChannels<'_> {
+    fn slot(&mut self, curve: &BFCurve) -> Option<&mut f32> {
+        let path = BRnaPath::parse(&curve.path)?;
+        let [BRnaStep::Field(p), BRnaStep::Field(b), BRnaStep::Key(bone), BRnaStep::Field(property)] = path.0.as_slice() else { return None };
+        let i = (p == "pose" && b == "bones").then(|| self.rig.bone(bone)).flatten()?;
+        channel_mut(&mut self.raw[i], property, curve.index as usize)
+    }
+}
+
 impl BRig {
-    /// The animation over the rig at `frame` (`curves`: its action's slot),
-    /// then its drivers.
-    pub fn state_at(&self, curves: &[BFCurve], frame: f32) -> BRigState {
+    /// The animation over the rig at `frame` — its NLA, then its action's
+    /// slot (`anim.curves`) — then its drivers.
+    /// Every channel as saved, every constraint at its own influence:
+    /// what a play writes its bones over (`anim/play.rs`).
+    pub fn rest_state(&self) -> BRigState {
+        self.state_at(BRigAnim { nla: &[], solo: false, curves: &[] }, 0.0)
+    }
+
+    pub fn state_at(&self, anim: BRigAnim, frame: f32) -> BRigState {
         let mut state = BRigState {
             raw: self.bones.iter().map(|b| b.raw).collect(),
             props: Default::default(),
@@ -85,7 +125,8 @@ impl BRig {
                 .map(|b| b.constraints.iter().map(|c| if let BConstraintKind::Armature { targets, .. } = &c.kind { targets.iter().map(|t| t.1).collect() } else { Vec::new() }).collect())
                 .collect(),
         };
-        for c in curves.iter().filter(|c| !c.muted()) {
+        BMotionTrack::play(anim.nla, anim.solo, &mut BBoneChannels { rig: self, raw: &mut state.raw }, frame);
+        for c in anim.curves.iter().filter(|c| !c.muted()) {
             let Some(v) = c.eval(frame) else { continue };
             let Some(path) = BRnaPath::parse(&c.path) else { continue };
             match path.0.as_slice() {
@@ -106,11 +147,11 @@ impl BRig {
         state
     }
 
-    /// The pose at `frame`: `curves` the rig's action curves, `ob` the rig
+    /// The pose at `frame`: `anim` what the rig plays, `ob` the rig
     /// object's world matrix, `others` the scene around it (for targets
     /// outside the rig).
-    pub fn pose_at(&self, curves: &[BFCurve], frame: f32, ob: Mat4, others: &dyn BSceneView) -> BRigPose {
-        let state = self.state_at(curves, frame);
+    pub fn pose_at(&self, anim: BRigAnim, frame: f32, ob: Mat4, others: &dyn BSceneView) -> BRigPose {
+        let state = self.state_at(anim, frame);
         self.solve(&state, ob, others)
     }
 

@@ -56,7 +56,7 @@ impl BTimeView {
                         paint_strip(boxed, muted_track, top, bottom, colors, at, &x, window, cx);
                     }
                 }
-                BRowKind::Summary { .. } | BRowKind::Object { .. } | BRowKind::Driver { .. } | BRowKind::Curve { .. } => {}
+                BRowKind::Summary { .. } | BRowKind::Object { .. } | BRowKind::Slot { .. } | BRowKind::Group { .. } | BRowKind::Driver { .. } | BRowKind::Curve { .. } => {}
             }
         }
     }

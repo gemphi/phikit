@@ -107,7 +107,6 @@ impl BAxis {
             .cursor_pointer()
             .text_color(to_hsla(ctx.style.colors.text))
             .text_size(px(ctx.style.typography.caption))
-            .font_weight(gpui::FontWeight::SEMIBOLD)
             .child(SharedString::from(letter))
             .hover(move |style| style.bg(hover))
             .on_click(move |_e: &ClickEvent, window, app| {

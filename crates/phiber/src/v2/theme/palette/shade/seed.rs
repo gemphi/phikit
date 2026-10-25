@@ -22,14 +22,20 @@ pub const GREY_LIGHT_SEED: [u8; 3] = [0xC4, 0xC6, 0xC9];
 /// render — as the dominant shade, with its dark blue as the accent
 /// (`theme::SILVER`); its light mode is that blue-grey lifted toward white,
 /// a lavender silver. It was the Tesla silver lowered to a gunmetal, which
-/// read as one more dark grey beside Graphite and Apple Dark.
+/// read as one more dark grey beside Graphite.
 pub const SILVER_SEED: [u8; 3] = [0x48, 0x4C, 0x74];
 pub const SILVER_LIGHT_SEED: [u8; 3] = lifted(SILVER_SEED);
-/// Apple's dark and light window greys — one theme, two modes. Apple Dark
-/// is the dark grey alone: its light mode is that grey lifted.
+/// Apple's dark and light window greys — one theme, two modes.
 pub const APPLE_SEED: [u8; 3] = [0x38, 0x38, 0x3A];
 pub const APPLE_LIGHT_SEED: [u8; 3] = [0xCB, 0xCB, 0xCD];
-pub const APPLE_DARK_SEED: [u8; 3] = APPLE_SEED;
+/// Phiber: the 3D logo's deep side (Phi-Pill Blue's `#1E3A8A`) eased to a
+/// navy canvas, so the window is the logo's own blue-black (the Phiegg
+/// site's dark `#0F172A` is its body shade) and the accent lights on it.
+pub const PHIBER_SEED: [u8; 3] = [0x1E, 0x2A, 0x52];
+/// Phiber's light mode is the Phiegg site's: a blue-white ground
+/// (`#F1F4F7`, its rail and top bar, is this seed's app shade) with the
+/// cards a step in, so the window reads as the site does.
+pub const PHIBER_LIGHT_SEED: [u8; 3] = [0xD2, 0xDA, 0xE6];
 /// The `phi` appkit variants' surfaces (`appkit/src/theme/variants`), each
 /// brought up to a canvas seed: Swift's warm dark, Barbie's pink-tinted
 /// dark, Fenty's earth, Cyberpunk's purple-black, Chanel's mushroom forest.
@@ -82,7 +88,7 @@ pub const ONYX: BShadeLadder = BShadeLadder::dark(ONYX_SEED);
 pub const GREY: BShadeLadder = BShadeLadder::dark(GREY_SEED);
 pub const SILVER: BShadeLadder = BShadeLadder::dark(SILVER_SEED);
 pub const APPLE: BShadeLadder = BShadeLadder::dark(APPLE_SEED);
-pub const APPLE_DARK: BShadeLadder = BShadeLadder::dark(APPLE_DARK_SEED);
+pub const PHIBER: BShadeLadder = BShadeLadder::dark(PHIBER_SEED);
 pub const SWIFT: BShadeLadder = BShadeLadder::dark(SWIFT_SEED);
 pub const BARBIE: BShadeLadder = BShadeLadder::dark(BARBIE_SEED);
 pub const FENTY: BShadeLadder = BShadeLadder::dark(FENTY_SEED);
@@ -101,7 +107,7 @@ pub const ONYX_LIGHT: BShadeLadder = BShadeLadder::light(lifted(ONYX_SEED));
 pub const GREY_LIGHT: BShadeLadder = BShadeLadder::light(GREY_LIGHT_SEED);
 pub const SILVER_LIGHT: BShadeLadder = BShadeLadder::light(SILVER_LIGHT_SEED);
 pub const APPLE_LIGHT: BShadeLadder = BShadeLadder::light(APPLE_LIGHT_SEED);
-pub const APPLE_DARK_LIGHT: BShadeLadder = BShadeLadder::light(lifted(APPLE_DARK_SEED));
+pub const PHIBER_LIGHT: BShadeLadder = BShadeLadder::light(PHIBER_LIGHT_SEED);
 pub const SWIFT_LIGHT: BShadeLadder = BShadeLadder::light(lifted(SWIFT_SEED));
 pub const BARBIE_LIGHT: BShadeLadder = BShadeLadder::light(lifted(BARBIE_SEED));
 pub const FENTY_LIGHT: BShadeLadder = BShadeLadder::light(lifted(FENTY_SEED));

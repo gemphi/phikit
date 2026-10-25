@@ -1,10 +1,13 @@
-//! Thumbnail tile + wrapping grid renderer. `.blend` previews are decoded
+//! Thumbnail tile + wrapping grid renderer. `.blend` previews (and the Play
+//! host's painted cards) are decoded
 //! once per file (`part::file::preview`) and uploaded as a gpui
 //! `RenderImage` (BGRA), cached per path for the life of the process.
 
 use super::color::to_hsla;
 use super::ctx::BRenderCtx;
 use super::walk;
+use super::flex::{BAlign, BEdge, BFill, BFlex, BJustify, BLen, BRadius};
+use crate::v2::theme::BSurfaceTone;
 use super::atom::icon_path;
 use crate::v2::part::file::preview::quick_info;
 use crate::v2::theme::BStyleRole;
@@ -25,13 +28,27 @@ fn render_image(path: &str) -> Option<Arc<RenderImage>> {
         if let Some(hit) = cache.borrow().get(path) {
             return hit.clone();
         }
-        let image = quick_info(path).and_then(|info| {
-            let t = info.thumbnail.as_ref()?;
-            let mut bgra = t.rgba.clone();
+        // The Play host's cards are painted (`part::play::thumb`); a
+        // file's preview is read from the file.
+        let pixels = match crate::v2::part::play::thumb::image(path) {
+            Some(card) => Some((card.width, card.height, card.rgba)),
+            None if path.starts_with("asset:") => crate::v2::part::project::thumb::image(path),
+            // The Library's designs are drawn from the figure.
+            None if path.starts_with("wear-check:") => crate::v2::part::project::check::image(path),
+            None if path.starts_with("wear") => crate::v2::part::project::library::image(path),
+            // A picture file is its own preview, read once and shrunk to the
+            // largest card it is shown on.
+            None if crate::v2::part::file::kind::BFileKind::of(path, false) == crate::v2::part::file::kind::BFileKind::Image => image::open(path).ok().map(|picture| {
+                let small = picture.thumbnail(256, 256).to_rgba8();
+                (small.width(), small.height(), small.into_raw())
+            }),
+            None => quick_info(path).and_then(|info| info.thumbnail.as_ref().map(|t| (t.width, t.height, t.rgba.to_vec()))),
+        };
+        let image = pixels.and_then(|(width, height, mut bgra)| {
             for px in bgra.chunks_exact_mut(4) {
                 px.swap(0, 2);
             }
-            let buf = image::RgbaImage::from_raw(t.width, t.height, bgra)?;
+            let buf = image::RgbaImage::from_raw(width, height, bgra)?;
             let frame = image::Frame::new(buf);
             Some(Arc::new(RenderImage::new(smallvec::smallvec![frame])))
         });
@@ -54,17 +71,25 @@ pub fn view(t: &BThumb, ctx: &BRenderCtx) -> AnyElement {
             .text_color(to_hsla(ctx.style.colors.text_dim))
             .into_any_element(),
     };
-    let frame = div()
-        .size(size)
-        .flex()
-        .items_center()
-        .justify_center()
-        .rounded(radius)
-        .bg(to_hsla(ctx.style.colors.bg_panel))
+    // The picture's card, edged so it reads on a ground as light as it is.
+    let frame = BFlex::row()
+        .width(BLen::Measured(t.size))
+        .height(BLen::Measured(t.size))
+        .align(BAlign::Center)
+        .justify(BJustify::Center)
+        .radius(BRadius::Role(BStyleRole::Card))
+        .fill(BFill::Tone(BSurfaceTone::Card))
+        .border(BEdge::All)
+        .div(ctx)
         .child(picture);
+    let selector = format!("thumb-{}", t.label);
     let mut tile = div()
-        .id(SharedString::from(format!("thumb-{}", t.label)))
+        .id(SharedString::from(selector.clone()))
+        .debug_selector(move || selector)
         .w(px(t.size + 2.0 * ctx.style.spacing.pad_sm))
+        // Tiles in a row line up by their tops: a name that wraps makes its
+        // tile taller, and centred, its picture rode up out of the row.
+        .self_start()
         .p(px(ctx.style.spacing.pad_sm))
         .flex()
         .flex_col()

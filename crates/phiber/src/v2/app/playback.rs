@@ -14,7 +14,8 @@ use super::BPhiberApp;
 use crate::v2::state::key::{float_or};
 use crate::v2::part::playback::set::BTransportButton;
 use gpui::Context;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use web_time::Instant;
 
 /// The most frames one late tick may catch up, so a long stall does not
 /// spin the playhead round the range.

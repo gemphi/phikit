@@ -4,10 +4,13 @@
 //! Structure: the rows and where they sit. Their backdrops, diamonds and
 //! names are `set.rs`.
 
+pub mod kind;
 pub mod name;
+mod place;
 pub mod set;
 
-use crate::phiphx::blend::BNlaTrack;
+pub use kind::BRowKind;
+
 use crate::phiphx::scene::{SceneAction, SceneNla};
 use crate::v2::host::BHostType;
 use crate::v2::scene::BShownKeys;
@@ -22,33 +25,6 @@ pub const ROW_SKIP: f32 = 0.1 * super::WIDGET_UNIT;
 /// `ANIM_UI_get_channel_name_width` / `NLATRACK_NAMEWIDTH`: the channel
 /// region, `10 × widget_unit`.
 pub const CHANNEL_WIDTH: f32 = 10.0 * super::WIDGET_UNIT;
-
-#[derive(Clone, Debug, PartialEq)]
-pub enum BRowKind {
-    /// `ANIMTYPE_SUMMARY`: every shown key. Collapsed in the Timeline,
-    /// expanded — and so given its backdrop — in the Dope Sheet.
-    Summary { expanded: bool },
-    /// `ANIMTYPE_OBJECT`: one shown object. `expanded` is Blender's
-    /// `ACHANNEL_SETTING_EXPAND` (`ADT_UI_EXPANDED`): closed, the object's
-    /// keys are summarised onto its own row; open, its F-curves follow it as
-    /// `Curve` rows and the object keeps the summary above them, which is
-    /// what `ANIM_animdata_filter` emits for an expanded object.
-    Object { name: String, expanded: bool },
-    /// `ANIMTYPE_FCURVE`: one F-curve under an expanded object, named the way
-    /// `getname_anim_fcurve` names it (`name::fcurve_name`) and carrying the
-    /// curve's own colour for the swatch beside it.
-    Curve { name: String, color: [f32; 3] },
-    /// `ANIMTYPE_NLAACTION`: an object's action line in the NLA editor —
-    /// the active action, or `<No Action>`; `tweaking` while
-    /// `ADT_NLA_EDIT_ON`.
-    Action { name: Option<String>, tweaking: bool },
-    /// `ANIMTYPE_NLATRACK`: one NLA track with its strips.
-    Track(BNlaTrack),
-    /// `ANIMTYPE_FCURVE` in the Drivers editor: one driver, named as
-    /// `getname_anim_fcurve` names it, with the curve's colour for the
-    /// swatch beside the name.
-    Driver { name: String, color: [f32; 3] },
-}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct BTimeRow {
@@ -82,11 +58,18 @@ impl BTimeRow {
                 }
                 return;
             }
+            // `ANIMCONT_ACTION`: the active object's action, a channel per
+            // slot (every slot, as the "Only Show Slot of Active Object"
+            // filter is off by default), each over its groups.
+            if host == BHostType::Action && crate::v2::part::modebar::active_mode(s, host) == crate::v2::part::action::template::ACTION_EDITOR {
+                out.extend(Self::action_editor(s, model));
+                return;
+            }
             for name in crate::v2::scene::action::dope::BKeyTarget::shown(s, model) {
                 let expanded = Self::is_expanded(s, &name);
                 out.push(Self::object_at(&name, &model.actions, expanded));
                 if expanded {
-                    out.extend(Self::curves(&name, &model.actions));
+                    out.extend(Self::channels(s, &name, &model.actions));
                 }
             }
         });
@@ -116,12 +99,6 @@ impl BTimeRow {
         out
     }
 
-    /// `NLATRACK_HEIGHT` for the NLA editor, `ANIM_UI_get_channel_height`
-    /// for the rest.
-    pub fn height(host: BHostType) -> f32 {
-        if host == BHostType::Nla { NLA_ROW_HEIGHT } else { ROW_HEIGHT }
-    }
-
     /// One object's row: the columns of the slot it is animated through in
     /// every action it uses (`dope::BKeyTarget`).
     pub fn object(name: &str, actions: &[SceneAction]) -> Self {
@@ -146,23 +123,97 @@ impl BTimeRow {
             == Some(crate::v2::state::val::V_TRUE)
     }
 
-    /// The F-curve rows of every action `name` uses, in the file's own order.
-    ///
-    /// `ANIM_animdata_filter` walks an expanded object's action and emits one
-    /// `ANIMTYPE_FCURVE` per curve. There is no group level here yet: the scene
-    /// model carries `SceneAction.curves` flat, without the `bActionGroup` that
-    /// Blender would nest them under.
+    /// The F-curve rows of every action `name` uses, in the file's own order,
+    /// ungrouped.
     pub fn curves(name: &str, actions: &[SceneAction]) -> Vec<Self> {
-        actions
-            .iter()
-            .filter(|action| action.users.iter().any(|user| user == name))
-            .flat_map(|action| action.curves.iter())
-            .map(|curve| Self {
-                kind: BRowKind::Curve { name: name::fcurve_name(curve), color: curve.color },
-                // `BezTriple.co` is (frame, value); the frame is the x.
-                keys: curve.keys.iter().map(|key| key.co[0]).collect(),
-            })
-            .collect()
+        Self::object_curves(name, actions).map(|curve| Self::curve(curve, false)).collect()
+    }
+
+    /// The Action Editor's channels under its summary: each slot of the
+    /// active object's action with its keys, and when open its groups and
+    /// curves (`animfilter_action_slot`).
+    fn action_editor(s: &BState, model: &crate::phiphx::scene::SceneModel) -> Vec<Self> {
+        let Some(object) = s.get(crate::v2::state::CtxKey::Object).filter(|o| !o.is_empty()) else { return Vec::new() };
+        let edits = crate::v2::scene::action::BSceneActions::now(s);
+        let Some(action) = edits.of(object, model).and_then(|(name, _)| edits.action(&name, model)) else { return Vec::new() };
+        let mut out = Vec::new();
+        for slot in &action.slots {
+            let curves: Vec<&crate::phiphx::blend::BFCurve> = action.curves.get(slot.curves.clone()).unwrap_or(&[]).iter().collect();
+            let mut keys: Vec<f32> = curves.iter().flat_map(|c| c.keys.iter().map(|k| k.co[0])).collect();
+            keys.sort_by(f32::total_cmp);
+            keys.dedup();
+            let user = action.bindings.iter().find(|(_, h)| *h == slot.handle).map(|(o, _)| o.clone());
+            let owner = user.unwrap_or_else(|| if slot.name().is_empty() { object.to_string() } else { slot.name().to_string() });
+            let fold = Self::slot_key(&action.name, &slot.identifier);
+            let expanded = s.get(crate::v2::state::DopeKey::Expanded(crate::v2::state::intern(&fold))) != Some(crate::v2::state::val::V_FALSE);
+            out.push(Self { kind: BRowKind::Slot { object: owner.clone(), action: action.name.clone(), identifier: slot.identifier.clone(), expanded }, keys });
+            if expanded {
+                out.extend(Self::grouped(s, &owner, curves));
+            }
+        }
+        out
+    }
+
+    /// The fold key of `action`'s slot `identifier`.
+    pub fn slot_key(action: &str, identifier: &str) -> String {
+        format!("{action}\u{1f}slot\u{1f}{identifier}")
+    }
+
+    /// What an expanded object lists (`animfilter_act_group` under
+    /// `animfilter_action`): each channel group in the order its first curve
+    /// comes — closed, its curves' keys summarised on it; open, those curves
+    /// under it — then the curves in no group.
+    pub fn channels(s: &BState, name: &str, actions: &[SceneAction]) -> Vec<Self> {
+        Self::grouped(s, name, Self::object_curves(name, actions).collect())
+    }
+
+    /// `curves` as group rows (folds keyed under `owner`) and the
+    /// ungrouped curves after them.
+    fn grouped(s: &BState, name: &str, curves: Vec<&crate::phiphx::blend::BFCurve>) -> Vec<Self> {
+        let mut groups: Vec<&str> = Vec::new();
+        for group in curves.iter().filter_map(|c| c.group.as_deref()) {
+            if !groups.contains(&group) {
+                groups.push(group);
+            }
+        }
+        let mut out = Vec::new();
+        for group in groups {
+            let members: Vec<&&crate::phiphx::blend::BFCurve> = curves.iter().filter(|c| c.group.as_deref() == Some(group)).collect();
+            let mut keys: Vec<f32> = members.iter().flat_map(|c| c.keys.iter().map(|k| k.co[0])).collect();
+            keys.sort_by(f32::total_cmp);
+            keys.dedup();
+            let expanded = Self::is_expanded(s, &Self::group_key(name, group));
+            out.push(Self { kind: BRowKind::Group { object: name.to_string(), name: group.to_string(), expanded }, keys });
+            if expanded {
+                out.extend(members.into_iter().map(|c| Self::curve(c, true)));
+            }
+        }
+        out.extend(curves.iter().filter(|c| c.group.is_none()).map(|c| Self::curve(c, false)));
+        out
+    }
+
+    /// The fold key of `object`'s group `group`: one object's `chest` is not
+    /// another's.
+    pub fn group_key(object: &str, group: &str) -> String {
+        format!("{object}\u{1f}{group}")
+    }
+
+    /// The curves `name` is animated by: in each action it uses, the slot
+    /// it is bound to — else, unbound, every curve (as `BKeyTarget::of`
+    /// reads its columns), so a curve row and its object's columns agree.
+    fn object_curves<'a>(name: &'a str, actions: &'a [SceneAction]) -> impl Iterator<Item = &'a crate::phiphx::blend::BFCurve> + 'a {
+        actions.iter().filter(move |action| action.used_by(name)).flat_map(move |action| match action.slot_of(name) {
+            Some(slot) => action.curves.get(slot.curves.clone()).unwrap_or(&[]).iter(),
+            None => action.curves.iter(),
+        })
+    }
+
+    fn curve(curve: &crate::phiphx::blend::BFCurve, grouped: bool) -> Self {
+        Self {
+            kind: BRowKind::Curve { name: name::fcurve_name(curve), color: curve.color, grouped },
+            // `BezTriple.co` is (frame, value); the frame is the x.
+            keys: curve.keys.iter().map(|key| key.co[0]).collect(),
+        }
     }
 
     /// The channel's name as the channel region prints it
@@ -171,52 +222,16 @@ impl BTimeRow {
         match &self.kind {
             BRowKind::Summary { .. } => "Summary",
             BRowKind::Object { name, .. } => name,
-            BRowKind::Curve { name, .. } => name,
+            // `acf_action_slot_name`: the slot's name past its ID code; a
+            // legacy action's lone slot has none.
+            BRowKind::Slot { identifier, .. } => identifier.get(2..).filter(|n| !n.is_empty()).unwrap_or("Legacy Slot"),
+            BRowKind::Curve { name, .. } | BRowKind::Group { name, .. } => name,
             BRowKind::Action { name, .. } => name.as_deref().unwrap_or("<No Action>"),
             BRowKind::Track(track) => &track.name,
             BRowKind::Driver { name, .. } => name,
         }
     }
 
-    /// `ANIM_UI_get_first_channel_top` and `ANIM_UI_get_channel_step`
-    /// (`NLATRACK_FIRST_TOP` / `NLATRACK_STEP`): the top of row `index`,
-    /// measured from the top of the window, for rows `height` tall.
-    /// `scrub` is the band above the rows (`BTimeView::scrub_height`), which
-    /// these are all measured past. It is a parameter and not a constant so the
-    /// theme decides it; `SCRUB_HEIGHT` remains as Blender's own number for the
-    /// callers that mean that and nothing else.
-    pub fn top(index: usize, height: f32, scrub: f32) -> f32 {
-        scrub + ROW_SKIP + index as f32 * (height + ROW_SKIP)
-    }
-
-    pub fn center(index: usize, height: f32, scrub: f32) -> f32 {
-        Self::top(index, height, scrub) + height / 2.0
-    }
-
-    /// `UI_view2d_listview_view_to_cell`: the row at `y` **from the top of the
-    /// window**, each row's cell its height and the skip below it.
-    ///
-    /// From the top of the WINDOW, not of the rows: it subtracts `top(0)`
-    /// itself, and `top` already counts past the scrub band. A caller that
-    /// subtracts the band before calling this subtracts it twice — which
-    /// `expander_write` did, putting every expander click a band's worth of
-    /// pixels down the list.
-    pub fn index_at(y: f32, height: f32, scrub: f32) -> Option<usize> {
-        let from = y - Self::top(0, height, scrub);
-        (from >= 0.0).then(|| (from / (height + ROW_SKIP)) as usize)
-    }
-
-    /// The NLA track row `index` of `rows` is: its object, and its place in
-    /// that object's stack counted from the bottom (the rows list it last
-    /// first).
-    pub fn track_at(rows: &[Self], index: usize) -> Option<(String, usize)> {
-        let BRowKind::Track(_) = rows.get(index)?.kind else { return None };
-        let head = rows[..index].iter().rposition(|r| matches!(r.kind, BRowKind::Object { .. }))?;
-        let BRowKind::Object { name: object, .. } = &rows[head].kind else { return None };
-        let tracks = rows[head + 1..].iter().take_while(|r| !matches!(r.kind, BRowKind::Object { .. })).filter(|r| matches!(r.kind, BRowKind::Track(_))).count();
-        let above = rows[head + 1..index].iter().filter(|r| matches!(r.kind, BRowKind::Track(_))).count();
-        Some((object.clone(), tracks - 1 - above))
-    }
 }
 
 #[cfg(test)]

@@ -19,11 +19,16 @@ impl BView {
         Self::split(vec![Self::label(heading), Self::ctrl(ctrl)])
     }
 
-    /// A boolean row: its text and a switch in the value column
-    /// (`BCtrlKind::Switch`) — one row wide whatever the text, so the rows of
-    /// a panel or popover line up.
+    /// A boolean row: its text from the row's left edge and the switch at
+    /// its right (`BCtrlKind::Switch`) — the whole row, so every switch in a
+    /// panel or popover lines up and no empty label column pushes its text
+    /// halfway across. A heading leading a group is its own line above it.
     pub fn check_row(s: &BState, heading: &str, key: BPath, default: bool, label: &str) -> Self {
-        Self::prop_row(heading, BCtrl::read(BCtrlKind::Switch, key, BValue::Bool(default), s).with_label(label))
+        let switch = Self::ctrl(BCtrl::read(BCtrlKind::Switch, key, BValue::Bool(default), s).with_label(label));
+        match heading.is_empty() {
+            true => switch,
+            false => Self::column(vec![Self::label(heading), switch]),
+        }
     }
 
     /// A dropdown row over `(value, label)` pairs; its menu is keyed by `rna`.

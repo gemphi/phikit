@@ -1,0 +1,6853 @@
+[
+{
+"file": "properties_collection.py",
+"cls": "COLLECTION_PT_collection_flags",
+"label": "Visibility",
+"ctx": "collection",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_collection.py",
+"cls": "COLLECTION_PT_viewlayer_flags",
+"label": "View Layer",
+"ctx": "collection",
+"parent": "COLLECTION_PT_collection_flags",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_collection.py",
+"cls": "COLLECTION_PT_importer",
+"label": "Importer",
+"ctx": "collection",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_collection.py",
+"cls": "COLLECTION_PT_exporters",
+"label": "Exporters",
+"ctx": "collection",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_collection.py",
+"cls": "COLLECTION_PT_instancing",
+"label": "Instancing",
+"ctx": "collection",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_collection.py",
+"cls": "COLLECTION_PT_lineart_collection",
+"label": "Line Art",
+"ctx": "collection",
+"parent": null,
+"opts": [],
+"order": 10
+},
+{
+"file": "properties_collection.py",
+"cls": "COLLECTION_PT_collection_custom_props",
+"label": null,
+"ctx": "collection",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_constraints",
+"label": "Object Constraints",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_constraints",
+"label": "Bone Constraints",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bChildOfConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bChildOfConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bTrackToConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bTrackToConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bFollowPathConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bFollowPathConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bRotLimitConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bRotLimitConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bLocLimitConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bLocLimitConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bSizeLimitConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bSizeLimitConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bRotateLikeConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bRotateLikeConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bLocateLikeConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bLocateLikeConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bSizeLikeConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bSizeLikeConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bSameVolumeConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bSameVolumeConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bTransLikeConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bTransLikeConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bActionConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bActionConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bActionConstraint_target",
+"label": "Target",
+"ctx": "constraint",
+"parent": "OBJECT_PT_bActionConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bActionConstraint_target",
+"label": "Target",
+"ctx": "bone_constraint",
+"parent": "BONE_PT_bActionConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bActionConstraint_action",
+"label": "Action",
+"ctx": "constraint",
+"parent": "OBJECT_PT_bActionConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bActionConstraint_action",
+"label": "Action",
+"ctx": "bone_constraint",
+"parent": "BONE_PT_bActionConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bLockTrackConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bLockTrackConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bDistLimitConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bDistLimitConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bStretchToConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bStretchToConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bMinMaxConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bMinMaxConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bClampToConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bClampToConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bTransformConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bTransformConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bTransformConstraint_source",
+"label": "Map From",
+"ctx": "constraint",
+"parent": "OBJECT_PT_bTransformConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bTransformConstraint_from",
+"label": "Map From",
+"ctx": "bone_constraint",
+"parent": "BONE_PT_bTransformConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bTransformConstraint_destination",
+"label": "Map To",
+"ctx": "constraint",
+"parent": "OBJECT_PT_bTransformConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bTransformConstraint_to",
+"label": "Map To",
+"ctx": "bone_constraint",
+"parent": "BONE_PT_bTransformConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bShrinkwrapConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bShrinkwrapConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bDampTrackConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bDampTrackConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bSplineIKConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bSplineIKConstraint_fitting",
+"label": "Fitting",
+"ctx": "bone_constraint",
+"parent": "BONE_PT_bSplineIKConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bSplineIKConstraint_chain_scaling",
+"label": "Chain Scaling",
+"ctx": "bone_constraint",
+"parent": "BONE_PT_bSplineIKConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bPivotConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bPivotConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bFollowTrackConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bFollowTrackConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bCameraSolverConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bCameraSolverConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bObjectSolverConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bObjectSolverConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bTransformCacheConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bTransformCacheConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bTransformCacheConstraint_velocity",
+"label": "Velocity",
+"ctx": "constraint",
+"parent": "OBJECT_PT_bTransformCacheConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bTransformCacheConstraint_velocity",
+"label": "Velocity",
+"ctx": "bone_constraint",
+"parent": "BONE_PT_bTransformCacheConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bTransformCacheConstraint_layers",
+"label": "Override Layers",
+"ctx": "constraint",
+"parent": "OBJECT_PT_bTransformCacheConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bTransformCacheConstraint_layers",
+"label": "Override Layers",
+"ctx": "bone_constraint",
+"parent": "BONE_PT_bTransformCacheConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bTransformCacheConstraint_time",
+"label": "Time",
+"ctx": "constraint",
+"parent": "OBJECT_PT_bTransformCacheConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bTransformCacheConstraint_time",
+"label": "Time",
+"ctx": "bone_constraint",
+"parent": "BONE_PT_bTransformCacheConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bArmatureConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bArmatureConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bArmatureConstraint_bones",
+"label": "Bones",
+"ctx": "constraint",
+"parent": "OBJECT_PT_bArmatureConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bArmatureConstraint_bones",
+"label": "Bones",
+"ctx": "bone_constraint",
+"parent": "BONE_PT_bArmatureConstraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bKinematicConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bKinematicConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "OBJECT_PT_bGeometryAttributeConstraint",
+"label": "",
+"ctx": "constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_constraint.py",
+"cls": "BONE_PT_bGeometryAttributeConstraint",
+"label": "",
+"ctx": "bone_constraint",
+"parent": null,
+"opts": [
+"HEADER_LAYOUT_EXPAND",
+"INSTANCED"
+],
+"order": null
+},
+{
+"file": "properties_data_armature.py",
+"cls": "DATA_PT_context_arm",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_armature.py",
+"cls": "DATA_PT_pose",
+"label": "Pose",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_armature.py",
+"cls": "DATA_PT_display",
+"label": "Viewport Display",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_armature.py",
+"cls": "DATA_PT_bone_collections",
+"label": "Bone Collections",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_armature.py",
+"cls": "DATA_PT_iksolver_itasc",
+"label": "Inverse Kinematics",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_armature.py",
+"cls": "DATA_PT_armature_animation",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_armature.py",
+"cls": "DATA_PT_custom_props_arm",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_armature.py",
+"cls": "DATA_PT_custom_props_bcoll",
+"label": null,
+"ctx": "data",
+"parent": "DATA_PT_bone_collections",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_armature.py",
+"cls": "POSE_PT_selection_sets",
+"label": "Selection Sets",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_bone.py",
+"cls": "BONE_PT_context_bone",
+"label": "",
+"ctx": "bone",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_bone.py",
+"cls": "BONE_PT_transform",
+"label": "Transform",
+"ctx": "bone",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_bone.py",
+"cls": "BONE_PT_curved",
+"label": "Bendy Bones",
+"ctx": "bone",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_bone.py",
+"cls": "BONE_PT_relations",
+"label": "Relations",
+"ctx": "bone",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_bone.py",
+"cls": "BONE_PT_collections",
+"label": "Bone Collections",
+"ctx": "bone",
+"parent": "BONE_PT_relations",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_bone.py",
+"cls": "BONE_PT_display",
+"label": "Viewport Display",
+"ctx": "bone",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_bone.py",
+"cls": "BONE_PT_display_custom_shape",
+"label": "Custom Shape",
+"ctx": "bone",
+"parent": "BONE_PT_display",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_bone.py",
+"cls": "BONE_PT_inverse_kinematics",
+"label": "Inverse Kinematics",
+"ctx": "bone",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_bone.py",
+"cls": "BONE_PT_deform",
+"label": "Deform",
+"ctx": "bone",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_bone.py",
+"cls": "BONE_PT_custom_props",
+"label": null,
+"ctx": "bone",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_context_camera",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_lens",
+"label": "Lens",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_camera_stereoscopy",
+"label": "Stereoscopy",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_camera",
+"label": "Camera",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_camera_dof",
+"label": "Depth of Field",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_camera_dof_aperture",
+"label": "Aperture",
+"ctx": "data",
+"parent": "DATA_PT_camera_dof",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_camera_background_image",
+"label": "Background Images",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_camera_display",
+"label": "Viewport Display",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_camera_display_composition_guides",
+"label": "Composition Guides",
+"ctx": "data",
+"parent": "DATA_PT_camera_display",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_camera_safe_areas",
+"label": "Safe Areas",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_camera_safe_areas_center_cut",
+"label": "Center-Cut Safe Areas",
+"ctx": "data",
+"parent": "DATA_PT_camera_safe_areas",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_camera_animation",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_camera.py",
+"cls": "DATA_PT_custom_props_camera",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_context_curve",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_shape_curve",
+"label": "Shape",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_curve_texture_space",
+"label": "Texture Space",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_geometry_curve",
+"label": "Geometry",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_geometry_curve_bevel",
+"label": "Bevel",
+"ctx": "data",
+"parent": "DATA_PT_geometry_curve",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_curve_animation",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_geometry_curve_start_end",
+"label": "Start & End Mapping",
+"ctx": "data",
+"parent": "DATA_PT_geometry_curve",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_pathanim",
+"label": "Path Animation",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_font",
+"label": "Font",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_font_transform",
+"label": "Transform",
+"ctx": "data",
+"parent": "DATA_PT_font",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_paragraph",
+"label": "Paragraph",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_paragraph_alignment",
+"label": "Alignment",
+"ctx": "data",
+"parent": "DATA_PT_paragraph",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_paragraph_spacing",
+"label": "Spacing",
+"ctx": "data",
+"parent": "DATA_PT_paragraph",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_text_boxes",
+"label": "Text Boxes",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_curve.py",
+"cls": "DATA_PT_custom_props_curve",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_curves.py",
+"cls": "DATA_PT_context_curves",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_curves.py",
+"cls": "DATA_PT_curves_surface",
+"label": "Surface",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_curves.py",
+"cls": "DATA_PT_CURVES_attributes",
+"label": "Attributes",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_curves.py",
+"cls": "DATA_PT_curves_animation",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_curves.py",
+"cls": "DATA_PT_custom_props_curves",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_empty.py",
+"cls": "DATA_PT_empty",
+"label": "Empty",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_empty.py",
+"cls": "DATA_PT_empty_image",
+"label": "Image",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_context_grease_pencil",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_layers",
+"label": "Layers",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_layer_masks",
+"label": "Masks",
+"ctx": "data",
+"parent": "DATA_PT_grease_pencil_layers",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_layer_transform",
+"label": "Transform",
+"ctx": "data",
+"parent": "DATA_PT_grease_pencil_layers",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_layer_adjustments",
+"label": "Adjustments",
+"ctx": "data",
+"parent": "DATA_PT_grease_pencil_layers",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_layer_relations",
+"label": "Relations",
+"ctx": "data",
+"parent": "DATA_PT_grease_pencil_layers",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_layer_display",
+"label": "Display",
+"ctx": "data",
+"parent": "DATA_PT_grease_pencil_layers",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_layer_group_display",
+"label": "Display",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_onion_skinning",
+"label": "Onion Skinning",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_onion_skinning_custom_colors",
+"label": "Custom Colors",
+"ctx": "data",
+"parent": "DATA_PT_grease_pencil_onion_skinning",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_onion_skinning_display",
+"label": "Display",
+"ctx": "data",
+"parent": "DATA_PT_grease_pencil_onion_skinning",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_settings",
+"label": "Settings",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_animation",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_custom_props",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_grease_pencil.py",
+"cls": "DATA_PT_grease_pencil_attributes",
+"label": "Attributes",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_lattice.py",
+"cls": "DATA_PT_context_lattice",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_lattice.py",
+"cls": "DATA_PT_lattice",
+"label": "Lattice",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_lattice.py",
+"cls": "DATA_PT_lattice_animation",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_lattice.py",
+"cls": "DATA_PT_custom_props_lattice",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_light.py",
+"cls": "DATA_PT_context_light",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_light.py",
+"cls": "DATA_PT_preview",
+"label": "Preview",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_light.py",
+"cls": "DATA_PT_light",
+"label": "Light",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_light.py",
+"cls": "DATA_PT_EEVEE_light",
+"label": "Light",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_light.py",
+"cls": "DATA_PT_EEVEE_light_distance",
+"label": "Custom Distance",
+"ctx": "data",
+"parent": "DATA_PT_EEVEE_light",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_light.py",
+"cls": "DATA_PT_EEVEE_light_shadow",
+"label": "Shadow",
+"ctx": "data",
+"parent": "DATA_PT_EEVEE_light",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_light.py",
+"cls": "DATA_PT_EEVEE_light_influence",
+"label": "Influence",
+"ctx": "data",
+"parent": "DATA_PT_EEVEE_light",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_light.py",
+"cls": "DATA_PT_spot",
+"label": "Beam Shape",
+"ctx": "data",
+"parent": "DATA_PT_EEVEE_light",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_light.py",
+"cls": "DATA_PT_light_animation",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_light.py",
+"cls": "DATA_PT_custom_props_light",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_context_lightprobe",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe",
+"label": "Probe",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe_eevee",
+"label": "Probe",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe_visibility",
+"label": "Visibility",
+"ctx": "data",
+"parent": "DATA_PT_lightprobe",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe_capture",
+"label": "Capture",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe_bake",
+"label": "Bake",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe_bake_resolution",
+"label": "Resolution",
+"ctx": "data",
+"parent": "DATA_PT_lightprobe_bake",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe_bake_capture",
+"label": "Capture",
+"ctx": "data",
+"parent": "DATA_PT_lightprobe_bake",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe_bake_offset",
+"label": "Offset",
+"ctx": "data",
+"parent": "DATA_PT_lightprobe_bake_capture",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe_bake_clamping",
+"label": "Clamping",
+"ctx": "data",
+"parent": "DATA_PT_lightprobe_bake_capture",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe_parallax",
+"label": "Custom Parallax",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe_display",
+"label": "Viewport Display",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe_display_eevee",
+"label": "Viewport Display",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_lightprobe.py",
+"cls": "DATA_PT_lightprobe_animation",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_mesh.py",
+"cls": "DATA_PT_context_mesh",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_mesh.py",
+"cls": "DATA_PT_texture_space",
+"label": "Texture Space",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_mesh.py",
+"cls": "DATA_PT_vertex_groups",
+"label": "Vertex Groups",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_mesh.py",
+"cls": "DATA_PT_shape_keys",
+"label": "Shape Keys",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_mesh.py",
+"cls": "DATA_PT_uv_texture",
+"label": "UV Maps",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_mesh.py",
+"cls": "DATA_PT_remesh",
+"label": "Remesh",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_mesh.py",
+"cls": "DATA_PT_customdata",
+"label": "Geometry Data",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_mesh.py",
+"cls": "DATA_PT_mesh_animation",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_mesh.py",
+"cls": "DATA_PT_custom_props_mesh",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_mesh.py",
+"cls": "DATA_PT_mesh_attributes",
+"label": "Attributes",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_mesh.py",
+"cls": "DATA_PT_vertex_colors",
+"label": "Color Attributes",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_metaball.py",
+"cls": "DATA_PT_context_metaball",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_metaball.py",
+"cls": "DATA_PT_metaball",
+"label": "Metaball",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_metaball.py",
+"cls": "DATA_PT_mball_texture_space",
+"label": "Texture Space",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_metaball.py",
+"cls": "DATA_PT_metaball_element",
+"label": "Active Element",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_metaball.py",
+"cls": "DATA_PT_metaball_animation",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_metaball.py",
+"cls": "DATA_PT_custom_props_metaball",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_modifier.py",
+"cls": "DATA_PT_modifiers",
+"label": "Modifiers",
+"ctx": "modifier",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_pointcloud.py",
+"cls": "DATA_PT_context_pointcloud",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_pointcloud.py",
+"cls": "DATA_PT_pointcloud_attributes",
+"label": "Attributes",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_pointcloud.py",
+"cls": "DATA_PT_custom_props_pointcloud",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_shaderfx.py",
+"cls": "DATA_PT_shader_fx",
+"label": "Effects",
+"ctx": "shaderfx",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_speaker.py",
+"cls": "DATA_PT_context_speaker",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_speaker.py",
+"cls": "DATA_PT_speaker",
+"label": "Sound",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_speaker.py",
+"cls": "DATA_PT_distance",
+"label": "Distance",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_speaker.py",
+"cls": "DATA_PT_cone",
+"label": "Cone",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_data_speaker.py",
+"cls": "DATA_PT_speaker_animation",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_speaker.py",
+"cls": "DATA_PT_custom_props_speaker",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_volume.py",
+"cls": "DATA_PT_context_volume",
+"label": "",
+"ctx": "data",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_data_volume.py",
+"cls": "DATA_PT_volume_file",
+"label": "OpenVDB File",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_volume.py",
+"cls": "DATA_PT_volume_grids",
+"label": "Grids",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_volume.py",
+"cls": "DATA_PT_volume_render",
+"label": "Render",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_volume.py",
+"cls": "DATA_PT_volume_viewport_display",
+"label": "Viewport Display",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_volume.py",
+"cls": "DATA_PT_volume_viewport_display_slicing",
+"label": "",
+"ctx": "data",
+"parent": "DATA_PT_volume_viewport_display",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_volume.py",
+"cls": "DATA_PT_volume_animation",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_data_volume.py",
+"cls": "DATA_PT_custom_props_volume",
+"label": null,
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_freestyle.py",
+"cls": "RENDER_PT_freestyle",
+"label": "Freestyle",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle",
+"label": "Freestyle",
+"ctx": "view_layer",
+"parent": null,
+"opts": [],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_edge_detection",
+"label": "Edge Detection",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_freestyle",
+"opts": [],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_style_modules",
+"label": "Style Modules",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_freestyle",
+"opts": [],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_lineset",
+"label": "Freestyle Line Set",
+"ctx": "view_layer",
+"parent": null,
+"opts": [],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_lineset_visibilty",
+"label": "Visibility",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_freestyle_lineset",
+"opts": [],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_lineset_edgetype",
+"label": "Edge Type",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_freestyle_lineset",
+"opts": [],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_lineset_facemarks",
+"label": "Face Marks",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_freestyle_lineset",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_lineset_collection",
+"label": "Collection",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_freestyle_lineset",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_linestyle_strokes",
+"label": "Freestyle Strokes",
+"ctx": "view_layer",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_linestyle_strokes_chaining",
+"label": "Chaining",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_freestyle_linestyle_strokes",
+"opts": [],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_linestyle_strokes_splitting",
+"label": "Splitting",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_freestyle_linestyle_strokes",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_linestyle_strokes_splitting_pattern",
+"label": "Split Pattern",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_freestyle_linestyle_strokes_splitting",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_linestyle_strokes_sorting",
+"label": "Sorting",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_freestyle_linestyle_strokes",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_linestyle_strokes_selection",
+"label": "Selection",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_freestyle_linestyle_strokes",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_linestyle_strokes_dashedline",
+"label": "Dashed Line",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_freestyle_linestyle_strokes",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_linestyle_color",
+"label": "Freestyle Color",
+"ctx": "view_layer",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_linestyle_alpha",
+"label": "Freestyle Alpha",
+"ctx": "view_layer",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_linestyle_thickness",
+"label": "Freestyle Thickness",
+"ctx": "view_layer",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_linestyle_geometry",
+"label": "Freestyle Geometry",
+"ctx": "view_layer",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_linestyle_texture",
+"label": "Freestyle Texture",
+"ctx": "view_layer",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "VIEWLAYER_PT_freestyle_animation",
+"label": "Freestyle Animation",
+"ctx": "view_layer",
+"parent": null,
+"opts": [],
+"order": 10
+},
+{
+"file": "properties_freestyle.py",
+"cls": "MATERIAL_PT_freestyle_line",
+"label": "Freestyle Line",
+"ctx": "material",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_material.py",
+"cls": "MATERIAL_PT_preview",
+"label": "Preview",
+"ctx": "material",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_material.py",
+"cls": "MATERIAL_PT_custom_props",
+"label": null,
+"ctx": "material",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_material.py",
+"cls": "EEVEE_MATERIAL_PT_context_material",
+"label": "",
+"ctx": "material",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_material.py",
+"cls": "EEVEE_MATERIAL_PT_surface",
+"label": "Surface",
+"ctx": "material",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_material.py",
+"cls": "EEVEE_MATERIAL_PT_volume",
+"label": "Volume",
+"ctx": "material",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_material.py",
+"cls": "EEVEE_MATERIAL_PT_displacement",
+"label": "Displacement",
+"ctx": "material",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_material.py",
+"cls": "EEVEE_MATERIAL_PT_thickness",
+"label": "Thickness",
+"ctx": "material",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_material.py",
+"cls": "EEVEE_MATERIAL_PT_viewport_settings",
+"label": "Settings",
+"ctx": "material",
+"parent": "MATERIAL_PT_viewport",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_material.py",
+"cls": "EEVEE_MATERIAL_PT_settings",
+"label": "Settings",
+"ctx": "material",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_material.py",
+"cls": "EEVEE_MATERIAL_PT_settings_surface",
+"label": "Surface",
+"ctx": "material",
+"parent": "EEVEE_MATERIAL_PT_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_material.py",
+"cls": "EEVEE_MATERIAL_PT_settings_volume",
+"label": "Volume",
+"ctx": "material",
+"parent": "EEVEE_MATERIAL_PT_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_material.py",
+"cls": "MATERIAL_PT_viewport",
+"label": "Viewport Display",
+"ctx": "material",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_material.py",
+"cls": "MATERIAL_PT_lineart",
+"label": "Line Art",
+"ctx": "material",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_material.py",
+"cls": "MATERIAL_PT_animation",
+"label": null,
+"ctx": "material",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_material_gpencil.py",
+"cls": "MATERIAL_PT_gpencil_slots",
+"label": "Grease Pencil Material Slots",
+"ctx": "material",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_material_gpencil.py",
+"cls": "MATERIAL_PT_gpencil_surface",
+"label": "Surface",
+"ctx": "material",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_material_gpencil.py",
+"cls": "MATERIAL_PT_gpencil_strokecolor",
+"label": "Stroke",
+"ctx": "material",
+"parent": "MATERIAL_PT_gpencil_surface",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_material_gpencil.py",
+"cls": "MATERIAL_PT_gpencil_random",
+"label": "Randomize",
+"ctx": "material",
+"parent": "MATERIAL_PT_gpencil_strokecolor",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_material_gpencil.py",
+"cls": "MATERIAL_PT_gpencil_fillcolor",
+"label": "Fill",
+"ctx": "material",
+"parent": "MATERIAL_PT_gpencil_surface",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_material_gpencil.py",
+"cls": "MATERIAL_PT_gpencil_animation",
+"label": null,
+"ctx": "material",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_material_gpencil.py",
+"cls": "MATERIAL_PT_gpencil_preview",
+"label": "Preview",
+"ctx": "material",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_material_gpencil.py",
+"cls": "MATERIAL_PT_gpencil_custom_props",
+"label": null,
+"ctx": "material",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_material_gpencil.py",
+"cls": "MATERIAL_PT_gpencil_settings",
+"label": "Settings",
+"ctx": "material",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_context_object",
+"label": "",
+"ctx": "object",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_transform",
+"label": "Transform",
+"ctx": "object",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_delta_transform",
+"label": "Delta Transform",
+"ctx": "object",
+"parent": "OBJECT_PT_transform",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_parent_inverse_transform",
+"label": "Parent Inverse Transform",
+"ctx": "object",
+"parent": "OBJECT_PT_transform",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_relations",
+"label": "Relations",
+"ctx": "object",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_collections",
+"label": "Collections",
+"ctx": "object",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_display",
+"label": "Viewport Display",
+"ctx": "object",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_instancing",
+"label": "Instancing",
+"ctx": "object",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_instancing_size",
+"label": "Scale by Face Size",
+"ctx": "object",
+"parent": "OBJECT_PT_instancing",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_lineart",
+"label": "Line Art",
+"ctx": "object",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_visibility",
+"label": "Visibility",
+"ctx": "object",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_shading",
+"label": "Shading",
+"ctx": "object",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_light_linking",
+"label": "Light Linking",
+"ctx": "object",
+"parent": "OBJECT_PT_shading",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_shadow_linking",
+"label": "Shadow Linking",
+"ctx": "object",
+"parent": "OBJECT_PT_shading",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_shadow_terminator",
+"label": "Shadow Terminator",
+"ctx": "object",
+"parent": "OBJECT_PT_shading",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_animation",
+"label": null,
+"ctx": "object",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_object.py",
+"cls": "OBJECT_PT_custom_props",
+"label": null,
+"ctx": "object",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_format",
+"label": "Format",
+"ctx": "output",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_frame_range",
+"label": "Frame Range",
+"ctx": "output",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_time_stretching",
+"label": "Time Stretching",
+"ctx": "output",
+"parent": "RENDER_PT_frame_range",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_post_processing",
+"label": "Post Processing",
+"ctx": "output",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_stamp",
+"label": "Metadata",
+"ctx": "output",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_stamp_note",
+"label": "Note",
+"ctx": "output",
+"parent": "RENDER_PT_stamp",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_stamp_burn",
+"label": "Burn Into Image",
+"ctx": "output",
+"parent": "RENDER_PT_stamp",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_output",
+"label": "Output",
+"ctx": "output",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_output_views",
+"label": "Views",
+"ctx": "output",
+"parent": "RENDER_PT_output",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_output_color_management",
+"label": "Color Management",
+"ctx": "output",
+"parent": "RENDER_PT_output",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_output_pixel_density",
+"label": "Pixel Density",
+"ctx": "output",
+"parent": "RENDER_PT_output",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_encoding",
+"label": "Encoding",
+"ctx": "output",
+"parent": "RENDER_PT_output",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_encoding_video",
+"label": "Video",
+"ctx": "output",
+"parent": "RENDER_PT_encoding",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_encoding_audio",
+"label": "Audio",
+"ctx": "output",
+"parent": "RENDER_PT_encoding",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_output.py",
+"cls": "RENDER_PT_stereoscopy",
+"label": "Stereoscopy",
+"ctx": "output",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_context_particles",
+"label": "",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_emission",
+"label": "Emission",
+"ctx": "particle",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_emission_source",
+"label": "Source",
+"ctx": "particle",
+"parent": "PARTICLE_PT_emission",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_hair_dynamics",
+"label": "Hair Dynamics",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_hair_dynamics_collision",
+"label": "Collisions",
+"ctx": "particle",
+"parent": "PARTICLE_PT_hair_dynamics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_hair_dynamics_structure",
+"label": "Structure",
+"ctx": "particle",
+"parent": "PARTICLE_PT_hair_dynamics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_hair_dynamics_volume",
+"label": "Volume",
+"ctx": "particle",
+"parent": "PARTICLE_PT_hair_dynamics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_cache",
+"label": "Cache",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_velocity",
+"label": "Velocity",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_rotation",
+"label": "Rotation",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_rotation_angular_velocity",
+"label": "Angular Velocity",
+"ctx": "particle",
+"parent": "PARTICLE_PT_rotation",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics",
+"label": "Physics",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics_fluid_advanced",
+"label": "Advanced",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics_fluid_springs",
+"label": "Springs",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics_fluid_springs_viscoelastic",
+"label": "Viscoelastic Springs",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics_fluid_springs",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics_fluid_springs_advanced",
+"label": "Advanced",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics_fluid_springs",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics_boids_movement",
+"label": "Movement",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics_boids_battle",
+"label": "Battle",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics_boids_misc",
+"label": "Misc",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics_relations",
+"label": "Relations",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics_fluid_interaction",
+"label": "Fluid Interaction",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics_deflection",
+"label": "Deflection",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics_forces",
+"label": "Forces",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_physics_integration",
+"label": "Integration",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_boidbrain",
+"label": "Boid Brain",
+"ctx": "particle",
+"parent": "PARTICLE_PT_physics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_render",
+"label": "Render",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_render_extra",
+"label": "Extra",
+"ctx": "particle",
+"parent": "PARTICLE_PT_render",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_render_path",
+"label": "Path",
+"ctx": "particle",
+"parent": "PARTICLE_PT_render",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_render_path_timing",
+"label": "Timing",
+"ctx": "particle",
+"parent": "PARTICLE_PT_render",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_render_object",
+"label": "Object",
+"ctx": "particle",
+"parent": "PARTICLE_PT_render",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_render_collection",
+"label": "Collection",
+"ctx": "particle",
+"parent": "PARTICLE_PT_render",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_render_collection_use_count",
+"label": "Use Count",
+"ctx": "particle",
+"parent": "PARTICLE_PT_render_collection",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_draw",
+"label": "Viewport Display",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_children",
+"label": "Children",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_children_parting",
+"label": "Parting",
+"ctx": "particle",
+"parent": "PARTICLE_PT_children",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_children_clumping",
+"label": "Clumping",
+"ctx": "particle",
+"parent": "PARTICLE_PT_children",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_children_clumping_noise",
+"label": "Clump Noise",
+"ctx": "particle",
+"parent": "PARTICLE_PT_children_clumping",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_children_roughness",
+"label": "Roughness",
+"ctx": "particle",
+"parent": "PARTICLE_PT_children",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_children_kink",
+"label": "Kink",
+"ctx": "particle",
+"parent": "PARTICLE_PT_children",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_field_weights",
+"label": "Field Weights",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_force_fields",
+"label": "Force Field Settings",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_force_fields_type1",
+"label": "Type 1",
+"ctx": "particle",
+"parent": "PARTICLE_PT_force_fields",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_force_fields_type2",
+"label": "Type 2",
+"ctx": "particle",
+"parent": "PARTICLE_PT_force_fields",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_force_fields_type1_falloff",
+"label": "Falloff",
+"ctx": "particle",
+"parent": "PARTICLE_PT_force_fields_type1",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_force_fields_type2_falloff",
+"label": "Falloff",
+"ctx": "particle",
+"parent": "PARTICLE_PT_force_fields_type2",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_vertexgroups",
+"label": "Vertex Groups",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_textures",
+"label": "Textures",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_hair_shape",
+"label": "Hair Shape",
+"ctx": "particle",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_animation",
+"label": null,
+"ctx": "particle",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_particle.py",
+"cls": "PARTICLE_PT_custom_props",
+"label": null,
+"ctx": "particle",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth",
+"label": "Cloth",
+"ctx": "physics",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth_physical_properties",
+"label": "Physical Properties",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cloth",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth_stiffness",
+"label": "Stiffness",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cloth_physical_properties",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth_damping",
+"label": "Damping",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cloth_physical_properties",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth_internal_springs",
+"label": "Internal Springs",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cloth_physical_properties",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth_pressure",
+"label": "Pressure",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cloth_physical_properties",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth_cache",
+"label": "Cache",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cloth",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth_shape",
+"label": "Shape",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cloth",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth_collision",
+"label": "Collisions",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cloth",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth_object_collision",
+"label": "Object Collisions",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cloth_collision",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth_self_collision",
+"label": "Self Collisions",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cloth_collision",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth_property_weights",
+"label": "Property Weights",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cloth",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_cloth.py",
+"cls": "PHYSICS_PT_cloth_field_weights",
+"label": "Field Weights",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cloth",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_common.py",
+"cls": "PHYSICS_PT_add",
+"label": "",
+"ctx": "physics",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dynamic_paint",
+"label": "Dynamic Paint",
+"ctx": "physics",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dynamic_paint_settings",
+"label": "Settings",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dynamic_paint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_surface_canvas",
+"label": "Surface",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dynamic_paint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_surface_canvas_paint_dry",
+"label": "Dry",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dp_surface_canvas",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_surface_canvas_paint_dissolve",
+"label": "Dissolve",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dp_surface_canvas",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_canvas_output",
+"label": "Output",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dynamic_paint",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_canvas_output_paintmaps",
+"label": "Paintmaps",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dp_canvas_output",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_canvas_output_wetmaps",
+"label": "Wetmaps",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dp_canvas_output",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_canvas_initial_color",
+"label": "Initial Color",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dynamic_paint",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_effects",
+"label": "Effects",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dynamic_paint",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_effects_spread",
+"label": "Spread",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dp_effects",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_effects_drip",
+"label": "Drip",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dp_effects",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_effects_drip_weights",
+"label": "Weights",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dp_effects_drip",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_effects_shrink",
+"label": "Shrink",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dp_effects",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_cache",
+"label": "Cache",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dynamic_paint",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_brush_source",
+"label": "Source",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dynamic_paint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_brush_source_color_ramp",
+"label": "Falloff Ramp",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dp_brush_source",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_brush_velocity",
+"label": "Velocity",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dynamic_paint",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_brush_velocity_color_ramp",
+"label": "Ramp",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dp_brush_velocity",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_brush_velocity_smudge",
+"label": "Smudge",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dp_brush_velocity",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_dynamicpaint.py",
+"cls": "PHYSICS_PT_dp_brush_wave",
+"label": "Waves",
+"ctx": "physics",
+"parent": "PHYSICS_PT_dynamic_paint",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_field.py",
+"cls": "PHYSICS_PT_field",
+"label": "Force Fields",
+"ctx": "physics",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_field.py",
+"cls": "PHYSICS_PT_field_settings",
+"label": "Settings",
+"ctx": "physics",
+"parent": "PHYSICS_PT_field",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_field.py",
+"cls": "PHYSICS_PT_field_settings_kink",
+"label": "Kink",
+"ctx": "physics",
+"parent": "PHYSICS_PT_field_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_field.py",
+"cls": "PHYSICS_PT_field_settings_texture_select",
+"label": "Texture",
+"ctx": "physics",
+"parent": "PHYSICS_PT_field_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_field.py",
+"cls": "PHYSICS_PT_field_falloff",
+"label": "Falloff",
+"ctx": "physics",
+"parent": "PHYSICS_PT_field",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_field.py",
+"cls": "PHYSICS_PT_field_falloff_angular",
+"label": "Angular",
+"ctx": "physics",
+"parent": "PHYSICS_PT_field_falloff",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_field.py",
+"cls": "PHYSICS_PT_field_falloff_radial",
+"label": "Radial",
+"ctx": "physics",
+"parent": "PHYSICS_PT_field_falloff",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_field.py",
+"cls": "PHYSICS_PT_collision",
+"label": "Collision",
+"ctx": "physics",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_field.py",
+"cls": "PHYSICS_PT_collision_particle",
+"label": "Particle",
+"ctx": "physics",
+"parent": "PHYSICS_PT_collision",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_field.py",
+"cls": "PHYSICS_PT_collision_softbody",
+"label": "Softbody & Cloth",
+"ctx": "physics",
+"parent": "PHYSICS_PT_collision",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_fluid",
+"label": "Fluid",
+"ctx": "physics",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_settings",
+"label": "Settings",
+"ctx": "physics",
+"parent": "PHYSICS_PT_fluid",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_borders",
+"label": "Border Collisions",
+"ctx": "physics",
+"parent": "PHYSICS_PT_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_smoke",
+"label": "Gas",
+"ctx": "physics",
+"parent": "PHYSICS_PT_fluid",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_smoke_dissolve",
+"label": "Dissolve",
+"ctx": "physics",
+"parent": "PHYSICS_PT_smoke",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_fire",
+"label": "Fire",
+"ctx": "physics",
+"parent": "PHYSICS_PT_smoke",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_liquid",
+"label": "Liquid",
+"ctx": "physics",
+"parent": "PHYSICS_PT_fluid",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_flow_source",
+"label": "Flow Source",
+"ctx": "physics",
+"parent": "PHYSICS_PT_settings",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_flow_initial_velocity",
+"label": "Initial Velocity",
+"ctx": "physics",
+"parent": "PHYSICS_PT_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_flow_texture",
+"label": "Texture",
+"ctx": "physics",
+"parent": "PHYSICS_PT_settings",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_adaptive_domain",
+"label": "Adaptive Domain",
+"ctx": "physics",
+"parent": "PHYSICS_PT_settings",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_noise",
+"label": "Noise",
+"ctx": "physics",
+"parent": "PHYSICS_PT_smoke",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_mesh",
+"label": "Mesh",
+"ctx": "physics",
+"parent": "PHYSICS_PT_liquid",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_particles",
+"label": "Particles",
+"ctx": "physics",
+"parent": "PHYSICS_PT_liquid",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_diffusion",
+"label": "Diffusion",
+"ctx": "physics",
+"parent": "PHYSICS_PT_liquid",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_viscosity",
+"label": "High Viscosity Solver",
+"ctx": "physics",
+"parent": "PHYSICS_PT_diffusion",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_guide",
+"label": "Guides",
+"ctx": "physics",
+"parent": "PHYSICS_PT_fluid",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_collections",
+"label": "Collections",
+"ctx": "physics",
+"parent": "PHYSICS_PT_fluid",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_cache",
+"label": "Cache",
+"ctx": "physics",
+"parent": "PHYSICS_PT_fluid",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_export",
+"label": "Volumetric Data",
+"ctx": "physics",
+"parent": "PHYSICS_PT_cache",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_field_weights",
+"label": "Field Weights",
+"ctx": "physics",
+"parent": "PHYSICS_PT_fluid",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_viewport_display",
+"label": "Viewport Display",
+"ctx": "physics",
+"parent": "PHYSICS_PT_fluid",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_viewport_display_slicing",
+"label": "Slice",
+"ctx": "physics",
+"parent": "PHYSICS_PT_viewport_display",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_viewport_display_color",
+"label": "Grid Display",
+"ctx": "physics",
+"parent": "PHYSICS_PT_viewport_display",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_viewport_display_debug",
+"label": "Vector Display",
+"ctx": "physics",
+"parent": "PHYSICS_PT_viewport_display",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_viewport_display_advanced",
+"label": "Advanced",
+"ctx": "physics",
+"parent": "PHYSICS_PT_viewport_display",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_fluid.py",
+"cls": "PHYSICS_PT_fluid_domain_render",
+"label": "Render",
+"ctx": "physics",
+"parent": "PHYSICS_PT_fluid",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_geometry_nodes.py",
+"cls": "PHYSICS_PT_geometry_nodes",
+"label": "Simulation Nodes",
+"ctx": "physics",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody.py",
+"cls": "PHYSICS_PT_rigid_body",
+"label": "Rigid Body",
+"ctx": "physics",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody.py",
+"cls": "PHYSICS_PT_rigid_body_settings",
+"label": "Settings",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody.py",
+"cls": "PHYSICS_PT_rigid_body_collisions",
+"label": "Collisions",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody.py",
+"cls": "PHYSICS_PT_rigid_body_collisions_surface",
+"label": "Surface Response",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_collisions",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody.py",
+"cls": "PHYSICS_PT_rigid_body_collisions_sensitivity",
+"label": "Sensitivity",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_collisions",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody.py",
+"cls": "PHYSICS_PT_rigid_body_collisions_collections",
+"label": "Collections",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_collisions",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody.py",
+"cls": "PHYSICS_PT_rigid_body_dynamics",
+"label": "Dynamics",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody.py",
+"cls": "PHYSICS_PT_rigid_body_dynamics_deactivation",
+"label": "Deactivation",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_dynamics",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint",
+"label": "Rigid Body Constraint",
+"ctx": "physics",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint_settings",
+"label": "Settings",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_constraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint_objects",
+"label": "Objects",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_constraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint_override_iterations",
+"label": "Override Iterations",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_constraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint_limits",
+"label": "Limits",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_constraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint_limits_linear",
+"label": "Linear",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_constraint_limits",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint_limits_angular",
+"label": "Angular",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_constraint_limits",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint_motor",
+"label": "Motor",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_constraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint_motor_angular",
+"label": "Angular",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_constraint_motor",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint_motor_linear",
+"label": "Linear",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_constraint_motor",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint_springs",
+"label": "Springs",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_constraint",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint_springs_angular",
+"label": "Angular",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_constraint_springs",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_rigidbody_constraint.py",
+"cls": "PHYSICS_PT_rigid_body_constraint_springs_linear",
+"label": "Linear",
+"ctx": "physics",
+"parent": "PHYSICS_PT_rigid_body_constraint_springs",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody",
+"label": "Soft Body",
+"ctx": "physics",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_object",
+"label": "Object",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_simulation",
+"label": "Simulation",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_cache",
+"label": "Cache",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_goal",
+"label": "Goal",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_goal_strengths",
+"label": "Strengths",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody_goal",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_goal_settings",
+"label": "Settings",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody_goal",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_edge",
+"label": "Edges",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_edge_aerodynamics",
+"label": "Aerodynamics",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody_edge",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_edge_stiffness",
+"label": "Stiffness",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody_edge",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_collision",
+"label": "Self Collision",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_solver",
+"label": "Solver",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_solver_diagnostics",
+"label": "Diagnostics",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody_solver",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_solver_helpers",
+"label": "Helpers",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody_solver",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_physics_softbody.py",
+"cls": "PHYSICS_PT_softbody_field_weights",
+"label": "Field Weights",
+"ctx": "physics",
+"parent": "PHYSICS_PT_softbody",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_context",
+"label": "",
+"ctx": "render",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_color_management",
+"label": "Color Management",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 100
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_color_management_working_space",
+"label": "Working Space",
+"ctx": "render",
+"parent": "RENDER_PT_color_management",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_color_management_advanced",
+"label": "Advanced",
+"ctx": "render",
+"parent": "RENDER_PT_color_management",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_color_management_curves",
+"label": "Curves",
+"ctx": "render",
+"parent": "RENDER_PT_color_management",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_color_management_white_balance",
+"label": "White Balance",
+"ctx": "render",
+"parent": "RENDER_PT_color_management",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_motion_blur",
+"label": "Motion Blur",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_motion_blur_curve",
+"label": "Shutter Curve",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_motion_blur",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_depth_of_field",
+"label": "Depth of Field",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_volumes",
+"label": "Volumes",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_volumes_range",
+"label": "Custom Range",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_volumes",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_raytracing",
+"label": "Raytracing",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_screen_trace",
+"label": "Screen Tracing",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_raytracing",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_gi_approximation",
+"label": "Fast GI Approximation",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_raytracing",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_denoise",
+"label": "Denoising",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_raytracing",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_light_paths",
+"label": "Light Paths",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_clamping",
+"label": "Clamping",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_light_paths",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_clamping_surface",
+"label": "Surface",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_clamping",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_clamping_volume",
+"label": "Volume",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_clamping",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_light_paths_intensity",
+"label": "Intensity",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_light_paths",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_sampling_shadows",
+"label": "Shadows",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_sampling",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_sampling",
+"label": "Sampling",
+"ctx": "render",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_sampling_viewport",
+"label": "Viewport",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_sampling",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_sampling_render",
+"label": "Render",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_sampling",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_sampling_advanced",
+"label": "Advanced",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_sampling",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_film",
+"label": "Film",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_hair",
+"label": "Curves",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_performance",
+"label": "Performance",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_performance_compositor",
+"label": "Compositor",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_performance",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_performance_compositor_denoise_settings",
+"label": "Denoise Nodes",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_performance_compositor",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_performance_memory",
+"label": "Memory",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_performance",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_eevee_performance_viewport",
+"label": "Viewport",
+"ctx": "render",
+"parent": "RENDER_PT_eevee_performance",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_gpencil",
+"label": "Grease Pencil",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_grease_pencil_viewport",
+"label": "Viewport",
+"ctx": "render",
+"parent": "RENDER_PT_gpencil",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_grease_pencil_render",
+"label": "Render",
+"ctx": "render",
+"parent": "RENDER_PT_gpencil",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_opengl_sampling",
+"label": "Sampling",
+"ctx": "render",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_opengl_film",
+"label": "Film",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_opengl_lighting",
+"label": "Lighting",
+"ctx": "render",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_opengl_color",
+"label": "Object Color",
+"ctx": "render",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_opengl_options",
+"label": "Options",
+"ctx": "render",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_simplify",
+"label": "Simplify",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_simplify_viewport",
+"label": "Viewport",
+"ctx": "render",
+"parent": "RENDER_PT_simplify",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_simplify_render",
+"label": "Render",
+"ctx": "render",
+"parent": "RENDER_PT_simplify",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_simplify_greasepencil",
+"label": "Grease Pencil",
+"ctx": "render",
+"parent": "RENDER_PT_simplify",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_render.py",
+"cls": "RENDER_PT_hydra_debug",
+"label": "Hydra Debug",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 200
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_context_scene",
+"label": "",
+"ctx": "scene",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_scene",
+"label": "Scene",
+"ctx": "scene",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_unit",
+"label": "Units",
+"ctx": "scene",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_keying_sets",
+"label": "Keying Sets",
+"ctx": "scene",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_keyframing_settings",
+"label": "Keyframing Settings",
+"ctx": "scene",
+"parent": "SCENE_PT_keying_sets",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_keying_set_paths",
+"label": "Active Keying Set",
+"ctx": "scene",
+"parent": "SCENE_PT_keying_sets",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_audio",
+"label": "Audio",
+"ctx": "scene",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_physics",
+"label": "Gravity",
+"ctx": "scene",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_simulation",
+"label": "Simulation",
+"ctx": "scene",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_rigid_body_world",
+"label": "Rigid Body World",
+"ctx": "scene",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_rigid_body_world_settings",
+"label": "Settings",
+"ctx": "scene",
+"parent": "SCENE_PT_rigid_body_world",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_rigid_body_cache",
+"label": "Cache",
+"ctx": "scene",
+"parent": "SCENE_PT_rigid_body_world",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_rigid_body_field_weights",
+"label": "Field Weights",
+"ctx": "scene",
+"parent": "SCENE_PT_rigid_body_world",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_eevee_light_probes",
+"label": "Light Probes",
+"ctx": "scene",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_animation",
+"label": null,
+"ctx": "scene",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_scene.py",
+"cls": "SCENE_PT_custom_props",
+"label": null,
+"ctx": "scene",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_color_tag_picker",
+"label": "Color Tag",
+"ctx": "none",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_strip",
+"label": "",
+"ctx": "strip",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_adjust_crop",
+"label": "Crop",
+"ctx": "strip",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_effect",
+"label": "Effect Strip",
+"ctx": "strip",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_effect_text_layout",
+"label": "Layout",
+"ctx": "strip",
+"parent": "STRIP_PT_effect",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_effect_text_style",
+"label": "Style",
+"ctx": "strip",
+"parent": "STRIP_PT_effect",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_effect_text_outline",
+"label": "Outline",
+"ctx": "strip",
+"parent": "STRIP_PT_effect_text_style",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_effect_text_shadow",
+"label": "Shadow",
+"ctx": "strip",
+"parent": "STRIP_PT_effect_text_style",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_effect_text_box",
+"label": "Box",
+"ctx": "strip",
+"parent": "STRIP_PT_effect_text_style",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_source",
+"label": "Source",
+"ctx": "strip",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_movie_clip",
+"label": "Movie Clip",
+"ctx": "strip",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_scene",
+"label": "Scene",
+"ctx": "strip",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_scene_sound",
+"label": "Sound",
+"ctx": "strip",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_mask",
+"label": "Mask",
+"ctx": "strip",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_time",
+"label": "Time",
+"ctx": "strip",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_adjust_sound",
+"label": "Sound",
+"ctx": "strip",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_adjust_comp",
+"label": "Compositing",
+"ctx": "strip",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_adjust_transform",
+"label": "Transform",
+"ctx": "strip",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_adjust_video",
+"label": "Video",
+"ctx": "strip",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_adjust_color",
+"label": "Color",
+"ctx": "strip",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_strip.py",
+"cls": "STRIP_PT_custom_props",
+"label": null,
+"ctx": "strip",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_strip_modifier.py",
+"cls": "STRIP_PT_modifiers",
+"label": "Modifiers",
+"ctx": "strip_modifier",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_preview",
+"label": "Preview",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_context",
+"label": "",
+"ctx": "texture",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_node",
+"label": "Node",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_clouds",
+"label": "Clouds",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_wood",
+"label": "Wood",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_marble",
+"label": "Marble",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_magic",
+"label": "Magic",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_blend",
+"label": "Blend",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_stucci",
+"label": "Stucci",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_image",
+"label": "Image",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_image_settings",
+"label": "Settings",
+"ctx": "texture",
+"parent": "TEXTURE_PT_image",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_image_sampling",
+"label": "Sampling",
+"ctx": "texture",
+"parent": "TEXTURE_PT_image",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_image_alpha",
+"label": "Alpha",
+"ctx": "texture",
+"parent": "TEXTURE_PT_image",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_image_mapping",
+"label": "Mapping",
+"ctx": "texture",
+"parent": "TEXTURE_PT_image",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_image_mapping_crop",
+"label": "Crop",
+"ctx": "texture",
+"parent": "TEXTURE_PT_image_mapping",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_musgrave",
+"label": "Musgrave",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_voronoi",
+"label": "Voronoi",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_voronoi_feature_weights",
+"label": "Feature Weights",
+"ctx": "texture",
+"parent": "TEXTURE_PT_voronoi",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_distortednoise",
+"label": "Distorted Noise",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_mapping",
+"label": "Mapping",
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_influence",
+"label": "Influence",
+"ctx": "texture",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_colors",
+"label": "Colors",
+"ctx": "texture",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_colors_ramp",
+"label": "Color Ramp",
+"ctx": "texture",
+"parent": "TEXTURE_PT_colors",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_animation",
+"label": null,
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_texture.py",
+"cls": "TEXTURE_PT_custom_props",
+"label": null,
+"ctx": "texture",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_view_layer.py",
+"cls": "VIEWLAYER_PT_context_layer",
+"label": "",
+"ctx": "view_layer",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_view_layer.py",
+"cls": "VIEWLAYER_PT_layer",
+"label": "View Layer",
+"ctx": "view_layer",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_view_layer.py",
+"cls": "VIEWLAYER_PT_layer_passes",
+"label": "Passes",
+"ctx": "view_layer",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_view_layer.py",
+"cls": "VIEWLAYER_PT_eevee_layer_passes_data",
+"label": "Data",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_layer_passes",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_view_layer.py",
+"cls": "VIEWLAYER_PT_workbench_layer_passes_data",
+"label": "Data",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_layer_passes",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_view_layer.py",
+"cls": "VIEWLAYER_PT_eevee_layer_passes_light",
+"label": "Light",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_layer_passes",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_view_layer.py",
+"cls": "VIEWLAYER_PT_layer_passes_aov",
+"label": "Shader AOV",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_layer_passes",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_view_layer.py",
+"cls": "VIEWLAYER_PT_layer_passes_cryptomatte",
+"label": "Cryptomatte",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_layer_passes",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_view_layer.py",
+"cls": "VIEWLAYER_PT_layer_passes_lightgroups",
+"label": "Light Groups",
+"ctx": "view_layer",
+"parent": "VIEWLAYER_PT_layer_passes",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_view_layer.py",
+"cls": "VIEWLAYER_PT_filter",
+"label": "Filter",
+"ctx": "view_layer",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_view_layer.py",
+"cls": "VIEWLAYER_PT_override",
+"label": "Override",
+"ctx": "view_layer",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_view_layer.py",
+"cls": "VIEWLAYER_PT_layer_custom_props",
+"label": null,
+"ctx": "view_layer",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_world.py",
+"cls": "WORLD_PT_context_world",
+"label": "",
+"ctx": "world",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "properties_world.py",
+"cls": "EEVEE_WORLD_PT_mist",
+"label": "Mist Pass",
+"ctx": "world",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_world.py",
+"cls": "WORLD_PT_animation",
+"label": null,
+"ctx": "world",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_world.py",
+"cls": "WORLD_PT_custom_props",
+"label": null,
+"ctx": "world",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_world.py",
+"cls": "EEVEE_WORLD_PT_surface",
+"label": "Surface",
+"ctx": "world",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "properties_world.py",
+"cls": "EEVEE_WORLD_PT_volume",
+"label": "Volume",
+"ctx": "world",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_world.py",
+"cls": "EEVEE_WORLD_PT_settings",
+"label": "Settings",
+"ctx": "world",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_world.py",
+"cls": "EEVEE_WORLD_PT_lightprobe",
+"label": "Light Probe",
+"ctx": "world",
+"parent": "EEVEE_WORLD_PT_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_world.py",
+"cls": "EEVEE_WORLD_PT_sun",
+"label": "Sun",
+"ctx": "world",
+"parent": "EEVEE_WORLD_PT_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "properties_world.py",
+"cls": "EEVEE_WORLD_PT_sun_shadow",
+"label": "Shadow",
+"ctx": "world",
+"parent": "EEVEE_WORLD_PT_sun",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "properties_world.py",
+"cls": "WORLD_PT_viewport_display",
+"label": "Viewport Display",
+"ctx": "world",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": 10
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_sampling",
+"label": "Sampling",
+"ctx": "render",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_sampling_viewport",
+"label": "Viewport",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_sampling",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_sampling_viewport_denoise",
+"label": "Denoise",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_sampling_viewport",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_sampling_render",
+"label": "Render",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_sampling",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_sampling_render_denoise",
+"label": "Denoise",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_sampling_render",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_sampling_path_guiding",
+"label": "Path Guiding",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_sampling",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_sampling_path_guiding_debug",
+"label": "Debug",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_sampling_path_guiding",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_sampling_advanced",
+"label": "Advanced",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_sampling",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_sampling_advanced_sample_subset",
+"label": "Sample Subset",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_sampling_advanced",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_sampling_lights",
+"label": "Lights",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_sampling",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_subdivision",
+"label": "Subdivision",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_curves",
+"label": "Curves",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_curves_viewport_display",
+"label": "Viewport Display",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_curves",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_volumes",
+"label": "Volumes",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_light_paths",
+"label": "Light Paths",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_light_paths_max_bounces",
+"label": "Max Bounces",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_light_paths",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_light_paths_clamping",
+"label": "Clamping",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_light_paths",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_light_paths_caustics",
+"label": "Caustics",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_light_paths",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_light_paths_fast_gi",
+"label": "Fast GI Approximation",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_light_paths",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_motion_blur",
+"label": "Motion Blur",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_motion_blur_curve",
+"label": "Shutter Curve",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_motion_blur",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_film",
+"label": "Film",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_film_transparency",
+"label": "Transparent",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_film",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_film_pixel_filter",
+"label": "Pixel Filter",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_film",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_performance",
+"label": "Performance",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_performance_compositor",
+"label": null,
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_performance",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_performance_compositor_denoise_settings",
+"label": null,
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_performance_compositor",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_performance_threads",
+"label": "Threads",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_performance",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_performance_memory",
+"label": "Memory",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_performance",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_performance_texture_cache",
+"label": "Texture Cache",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_performance",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_performance_acceleration_structure",
+"label": "Acceleration Structure",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_performance",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_performance_final_render",
+"label": "Final Render",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_performance",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_performance_viewport",
+"label": "Viewport",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_performance",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_filter",
+"label": "Filter",
+"ctx": "view_layer",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_passes",
+"label": "Passes",
+"ctx": "view_layer",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_passes_data",
+"label": "Data",
+"ctx": "view_layer",
+"parent": "CYCLES_RENDER_PT_passes",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_passes_light",
+"label": "Light",
+"ctx": "view_layer",
+"parent": "CYCLES_RENDER_PT_passes",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_passes_crypto",
+"label": "Cryptomatte",
+"ctx": "view_layer",
+"parent": "CYCLES_RENDER_PT_passes",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_passes_aov",
+"label": "Shader AOV",
+"ctx": "view_layer",
+"parent": "CYCLES_RENDER_PT_passes",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_passes_lightgroups",
+"label": "Light Groups",
+"ctx": "view_layer",
+"parent": "CYCLES_RENDER_PT_passes",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_PT_post_processing",
+"label": "Post Processing",
+"ctx": "output",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_CAMERA_PT_dof",
+"label": "Depth of Field",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_CAMERA_PT_dof_aperture",
+"label": "Aperture",
+"ctx": "render",
+"parent": "CYCLES_CAMERA_PT_dof",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_CAMERA_PT_lens_custom_parameters",
+"label": "Parameters",
+"ctx": "render",
+"parent": "DATA_PT_lens",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_PT_context_material",
+"label": "",
+"ctx": "material",
+"parent": null,
+"opts": [
+"HIDE_HEADER"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_OBJECT_PT_motion_blur",
+"label": "Motion Blur",
+"ctx": "object",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_OBJECT_PT_shading_gi_approximation",
+"label": "Fast GI Approximation",
+"ctx": "object",
+"parent": "OBJECT_PT_shading",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_OBJECT_PT_shading_caustics",
+"label": "Caustics",
+"ctx": "object",
+"parent": "OBJECT_PT_shading",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_OBJECT_PT_lightgroup",
+"label": "Light Group",
+"ctx": "object",
+"parent": "OBJECT_PT_shading",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_OBJECT_PT_visibility",
+"label": "Visibility",
+"ctx": "object",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_OBJECT_PT_visibility_ray_visibility",
+"label": "Ray Visibility",
+"ctx": "object",
+"parent": "CYCLES_OBJECT_PT_visibility",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_OBJECT_PT_visibility_culling",
+"label": "Culling",
+"ctx": "object",
+"parent": "CYCLES_OBJECT_PT_visibility",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_LIGHT_PT_preview",
+"label": "Preview",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_LIGHT_PT_light",
+"label": "Light",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_LIGHT_PT_settings",
+"label": "Settings",
+"ctx": "data",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_LIGHT_PT_nodes",
+"label": "Nodes",
+"ctx": "data",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_LIGHT_PT_beam_shape",
+"label": "Beam Shape",
+"ctx": "data",
+"parent": "CYCLES_LIGHT_PT_light",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_WORLD_PT_preview",
+"label": "Preview",
+"ctx": "world",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_WORLD_PT_surface",
+"label": "Surface",
+"ctx": "world",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_WORLD_PT_volume",
+"label": "Volume",
+"ctx": "world",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_WORLD_PT_mist",
+"label": "Mist Pass",
+"ctx": "world",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_WORLD_PT_ray_visibility",
+"label": "Ray Visibility",
+"ctx": "world",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_WORLD_PT_settings",
+"label": "Settings",
+"ctx": "world",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_WORLD_PT_settings_surface",
+"label": "Surface",
+"ctx": "world",
+"parent": "CYCLES_WORLD_PT_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_WORLD_PT_settings_volume",
+"label": "Volume",
+"ctx": "world",
+"parent": "CYCLES_WORLD_PT_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_WORLD_PT_settings_light_group",
+"label": "Light Group",
+"ctx": "world",
+"parent": "CYCLES_WORLD_PT_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_MATERIAL_PT_preview",
+"label": "Preview",
+"ctx": "material",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_MATERIAL_PT_surface",
+"label": "Surface",
+"ctx": "material",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_MATERIAL_PT_volume",
+"label": "Volume",
+"ctx": "material",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_MATERIAL_PT_displacement",
+"label": "Displacement",
+"ctx": "material",
+"parent": null,
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_MATERIAL_PT_settings",
+"label": "Settings",
+"ctx": "material",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_MATERIAL_PT_settings_surface",
+"label": "Surface",
+"ctx": "material",
+"parent": "CYCLES_MATERIAL_PT_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_MATERIAL_PT_settings_volume",
+"label": "Volume",
+"ctx": "material",
+"parent": "CYCLES_MATERIAL_PT_settings",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_bake",
+"label": "Bake",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_bake_influence",
+"label": "Influence",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_bake",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_bake_selected_to_active",
+"label": "Selected to Active",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_bake",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_bake_output",
+"label": "Output",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_bake",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_bake_output_margin",
+"label": "Margin",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_bake_output",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_debug",
+"label": "Debug",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_simplify",
+"label": "Simplify",
+"ctx": "render",
+"parent": null,
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_simplify_viewport",
+"label": "Viewport",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_simplify",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_simplify_render",
+"label": "Render",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_simplify",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_RENDER_PT_simplify_culling",
+"label": "Culling",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_simplify",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_VIEW3D_PT_shading_debug",
+"label": "Debug",
+"ctx": "render",
+"parent": "VIEW3D_PT_shading",
+"opts": [],
+"order": null
+},
+{
+"file": "ui.py",
+"cls": "CYCLES_VIEW3D_PT_simplify_greasepencil",
+"label": "Grease Pencil",
+"ctx": "render",
+"parent": "CYCLES_RENDER_PT_simplify",
+"opts": [
+"DEFAULT_CLOSED"
+],
+"order": null
+}
+]

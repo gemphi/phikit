@@ -14,7 +14,7 @@
 //! the popover drifted from the cards beside it every time either moved.
 
 use super::ctx::BRenderCtx;
-use super::flex::{BAlign, BDim, BEdge, BFill, BFlex, BFlexed, BLen, BOverflow, BPlace, BRadius, BSpace};
+use super::flex::{BAlign, BDim, BFill, BFlex, BFlexed, BLen, BOverflow, BPlace, BRadius, BSpace};
 use super::surface::compatible_inner_radius;
 use super::walk;
 mod leave;
@@ -32,12 +32,17 @@ enum BPopoverPart {
     /// The floating panel: a card's frame at the overlay elevation. Bounded
     /// on both axes, so neither a long host list nor a wide one runs past the
     /// area it opened in.
-    Panel { two_column: bool, width: BPopoverWidth },
+    /// `side` squares the corner that meets the button it hangs from.
+    Panel { two_column: bool, width: BPopoverWidth, side: BPopoverSide },
     /// The rows inside it, as a card body holds its rows: the frame gutter on
     /// all four sides and one gap between them. It scrolls — `empty` keeps an
     /// opened submenu with nothing in it visible instead of collapsing to
     /// nothing (`viewport_layout_bug_conditions` C4).
     Content { empty: bool },
+    /// One group of a menu — the rows between two dividers — on a ground of
+    /// its own, a step off the panel. A menu with no dividers has no groups
+    /// and paints no grounds: its rows show only under the pointer.
+    Group,
     /// The host switcher's two columns, and the row that holds them. The
     /// columns paint nothing: the panel owns every surface.
     SwitcherRow,
@@ -60,9 +65,11 @@ enum BPopoverPart {
 /// instead of somewhere inside the row.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum BPopoverWidth {
-    /// A menu, a property dropdown, a submenu, the switcher's picker: one
-    /// panel wide, so the dropdowns in a strip share a width instead of each
-    /// sizing to its own longest label.
+    /// A menu, a property dropdown, a submenu: it hugs its rows, from a
+    /// menu's least width up — RCP's and macOS's menus are as wide as their
+    /// longest row, not a panel wide with the rest left empty.
+    Menu,
+    /// The host switcher's picker: one panel wide.
     Panel,
     /// A header popover: one side zone wide.
     Header,
@@ -72,12 +79,14 @@ impl BPopoverWidth {
     fn of(side: BPopoverSide) -> Self {
         match side {
             BPopoverSide::BelowEnd => Self::Header,
-            BPopoverSide::Below | BPopoverSide::Switcher | BPopoverSide::Right => Self::Panel,
+            BPopoverSide::Switcher => Self::Panel,
+            BPopoverSide::Below | BPopoverSide::Right => Self::Menu,
         }
     }
 
     fn least(self) -> BDim {
         match self {
+            Self::Menu => BDim::MenuWidth,
             Self::Panel => BDim::PanelWidth,
             Self::Header => BDim::SideZoneDefaultWidth,
         }
@@ -87,20 +96,21 @@ impl BPopoverWidth {
 impl BFlexed for BPopoverPart {
     fn flex(&self, ctx: &BRenderCtx) -> BFlex {
         match *self {
-            Self::Panel { two_column, width } => {
+            Self::Panel { two_column, width, side } => {
                 let wide = ctx.style.dimensions.panel_width * 2.0;
+                let radius = compatible_inner_radius(ctx.style.radius_for(BStyleRole::Popover), ctx.style.strokes.border);
+                // Every corner rounds: a menu stands clear of the control
+                // that opened it, as every control stands clear of its row.
+                let _ = side;
+                // No border: a menu is a surface on its shadow, and its
+                // groups are grounds within it, not boxes drawn round rows.
                 let panel = BFlex::column()
                     .fill(BFill::Tone(BSurfaceTone::Card))
                     .ink()
-                    .border(BEdge::All)
-                    .radius(BRadius::All(compatible_inner_radius(
-                        ctx.style.radius_for(BStyleRole::Popover),
-                        ctx.style.strokes.border,
-                    )))
-                    // Every dropdown is at least one panel wide, so the menus
-                    // in a strip share a width instead of each sizing to its
-                    // own longest label; a header popover is one side zone
-                    // wide (`BPopoverWidth`). Content may grow either further.
+                    .radius(BRadius::All(radius))
+                    // A menu hugs its rows from a menu's least width; the
+                    // switcher is a panel wide and a header popover one side
+                    // zone wide (`BPopoverWidth`). Content may grow further.
                     .min_width(BLen::Dim(width.least()))
                     // As tall as its rows need, or as the window allows,
                     // whichever is less — and it scrolls past that.
@@ -132,6 +142,12 @@ impl BFlexed for BPopoverPart {
                 // gets a picker that fits inside it.
                 if two_column { panel.max_width(BLen::Measured(wide)) } else { panel }
             }
+            Self::Group => BFlex::column()
+                .width(BLen::Full)
+                .pad(BSpace::PadXs)
+                .gap(BSpace::GapXs)
+                .radius(BRadius::Role(BStyleRole::MenuItem))
+                .fill(BFill::Tone(BSurfaceTone::Nested(1))),
             Self::Content { empty } => {
                 let column = BFlex::column()
                     .width(BLen::Full)

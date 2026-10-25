@@ -19,6 +19,7 @@ pub mod execute;
 pub mod fsmenu;
 pub mod header;
 pub mod history;
+pub mod info;
 pub mod kind;
 pub mod listing;
 pub mod nav;

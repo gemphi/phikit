@@ -159,6 +159,10 @@ pub enum BModalShape {
     /// A reading sheet: `share` of the window's width, its full height,
     /// centred — a page over the workspace.
     Sheet { share: f32 },
+    /// A search palette: half the window wide, hung under the top bar, on a
+    /// see-through ground with a border — the field is its heading, so it
+    /// has no title bar.
+    Palette,
 }
 
 impl BSpec for BModalSpec {

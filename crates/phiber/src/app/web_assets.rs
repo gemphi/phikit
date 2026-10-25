@@ -9,7 +9,9 @@
 //! a browser user opens their own file through `Phx::open_bytes`, so they do
 //! not belong in the bundle. What the app actually loads at startup — icons,
 //! fonts, the brand marks, matcaps, studio lights and the startup
-//! templates — comes to **5.5 MB**, which does fit.
+//! templates — comes to about **10.5 MB**, which does fit
+//! (`the_embedded_set_stays_small` holds it under 12 MB). The Phi type families
+//! sit in `assets/phi-fonts/`, outside these roots, until the app loads them.
 //!
 //! Listing the roots one by one rather than embedding `assets/` wholesale is
 //! the point: a new folder of content cannot silently add 100 MB to the
@@ -44,7 +46,7 @@ pub(crate) const ROOTS: [(&str, &Dir<'static>); 6] = [
 /// `assets/`, embedded — the [`AssetSource`] a browser build hands gpui.
 pub struct WebAssets;
 
-/// Split `icons/foo.svg` into its root and the path within it.
+/// Split an asset path (`icons/<name>.svg`) into its root and the path within it.
 ///
 /// gpui asks for paths relative to `assets/`, the same strings the desktop
 /// source joins onto its base folder, so the first segment names the root.

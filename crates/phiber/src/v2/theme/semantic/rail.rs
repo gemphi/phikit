@@ -9,17 +9,12 @@ use crate::v2::host::BHostType;
 use crate::v2::theme::BResolvedUiStyle;
 
 impl BResolvedUiStyle {
-    /// Left edge of the Properties rail-tab paint layer. Two resolved border
-    /// strokes preserve the requested 2px default while remaining compatible
-    /// with runtime stroke overrides.
-    pub fn properties_tab_background_inset(&self) -> f32 {
-        self.strokes.border * 2.0
-    }
-
-    /// Content-facing overlap for Properties rail-tab paint. The paint layer
-    /// extends without changing the tab or strip allocation.
-    pub fn properties_tab_overlap(&self) -> f32 {
-        self.spacing.gap_xs.max(self.strokes.border)
+    /// Every rail's collapsed width — the toolbar, the sidebar, the
+    /// Properties and Preferences navbars, docked or floating over a canvas:
+    /// one card-head square tile and `pad_xs` either side of it. One number,
+    /// so no host's strip can come out a different width from another's.
+    pub fn rail_width(&self) -> f32 {
+        self.dimensions.card_head_height() + 2.0 * self.spacing.pad_xs
     }
 
     /// The vertical pad a host's content region keeps above its first card:
@@ -41,12 +36,16 @@ impl BResolvedUiStyle {
     /// keeps the module's own lead.
     pub fn rail_lead(&self, host: BHostType) -> f32 {
         // A rail entry is the card-head module, so the first entry's top is
-        // the first heading's top: nothing to centre.
-        match host {
+        // the first heading's top: nothing to centre. The rail's own bar pads
+        // `pad_xs` inside its ground (`rail.rs`), so the region pads that much
+        // less.
+        let lead = match host {
             BHostType::Buts | BHostType::Prefs => {
-                self.content_pad(host) + 2.0 * self.strokes.border + self.spacing.pad_sm
+                // The body column's border; a card has no border of its own.
+                self.content_pad(host) + self.strokes.border + self.spacing.pad_sm
             }
             _ => self.spacing.pad_sm + self.spacing.pad_md,
-        }
+        };
+        lead - self.spacing.pad_xs
     }
 }

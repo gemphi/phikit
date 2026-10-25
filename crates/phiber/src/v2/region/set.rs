@@ -9,6 +9,7 @@ use super::BRegionType;
 impl BRegionType {
     pub fn label(self) -> &'static str {
         match self {
+            BRegionType::Tabs => "Tabs",
             BRegionType::Header => "Header",
             BRegionType::Center => "Center",
             BRegionType::Footer => "Footer",

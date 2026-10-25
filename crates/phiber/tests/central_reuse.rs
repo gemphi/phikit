@@ -194,16 +194,16 @@ async fn the_topbar_right_cell_survives_a_narrow_window(cx: &mut TestAppContext)
                 && f32::from(zones.size.width) > 0.0,
             "the zone toggles were squeezed out of the right cell at {width}px"
         );
-        // Its icons ride the strip's line — the centre of the cap band, the
-        // strip less the menu gap above it — with the menus beside them.
-        // Below the wrap width the bar is two lines and they ride the
-        // second (`filter::topbar_wraps`).
+        // Its icons ride the strip's line — the middle of the row, which a
+        // control clears by `CONTROL_CLEAR` above and below — with the menus
+        // beside them. Below the wrap width the bar is two lines and they
+        // ride the second (`filter::topbar_wraps`).
         let icon_mid = f32::from(close.origin.y) + f32::from(close.size.height) / 2.0;
         let metrics = phiber::v2::theme::METRICS;
-        let (gap, line) = (metrics.menu_top_gap, metrics.h_header);
+        let line = metrics.h_header;
         let wrapped = f32::from(strip.size.height) > line + 0.5;
         let line_top = f32::from(strip.origin.y) + if wrapped { line + metrics.gap_xs } else { 0.0 };
-        let strip_line = line_top + gap + (line - gap) / 2.0;
+        let strip_line = line_top + line / 2.0;
         assert!(
             (icon_mid - strip_line).abs() < 0.51,
             "the top bar's right-hand icons are off the strip's line at {width}px: {icon_mid} vs {strip_line}"
@@ -445,17 +445,9 @@ fn the_selected_properties_tab_is_the_panel_head_beside_it() {
     assert_eq!(fill, style.heading_surface(phiber::v2::theme::BSurfaceTone::Card));
     assert_eq!(style.rail_surface(BHostType::Buts), style.host_body_surface(BHostType::Buts));
 
-    // And it runs along the rail-to-panel axis, whichever side the rail is on.
-    assert_eq!(
-        BCapSide::Right.gradient_axis(),
-        BGradientAxis::Trailing,
-        "a left-hand rail hands off to the right"
-    );
-    assert_eq!(
-        BCapSide::Left.gradient_axis(),
-        BGradientAxis::Leading,
-        "a right-hand rail hands off to the left"
-    );
+    // A rail entry is one tile whichever side its rail is on (`BCapSide::Free`),
+    // and every cap's fill runs down it, as a header tab's does.
+    assert_eq!(BCapSide::Free.gradient_axis(), BGradientAxis::Down);
     assert_eq!(BCapSide::Below.gradient_axis(), BGradientAxis::Down);
 }
 

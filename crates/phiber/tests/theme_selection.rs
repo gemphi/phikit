@@ -12,7 +12,7 @@ use phiber::v2::{
     state::{AppKey, BPath, BState, action::apply_action, key::ui_style as key},
     theme::{
         BPaletteName, BRadiusScale, BRadiusToken, BResolvedUiStyle, BShadowStyle, BStyleRole, BThemeMode,
-        MEDIUM_RADII, PILL_RADII, ROUND_RADII, SOFT_RADII, SQUARE_RADII, TIGHT_RADII, resolve_ui_style,
+        MEDIUM_RADII, OCTA_RADII, PILL_RADII, ROUND_RADII, SOFT_RADII, SQUARE_RADII, TIGHT_RADII, resolve_ui_style,
         ui_style_defaults, ui_style_defaults_for, ui_style_defaults_in,
     },
     view::{BAction, BView, BViewItem},
@@ -30,7 +30,7 @@ const THEMES: [(BPaletteName, BRadiusScale, BShadowStyle, bool, f32); 16] = [
     (BPaletteName::Grey, ROUND_RADII, BShadowStyle::Medium, true, 6.0),
     (BPaletteName::Silver, MEDIUM_RADII, BShadowStyle::Small, false, 6.0),
     (BPaletteName::Apple, MEDIUM_RADII, BShadowStyle::Medium, false, 4.0),
-    (BPaletteName::AppleDark, MEDIUM_RADII, BShadowStyle::Medium, false, 4.0),
+    (BPaletteName::Phiber, OCTA_RADII, BShadowStyle::ExtraLarge, true, 4.0),
     (BPaletteName::Swift, SOFT_RADII, BShadowStyle::Large, true, 4.0),
     (BPaletteName::Barbie, PILL_RADII, BShadowStyle::ExtraLarge, true, 8.0),
     (BPaletteName::Fenty, ROUND_RADII, BShadowStyle::Large, true, 6.0),
@@ -72,6 +72,16 @@ struct BPicker {
 }
 
 fn picker(state: &BState) -> BPicker {
+    // Sixteen themes are two groups of eight; open both so every row is in
+    // reach. Folding the section itself is still the test's to do.
+    let mut state = state.clone();
+    for (group, _) in phiber::v2::part::pref::THEME_GROUPS {
+        let key = phiber::v2::part::props::BPanelItem::expand_key(BHostType::Prefs, "Appearance", &format!("Theme {group}"));
+        if state.get(&key).is_none() {
+            state.set(&key, "true");
+        }
+    }
+    let state = &state;
     let view = BPrefsItem::new().build(state);
     let BView::Card(column) = &view else { panic!("preferences are a column") };
     let BView::Card(first) = &column.body[0] else { panic!("the picker leads") };
@@ -90,8 +100,12 @@ fn picker(state: &BState) -> BPicker {
     let rows = first
         .body
         .iter()
+        .flat_map(|group| match group {
+            BView::Card(group) => group.body.clone(),
+            other => vec![other.clone()],
+        })
         .map(|row| {
-            let BView::Split { list } = row else { panic!("a theme row is a split") };
+            let BView::Split { list } = &row else { panic!("a theme row is a split") };
             let BView::Label { text } = &list[0] else { panic!("label first") };
             let BView::Button(control) = &list[1] else { panic!("button second") };
             (text.clone(), control.active, control.action.clone().expect("a theme button acts"))
@@ -120,7 +134,8 @@ fn preferences_offer_sixteen_themes_in_an_accordion_and_choosing_one_is_what_the
     let labels: Vec<String> = first.rows.iter().map(|(label, _, _)| label.clone()).collect();
     assert_eq!(
         labels,
-        ["Sphere", "Graphite", "Tokyo", "Moss", "Ember", "Plum", "Onyx", "Grey", "Silver", "Apple", "Apple Dark", "Swift", "Barbie", "Fenty", "Cyberpunk", "Chanel"]
+        // Two groups of eight (`MAX_CHILDREN`): Studio, then Signature.
+        ["Phiber", "Sphere", "Graphite", "Tokyo", "Silver", "Onyx", "Grey", "Apple", "Moss", "Ember", "Plum", "Swift", "Barbie", "Fenty", "Cyberpunk", "Chanel"]
     );
     assert!(labels.len() <= BPaletteName::MAX, "sixteen at most");
     for (name, radii, shadow, gradients, gap) in THEMES {

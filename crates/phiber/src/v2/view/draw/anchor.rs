@@ -31,7 +31,10 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     // the rule the popover drops from). Anywhere else — a dropdown in a
     // panel's row — it is a free control, rounded on every corner. One rule,
     // read off where the anchor stands (`BCapSide::of`).
-    let cap = super::tab::cap::BCapSide::of(ctx);
+    // A menu anchor is a control like every other: the control height,
+    // centred, rounded on every corner — it clears the header's edges rather
+    // than running into them, and its popover opens a gap below it.
+    let cap = super::tab::cap::BCapSide::Free;
     let mut row = cap.round(div()
         .flex()
         .flex_row()

@@ -22,6 +22,7 @@
 use super::flex::{BAlign, BEdge, BFill, BFlex, BFlexed, BJustify, BLen, BOverflow, BRadius, BSpace, BType};
 use super::ctx::BRenderCtx;
 use super::walk;
+use super::slot::slot;
 use crate::v2::theme::{BStyleRole, BSurfaceTone};
 use crate::v2::view::BView;
 use crate::v2::view::prim::{BCard, BCardKind, BColumn};
@@ -35,8 +36,9 @@ enum BCardPart {
     /// against whatever it sits on, and gives it back when it folds away.
     /// Without it a column of open plain accordions runs together.
     Frame { kind: BCardKind, open: bool },
-    /// The heading strip; `open` decides which corners it rounds.
-    Head { kind: BCardKind, open: bool },
+    /// The heading strip; `open` decides which corners it rounds, `rule`
+    /// whether a line runs under it — an unfolded heading over its rows.
+    Head { kind: BCardKind, open: bool, rule: bool },
     /// A fixed-size slot in the header: the triangle, the grip.
     Glyph { dimmed: bool },
     /// The title, which takes the header's free space and clips.
@@ -47,10 +49,13 @@ enum BCardPart {
     /// The rows under the heading — or, in a headless card, the whole card:
     /// its rows then start where a heading would, so a headless card and a
     /// headed one share one row grid with the rail beside them.
-    Body { headless: bool },
+    /// `list`: every row a menu row, which is its own height — they stack
+    /// with no gap, as a menu's rows do.
+    Body { headless: bool, fold: Option<bool>, list: bool },
     /// One row; bare text gets a row's own inset so it lines up with rows
     /// that carry theirs.
-    Row { text: bool },
+    /// `own`: a menu row, which is its own module and needs no floor.
+    Row { text: bool, own: bool },
     /// The strip under the body — a dialog's actions.
     Foot,
 }
@@ -67,35 +72,52 @@ impl BFlexed for BCardPart {
                 match kind {
                     // No clipping: a dropdown opened from a row has to escape
                     // the card (`file_browser_accordion_refinement`).
-                    BCardKind::Panel => column.radius(BRadius::Role(BStyleRole::Card)).border(BEdge::All).fill(panel_fill(ctx)),
+                    // A group is a ground, not a box: its fill marks it out, with no
+                    // border round it (menus, panels and areas alike).
+                    BCardKind::Panel => column.radius(BRadius::Role(BStyleRole::Card)).fill(panel_fill(ctx)),
                     // A sub-panel is its parent's card again, one shade in:
                     // no indent and no guide down its left edge. Both marked
                     // it out as a different kind of thing, when the whole
                     // point is that a nested accordion is an accordion — it
                     // sits in its parent's body on that body's inset, so the
                     // space around it is even on all four sides.
-                    BCardKind::Sub { depth } => column
+                    // Indented one gutter under its parent's rows, its
+                    // heading a shade in, behaving as the parent's does: a
+                    // child accordion reads as its parent's child.
+                    // No margin of its own: its parent's body already sets it
+                    // in under the parent's title (`BSpace::FoldBody`).
+                    BCardKind::Sub { depth } => BFlex::column()
+                        .fills()
                         .radius(BRadius::Role(BStyleRole::Card))
                         .fill(BFill::Tone(BSurfaceTone::Nested(*depth))),
+                    // A source list's section: no surface, a divider under it.
+                    BCardKind::Section => column.border(BEdge::Bottom),
                     // A plain accordion with its rows showing takes a
                     // border, so the open one reads apart from its
                     // neighbours; closed, it is a row of text again. The
                     // Properties editor's transparent rows are bare cards
                     // that do not fold, so `open` is false there and they
                     // keep their outer border alone.
-                    BCardKind::Bare if *open => column.border(BEdge::All).radius(BRadius::Role(BStyleRole::Card)),
+                    // Open, a plain accordion is a group: it takes a ground, not a
+                    // border.
+                    BCardKind::Bare if *open => column.radius(BRadius::Role(BStyleRole::Card)).fill(BFill::Tone(BSurfaceTone::Card)),
                     BCardKind::Bare | BCardKind::Strip(_) | BCardKind::Column(_) => column,
                 }
             }
-            Self::Head { kind, open } => {
+            Self::Head { kind, open, rule } => {
+                // A nested heading pads `PadSm`, so its fold triangle lands
+                // exactly under its parent's title, the next step of the tree.
+                let pad = if matches!(kind, BCardKind::Sub { .. }) { BSpace::PadSm } else { BSpace::PadMd };
                 let strip = BFlex::row()
                     .width(BLen::Full)
                     .height(BLen::Dim(super::flex::BDim::CardHead))
                     .align(BAlign::Center)
                     .gap(BSpace::GapSm)
-                    .pad_x(BSpace::PadMd)
+                    .pad_x(pad)
                     .type_size(BType::Body)
                     .ink();
+                // A section's own divider is under its rows, not its heading.
+                let strip = if *rule && *kind != BCardKind::Section { strip.border(BEdge::Bottom) } else { strip };
                 let rounded = if *open { BRadius::Top(corner(ctx)) } else { BRadius::Role(BStyleRole::Card) };
                 match kind {
                     // A panel's heading lifts a step off its card
@@ -111,7 +133,7 @@ impl BFlexed for BCardPart {
                             .radius(rounded)
                             .overflow(BOverflow::Clip)
                     }
-                    BCardKind::Bare | BCardKind::Strip(_) | BCardKind::Column(_) => strip,
+                    BCardKind::Bare | BCardKind::Section | BCardKind::Strip(_) | BCardKind::Column(_) => strip,
                 }
             }
             Self::Glyph { dimmed } => {
@@ -124,14 +146,22 @@ impl BFlexed for BCardPart {
                 .align(BAlign::Center)
                 .overflow(BOverflow::Clip),
             Self::Controls => BFlex::row().align(BAlign::Center).gap(BSpace::GapXs).keeps_size(),
-            Self::Body { headless } => {
-                let column = BFlex::column().width(BLen::Full).pad_x(BSpace::CardInset).gap(BSpace::GapXs);
+            Self::Body { headless, fold, list } => {
+                let column = BFlex::column().width(BLen::Full).pad_x(BSpace::CardInset);
+                let column = if *list { column.gap(BSpace::None) } else { column.gap(BSpace::GapXs) };
+                // A folding card's children are its tree: they stand under
+                // its title, one step in, at every depth.
+                let column = match fold {
+                    Some(sub) => column.pad_left(BSpace::FoldBody { sub: *sub }),
+                    None => column,
+                };
                 if *headless { column } else { column.pad_y(BSpace::PadXs) }
             }
             // A row is the card-head module tall at least, its content
             // centred, so a button in it has room over and under it.
-            Self::Row { text } => {
-                let row = BFlex::row().width(BLen::Full).min_height(BLen::Dim(super::flex::BDim::CardHead)).align(BAlign::Center);
+            Self::Row { text, own } => {
+                let row = BFlex::row().width(BLen::Full).align(BAlign::Center);
+                let row = if *own { row } else { row.min_height(BLen::Dim(super::flex::BDim::CardHead)) };
                 if *text { row.pad_x(BSpace::PadSm) } else { row }
             }
             Self::Foot => BFlex::row()
@@ -144,6 +174,7 @@ impl BFlexed for BCardPart {
         }
     }
 }
+
 
 /// A panel's body surface (`TH_PANEL_BACK`): a step over the region it sits
 /// in, in Properties as everywhere (Blender's `#3D3D3D` panel on its
@@ -171,34 +202,6 @@ fn panel_fill(ctx: &BRenderCtx) -> BFill {
     if ctx.host == crate::v2::host::BHostType::Activity && ctx.region == Some(crate::v2::region::BRegionType::Center) { BFill::Floating } else { BFill::Tone(BSurfaceTone::Card) }
 }
 
-/// The name a card's selectors are built from: its fold key, its title, or
-/// — for a headless card — the first words of its first row.
-fn slot(card: &BCard) -> String {
-    let words = match (&card.fold, card.title()) {
-        (Some(fold), _) => return fold.key.encode().replace('.', "-"),
-        (None, Some(title)) if !title.is_empty() => title.to_string(),
-        _ => card.body.first().map(first_words).unwrap_or_default(),
-    };
-    if words.is_empty() { "card".to_string() } else { words.to_lowercase().replace(' ', "-") }
-}
-
-fn first_words(v: &BView) -> String {
-    match v {
-        BView::Label { text } => text.clone(),
-        BView::Button(ctl) => ctl.label.clone().unwrap_or_default(),
-        BView::Icon { name } => name.clone(),
-        BView::Row { list } | BView::Column { list } | BView::Split { list } => {
-            list.first().map(first_words).unwrap_or_default()
-        }
-        // A region column is named by what it holds, as its panel role was.
-        BView::Card(card) if matches!(card.kind, BCardKind::Column(_)) => {
-            card.body.first().map(first_words).unwrap_or_default()
-        }
-        BView::ListRow { list, .. } => list.first().map(first_words).unwrap_or_default(),
-        _ => String::new(),
-    }
-}
-
 fn tagged(element: gpui::Div, id: String) -> gpui::Stateful<gpui::Div> {
     let selector = id.clone();
     element.id(SharedString::from(id)).debug_selector(move || selector)
@@ -207,7 +210,8 @@ fn tagged(element: gpui::Div, id: String) -> gpui::Stateful<gpui::Div> {
 fn head(card: &BCard, name: &str, ctx: &BRenderCtx) -> Option<AnyElement> {
     let head = card.head.as_ref()?;
     let open = card.is_open();
-    let mut strip = tagged(BCardPart::Head { kind: card.kind, open }.flex(ctx).div(ctx), format!("card-head-{name}"));
+    let rule = card.fold.as_ref().is_some_and(|f| f.open) && !card.body.is_empty();
+    let mut strip = tagged(BCardPart::Head { kind: card.kind, open, rule }.flex(ctx).div(ctx), format!("card-head-{name}"));
     if card.fold.is_some() {
         let triangle = if open { "triangle_down" } else { "triangle_right" };
         strip = strip.child(tagged(
@@ -281,11 +285,21 @@ fn draw(card: &BCard, ctx: &BRenderCtx) -> AnyElement {
         frame = frame.child(head);
     }
     if card.is_open() && !card.body.is_empty() {
-        let mut body = tagged(BCardPart::Body { headless }.flex(ctx).div(ctx), format!("card-content-{name}"));
+        let fold = (card.fold.is_some() && !headless).then_some(matches!(card.kind, BCardKind::Sub { .. }));
+        let list = card.body.iter().all(|row| matches!(row, BView::MenuItem(_)));
+        let mut body = tagged(BCardPart::Body { headless, fold, list }.flex(ctx).div(ctx), format!("card-content-{name}"));
+        let listed = BRenderCtx { listed: card.kind == BCardKind::Section, ..ctx.clone() };
         for (n, row) in card.body.iter().enumerate() {
-            let text = matches!(row, BView::Label { .. });
+            // Every read-out that is only words — a label, a `name: value`,
+            // a paragraph — takes the row's inset; a control carries its own.
+            // Only `Label` did, so the details column's pairs ran to the
+            // card's edge while its heading and preview stood in from it.
+            let text = matches!(row, BView::Label { .. } | BView::Pair { .. } | BView::Prose { .. });
+            // A menu row and a read-out are their own height: a stack of
+            // them reads as a list, not rungs a button's height apart.
+            let own = matches!(row, BView::MenuItem(_) | BView::Pair { .. });
             body = body.child(
-                tagged(BCardPart::Row { text }.flex(ctx).div(ctx), format!("card-row-{name}-{n}")).child(walk(row, ctx)),
+                tagged(BCardPart::Row { text, own }.flex(ctx).div(ctx), format!("card-row-{name}-{n}")).child(walk(row, &listed)),
             );
         }
         frame = frame.child(body);
@@ -299,4 +313,5 @@ fn draw(card: &BCard, ctx: &BRenderCtx) -> AnyElement {
     }
     frame.into_any_element()
 }
+
 

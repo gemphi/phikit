@@ -43,8 +43,11 @@ fn every_host_leads_with_its_own_icon_and_name() {
     let s = BState::new();
     for &host in BHostType::ALL {
         let left = parts(host, &s, BPaneType::Left);
-        if left.is_empty() {
-            continue; // a host with no header content at all (status bar)
+        // A host with no header content at all, or one of the window's own
+        // bars (top bar, status bar): those are not editors and have no
+        // editor type to switch to.
+        if left.is_empty() || host.is_fixed_bar() {
+            continue;
         }
         assert_eq!(
             left.first(),
@@ -65,12 +68,13 @@ fn a_host_with_a_search_puts_it_in_the_middle_and_others_leave_it_empty() {
     for &host in BHostType::ALL {
         let centre = parts(host, &s, BPaneType::Center);
         let has_search = centre.contains(&BPartType::Search);
-        // The file browsers search from their path strip (Blender's
-        // `filter_search` sits beside the directory), so their header's
-        // middle stays empty.
+        // The file browsers' header is the columns under it: the search
+        // stands over the details column, at the header's end.
+        let at_end = parts(host, &s, BPaneType::Right).contains(&BPartType::Search);
+        assert_eq!(at_end, search_key(host).is_some() && host.heads_its_columns(), "{host:?}: the search ends the header only in a browser");
         assert_eq!(
             has_search,
-            search_key(host).is_some() && !host.searches_in_tool_header(),
+            search_key(host).is_some() && !host.heads_its_columns(),
             "{host:?}: the middle holds a search only when the host searches from its header"
         );
     }

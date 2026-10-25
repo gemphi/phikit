@@ -27,6 +27,7 @@ pub mod nla;
 pub mod nla_edit;
 pub mod nla_eval;
 pub mod nla_stack;
+pub mod play;
 /// The pose oracle: `BChannel`, `bases_at` and `poses_at` recompute a
 /// rig's matrices the way `BKE_pchan_to_mat4` does, for `tests.rs` to
 /// check against Blender's own. The app poses through `rig/` and

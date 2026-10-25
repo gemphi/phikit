@@ -17,6 +17,9 @@ path = "src/theme.rs"
 doctest = false
 
 [dependencies]
+# `std::time::Instant::now` panics on wasm32-unknown-unknown; web-time is
+# std::time on every other target and performance.now() in the browser.
+web-time.workspace = true
 anyhow.workspace = true
 collections.workspace = true
 gpui.workspace = true

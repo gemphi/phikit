@@ -1,7 +1,7 @@
 //! The hex spelling of a colour — `#RRGGBB` / `#RRGGBBAA` — beside `parse_hsla`,
 //! which is the other spelling a theme colour has.
 //!
-//! Ported from Blender 5.2.0 in `crates/phiber/refs/blender`, not invented:
+//! Ported from Blender 5.2.0 in `gemphi/ext/phiber-refs/blender`, not invented:
 //! `blenlib/intern/math_color.cc:202` `hex_to_rgba` is the parser, and
 //! `editors/interface/regions/interface_region_color_picker.cc:260-283` is the
 //! formatter — `#%02X%02X%02X%02X` when the colour has an alpha channel,

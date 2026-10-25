@@ -41,9 +41,16 @@ pub fn system_bookmarks() -> Vec<BFsEntry> {
     ] {
         out.extend(entry(icon, name, join(&home, name)));
     }
+    // Blender's Windows list goes on with the fonts folder, OneDrive and
+    // the screenshots under Pictures.
+    if cfg!(windows) {
+        let windir = std::env::var("WINDIR").unwrap_or_else(|_| "C:\\Windows".into());
+        out.extend(entry("type", "Fonts", join(&windir, "Fonts")));
+    }
     if let Ok(od) = std::env::var("OneDrive") {
         out.extend(entry("cloud", "OneDrive", od));
     }
+    out.extend(entry("image", "Screenshots", join(&join(&home, "Pictures"), "Screenshots")));
     out
 }
 
@@ -52,14 +59,15 @@ pub fn system_bookmarks() -> Vec<BFsEntry> {
 pub fn volumes() -> Vec<BFsEntry> {
     let mut out = Vec::new();
     if cfg!(windows) {
+        // Named as Explorer names them: the system drive is the local
+        // disk, every other one its letter in brackets.
+        let system = std::env::var("SystemDrive").unwrap_or_else(|_| "C:".into());
         for letter in b'A'..=b'Z' {
-            let root = format!("{}:\\", letter as char);
+            let drive = format!("{}:", letter as char);
+            let root = format!("{drive}\\");
             if Path::new(&root).is_dir() {
-                out.push(BFsEntry {
-                    icon: "hard_drive",
-                    label: root.clone(),
-                    path: root,
-                });
+                let label = if drive.eq_ignore_ascii_case(&system) { format!("Local Disk ({drive})") } else { format!("Disk ({drive})") };
+                out.push(BFsEntry { icon: "hard_drive", label, path: root });
             }
         }
     } else {

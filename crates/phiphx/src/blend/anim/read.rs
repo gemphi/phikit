@@ -116,7 +116,16 @@ impl BlendFile {
             color: [color(0), color(1), color(2)],
             generator: self.generator(fc, dna),
             extend: self.off("FCurve", "extend", dna).and_then(|o| fc.data.get(o)).copied().unwrap_or(0),
+            group: self.fcurve_group(fc, dna),
         })
+    }
+
+    /// The name of the `bActionGroup` an F-curve belongs to (`FCurve.grp`),
+    /// the same pointer in a legacy action and in a layered one's channelbag.
+    fn fcurve_group(&self, fc: &BlendBlock, dna: &DnaType) -> Option<String> {
+        let group = self.block_at(self.ptr(fc, self.off("FCurve", "*grp", dna)))?;
+        let (o, n) = self.field_span("bActionGroup", "name", dna)?;
+        Some(crate::blend::shade::nodes::read_cstr(&group.data, o, n)).filter(|name| !name.is_empty())
     }
 
     /// `FCURVE.modifiers`: the first Generator in polynomial mode, as its

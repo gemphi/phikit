@@ -77,16 +77,17 @@ fn properties_rows_are_transparent_but_header_and_outer_card_remain_surfaces() {
     // After the prim.rs → prim.rs split, region columns live in prim/{body,sidebar}.rs.
     // Section transparency is in section.rs; card surfaces are in card.rs.
     let section = source("view/draw/split.rs");
-    // A property row carries the section tone everywhere but Properties,
-    // where the card it sits in already does — `BSplitPart::Row { toned }`.
-    assert!(section.contains("toned: ctx.host != crate::v2::host::BHostType::Buts"));
+    // A property row is transparent in every host: a label/value row is
+    // text and a control on whatever it sits on (`BSplitPart::Row`).
+    assert!(!section.contains("BSurfaceTone::Section"), "no section tone behind a row");
     // A panel's header and frame are the card's (`card.rs`): the header a
     // step over the card it heads, the frame outlined, rounded and on the
     // panel tone; a sub-panel's header a step over its own well.
     let card = source("view/draw/card.rs");
     assert!(card.contains("strip.fill(BFill::Heading(BSurfaceTone::Card))"), "panel header surface was lost");
     assert!(card.contains("BFill::Heading(BSurfaceTone::Nested(*depth))"), "sub-panel header surface was lost");
-    assert!(card.contains(".border(BEdge::All)"), "outer panel border was lost");
+    // A panel is a ground with no border round it: a group is a BG, not a box.
+    assert!(!card.contains(".border(BEdge::All)"), "a panel takes no outer border");
     assert!(card.contains(".radius(BRadius::Role(BStyleRole::Card))"), "outer panel radius was lost");
     // Through `panel_fill`, which picks swept or flat from the one card tone
     // (`the_activity_strip_is_card_content`).
@@ -157,7 +158,9 @@ fn switcher_uses_category_and_host_columns_without_replacing_host_metadata() {
 
 #[test]
 fn every_declared_host_header_leads_with_its_switcher_and_keeps_its_mode_control() {
-    for &host in BHostType::ALL {
+    // The window's own bars (top bar, status bar) are not editors: no
+    // editor type to switch them to, so no switcher.
+    for &host in BHostType::ALL.iter().filter(|host| !host.is_fixed_bar()) {
         for &region in host
             .spec()
             .regions
@@ -214,7 +217,10 @@ fn every_declared_host_header_leads_with_its_switcher_and_keeps_its_mode_control
             // the centre pane, and the filter never anywhere but the right —
             // a control that drifted into the left cell would read as part of
             // the editor's identity.
-            for (part, home) in [(BPartType::Search, BPaneType::Center), (BPartType::Filter, BPaneType::Right)] {
+            // A browser's header is the columns under it read across, so its
+            // search stands over the details column, at the right.
+            let search_home = if host.heads_its_columns() { BPaneType::Right } else { BPaneType::Center };
+            for (part, home) in [(BPartType::Search, search_home), (BPartType::Filter, BPaneType::Right)] {
                 for pane in [BPaneType::Left, BPaneType::Center, BPaneType::Right] {
                     let count = parts(pane).filter(|v| is(v, part)).count();
                     let allowed = usize::from(pane == home);
@@ -309,7 +315,9 @@ fn host_switch_popup_opens_inside_its_area() {
         !popover.contains(".max_height(BLen::Measured(wide))"),
         "but not by a width — that was the cap no long menu could meet"
     );
-    assert!(popover.contains(".scroller("));
+    // The content scrolls past that cap: the scroller is the popover's
+    // render half (`popover/render.rs`), the box above it this module.
+    assert!(source("view/draw/popover/render.rs").contains(".scroller("));
 }
 
 /// A module is a file or a folder; read whichever spelling exists.

@@ -95,7 +95,8 @@ impl BSceneActions {
     }
 
     /// The session's stacks in `out`'s place; then whoever has one, or a
-    /// strip of an action with new keys, plays its NLA as it is now.
+    /// strip of an action with new keys, plays its NLA as it is now — a
+    /// rig's bones with it.
     pub(super) fn lay(&self, out: &mut SceneModel) {
         for stack in &self.nla {
             match out.nla.iter_mut().find(|n| n.object == stack.object) {
@@ -110,8 +111,16 @@ impl BSceneActions {
             if !edited && !stack.tracks.iter().flat_map(|t| &t.strips).any(keyed) {
                 continue;
             }
+            let (played, solo) = (Self::played(stack, actions), stack.flag & ADT_SOLO_TRACK != 0);
+            // A rig's strips pose its bones as well as moving it.
+            let list = &motion.motion.list;
+            if let Some(rig) = motion.rigs.rigs.iter_mut().find(|r| list.get(r.object).is_some_and(|m| m.name == stack.object)) {
+                let mut source = (**rig).clone();
+                (source.nla, source.solo) = (played.clone(), solo);
+                *rig = std::sync::Arc::new(source);
+            }
             if let Some(m) = motion.motion.list.iter_mut().find(|m| m.name == stack.object) {
-                (m.nla, m.solo) = (Self::played(stack, actions), stack.flag & ADT_SOLO_TRACK != 0);
+                (m.nla, m.solo) = (played, solo);
             }
         }
     }

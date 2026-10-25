@@ -19,7 +19,7 @@ use gpui::AnyElement;
 
 pub(super) const fn surface_opacity(kind: BRegionType, host: BHostType) -> BSurfaceOpacity {
     match kind {
-        BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute
+        BRegionType::Tabs | BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute
             if !matches!(host, BHostType::Topbar) =>
         {
             BSurfaceOpacity::Opaque
@@ -45,7 +45,7 @@ fn region_fill(kind: BRegionType) -> BFill {
         // (Blender draws both in `TH_HEADER`) — and so is the file
         // browser's execute bar: a strip of field and buttons, one surface
         // with the header strips over it.
-        BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute => BFill::HostHeader,
+        BRegionType::Tabs | BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute => BFill::HostHeader,
         // Every vertical strip — the Properties navbar, the tool rail, the
         // editor side rail — takes the rail surface, which is the body of
         // the area it sits in (`rail_surface`): the strip has no colour of
@@ -130,7 +130,7 @@ impl BFlexed for BRegionFrame {
 
         let expanded = |key| strip::is_expanded(ctx.state, ctx.host, key);
         let fixed = match kind {
-            BRegionType::Header | BRegionType::ToolHeader | BRegionType::AssetShelfHeader => {
+            BRegionType::Tabs | BRegionType::Header | BRegionType::ToolHeader | BRegionType::AssetShelfHeader => {
                 Some(BDim::HeaderHeight)
             }
             BRegionType::Footer => Some(BDim::FooterHeight),
@@ -145,15 +145,22 @@ impl BFlexed for BRegionFrame {
             // A tools column of panels (the file browser's source list) is
             // as wide as the user dragged it, or a panel's width until then.
             BRegionType::Tools if ctx.host.tools_hold_panels() => None,
-            BRegionType::Tools if expanded("tool") => Some(BDim::SidebarMinWidth),
-            BRegionType::Tools => Some(BDim::ToolbarWidth),
-            BRegionType::NavBar if expanded("navbar") => Some(BDim::SidebarMinWidth),
-            BRegionType::NavBar => Some(BDim::NavbarWidth),
+            // Both widths are the floating strip's (`pane::strip_width`), so
+            // a docked rail and the viewport's are one element.
+            BRegionType::Tools if expanded("tool") => Some(BDim::PanelWidth),
+            BRegionType::Tools => Some(BDim::RailWidth),
+            BRegionType::NavBar if expanded("navbar") => Some(BDim::PanelWidth),
+            BRegionType::NavBar => Some(BDim::RailWidth),
             BRegionType::UI => Some(BDim::PanelWidth),
             BRegionType::Channels => Some(BDim::ChannelsWidth),
             BRegionType::ToolProps => Some(BDim::ToolPropsWidth),
             _ => None,
         };
+        // A browser's inspector (the Project Browser's, Reality Composer
+        // Pro's right column) is a panel's width, beside cards that fill.
+        if kind == BRegionType::UI && ctx.host.tools_hold_panels() {
+            return flex.width(BLen::Dim(BDim::PanelWidth)).keeps_size().height(BLen::Full).min_height(BLen::Zero);
+        }
         if kind == BRegionType::Tools && ctx.host.tools_hold_panels() {
             // Dragged shut: the region keeps only the arrow that restores it.
             if crate::v2::view::size::sidebar_hidden(ctx.state) {
@@ -242,9 +249,9 @@ impl BFlexed for BRegionFrame {
 /// starts where the file list does (`pane`).
 pub(super) fn tools_column_width(ctx: &BRenderCtx) -> f32 {
     let width = crate::v2::view::size::sidebar_column_width(ctx.state, ctx.style.sidebar_min_width(), ctx.style.dimensions.sidebar_min_width);
-    // The column and the one pad between it and the area edge; the region
+    // The column and the seam between it and the area edge; the region
     // beside it pads the inner edge (`BRegionFrame`).
-    width + ctx.style.spacing.pad_md
+    width + ctx.style.resize.gap
 }
 
 pub fn view(kind: BRegionType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
@@ -255,7 +262,10 @@ pub fn view(kind: BRegionType, list: &[BView], ctx: &BRenderCtx) -> AnyElement {
     // wheel and pans under a middle-drag, as Blender's do, instead of
     // clipping its right end — unless it is the top bar wrapping onto a
     // second line (`BRegionFrame`).
-    let strip = matches!(kind, BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer | BRegionType::Execute);
+    // The execute bar is not one: it is three groups across the dialog's
+    // width (`file::execute`), so it takes the width it is given rather
+    // than scrolling to its content's.
+    let strip = matches!(kind, BRegionType::Tabs | BRegionType::Header | BRegionType::ToolHeader | BRegionType::Footer);
     let wraps = kind == BRegionType::Header && ctx.host.pins_header_cells() && crate::v2::part::filter::topbar_wraps(ctx.state);
     // The loading panel is taller than one line, so it is not a sideways-
     // scrolling strip: let the region grow around it (like a wrapping header).

@@ -35,9 +35,9 @@ fn object(name: &str, location: [f32; 3], scale: [f32; 3], color: [f32; 4], roug
             bsdf: Default::default(),
             mix: None,
             procedural: Default::default(),
-            normal_texture: None,
-            normal_map: None,
-            maps: Default::default(),
+            // The rest — the bake and the UV transform — as a material
+            // built from nothing has them.
+            ..SceneMaterial::neutral()
         }],
         material_indices: Default::default(),
         uvs: Default::default(),

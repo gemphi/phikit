@@ -2,9 +2,9 @@
 //!
 //! Validates: Requirements 3.4, 4.4, 4.5, 10.1, 11.1, 11.5-11.7, 12.7, 14.7-14.12
 
-use phiber::v2::state::{BKey as _, CtxKey, ModalKey};
+use phiber::v2::state::{AppKey, BKey as _, ModalKey, OpKey};
 use phiber::v2::{
-    modal::{BModalType, splash::BSplashModal},
+    modal::{BModalType, splash::{BSplashModal, BWelcomeTab}},
     state::{
         BState,
         val::V_MODAL_FILE_BROWSER,
@@ -45,6 +45,13 @@ fn visit<'a>(
                 actions.push(action);
             }
         }
+        BView::Thumbnail(t) => {
+            icons.push(&t.icon);
+            strings.push(&t.label);
+            if let Some(action) = &t.action {
+                actions.push(action);
+            }
+        }
         BView::Card(card) => {
             if let Some(title) = card.title() {
                 strings.push(title);
@@ -64,55 +71,96 @@ fn visit<'a>(
     }
 }
 
+/// Every card in `view`, depth first.
+fn cards(view: &BView, out: &mut Vec<BCardKind>) {
+    match view {
+        BView::Card(card) => {
+            out.push(card.kind);
+            for child in card.body.iter().chain(&card.foot) {
+                cards(child, out);
+            }
+        }
+        BView::Row { list } | BView::Column { list } | BView::ListRow { list, .. } => list.iter().for_each(|c| cards(c, out)),
+        _ => {}
+    }
+}
+
+/// The Welcome body with `tab` open.
+fn welcome(tab: BWelcomeTab) -> BView {
+    let mut state = BState::new();
+    state.set(AppKey::WelcomeTab, tab.slug());
+    BSplashModal.build(&state)
+}
+
 #[test]
-fn welcome_uses_phiber_brand_icon_and_one_aligned_content_header() {
-    let view = BSplashModal.build(&BState::new());
+fn welcome_leads_with_the_logo_and_paints_no_header_bar() {
+    // The home (`modal/splash/mod.rs`): the 3D logo and its line on the
+    // backdrop, the tabs on their one ground, then the open tab's cards.
+    let view = welcome(BWelcomeTab::New);
     let BView::Column { list } = &view else {
         panic!("Welcome body must be one column")
     };
-    // Blender `WM_MT_splash`: banner, then two splits (New File | Recent
-    // Files / Getting Started) and (Open… + Recover | What's New + support).
-    assert_eq!(list.len(), 3);
-    assert!(matches!(
-        &list[0],
-        BView::Card(card) if card.kind == BCardKind::Strip(BStrip::Header)
-            && matches!(card.body.as_slice(), [_, BView::Icon { name }, BView::Icon { name: word }, _]
-                if name == "phiber_banner" && word == "phiber_wordmark_banner")
-    ));
-    for split in &list[1..] {
-        let BView::Row { list: cards } = split else { panic!("splash splits are rows") };
-        assert_eq!(cards.len(), 2, "each split has two cards");
-        assert!(cards.iter().all(|c| matches!(c, BView::Card(card) if card.fold.is_none())),
-            "every splash block is one card that does not fold");
+    assert!(list.len() > 4, "logo, tagline, tabs, then the rows of cards");
+    // Nothing is painted under the logo or its line: neither is a card.
+    for line in &list[..2] {
+        let mut kinds = Vec::new();
+        cards(line, &mut kinds);
+        assert!(kinds.is_empty(), "the logo stands on the backdrop: {kinds:?}");
     }
+    let BView::Card(tabs) = &list[2] else { panic!("the tabs are a strip") };
+    assert_eq!(tabs.kind, BCardKind::Strip(BStrip::Tabs));
+    assert_eq!(tabs.body.len(), BWelcomeTab::ALL.len());
+    // The tab changes what is under it.
+    for tab in BWelcomeTab::ALL {
+        let BView::Column { list } = welcome(tab) else { panic!() };
+        let rows = &list[3..];
+        assert!(!rows.is_empty(), "{tab:?} shows no cards");
+        for row in rows {
+            let BView::Row { list: line } = row else { continue };
+            let tiles = line.iter().filter(|v| matches!(v, BView::Thumbnail(_))).count();
+            assert!(tiles <= phiber::v2::modal::splash::ACROSS, "{tab:?}: {tiles} cards in a row");
+        }
+    }
+    // No filled header bar anywhere.
+    let mut kinds = Vec::new();
+    cards(&view, &mut kinds);
+    assert!(kinds.iter().all(|k| *k != BCardKind::Strip(BStrip::Header)), "{kinds:?}");
 
     let mut strings = Vec::new();
     let mut icons = Vec::new();
     let mut actions = Vec::new();
+    visit(&list[0], &mut strings, &mut icons, &mut actions);
+    // The hero carries the name as the 3D logo, in the logo's own font
+    // rather than the interface's (`brand::WORDMARK_3D`).
+    assert_eq!(icons, ["phiber_wordmark_3d"]);
+    let (mut strings, mut icons) = (Vec::new(), Vec::new());
     visit(&view, &mut strings, &mut icons, &mut actions);
     assert!(
         strings
             .iter()
             .all(|text| !text.to_ascii_lowercase().contains("blender"))
     );
-    // The banner sets the mark and the name at the header's size, in a strip
-    // of the header's height: no larger than any other heading.
-    assert!(icons.contains(&"phiber_banner") && icons.contains(&"phiber_wordmark_banner"));
     assert_eq!(BModalType::Splash.spec().label, "Welcome to Phiber");
     assert_eq!(BModalType::Splash.spec().icon, "phiber");
-    for asset in ["phiber", "phiber_splash", "phiber_warm", "phiber_cool", "phiber_line", "phiber_join"] {
+    for asset in ["phiber", "phiber_splash"] {
         assert!(crate_path(&format!("assets/icons/{asset}.svg")).is_file(), "{asset}");
+    }
+    for layer in ["side", "body", "pill"] {
+        assert!(crate_path(&format!("assets/brand/phiber_mark_{layer}.svg")).is_file(), "{layer}");
     }
     assert!(crate_path("assets/brand/phiber_wordmark.svg").is_file());
 }
 
 #[test]
 fn welcome_preserves_template_open_and_link_actions() {
-    let view = BSplashModal.build(&BState::new());
+    // Every tab together: what the window offers across them.
+    let views: Vec<BView> = BWelcomeTab::ALL.into_iter().map(welcome).collect();
     let mut strings = Vec::new();
     let mut icons = Vec::new();
     let mut actions = Vec::new();
-    visit(&view, &mut strings, &mut icons, &mut actions);
+    for view in &views {
+        visit(view, &mut strings, &mut icons, &mut actions);
+    }
 
     for target in [
         "Layout",
@@ -126,7 +174,7 @@ fn welcome_preserves_template_open_and_link_actions() {
     ] {
         assert!(
             actions.iter().copied().any(|action| matches!(
-                action, BAction::Set(path, value) if path == &CtxKey::Space.path() && value == target
+                action, BAction::Set(path, value) if path == &OpKey::NewFile.path() && value == target
             )),
             "missing template action for {target}"
         );
@@ -157,8 +205,16 @@ fn welcome_preserves_template_open_and_link_actions() {
             .copied()
             .filter(|action| matches!(action, BAction::Set(path, _) if path.encode() == "ctx.reader.doc"))
             .count(),
-        entries.len() - leaving
+        // The links that stay, and the home groups' rows that open a page
+        // of the manual (the Quests).
+        entries.len() - leaving + home_docs()
     );
+}
+
+/// The home groups' rows that open a manual page.
+fn home_docs() -> usize {
+    use phiber::v2::modal::splash::home::{BHomeTarget, GROUPS};
+    GROUPS.iter().flat_map(|g| g.rows).filter(|r| matches!(r.goes, Some(BHomeTarget::Doc(_)))).count()
 }
 
 #[test]

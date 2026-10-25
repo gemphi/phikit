@@ -25,6 +25,8 @@ pub mod modal;
 pub mod node;
 pub mod op;
 pub mod outliner;
+pub mod play;
+pub mod project;
 pub mod screen;
 pub mod scene;
 pub mod time_view;
@@ -45,6 +47,8 @@ pub use modal::ModalKey;
 pub use node::NodeKey;
 pub use op::OpKey;
 pub use outliner::OutlinerKey;
+pub use play::PlayKey;
+pub use project::ProjectKey;
 pub use screen::ScreenKey;
 pub use scene::SceneKey;
 pub use time_view::TimeViewKey;
@@ -146,6 +150,8 @@ pub mod ui_style {
         DIMENSION_SCRUBBING_HEIGHT => "scrubbing_height",
         DIMENSION_ASSET_SHELF_HEIGHT => "asset_shelf_height",
         DIMENSION_BOTTOM_STRIP_HEIGHT => "bottom_strip_height",
+        DIMENSION_BOTTOM_PANEL_HEIGHT => "bottom_panel_height",
+        DIMENSION_MENU_WIDTH => "menu_width",
         DIMENSION_STATUS_LOG_HEIGHT => "status_log_height",
         DIMENSION_BANNER_HEIGHT => "banner_height",
         DIMENSION_ACTIVITY_WIDTH => "activity_width", DIMENSION_TOOLBAR_WIDTH => "toolbar_width",

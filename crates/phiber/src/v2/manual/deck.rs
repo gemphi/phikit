@@ -34,9 +34,9 @@
 //! level, so a figure's depth and the editor's depth are the same ladder —
 //! the picture is drawn in the shades the screen is.
 //!
-//! The palette is Silver (`BPaletteName::Silver`), which is also the
-//! editor's default, so a figure and the screen it was taken from are the
-//! same grey.
+//! The palette is Silver (`BPaletteName::Silver`), the grey the manual's
+//! figures were drawn in. The editor's default is now Phiber; a figure is
+//! taken from a window set to Silver.
 
 use crate::v2::theme::BPaletteName;
 
@@ -157,8 +157,7 @@ mod tests {
     }
 
     #[test]
-    fn the_figure_is_drawn_in_the_editors_own_default_theme() {
+    fn the_figure_is_drawn_in_silver() {
         assert_eq!(BDeck::SILVER.palette, BPaletteName::Silver);
-        assert_eq!(BDeck::SILVER.palette, BPaletteName::DEFAULT, "a figure and the screen it came from are the same grey");
     }
 }

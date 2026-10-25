@@ -184,11 +184,12 @@ impl BlendFile {
         let arm = self.block_at_code(o.ptr("*data"), "AR")?;
         let a = BFields::new(self, dna, arm, "bArmature");
         let pose = self.block_at(o.ptr("*pose"));
-        let collections = self.scoped(arm, || self.bone_collections(&a, pose, rig, dna));
+        let rest = self.bones_by_name(ob, dna);
+        let collections = self.scoped(arm, || self.bone_collections(&a, pose, rig, dna, &rest));
         let (version, sub) = PCHAN_HIDE_VERSION;
         let file = self.header.version_number;
         let pose_hide = file > version || (file == version && self.subversion(dna) >= sub);
-        let bones: Vec<BBoneLook> = rig.bones.iter().map(|b| self.bone_look(b.address, rig, &collections, pose_hide, dna)).collect();
+        let bones: Vec<BBoneLook> = rig.bones.iter().map(|b| self.bone_look(b.address, rig, &collections, pose_hide, dna, &rest)).collect();
         let shapes = bones.iter().filter_map(|b| b.shape).filter_map(|s| self.bone_shape(s, dna).map(|shape| (s, Arc::new(shape)))).collect();
         Some(BRigLook {
             drawtype: a.int("drawtype") as i32 as i8,
@@ -200,10 +201,10 @@ impl BlendFile {
         })
     }
 
-    fn bone_look(&self, chan: u64, rig: &BRig, collections: &BCollections, pose_hide: bool, dna: &DnaType) -> BBoneLook {
+    fn bone_look(&self, chan: u64, rig: &BRig, collections: &BCollections, pose_hide: bool, dna: &DnaType, rest: &std::collections::HashMap<String, &BlendBlock>) -> BBoneLook {
         let Some(pc) = self.block_at(chan) else { return BBoneLook::default() };
         let c = BFields::new(self, dna, pc, "bPoseChannel");
-        let bone = self.block_at(c.ptr("*bone"));
+        let bone = self.pchan_bone(pc, dna, rest);
         let b = bone.map(|b| BFields::new(self, dna, b, "Bone"));
         let flag = b.as_ref().map_or(0, |b| b.int("flag"));
         let drawtype = b.as_ref().filter(|b| b.has("drawtype")).map(|b| b.int("drawtype") as u8 as i8).filter(|&t| t >= 0);
@@ -224,7 +225,7 @@ impl BlendFile {
 
     /// The armature's bone collections (4.0+), or the ones Blender makes of
     /// a 3.x file's layers and bone groups.
-    fn bone_collections(&self, a: &BFields, pose: Option<&BlendBlock>, rig: &BRig, dna: &DnaType) -> BCollections {
+    fn bone_collections(&self, a: &BFields, pose: Option<&BlendBlock>, rig: &BRig, dna: &DnaType, rest: &HashMap<String, &BlendBlock>) -> BCollections {
         let mut of_bone: HashMap<u64, Vec<(bool, bool)>> = HashMap::new();
         // The file keeps the array as the `collections` list, in its order
         // (`armature_blend_write`); Blender builds the array again on read.
@@ -262,7 +263,8 @@ impl BlendFile {
         for b in &rig.bones {
             let Some(pc) = self.block_at(b.address) else { continue };
             let c = BFields::new(self, dna, pc, "bPoseChannel");
-            let Some(bone) = self.block_at(c.ptr("*bone")) else { continue };
+            let _ = &c;
+            let Some(bone) = self.pchan_bone(pc, dna, rest) else { continue };
             let layer = BFields::new(self, dna, bone, "Bone").int("layer") & used;
             let mut list: Vec<(bool, bool)> = (0..32).filter(|l| layer & (1 << l) != 0).map(|l| (shown & (1 << l) != 0, false)).collect();
             let group = c.int("agrp_index") as u16 as i16;

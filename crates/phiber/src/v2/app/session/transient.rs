@@ -98,6 +98,7 @@ mod tests {
         assert!(!is_transient("ctx.outliner.expanded.col/Scene Collection"), "an unfolded row is UI");
 
         assert!(is_transient("ctx.playing"), "but the session reopens paused");
+        assert!(is_transient("ctx.edit") && is_transient("ctx.edit_undo"), "and with no field holding the caret");
         assert!(is_transient("ctx.frame_start"), "the scene's range is the file's, not the session's");
         assert!(is_transient("ctx.scene.loading"), "nor the import machinery");
         assert!(is_transient("ctx.scene.unsaved"), "nor a dirty flag");

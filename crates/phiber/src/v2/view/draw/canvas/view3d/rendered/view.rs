@@ -66,6 +66,10 @@ pub(in crate::v2::view::draw::canvas::view3d) struct BRayView {
     /// `rendered::scene::build` instances them: what the tracer's own
     /// overlay pass draws around (`Tracer::outline`).
     pub outline_class: Arc<[phiray::trace::Outline]>,
+    /// While playing, how long the paint waits for this frame's image
+    /// (one frame period): `None` when still, and in the browser, which
+    /// has no thread to wait on.
+    pub sync: Option<std::time::Duration>,
 }
 
 impl BRayView {
@@ -104,7 +108,14 @@ impl BRayView {
         let lights = if studio { Vec::new() } else { crate::v2::scene::pose::lights_in_viewport(ctx.state, crate::v2::scene::scene_lights()) };
         let pick = super::scene::rgba(crate::v2::view::draw::color::to_hsla(ctx.style.colors.accent));
         let lit = super::scene::rgba(crate::v2::view::draw::color::to_hsla(ctx.style.step(ctx.style.colors.accent, 2)));
-        Self { yaw, pitch, pan, zoom, setup, sky, grid, studio, lights, wire, mode, set, see_through, grid_hide, view, fx, outline, cavity, ssao, shadow, shadow_fade, shade: solid_fx.shade_words(shade.shade_words()), matcap: shade.matcap_words(), single: shade.single_words(), dof, border: None, aa, outline_fx: [0.0, 0.0, 0.35, 1.0], outline_pick: pick, outline_active: lit, outline_move: pick, outline_class: Arc::from([]) }
+        // Blender draws a frame's shading and its overlays in one pass from
+        // one evaluated scene. The tracer is asynchronous, so while playing
+        // the paint waits for the frame it posted; otherwise the bones,
+        // drawn every frame, run ahead of the meshes in the image.
+        let playing = crate::v2::part::playback::set::BTransportButton::playing(ctx.state);
+        let fps = crate::v2::state::key::float_or(ctx.state, crate::v2::state::CtxKey::Fps, 24.0).clamp(1.0, 240.0);
+        let sync = (playing && cfg!(not(target_family = "wasm"))).then(|| std::time::Duration::from_secs_f32(1.0 / fps));
+        Self { yaw, pitch, pan, zoom, setup, sky, grid, studio, lights, wire, mode, set, see_through, grid_hide, view, fx, outline, cavity, ssao, shadow, shadow_fade, shade: solid_fx.shade_words(shade.shade_words()), matcap: shade.matcap_words(), single: shade.single_words(), dof, border: None, aa, outline_fx: [0.0, 0.0, 0.35, 1.0], outline_pick: pick, outline_active: lit, outline_move: pick, outline_class: Arc::from([]), sync }
     }
 
     /// With the objects the overlay outlines (`BGuide::outlined`), one

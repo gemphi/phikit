@@ -2,29 +2,25 @@
 //! active/hover, producing Blender's "paper tab" continuation effect on the
 //! Properties navbar, the view3d sidebar and the top space bar.
 //!
-//! Geometry: a tab is a cap cut into the strip, so only its *leading* corners
-//! are rounded and the trailing edge runs flush into the pane —
-//!   • horizontal (labeled) tabs round the TOP corners (`rounded_t`),
-//!   • vertical icon-only navbar tabs round the LEFT corners (`rounded_l`).
-//! Active tabs always receive the stronger cap. Inactive editor tabs remain
-//! transparent until hover; inactive Topbar workspace tabs rest on the light
-//! host-matching fill and promote to the stronger active background on hover.
+//! Geometry: a horizontal tab is a cap cut into its strip, rounded on the
+//! TOP corners (`rounded_t`) and running flush into the pane below. A rail
+//! entry is not a cap: in every rail — the toolbar, the sidebar, the
+//! Properties and Preferences navbars, docked or floating — it is the same
+//! square tile on its resting ground, lit with the accent when active
+//! (`rail`). One kind, so a change to it lands in every host at once.
 
 use super::color::{resolved_gradient, to_hsla};
 use super::ctx::BRenderCtx;
 use super::chrome;
 use super::atom::icon_path;
-use super::flex::{BFlex, BFlexed, BLen, BOverflow, BPlace};
+use super::flex::{BFlex, BFlexed, BLen, BOverflow};
 
 pub mod cap;
 mod shape;
-mod stack;
 use self::shape::BCapShape;
-pub use self::stack::rail_stack;
 use self::cap::{BCapSide, BTabTooltip};
-use crate::v2::host::BHostType;
 use crate::v2::theme::{BControlState, BStyleRole};
-use crate::v2::view::prim::{BControl, BRailSide};
+use crate::v2::view::prim::BControl;
 use gpui::prelude::*;
 use gpui::{AnyElement, ClickEvent, SharedString, px, svg};
 use std::rc::Rc;
@@ -37,22 +33,11 @@ pub fn view(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
     cap_view(ctl, BCapSide::Below, ctx)
 }
 
-/// A rail tab, whose pane continues to the side the rail is pinned opposite.
-pub fn rail(ctl: &BControl, side: BRailSide, ctx: &BRenderCtx) -> AnyElement {
-    // A floating strip caps into nothing, so its entries are buttons.
-    let side = if ctx.floating {
-        BCapSide::Free
-    } else {
-        BCapSide::from(side)
-    };
-    cap_view(ctl, side, ctx)
-}
-
-/// A rail entry that is a free button — the activity bar's: it caps into no
-/// pane, rounds fully and centres in its rail, but it is docked chrome, so it
-/// rests on nothing and takes the accent only on hover and when active.
-pub fn rail_button(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
-    cap_view(ctl, BCapSide::Free, ctx)
+/// A rail entry: the square tile every rail draws, docked or floating. It
+/// always rests on its tile (`chrome::rests`, through the floating paint), so
+/// an icon never sits on nothing — the viewport's strips are the reference.
+pub fn rail(ctl: &BControl, ctx: &BRenderCtx) -> AnyElement {
+    cap_view(ctl, BCapSide::Free, &ctx.floating())
 }
 
 fn cap_view(ctl: &BControl, side: BCapSide, ctx: &BRenderCtx) -> AnyElement {
@@ -61,28 +46,15 @@ fn cap_view(ctl: &BControl, side: BCapSide, ctx: &BRenderCtx) -> AnyElement {
     let active = ctl.active;
     // Which of the six caps this is, asked once (`shape.rs`) instead of
     // re-derived from four booleans at every geometry decision.
-    let shape = BCapShape::of(side, lbl.is_some(), ctx.host);
+    let shape = BCapShape::of(side, lbl.is_some());
     let strip_tab = chrome::in_strip(ctx) && shape.is_strip_tab();
     let text = if active { ctx.style.colors.text } else { ctx.style.colors.text_dim };
-    let hover_fill = if shape.icon_only() && ctx.host != BHostType::Buts {
-        // Activity bar and non-Properties icon rails: lift from the soft strip.
-        to_hsla(ctx.style.rail_tab_hover(ctx.host))
-    } else if shape.paints_separately() {
-        // A Properties tab previews what clicking it will do: hover takes the
-        // shade the SELECTED tab has, so the cap under the pointer already
-        // reads as joined to the panel. A hover tone of its own would be a
-        // third shade on a strip that only has two states to tell apart.
-        to_hsla(ctx.style.tab_active_gradient(ctx.host).top)
-    } else {
-        to_hsla(ctx.style.tab_hover(ctx.host))
-    };
+    let hover_fill = to_hsla(ctx.style.tab_hover(ctx.host));
     let r = px(ctx.style.radius_for(BStyleRole::Tab));
 
     let mut row = shape.row(ctx).div(ctx).text_color(to_hsla(text)).text_size(px(ctx.style.typography.body));
 
-    // Non-Properties tabs paint on the row. Properties rail tabs paint on a
-    // stable sibling layer assembled below.
-    if active && !shape.paints_separately() {
+    if active {
         // An icon-only rail entry (the activity bar, the toolbar, a navbar)
         // marks its active state the way every control does: the accent at
         // the active opacity, one hue for the whole family of controls
@@ -131,11 +103,7 @@ fn cap_view(ctl: &BControl, side: BCapSide, ctx: &BRenderCtx) -> AnyElement {
     }
 
     let id_text = format!("tab-{}-{}", ic, lbl.unwrap_or(ic));
-    let content: AnyElement = if shape.paints_separately() {
-        properties_layers(row, &id_text, active, side, r, hover_fill, ctx)
-    } else {
-        row.into_any_element()
-    };
+    let content: AnyElement = row.into_any_element();
 
     let Some(a) = ctl.action.as_ref() else {
         return content;
@@ -155,14 +123,10 @@ fn cap_view(ctl: &BControl, side: BCapSide, ctx: &BRenderCtx) -> AnyElement {
         .cursor_pointer()
         .child(content);
     // The gap sits on the cap's far edge, so its pane-facing edge is the
-    // strip's and the pane beyond continues the same surface. Properties rail
-    // tabs are the exception: they carry the same inset in their paint layer
-    // instead, so selection never moves the icon.
-    if !shape.paints_separately() {
-        element = side.gap(element, ctx.style.dimensions.menu_top_gap);
-    }
+    // strip's and the pane beyond continues the same surface.
+    element = side.gap(element);
     element = side.round(element, r);
-    if !shape.paints_separately() && !active {
+    if !active {
         // Every control's rest / hover fill comes from one mapping
         // (`chrome::paint`): the accent at an opacity. Docked rails paint
         // nothing until hovered; floating chrome rests on the faint step so
@@ -186,73 +150,12 @@ fn cap_view(ctl: &BControl, side: BCapSide, ctx: &BRenderCtx) -> AnyElement {
         .into_any_element()
 }
 
-/// A Properties rail tab's two layers: the paint, inset on the far edge and
-/// bleeding past the pane-facing one, and the row over it. Keeping them
-/// separate is what stops selection from moving the icon.
-#[allow(clippy::too_many_arguments)]
-fn properties_layers(
-    row: gpui::Div,
-    id_text: &str,
-    active: bool,
-    side: BCapSide,
-    r: gpui::Pixels,
-    hover_fill: gpui::Hsla,
-    ctx: &BRenderCtx,
-) -> AnyElement {
-    let group = SharedString::from(format!("{id_text}-paint-hover"));
-    let paint_id_text = format!("{id_text}-background");
-    let mut paint = BCapPart::Paint
-        .flex(ctx)
-        .div(ctx)
-        .id(SharedString::from(paint_id_text.clone()))
-        .debug_selector(move || paint_id_text);
-    // The far edge is inset and rounded; the pane-facing edge bleeds into the
-    // content region, so it stays flush.
-    paint = side.paint(
-        paint,
-        ctx.style.properties_tab_background_inset(),
-        ctx.style.properties_tab_overlap(),
-    );
-    paint = side.round(paint, r);
-    paint = if active {
-        // The selected Properties tab is painted as the accordion heading
-        // level with it is — the same surface, the same lit edge, so the two
-        // read as one row (`tab_active_gradient`). The heading's own axis is
-        // kept rather than turned towards the pane: a sweep running the
-        // other way from the accordion's would make them two materials.
-        paint.bg(resolved_gradient(ctx.style.tab_active_gradient(ctx.host)))
-    } else {
-        // An unselected tab paints NOTHING at rest. It used to draw a darker
-        // chip, which left the strip reading inside out: the resting tabs were
-        // the dark squares and the selected one was the gap between them. The
-        // step that chip used is the body's now (`host_body_surface`), so the
-        // selected tab is the one with a shade and a resting tab is strip.
-        //
-        // Hover borrows the selected tab's shade rather than a third tone of
-        // its own, so the cap under the pointer shows what clicking it gives.
-        paint.group_hover(group.clone(), move |style| style.bg(hover_fill))
-    };
-    BCapPart::Layers
-        .flex(ctx)
-        .div(ctx)
-        .group(group)
-        .child(paint)
-        .child(row)
-        .into_any_element()
-}
-
 /// The parts a cap is built from — one enum for the level, as every other
 /// level states its parts (`BCardPart`, `BModalPart`, `BTablePart`). Which
 /// *kind* of cap this is, is `BCapShape` (`tab/shape.rs`).
 enum BCapPart {
     /// The icon cell: one icon size, never shrinking.
     Icon,
-    /// The paint layer, spanning the cap top to bottom; its left and right
-    /// come from `BCapSide::paint`. The selected tab paints its gradient onto
-    /// it and hover borrows that shade; at rest it paints nothing.
-    Paint,
-    /// The two-layer stack a Properties rail tab is: the paint, then the row.
-    Layers,
 }
 
 impl BFlexed for BCapPart {
@@ -262,11 +165,6 @@ impl BFlexed for BCapPart {
                 let size = BLen::Measured(ctx.style.dimensions.icon_size);
                 BFlex::row().width(size).height(size).keeps_size()
             }
-            Self::Paint => BFlex::row().place(BPlace::Overlay),
-            Self::Layers => BFlex::row()
-                .place(BPlace::Anchor)
-                .width(BLen::Full)
-                .height(BLen::Measured(ctx.style.dimensions.card_head_height())),
         }
     }
 }

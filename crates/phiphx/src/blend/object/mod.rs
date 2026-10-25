@@ -7,6 +7,9 @@ pub mod light_driver;
 pub(crate) mod light_driver_read;
 pub mod dof;
 pub(crate) mod dna;
+pub(crate) mod instance;
+#[cfg(test)]
+mod instance_tests;
 pub(crate) mod kind;
 pub mod layer;
 pub(crate) mod meta;

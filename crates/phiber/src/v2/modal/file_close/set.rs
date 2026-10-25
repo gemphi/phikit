@@ -44,7 +44,8 @@ impl BCloseAnswer {
     }
 
     pub fn button(self) -> BView {
-        BView::Button(BControl::new().with_label(self.label()).with_action(BAction::Set(OpKey::FileClose.path(), self.slug().to_string())))
+        // Save is the dialog's lit answer, as Blender's default button is.
+        BView::Button(BControl::new().with_label(self.label()).with_active(self == Self::Save).with_action(BAction::Set(OpKey::FileClose.path(), self.slug().to_string())))
     }
 }
 

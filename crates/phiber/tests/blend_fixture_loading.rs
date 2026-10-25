@@ -4,8 +4,8 @@
 //! point the Viewport/Outliner pipeline uses — over two fixture sets that ship
 //! in the workspace:
 //!
-//!   1. Blender's small upstream test files (`REFS/blender/blender/tests/files`).
-//!   2. The CW-Fashion example meshes (`REFS/zed-repo/.../assets/CW-Fashion`).
+//!   1. Blender's small upstream test files (`gemphi/ext/REFS/blender/blender/tests/files`).
+//!   2. The CW-Fashion example meshes (`gemphi/ext/REFS/zed-repo/.../assets/CW-Fashion`).
 //!
 //! Every fixture must return `Ok(SceneModel)` or a categorized
 //! `Err(SceneLoadError)` WITHOUT panicking (Requirement 2.4, 3.1). When a load
@@ -23,14 +23,14 @@ use phiber::phiphx::scene::{SceneModel, SceneNormals};
 /// Root of Blender's upstream test files inside REFS (relative to the phiber
 /// crate manifest dir). Optional — tests skip when it is absent.
 fn blender_tests_files() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../REFS/blender/blender/tests/files")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../ext/REFS/blender/blender/tests/files")
 }
 
 /// Root of the CW-Fashion example meshes inside REFS (relative to the phiber
 /// crate manifest dir). Optional — tests skip when it is absent.
 fn cw_fashion_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../REFS/zed-repo/crates/phiber/assets/CW-Fashion")
+        .join("../../../ext/REFS/zed-repo/crates/phiber/assets/CW-Fashion")
 }
 
 /// Assert every object's geometry satisfies the importer invariants: the index

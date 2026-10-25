@@ -15,13 +15,18 @@
 //! The strip kinds' fixed bottom cluster (expand chevron collapsed;
 //! prev/collapse/next expanded) is just more entries in the Bottom group —
 //! the part list builds them from state, so this renderer stays declarative:
-//! it owns layout only, never behaviour.
+//! it owns layout only, never behaviour. Those entries are the same square
+//! tiles as the rest: nothing behind them lights up, because only a thing
+//! you can click may change under the pointer.
+//!
+//! One width, one tile, everywhere: a rail is its tiles plus `pad_xs` either
+//! side (`BResolvedUiStyle::rail_width`), docked in a region or floating
+//! over a canvas — the floating pane pads it, a docked rail pads itself.
 
 use super::ctx::BRenderCtx;
-use super::flex::{BAlign, BFlex, BFlexed, BLen, BRadius, BSpace};
+use super::flex::{BAlign, BDim, BFill, BFlex, BFlexed, BLen, BRadius, BSpace};
 use super::{strip, tab};
-use crate::v2::theme::BStyleRole;
-use crate::v2::view::prim::{BRailEntry, BRailGroup, BRailKind, BRailSide, BRailView};
+use crate::v2::view::prim::{BRailEntry, BRailGroup, BRailSide, BRailView};
 use gpui::prelude::*;
 use gpui::{AnyElement, px};
 
@@ -53,7 +58,9 @@ impl BFlexed for BRailPart {
             // width plus a margin overflows, which ran the expand arrow 4px
             // past the edge it was being held off.
             Self::Foot => BFlex::column().width(BLen::Full).align(BAlign::Stretch).keeps_size(),
-            Self::WithPanels => BFlex::row().height(BLen::Full).min_height(BLen::Zero).keeps_size(),
+            // A column of panels always stands a gap off the strip beside it,
+            // the same gap every column keeps from its neighbour.
+            Self::WithPanels => BFlex::row().height(BLen::Full).min_height(BLen::Zero).keeps_size().gap(BSpace::GapXs),
         }
     }
 }
@@ -108,18 +115,17 @@ impl BRail<'_> {
             band
         };
         let element = element.group(group_name).h_full().min_h_0();
-        let element = if rail.kind == BRailKind::Activity {
-            // The activity rail fills its area's card and centres its buttons
-            // in it. Its pane hugs, so without a width of its own the rail
-            // would be exactly one button wide and the buttons would sit on
-            // the card's left edge instead of down its centre line
-            // (`chrome_geometry`, which measures both margins).
-            let inner = ctx.style.dimensions.activity_width - 2.0 * ctx.style.strokes.border;
-            element.w(px(inner)).items_center()
-        } else {
-            // The band already spans the rail and stretches its slots.
-            element
-        };
+        // Docked or floating, the rail is one bar: its pad, its rounded
+        // ground in the floating chrome's shade — so the two are the same
+        // width with the same tiles on the same bar, wherever it stands (the
+        // Timeline's strip, the activity bar, the Properties tabs, the
+        // viewport's toolbar).
+        let bar = BFlex::column()
+            .pad(BSpace::PadXs)
+            .radius(BRadius::Role(crate::v2::theme::BStyleRole::Panel))
+            .fill(BFill::Floating);
+        let bar = if rail.expanded { bar.width(BLen::Full) } else { bar.width(BLen::Dim(BDim::RailWidth)).keeps_size() };
+        let element = bar.styled(element, ctx);
         let strip = element
             // The leading inset belongs to the region, which knows what the
             // content beside the rail is inset by (`style.rail_lead`).
@@ -195,25 +201,13 @@ impl BRail<'_> {
         entries.into_iter().map(|e| self.entry(e, rail.expanded, ctx)).collect()
     }
 
-    /// The actions bar at a rail's foot — the collapse control and the paging
-    /// arrows sit on it, not on the rail: painted as a floating control is
-    /// (`chrome::paint`), the control shade at rest and the hover shade under
-    /// the pointer, so nothing sits directly on the rail unmarked.
+    /// The holder of a rail's foot cluster — the collapse control and the
+    /// paging arrows. It paints nothing and does not react to the pointer:
+    /// it is not clickable, so it must not light up. Each control in it is
+    /// the rail's own square tile (`tab::rail`), so the foot reads as more of
+    /// the same strip.
     fn bar(ctx: &BRenderCtx) -> gpui::Stateful<gpui::Div> {
-        // Inset from the strip's edges: the bar is a control, not a cap, so
-        // it keeps the gap a button keeps rather than running edge to edge
-        // the way a tab does (`tab::cap`, and `layout_gutters`, which is
-        // about tabs and not this).
-        // On a floating strip the bar itself is inset by the strip's own
-        // pad (`BPanePart::Float`), so it takes the strip's full inner width
-        // and its button comes out the same square as the tools above it —
-        // the margin on top of the pad made it the one narrow control.
-        let column = if ctx.floating { BFlex::column() } else { BFlex::column().margin_x(BSpace::PadXs) };
-        let element = column
-            .radius(BRadius::Role(BStyleRole::Button))
-            .div(ctx)
-            .id("rail-actions");
-        super::chrome::paint(element, false, &ctx.floating())
+        BFlex::column().gap(BSpace::GapXs).div(ctx).id("rail-actions")
     }
 
     /// One entry cell. The entry's label renders inline when the strip is
@@ -225,18 +219,11 @@ impl BRail<'_> {
     /// with its name under it, as Slack's rail is — or, expanded, a free
     /// button beside its name.
     fn entry(&self, e: &BRailEntry, expanded: bool, ctx: &BRenderCtx) -> AnyElement {
-        let (side, kind) = (self.0.side, self.0.kind);
         let mut ctl = e.control.clone();
         ctl.tooltip = ctl.label.clone();
         if !expanded {
             ctl.label = None;
         }
-        if kind == BRailKind::Activity {
-            if !expanded {
-                return tab::rail_stack(&e.control, ctx);
-            }
-            return tab::rail_button(&ctl, ctx);
-        }
-        tab::rail(&ctl, side, ctx)
+        tab::rail(&ctl, ctx)
     }
 }

@@ -104,7 +104,8 @@ fn the_sidebar_builds_those_cards_for_both_editors() {
             vec!["Display", "2D Cursor", "UDIM Grid"],
             "{host:?} View tab"
         );
-        assert_eq!(titles(host, "Tool"), vec!["Active Tool"], "{host:?} Tool tab");
+        // The viewport's own Tool tab (`editor::VIEW3D_TOOL`).
+        assert_eq!(titles(host, "Tool"), vec!["Active Tool", "Options", "Workspace"], "{host:?} Tool tab");
     }
 }
 

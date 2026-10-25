@@ -51,6 +51,11 @@ impl BPlacement {
     }
 
     fn from_style(side: BPopoverSide, style: &BResolvedUiStyle) -> Self {
+        // A control stands `CONTROL_CLEAR` inside its row, so a drop-down
+        // opened from it drops by that much: its top lands on the row's (the
+        // header's) bottom edge, level with the content under it, rather than
+        // hanging off the button in mid-row.
+        let drop = ((style.dimensions.row_height - style.dimensions.button_height) / 2.0).max(0.0);
         match side {
             // A drop-down hangs from the anchor's bottom-left corner. The
             // host switcher opens from the trigger's leading edge too, so a
@@ -58,7 +63,7 @@ impl BPlacement {
             // below still rescues it at a window edge.
             BPopoverSide::Below | BPopoverSide::Switcher => Self {
                 corner: Anchor::TopLeft,
-                gap: 0.0,
+                gap: drop,
                 vertical: true,
                 lift: 0.0,
                 trailing: false,
@@ -72,7 +77,7 @@ impl BPlacement {
             // the header's first icon.
             BPopoverSide::BelowEnd => Self {
                 corner: Anchor::TopRight,
-                gap: 0.0,
+                gap: drop,
                 vertical: true,
                 lift: 0.0,
                 trailing: true,

@@ -52,7 +52,7 @@ async fn n_opens_the_item_tab_with_the_objects_transform(cx: &mut TestAppContext
     let transform = cx.debug_bounds("card-ctx-view3d-item-transform-expanded").expect("Item ▸ Transform");
     assert!(transform.origin.x >= column.origin.x && right(transform) <= right(column));
     let x = cx
-        .debug_bounds("btn-icon-set-ctx.edit-ctx.buts.location.x-number")
+        .debug_bounds("btn-label-set-ctx.edit-ctx.buts.location.x-text")
         .expect("the Location X field");
     assert!(x.origin.x >= column.origin.x, "the Location field is the sidebar's");
     // The gizmo keeps its distance from the strip, now the strip and the panels.

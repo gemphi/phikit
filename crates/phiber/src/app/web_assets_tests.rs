@@ -62,17 +62,13 @@ fn an_unknown_asset_is_absent_rather_than_an_error() {
 /// those folders ever gets embedded, this is what says so.
 #[test]
 fn the_embedded_set_stays_small() {
-    let total: usize = ROOTS
-        .iter()
-        .map(|(_, dir)| {
-            fn bytes(d: &include_dir::Dir<'_>) -> usize {
-                d.files().map(|f| f.contents().len()).sum::<usize>()
-                    + d.dirs().map(bytes).sum::<usize>()
-            }
-            bytes(dir)
-        })
-        .sum();
+    fn bytes(d: &include_dir::Dir<'_>) -> usize {
+        d.files().map(|f| f.contents().len()).sum::<usize>() + d.dirs().map(bytes).sum::<usize>()
+    }
+    let roots: Vec<(&str, usize)> = ROOTS.iter().map(|(name, dir)| (*name, bytes(dir))).collect();
+    let total: usize = roots.iter().map(|(_, b)| b).sum();
     let mb = total as f64 / 1_048_576.0;
-    assert!(mb < 12.0, "the embedded assets are {mb:.1} MB — too much to download");
+    let each: Vec<String> = roots.iter().map(|(name, b)| format!("{name} {:.2}", *b as f64 / 1_048_576.0)).collect();
+    assert!(mb < 12.0, "the embedded assets are {mb:.1} MB — too much to download ({})", each.join(", "));
     assert!(mb > 1.0, "only {mb:.1} MB embedded — a root is probably missing");
 }

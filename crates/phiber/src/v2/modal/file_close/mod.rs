@@ -20,7 +20,7 @@ impl BViewItem for BFileCloseModal {
     fn build(&self, s: &BState) -> BView {
         BView::column(vec![
             BView::row(vec![BView::icon("file_blend"), BView::label(set::file_name(s))]),
-            BView::row(set::buttons().into_iter().map(|answer| answer.button()).collect()),
+            BView::row(std::iter::once(BView::spacer()).chain(set::buttons().into_iter().map(|answer| answer.button())).collect()),
         ])
     }
 }

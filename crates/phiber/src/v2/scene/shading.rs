@@ -38,16 +38,14 @@ impl BShading {
     /// mapped onto Phiber's `assets/icons`).
     pub fn icon(self) -> &'static str {
         match self {
-            // Blender's four: a wire cage, a lit sphere, a material ball, a
-            // camera render. The generic circles these were drawn with said
-            // nothing about which mode they picked — two of them were the
-            // same circle with a different dash. `globe` and `grid_3x3` read
-            // better for the wire mode but are both still the placeholder
-            // drawing (`icon_coverage`), so the cage is `box`.
-            Self::Wireframe => "box",
+            // One sphere four ways, as RCP draws its viewport toolbar: a
+            // wire globe, a lit sphere half in shade, a glossy ball, and the
+            // world lit (RCP's environment hills). Four shapes of one thing
+            // read as a radio; a cube, a hexagon and two rings did not.
+            Self::Wireframe => "shading_wire",
             Self::Solid => "shading_solid",
-            Self::Material => "material",
-            Self::Rendered => "render",
+            Self::Material => "shading_material",
+            Self::Rendered => "shading_rendered",
         }
     }
 

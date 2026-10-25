@@ -60,7 +60,7 @@ fn lead_icon(color: crate::v2::theme::BColor, ctx: &BRenderCtx) -> impl IntoElem
 pub fn view(
     placeholder: &str,
     value: &str,
-    editing: bool,
+    (editing, searches): (bool, bool),
     on_change: &BAction,
     ctx: &BRenderCtx,
 ) -> AnyElement {
@@ -74,7 +74,7 @@ pub fn view(
         let inner = BSearchPart::Row
             .flex(ctx)
             .div(ctx)
-            .child(lead_icon(ctx.style.colors.text, ctx))
+            .children(searches.then(|| lead_icon(ctx.style.colors.text, ctx)))
             .child(BSearchPart::TextCell.flex(ctx).div(ctx).child(field_text));
         let id_str = element_id("search", Some(placeholder), on_change);
         return field::shell(true, ctx)
@@ -120,8 +120,9 @@ pub fn view(
     let inner = BSearchPart::Row
         .flex(ctx)
         .div(ctx)
-        // Search icon on the left, matching Blender's `ICON_VIEWZOOM`.
-        .child(lead_icon(text_color, ctx))
+        // Search icon on the left, matching Blender's `ICON_VIEWZOOM` — on
+        // a filter; a field that names a file starts with its text.
+        .children(searches.then(|| lead_icon(text_color, ctx)))
         .child(
             BSearchPart::TextCell
                 .flex(ctx)

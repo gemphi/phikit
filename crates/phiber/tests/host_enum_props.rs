@@ -27,9 +27,10 @@ proptest! {
 }
 
 #[test]
-fn all_has_twenty_eight_variants() {
-    // 27 Blender editor hosts + 1 Phiber-native Activity rail host.
-    assert_eq!(BHostType::ALL.len(), 28);
+fn all_has_thirty_variants() {
+    // 27 Blender editor hosts, the Play host and the Project Browser
+    // (Reality Composer Pro's), and the Phiber-native Activity rail host.
+    assert_eq!(BHostType::ALL.len(), 30);
 }
 
 #[test]

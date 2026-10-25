@@ -56,6 +56,25 @@ impl BFileKind {
         }
     }
 
+    /// What the kind is called, as the details column names it.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Folder => "Folder",
+            Self::Blend => "Blender File",
+            Self::BlendBackup => "Blender Backup",
+            Self::Image => "Image",
+            Self::Movie => "Movie",
+            Self::Script => "Script",
+            Self::Font => "Font",
+            Self::Sound => "Sound",
+            Self::Text => "Text",
+            Self::Volume => "Volume",
+            Self::Archive => "Archive",
+            Self::Model => "3D Model",
+            Self::Other => "File",
+        }
+    }
+
     /// Icon name from the shipped `assets/icons` set.
     pub fn icon(self) -> &'static str {
         match self {

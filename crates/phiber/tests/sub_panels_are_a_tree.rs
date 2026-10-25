@@ -1,13 +1,13 @@
-//! Sub-panels are a tree, and shade is what says so. A nested accordion sits
-//! on its parent's own row column — no extra indent, no guide down its left
-//! edge — and is recessed a step toward the region, its heading a step over
-//! its own well, so Properties' Sampling ▸ Render ▸ Denoise reads as three
-//! levels in shade alone, in every theme.
+//! Sub-panels are a tree, said twice: a nested accordion's fold triangle
+//! stands under its parent's title (2026-10-25), as content under a heading is,
+//! and its heading is a shade of its own over its well, so Properties'
+//! Sampling ▸ Render ▸ Denoise reads as three levels in place and in shade,
+//! in every theme. It behaves as its parent does — the same card, folding
+//! the same way — and carries no guide down its edge.
 //!
-//! It used to step in by a `pad_sm` and carry a left guide. Both marked a
-//! sub-panel out as a different kind of thing and left the space around it
-//! uneven — wider on the left than the inset its parent's body gives every
-//! other row. A nested accordion is an accordion: same card, one shade in.
+//! It sat on its parent's own row column for a while, with shade alone to
+//! say it was a level down; read in a long Properties column that was too
+//! quiet, and the user asked for the indent back (2026-10-21).
 
 use gpui::{TestAppContext, px, size};
 use phiber::v2::app::BPhiberApp;
@@ -45,12 +45,17 @@ async fn each_level_steps_in_by_one_indent_under_its_parents_rows(cx: &mut TestA
     let render_rows = at("row", "sampling_render-expanded-0");
     let denoise = at("", "sampling_render_denoise");
     let viewport = at("", "sampling_viewport");
-    // A sub-panel starts exactly where its parent's rows start, and its own
-    // sub-panel exactly where *its* rows start: the body's inset is the only
-    // space either side of it, so the gap around a nested accordion is the
-    // same on all four sides.
-    assert_eq!(render, sampling_rows, "Render starts on Sampling's row column");
-    assert_eq!(denoise, render_rows, "Denoise starts on Render's row column");
+    // A sub-panel stands in its parent's row column, and its heading puts its
+    // fold triangle exactly under the parent's title — the next step of the
+    // tree — at every depth.
+    assert_eq!(render, sampling_rows, "Render stands in Sampling's row column");
+    assert_eq!(denoise, render_rows, "Denoise stands in Render's row column");
+    let sampling_title = at("title", "sampling");
+    let render_fold = at("fold", "sampling_render");
+    let render_title = at("title", "sampling_render");
+    let denoise_fold = at("fold", "sampling_render_denoise");
+    assert_eq!(render_fold, sampling_title, "Render's triangle sits under Sampling's title");
+    assert_eq!(denoise_fold, render_title, "Denoise's triangle sits under Render's title");
     // Depth still reads left to right, because each level's rows are inset
     // inside the level above.
     assert!(denoise > render, "a grandchild sits right of its parent");

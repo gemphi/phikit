@@ -176,7 +176,13 @@ fn rows_in(views: &[BView]) -> usize {
 #[test]
 fn each_popover_draws_one_row_per_box() {
     for (host, _) in CARRIERS {
-        let rows = opened(&open_for(host), host).expect("the open popover");
+        // A popover opens with its first heading open and the rest folded
+        // (`filter::fold`); opened one by one, every box is a row.
+        let mut state = open_for(host);
+        for (title, _) in overlay::groups(&state, host) {
+            state.set(&phiber::v2::part::filter::fold::expand_key(&overlay::scope(host), title), V_TRUE);
+        }
+        let rows = opened(&state, host).expect("the open popover");
         assert_eq!(rows_in(&rows), overlay::table_for(host).unwrap().len(), "{host:?}");
     }
 }

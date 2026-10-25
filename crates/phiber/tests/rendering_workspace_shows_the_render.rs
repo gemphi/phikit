@@ -21,6 +21,10 @@ fn plan(samples: u32) -> BRenderPlan {
         kind: "PERSP".into(),
         focal_length_mm: 50.0,
         sensor_width: 36.0,
+        // Blender's defaults: the 24 mm height, fitted automatically, no shift.
+        sensor_height: 24.0,
+        sensor_fit: "AUTO".into(),
+        shift: [0.0, 0.0],
         ortho_scale: 6.0,
         clip_start: 0.1,
         clip_end: 100.0,
@@ -50,6 +54,10 @@ async fn the_rendering_workspace_is_the_image_editor_with_blenders_header(cx: &m
     assert!(window.origin.y > header.origin.y);
     let buts = cx.debug_bounds("region-Header-Buts").expect("Properties runs down the right");
     let time = cx.debug_bounds("region-Header-Time").expect("a Timeline strip runs along the bottom");
+    // The bottom panel opens with its editor tabs (Reality Composer Pro's
+    // strip), the Timeline's header under them.
+    let tabs = cx.debug_bounds("region-Tabs-Time").expect("the bottom panel's editor tabs");
+    assert!(tabs.origin.y < time.origin.y, "the tabs sit over the Timeline's header");
     // No tool header above the header: Blender's Rendering workspace keeps
     // the Image editor's tool header hidden in View mode, so the header sits
     // level with the Properties header beside it …
@@ -57,7 +65,7 @@ async fn the_rendering_workspace_is_the_image_editor_with_blenders_header(cx: &m
     assert_eq!(window.origin.y, header.origin.y + header.size.height, "the window starts right under its header");
     // … and the window reaches the Timeline: no asset-shelf drawer reserving
     // an empty band between them.
-    let gap = f32::from(time.origin.y) - f32::from(window.origin.y + window.size.height);
+    let gap = f32::from(tabs.origin.y) - f32::from(window.origin.y + window.size.height);
     let seam = phiber::v2::theme::ui_style_defaults(phiber::v2::theme::BPaletteName::DEFAULT).resize.gap;
     assert!(gap >= 0.0 && gap <= seam + 2.0, "the Image window ends a seam above the Timeline, not {gap} px (seam {seam})");
     let names = selectors(cx);

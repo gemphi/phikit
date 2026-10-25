@@ -186,6 +186,13 @@ mod digest {
         let rh = scene.objects.iter().filter(|o| o.visibility.hide_render).count();
         let hv = scene.objects.iter().filter(|o| o.visibility.hide_viewport).count();
         println!("objects hide_render {rh}, hide_viewport {hv}");
+        let w = &scene.props.world;
+        println!("world: color {:?} strength {} texture {:?} missing {:?}", w.color, w.strength, w.texture, w.missing);
+        for o in scene.objects.iter().filter(|o| o.object_type == "LIGHT" || o.object_type == "LAMP") {
+            if let crate::blend::BlendObjectData::Light(l) = &o.data {
+                println!("light {:?}: kind {} energy {} color {:?} hr {}", o.name, l.kind, l.energy, l.color, o.visibility.hide_render);
+            }
+        }
         fn walk(c: &crate::blend::BlendCollection, depth: usize) {
             println!(
                 "col {}{:?}: {} objs, exclude {} hide_v {} vis(hv {} hs {} hr {})",
@@ -244,6 +251,75 @@ mod digest {
                 let cam_name = ob.map(|b| f.extract_name_from_block(b, "id.name").unwrap_or_default());
                 println!("SC {name}: camera -> {addr:#x} {cam_name:?}");
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod bone_digest {
+    /// Not a fixture test: point `BONE_DIGEST` at a `.blend` and this
+    /// prints every bone's saved rest fields (`arm_mat`, `bone_mat`,
+    /// `head`), for checking a scripted file against Blender's layout.
+    #[test]
+    fn bone_digest_of_env_file() {
+        let Ok(path) = std::env::var("BONE_DIGEST") else { return };
+        let bytes = std::fs::read(&path).expect("read");
+        let f = crate::blend::file::types::BlendFile::parse_bytes(&bytes).expect("parse");
+        let dna = f.dna.clone().expect("dna");
+        let layouts = dna.layout(f.header.pointer_size as usize);
+        let ps = f.header.pointer_size as usize;
+        {
+            use std::collections::HashMap;
+            let mut by_type: HashMap<&str, usize> = HashMap::new();
+            for b in &f.blocks {
+                let t = dna.structs.get(b.sdna_index as usize).and_then(|s| dna.types.get(s.type_index as usize)).map_or("?", String::as_str);
+                *by_type.entry(t).or_default() += 1;
+            }
+            let mut rows: Vec<_> = by_type.into_iter().collect();
+            rows.sort();
+            println!("TYPES {rows:?}");
+        }
+        for pc in f.blocks.iter().filter(|b| {
+            dna.structs.get(b.sdna_index as usize).and_then(|s| dna.types.get(s.type_index as usize)).map(String::as_str) == Some("bPoseChannel")
+        }) {
+            if let Some(o) = crate::blend::file::types::BlendFile::struct_field_offset_exact("bPoseChannel", "*bone", &dna, ps) {
+                let addr = crate::blend::file::types::BlendFile::read_ptr(&pc.data, o, ps, f.header.little_endian);
+                println!("PCHAN *bone = {addr:#x} block_at {:?}", f.block_at(addr).map(|b| (b.code_str.clone(), b.old_address, b.count)));
+            }
+        }
+        for b in f.blocks.iter().filter(|b| {
+            dna.structs.get(b.sdna_index as usize).and_then(|s| dna.types.get(s.type_index as usize)).map(String::as_str) == Some("Bone")
+        }) {
+            println!("BONEBLOCK code {} at {:#x} count {} size {}", b.code_str, b.old_address, b.count, b.size);
+        }
+        if let Some(st) = dna.structs.iter().find(|s| dna.types.get(s.type_index as usize).map(String::as_str) == Some("bPoseChannel")) {
+            for fld in &st.fields {
+                let n = dna.names.get(fld.name_index as usize).cloned().unwrap_or_default();
+                if n.contains("bone") || n.contains("Bone") {
+                    println!("DNA bPoseChannel field: {n} (type {})", dna.types.get(fld.type_index as usize).map_or("?", String::as_str));
+                }
+            }
+        }
+        if let Some(st) = dna.structs.iter().find(|s| dna.types.get(s.type_index as usize).map(String::as_str) == Some("Bone")) {
+            for fld in &st.fields {
+                let n = dna.names.get(fld.name_index as usize).cloned().unwrap_or_default();
+                if n.contains("mat") || n.contains("head") || n.contains("tail") || n.contains("length") {
+                    println!("DNA Bone field: {n}");
+                }
+            }
+        }
+        for b in f.blocks.iter().filter(|b| b.code_str == "DATA") {
+            let Some(layout) = layouts.structure("Bone") else { continue };
+            // Bones are DATA blocks whose SDNA struct is Bone.
+            if dna.structs.get(b.sdna_index as usize).map(|s| dna.types.get(s.type_index as usize).map(String::as_str)) != Some(Some("Bone")) {
+                continue;
+            }
+            let name_o = layout.fields.get("name").map(|(o, _)| *o).unwrap_or(0);
+            let name = crate::blend::shade::nodes::read_cstr(&b.data, name_o, 64);
+            let g = |field: &str, n: usize| -> Vec<f32> {
+                layout.fields.get(field).map_or(vec![], |(o, _)| (0..n).map(|k| f.read_f32(&b.data[o + 4 * k..o + 4 * k + 4])).collect())
+            };
+            println!("BONE {name}: head {:?} arm_mat row3 {:?} bone_mat row0 {:?}", g("head[3]", 3), &g("arm_mat[4][4]", 16)[12..16], &g("bone_mat[3][3]", 3)[0..3]);
         }
     }
 }

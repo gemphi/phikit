@@ -62,7 +62,7 @@ pub static ASSET_CATALOG: &[BMenuItem] = &[
     op("New Catalog", ""),
 ];
 pub static NODE_ADD: &[BMenuItem] = &[
-    op("Search...", "F3"),
+    op("Search...", ""),
     op("Shader", ""),
     op("Texture", ""),
     op("Converter", ""),

@@ -28,7 +28,7 @@ fn digest(file: &str, path: &PathBuf) -> Vec<String> {
 #[test]
 fn meshes_match_blender() {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    let upstream = root.join("../../REFS/blender/blender/tests/files");
+    let upstream = root.join("../../../ext/REFS/blender/blender/tests/files");
     // Production files kept outside the repo (see fixtures/README.md).
     let assets = root.join("../phiber/assets/production");
     let files = [

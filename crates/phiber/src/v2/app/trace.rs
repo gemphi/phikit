@@ -13,7 +13,8 @@
 
 use super::journal::BJournal;
 use std::cell::RefCell;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use web_time::Instant;
 
 thread_local! {
     static LOG: RefCell<BTrace> = const { RefCell::new(BTrace::new()) };
