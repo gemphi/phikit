@@ -198,11 +198,8 @@ impl DirectWriteTextSystem {
             result.context("Failed to get system font collection")?
         };
         let custom_font_set = unsafe { components.builder.CreateFontSet()? };
-        let custom_font_collection = unsafe {
-            components
-                .factory
-                .CreateFontCollectionFromFontSet(&custom_font_set)?
-        };
+        let custom_font_collection =
+            unsafe { typographic_collection(&components.factory, &custom_font_set)? };
 
         Ok(Self {
             components,
@@ -379,7 +376,7 @@ impl DirectWriteState {
             }
         }
         let set = unsafe { components.builder.CreateFontSet()? };
-        let collection = unsafe { components.factory.CreateFontCollectionFromFontSet(&set)? };
+        let collection = unsafe { typographic_collection(&components.factory, &set)? };
         self.custom_font_collection = collection;
 
         Ok(())
@@ -484,31 +481,39 @@ impl DirectWriteState {
                 .log_err()?
         };
         let total_number = unsafe { font.GetFontCount() };
+        let font_info = |font_face: IDWriteFontFace3| -> Option<FontInfo> {
+            let direct_write_features =
+                unsafe { Self::generate_font_features(factory, features).log_err()? };
+            let fallbacks = fallbacks.as_ref().and_then(|fallbacks| {
+                Self::generate_font_fallbacks(fallbacks, factory, system_font_collection)
+                    .log_err()
+                    .flatten()
+            });
+            Some(FontInfo {
+                font_family_h: font_family_h.clone(),
+                font_face,
+                features: direct_write_features,
+                fallbacks,
+                font_collection: collection.clone(),
+            })
+        };
         for index in 0..total_number {
             let res = maybe!({
                 let font_face_ref = unsafe { font.GetFontFaceReference(index).log_err()? };
                 let font_face = unsafe { font_face_ref.CreateFontFace().log_err()? };
-                let direct_write_features =
-                    unsafe { Self::generate_font_features(factory, features).log_err()? };
-                let fallbacks = fallbacks.as_ref().and_then(|fallbacks| {
-                    Self::generate_font_fallbacks(fallbacks, factory, system_font_collection)
-                        .log_err()
-                        .flatten()
-                });
-                let font_info = FontInfo {
-                    font_family_h: font_family_h.clone(),
-                    font_face,
-                    features: direct_write_features,
-                    fallbacks,
-                    font_collection: collection.clone(),
-                };
-                Some(font_info)
+                font_info(font_face)
             });
             if res.is_some() {
                 return res;
             }
         }
-        None
+        // The font set matches weight-stretch-style family names, under which
+        // a condensed face is filed as its plain family ("Phi-Soft"), so a
+        // typographic name like "Phi-Soft Condensed" finds nothing above. Our
+        // added fonts are grouped by typographic family
+        // (`typographic_collection`), so ask the collection itself.
+        let font_face = unsafe { typographic_face(collection, &font_family_h, weight, style) }?;
+        font_info(font_face)
     }
 
     fn layout_line(
@@ -1719,6 +1724,51 @@ fn font_weight_to_dwrite(weight: FontWeight) -> DWRITE_FONT_WEIGHT {
 
 fn font_weight_from_dwrite(value: DWRITE_FONT_WEIGHT) -> FontWeight {
     FontWeight(value.0 as f32)
+}
+
+/// The collection for fonts the app adds, grouped by typographic family
+/// (name ID 16) rather than DirectWrite's default weight-stretch-style model.
+/// Under the default, "Phi-Soft" and "Phi-Soft Condensed" fold into one
+/// family, and since every lookup here asks for the normal stretch, the
+/// condensed faces could never be reached. Core Text and fontconfig already
+/// group by typographic family, so this makes Windows agree with them.
+unsafe fn typographic_collection(
+    factory: &IDWriteFactory5,
+    set: &IDWriteFontSet,
+) -> Result<IDWriteFontCollection1> {
+    let factory: IDWriteFactory6 = factory.cast()?;
+    let collection =
+        unsafe { factory.CreateFontCollectionFromFontSet(set, DWRITE_FONT_FAMILY_MODEL_TYPOGRAPHIC)? };
+    Ok(collection.cast()?)
+}
+
+/// The face of the collection's family named `family` nearest `weight` and
+/// `style`, by the collection's own family names (typographic, for the fonts
+/// the app adds).
+unsafe fn typographic_face(
+    collection: &IDWriteFontCollection1,
+    family: &HSTRING,
+    weight: FontWeight,
+    style: FontStyle,
+) -> Option<IDWriteFontFace3> {
+    let mut index = 0u32;
+    let mut exists = BOOL(0);
+    unsafe { collection.FindFamilyName(family, &mut index, &mut exists).log_err()? };
+    if !exists.as_bool() {
+        return None;
+    }
+    let font_family = unsafe { collection.GetFontFamily(index).log_err()? };
+    let font = unsafe {
+        font_family
+            .GetFirstMatchingFont(
+                font_weight_to_dwrite(weight),
+                DWRITE_FONT_STRETCH_NORMAL,
+                font_style_to_dwrite(style),
+            )
+            .log_err()?
+    };
+    let face = unsafe { font.CreateFontFace().log_err()? };
+    face.cast().log_err()
 }
 
 fn get_font_names_from_collection(
