@@ -30,20 +30,23 @@ pub(super) fn vertex_normals(mesh: &BlendEvalMesh) -> Vec<Vec3> {
     normals
 }
 
-/// Boundary edges: those used by exactly one face.
+/// Boundary edges: those used by exactly one face, in sorted order.
+///
+/// Every corner's edge into one list, sorted once, and the edges that occur
+/// once kept — as `topology.rs` builds its edges. It used to insert each new
+/// edge into a sorted list as it went, which moves half the list every time:
+/// the crystal caves city's APRON-BASE, half a million faces once
+/// subdivided, spent six minutes of the file's open in here.
 pub(super) fn boundary(mesh: &BlendEvalMesh) -> Vec<(u32, u32)> {
-    let mut edges: Vec<((u32, u32), u32)> = Vec::new();
+    let mut edges: Vec<(u32, u32)> = Vec::with_capacity(mesh.faces.corners());
     for face in 0..mesh.faces.len() {
         let corners = mesh.faces.get(face);
         for n in 0..corners.len() {
             let a = corners[n];
             let b = corners[(n + 1) % corners.len()];
-            let key = if a < b { (a, b) } else { (b, a) };
-            match edges.binary_search_by_key(&key, |(k, _)| *k) {
-                Ok(at) => edges[at].1 += 1,
-                Err(at) => edges.insert(at, (key, 1)),
-            }
+            edges.push(if a < b { (a, b) } else { (b, a) });
         }
     }
-    edges.into_iter().filter(|(_, uses)| *uses == 1).map(|(e, _)| e).collect()
+    edges.sort_unstable();
+    edges.chunk_by(|a, b| a == b).filter(|uses| uses.len() == 1).map(|uses| uses[0]).collect()
 }

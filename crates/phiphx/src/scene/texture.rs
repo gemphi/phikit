@@ -283,6 +283,13 @@ pub(super) fn attach(objects: &mut [super::SceneObject], p: &crate::blend::Blend
     let blend = std::path::Path::new(source_path);
     let mut cache = TextureCache::new(&p.packed_images, Some(blend));
     let mut missing = super::texture_miss::BMissingTexture::default();
+    // A bake belongs to the material, not to the object wearing it: every
+    // object in its slot carries the same program over the same images. It
+    // was run again per object, on one core at the images' full size — the
+    // crystal caves city ran 3,101 bakes for 89 distinct ones, ten minutes
+    // of its open, and kept every copy. A list, not a map: `BlendBake` holds
+    // floats, so it is `PartialEq` and no more, and there are few of them.
+    let mut baked: Vec<(crate::blend::shade::bake::BlendBake, Option<(SceneTexture, Option<[[f32; 3]; 2]>)>)> = Vec::new();
     for m in objects.iter_mut().flat_map(|o| o.materials.iter_mut()) {
         if let Some((key, _)) = m.normal_texture.clone() {
             m.normal_map = cache.get(&key);
@@ -301,7 +308,15 @@ pub(super) fn attach(objects: &mut [super::SceneObject], p: &crate::blend::Blend
             for img in &bake.images {
                 missing.note(&img.key, cache.get(&img.key).is_some());
             }
-            if let Some((tex, affine)) = run_bake(&bake, &mut cache) {
+            let done = match baked.iter().find(|(seen, _)| *seen == bake) {
+                Some((_, done)) => done.clone(),
+                None => {
+                    let done = run_bake(&bake, &mut cache);
+                    baked.push((bake, done.clone()));
+                    done
+                }
+            };
+            if let Some((tex, affine)) = done {
                 m.texture = Some(tex);
                 m.uv_affine = affine;
                 m.baked = true;

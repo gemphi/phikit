@@ -184,3 +184,27 @@ fn the_colour_attribute_rides_the_stack_as_the_uvs_do() {
     eval(&mut m, &BTriangulate { min_vertices: 4 });
     assert!(m.loop_colors.is_empty(), "no attribute, none made up");
 }
+
+/// The open edges Solidify rims (`geom::boundary`): an open grid's are its
+/// outline, a closed cube has none, and an edge three faces share is not one.
+#[test]
+fn the_boundary_is_the_edges_one_face_uses() {
+    use super::super::geom::boundary;
+    use super::super::BlendEvalMesh;
+    // Two quads side by side: six outline edges, the shared one left out.
+    let two = BlendEvalMesh {
+        vertices: vec![[0., 0., 0.], [1., 0., 0.], [2., 0., 0.], [0., 1., 0.], [1., 1., 0.], [2., 1., 0.]],
+        faces: [[0u32, 1, 4, 3], [1, 2, 5, 4]].iter().map(|q| q.to_vec()).collect(),
+        ..Default::default()
+    };
+    assert_eq!(boundary(&two), vec![(0, 1), (0, 3), (1, 2), (2, 5), (3, 4), (4, 5)]);
+    assert!(boundary(&super::cube()).is_empty(), "a closed mesh has no rim");
+    // A fin: three triangles on the edge 0-1.
+    let fin = BlendEvalMesh {
+        vertices: vec![[0., 0., 0.], [1., 0., 0.], [0., 1., 0.], [0., -1., 0.], [0., 0., 1.]],
+        faces: [[0u32, 1, 2], [1, 0, 3], [0, 1, 4]].iter().map(|t| t.to_vec()).collect(),
+        ..Default::default()
+    };
+    assert!(!boundary(&fin).contains(&(0, 1)), "used three times is not open");
+    assert_eq!(boundary(&fin).len(), 6);
+}
