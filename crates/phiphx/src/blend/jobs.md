@@ -2,7 +2,7 @@
 
 | State | Open | Done |
 |---|---|---|
-| 🟡 in progress | 3 | 5 |
+| 🟡 in progress | 3 | 6 |
 
 ## Todo
 
@@ -16,6 +16,7 @@
 - [x] Split into `file/`, `object/`, `mesh/`, `shade/`, `scene/`, `modifier/`, `asset/`
 - [x] Constraints on bones and on objects — every matrix kind, IK, drivers — objects that follow a rig's bones (bone parents, bone targets), and objects on a curve's path (curve parents, Follow Path, Clamp To), solved with the motion (`rig/tests.rs`, `rig/constraint/tests.rs`, `anim/follow_tests.rs`, `curve/tests.rs`)
 - [x] What the viewport draws of a rig and over the scene: each armature's shown bones and custom shapes (`rig/display_tests.rs`), each 3D view's overlay and gizmo switches, the 3D cursor, and the relationship lines — parent display origins and constraint targets (`scene/overlay_tests.rs`)
+- [x] Physics settings (`physics/`): the Rigid Body World, every object's rigid body and constraint, the Cloth modifier's simulation and collision settings, the Collision modifier's and a force field's `PartDeflect`, and the Soft Body, read by DNA name into `SceneModel::physics` — settings only, no solver (`phiray/docs/ROADMAP.md` §2 designs one). `tests/physics_truth.rs` over `fixtures/physics.blend`, every value away from its default; the flag bits checked against bpy
 - [x] Writer (`write/`): the read file back byte for byte in every BHead layout, zstd/gzip kept, with the session's edits patched by DNA — frame range, names, visibility and base flags, active object, collection flags, markers (`tests/save_truth.rs`)
 
 Format: one line per job, `- [ ]` open / `- [x]` done; move a line from Todo to Done when it lands, with its test.
