@@ -17,12 +17,23 @@ pub type PackedImages = Vec<(String, Arc<Vec<u8>>)>;
 /// be checked while materials are folded. `None` (no file) treats every image
 /// as present.
 static SOURCE_DIR: std::sync::RwLock<Option<std::path::PathBuf>> = std::sync::RwLock::new(None);
+/// The `.blend` itself, for what is named after it beside it — a physics
+/// disk cache lives in `blendcache_<stem>/` (`BKE_ptcache_path`).
+static SOURCE_FILE: std::sync::RwLock<Option<std::path::PathBuf>> = std::sync::RwLock::new(None);
 
 /// Record the `.blend` being opened (`Phx::open`).
 pub(crate) fn set_source(path: &std::path::Path) {
     if let Ok(mut dir) = SOURCE_DIR.write() {
         *dir = path.parent().map(std::path::Path::to_path_buf);
     }
+    if let Ok(mut file) = SOURCE_FILE.write() {
+        *file = Some(path.to_path_buf());
+    }
+}
+
+/// The `.blend` being opened (`None` for bytes).
+pub(crate) fn source_path() -> Option<std::path::PathBuf> {
+    SOURCE_FILE.read().ok().and_then(|f| f.clone())
 }
 
 /// There is no folder to resolve images against — the file arrived as bytes
@@ -36,6 +47,15 @@ pub(crate) fn clear_source() {
     if let Ok(mut dir) = SOURCE_DIR.write() {
         *dir = None;
     }
+    if let Ok(mut file) = SOURCE_FILE.write() {
+        *file = None;
+    }
+}
+
+/// The folder of the `.blend` being opened (`None` for bytes): where a
+/// text object's `//` font path points (`blend/text/read.rs`).
+pub(crate) fn source_dir() -> Option<std::path::PathBuf> {
+    SOURCE_DIR.read().ok().and_then(|d| d.clone())
 }
 
 impl BlendFile {

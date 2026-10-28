@@ -16,20 +16,34 @@ use crate::blend::file::types::*;
 pub(crate) struct BVal {
     pub rgba: [f32; 4],
     pub float: bool,
+    /// A vector socket's value, its XYZ in `rgba[..3]`.
+    pub vector: bool,
     pub exact: bool,
 }
 
 impl BVal {
-    fn f(v: f32, exact: bool) -> Self {
-        Self { rgba: [v, v, v, 1.0], float: true, exact }
+    pub(super) fn f(v: f32, exact: bool) -> Self {
+        Self { rgba: [v, v, v, 1.0], float: true, vector: false, exact }
     }
-    fn c(rgba: [f32; 4], exact: bool) -> Self {
-        Self { rgba, float: false, exact }
+    pub(super) fn c(rgba: [f32; 4], exact: bool) -> Self {
+        Self { rgba, float: false, vector: false, exact }
     }
-    /// As a float socket (colour → Rec.709 luminance, like Blender).
+    pub(super) fn v(xyz: [f32; 3], exact: bool) -> Self {
+        Self { rgba: [xyz[0], xyz[1], xyz[2], 1.0], float: false, vector: true, exact }
+    }
+    /// As a float socket, as Cycles converts (`svm_node_convert`): a
+    /// colour is its Rec.709 luminance, a vector the mean of its parts.
     pub fn value(&self) -> f32 {
         let [r, g, b, _] = self.rgba;
-        if self.float { r } else { 0.2126 * r + 0.7152 * g + 0.0722 * b }
+        match (self.float, self.vector) {
+            (true, _) => r,
+            (_, true) => (r + g + b) / 3.0,
+            _ => 0.2126 * r + 0.7152 * g + 0.0722 * b,
+        }
+    }
+    /// As a vector socket: a float spread over three, a colour its RGB.
+    pub fn xyz(&self) -> [f32; 3] {
+        [self.rgba[0], self.rgba[1], self.rgba[2]]
     }
 }
 
@@ -39,8 +53,8 @@ const SOCK_VECTOR: u16 = 1;
 const SOCK_RGBA: u16 = 2;
 
 pub(crate) struct BGraph<'a> {
-    f: &'a BlendFile,
-    dna: &'a DnaType,
+    pub(super) f: &'a BlendFile,
+    pub(super) dna: &'a DnaType,
     nodes: Vec<&'a BlendBlock>,
     links: Vec<BLink>,
 }
@@ -53,14 +67,14 @@ impl<'a> BGraph<'a> {
     /// The graph of `id`'s node tree; `owner` names the datablock type that
     /// holds the `*nodetree` pointer (`Material`, `World`).
     pub fn owned(f: &'a BlendFile, id: &BlendBlock, owner: &str, dna: &'a DnaType) -> Self {
-        Self { f, dna, nodes: f.tree_nodes(id, owner, dna), links: f.tree_links(id, owner, dna) }
+        Self { f, dna, nodes: f.flat_nodes(id, owner, dna), links: f.flat_links(id, owner, dna) }
     }
 
-    fn off(&self, s: &str, field: &str) -> Option<usize> {
+    pub(super) fn off(&self, s: &str, field: &str) -> Option<usize> {
         self.f.off(s, field, self.dna)
     }
 
-    fn text(&self, b: &BlendBlock, s: &str, field: &str) -> String {
+    pub(super) fn text(&self, b: &BlendBlock, s: &str, field: &str) -> String {
         self.off(s, field).map(|o| read_cstr(&b.data, o, 64)).unwrap_or_default()
     }
 
@@ -74,6 +88,11 @@ impl<'a> BGraph<'a> {
             Some(l) if depth < 64 => {
                 let node = self.nodes.iter().copied().find(|n| n.old_address == l.from)?;
                 let out = self.f.block_at(l.from_sock)?;
+                // A link `group.rs` left pointing at a group node carries
+                // that socket's own value (an unlinked group input).
+                if self.text(node, "bNode", "idname") == "ShaderNodeGroup" {
+                    return self.default(out);
+                }
                 self.output(node, &self.text(out, "bNodeSocket", "identifier"), &self.text(out, "bNodeSocket", "name"), depth + 1)
             }
             Some(_) => None,
@@ -90,20 +109,20 @@ impl<'a> BGraph<'a> {
     }
 
     /// A socket's stored `default_value`.
-    fn default(&self, s: &BlendBlock) -> Option<BVal> {
+    pub(super) fn default(&self, s: &BlendBlock) -> Option<BVal> {
         let ty = self.f.read_u16(s.data.get(self.off("bNodeSocket", "type")?..)?.get(..2)?);
         let v = self.f.block_at(self.f.ptr(s, self.off("bNodeSocket", "*default_value")))?;
         let fl = |i: usize| v.data.get(i..i + 4).map(|b| self.f.read_f32(b));
         Some(match ty {
             SOCK_FLOAT => BVal::f(fl(4)?, true),
-            SOCK_VECTOR => BVal::f((fl(4)? + fl(8)? + fl(12)?) / 3.0, true),
+            SOCK_VECTOR => BVal::v([fl(4)?, fl(8)?, fl(12)?], true),
             SOCK_RGBA => BVal::c([fl(0)?, fl(4)?, fl(8)?, fl(12)?], true),
             _ => return None,
         })
     }
 
     /// Input of `node` by identifier (falls back to name).
-    fn arg(&self, node: &BlendBlock, id: &str, depth: u32) -> Option<BVal> {
+    pub(super) fn arg(&self, node: &BlendBlock, id: &str, depth: u32) -> Option<BVal> {
         let socks = self.f.input_sockets(node, self.dna);
         let find = |field: &str| {
             socks.iter().copied().find(|&a| self.f.block_at(a).is_some_and(|b| self.text(b, "bNodeSocket", field) == id))
@@ -122,6 +141,9 @@ impl<'a> BGraph<'a> {
                 let fac = arg("Factor_Float")?;
                 let (a, b) = match byte("data_type") as u16 {
                     SOCK_RGBA => (arg("A_Color")?, arg("B_Color")?),
+                    // A vector Mix is a plain lerp (`svm_node_mix_vector`),
+                    // its factor uniform.
+                    SOCK_VECTOR => (arg("A_Vector")?, arg("B_Vector")?),
                     _ => (arg("A_Float")?, arg("B_Float")?),
                 };
                 let t = if byte("clamp_factor") != 0 { fac.value().clamp(0.0, 1.0) } else { fac.value() };
@@ -129,7 +151,7 @@ impl<'a> BGraph<'a> {
                 if byte("clamp_result") != 0 {
                     rgba = rgba.map(|c| c.clamp(0.0, 1.0));
                 }
-                Some(BVal { rgba, float: a.float, exact: fac.exact && a.exact && b.exact })
+                Some(BVal { rgba, float: a.float, vector: a.vector, exact: fac.exact && a.exact && b.exact })
             }
             "ShaderNodeMixRGB" => {
                 let (fac, a, b) = (arg("Fac")?, arg("Color1")?, arg("Color2")?);
@@ -220,7 +242,7 @@ impl<'a> BGraph<'a> {
             k if k.starts_with("ShaderNodeTex") => {
                 Some(if out_name == "Color" { BVal::c([0.5, 0.5, 0.5, 1.0], false) } else { BVal::f(0.5, false) })
             }
-            _ => None,
+            _ => self.fold_more(node, out_id, out_name, depth),
         }
     }
 }
@@ -295,6 +317,11 @@ impl BGraph<'_> {
             Some(l) => {
                 let node = self.nodes.iter().copied().find(|n| n.old_address == l.from)?;
                 let out = self.f.block_at(l.from_sock)?;
+                if self.text(node, "bNode", "idname") == "ShaderNodeGroup" {
+                    let v = self.default(out)?;
+                    bake.ops.push(if v.float { BBakeOp::ConstF(v.rgba[0]) } else { BBakeOp::Const(v.rgba) });
+                    return Some(());
+                }
                 let out_id = self.text(out, "bNodeSocket", "identifier");
                 let out_name = self.text(out, "bNodeSocket", "name");
                 self.emit_output(node, &out_id, &out_name, bake, depth + 1)
@@ -308,7 +335,7 @@ impl BGraph<'_> {
     }
 
     /// Emit `node`'s input by identifier (falling back to name).
-    fn emit_arg(&self, node: &BlendBlock, id: &str, bake: &mut BlendBake, depth: u32) -> Option<()> {
+    pub(super) fn emit_arg(&self, node: &BlendBlock, id: &str, bake: &mut BlendBake, depth: u32) -> Option<()> {
         let socks = self.f.input_sockets(node, self.dna);
         let find = |field: &str| {
             socks.iter().copied().find(|&a| self.f.block_at(a).is_some_and(|b| self.text(b, "bNodeSocket", field) == id))
@@ -439,7 +466,7 @@ impl BGraph<'_> {
                 bake.ops.push(if out_name == "Color" { BBakeOp::Const([0.5, 0.5, 0.5, 1.0]) } else { BBakeOp::ConstF(0.5) });
                 Some(())
             }
-            _ => None,
+            _ => self.emit_more(node, out_id, out_name, bake, depth),
         }
     }
 }

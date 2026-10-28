@@ -2,7 +2,7 @@
 //! Status and next steps: `jobs.md` in this folder.
 
 /// Zstd decoding, from the C library or from Rust (`zst::PURE`).
-mod zst;
+pub(crate) mod zst;
 
 pub(crate) mod bhead;
 pub(crate) mod dna;

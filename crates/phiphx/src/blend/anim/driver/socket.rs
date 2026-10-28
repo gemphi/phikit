@@ -5,7 +5,9 @@
 //! A driver on a node socket is stored on the **tree's** `AnimData`, not
 //! the datablock's, and pathed
 //!
-//!     nodes["<node name>"].inputs[<i>].default_value
+//! ```text
+//! nodes["<node name>"].inputs[<i>].default_value
+//! ```
 //!
 //! with the component in the curve's `array_index`. The index counts
 //! through `bNode.inputs` as the file stores it — every socket, including

@@ -142,3 +142,82 @@ mod tests {
         assert_eq!(clamp(0, 0.5, 1.0, 0.0), 0.0, "min/max clamp applies min then max");
     }
 }
+
+/// `svm_node_map_range` (`kernel/svm/map_range.h`): `value` taken from
+/// `[from_min, from_max]` to `[to_min, to_max]` by `ty`
+/// (`NodeMapRangeType`: 0 linear, 1 stepped, 2 smoothstep, 3
+/// smootherstep — the smooth two are symmetric, so a reversed source
+/// range needs no special case), then, with the node's Clamp, held to
+/// the target range either way round (`MapRangeNode::expand` adds a
+/// range Clamp after the node). A source range of no width gives 0.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn map_range(ty: u32, value: f32, from_min: f32, from_max: f32, to_min: f32, to_max: f32, steps: f32, clamp: bool) -> f32 {
+    if from_max == from_min {
+        return 0.0;
+    }
+    let t = (value - from_min) / (from_max - from_min);
+    let factor = match ty {
+        1 => if steps > 0.0 { (t * (steps + 1.0)).floor() / steps } else { 0.0 },
+        2 => {
+            let x = t.clamp(0.0, 1.0);
+            x * x * (3.0 - 2.0 * x)
+        }
+        3 => {
+            let x = t.clamp(0.0, 1.0);
+            x * x * x * (x * (x * 6.0 - 15.0) + 10.0)
+        }
+        _ => t,
+    };
+    let r = to_min + factor * (to_max - to_min);
+    match (clamp, to_min > to_max) {
+        (false, _) => r,
+        (true, true) => r.clamp(to_max, to_min),
+        (true, false) => r.clamp(to_min, to_max),
+    }
+}
+
+/// A scalar node between a texture and the socket it drives, its other
+/// inputs folded: a Math node or a Map Range. The tracer carries one as
+/// its slot's tail (`BlendMath`); those between the texture and a Color
+/// Ramp are composed into the ramp's bake instead (`procedural.rs`).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) enum BScalarOp {
+    Math { op: u32, b: f32, c: f32, clamp: bool },
+    MapRange { ty: u32, from_min: f32, from_max: f32, to_min: f32, to_max: f32, steps: f32, clamp: bool },
+}
+
+impl BScalarOp {
+    /// The op over `x`.
+    pub fn apply(&self, x: f32) -> f32 {
+        match *self {
+            Self::Math { op, b, c, clamp } => {
+                let v = math(op as u16, x, b, c).unwrap_or(x);
+                if clamp { v.clamp(0.0, 1.0) } else { v }
+            }
+            Self::MapRange { ty, from_min, from_max, to_min, to_max, steps, clamp } => map_range(ty, x, from_min, from_max, to_min, to_max, steps, clamp),
+        }
+    }
+}
+
+#[cfg(test)]
+mod map_range_tests {
+    use super::*;
+
+    /// 0.3 of 0..1 onto 0.2..0.8 is 0.5; stepped at 4 steps floors to
+    /// quarters; smoothstep eases; clamp holds an out-of-range value to
+    /// the target range, whichever way round it is.
+    #[test]
+    fn map_range_follows_svm_node_map_range() {
+        assert!((map_range(0, 0.3, 0.0, 1.0, 0.2, 0.8, 4.0, false) - 0.38).abs() < 1e-6);
+        assert!((map_range(1, 0.3, 0.0, 1.0, 0.0, 1.0, 4.0, false) - 0.25).abs() < 1e-6, "stepped");
+        assert!((map_range(2, 0.25, 0.0, 1.0, 0.0, 1.0, 4.0, false) - 0.15625).abs() < 1e-6, "smoothstep");
+        assert!((map_range(3, 0.5, 0.0, 1.0, 0.0, 1.0, 4.0, false) - 0.5).abs() < 1e-6, "smootherstep");
+        assert_eq!(map_range(0, 2.0, 0.0, 1.0, 0.0, 1.0, 4.0, true), 1.0, "clamped");
+        assert_eq!(map_range(0, 2.0, 0.0, 1.0, 0.0, 1.0, 4.0, false), 2.0, "unclamped");
+        assert_eq!(map_range(0, 2.0, 0.0, 1.0, 1.0, 0.0, 4.0, true), 0.0, "clamped to a reversed target");
+        assert_eq!(map_range(0, 0.5, 1.0, 1.0, 0.0, 1.0, 4.0, false), 0.0, "no source range");
+        let op = BScalarOp::MapRange { ty: 0, from_min: 0.0, from_max: 1.0, to_min: 0.2, to_max: 0.8, steps: 4.0, clamp: true };
+        assert!((op.apply(0.3) - 0.38).abs() < 1e-6);
+        assert_eq!(BScalarOp::Math { op: 2, b: 3.0, c: 0.0, clamp: true }.apply(0.5), 1.0);
+    }
+}

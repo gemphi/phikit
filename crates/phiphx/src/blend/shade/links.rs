@@ -28,14 +28,23 @@ pub struct BlendNormalMap {
 }
 
 impl BlendFile {
+    /// A material's links, its node groups expanded (`group.rs`).
     pub(crate) fn links(&self, ma: &BlendBlock, dna: &DnaType) -> Vec<BLink> {
-        self.tree_links(ma, "Material", dna)
+        self.flat_links(ma, "Material", dna)
     }
 
-    /// The links of `id`'s node tree (`owner` names the datablock type).
+    /// The links of `id`'s node tree as saved, groups unexpanded (`owner`
+    /// names the datablock type).
     pub(crate) fn tree_links(&self, id: &BlendBlock, owner: &str, dna: &DnaType) -> Vec<BLink> {
+        match self.block_at(self.ptr(id, self.off(owner, "*nodetree", dna))) {
+            Some(nt) => self.links_of(nt, dna),
+            None => Vec::new(),
+        }
+    }
+
+    /// The links of node tree `nt` (`bNodeTree.links`).
+    pub(crate) fn links_of(&self, nt: &BlendBlock, dna: &DnaType) -> Vec<BLink> {
         let off = |s: &str, f: &str| self.off(s, f, dna);
-        let Some(nt) = self.block_at(self.ptr(id, off(owner, "*nodetree"))) else { return Vec::new() };
         let (from, to) = (off("bNodeLink", "*fromnode"), off("bNodeLink", "*tonode"));
         let (fsock, sock) = (off("bNodeLink", "*fromsock"), off("bNodeLink", "*tosock"));
         self.list(self.ptr(nt, off("bNodeTree", "links")), off("bNodeLink", "*next"))

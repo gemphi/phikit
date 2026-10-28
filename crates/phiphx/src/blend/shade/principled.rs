@@ -102,12 +102,14 @@ impl BlendFile {
         Some(bsdf)
     }
 
+    /// A material's shader nodes, its node groups expanded (`group.rs`).
     pub(crate) fn shader_nodes(&self, ma: &BlendBlock, dna: &DnaType) -> Vec<&BlendBlock> {
-        self.tree_nodes(ma, "Material", dna)
+        self.flat_nodes(ma, "Material", dna)
     }
 
-    /// The shader nodes of `id`'s node tree; `owner` is the datablock type
-    /// holding the `*nodetree` pointer (`Material`, `World`, `Light`).
+    /// The shader nodes of `id`'s node tree as saved, groups unexpanded;
+    /// `owner` is the datablock type holding the `*nodetree` pointer
+    /// (`Material`, `World`, `Light`).
     pub(crate) fn tree_nodes(&self, id: &BlendBlock, owner: &str, dna: &DnaType) -> Vec<&BlendBlock> {
         let ma = id;
         let ps = self.header.pointer_size as usize;

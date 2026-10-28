@@ -37,6 +37,13 @@ pub enum BlendProcKind {
     GaborValue,
     GaborPhase,
     GaborIntensity,
+    /// Fresnel ▸ Fac at the node's IOR (`svm_node_fresnel`); the IOR
+    /// rides in `detail`.
+    Fresnel,
+    /// Layer Weight ▸ Fresnel and ▸ Facing (`svm_node_layer_weight`);
+    /// the Blend rides in `detail`.
+    LayerFresnel,
+    LayerFacing,
 }
 
 /// A Math node between a texture and the socket it drives: the operation
@@ -203,7 +210,7 @@ impl BProcFinder<'_> {
     /// an output the tracer does not evaluate (Voronoi ▸ Position, W).
     pub(super) fn texture(&self, from: &BlendBlock, output: &str) -> Option<BlendProc> {
         let idname = self.kind(from);
-        let kind = idname.strip_prefix("ShaderNodeTex").unwrap_or("");
+        let Some(kind) = idname.strip_prefix("ShaderNodeTex") else { return self.view_node(from, &idname, output) };
         let color = output == "Color";
         let base = BlendProc { scale: self.float(from, "Scale", 5.0), scale3: [1.0; 3], ..Default::default() };
         Some(match kind {
@@ -328,6 +335,25 @@ impl BProcFinder<'_> {
                 roughness: self.float(from, "Anisotropy", 1.0),
                 lacunarity: self.float(from, "Orientation 2D", std::f32::consts::FRAC_PI_4),
                 colors: [self.vector(from, "Orientation 3D", [std::f32::consts::SQRT_2, std::f32::consts::SQRT_2, 0.0]), [0.0; 3], [0.0; 3]],
+                ..base
+            },
+            _ => return None,
+        })
+    }
+}
+
+impl BProcFinder<'_> {
+    /// The nodes whose value is the surface's angle to the camera rather
+    /// than a texture's — Fresnel and Layer Weight — as a slot the tracer
+    /// evaluates per pixel from the hit's normal and ray
+    /// (`procedural.wgsl`'s `proc_n`, `proc_wi`). No coordinate, no Scale.
+    fn view_node(&self, from: &BlendBlock, idname: &str, output: &str) -> Option<BlendProc> {
+        let base = BlendProc { scale: 1.0, scale3: [1.0; 3], ..Default::default() };
+        Some(match idname {
+            "ShaderNodeFresnel" => BlendProc { kind: BlendProcKind::Fresnel, detail: self.float(from, "IOR", 1.45), ..base },
+            "ShaderNodeLayerWeight" => BlendProc {
+                kind: if output == "Facing" { BlendProcKind::LayerFacing } else { BlendProcKind::LayerFresnel },
+                detail: self.float(from, "Blend", 0.5),
                 ..base
             },
             _ => return None,

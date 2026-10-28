@@ -62,6 +62,15 @@ pub enum BBakeOp {
     Math { op: u16, clamp: bool, args: u8 },
     /// Pops max, min, value.
     Clamp { range: u16 },
+    /// Pops steps, to max, to min, from max, from min, value
+    /// (`ShaderNodeMapRange`, float).
+    MapRange { ty: u32, clamp: bool },
+    /// Pops a colour (or vector); pushes its channel `channel` in `mode`
+    /// (`NodeCombSepColorMode`; Separate XYZ is RGB over a vector).
+    SepColor { mode: u32, channel: u8 },
+    /// Pops the third, second, first channel; pushes the colour they make
+    /// in `mode` (Combine Color; Combine XYZ is RGB).
+    CombColor { mode: u32 },
 }
 
 /// The compiled Base Color program of one material.
@@ -155,6 +164,22 @@ pub fn run(ops: &[BBakeOp], sample: &dyn Fn(u16) -> [f32; 4]) -> [f32; 4] {
             BBakeOp::Clamp { range } => {
                 let (max, min, v) = (pop(&mut stack), pop(&mut stack), pop(&mut stack));
                 V::f(super::scalar::clamp(*range, v.value(), min.value(), max.value()))
+            }
+            BBakeOp::MapRange { ty, clamp } => {
+                let mut a = [0.0; 6];
+                for slot in a.iter_mut().rev() {
+                    *slot = pop(&mut stack).value();
+                }
+                V::f(super::scalar::map_range(*ty, a[0], a[1], a[2], a[3], a[4], a[5], *clamp))
+            }
+            BBakeOp::SepColor { mode, channel } => {
+                let c = pop(&mut stack).rgba;
+                V::f(super::sepcomb::separate_color(*mode, [c[0], c[1], c[2]])[(*channel).min(2) as usize])
+            }
+            BBakeOp::CombColor { mode } => {
+                let (b, g, r) = (pop(&mut stack), pop(&mut stack), pop(&mut stack));
+                let [r, g, b] = super::sepcomb::combine_color(*mode, [r.value(), g.value(), b.value()]);
+                V { rgba: [r, g, b, 1.0], float: false }
             }
         };
         stack.push(v);

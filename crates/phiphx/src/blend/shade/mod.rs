@@ -2,6 +2,10 @@
 //! Status and next steps: `jobs.md` in this folder.
 
 pub mod graph;
+pub(crate) mod group;
+pub(crate) mod fold;
+pub(crate) mod sepcomb;
+pub(crate) mod vector;
 pub mod image;
 pub mod socket;
 pub(crate) mod material;
@@ -15,6 +19,7 @@ pub(crate) mod links;
 pub(crate) mod maps;
 pub(crate) mod principled;
 pub mod procedural;
+pub(crate) mod procscalar;
 pub(crate) mod texnode;
 pub(crate) mod scalar;
 pub(crate) mod slots;
