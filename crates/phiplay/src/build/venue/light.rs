@@ -22,6 +22,11 @@ const FACADE: f32 = 6.0;
 /// Watts of lamp a square metre of field gets under a roof.
 const LUX: f32 = 40.0;
 
+/// How wide one ceiling lamp is, in metres: a cluster of fixtures, not a
+/// share of the floor. Eight lamps this size still light the court evenly
+/// and leave each player a shadow under her.
+const FIXTURE: f32 = 2.0;
+
 pub fn lights(choice: &BChoice, bowl: &BBowl, out: &mut BVenueBuild) {
     let sport = choice.sport.spec();
     let venue = choice.venue.spec();
@@ -37,7 +42,12 @@ pub fn lights(choice: &BChoice, bowl: &BBowl, out: &mut BVenueBuild) {
                 let x = -hx + (2.0 * c as f32 + 1.0) * hx / cols as f32;
                 let y = -hy + (2.0 * r as f32 + 1.0) * hy / rows as f32;
                 let at = Mat4::from_translation(Vec3::new(x, y, h - 2.0));
-                out.lamps.push(BLamp::Area { at, size: [2.0 * hx / cols as f32 * 0.6, 2.0 * hy / rows as f32 * 0.6], colour: theme.key, power });
+                // A fixture's size, not a share of the floor: sized by the
+                // court, each of the eight lamps came out 4 m across and
+                // lit the players from so many directions at once that
+                // nothing cast a shadow and everyone floated (2026-10-28).
+                // The power is unchanged — only how gathered the light is.
+                out.lamps.push(BLamp::Area { at, size: [FIXTURE, FIXTURE], colour: theme.key, power });
             }
         }
     } else {
