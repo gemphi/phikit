@@ -50,3 +50,21 @@ pub(super) fn boundary(mesh: &BlendEvalMesh) -> Vec<(u32, u32)> {
     edges.sort_unstable();
     edges.chunk_by(|a, b| a == b).filter(|uses| uses.len() == 1).map(|uses| uses[0]).collect()
 }
+
+/// Open edges as `(face, corner, next corner)` in the owning face's winding:
+/// the edges the Solidify's rim closes (`edge_users` in
+/// `MOD_solidify_extrude.cc`).
+pub(super) fn open_corners(mesh: &BlendEvalMesh) -> Vec<(usize, usize, usize)> {
+    let open: std::collections::HashSet<(u32, u32)> = boundary(mesh).into_iter().collect();
+    let mut out = Vec::new();
+    for face in 0..mesh.faces.len() {
+        let c = mesh.faces.get(face);
+        for n in 0..c.len() {
+            let (a, b) = (c[n], c[(n + 1) % c.len()]);
+            if open.contains(&(a.min(b), a.max(b))) {
+                out.push((face, n, (n + 1) % c.len()));
+            }
+        }
+    }
+    out
+}

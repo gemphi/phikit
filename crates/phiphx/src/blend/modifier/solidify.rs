@@ -4,10 +4,18 @@
 //! open boundary.
 //!
 //! `offset` places the shell relative to the original surface: −1 puts it
-//! entirely inside, +1 entirely outside, 0 centres it. Not yet: the complex
-//! (non-manifold) mode, per-vertex-group thickness, rim material offsets.
+//! entirely inside, +1 entirely outside, 0 centres it. The shell carries
+//! the mesh's creases and the rim writes its own (`solidify_creases.rs`).
+//! Not yet: the complex (non-manifold) mode, per-vertex-group thickness, rim
+//! material offsets.
 
-use super::geom::{boundary, vertex_normals};
+use super::geom::open_corners as rim;
+#[path = "solidify_normals.rs"]
+mod normals;
+use normals::vertex_normals;
+#[path = "solidify_creases.rs"]
+mod creases;
+pub(crate) use creases::BSolidifyCreases;
 use super::driver::BModValue;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::blend::file::types::*;
@@ -23,6 +31,8 @@ pub(crate) struct BSolidify {
     pub thickness: f32,
     pub offset: f32,
     pub flag: u32,
+    /// `crease_inner` / `crease_outer` / `crease_rim`.
+    pub creases: BSolidifyCreases,
 }
 
 pub(super) fn read(
@@ -35,6 +45,11 @@ pub(super) fn read(
         thickness: f.float_field(md, "SolidifyModifierData", "offset", dna, 0.01),
         offset: f.float_field(md, "SolidifyModifierData", "offset_fac", dna, -1.0),
         flag: f.int_field(md, "SolidifyModifierData", "flag", dna),
+        creases: BSolidifyCreases {
+            inner: f.float_field(md, "SolidifyModifierData", "crease_inner", dna, 0.0),
+            outer: f.float_field(md, "SolidifyModifierData", "crease_outer", dna, 0.0),
+            rim: f.float_field(md, "SolidifyModifierData", "crease_rim", dna, 0.0),
+        },
     }))
 }
 
@@ -44,7 +59,7 @@ pub(super) fn read(
 impl BSolidify {
     #[cfg(test)]
     pub(crate) fn for_test() -> Self {
-        Self { thickness: 0.01, offset: -1.0, flag: 0 }
+        Self { thickness: 0.01, offset: -1.0, flag: 0, creases: BSolidifyCreases::default() }
     }
 
     fn driven(&mut self, prop: &str, value: BModValue) -> bool {
@@ -58,7 +73,7 @@ impl BSolidify {
 }
 impl BModifier for BSolidify {
     fn clone_box(&self) -> Box<dyn BModifier> {
-        Box::new(Self { thickness: self.thickness, offset: self.offset, flag: self.flag })
+        Box::new(Self { thickness: self.thickness, offset: self.offset, flag: self.flag, creases: self.creases })
     }
 
     fn set_driven(&mut self, prop: &str, _component: usize, value: BModValue) -> bool {
@@ -81,7 +96,9 @@ impl BModifier for BSolidify {
             first.push(at);
             at += mesh.faces.get(f).len();
         }
-        let rim_edges = if self.flag & RIM != 0 { rim(mesh) } else { Vec::new() };
+        let rim_edges = (self.flag & RIM != 0).then(|| rim(mesh)).unwrap_or_default();
+        // The rim's edges by their original vertices, for the creases.
+        let open: Vec<(u32, u32)> = rim_edges.iter().map(|&(f, a, b)| (mesh.faces.get(f)[a], mesh.faces.get(f)[b])).collect();
 
         // `MOD_solidify_extrude.cc`: `ofs_orig = -((1 - offset_fac) / 2) *
         // thickness`, `ofs_new = ofs_orig + thickness`. Which shell takes which
@@ -198,18 +215,21 @@ impl BModifier for BSolidify {
             }
         }
         let base_corners = first.last().map_or(0, |f| f + mesh.faces.get(base_faces - 1).len());
-        if uvs {
-            mesh.loop_uvs.truncate(base_corners);
-            mesh.loop_uvs.extend(shell_uvs);
-        } else if !mesh.loop_uvs.is_empty() {
-            mesh.loop_uvs.clear();
+        match uvs {
+            true => {
+                mesh.loop_uvs.truncate(base_corners);
+                mesh.loop_uvs.extend(shell_uvs);
+            }
+            false => mesh.loop_uvs.clear(),
         }
-        if colors {
-            mesh.loop_colors.truncate(base_corners);
-            mesh.loop_colors.extend(shell_colors);
-        } else if !mesh.loop_colors.is_empty() {
-            mesh.loop_colors.clear();
+        match colors {
+            true => {
+                mesh.loop_colors.truncate(base_corners);
+                mesh.loop_colors.extend(shell_colors);
+            }
+            false => mesh.loop_colors.clear(),
         }
+        creases::shell_creases(mesh, base_verts, &open, self.creases);
         // Duplicate loose edges for the inner shell.
         let base_loose = mesh.loose_edges.len();
         for i in 0..base_loose {
@@ -217,20 +237,4 @@ impl BModifier for BSolidify {
             mesh.loose_edges.push((a + base_verts, b + base_verts));
         }
     }
-}
-
-/// Open edges as `(face, corner, next corner)` in the owning face's winding.
-fn rim(mesh: &BlendEvalMesh) -> Vec<(usize, usize, usize)> {
-    let open: std::collections::HashSet<(u32, u32)> = boundary(mesh).into_iter().collect();
-    let mut out = Vec::new();
-    for face in 0..mesh.faces.len() {
-        let c = mesh.faces.get(face);
-        for n in 0..c.len() {
-            let (a, b) = (c[n], c[(n + 1) % c.len()]);
-            if open.contains(&if a < b { (a, b) } else { (b, a) }) {
-                out.push((face, n, (n + 1) % c.len()));
-            }
-        }
-    }
-    out
 }

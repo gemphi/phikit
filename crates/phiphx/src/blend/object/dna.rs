@@ -117,6 +117,7 @@ impl BlendFile {
                 .map(|r| r.parentinv)
                 .unwrap_or(crate::blend::object::transform::IDENTITY4),
             partype: raw_xf.map(|r| r.partype).unwrap_or(0),
+            parent_verts: raw_xf.map(|r| r.par).unwrap_or([0; 3]),
             visibility: self.object_visibility(block, dna),
             color: self.object_color(block, dna),
             shadow: self.object_shadow(block, dna),
@@ -132,6 +133,7 @@ impl BlendFile {
             skipped_modifiers: Vec::new(),
             instance_targets,
             is_instance,
+            instance_source: None,
             base_color: [0.8, 0.8, 0.8, 1.0],
             roughness: 0.5,
             metallic: 0.0,

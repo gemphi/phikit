@@ -1,10 +1,13 @@
 //! Array modifier (`ArrayModifierData`, Blender `MOD_array.cc`): repeat the
 //! mesh `count` times, each copy displaced by the sum of the enabled offsets —
 //! a constant vector, a fraction of the mesh's own bounding box, and/or
-//! another object's transform relative to this one.
-//! Not yet: start/end caps, merge, fit-to-curve and fit-to-length.
+//! another object's transform relative to this one — and merges the copies
+//! where they meet ("Merge", `array_merge.rs`).
+//! Not yet: start/end caps, fit-to-curve and fit-to-length.
 
 use super::{BModifier, BlendEvalMesh, EvalCtx};
+#[path = "array_merge.rs"]
+mod array_merge;
 use super::driver::BModValue;
 use crate::blend::file::types::*;
 use glam::{Mat4, Vec3};
@@ -12,6 +15,16 @@ use glam::{Mat4, Vec3};
 const OFF_CONST: u32 = 1 << 0;
 const OFF_RELATIVE: u32 = 1 << 1;
 const OFF_OBJ: u32 = 1 << 2;
+/// `MOD_ARR_MERGE` / `MOD_ARR_MERGEFINAL` (`ArrayModifierData.flags`).
+const MERGE: u32 = 1 << 0;
+const MERGE_FINAL: u32 = 1 << 1;
+
+/// "Merge": the distance, and whether the last copy meets the first.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct BArrayMerge {
+    pub dist: f32,
+    pub first_last: bool,
+}
 
 pub(crate) struct BArray {
     pub count: usize,
@@ -19,6 +32,7 @@ pub(crate) struct BArray {
     pub constant: Vec3,
     pub relative: Vec3,
     pub offset_ob: u64,
+    pub merge: Option<BArrayMerge>,
 }
 
 pub(super) fn read(
@@ -38,6 +52,7 @@ pub(super) fn read(
                 )
             })
     };
+    let flags = f.int_field(md, "ArrayModifierData", "flags", dna);
     Some(Box::new(BArray {
         // Blender clamps to at least one copy — the original.
         count: f.int_field(md, "ArrayModifierData", "count", dna).max(1) as usize,
@@ -45,6 +60,10 @@ pub(super) fn read(
         constant: v3("offset[3]"),
         relative: v3("scale[3]"),
         offset_ob: f.ptr(md, f.off("ArrayModifierData", "*offset_ob", dna)),
+        merge: (flags & MERGE != 0).then(|| BArrayMerge {
+            dist: f.float_field(md, "ArrayModifierData", "merge_dist", dna, 0.01),
+            first_last: flags & MERGE_FINAL != 0,
+        }),
     }))
 }
 
@@ -52,7 +71,7 @@ impl BArray {
     /// A plain Array for the driven-setting tests (`driven_tests.rs`).
     #[cfg(test)]
     pub(crate) fn for_test() -> Self {
-        Self { count: 2, offset_type: 0, constant: Default::default(), relative: Default::default(), offset_ob: 0 }
+        Self { count: 2, offset_type: 0, constant: Default::default(), relative: Default::default(), offset_ob: 0, merge: None }
     }
 
     /// The displacement between one copy and the next, in object space.
@@ -115,6 +134,7 @@ impl BModifier for BArray {
             constant: self.constant,
             relative: self.relative,
             offset_ob: self.offset_ob,
+            merge: self.merge,
         })
     }
 
@@ -132,6 +152,8 @@ impl BModifier for BArray {
         let base_uvs = mesh.loop_uvs.len();
         let base_colors = mesh.loop_colors.len();
         let base_loose = mesh.loose_edges.len();
+        let base_creases = mesh.edge_creases.len();
+        let vert_creases = mesh.vert_creases.len() == verts as usize;
 
         for copy in 1..self.count {
             let shift = step * copy as f32;
@@ -165,6 +187,17 @@ impl BModifier for BArray {
                 let (a, b) = mesh.loose_edges[n];
                 mesh.loose_edges.push((a + base, b + base));
             }
+            // `edge_interp.copy` / `vert_interp.copy`: the creases come along.
+            for n in 0..base_creases {
+                let (a, b, c) = mesh.edge_creases[n];
+                mesh.edge_creases.push((a + base, b + base, c));
+            }
+            if vert_creases {
+                mesh.vert_creases.extend_from_within(..verts as usize);
+            }
+        }
+        if let Some(m) = self.merge {
+            array_merge::array_merge(mesh, verts as usize, self.count, m.dist, m.first_last);
         }
     }
 }

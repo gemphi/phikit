@@ -98,7 +98,10 @@ impl BlendFile {
                                 let start = offsets.get(p).copied().unwrap_or(0);
                                 let end = offsets.get(p + 1).copied().unwrap_or(loop_count);
                                 let count = end.saturating_sub(start);
-                                if !(3..100).contains(&count) {
+                                // Any size from a triangle up: a wheel's
+                                // 192-corner hub cap (BC-15's `Front_Wheel`)
+                                // is one face, as Blender's `faces()` has it.
+                                if count < 3 {
                                     continue;
                                 }
                                 let face: Vec<u32> = (start..end)

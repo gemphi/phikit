@@ -126,6 +126,7 @@ impl BlendFile {
             scene.props.ui = self.extract_ui_state(Some(sc), dna);
             scene.props.packed_images = self.packed_images(dna);
             scene.props.compositor = self.compositor();
+            scene.props.physics = self.extract_physics(sc, &scene.objects, dna);
             // Everything below used to run after a single `progress(1.0, …)`,
             // with no further report and no cancel check — modifier
             // evaluation (which may skin on the GPU), actions, motion, NLA
@@ -217,6 +218,12 @@ impl BlendFile {
                     object.matrix_world = world;
                 }
             }
+            // A vertex-parented child hangs from its parent's EVALUATED
+            // vertices (`give_parvert`), known only now; the follow solve
+            // above does not know vertex parents, so this comes after it.
+            // A progressive open has no evaluated meshes yet and does this
+            // when they land (`scene/progressive.rs`).
+            Self::reparent_to_vertices(&mut scene.objects, &scene.props.evaluated);
             if !progress(0.98, "Reading NLA") {
                 return Err(crate::PointCloudError::Cancelled);
             }

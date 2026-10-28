@@ -109,12 +109,16 @@ pub struct BlendSceneProps {
     /// no tree at all; a tree that is switched off still comes through, so
     /// the editor can draw it.
     pub compositor: Option<crate::comp::BCompTree>,
+    /// The Physics tabs: rigid body world and bodies, joints, cloth,
+    /// colliders, force fields, soft bodies (`blend/physics/`).
+    pub physics: crate::blend::BlendPhysics,
 }
 
 impl Default for BlendSceneProps {
     fn default() -> Self {
         Self {
             compositor: None,
+            physics: Default::default(),
             frame_current: 1,
             frame_start: 1,
             frame_end: 250,
@@ -259,6 +263,8 @@ impl BlendFile {
             // Read from the Scene block in `read.rs`, which has the DNA to
             // hand; the props reader does not reach the node tree.
             compositor: None,
+            // Likewise, read in `read.rs` once the objects are known.
+            physics: Default::default(),
             frame_current: self.sp_i32(d, self.rd_off("cfra", dna), 1),
             frame_start: self.sp_i32(d, self.rd_off("sfra", dna), 1),
             frame_end: self.sp_i32(d, self.rd_off("efra", dna), 250),

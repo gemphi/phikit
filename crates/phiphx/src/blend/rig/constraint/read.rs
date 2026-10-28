@@ -6,6 +6,9 @@ use crate::blend::file::types::*;
 use crate::blend::rig::read::BFields;
 use std::collections::HashMap;
 
+/// `bRotLimitConstraint.flag`'s `LIMIT_ROT_LEGACY_BEHAVIOR`.
+const LIMIT_ROT_LEGACY_BEHAVIOR: u32 = 1 << 3;
+
 /// What a constraint's targets resolve against: its owner's object (a rig
 /// or not) and the rig's bones by name.
 pub struct BTargetNames<'a> {
@@ -60,6 +63,19 @@ impl BlendFile {
         }
     }
 
+    /// `versioning_420.cc` (`!MAIN_VERSION_FILE_ATLEAST(bmain, 402, 60)`, or
+    /// 4.3 before 4.3.3): a Limit Rotation saved by an older Blender keeps
+    /// the naive clamp it was made with - `LIMIT_ROT_LEGACY_BEHAVIOR`, which
+    /// Rigify's foot roll relies on to clamp a negative angle to zero.
+    fn limit_rotation_legacy(&self, dna: &DnaType) -> u32 {
+        let (v, s) = (self.header.version_number, self.subversion(dna));
+        let at_least = |ver: u32, sub: u32| v > ver || (v == ver && s >= sub);
+        match !at_least(402, 60) || (v == 403 && !at_least(403, 3)) {
+            true => LIMIT_ROT_LEGACY_BEHAVIOR,
+            false => 0,
+        }
+    }
+
     fn constraint_kind(&self, ty: u16, d: &BlendBlock, dna: &DnaType, names: &BTargetNames) -> BConstraintKind {
         let st = match ty {
             TYPE_TRANSLIKE => "bTransLikeConstraint",
@@ -108,7 +124,7 @@ impl BlendFile {
             TYPE_ROTLIMIT => BConstraintKind::LimitRotation {
                 min: Vec3::new(f.f32("xmin", 0.0), f.f32("ymin", 0.0), f.f32("zmin", 0.0)),
                 max: Vec3::new(f.f32("xmax", 0.0), f.f32("ymax", 0.0), f.f32("zmax", 0.0)),
-                flag: f.int("flag"),
+                flag: f.int("flag") | self.limit_rotation_legacy(dna),
                 order: f.int("euler_order") as u8,
             },
             TYPE_DISTLIMIT => BConstraintKind::LimitDistance { target: target(), dist: f.f32("dist", 0.0), soft: f.f32("soft", 0.0), flag: f.int("flag"), mode: f.int("mode") },

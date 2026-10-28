@@ -36,6 +36,9 @@ pub struct ObjectTransformRaw {
     pub parentinv: [[f32; 4]; 4],
     pub parent_address: u64,
     pub partype: u8,
+    /// `Object.par1`, `par2`, `par3`: the parent's vertex indices a
+    /// `PARVERT1` (the first) or `PARVERT3` child hangs from.
+    pub par: [i32; 3],
     pub ob_type: i16,
 }
 
@@ -58,6 +61,7 @@ impl Default for ObjectTransformRaw {
             parentinv: IDENTITY4,
             parent_address: 0,
             partype: PAROBJECT,
+            par: [0; 3],
             ob_type: 1,
         }
     }
@@ -97,6 +101,12 @@ impl BlendFile {
             *v = self.f32_at(data, off + 4 * i);
         }
         out
+    }
+    pub(crate) fn i32_at(&self, data: &[u8], off: usize) -> i32 {
+        match off + 4 <= data.len() {
+            true => self.read_i32(&data[off..off + 4]),
+            false => 0,
+        }
     }
     pub(crate) fn i16_at(&self, data: &[u8], off: Option<usize>, default: i16) -> i16 {
         match off {
@@ -153,6 +163,7 @@ impl BlendFile {
             parentinv,
             parent_address,
             partype,
+            par: ["par1", "par2", "par3"].map(|n| off(n).map_or(0, |o| self.i32_at(d, o))),
             ob_type: self.i16_at(d, off("type"), 1),
         }
     }

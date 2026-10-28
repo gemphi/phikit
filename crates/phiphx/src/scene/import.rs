@@ -139,12 +139,28 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
         obj.skipped_modifiers.iter().map(move |m| format!("{}: unsupported modifier {}", obj.name, m))
     }).collect();
     let wanted: std::collections::HashSet<usize> = mesh_jobs.iter().copied().collect();
-    let (mut objects, uv_maps): (Vec<SceneObject>, Vec<std::sync::Arc<super::SceneUvMap>>) = raw
+    // A collection instance shares its member's converted geometry
+    // (`share.rs`): the member is converted once, the instance's own copy
+    // of its buffers is dropped unconverted, and the `Arc`s are joined below.
+    let shared = super::share::sources(&raw, &wanted);
+    let (mut objects, mut uv_maps): (Vec<SceneObject>, Vec<std::sync::Arc<super::SceneUvMap>>) = raw
         .into_par_iter()
         .enumerate()
         .filter(|(i, _)| wanted.contains(i))
-        .map(|(i, obj)| (evaluated_object(&obj, blend.props.evaluated.get(&i)), std::sync::Arc::new(super::SceneUvMap::of(&obj))))
+        .map(|(i, obj)| match shared[i] {
+            Some(_) => {
+                let bare = crate::blend::BlendSceneObject { vertices: Vec::new(), faces: Default::default(), loop_uvs: Vec::new(), loop_colors: Vec::new(), loop_normals: Vec::new(), ..obj };
+                (evaluated_object(&bare, None), std::sync::Arc::default())
+            }
+            None => (evaluated_object(&obj, blend.props.evaluated.get(&i)), std::sync::Arc::new(super::SceneUvMap::of(&obj))),
+        })
         .unzip();
+    for (i, source) in shared.iter().enumerate() {
+        if let (Some(Some(to)), Some(Some(from))) = (remap.get(i), source.and_then(|s| remap.get(s))) {
+            super::share::alias(&mut objects, *from, *to);
+            uv_maps[*to] = uv_maps[*from].clone();
+        }
+    }
     let p = &blend.props;
     let missing = super::texture::attach(&mut objects, p, source_path);
     let report = super::report::SceneReadReport {
@@ -242,6 +258,7 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
         uv_maps,
         cursor: p.cursor,
         compositor: p.compositor.clone(),
+        physics: p.physics.clone(),
     }
 }
 

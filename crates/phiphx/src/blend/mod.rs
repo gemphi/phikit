@@ -17,11 +17,14 @@ mod object;
 pub mod rig;
 mod scene;
 pub mod shade;
+pub mod text;
 pub use shade::material::VIEWPORT_PBR;
 pub mod write;
 pub(crate) use shade::image::set_source as set_image_source;
 pub(crate) use shade::image::clear_source as clear_image_source;
 pub mod mesh;
+pub mod physics;
+pub use physics::BlendPhysics;
 
 pub use file::quick::{BlendQuickInfo, BlendRenderInfo, BlendThumbnail};
 pub use file::types::{
@@ -34,6 +37,8 @@ pub use modifier::driver::{BModValue, BModWrite, BModifierDrivers};
 pub use modifier::skin::{CpuSkin, SKIN_MIN, SkinJob, SkinPair, Skinner, set_skinner};
 pub(crate) use modifier::supported_modifiers;
 pub(crate) use modifier::{DeferredRaw, apply_eval_jobs};
+pub use object::vertex_parent::{is_vertex_parent, PARVERT1, PARVERT3};
+pub(crate) use object::world::vertex_children_worlds;
 
 thread_local! {
     /// Set while a progressive open parses, so the reader captures modifier

@@ -80,7 +80,9 @@ impl BlendFile {
     pub(crate) fn mesh_block_of(&self, ob: &BlendBlock, dna: &DnaType) -> Option<&BlendBlock> {
         let ps = self.header.pointer_size as usize;
         let off = Self::struct_field_offset_exact("Object", "*data", dna, ps)?;
-        self.block_at_code(Self::read_ptr(&ob.data, off, ps, self.header.little_endian), "ME")
+        // Scoped to the object, for the same repeated-address reason as
+        // every other pointer it owns (`file/scope.rs`).
+        self.scoped(ob, || self.block_at_code(Self::read_ptr(&ob.data, off, ps, self.header.little_endian), "ME"))
     }
 
     fn face_data_offset(&self, dna: &DnaType) -> Option<usize> {

@@ -18,8 +18,12 @@ use rayon::prelude::*;
 const RECURSIVE: u32 = 1 << 6;
 /// `eSubsurfModifierFlag_UseCrease`.
 const USE_CREASE: u32 = 1 << 4;
-/// Guard against runaway levels on huge meshes (faces after refinement).
-const MAX_FACES: usize = 8_000_000;
+/// Guard against runaway levels only (faces after refinement). Blender has
+/// none: `BKE_subdiv_to_mesh` evaluates every level asked for, so this sits
+/// far above what a scene's mesh reaches — `Peep_Base.006` of the CW poses,
+/// 8.3M quads at its level, evaluated whole — and stops only a stack that
+/// would not fit in memory.
+const MAX_FACES: usize = 64_000_000;
 
 pub(crate) struct BSubsurf {
     pub levels: u32,
@@ -31,6 +35,9 @@ pub(crate) struct BSubsurf {
     /// `quality`: the level OpenSubdiv isolates sharp features to when it
     /// evaluates the limit surface.
     pub quality: u32,
+    /// The scene's Simplify cap on the level (`r.simplify_subsurf` under
+    /// `R_SIMPLIFY`), `None` when Simplify is off.
+    pub simplify: Option<u32>,
     /// Each level's adjacency, by the mesh's vertex and face counts: a mesh
     /// subdivided again in another pose (`scene/rig.rs`, every frame) has
     /// the same faces, and building the tables was most of the work.
@@ -38,9 +45,17 @@ pub(crate) struct BSubsurf {
 }
 
 impl BSubsurf {
-    #[cfg(test)]
     pub(crate) fn new(levels: u32, simple: bool, limit: bool, keep_corners: bool) -> Self {
-        Self { levels, simple, limit, keep_corners, use_creases: true, quality: 3, topologies: Default::default() }
+        Self { levels, simple, limit, keep_corners, use_creases: true, quality: 3, simplify: None, topologies: Default::default() }
+    }
+
+    /// The level evaluated: `get_render_subsurf_level` for the viewport,
+    /// `levels` under the scene's Simplify cap.
+    fn level(&self) -> u32 {
+        match self.simplify {
+            Some(cap) => self.levels.min(cap),
+            None => self.levels,
+        }
     }
 
     /// One level of refinement under `creases`; the creases of the next.
@@ -63,7 +78,7 @@ impl BSubsurf {
         let n = mesh.vertices.len();
         let mut fine: Option<BlendEvalMesh> = None;
         let mut creases = creases;
-        let mut level = self.levels;
+        let mut level = self.level();
         while level < self.quality && creases.has_finite() {
             let m = fine.get_or_insert_with(|| BlendEvalMesh { vertices: mesh.vertices.clone(), faces: mesh.faces.clone(), ..Default::default() });
             creases = self.refine_level(m, &creases);
@@ -100,16 +115,20 @@ pub(super) fn read(f: &BlendFile, md: &BlendBlock, _ob: &BlendBlock, dna: &DnaTy
     // step later, on the settings as the drivers left them.
     //
     // `get_render_subsurf_level` also caps the level by the scene's Simplify
-    // setting (`r->simplify_subsurf` under `R_SIMPLIFY`); phiphx does not read
-    // Simplify, so this is the un-simplified branch of that function.
+    // setting (`r->simplify_subsurf` under `R_SIMPLIFY`): FEMALE-01-RIGGED-
+    // POSES saves Simplify at 1, and every figure there came out four times
+    // Blender's triangles until it was read.
     Some({
         Box::new(BSubsurf {
             levels: levels.min(6),
             simple: f.int_field(md, "SubsurfModifierData", "subdivType", dna) == 1,
             limit: f.int_field(md, "SubsurfModifierData", "flags", dna) & RECURSIVE == 0,
-            keep_corners: f.int_field(md, "SubsurfModifierData", "boundary_smooth", dna) == 0,
+            // `SUBSURF_BOUNDARY_SMOOTH_PRESERVE_CORNERS` = 1 (`ALL` = 0, the
+            // default): only Preserve Corners pins a one-face corner (`subdiv.cc`).
+            keep_corners: f.int_field(md, "SubsurfModifierData", "boundary_smooth", dna) == 1,
             use_creases: f.int_field(md, "SubsurfModifierData", "flags", dna) & USE_CREASE != 0,
             quality: match f.int_field(md, "SubsurfModifierData", "quality", dna) { q if (1..=10).contains(&q) => q, _ => 3 },
+            simplify: f.simplify_subsurf(dna),
             topologies: Default::default(),
         }) as Box<dyn BModifier>
     })
@@ -142,6 +161,7 @@ impl BModifier for BSubsurf {
             keep_corners: self.keep_corners,
             use_creases: self.use_creases,
             quality: self.quality,
+            simplify: self.simplify,
             topologies: Default::default(),
         })
     }
@@ -153,14 +173,14 @@ impl BModifier for BSubsurf {
     /// `is_disabled`: a Subdivision at level 0 does nothing, so Blender drops
     /// it from the stack instead of evaluating an identity.
     fn disabled(&self) -> bool {
-        self.levels == 0
+        self.level() == 0
     }
 
     fn apply(&self, mesh: &mut BlendEvalMesh, _ctx: &EvalCtx) {
         let adaptive = self.limit && !self.simple;
         let mut creases = BCreaseLevel::read(mesh, self.use_creases);
         let carried = creases.clone();
-        for level in 0..self.levels {
+        for level in 0..self.level() {
             if mesh.faces.len() * 4 > MAX_FACES {
                 break;
             }
@@ -314,4 +334,18 @@ fn refine(m: &mut BlendEvalMesh, s: &BSubsurf, t: &Topology, sharp: &BSharpness)
     }
     out.loose_edges = loose;
     *m = out;
+}
+
+/// `RenderData.mode`: Simplify is on.
+const R_SIMPLIFY: u32 = 1 << 24;
+
+impl BlendFile {
+    /// The viewport's Simplify cap on subdivision levels
+    /// (`get_render_subsurf_level`, not for render): the current scene's
+    /// `r.simplify_subsurf` when `R_SIMPLIFY` is set, else `None`.
+    pub(crate) fn simplify_subsurf(&self, dna: &DnaType) -> Option<u32> {
+        let sc = self.file_global_curscene(dna).or_else(|| self.blocks.iter().find(|b| b.code_str == "SC"))?;
+        let mode = self.nested_int(sc, "Scene", "r", "RenderData", "mode", dna)?;
+        (mode & R_SIMPLIFY != 0).then(|| self.nested_int(sc, "Scene", "r", "RenderData", "simplify_subsurf", dna)).flatten()
+    }
 }

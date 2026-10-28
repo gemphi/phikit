@@ -26,7 +26,8 @@
 //! shaped targets; driver variables other than a single property of the
 //! rig; and NLA strips on the rig. A bone behind one of them keeps its
 //! channel's pose. `tests.rs` holds every bone of THYMUS's Rigify rig to
-//! Blender's pose at six frames, `constraint/tests.rs` a bone under each
+//! Blender's pose at six frames, `leg_tests.rs` a small Rigify-like leg
+//! (IK, foot roll, tweaks, Stretch To) at four, `constraint/tests.rs` a bone under each
 //! other constraint kind, `anim/follow_tests.rs` objects under them.
 
 mod constraint;
@@ -46,6 +47,8 @@ mod tests;
 mod display_tests;
 #[cfg(test)]
 mod nla_tests;
+#[cfg(test)]
+mod leg_tests;
 
 pub use constraint::{BConstraint, BConstraintKind, BObjectWork, BTarget};
 pub use display::{BBoneDraw, BBoneLook, BBoneShape, BBoneShown, BRigLook};

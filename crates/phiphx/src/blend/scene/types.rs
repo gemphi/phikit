@@ -23,8 +23,11 @@ pub struct BlendSceneObject {
     pub parent_address: u64,
     /// `Object.parentinv` (inverse of the parent's matrix at parenting time).
     pub parentinv: [[f32; 4]; 4],
-    /// `Object.partype & PARTYPE` — 0 = PAROBJECT (only mode fully honoured).
+    /// `Object.partype & PARTYPE`: 0 = PAROBJECT, 5 / 6 = a vertex parent
+    /// (`object/vertex_parent.rs`), 7 = PARBONE (`anim/follow.rs`).
     pub partype: u8,
+    /// `Object.par1..par3`: the parent vertices of a vertex-parented child.
+    pub parent_verts: [i32; 3],
     /// `Object.visibility_flag`: disabled in viewports / not selectable /
     /// disabled in renders.
     pub visibility: crate::blend::BlendVisibility,
@@ -57,6 +60,12 @@ pub struct BlendSceneObject {
     pub skipped_modifiers: Vec<String>,
     pub instance_targets: Vec<String>,
     pub is_instance: bool,
+    /// For an object a collection instance draws (`object/instance.rs`):
+    /// the member's object block and the member's own world matrix. Blender
+    /// evaluates the member once, where it stands, and every instance draws
+    /// that evaluated geometry (`make_duplis_collection`); the modifier pass
+    /// reads this to give an instance its member's stack, not the bare mesh.
+    pub instance_source: Option<(u64, [[f32; 4]; 4])>,
     /// Base/diffuse colour (RGBA) from the object's first material.
     pub base_color: [f32; 4],
     /// PBR roughness from the object's first material.

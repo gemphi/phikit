@@ -16,6 +16,7 @@ fn array_repeats_the_mesh_and_everything_that_travels_with_it() {
             constant: glam::Vec3::new(2.0, 0.0, 0.0),
             relative: glam::Vec3::ZERO,
             offset_ob: 0,
+            merge: None,
         },
     );
     assert_eq!((m.vertices.len(), m.faces.len()), (12, 3));
@@ -42,6 +43,7 @@ fn array_relative_offset_measures_the_mesh_itself() {
             constant: glam::Vec3::ZERO,
             relative: glam::Vec3::new(1.0, 0.0, 0.0),
             offset_ob: 0,
+            merge: None,
         },
     );
     // The quad is one unit wide, so one relative step is one unit.
@@ -60,6 +62,7 @@ fn a_single_copy_array_changes_nothing() {
             constant: glam::Vec3::new(5.0, 0.0, 0.0),
             relative: glam::Vec3::ZERO,
             offset_ob: 0,
+            merge: None,
         },
     );
     assert_eq!(m, before);
@@ -101,6 +104,7 @@ fn solidify_adds_a_second_shell_and_a_rim() {
             thickness: 0.2,
             offset: -1.0,
             flag: 1 << 0, // MOD_SOLIDIFY_RIM
+            creases: Default::default(),
         },
     );
     // The original four vertices gain a shell of four more.
@@ -120,7 +124,7 @@ fn a_negative_thickness_pushes_the_original_surface_outward_as_blender_does() {
     // and the reversed copy stays on it. The other way round put the visible
     // surface exactly on the body the garment was made from.
     let mut m = quad();
-    eval(&mut m, &BSolidify { thickness: -0.004, offset: -1.0, flag: 0 });
+    eval(&mut m, &BSolidify { thickness: -0.004, offset: -1.0, flag: 0, creases: Default::default() });
     assert!((m.vertices[0][2] - 0.004).abs() < 1e-6, "original moved out: {:?}", m.vertices[0]);
     assert!((m.vertices[4][2] - 0.0).abs() < 1e-6, "copy stays on the base: {:?}", m.vertices[4]);
 }
@@ -128,7 +132,7 @@ fn a_negative_thickness_pushes_the_original_surface_outward_as_blender_does() {
 #[test]
 fn solidify_reverses_the_inner_shell_so_it_faces_outward() {
     let mut m = quad();
-    eval(&mut m, &BSolidify { thickness: 0.1, offset: -1.0, flag: 0 });
+    eval(&mut m, &BSolidify { thickness: 0.1, offset: -1.0, flag: 0, creases: Default::default() });
     let inner = m.faces.get(1).to_vec();
     // The inner shell's corners run the other way round from the outer's.
     assert_eq!(inner, vec![7, 6, 5, 4]);
@@ -141,10 +145,31 @@ fn solidify_keeps_uvs_on_both_shells_and_the_rim() {
     // shell was added left every solidified piece of clothing untextured.
     let mut m = quad();
     m.loop_uvs = vec![[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]];
-    eval(&mut m, &BSolidify { thickness: 0.1, offset: -1.0, flag: 1 << 0 });
+    eval(&mut m, &BSolidify { thickness: 0.1, offset: -1.0, flag: 1 << 0, creases: Default::default() });
     assert_eq!(m.loop_uvs.len(), m.faces.corners());
     // The copied shell carries the same UVs, reversed with its corners.
     assert_eq!(&m.loop_uvs[4..8], &[[0.0, 1.0], [1.0, 1.0], [1.0, 0.0], [0.0, 0.0]]);
+}
+
+#[test]
+fn solidify_copies_the_creases_to_the_shell_and_writes_the_rims() {
+    // `MOD_solidify_extrude.cc`: the shell copies every crease, then the rim
+    // adds `crease_outer` / `crease_inner` to the open edge and its copy
+    // (held to 1) and sets `crease_rim` on each edge across the gap.
+    use super::super::solidify::BSolidifyCreases;
+    let mut m = quad();
+    m.edge_creases = vec![(0, 1, 0.5)];
+    m.vert_creases = vec![0.9, 0.0, 0.0, 0.0];
+    let creases = BSolidifyCreases { inner: 1.0, outer: 0.7, rim: 0.4 };
+    eval(&mut m, &BSolidify { thickness: 0.1, offset: -1.0, flag: 1 << 0, creases });
+    let mut got = m.edge_creases.clone();
+    got.sort_by_key(|&(a, b, _)| (a, b));
+    let want = vec![
+        (0, 1, 1.0), (0, 3, 0.7), (0, 4, 0.4), (1, 2, 0.7), (1, 5, 0.4), (2, 3, 0.7),
+        (2, 6, 0.4), (3, 7, 0.4), (4, 5, 1.0), (4, 7, 1.0), (5, 6, 1.0), (6, 7, 1.0),
+    ];
+    assert_eq!(got, want);
+    assert_eq!(m.vert_creases, vec![0.9, 0.0, 0.0, 0.0, 0.9, 0.0, 0.0, 0.0]);
 }
 
 /// Solid's Color ▸ Attribute through the stack: the colour attribute rides
@@ -156,12 +181,12 @@ fn the_colour_attribute_rides_the_stack_as_the_uvs_do() {
     let paint = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [1.0, 1.0, 1.0]];
     let mut m = quad();
     m.loop_colors = paint.to_vec();
-    eval(&mut m, &BArray { count: 2, offset_type: 1, constant: glam::Vec3::new(2.0, 0.0, 0.0), relative: glam::Vec3::ZERO, offset_ob: 0 });
+    eval(&mut m, &BArray { count: 2, offset_type: 1, constant: glam::Vec3::new(2.0, 0.0, 0.0), relative: glam::Vec3::ZERO, offset_ob: 0, merge: None });
     assert_eq!(m.loop_colors.len(), 8, "the copy's corners take the colours");
     assert_eq!(&m.loop_colors[4..], &paint);
     let mut m = quad();
     m.loop_colors = paint.to_vec();
-    eval(&mut m, &BSolidify { thickness: 0.1, offset: -1.0, flag: 1 << 0 });
+    eval(&mut m, &BSolidify { thickness: 0.1, offset: -1.0, flag: 1 << 0, creases: Default::default() });
     assert_eq!(m.loop_colors.len(), m.faces.corners());
     assert_eq!(&m.loop_colors[4..8], &[paint[3], paint[2], paint[1], paint[0]], "the inner shell, reversed with its corners");
     assert_eq!(m.loop_colors[8], m.loop_colors[11], "a rim quad takes its edge's two colours");

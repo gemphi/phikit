@@ -67,19 +67,7 @@ fn truth() -> Vec<Blender> {
 /// A row is a decision, and the numbers are exact so that closing a gap —
 /// or opening a new one — fails here.
 const SHORT: &[(&str, usize, usize, &str)] = &[
-    (
-        "THYMUS-BOLDROID-WAVE-003.blend",
-        240,
-        1,
-        "192 for loose-edge subdivision on six Rigify widgets, 48 for the untessellated `Path` curve; \
-         the object is an Empty, which phiphx does not list",
-    ),
-    (
-        "FLORIS_BOLDRIOD_RIG.blend",
-        192,
-        0,
-        "loose-edge subdivision on the same six Rigify widgets",
-    ),
+    ("THYMUS-BOLDROID-WAVE-003.blend", 0, 1, "the object is an Empty, which phiphx does not list"),
     ("constraints.blend", 0, 1, "the object is an Empty, which phiphx does not list"),
 ];
 

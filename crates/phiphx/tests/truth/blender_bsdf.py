@@ -3,9 +3,14 @@
     python tests/truth/blender_bsdf.py -- <files...> | grep '\\.blend|' > tests/truth/bsdf.txt
 
 One line per material with a Principled BSDF: file|material|base rgba|rough|metal|alpha|ior|transmission|emission rgb|strength.
-Linked inputs are folded like phiphx `blend/shade/eval.rs` (colour ramps are
-evaluated by Blender itself): image colour = white, procedural = 0.5; alpha,
-emission, IOR and transmission keep their defaults unless the fold is exact.
+Linked inputs are folded like phiphx `blend/shade/eval.rs` and
+`blend/shade/fold.rs` (colour ramps are evaluated by Blender itself): image
+colour = white, procedural = 0.5; alpha, emission, IOR and transmission keep
+their defaults unless the fold is exact. Node groups are expanded as
+`blend/shade/group.rs` expands them — a link out of a group node is followed
+to what feeds its Group Output, a link out of a Group Input back to the
+instance's own socket — and a vector socket keeps its three components, which
+read as a float the way `svm_node_convert` converts them (their mean).
 """
 import os
 import sys
@@ -53,23 +58,59 @@ def hue_sat(c, hue, sat, val, fac):
     return [r + fac * (rgb[0] - r), g + fac * (rgb[1] - g), b + fac * (rgb[2] - b), a]
 
 
+class VEC:
+    """The flag of a vector value: its three components in `v[0]`, read as a
+    float by their mean (`svm_node_convert`), not by luminance."""
+
+
 def val(v, fl, exact): return (list(v), fl, exact)
 def grey(x, exact): return ([x, x, x, 1.0], True, exact)
-def value(v): return v[0][0] if v[1] else 0.2126 * v[0][0] + 0.7152 * v[0][1] + 0.0722 * v[0][2]
+def vec3(xyz, exact): return ([xyz[0], xyz[1], xyz[2], 1.0], VEC, exact)
+
+
+def value(v):
+    if v[1] is VEC: return (v[0][0] + v[0][1] + v[0][2]) / 3
+    return v[0][0] if v[1] else 0.2126 * v[0][0] + 0.7152 * v[0][1] + 0.0722 * v[0][2]
+
+
+def xyz(v): return v[0][:3]
+
+
+def sock(sockets, ident):
+    return next((x for x in sockets if x.identifier == ident), None) or sockets.get(ident)
+
+
+def group_output(tree):
+    outs = [n for n in tree.nodes if n.bl_idname == "NodeGroupOutput"]
+    return next((n for n in outs if n.is_active_output), outs[0] if outs else None)
 
 
 def default(s):
     if s.type in ("VALUE", "INT"): return grey(float(s.default_value), True)
-    if s.type == "VECTOR": return grey(sum(s.default_value) / 3, True)
+    if s.type == "VECTOR": return vec3(list(s.default_value), True)
     if s.type == "RGBA": return val(s.default_value, False, True)
     return None
 
 
-def inp(s, depth=0):
+def inp(s, depth=0, stack=()):
     if not s.is_linked: return default(s)
     if depth > 64: return None
     l = s.links[0]
-    v = out(l.from_node, l.from_socket, depth + 1)
+    n = l.from_node
+    # A node group is expanded, not folded: its output socket is whatever
+    # feeds the matching input of the group's active Group Output, evaluated
+    # inside the group; a Group Input climbs back out to the instance's own
+    # socket, whose value it takes when the instance leaves it unlinked.
+    if n.bl_idname == "ShaderNodeGroup":
+        go = group_output(n.node_tree) if n.node_tree else None
+        inner = sock(go.inputs, l.from_socket.identifier) if go else None
+        v = inp(inner, depth + 1, stack + (n,)) if inner is not None else None
+        return v if v is not None else default(s)
+    if n.bl_idname == "NodeGroupInput":
+        outer = sock(stack[-1].inputs, l.from_socket.identifier) if stack else None
+        v = inp(outer, depth + 1, stack[:-1]) if outer is not None else None
+        return v if v is not None else default(s)
+    v = out(n, l.from_socket, depth + 1, stack)
     # A link from a node this fold (or Blender: `Undefined[...]`, saved by a
     # Blender without the type) does not know is dead: the socket keeps its
     # own value, which is what Cycles renders.
@@ -124,14 +165,184 @@ def math_op(op, a, b, c):
     return t.get(op)
 
 
-def arg(n, ident, depth):
-    s = next((x for x in n.inputs if x.identifier == ident), None) or n.inputs.get(ident)
-    return inp(s, depth) if s is not None else None
+def arg(n, ident, depth, stack=()):
+    s = sock(n.inputs, ident)
+    return inp(s, depth, stack) if s is not None else None
 
 
-def out(n, o, depth):
+def map_range(ty, v, fmin, fmax, tmin, tmax, steps, clamp):
+    """`svm_node_map_range` with `MapRangeNode::expand`'s Clamp."""
+    import math
+    if fmax == fmin: return 0.0
+    t = (v - fmin) / (fmax - fmin)
+    if ty == "STEPPED": f = math.floor(t * (steps + 1.0)) / steps if steps > 0 else 0.0
+    elif ty == "SMOOTHSTEP":
+        x = min(max(t, 0.0), 1.0)
+        f = x * x * (3.0 - 2.0 * x)
+    elif ty == "SMOOTHERSTEP":
+        x = min(max(t, 0.0), 1.0)
+        f = x * x * x * (x * (x * 6.0 - 15.0) + 10.0)
+    else: f = t
+    r = tmin + f * (tmax - tmin)
+    if not clamp: return r
+    lo, hi = (tmax, tmin) if tmin > tmax else (tmin, tmax)
+    return min(max(r, lo), hi)
+
+
+def rgb_to_hsl(c):
+    cmax, cmin = max(c), min(c)
+    l = min(1.0, (cmax + cmin) / 2.0)
+    if cmax == cmin: return [0.0, 0.0, l]
+    d = cmax - cmin
+    sat = d / (2.0 - cmax - cmin) if l > 0.5 else d / (cmax + cmin)
+    if cmax == c[0]: h = (c[1] - c[2]) / d + (6.0 if c[1] < c[2] else 0.0)
+    elif cmax == c[1]: h = (c[2] - c[0]) / d + 2.0
+    else: h = (c[0] - c[1]) / d + 4.0
+    return [h / 6.0, sat, l]
+
+
+def hsl_to_rgb(hsl):
+    h, sat, l = hsl
+    nr = min(max(abs(h * 6.0 - 3.0) - 1.0, 0.0), 1.0)
+    ng = min(max(2.0 - abs(h * 6.0 - 2.0), 0.0), 1.0)
+    nb = min(max(2.0 - abs(h * 6.0 - 4.0), 0.0), 1.0)
+    chroma = (1.0 - abs(2.0 * l - 1.0)) * sat
+    return [(nr - 0.5) * chroma + l, (ng - 0.5) * chroma + l, (nb - 0.5) * chroma + l]
+
+
+def rgb_to_hsv(c):
+    mx, mn = max(c), min(c)
+    d = mx - mn
+    if d == 0: h = 0.0
+    elif mx == c[0]: h = ((c[1] - c[2]) / d) % 6 / 6
+    elif mx == c[1]: h = ((c[2] - c[0]) / d + 2) / 6
+    else: h = ((c[0] - c[1]) / d + 4) / 6
+    return [h, d / mx if mx != 0 else 0.0, mx]
+
+
+def hsv_to_rgb(hsv):
+    h, sat, v = hsv
+    def k(n):
+        kk = (n + h * 6) % 6
+        return v - v * sat * min(max(min(kk, 4 - kk), 0), 1)
+    return [k(5), k(3), k(1)]
+
+
+def sep_color(mode, c):
+    return rgb_to_hsv(c) if mode == "HSV" else rgb_to_hsl(c) if mode == "HSL" else list(c)
+
+
+def comb_color(mode, c):
+    return hsv_to_rgb(c) if mode == "HSV" else hsl_to_rgb(c) if mode == "HSL" else list(c)
+
+
+def safe_normalize(v):
+    import math
+    l = math.sqrt(sum(x * x for x in v))
+    return [x / l for x in v] if l > 0 else list(v)
+
+
+def vector_math(op, A, B, C, param):
+    """`svm_vector_math`: `(vector, value)`, or None for an unknown op."""
+    import math
+    sd = lambda x, y: x / y if y != 0 else 0.0
+    fmod = lambda x, y: x - math.floor(x / y) * y if y != 0 else 0.0
+    dot = sum(A[i] * B[i] for i in range(3))
+    z = [0.0, 0.0, 0.0]
+    if op == "ADD": return ([A[i] + B[i] for i in range(3)], 0.0)
+    if op == "SUBTRACT": return ([A[i] - B[i] for i in range(3)], 0.0)
+    if op == "MULTIPLY": return ([A[i] * B[i] for i in range(3)], 0.0)
+    if op == "DIVIDE": return ([sd(A[i], B[i]) for i in range(3)], 0.0)
+    if op == "CROSS_PRODUCT":
+        return ([A[1] * B[2] - A[2] * B[1], A[2] * B[0] - A[0] * B[2], A[0] * B[1] - A[1] * B[0]], 0.0)
+    if op == "PROJECT":
+        l2 = sum(x * x for x in B)
+        return ([B[i] * dot / l2 for i in range(3)] if l2 != 0 else z, 0.0)
+    if op == "REFLECT":
+        nb = safe_normalize(B)
+        d = sum(A[i] * nb[i] for i in range(3))
+        return ([A[i] - 2 * d * nb[i] for i in range(3)], 0.0)
+    if op == "REFRACT":
+        nb = safe_normalize(B)
+        d = sum(nb[i] * A[i] for i in range(3))
+        k = 1.0 - param * param * (1.0 - d * d)
+        return (z if k < 0 else [param * A[i] - (param * d + math.sqrt(k)) * nb[i] for i in range(3)], 0.0)
+    if op == "FACEFORWARD":
+        return (list(A) if sum(C[i] * B[i] for i in range(3)) < 0 else [-x for x in A], 0.0)
+    if op == "MULTIPLY_ADD": return ([A[i] * B[i] + C[i] for i in range(3)], 0.0)
+    if op == "DOT_PRODUCT": return (z, dot)
+    if op == "DISTANCE": return (z, math.sqrt(sum((A[i] - B[i]) ** 2 for i in range(3))))
+    if op == "LENGTH": return (z, math.sqrt(sum(x * x for x in A)))
+    if op == "SCALE": return ([x * param for x in A], 0.0)
+    if op == "NORMALIZE": return (safe_normalize(A), 0.0)
+    if op == "SNAP": return ([math.floor(sd(A[i], B[i])) * B[i] for i in range(3)], 0.0)
+    if op == "ROUND": return ([math.floor(x + 0.5) for x in A], 0.0)
+    if op == "FLOOR": return ([math.floor(x) for x in A], 0.0)
+    if op == "CEIL": return ([math.ceil(x) for x in A], 0.0)
+    if op == "MODULO": return ([cmod(A[i], B[i]) for i in range(3)], 0.0)
+    if op == "WRAP": return ([fmod(A[i] - C[i], B[i] - C[i]) + C[i] for i in range(3)], 0.0)
+    if op == "FRACTION": return ([x - math.floor(x) for x in A], 0.0)
+    if op == "ABSOLUTE": return ([abs(x) for x in A], 0.0)
+    if op == "POWER": return ([cpow(A[i], B[i]) for i in range(3)], 0.0)
+    if op == "SIGN": return ([(x > 0) - (x < 0) for x in A], 0.0)
+    if op == "MINIMUM": return ([min(A[i], B[i]) for i in range(3)], 0.0)
+    if op == "MAXIMUM": return ([max(A[i], B[i]) for i in range(3)], 0.0)
+    if op == "SINE": return ([math.sin(x) for x in A], 0.0)
+    if op == "COSINE": return ([math.cos(x) for x in A], 0.0)
+    if op == "TANGENT": return ([math.tan(x) for x in A], 0.0)
+    return None
+
+
+def euler_rows(e):
+    """`euler_to_transform`'s rows."""
+    import math
+    cx, cy, cz = (math.cos(x) for x in e)
+    sx, sy, sz = (math.sin(x) for x in e)
+    return [[cy * cz, sy * sx * cz - cx * sz, sy * cx * cz + sx * sz],
+            [cy * sz, sy * sx * sz + cx * cz, sy * cx * sz - sx * cz],
+            [-sy, cy * sx, cy * cx]]
+
+
+def vector_rotate(ty, invert, v, centre, axis, angle, rotation):
+    """`svm_node_vector_rotate`."""
+    import math
+    p = [v[i] - centre[i] for i in range(3)]
+    if ty == "EULER_XYZ":
+        r = euler_rows(rotation)
+        q = ([sum(r[i][k] * p[k] for k in range(3)) for i in range(3)] if not invert
+             else [sum(r[k][i] * p[k] for k in range(3)) for i in range(3)])
+        return [q[i] + centre[i] for i in range(3)]
+    axis = {"X_AXIS": [1.0, 0, 0], "Y_AXIS": [0, 1.0, 0], "Z_AXIS": [0, 0, 1.0]}.get(ty, list(axis))
+    l = math.sqrt(sum(x * x for x in axis))
+    if l == 0: return list(v)
+    x, y, zz = [c / l for c in axis]
+    ang = -angle if invert else angle
+    c, sn = math.cos(ang), math.sin(ang)
+    k = 1.0 - c
+    r = [[c + k * x * x, k * x * y - zz * sn, k * x * zz + y * sn],
+         [k * x * y + zz * sn, c + k * y * y, k * y * zz - x * sn],
+         [k * x * zz - y * sn, k * y * zz + x * sn, c + k * zz * zz]]
+    return [sum(r[i][j] * p[j] for j in range(3)) + centre[i] for i in range(3)]
+
+
+def fresnel_fss(eta):
+    """`fresnel_dielectric_Fss`: the hemispherical mean of the Fresnel."""
+    if eta < 1.0: return 0.997118 + eta * (0.1014 - eta * (0.965241 + eta * 0.130607))
+    return (eta - 1.0) / (4.08567 + 1.00071 * eta)
+
+
+def facing_mean(blend):
+    """Layer Weight ▸ Facing averaged over the hemisphere: `1 − 2/(p + 2)`."""
+    if blend == 0.5: p = 1.0
+    else:
+        b = min(max(blend, 0.0), 1.0 - 1e-5)
+        p = 2.0 * b if b < 0.5 else 0.5 / (1.0 - b)
+    return 1.0 - 2.0 / (p + 2.0)
+
+
+def out(n, o, depth, stack=()):
     t = n.bl_idname
-    a = lambda i: arg(n, i, depth)
+    a = lambda i: arg(n, i, depth, stack)
     if t == "ShaderNodeMix":
         f = a("Factor_Float")
         A, B = (a("A_Color"), a("B_Color")) if n.data_type == "RGBA" else (a("A_Float"), a("B_Float"))
@@ -183,8 +394,79 @@ def out(n, o, depth):
         rgb = [c[0][k] + tt * (1 - 2 * c[0][k]) for k in range(3)]
         return (rgb + [c[0][3]], False, f[2] and c[2])
     if t in ("ShaderNodeRGB", "ShaderNodeValue"): return default(n.outputs[0])
-    if t == "NodeReroute": return inp(n.inputs[0], depth)
+    if t == "NodeReroute": return inp(n.inputs[0], depth, stack)
     if t == "ShaderNodeRGBCurve":
+        c = a("Color")
+        return (c[0], c[1], False) if c else None
+    if t == "ShaderNodeMapRange":
+        if n.data_type == "FLOAT_VECTOR":
+            xs = [a(i) for i in ("Vector", "From_Min_FLOAT3", "From_Max_FLOAT3", "To_Min_FLOAT3", "To_Max_FLOAT3", "Steps_FLOAT3")]
+            if None in xs: return None
+            r = [map_range(n.interpolation_type, *[x[0][k] for x in xs], n.clamp) for k in range(3)]
+            return vec3(r, all(x[2] for x in xs))
+        xs = [a(i) for i in ("Value", "From Min", "From Max", "To Min", "To Max", "Steps")]
+        if None in xs: return None
+        return grey(map_range(n.interpolation_type, *[value(x) for x in xs], n.clamp), all(x[2] for x in xs))
+    if t in ("ShaderNodeSeparateColor", "ShaderNodeSeparateRGB", "ShaderNodeSeparateHSV"):
+        mode = {"ShaderNodeSeparateRGB": "RGB", "ShaderNodeSeparateHSV": "HSV"}.get(t) or n.mode
+        c = a("Image" if t == "ShaderNodeSeparateRGB" else "Color")
+        if c is None: return None
+        names = {"ShaderNodeSeparateColor": ["Red", "Green", "Blue"]}.get(t, ["R", "G", "B"]) if t != "ShaderNodeSeparateHSV" else ["H", "S", "V"]
+        k = names.index(o.name) if o.name in names else 0
+        return grey(sep_color(mode, xyz(c))[k], c[2])
+    if t in ("ShaderNodeCombineColor", "ShaderNodeCombineRGB", "ShaderNodeCombineHSV"):
+        mode = {"ShaderNodeCombineRGB": "RGB", "ShaderNodeCombineHSV": "HSV"}.get(t) or n.mode
+        ids = {"ShaderNodeCombineColor": ["Red", "Green", "Blue"]}.get(t, ["R", "G", "B"]) if t != "ShaderNodeCombineHSV" else ["H", "S", "V"]
+        xs = [a(i) for i in ids]
+        if None in xs: return None
+        return val(comb_color(mode, [value(x) for x in xs]) + [1.0], False, all(x[2] for x in xs))
+    if t == "ShaderNodeSeparateXYZ":
+        v = a("Vector")
+        if v is None: return None
+        return grey(xyz(v)["XYZ".index(o.name) if o.name in "XYZ" else 0], v[2])
+    if t == "ShaderNodeCombineXYZ":
+        xs = [a(i) for i in ("X", "Y", "Z")]
+        if None in xs: return None
+        return vec3([value(x) for x in xs], all(x[2] for x in xs))
+    if t == "ShaderNodeVectorMath":
+        xs = [a(i) for i in ("Vector", "Vector_001", "Vector_002", "Scale")]
+        if None in xs: return None
+        r = vector_math(n.operation, xyz(xs[0]), xyz(xs[1]), xyz(xs[2]), value(xs[3]))
+        if r is None: return None
+        ok = all(x[2] for x in xs)
+        return grey(r[1], ok) if o.name == "Value" else vec3(r[0], ok)
+    if t == "ShaderNodeVectorRotate":
+        xs = [a(i) for i in ("Vector", "Center", "Axis", "Angle", "Rotation")]
+        if None in xs: return None
+        r = vector_rotate(n.rotation_type, n.invert, xyz(xs[0]), xyz(xs[1]), xyz(xs[2]), value(xs[3]), xyz(xs[4]))
+        return vec3(r, all(x[2] for x in xs))
+    if t == "ShaderNodeNormal":
+        d = safe_normalize(list(n.outputs["Normal"].default_value))
+        if o.name != "Dot": return vec3(d, True)
+        v = a("Normal")
+        if v is None: return None
+        nv = safe_normalize(xyz(v))
+        return grey(sum(d[i] * nv[i] for i in range(3)), v[2])
+    if t == "ShaderNodeFresnel":
+        ior = a("IOR")
+        return grey(fresnel_fss(max(value(ior) if ior else 1.45, 1e-5)), False)
+    if t == "ShaderNodeLayerWeight":
+        b = a("Blend")
+        bl = value(b) if b else 0.5
+        return grey(facing_mean(bl) if o.name == "Facing" else fresnel_fss(1.0 / max(1.0 - bl, 1e-5)), False)
+    if t in ("ShaderNodeVertexColor", "ShaderNodeAttribute"):
+        return grey(1.0, False) if o.name in ("Alpha", "Fac") else ([1.0] * 4, False, False)
+    # A Mapping is affine, so the mean maps to the mean (`eval.rs`).
+    if t == "ShaderNodeMapping":
+        v = a("Vector")
+        if v is None: return None
+        sc, lo = a("Scale"), a("Location")
+        return grey(value(v) * (value(sc) if sc else 1.0) + (value(lo) if lo else 0.0), False)
+    if t in ("ShaderNodeUVMap", "ShaderNodeNewGeometry"): return grey(0.5, False)
+    if t == "ShaderNodeLightPath":
+        return grey(1.0 if o.name in ("Is Camera Ray", "Ray Length") else 0.0, True)
+    if t == "ShaderNodeAmbientOcclusion":
+        if o.name == "AO": return grey(1.0, False)
         c = a("Color")
         return (c[0], c[1], False) if c else None
     if t == "ShaderNodeTexImage": return grey(1.0, False) if o.identifier == "Alpha" else ([1.0] * 4, False, False)

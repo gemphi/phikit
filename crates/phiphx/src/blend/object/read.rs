@@ -50,10 +50,13 @@ impl BlendFile {
                 // Extract mesh data including UVs and normals
                 // Only mesh objects own mesh data; a Camera / Light / Empty
                 // `*data` block must not be scanned as geometry.
-                let (verts, fac, uvs, norms, face_mats) = if t == "MESH" {
-                    self.extract_mesh_data_full(block, dna)
-                } else {
-                    (Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new())
+                // A text object's mesh is made from its string, a curve
+                // object's from its splines (`blend/text`, `blend/curve`).
+                let (verts, fac, uvs, norms, face_mats) = match t.as_str() {
+                    "MESH" => self.extract_mesh_data_full(block, dna),
+                    "FONT" => self.object_text_mesh(block, dna).map_or_else(Default::default, |m| (m.vertices, m.faces, Vec::new(), Vec::new(), m.face_materials)),
+                    "CURVE" => self.object_curve_mesh(block, dna).map_or_else(Default::default, |m| (m.vertices, m.faces, Vec::new(), Vec::new(), m.face_materials)),
+                    _ => (Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new()),
                 };
                 // The active colour attribute, a colour per corner (Solid's
                 // Color ▸ Attribute).
@@ -170,6 +173,7 @@ impl BlendFile {
             parent_address: raw_xf.parent_address,
             parentinv: raw_xf.parentinv,
             partype: raw_xf.partype,
+            parent_verts: raw_xf.par,
             visibility: self.dna.as_ref().map(|dna| self.object_visibility(block, dna)).unwrap_or_default(),
             color: self.dna.as_ref().map(|dna| self.object_color(block, dna)).unwrap_or([1.0; 4]),
             shadow: self.dna.as_ref().map(|dna| self.object_shadow(block, dna)).unwrap_or_default(),
@@ -185,6 +189,7 @@ impl BlendFile {
             skipped_modifiers: Vec::new(),
             instance_targets,
             is_instance,
+            instance_source: None,
             base_color,
             roughness,
             metallic,

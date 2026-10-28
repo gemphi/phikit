@@ -51,8 +51,14 @@ impl BlendFile {
 
     /// Each edge's two vertices (`.edge_verts`, else the legacy `MEdge`
     /// array) — what a bone's custom shape draws (`rig/display.rs`).
+    ///
+    /// Scoped to `me`, as `mesh_creases` is: an edge array's address can
+    /// repeat in a big file, and unscoped it resolved to another mesh's —
+    /// `Hair.001` in CW pose 26 read 578 edges of some other mesh for its
+    /// 572, so 429 of them looked loose and Subdivision grew 1,287 stray
+    /// vertices on wire edges Blender never had.
     pub(crate) fn mesh_edges(&self, me: &BlendBlock, dna: &DnaType) -> Vec<(u32, u32)> {
-        self.crease_edges(me, dna).into_iter().map(|(a, b, _)| (a, b)).collect()
+        self.scoped(me, || self.crease_edges(me, dna)).into_iter().map(|(a, b, _)| (a, b)).collect()
     }
 
     /// Each edge's two vertices (`.edge_verts`, else the legacy `MEdge`
@@ -90,7 +96,7 @@ impl BlendFile {
     /// The layer `name` of `domain`: a named `CustomData` layer (4.x), an
     /// attribute of that domain whose elements are `width` bytes (5.x), or
     /// for the creases the unnamed `CD_CREASE` layer (3.x).
-    fn crease_layer(&self, me: &BlendBlock, dna: &DnaType, name: &str, domain: i8, width: usize) -> Option<Cow<'_, [u8]>> {
+    pub(crate) fn crease_layer(&self, me: &BlendBlock, dna: &DnaType, name: &str, domain: i8, width: usize) -> Option<Cow<'_, [u8]>> {
         let cd = self.cd_offset(dna, if domain == DOMAIN_POINT { ["vert_data", "vdata"] } else { ["edge_data", "edata"] });
         if let Some(bytes) = cd.and_then(|cd| self.read_customdata_named(me, cd, dna, name)) {
             return Some(Cow::Borrowed(bytes));
@@ -135,7 +141,7 @@ impl BlendFile {
         faces: &crate::blend::BFaces,
         verts: usize,
     ) -> Vec<(u32, u32)> {
-        let all = self.mesh_edges(me, dna);
+        let all = self.scoped(me, || self.mesh_edges(me, dna));
         if all.is_empty() {
             return Vec::new();
         }

@@ -146,6 +146,7 @@ impl BlendFile {
                 edge_creases: creases.edge,
                 vert_creases: creases.vert,
                 loose_edges: loose,
+                sharp_edges: me.map(|me| self.mesh_sharp_edges(me, dna, o.vertices.len())).unwrap_or_default(),
             };
             out.push(BlendDrivenSource {
                 object: i,

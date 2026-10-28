@@ -53,3 +53,36 @@ fn a_file_without_modifiers_has_nothing_to_defer() {
     }
     assert_eq!(base.objects, eager.objects, "no modifiers → base already equals eager");
 }
+
+/// What the viewport draws of a mesh its rig deforms is its pose, at every
+/// frame — `SceneMotion::posed_at` over the triangles its skin keeps — and
+/// Phiber opens every file progressively. Those triangles used to be the
+/// mesh as saved: the progressive read has no evaluated meshes when the
+/// skins are made, and the swap never told them. So a figure modelled as a
+/// half under Mirror, then Armature, then Subdivision (every garment and
+/// accessory in the CW-POSES files) lost its mirrored half the moment it was
+/// posed: `Earring pearl` drew 96 of Blender's 192 triangles, `Chatty
+/// Pants` its saved cage.
+///
+/// The counts are Blender 5.2's own (`evaluated_get(depsgraph).to_mesh()`
+/// over `mirror_rig.blend`, `fixtures/make_mirror_rig.py`), the twin with a
+/// negative determinant as the dancers' second figure has.
+#[test]
+fn a_mirrored_rigged_half_poses_whole_after_the_swap() {
+    let path = fixture("mirror_rig.blend");
+    let eager = Phx::open(&path).expect("eager open");
+    let (mut base, deferred) = Phx::open_progressive(&path, &|_, _| true).expect("progressive open");
+    base.apply_deferred(deferred.expect("Mirror, Armature and Subdivision are deferred").finish());
+    let frame = base.timeline.current_frame as f32;
+    let (posed, _) = base.motion.posed_at(frame);
+    let (truth, _) = eager.motion.posed_at(frame);
+    let tris = |model: &phiphx::scene::SceneModel, meshes: &[(usize, phiphx::scene::SceneMesh)], name: &str| {
+        let i = model.objects.iter().position(|o| o.name == name).expect(name);
+        meshes.iter().find(|(k, _)| *k == i).map(|(_, m)| m.indices.len() / 3).expect("a rig deforms it")
+    };
+    for (name, blender) in [("Half Body", 192), ("Half Pearl", 48), ("Twin Body", 192)] {
+        assert_eq!(tris(&eager, &truth, name), blender, "{name}: eager, posed");
+        assert_eq!(tris(&base, &posed, name), blender, "{name}: progressive, posed — the mirrored half and the subdivision drawn");
+    }
+    assert_eq!(posed, truth, "a progressive open poses exactly as an eager one");
+}

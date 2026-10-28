@@ -17,6 +17,9 @@ path = "src/lib.rs"
 [dependencies]
 glam = "0.29"
 byteorder = "1.5"
+# Text objects' TrueType / OpenType fonts (`blend/text/font/sfnt.rs`);
+# already in the workspace lock through gpui.
+ttf-parser = "0.25"
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

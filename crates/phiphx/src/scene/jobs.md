@@ -2,7 +2,7 @@
 
 | State | Open | Done |
 |---|---|---|
-| 🟡 in progress | 1 | 14 |
+| 🟡 in progress | 1 | 15 |
 
 ## Todo
 
@@ -15,6 +15,8 @@
   **Still open: (2) the prefix, and (3) non-rigged objects.** (3) is the bigger one and it is where the remaining work is: `source.evaluate*` is reached only from `rig.rs`, so an object with no Armature still has no per-frame path at all — `MODDRIVERS` is exactly such a file, which is why its driven values are now correct per frame and no mesh moves yet. Blender does not special-case rigs: the depsgraph gives any object with a driven input a relation to its geometry component and re-evaluates it. Matching that needs the non-rigged stacks retained past the open, the way `BlendSkinSource` retains the rigged ones.
 
 ## Done
+
+- [x] **A progressive open places the vertex-parented children** (`progressive_links.rs`, `SceneSwap::moved`). Blender hangs such a child from its parent's *evaluated* vertices (`give_parvert`, `blend/object/vertex_parent.rs`), which on this path do not exist when the base scene is built — so the links (transforms only, plus the saved vertices of a parent with no modifier job) travel with the deferred work, each finished mesh re-solves the children under it, and `apply_deferred` puts each one back as whatever it became: an object, a camera, a light or an empty. Nothing is kept for a file with no vertex parent. `tests/vertex_parent_truth.rs` holds base + finish equal to the eager open for every child, and asserts the child of the posed skin actually moves when its mesh lands
 
 - [x] Missing textures are reported as an answer, not a wall (`texture_miss.rs`): pose 26 asks for 304 images and 289 are on another machine, which filled the Info editor with 289 near-identical Blender lines and no way to act. The tally now leads with the count and what to do, ranks the folders by how many images each owes, and keeps six of Blender's own lines as evidence — a recorded divergence, since Blender prints all 289 (`texture_miss::tests`)
 - [x] Find Missing Files (`texture_find.rs`): an image whose path is another machine's (`E:\…`, `//../../../…`) is looked for by file name under the `.blend`'s folder tree and its `textures/`, as `BKE_bpath_missing_files_find` does on command — automatically here, recorded as a divergence; `image_present` and `SceneTexture::candidates_in` read the same list so "present" and "found" agree (`texture_find::tests`)

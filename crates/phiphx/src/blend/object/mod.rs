@@ -8,6 +8,7 @@ pub(crate) mod light_driver_read;
 pub mod dof;
 pub(crate) mod dna;
 pub(crate) mod instance;
+pub(crate) mod instance_members;
 #[cfg(test)]
 mod instance_tests;
 pub(crate) mod kind;
@@ -16,5 +17,6 @@ pub(crate) mod meta;
 pub(crate) mod read;
 pub(crate) mod rotation;
 pub(crate) mod transform;
+pub mod vertex_parent;
 pub mod visibility;
 pub(crate) mod world;

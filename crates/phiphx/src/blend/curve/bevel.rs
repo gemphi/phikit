@@ -80,7 +80,7 @@ impl BBevelList {
         Some(list)
     }
 
-    fn poly(nu: &BNurb) -> Vec<BBevelPoint> {
+    pub(super) fn poly(nu: &BNurb) -> Vec<BBevelPoint> {
         let mut out: Vec<BBevelPoint> =
             nu.bp.iter().take(nu.pntsu).map(|bp| BBevelPoint { vec: bp.vec.truncate(), tilt: bp.tilt, radius: bp.radius, weight: bp.weight, ..Default::default() }).collect();
         if !nu.cyclic() {
@@ -99,7 +99,7 @@ impl BBevelList {
         }
     }
 
-    fn bezier(nu: &BNurb, do_tilt: bool, do_radius: bool, tangent: bool) -> Vec<BBevelPoint> {
+    pub(super) fn bezier(nu: &BNurb, do_tilt: bool, do_radius: bool, tangent: bool) -> Vec<BBevelPoint> {
         let bezt = &nu.bezt;
         let resolu = nu.resolu;
         let mut out = Vec::new();
@@ -219,7 +219,7 @@ impl BBevelList {
     }
 
     /// `BKE_nurb_makeCurve` over the spline's saved knots.
-    fn nurbs(nu: &BNurb, do_tilt: bool, do_radius: bool) -> Vec<BBevelPoint> {
+    pub(super) fn nurbs(nu: &BNurb, do_tilt: bool, do_radius: bool) -> Vec<BBevelPoint> {
         let order = nu.orderu;
         let cycl = if nu.cyclic() { order - 1 } else { 0 };
         let knot_count = order + nu.pntsu + cycl;
@@ -313,7 +313,7 @@ impl BBevelList {
 
     /// STEP 2: a point the same as the next (within `0.00001 / resolu`)
     /// is dropped — for a closed spline, the last against the first too.
-    fn drop_duplicates(&mut self, resolu: usize) {
+    pub(super) fn drop_duplicates(&mut self, resolu: usize) {
         let n = self.points.len();
         if n == 0 {
             return;

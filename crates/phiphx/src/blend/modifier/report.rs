@@ -114,7 +114,10 @@ impl BlendFile {
                     return None; // not viewport-enabled
                 }
                 let ty = self.int_field(md, "ModifierData", "type", dna);
-                if KINDS.iter().any(|k| k.dna_type == ty) {
+                // A Geometry Nodes modifier is supported per tree: one
+                // the reader turns down is dropped, so it is reported.
+                let read = KINDS.iter().find(|k| k.dna_type == ty).map(|k| k.read);
+                if read.is_some_and(|read| ty != super::nodes::DNA_TYPE || self.scoped(ob, || read(self, md, ob, dna)).is_some()) {
                     return None; // supported
                 }
                 let user = self.modifier_name(md, name_at).unwrap_or_default();

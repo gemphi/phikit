@@ -201,6 +201,11 @@ pub struct SceneModel {
     /// split — compositing is part of the render pipeline, not of the
     /// viewport's shading.
     pub compositor: Option<crate::comp::BCompTree>,
+    /// The file's physics settings (`blend/physics/`): the Rigid Body
+    /// World, each body and joint, cloth, colliders, force fields and soft
+    /// bodies, as the Physics tabs show them. Settings only; nothing
+    /// simulates them yet (`phiray/docs/ROADMAP.md` §2).
+    pub physics: crate::blend::BlendPhysics,
 }
 
 impl SceneModel {
@@ -229,7 +234,8 @@ pub use relation::SceneRelation;
 pub mod uv;
 pub use uv::SceneUvMap;
 pub mod progressive;
-pub use progressive::DeferredModifiers;
+mod progressive_links;
+pub use progressive::{DeferredModifiers, SceneSwap};
 mod error;
 mod extras;
 mod geometry;
@@ -239,6 +245,7 @@ mod material;
 mod object;
 pub(crate) mod polyfill;
 mod report;
+mod share;
 pub(crate) mod texture;
 /// Find Missing Files: an image by its name under the `.blend`'s folder.
 pub(crate) mod texture_find;

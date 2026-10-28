@@ -110,13 +110,22 @@ impl BMirror {
         // Index of each mirrored vertex: merged onto its source or appended.
         let mut map = Vec::with_capacity(n as usize);
         let mut added = Vec::new();
-        for (i, v) in m.vertices.iter().enumerate() {
-            let p = mtx.transform_point3(Vec3::from(*v));
-            if merge && p.distance(Vec3::from(*v)) <= self.tolerance {
-                map.push(i as u32);
-            } else {
-                map.push(n + added.len() as u32);
-                added.push((i, p.to_array()));
+        // `BKE_mesh_mirror_apply_mirror_on_axis_for_modifier`: a copy closer
+        // than the tolerance (squared, strictly) merges into its source, and
+        // both move to their midpoint (`mid_v3_v3v3`) — onto the plane.
+        let tolerance_sq = self.tolerance * self.tolerance;
+        for i in 0..m.vertices.len() {
+            let v = Vec3::from(m.vertices[i]);
+            let p = mtx.transform_point3(v);
+            match merge && v.distance_squared(p) < tolerance_sq {
+                true => {
+                    map.push(i as u32);
+                    m.vertices[i] = ((v + p) * 0.5).to_array();
+                }
+                false => {
+                    map.push(n + added.len() as u32);
+                    added.push((i, p.to_array()));
+                }
             }
         }
         let flip_groups = self.flag & VGROUP != 0;

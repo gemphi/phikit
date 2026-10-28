@@ -11,11 +11,21 @@
 //! (`BKE_anim_path_calc_data`), and a place on it is found by length
 //! (`BKE_where_on_path`, [`path`]).
 //!
-//! Not read: deform modifiers and shape keys on the curve, and hooks.
+//! A curve object's geometry is every spline's list ([`lists`]) swept by
+//! its bevel profile into a display list ([`displist`], through the text
+//! pipeline's `blend/text/sweep`), with a custom profile sampled
+//! ([`profile`]), and made a mesh ([`mesh_read`]).
+//!
+//! Not read: deform modifiers and shape keys on the curve, and hooks; the
+//! bevel start and end factors (the whole spline is swept).
 
 pub mod bevel;
+pub mod displist;
+pub mod lists;
+mod mesh_read;
 mod orient;
 pub mod path;
+pub mod profile;
 pub(crate) mod read;
 #[cfg(test)]
 mod tests;

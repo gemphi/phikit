@@ -27,8 +27,30 @@ mod subsurf;
 mod topology;
 mod triangulate;
 mod weld;
+mod merge_verts;
 mod lattice;
 mod crease;
+mod corrective_smooth;
+mod mask;
+mod shrinkwrap;
+mod curve;
+mod multires;
+mod simple_deform;
+mod surface_deform;
+mod surface_deform_read;
+mod cloth;
+mod cloth_cache;
+mod cloth_disk;
+mod nodes;
+pub(crate) mod nodes_corners;
+mod nodes_fans;
+mod nodes_ops;
+mod nodes_topo;
+mod nodes_field;
+mod nodes_inputs;
+mod nodes_legacy;
+#[cfg(test)]
+mod nodes_tests;
 pub(crate) mod report;
 #[cfg(test)]
 mod tests;
@@ -66,6 +88,12 @@ pub struct BlendEvalMesh {
     /// the Subdivision Surface so the vertex count stays in parity with
     /// Blender.
     pub loose_edges: Vec<(u32, u32)>,
+    /// Edges marked sharp (`sharp_edge`), `(a, b)` with `a < b`: what the
+    /// Geometry Nodes "Smooth by Angle" reads and writes, and what the
+    /// corner normals split on (`nodes_corners.rs`). Carried by vertex
+    /// pair, so a modifier that keeps its vertices keeps them and one that
+    /// rebuilds them leaves pairs that name no edge, which split nothing.
+    pub sharp_edges: Vec<(u32, u32)>,
 }
 
 /// What a modifier may look up while evaluating.
@@ -219,6 +247,7 @@ impl BlendSkinSource {
             edge_creases: self.base.edge_creases.clone(),
             loose_edges: self.base.loose_edges.clone(),
             vert_creases: self.base.vert_creases.clone(),
+            sharp_edges: self.base.sharp_edges.clone(),
             ..Default::default()
         };
         let worlds = HashMap::new();
@@ -250,6 +279,15 @@ pub(crate) const KINDS: &[BModifierKind] = &[
     BModifierKind { dna_type: 14, name: "DISPLACE", read: displace::read },
     BModifierKind { dna_type: 55, name: "WELD", read: weld::read },
     BModifierKind { dna_type: 2, name: "LATTICE", read: lattice::read },
+    BModifierKind { dna_type: 51, name: "CORRECTIVE_SMOOTH", read: corrective_smooth::read },
+    BModifierKind { dna_type: 25, name: "SHRINKWRAP", read: shrinkwrap::read },
+    BModifierKind { dna_type: 27, name: "MASK", read: mask::read },
+    BModifierKind { dna_type: 3, name: "CURVE", read: curve::read },
+    BModifierKind { dna_type: 29, name: "MULTIRES", read: multires::read },
+    BModifierKind { dna_type: 28, name: "SIMPLE_DEFORM", read: simple_deform::read },
+    BModifierKind { dna_type: 53, name: "SURFACE_DEFORM", read: surface_deform::read },
+    BModifierKind { dna_type: 22, name: "CLOTH", read: cloth::read },
+    BModifierKind { dna_type: nodes::DNA_TYPE, name: "NODES", read: nodes::read },
 ];
 
 /// Names of the modifiers the viewport evaluates (Blender's RNA type ids).
@@ -272,7 +310,8 @@ impl BlendFile {
             held.get(&ob.old_address).cloned().unwrap_or_default()
         };
         let name_at = (!driven.is_empty()).then(|| self.modifier_name_offset(dna)).flatten();
-        mds.into_iter()
+        let mut stack: Vec<Box<dyn BModifier>> = mds
+            .into_iter()
             .filter(|md| self.int_field(md, "ModifierData", "mode", dna) & MODE_REALTIME != 0)
             .filter_map(|md| {
                 let ty = self.int_field(md, "ModifierData", "type", dna);
@@ -289,7 +328,16 @@ impl BlendFile {
                 // `is_disabled`, on the settings as the drivers left them.
                 (!built.disabled()).then_some(built)
             })
-            .collect()
+            .collect();
+        // Blender ADDS a Geometry Nodes "Auto Smooth" modifier at the tail
+        // while loading a file older than 4.2.22 whose mesh carries the
+        // legacy auto-smooth flag (`nodes_legacy.rs`,
+        // `BKE_main_mesh_legacy_convert_auto_smooth`), so the stack a file
+        // describes is not the stack Blender runs.
+        if let Some(m) = self.scoped(ob, || self.legacy_auto_smooth(ob, dna)) {
+            stack.push(Box::new(m));
+        }
+        stack
     }
 
     /// Linked-list walk from a `ListBase.first` address.
@@ -325,11 +373,25 @@ impl BlendFile {
             .map(|o| (o.block_address, Mat4::from_cols_array_2d(&o.matrix_world)))
             .collect();
         let mut jobs = Vec::new();
+        // A collection instance draws its member's evaluated geometry, and
+        // Blender evaluates the member once whatever number of instances
+        // show it: each later instance of an evaluated member shares that
+        // result (`aliases`, `scene/share.rs`) rather than a stack of its own.
+        let mut by_block: HashMap<u64, usize> = HashMap::new();
+        let mut aliases = Vec::new();
         for (i, o) in objects.iter().enumerate() {
-            if o.object_type != "MESH" || o.vertices.is_empty() {
+            if !matches!(o.object_type.as_str(), "MESH" | "FONT" | "CURVE") || o.vertices.is_empty() {
                 continue;
             }
-            let Some(ob) = self.block_at_code(o.block_address, "OB") else { continue };
+            let (address, world) = match o.instance_source {
+                Some((member, world)) => (member, world),
+                None => (o.block_address, o.matrix_world),
+            };
+            if let Some(&first) = by_block.get(&address) {
+                aliases.push((i, first));
+                continue;
+            }
+            let Some(ob) = self.block_at_code(address, "OB") else { continue };
             let mut stack = self.modifier_stack(ob, dna);
             // `PHIPHX_MODIFIERS=<n>` keeps only the first `n` of every stack.
             // Parity work compares one stage at a time against Blender with
@@ -348,6 +410,7 @@ impl BlendFile {
             };
             let creases = me.map(|me| self.mesh_creases(me, dna, o.vertices.len())).unwrap_or_default();
             let loose = me.map(|me| self.mesh_loose_edges(me, dna, &o.faces, o.vertices.len())).unwrap_or_default();
+            let sharp_edges = me.map(|me| self.mesh_sharp_edges(me, dna, o.vertices.len())).unwrap_or_default();
             let mesh = BlendEvalMesh {
                 vertices: o.vertices.clone(),
                 faces: o.faces.clone(),
@@ -359,10 +422,12 @@ impl BlendFile {
                 edge_creases: creases.edge,
                 vert_creases: creases.vert,
                 loose_edges: loose,
+                sharp_edges,
             };
-            jobs.push(BEvalJob { index: i, mesh, stack, world: Mat4::from_cols_array_2d(&o.matrix_world), weights: dverts_loaded });
+            by_block.insert(address, i);
+            jobs.push(BEvalJob { index: i, mesh, stack, world: Mat4::from_cols_array_2d(&world), weights: dverts_loaded });
         }
-        DeferredRaw { jobs, worlds, prefix: self.prefix_box.clone() }
+        DeferredRaw { jobs, worlds, prefix: self.prefix_box.clone(), aliases }
     }
 
     /// Every mesh object an Armature modifier deforms (the first one in its
@@ -388,7 +453,8 @@ impl BlendFile {
             let dverts = self.deform_verts(me, dna, o.vertices.len());
             let creases = self.mesh_creases(me, dna, o.vertices.len());
             let loose = self.mesh_loose_edges(me, dna, &o.faces, o.vertices.len());
-            jobs.push((i, o, stack, tail, rig, groups.to_vec(), dverts, creases, loose));
+            let sharp_edges = self.mesh_sharp_edges(me, dna, o.vertices.len());
+            jobs.push((i, o, stack, tail, rig, groups.to_vec(), dverts, creases, loose, sharp_edges));
         }
         use rayon::prelude::*;
         // The same drop box the stack apply uses (`prefix.rs`): `stack` here
@@ -396,7 +462,7 @@ impl BlendFile {
         // and the other takes the result.
         let prefix = self.prefix_box.clone();
         jobs.into_par_iter()
-            .map(|(i, o, stack, tail, rig, groups, dverts, creases, loose)| {
+            .map(|(i, o, stack, tail, rig, groups, dverts, creases, loose, sharp_edges)| {
                 // `skin_sources` always loads the weights, so `weights` is
                 // true on this side by construction.
                 let key = (prefix::sharing() && !stack.is_empty())
@@ -415,6 +481,7 @@ impl BlendFile {
                     edge_creases: creases.edge,
                     vert_creases: creases.vert,
                     loose_edges: loose,
+                    sharp_edges,
                 };
                 let ctx = EvalCtx { world: Mat4::from_cols_array_2d(&o.matrix_world), worlds: &worlds };
                 for m in &stack {
@@ -482,6 +549,10 @@ pub(crate) struct DeferredRaw {
     /// (`prefix.rs`). Held by `Arc` because a progressive open applies these
     /// jobs on a worker thread, long after the read that made them.
     pub prefix: std::sync::Arc<prefix::BPrefixBox>,
+    /// `(instance, member)` object indices: an instance that draws the
+    /// member's evaluated mesh — by sharing the member's converted
+    /// geometry (`scene/share.rs`), so the evaluated map holds it once.
+    pub aliases: Vec<(usize, usize)>,
 }
 
 impl DeferredRaw {
@@ -504,7 +575,7 @@ impl std::fmt::Debug for DeferredRaw {
 /// the base scene is already on screen.
 pub(crate) fn apply_eval_jobs(raw: DeferredRaw) -> HashMap<usize, BlendEvalMesh> {
     use rayon::prelude::*;
-    let DeferredRaw { jobs, worlds, prefix } = raw;
+    let DeferredRaw { jobs, worlds, prefix, aliases: _ } = raw;
     let batch = skin::skinner();
     let evaluated: Vec<(usize, BlendEvalMesh, Option<skin::SkinJob>)> = jobs
         .into_par_iter()

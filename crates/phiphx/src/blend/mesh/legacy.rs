@@ -98,10 +98,13 @@ impl BlendFile {
             }
             let loop_start = self.read_i32(&pb.data[pbase..pbase + 4]) as usize;
             let loop_tot = self.read_i32(&pb.data[pbase + 4..pbase + 8]) as usize;
-            if !(3..100).contains(&loop_tot) {
+            // No upper bound: Blender's `MPoly.totloop` has none, and a
+            // cap at 99 corners dropped big n-gons (hub caps) whole.
+            if loop_tot < 3 {
                 continue;
             }
-            let mut face = Vec::with_capacity(loop_tot);
+            // `loop_tot` is file data: reserve no more than the loops there are.
+            let mut face = Vec::with_capacity(loop_tot.min(llen / mloop_size));
             for l in 0..loop_tot {
                 // Overflow-safe: `loop_start + l` and the `* mloop_size` product
                 // both come from file data and can be enormous.

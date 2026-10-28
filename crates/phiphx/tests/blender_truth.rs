@@ -12,7 +12,9 @@ fn digest(file: &str, path: &PathBuf) -> Vec<String> {
     let s = f.extract_scene().unwrap();
     s.objects
         .iter()
-        .filter(|o| o.object_type == "MESH")
+        // Blender's digest lists the file's own meshes; a collection
+        // instance (`object/instance.rs`) is drawn, not stored.
+        .filter(|o| o.object_type == "MESH" && !o.is_instance)
         .map(|o| {
             let ps: f64 = o.vertices.iter().enumerate().map(|(i, v)| (i as f64 + 1.0) * (v[0] as f64 + 2.0 * v[1] as f64 + 3.0 * v[2] as f64)).sum();
             let fs: u64 = o.faces.iter().enumerate().map(|(i, f)| (i as u64 + 1) * f.iter().enumerate().map(|(k, &x)| (k as u64 + 1) * x as u64).sum::<u64>()).sum();

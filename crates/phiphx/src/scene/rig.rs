@@ -85,6 +85,20 @@ impl SceneRigs {
         self.rigs.iter().any(|r| r.moves)
     }
 
+    /// `objects[object]` was evaluated after its skin was made — a
+    /// progressive open's modifiers land late (`progressive.rs`) — so its
+    /// poses take the triangles it was evaluated into. The ones it was made
+    /// with are the mesh as saved, which index only the vertices a Mirror
+    /// or a Subdivision starts from: drawn over the evaluated vertices they
+    /// are the original half, coarse, and nothing of the mirrored one.
+    ///
+    /// An object has one skin at most: its first Armature modifier's.
+    pub(super) fn retriangulate(&mut self, object: usize, tris: STriangles) {
+        if let Some(skin) = self.skins.iter_mut().find(|s| s.object == object) {
+            *skin = Arc::new(SceneSkin { object, motion: skin.motion, rig: skin.rig, source: skin.source.clone(), tris });
+        }
+    }
+
     /// Each rig's bones (`pose_mat`) at a frame solved with every rig
     /// posed, by rig index.
     pub fn bones_at(&self, at: &BMotionAt) -> Vec<Arc<Vec<Mat4>>> {

@@ -25,10 +25,34 @@ pub(super) fn evaluated_triangles(src: &BlendSceneObject, eval: Option<&crate::b
     }
 }
 
+/// An evaluated mesh's corner normals when it has sharp edges that split
+/// them (`Mesh::corner_normals`, `modifier/nodes_corners.rs`); empty
+/// otherwise, which draws the smooth vertex normals as before.
+fn eval_corner_normals(e: &crate::blend::BlendEvalMesh) -> Vec<[f32; 3]> {
+    let splits = e.sharp_edges.iter().any(|&(a, b)| (a as usize) < e.vertices.len() && (b as usize) < e.vertices.len());
+    if !splits || !e.face_smooth.iter().any(|&s| s) {
+        return Vec::new();
+    }
+    crate::blend::modifier::nodes_corners::corner_normals(e)
+}
+
 /// Convert one `BlendSceneObject`, drawing the modifier-evaluated mesh when
 /// given; saved split normals describe the rest mesh, so an evaluated mesh
 /// recomputes its normals.
 pub(super) fn evaluated_object(src: &BlendSceneObject, eval: Option<&crate::blend::BlendEvalMesh>) -> SceneObject {
+    evaluated_object_and_tris(src, eval, false).0
+}
+
+/// [`evaluated_object`], and — when `keep` — the triangles it cut the mesh
+/// into, which are [`evaluated_triangles`]'s: what a mesh its rig deforms
+/// is drawn with at every pose (`rig.rs`). A progressive open learns them
+/// only here, when the deferred modifiers finish (`progressive.rs`), so the
+/// one triangulation serves both rather than the mesh being cut twice.
+pub(super) fn evaluated_object_and_tris(
+    src: &BlendSceneObject,
+    eval: Option<&crate::blend::BlendEvalMesh>,
+    keep: bool,
+) -> (SceneObject, Option<STriangles>) {
     let owned;
     let obj = match eval {
         Some(e) => {
@@ -39,7 +63,9 @@ pub(super) fn evaluated_object(src: &BlendSceneObject, eval: Option<&crate::blen
                 loop_colors: e.loop_colors.clone(),
                 face_materials: e.face_materials.clone(),
                 face_smooth: e.face_smooth.clone(),
-                loop_normals: Vec::new(),
+                // Sharp edges split the normals (Blender's corner fans);
+                // without any, the smooth vertex normals below are them.
+                loop_normals: eval_corner_normals(e),
                 loose_edges: e.loose_edges.clone(),
                 ..src.clone()
             };
@@ -51,10 +77,14 @@ pub(super) fn evaluated_object(src: &BlendSceneObject, eval: Option<&crate::blen
     let vert_count = vertices.len();
     let mut tris = STriangles::of(obj);
     let mesh = tris.mesh(vertices, &obj.loop_normals, &obj.loop_colors);
-    let material_indices = std::mem::take(&mut tris.material_indices);
+    // Kept triangles keep their slots too, as `evaluated_triangles` does.
+    let material_indices = match keep {
+        true => tris.material_indices.clone(),
+        false => std::mem::take(&mut tris.material_indices),
+    };
     let uvs = per_vertex_uvs(&obj.faces, &obj.loop_uvs, vert_count);
     let materials = materials_from_blend(obj);
-    SceneObject {
+    let object = SceneObject {
         name: obj.name.clone(),
         mesh: mesh.into(),
         location: obj.location,
@@ -65,7 +95,8 @@ pub(super) fn evaluated_object(src: &BlendSceneObject, eval: Option<&crate::blen
         uvs: uvs.into(),
         color: obj.color,
         shadow: obj.shadow,
-    }
+    };
+    (object, keep.then_some(tris))
 }
 
 

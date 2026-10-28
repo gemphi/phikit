@@ -8,11 +8,16 @@
 //!
 //! `finish()` produces exactly what an eager open would: it runs the same
 //! apply (`apply_eval_jobs`) and the same conversion (`evaluated_object`), so
-//! `base + finish()` equals the eager result object for object.
+//! `base + finish()` equals the eager result object for object — and pose for
+//! pose: a mesh its rig deforms is drawn at every frame with the triangles it
+//! was evaluated into (`rig.rs`), and those are only known here, so the swap
+//! hands them to the rig as well.
 
-use super::object::evaluated_object;
+use super::object::{STriangles, evaluated_object_and_tris};
+use super::share::shared_object;
+use super::progressive_links::{parent_links, vertex_parent_of};
 use super::{SceneModel, SceneObject};
-use crate::blend::{BlendScene, BlendSceneObject, DeferredRaw, apply_eval_jobs};
+use crate::blend::{BlendScene, BlendSceneObject, DeferredRaw, apply_eval_jobs, vertex_children_worlds};
 use std::sync::Arc;
 
 /// The modifier work of a progressively-opened scene, not yet applied. Owned
@@ -20,8 +25,37 @@ use std::sync::Arc;
 pub struct DeferredModifiers {
     raw: Arc<DeferredRaw>,
     /// One entry per modified mesh object: its `objects` index, its raw index
-    /// (the key in the evaluated map), and the raw object the conversion needs.
-    targets: Vec<(usize, usize, BlendSceneObject)>,
+    /// (the key in the evaluated map), the raw object the conversion needs,
+    /// and whether a rig deforms it (its triangles then go to the rig too).
+    targets: Vec<(usize, usize, BlendSceneObject, bool)>,
+    /// One entry per collection instance of a modified member: its
+    /// `objects` index, the member's raw index, and the raw instance — it
+    /// takes the member's evaluated geometry by `Arc` (`share.rs`), not a
+    /// conversion of its own.
+    aliases: Vec<(usize, usize, BlendSceneObject)>,
+    /// Every blend object's parent links (transforms only, no geometry;
+    /// the saved vertices of a vertex parent with no modifier job), so the
+    /// vertex-parented children can be re-solved against the evaluated
+    /// meshes when they land (`BlendFile::reparent_to_vertices` does the
+    /// same on an eager open). Empty when no object is vertex-parented.
+    links: Vec<BlendSceneObject>,
+}
+
+/// One object the deferred modifiers finished, for
+/// [`SceneModel::apply_deferred`] to put in place.
+#[derive(Debug)]
+pub struct SceneSwap {
+    /// Its index in `objects`.
+    pub index: usize,
+    /// The object with its modifier stack applied.
+    pub object: SceneObject,
+    /// For a mesh a rig deforms, the triangles its evaluated mesh was cut
+    /// into — what every pose of it is drawn with. `None` otherwise.
+    tris: Option<STriangles>,
+    /// `(blend object index, world)` of the vertex-parented children (and
+    /// their descendants) that hang from this object's evaluated vertices
+    /// — placed by `give_parvert` only once the mesh is evaluated.
+    moved: Vec<(usize, [[f32; 4]; 4])>,
 }
 
 impl DeferredModifiers {
@@ -30,22 +64,38 @@ impl DeferredModifiers {
         self.targets.is_empty()
     }
 
-    /// Apply the modifiers and build the evaluated objects. Returns
-    /// `(objects index, evaluated SceneObject)` for every modified object, for
-    /// the host to splice into the base scene's `objects`.
-    pub fn finish(self) -> Vec<(usize, SceneObject)> {
+    /// Apply the modifiers and build the evaluated objects: one
+    /// [`SceneSwap`] per modified object, for the host to splice into the
+    /// base scene with [`SceneModel::apply_deferred`].
+    pub fn finish(self) -> Vec<SceneSwap> {
         // `raw` is held only here (taken out of the `BlendScene`), so unwrap
         // succeeds; if it were somehow shared, there is simply nothing to swap.
         let Ok(raw) = Arc::try_unwrap(self.raw) else { return Vec::new() };
         let evaluated = apply_eval_jobs(raw);
-        self.targets
+        let links = &self.links;
+        let mut moved = vertex_children_worlds(links, &|p| evaluated.get(&p).map_or(links[p].vertices.as_slice(), |m| m.vertices.as_slice()));
+        let mut swaps: Vec<(usize, SceneSwap)> = self
+            .targets
             .into_iter()
-            .filter_map(|(scene_index, raw_index, src)| {
-                evaluated
-                    .get(&raw_index)
-                    .map(|mesh| (scene_index, evaluated_object(&src, Some(mesh))))
+            .filter_map(|(index, raw_index, src, skinned)| {
+                let (object, tris) = evaluated_object_and_tris(&src, Some(evaluated.get(&raw_index)?), skinned);
+                // The children re-solved against THIS evaluated mesh.
+                let (mine, rest): (Vec<_>, Vec<_>) = std::mem::take(&mut moved).into_iter().partition(|&(j, _)| vertex_parent_of(links, j) == Some(raw_index));
+                moved = rest;
+                Some((raw_index, SceneSwap { index, object, tris, moved: mine }))
             })
-            .collect()
+            .collect();
+        // Each instance of an evaluated member shares the member's swap: the
+        // same `Arc<SceneMesh>`, converted once (`share.rs`).
+        let shared: Vec<SceneSwap> = self
+            .aliases
+            .iter()
+            .filter_map(|(index, member, src)| {
+                let from = &swaps.iter().find(|(raw_index, _)| raw_index == member)?.1.object;
+                Some(SceneSwap { index: *index, object: shared_object(src, from), tris: None, moved: Vec::new() })
+            })
+            .collect();
+        swaps.drain(..).map(|(_, swap)| swap).chain(shared).collect()
     }
 }
 
@@ -55,11 +105,23 @@ impl SceneModel {
     /// resolved `materials` (a modifier changes geometry, not which textures a
     /// slot resolved to), so the result matches an eager open that ran
     /// `texture::attach`, without re-resolving textures here.
-    pub fn apply_deferred(&mut self, swaps: Vec<(usize, SceneObject)>) {
-        for (i, mut obj) in swaps {
-            let Some(base) = self.objects.get(i) else { continue };
-            obj.materials = base.materials.clone();
-            self.objects[i] = obj;
+    ///
+    /// A mesh a rig deforms takes its evaluated triangles into its skin as
+    /// well. Its skin was made with the base read's — the mesh as saved, no
+    /// Mirror, no Subdivision — and every pose is drawn over those, so
+    /// without this a rigged figure lost its mirrored half (and its
+    /// subdivision) the moment the viewport posed it.
+    pub fn apply_deferred(&mut self, swaps: Vec<SceneSwap>) {
+        for SceneSwap { index, mut object, tris, moved } in swaps {
+            let Some(base) = self.objects.get(index) else { continue };
+            object.materials = base.materials.clone();
+            self.objects[index] = object;
+            if let Some(tris) = tris {
+                self.motion.rigs.retriangulate(index, tris);
+            }
+            for (j, world) in moved {
+                self.place(j, world);
+            }
         }
         // The report counted the base meshes at read; the evaluated ones are
         // heavier, so refresh it to follow them (matching an eager open).
@@ -99,28 +161,46 @@ impl SceneModel {
             scene_index[j] = Some(k);
             k += 1;
         }
-        let targets: Vec<(usize, usize, BlendSceneObject)> = raw
+        // The blend objects a rig deforms, which the base build gives skins.
+        let skinned: std::collections::HashSet<usize> = blend.props.rigs.skins.iter().map(|s| s.object).collect();
+        let targets: Vec<(usize, usize, BlendSceneObject, bool)> = raw
             .as_ref()
             .map(|raw| {
                 raw.jobs
                     .iter()
-                    .filter_map(|job| {
+                    .map(|job| job.index)
+                    .filter_map(|index| {
                         scene_index
-                            .get(job.index)
+                            .get(index)
                             .copied()
                             .flatten()
-                            .map(|si| (si, job.index, blend.objects[job.index].clone()))
+                            .map(|si| (si, index, blend.objects[index].clone(), skinned.contains(&index)))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        // A collection instance sharing its member's evaluated mesh
+        // (`DeferredRaw::aliases`) is swapped in with the member's `Arc`s.
+        let aliases: Vec<(usize, usize, BlendSceneObject)> = raw
+            .as_ref()
+            .map(|raw| {
+                raw.aliases
+                    .iter()
+                    .filter_map(|&(instance, member)| {
+                        let si = scene_index.get(instance).copied().flatten()?;
+                        Some((si, member, blend.objects[instance].clone()))
                     })
                     .collect()
             })
             .unwrap_or_default();
 
+        let links = parent_links(&blend.objects, raw.as_deref());
         // The base model: `props.evaluated` is empty on a progressive read, so
         // every object converts from its base mesh.
         let model = SceneModel::from_blend_owned(blend, source_path);
         let deferred = raw
             .filter(|r| !r.is_empty())
-            .map(|raw| DeferredModifiers { raw, targets });
+            .map(|raw| DeferredModifiers { raw, targets, aliases, links });
         (model, deferred)
     }
 }
