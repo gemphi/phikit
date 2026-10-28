@@ -46,13 +46,17 @@ impl DirectXAtlas {
         }))
     }
 
+    /// The view of texture `id`, or `None` once the texture has been freed.
+    /// `remove` frees a texture with its last tile, and a frame recorded
+    /// before that still holds sprites on it: drawing them unwrapped the
+    /// empty slot, which is the panic that closed Phiber about nine seconds
+    /// after a bare launch, as the Welcome window's images were dropped.
     pub(crate) fn get_texture_view(
         &self,
         id: AtlasTextureId,
-    ) -> [Option<ID3D11ShaderResourceView>; 1] {
+    ) -> Option<[Option<ID3D11ShaderResourceView>; 1]> {
         let lock = self.0.lock();
-        let tex = lock.texture(id);
-        tex.view.clone()
+        lock.slot(id).map(|tex| tex.view.clone())
     }
 
     pub(crate) fn handle_device_lost(
@@ -243,6 +247,16 @@ impl DirectXAtlasState {
             texture_list.textures.push(Some(atlas_texture));
             texture_list.textures.last_mut().unwrap().as_mut()
         }
+    }
+
+    /// Texture `id`, when its slot still holds one.
+    fn slot(&self, id: AtlasTextureId) -> Option<&DirectXAtlasTexture> {
+        let list = match id.kind {
+            AtlasTextureKind::Monochrome => &self.monochrome_textures,
+            AtlasTextureKind::Polychrome => &self.polychrome_textures,
+            AtlasTextureKind::Subpixel => &self.subpixel_textures,
+        };
+        list.textures.get(id.index as usize)?.as_ref()
     }
 
     fn texture(&self, id: AtlasTextureId) -> &DirectXAtlasTexture {
