@@ -1,0 +1,13 @@
+[package]
+name = "phiecs"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "The world phiber and phiplay run on: words, relations between them, aspects bound to them, resources and staged systems. No dependencies."
+
+# The core of phinet's phiecs (`gemphi/phinet/crates/phiecs`), without its
+# phasors, quests and kits: only what phiber's Project Browser and phiplay's
+# games call, so phikit builds with no phinet folder beside it. Word ids,
+# edge weights, plans and system order match phinet's, so a game plays out
+# the same on either.
+[dependencies]

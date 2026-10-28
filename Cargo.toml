@@ -33,8 +33,11 @@ members = [
     "crates/phiber",
     # The game Phiber plays (`crates/phiplay`): its sports, teams, kits,
     # looks, themes and venues as declarative sets, and the play itself on
-    # phiecs (`gemphi/phinet/crates/phiecs`).
+    # phiecs (`crates/phicore/phiecs`).
     "crates/phiplay",
+    # The core of phinet's phiecs that phiber and phiplay run on, kept here
+    # so phikit builds with no phinet folder beside it.
+    "crates/phicore/phiecs",
     "crates/phiray",
     "crates/phipro",
     "crates/phicore/refineable",

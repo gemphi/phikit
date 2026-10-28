@@ -15,5 +15,11 @@ them through those two.
 | `refineable`, `util_macros` | `theme`, `util` | derive macros |
 | `zlog`, `ztracing`, `ztracing_macro` | `gpui`, `sum_tree` | logging and tracing |
 
+One is phikit's own and phiber names it directly:
+
+| Crate | Used by | What it does |
+|---|---|---|
+| `phiecs` | `phiber`, `phiplay` | the world of words, relations and staged systems the Project Browser and the games run on: phinet's phiecs core, with no dependencies |
+
 Remove any one and phiber stops building — check with
 `cargo tree -p phiber` before touching them.

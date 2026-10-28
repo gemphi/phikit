@@ -22,7 +22,7 @@
 //! A [`choice::BChoice`] picks one of each, and the eight-way picker in
 //! Phiber's Play host is these sets looped over, never a list of its own.
 //!
-//! The play runs on phiecs (`gemphi/phinet/crates/phiecs`): RealityKit's
+//! The play runs on phiecs (`crates/phicore/phiecs`, the core of phinet's): RealityKit's
 //! entity-component-system with the entity a word. Players, the ball and the
 //! goals are words; what they do to each other — who guards whom, who is
 //! open to whom, who holds the ball — are relations; the phases of a match

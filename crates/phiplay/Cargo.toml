@@ -8,7 +8,7 @@ description = "The game Phiber plays: five sports, their teams, kits, looks, the
 [dependencies]
 # The world the play runs in: players, the ball and the goals are words,
 # what they do to each other relations, the phases conditions, and the
-# game's logic systems by stage (`gemphi/phinet/crates/phiecs`, beside
-# phiace in the gemphi folder).
-phiecs = { path = "../../../phinet/crates/phiecs" }
+# game's logic systems by stage (`crates/phicore/phiecs`: phinet's phiecs
+# core, kept in phikit so it needs no phinet folder).
+phiecs = { path = "../phicore/phiecs" }
 glam = "0.29"
