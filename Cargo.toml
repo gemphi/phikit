@@ -571,12 +571,9 @@ async-process = { git = "https://github.com/zed-industries/async-process.git", r
 async-task = { git = "https://github.com/smol-rs/async-task.git", rev = "b4486cd71e4e94fbda54ce6302444de14f4d190e" }
 windows-capture = { git = "https://github.com/zed-industries/windows-capture.git", rev = "f0d6c1b6691db75461b732f6d5ff56eed002eeb9" }
 calloop = { git = "https://github.com/zed-industries/calloop" }
-livekit = { git = "https://github.com/zed-industries/livekit-rust-sdks", rev = "d0e27be0cdad89eadab3e36207cda0a2b6e359ee" }
-libwebrtc = { git = "https://github.com/zed-industries/livekit-rust-sdks", rev = "d0e27be0cdad89eadab3e36207cda0a2b6e359ee" }
-notify = { git = "https://github.com/zed-industries/notify", rev = "0890bbb8ca40a4b5d1f67031698dd7918b37d991" }
-notify-types = { git = "https://github.com/zed-industries/notify", rev = "0890bbb8ca40a4b5d1f67031698dd7918b37d991" }
-webrtc-sys = { git = "https://github.com/zed-industries/livekit-rust-sdks", rev = "d0e27be0cdad89eadab3e36207cda0a2b6e359ee" }
-msvc_spectre_libs = { path = "patches/msvc_spectre_libs" }
+# Zed's livekit, webrtc and notify patches (and msvc_spectre_libs, which only
+# webrtc-sys pulled in) went with the voice and file-watching crates phikit
+# does not vendor; cargo warned on every build that nothing used them.
 
 [profile.dev]
 split-debuginfo = "unpacked"
