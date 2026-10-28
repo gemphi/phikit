@@ -492,9 +492,39 @@ impl WindowsWindowInner {
         if handled { Some(0) } else { Some(1) }
     }
 
+    /// A caption button pressed with `pressed` and released over `released`
+    /// (hit-test codes): the button acts only when both are the same one,
+    /// as a native caption button does.
+    fn release_nc_button(&self, handle: HWND, released: u32, pressed: u32) -> bool {
+        match (released, pressed) {
+            (HTMINBUTTON, HTMINBUTTON) if self.is_minimizable => {
+                unsafe { ShowWindowAsync(handle, SW_MINIMIZE).ok().log_err() };
+                true
+            }
+            (HTMINBUTTON, HTMINBUTTON) => true,
+            (HTMAXBUTTON, HTMAXBUTTON) if self.is_resizable => {
+                if self.state.is_maximized() {
+                    unsafe { ShowWindowAsync(handle, SW_NORMAL).ok().log_err() };
+                } else {
+                    unsafe { ShowWindowAsync(handle, SW_MAXIMIZE).ok().log_err() };
+                }
+                true
+            }
+            (HTMAXBUTTON, HTMAXBUTTON) => true,
+            (HTCLOSE, HTCLOSE) => {
+                unsafe {
+                    PostMessageW(Some(handle), WM_CLOSE, WPARAM::default(), LPARAM::default())
+                        .log_err()
+                };
+                true
+            }
+            _ => false,
+        }
+    }
+
     fn handle_mouse_up_msg(
         &self,
-        _handle: HWND,
+        handle: HWND,
         button: MouseButton,
         lparam: LPARAM,
     ) -> Option<isize> {
@@ -516,6 +546,20 @@ impl WindowsWindowInner {
         });
         let handled = !func(input).propagate;
         self.state.callbacks.input.set(Some(func));
+
+        // The release of a caption button pressed in `handle_nc_mouse_down_msg`,
+        // brought back here by its capture: act if it is still over the button.
+        if button == MouseButton::Left
+            && let Some(pressed) = self.state.nc_button_pressed.take()
+            && !handled
+        {
+            let mut cursor = POINT { x: lparam.signed_loword().into(), y: lparam.signed_hiword().into() };
+            unsafe { ClientToScreen(handle, &mut cursor).ok().log_err() };
+            let at = LPARAM(((cursor.y as u16 as u32) << 16 | cursor.x as u16 as u32) as isize);
+            let released = unsafe { SendMessageW(handle, WM_NCHITTEST, None, Some(at)) }.0 as u32;
+            self.release_nc_button(handle, released, pressed);
+            return Some(0);
+        }
 
         if handled { Some(0) } else { Some(1) }
     }
@@ -1063,12 +1107,20 @@ impl WindowsWindowInner {
         } else {
         };
 
-        // Since these are handled in handle_nc_mouse_up_msg we must prevent the default window proc
+        // Since these are handled on release we must prevent the default window proc.
+        //
+        // The press is not passed on, so Windows does not track the button
+        // itself, and on Windows 11 the release over the maximize button
+        // never arrives as `WM_NCLBUTTONUP` (the Snap Layouts flyout takes
+        // it): the button did nothing. Capturing the pointer brings the
+        // release back as `WM_LBUTTONUP`, wherever it lands, and
+        // `handle_mouse_up_msg` finishes the press there.
         if button == MouseButton::Left {
             match wparam.0 as u32 {
-                HTMINBUTTON => self.state.nc_button_pressed.set(Some(HTMINBUTTON)),
-                HTMAXBUTTON => self.state.nc_button_pressed.set(Some(HTMAXBUTTON)),
-                HTCLOSE => self.state.nc_button_pressed.set(Some(HTCLOSE)),
+                code @ (HTMINBUTTON | HTMAXBUTTON | HTCLOSE) => {
+                    self.state.nc_button_pressed.set(Some(code));
+                    unsafe { SetCapture(handle) };
+                }
                 _ => return None,
             };
             Some(0)
@@ -1111,30 +1163,7 @@ impl WindowsWindowInner {
         if button == MouseButton::Left
             && let Some(last_pressed) = last_pressed
         {
-            let handled = match (wparam.0 as u32, last_pressed) {
-                (HTMINBUTTON, HTMINBUTTON) if self.is_minimizable => {
-                    unsafe { ShowWindowAsync(handle, SW_MINIMIZE).ok().log_err() };
-                    true
-                }
-                (HTMINBUTTON, HTMINBUTTON) => true,
-                (HTMAXBUTTON, HTMAXBUTTON) if self.is_resizable => {
-                    if self.state.is_maximized() {
-                        unsafe { ShowWindowAsync(handle, SW_NORMAL).ok().log_err() };
-                    } else {
-                        unsafe { ShowWindowAsync(handle, SW_MAXIMIZE).ok().log_err() };
-                    }
-                    true
-                }
-                (HTMAXBUTTON, HTMAXBUTTON) => true,
-                (HTCLOSE, HTCLOSE) => {
-                    unsafe {
-                        PostMessageW(Some(handle), WM_CLOSE, WPARAM::default(), LPARAM::default())
-                            .log_err()
-                    };
-                    true
-                }
-                _ => false,
-            };
+            let handled = self.release_nc_button(handle, wparam.0 as u32, last_pressed);
             if handled {
                 return Some(0);
             }
