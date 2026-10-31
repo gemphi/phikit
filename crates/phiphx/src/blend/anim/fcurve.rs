@@ -24,6 +24,14 @@ pub struct BKey {
     pub h2_selected: bool,
     /// `BezTriple.easing` (`eBezTriple_Easing`), for the easing interpolations.
     pub easing: u8,
+    /// Keyframe Type (`eBezTriple_KeyframeType`). Blender keeps it in
+    /// `BezTriple.hide` and reaches it through the `BEZKEYTYPE` macro —
+    /// `hide` means "hidden" for a 3D curve point and the keyframe's type
+    /// for an F-curve's (`DNA_curve_types.h`, `DNA_curve_enums.h`) — so the
+    /// name here is what the field MEANS on a key rather than what the DNA
+    /// member is called. It only picks the colour and shape the editors draw
+    /// the key with; it changes no value.
+    pub keytype: u8,
     /// `BezTriple.back`, `amplitude`, `period`: the Back and Elastic shapes.
     pub back: f32,
     pub amplitude: f32,
@@ -46,6 +54,14 @@ pub const HANDLE_AUTO_ANIM: u8 = 4;
 /// `BEZT_IPO_BEZ`: the interpolation that has handles.
 pub const IPO_BEZ: u8 = 2;
 
+/// `eBezTriple_KeyframeType` (`DNA_curve_enums.h`), kept in `BezTriple.hide`.
+pub const KEYTYPE_KEYFRAME: u8 = 0;
+pub const KEYTYPE_EXTREME: u8 = 1;
+pub const KEYTYPE_BREAKDOWN: u8 = 2;
+pub const KEYTYPE_JITTER: u8 = 3;
+pub const KEYTYPE_MOVEHOLD: u8 = 4;
+pub const KEYTYPE_GENERATED: u8 = 5;
+
 impl BKey {
     /// A key with Blender's defaults around its points: auto-clamped
     /// handles (`HD_AUTO_ANIM`, what `insert_vert_fcurve` gives a new key),
@@ -64,6 +80,9 @@ impl BKey {
             // `DNA_curve_defaults.h`: the Back overshoot and the Elastic
             // amplitude and period a new key carries.
             easing: 0,
+            // `BEZT_KEYTYPE_KEYFRAME`: a 'proper' keyframe, what
+            // `insert_vert_fcurve` gives a new key.
+            keytype: KEYTYPE_KEYFRAME,
             back: 1.70158,
             amplitude: 0.8,
             period: 4.1,

@@ -37,9 +37,21 @@ const NODE_DO_OUTPUT: i32 = 1 << 6;
 /// Shader nodes a surface search passes through to the closures.
 const THROUGH: [&str; 3] = ["MixShader", "AddShader", "NodeReroute"];
 
+/// A node kind usable by evaluators. Blender preserves the original idname
+/// as `Undefined[Type]` when the writer's registry cannot resolve it. The
+/// payload, storage and sockets are still in the file, and if Phiphx knows
+/// that inner built-in type it can evaluate it exactly. Pose 26 contains
+/// `Undefined[ShaderNodeMix]`; treating the wrapper as a different kind
+/// aborts its whole 17-image Base Color bake and drops the swimsuit/floor
+/// prints to a flat fallback.
+pub(super) fn canonical_kind(raw: &str) -> &str {
+    raw.strip_prefix("Undefined[").and_then(|s| s.strip_suffix(']')).unwrap_or(raw)
+}
+
 impl BlendFile {
     pub(crate) fn kind(&self, node: &BlendBlock, dna: &DnaType) -> String {
-        self.off("bNode", "idname", dna).map(|o| read_cstr(&node.data, o, 64)).unwrap_or_default()
+        let raw = self.off("bNode", "idname", dna).map(|o| read_cstr(&node.data, o, 64)).unwrap_or_default();
+        canonical_kind(&raw).to_string()
     }
 
     /// The active Material Output of `nodes`.

@@ -75,7 +75,16 @@ impl<'a> BGraph<'a> {
     }
 
     pub(super) fn text(&self, b: &BlendBlock, s: &str, field: &str) -> String {
-        self.off(s, field).map(|o| read_cstr(&b.data, o, 64)).unwrap_or_default()
+        let raw = self.off(s, field).map(|o| read_cstr(&b.data, o, 64)).unwrap_or_default();
+        // Evaluation asks for bNode.idname through this helper; use the
+        // preserved inner built-in type of Blender's Undefined[...] wrapper
+        // just as `BlendFile::kind` does. Other text fields (socket names,
+        // identifiers) are data and must remain byte-for-byte as saved.
+        if s == "bNode" && field == "idname" {
+            super::surface::canonical_kind(&raw).to_string()
+        } else {
+            raw
+        }
     }
 
     pub fn linked(&self, sock: u64) -> bool {

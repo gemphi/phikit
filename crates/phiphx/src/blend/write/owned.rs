@@ -104,7 +104,7 @@ impl BlendFile {
             for (n, v) in [key.h1[0], key.h1[1], 0.0, key.co[0], key.co[1], 0.0, key.h2[0], key.h2[1], 0.0].into_iter().enumerate() {
                 d[vec + n * 4..vec + n * 4 + 4].copy_from_slice(&f32b(v));
             }
-            for (field, value) in [("ipo", key.ipo), ("h1", key.h1_type), ("h2", key.h2_type), ("f1", key.h1_selected as u8), ("f2", key.selected as u8), ("f3", key.h2_selected as u8), ("easing", key.easing)] {
+            for (field, value) in [("ipo", key.ipo), ("h1", key.h1_type), ("h2", key.h2_type), ("f1", key.h1_selected as u8), ("f2", key.selected as u8), ("f3", key.h2_selected as u8), ("easing", key.easing), ("hide", key.keytype)] {
                 if let Some(o) = off(field) {
                     d[o] = value;
                 }

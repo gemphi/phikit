@@ -75,6 +75,8 @@ impl BlendFile {
         let (f1_o, f2_o, f3_o) = (byte("f1"), byte("f2"), byte("f3"));
         let (h1_o, h2_o) = (byte("h1"), byte("h2"));
         let easing_o = byte("easing");
+        // Keyframe Type lives in `BezTriple.hide` (`BEZKEYTYPE`).
+        let keytype_o = byte("hide");
         let (back_o, amplitude_o, period_o) = (byte("back"), byte("amplitude"), byte("period"));
         let keys = match self.block_at(self.ptr(fc, self.off("FCurve", "*bezt", dna))) {
             Some(b) => (0..n)
@@ -96,6 +98,13 @@ impl BlendFile {
                         h1_selected: selected(f1_o),
                         h2_selected: selected(f3_o),
                         easing: easing_o.and_then(|o| d.get(o)).copied().unwrap_or(0),
+                        // Keyframe Type, which Blender keeps in `hide`
+                        // (`BEZKEYTYPE`); an unknown value reads as a plain
+                        // keyframe rather than as a colour nothing draws.
+                        keytype: match keytype_o.and_then(|o| d.get(o)).copied().unwrap_or(0) {
+                            t @ 0..=5 => t,
+                            _ => 0,
+                        },
                         back: float(back_o, defaults.back),
                         amplitude: float(amplitude_o, defaults.amplitude),
                         period: float(period_o, defaults.period),
