@@ -1,8 +1,18 @@
 # Rust
 /target/
+# Nested target dirs: a workspace member must build into the ROOT /target,
+# never into its own crate dir. A stray crates/<name>/target (from running
+# cargo inside a crate) duplicates the whole build tree and makes cargo's
+# workspace file-scan crawl — a ~2 s build became minutes with one such tree
+# under crates/phiray/. Ignore them everywhere so they cannot come back.
+**/target/
 **/*.rs.bk
 *.pdb
 Cargo.lock
+
+# wasm-pack / trunk output (regenerable)
+**/pkg/
+**/dist/
 
 # IDE
 .vscode/

@@ -1,0 +1,22 @@
+[package]
+name = "philog"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+license = "GPL-3.0-or-later"
+description = "The session journal: a sink for the `log` facade that leaves one readable file per run"
+
+[lints]
+workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+# The front door. philog adds no logging API of its own: a crate that
+# already calls `log::info!` is journalled by installing the sink.
+log.workspace = true
+# `std::time::Instant::now` panics on wasm32-unknown-unknown; web-time is
+# `std::time` on every other target. phiber hands philog the instants its
+# own log entries were stamped with, so both must mean the same type.
+web-time.workspace = true

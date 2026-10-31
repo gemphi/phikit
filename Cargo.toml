@@ -1,15 +1,11 @@
 [workspace]
 resolver = "2"
-exclude = [
-    # Phiace-specific crates that predate the zed vendoring. They live in
-    # phiace/crates/ but are not part of the zed workspace graph — leaving
-    # them here keeps their source available without letting cargo try to
-    # build them alongside the vendored zed tree (they have their own,
-    # non-zed workspace-dep set).
-    "crates/apple",
-    "crates/apple-macros",
-    "crates/apple-mirror-tool",
-]
+# Nothing is excluded. The `apple` tree that used to sit here is a REFERENCE,
+# not code this workspace builds: it lives in `ext/phiber-refs/apple` beside
+# the Blender source, and what phikit needs from it is ported into the crate
+# that owns that work rather than kept as a second copy — its async readback
+# is `phiray::gpu::readback`, and bloom is `phiray`'s `Glow` kernel. The live
+# trees are phinet, phikit and puikit; everything else is a reference point.
 members = [
     "crates/phiphx",
     "crates/phicore/collections",
@@ -31,6 +27,11 @@ members = [
     "crates/phigpu/gpui_wgpu",
     "crates/phicore/http_client",
     "crates/phiber",
+    # The session journal every crate here logs through (`philog`): a sink
+    # for the `log` facade that leaves one readable file per run, with the
+    # timings beside the lines. phiber's journal is this crate; phiphx,
+    # phiray and simkit's headless server can have the same record.
+    "crates/philog",
     # The game Phiber plays (`crates/phiplay`): its sports, teams, kits,
     # looks, themes and venues as declarative sets, and the play itself on
     # phiecs (`crates/phicore/phiecs`).
@@ -39,6 +40,13 @@ members = [
     # so phikit builds with no phinet folder beside it.
     "crates/phicore/phiecs",
     "crates/phiray",
+    # Microsoft AirSim's AirLib, in Rust: the sensors, vehicles, controllers
+    # and msgpack-rpc a client drives a drone or a car through. A member so
+    # it keeps compiling against the same `glam` the renderer places its
+    # poses with, which is the point of it being here rather than beside.
+    # "crates/simkit" is not built: nothing in phikit uses it yet, and every
+    # workspace build was compiling it. The folder stays; add it back when a
+    # crate depends on it.
     "crates/phipro",
     "crates/phicore/refineable",
     "crates/phicore/refineable/derive_refineable",
@@ -64,6 +72,7 @@ edition = "2024"
 #
 
 phiber = { path = "crates/phiber" }
+philog = { path = "crates/philog" }
 phipro = { path = "crates/phipro" }
 collections = { path = "crates/phicore/collections", version = "0.1.0" }
 compliance = { path = "tooling/compliance" }
