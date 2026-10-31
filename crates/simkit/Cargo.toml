@@ -1,0 +1,55 @@
+[package]
+name = "simkit"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Simulation for autonomous vehicles - drones, cars - after Microsoft AirSim's AirLib"
+
+[lib]
+name = "simkit"
+path = "src/lib.rs"
+
+[dependencies]
+# Maths, serialisation, time, logging and errors come from the workspace, so
+# simkit speaks the same types as the rest of phikit: a pose it computes is a
+# `glam` transform phiray can place, not a conversion away from one.
+glam = { version = "0.29", features = ["bytemuck", "serde"] }
+
+# The ECS the rest of phikit runs on (`crates/phicore/phiecs`), so a drone
+# or a car is a `Word` in the same world phiplay's players live in, driven
+# by `System`s in `Stage` order rather than by a bespoke update loop.
+phiecs = { path = "../phicore/phiecs" }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
+# The session journal the RPC server arms: a headless run, flying a client's
+# drone with nobody watching a terminal, leaves `simkit-session.log` beside
+# the executable with every `log` record at its time (`server::journal`).
+philog = { workspace = true }
+chrono = { workspace = true }
+image = { workspace = true }
+
+# msgpack-rpc, the wire AirSim's clients already speak, so a client written
+# against AirSim talks to this server unchanged.
+rmp-serde = "1.1"
+rmp = "0.8"
+rmpv = { version = "1.0", features = ["with-serde"] }
+
+tokio = { workspace = true, features = ["rt-multi-thread", "net", "time", "io-util", "macros", "sync"] }
+
+dirs = { version = "5.0", optional = true }
+
+[features]
+default = ["dirs"]
+
+[dev-dependencies]
+tokio-test = "0.4"
+# `benches/sensor_benchmarks.rs` was written against criterion and nothing
+# was linking it, so it never compiled. It is already in the lockfile.
+criterion = "0.5"
+
+[[bench]]
+name = "sensor_benchmarks"
+harness = false
