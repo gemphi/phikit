@@ -886,12 +886,19 @@ impl PlatformWindow for WindowsWindow {
         match background_appearance {
             WindowBackgroundAppearance::Opaque => {
                 set_window_composition_attribute(hwnd, None, 0);
+                // DWMSBT_NONE: take back a system backdrop set before.
+                dwm_set_window_composition_attribute(hwnd, 1);
             }
             WindowBackgroundAppearance::Transparent => {
                 set_window_composition_attribute(hwnd, None, 2);
             }
             WindowBackgroundAppearance::Blurred => {
-                set_window_composition_attribute(hwnd, Some((0, 0, 0, 0)), 4);
+                // DWMSBT_TRANSIENTWINDOW is the system's acrylic. The accent
+                // policy's acrylic draws black behind a DirectComposition
+                // swap chain on Windows 11, so it is only the fallback.
+                if !dwm_set_window_composition_attribute(hwnd, 3) {
+                    set_window_composition_attribute(hwnd, Some((0, 0, 0, 0)), 4);
+                }
             }
             WindowBackgroundAppearance::MicaBackdrop => {
                 // DWMSBT_MAINWINDOW => MicaBase
@@ -1539,27 +1546,30 @@ fn retrieve_window_placement(
     Ok(placement)
 }
 
-fn dwm_set_window_composition_attribute(hwnd: HWND, backdrop_type: u32) {
+/// Sets the system backdrop (DWMSBT_*: 1 none, 2 Mica, 3 acrylic, 4 Mica Alt)
+/// and extends the frame over the client area so it shows behind the
+/// swap chain. Returns whether the system took it.
+fn dwm_set_window_composition_attribute(hwnd: HWND, backdrop_type: u32) -> bool {
     let mut version = unsafe { std::mem::zeroed() };
     let status = unsafe { windows::Wdk::System::SystemServices::RtlGetVersion(&mut version) };
 
     // DWMWA_SYSTEMBACKDROP_TYPE is available only on version 22621 or later
     // using SetWindowCompositionAttributeType as a fallback
     if !status.is_ok() || version.dwBuildNumber < 22621 {
-        return;
+        return false;
     }
 
     unsafe {
-        let result = DwmSetWindowAttribute(
+        let inset = if backdrop_type == 1 { 0 } else { -1 };
+        let margins = MARGINS { cxLeftWidth: inset, cxRightWidth: inset, cyTopHeight: inset, cyBottomHeight: inset };
+        DwmExtendFrameIntoClientArea(hwnd, &margins).log_err();
+        DwmSetWindowAttribute(
             hwnd,
             DWMWA_SYSTEMBACKDROP_TYPE,
             &backdrop_type as *const _ as *const _,
             std::mem::size_of_val(&backdrop_type) as u32,
-        );
-
-        if !result.is_ok() {
-            return;
-        }
+        )
+        .is_ok()
     }
 }
 

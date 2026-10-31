@@ -125,10 +125,36 @@ impl AppContext for TestAppContext {
 impl TestAppContext {
     /// Creates a new `TestAppContext`. Usually you can rely on `#[gpui::test]` to do this for you.
     pub fn build(dispatcher: TestDispatcher, fn_name: Option<&'static str>) -> Self {
+        Self::build_over(dispatcher, fn_name, None)
+    }
+
+    /// [`Self::build`] over the given platform text system instead of the no-op one, which
+    /// rasterizes nothing: with a text system that gives glyphs a size, painted text reaches
+    /// the scene as sprites, which [`VisualTestContext::painted_glyphs`] reads back.
+    pub fn build_with_text_system(
+        dispatcher: TestDispatcher,
+        fn_name: Option<&'static str>,
+        text_system: Arc<dyn crate::PlatformTextSystem>,
+    ) -> Self {
+        Self::build_over(dispatcher, fn_name, Some(text_system))
+    }
+
+    fn build_over(
+        dispatcher: TestDispatcher,
+        fn_name: Option<&'static str>,
+        text_system: Option<Arc<dyn crate::PlatformTextSystem>>,
+    ) -> Self {
         let arc_dispatcher = Arc::new(dispatcher.clone());
         let background_executor = BackgroundExecutor::new(arc_dispatcher.clone());
         let foreground_executor = ForegroundExecutor::new(arc_dispatcher);
-        let platform = TestPlatform::new(background_executor.clone(), foreground_executor.clone());
+        let platform = match text_system {
+            Some(text_system) => TestPlatform::with_text_system(
+                background_executor.clone(),
+                foreground_executor.clone(),
+                text_system,
+            ),
+            None => TestPlatform::new(background_executor.clone(), foreground_executor.clone()),
+        };
         let asset_source = Arc::new(());
         let http_client = http_client::FakeHttpClient::with_404_response();
         let text_system = Arc::new(TextSystem::new(platform.text_system()));
@@ -732,6 +758,18 @@ impl<V> Entity<V> {
 use derive_more::{Deref, DerefMut};
 
 use super::{Context, Entity};
+
+/// One glyph a frame painted ([`VisualTestContext::painted_glyphs`]).
+#[derive(Clone, Debug)]
+pub struct PaintedGlyph {
+    /// Where it was drawn, clipped to its content mask, in logical pixels.
+    pub bounds: Bounds<Pixels>,
+    /// Its tint.
+    pub color: crate::Hsla,
+    /// The opaque quad painted over it later, if one covers its centre.
+    pub hidden_by: Option<Bounds<Pixels>>,
+}
+
 #[derive(Deref, DerefMut, Clone)]
 /// A VisualTestContext is the test-equivalent of a `Window` and `App`. It allows you to
 /// run window-specific test code. It can be dereferenced to a `TextAppContext`.
@@ -947,6 +985,56 @@ impl VisualTestContext {
                 out.push(format!("image {} clip {} {}", b(&s.bounds), b(&s.content_mask.bounds), r(&s.corner_radii)));
             }
             out
+        })
+    }
+
+    /// Every glyph the last frame painted, in logical pixels, and the quad that hides it
+    /// if one does: a quad drawn after it (a later draw order) whose opaque fill covers the
+    /// glyph's centre. A hidden glyph was painted and is not seen. The no-op text system
+    /// rasterizes nothing, so this needs [`TestAppContext::build_with_text_system`].
+    pub fn painted_glyphs(&mut self) -> Vec<PaintedGlyph> {
+        self.update(|window, _| {
+            let scale = window.scale_factor();
+            let logical = |v: &Bounds<crate::ScaledPixels>| {
+                Bounds::new(
+                    crate::point(crate::px(v.origin.x.0 / scale), crate::px(v.origin.y.0 / scale)),
+                    crate::size(crate::px(v.size.width.0 / scale), crate::px(v.size.height.0 / scale)),
+                )
+            };
+            let scene = &window.rendered_frame.scene;
+            let opaque = |q: &crate::Quad| match q.background.tag {
+                crate::color::BackgroundTag::Solid => q.background.solid.a >= 0.999,
+                crate::color::BackgroundTag::LinearGradient => {
+                    q.background.colors.iter().all(|stop| stop.color.a >= 0.999)
+                }
+                crate::color::BackgroundTag::PatternSlash | crate::color::BackgroundTag::Checkerboard => false,
+            };
+            let glyphs = scene
+                .monochrome_sprites
+                .iter()
+                .map(|s| (s.order, s.bounds, s.content_mask.bounds, s.color))
+                .chain(
+                    scene
+                        .subpixel_sprites
+                        .iter()
+                        .map(|s| (s.order, s.bounds, s.content_mask.bounds, s.color)),
+                );
+            glyphs
+                .map(|(order, bounds, clip, color)| {
+                    let shown = bounds.intersect(&clip);
+                    let centre = crate::point(
+                        crate::ScaledPixels(shown.origin.x.0 + shown.size.width.0 / 2.0),
+                        crate::ScaledPixels(shown.origin.y.0 + shown.size.height.0 / 2.0),
+                    );
+                    let hidden_by = scene
+                        .quads
+                        .iter()
+                        .filter(|q| q.order > order && opaque(q))
+                        .find(|q| q.bounds.intersect(&q.content_mask.bounds).contains(&centre))
+                        .map(|q| logical(&q.bounds));
+                    PaintedGlyph { bounds: logical(&shown), color, hidden_by }
+                })
+                .collect()
         })
     }
 
