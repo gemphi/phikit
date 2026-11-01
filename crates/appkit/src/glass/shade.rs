@@ -7,11 +7,10 @@ use super::material::GlassMaterial;
 use super::shape::{union_distance, GlassBounds, GlassShape};
 
 /// How far in from the edge the rim bends light and catches it.
-const RIM_BAND: f32 = 38.0;
+const RIM_BAND: f32 = 30.0;
 const SHADOW_DROP: f32 = 10.0;
-const SHADOW_SOFTNESS: f32 = 18.0;
-/// Past this the shadow is under one level in 255 at full strength.
-pub(super) const SHADOW_REACH: f32 = 90.0;
+/// Where the shadow has faded to nothing.
+pub(super) const SHADOW_REACH: f32 = 48.0;
 /// Up and to the left, in canvas directions (y runs down).
 const LIGHT: [f32; 2] = [-0.507, -0.862];
 
@@ -30,10 +29,33 @@ impl Shader<'_> {
     /// Paint `area`, returning how many pixels the glass itself covered.
     pub fn paint(&self, canvas: &mut impl GlassCanvas, area: GlassBounds) -> usize {
         let mut covered = 0;
+        // Distance changes by at most one per pixel, so one reading says how
+        // far a run stays deep inside (no rim to work out) or beyond the shadow
+        // (nothing to do). Most of a panel is one or the other.
+        let beyond = SHADOW_REACH + SHADOW_DROP + 1.0;
         for y in area.y0..area.y1 {
-            for x in area.x0..area.x1 {
-                let (px, py) = (x as f32 + 0.5, y as f32 + 0.5);
+            let py = y as f32 + 0.5;
+            let mut x = area.x0;
+            while x < area.x1 {
+                let px = x as f32 + 0.5;
                 let d = self.distance(px, py);
+                let left = area.x1 - x;
+                if d < -RIM_BAND - 1.0 {
+                    let run = ((-d - RIM_BAND) as usize).clamp(1, left);
+                    for i in 0..run {
+                        let c = self.backdrop.sample(px + i as f32, py);
+                        canvas.set_pixel(x + i, y, from_rgb(self.colored(c)));
+                    }
+                    covered += run;
+                    x += run;
+                    continue;
+                }
+                if d > beyond {
+                    x += ((d - beyond) as usize).clamp(1, left);
+                    continue;
+                }
+                x += 1;
+                let x = x - 1;
                 let cover = ((0.75 - d) / 1.5).clamp(0.0, 1.0);
                 let below = to_rgb(canvas.pixel(x, y));
                 let below = self.shadowed(below, px, py, cover);
@@ -62,7 +84,9 @@ impl Shader<'_> {
         if d >= SHADOW_REACH {
             return below;
         }
-        let amount = (-d / SHADOW_SOFTNESS).exp() * m.shadow_strength;
+        // A smooth fall to exactly zero at the reach, so it leaves no edge.
+        let t = 1.0 - d / SHADOW_REACH;
+        let amount = t * t * t * m.shadow_strength;
         std::array::from_fn(|i| below[i] + (m.shadow[i] - below[i]) * amount)
     }
 
@@ -74,18 +98,25 @@ impl Shader<'_> {
             false => [0.0; 2],
         };
         // The lens: near the rim, read from further inside.
-        let pull = band.powf(2.5) * m.lens;
-        let c = self.backdrop.sample(px - normal[0] * pull, py - normal[1] * pull);
-        // Saturation, about the pixel's own luminance.
-        let luma = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-        let c: [f32; 3] = std::array::from_fn(|i| luma + (c[i] - luma) * m.saturation);
-        // Tint, which keeps contrast steady over any backdrop.
-        let c: [f32; 3] = std::array::from_fn(|i| c[i] + (m.tint[i] - c[i]) * m.tint_amount);
+        let pull = band * band * band.sqrt() * m.lens;
+        let c = self.colored(self.backdrop.sample(px - normal[0] * pull, py - normal[1] * pull));
         // Edge light: a rim that faces the light, and a soft glow inside it.
         let rim = (1.0 - (d + 1.0).abs() / 2.2).clamp(0.0, 1.0);
         let facing = (normal[0] * LIGHT[0] + normal[1] * LIGHT[1]).max(0.0);
         let light = rim * (0.2 + 0.8 * facing * facing) * m.edge_strength + band.powi(4) * 0.07 * m.edge_strength;
         std::array::from_fn(|i| c[i] + m.edge[i] * light)
+    }
+
+    /// Saturation about the pixel's own luminance, then the tint, which keeps
+    /// contrast steady over any backdrop.
+    #[inline]
+    fn colored(&self, c: [f32; 3]) -> [f32; 3] {
+        let m = self.material;
+        let luma = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+        std::array::from_fn(|i| {
+            let vivid = luma + (c[i] - luma) * m.saturation;
+            vivid + (m.tint[i] - vivid) * m.tint_amount
+        })
     }
 
     fn normal(&self, px: f32, py: f32) -> [f32; 2] {
