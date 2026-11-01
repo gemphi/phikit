@@ -118,6 +118,11 @@ impl BlendFile {
         Some(None)
     }
 
+    pub(crate) fn output_sockets(&self, node: &BlendBlock, dna: &DnaType) -> Vec<u64> {
+        let first = self.ptr(node, self.off("bNode", "outputs", dna));
+        self.list(first, self.off("bNodeSocket", "*next", dna)).into_iter().map(|s| s.old_address).collect()
+    }
+
     pub(crate) fn input_sockets(&self, node: &BlendBlock, dna: &DnaType) -> Vec<u64> {
         let first = self.ptr(node, self.off("bNode", "inputs", dna));
         self.list(first, self.off("bNodeSocket", "*next", dna)).into_iter().map(|s| s.old_address).collect()

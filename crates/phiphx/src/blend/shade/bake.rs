@@ -29,6 +29,13 @@
 pub struct BBakeImage {
     pub key: String,
     pub affine: [[f32; 3]; 2],
+    /// Whether Color reads the stored RGB as it is. Cycles keeps an image
+    /// premultiplied and hands that to Color, so a white pattern with its
+    /// shape in the alpha reads black in the holes. It reads the stored RGB
+    /// only when the node's Alpha output is linked, or the image is
+    /// Non-Color, channel-packed or ignores its alpha
+    /// (`ImageTextureNode::compile`, `svm_image_texture`).
+    pub straight: bool,
 }
 
 pub const IDENTITY: [[f32; 3]; 2] = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]];
@@ -78,6 +85,10 @@ pub enum BBakeOp {
 pub struct BlendBake {
     pub images: Vec<BBakeImage>,
     pub ops: Vec<BBakeOp>,
+    /// The Principled's Alpha when an image reaches it, over the same
+    /// images: a cut-out such as a grille, `Image → Color Ramp → Alpha`. It
+    /// lands in the baked texture's alpha, which the tracer cuts by.
+    pub alpha: Option<Vec<BBakeOp>>,
 }
 
 impl BlendBake {
@@ -107,6 +118,14 @@ impl V {
         let [r, g, b, _] = self.rgba;
         if self.float { r } else { 0.2126 * r + 0.7152 * g + 0.0722 * b }
     }
+}
+
+/// One texel of a bake, linear: the colour program's RGBA with the alpha
+/// program's value, as a float socket reads a colour, in its alpha.
+pub fn texel(bake: &BlendBake, sample: &dyn Fn(u16) -> [f32; 4]) -> [f32; 4] {
+    let [r, g, b, a] = run(&bake.ops, sample);
+    let cut = bake.alpha.as_ref().map(|ops| run(ops, sample)).map(|[x, y, z, _]| 0.2126 * x + 0.7152 * y + 0.0722 * z);
+    [r, g, b, cut.unwrap_or(a)]
 }
 
 /// Run `ops` with `sample(i)` answering each image op. Answers linear RGBA.
@@ -252,6 +271,21 @@ mod tests {
         ];
         let out = run(&ops, &|i| if i == 0 { [1.0; 4] } else { [0.0; 4] });
         assert_eq!(out, [0.9, 0.0, 0.0, 1.0]);
+    }
+
+    /// The grille's shape: the image's coverage through a ramp is the alpha,
+    /// the colour program is left alone.
+    #[test]
+    fn an_alpha_program_cuts_without_touching_the_colour() {
+        let bake = BlendBake {
+            images: vec![BBakeImage { key: "grille".into(), affine: IDENTITY, straight: false }],
+            ops: vec![BBakeOp::Const([0.5, 0.25, 0.0, 1.0])],
+            alpha: Some(vec![BBakeOp::Image(0)]),
+        };
+        assert_eq!(texel(&bake, &|_| [0.0, 0.0, 0.0, 0.0]), [0.5, 0.25, 0.0, 0.0], "a hole");
+        let solid = texel(&bake, &|_| [1.0; 4]);
+        assert_eq!(&solid[..3], &[0.5, 0.25, 0.0]);
+        assert!((solid[3] - 1.0).abs() < 1e-6, "the strand: {solid:?}");
     }
 
     #[test]

@@ -270,11 +270,24 @@ impl BlendFile {
     pub(crate) fn base_bake(&self, ma: &BlendBlock, dna: &DnaType) -> Option<BlendBake> {
         let bsdf = self.surface_principled(ma, dna)?;
         let sock = self.socket_named(bsdf, "Base Color", dna)?;
+        let cut = self.socket_named(bsdf, "Alpha", dna);
         let g = BGraph::new(self, ma, dna);
-        if !g.linked(sock) {
+        let cuts = cut.is_some_and(|c| g.linked(c));
+        if !g.linked(sock) && !cuts {
             return None;
         }
-        let mut bake = BlendBake { images: Vec::new(), ops: Vec::new() };
+        let mut bake = BlendBake { images: Vec::new(), ops: Vec::new(), alpha: None };
+        if let Some(cut) = cut.filter(|_| cuts) {
+            // Only worth a program when an image reaches it; a chain of
+            // procedurals keeps the value it folds to (`principled.rs`).
+            if g.emit_input(cut, &mut bake, 0).is_some() && !bake.images.is_empty() {
+                bake.alpha = Some(std::mem::take(&mut bake.ops));
+            }
+            bake.ops.clear();
+            if bake.alpha.is_none() {
+                bake.images.clear();
+            }
+        }
         g.emit_input(sock, &mut bake, 0)?;
         (!bake.images.is_empty()).then_some(bake)
     }
@@ -359,21 +372,26 @@ impl BGraph<'_> {
         let short = |o: Option<usize>| o.and_then(|o| node.data.get(o..o + 2)).map_or(0, |b| self.f.read_u16(b));
         match kind.as_str() {
             "ShaderNodeTexImage" => {
-                let im = self.f.block_at(self.f.ptr(node, self.off("bNode", "*id")))?;
-                let key = self.f.image_key(im, self.dna);
-                if key.is_empty() {
-                    return None;
-                }
+                let is_alpha = out_id == "Alpha" || out_name == "Alpha";
+                // No image on the node: Cycles answers its missing-image
+                // colour (`IMAGE_MISSING_RGBA`), and the graph goes on.
+                let picked = self.f.block_at(self.f.ptr(node, self.off("bNode", "*id"))).map(|im| (self.f.image_key(im, self.dna), im));
+                let Some((key, im)) = picked.filter(|(key, _)| !key.is_empty()) else {
+                    bake.ops.push(if is_alpha { BBakeOp::ConstF(1.0) } else { BBakeOp::Const([1.0, 0.0, 1.0, 1.0]) });
+                    return Some(());
+                };
                 let affine = self.uv_affine(node, 0);
-                let same = |img: &BBakeImage| img.key == key && img.affine == affine;
+                let alpha_linked = self.f.output_sockets(node, self.dna).into_iter().any(|s| self.f.socket_name(s, self.dna) == "Alpha" && self.links.iter().any(|l| l.from_sock == s));
+                let straight = alpha_linked || self.f.image_color_is_stored(im, self.dna);
+                let same = |img: &BBakeImage| img.key == key && img.affine == affine && img.straight == straight;
                 let i = match bake.images.iter().position(same) {
                     Some(i) => i,
                     None => {
-                        bake.images.push(BBakeImage { key, affine });
+                        bake.images.push(BBakeImage { key, affine, straight });
                         bake.images.len() - 1
                     }
                 } as u16;
-                bake.ops.push(if out_id == "Alpha" || out_name == "Alpha" { BBakeOp::ImageAlpha(i) } else { BBakeOp::Image(i) });
+                bake.ops.push(if is_alpha { BBakeOp::ImageAlpha(i) } else { BBakeOp::Image(i) });
                 Some(())
             }
             "ShaderNodeMix" => {

@@ -109,6 +109,18 @@ impl SceneTexture {
         })
     }
 
+    /// This image as Cycles stores it, premultiplied in its encoded values
+    /// (`svm_image_texture` undoes the division before it decodes sRGB). An
+    /// opaque image is itself, so it shares its pixels.
+    pub fn associated(&self) -> Self {
+        if self.rgba.chunks_exact(4).all(|p| p[3] == 255) {
+            return self.clone();
+        }
+        let scale = |c: u8, a: u8| ((u16::from(c) * u16::from(a) + 127) / 255) as u8;
+        let rgba = self.rgba.chunks_exact(4).flat_map(|p| [scale(p[0], p[3]), scale(p[1], p[3]), scale(p[2], p[3]), p[3]]).collect();
+        Self { width: self.width, height: self.height, rgba: Arc::new(rgba) }
+    }
+
     pub fn decode(bytes: &[u8]) -> Option<Self> {
         let img = image::load_from_memory(bytes).ok()?;
         let img = if img.width() > MAX_TEXTURE || img.height() > MAX_TEXTURE {
@@ -201,6 +213,16 @@ impl TextureCache {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_pattern_held_in_the_alpha_reads_black_in_its_holes() {
+        // White everywhere, the shape in the alpha: half covered, half hole.
+        let t = SceneTexture { width: 2, height: 1, rgba: Arc::new(vec![255, 255, 255, 255, 255, 255, 255, 0]) };
+        let done = t.associated();
+        assert_eq!(*done.rgba, vec![255, 255, 255, 255, 0, 0, 0, 0]);
+        let opaque = SceneTexture { width: 1, height: 1, rgba: Arc::new(vec![9, 8, 7, 255]) };
+        assert!(Arc::ptr_eq(&opaque.associated().rgba, &opaque.rgba), "an opaque image keeps its pixels");
+    }
 
     #[test]
     fn relative_paths_resolve_next_to_the_blend() {
@@ -349,7 +371,7 @@ const BAKE_GRID: u32 = 512;
 /// image resolved, so the caller falls back to the folded tint.
 fn run_bake(bake: &crate::blend::shade::bake::BlendBake, cache: &mut TextureCache) -> Option<(SceneTexture, Option<[[f32; 3]; 2]>)> {
     use crate::blend::shade::bake as b;
-    let srcs: Vec<Option<SceneTexture>> = bake.images.iter().map(|i| cache.get(&i.key)).collect();
+    let srcs: Vec<Option<SceneTexture>> = bake.images.iter().map(|i| cache.get(&i.key).map(|t| if i.straight { t } else { t.associated() })).collect();
     srcs.iter().any(Option::is_some).then_some(())?;
     if let (Some(one), Some(Some(src))) = (bake.single(), srcs.first()) {
         let (w, h) = (src.width.max(1), src.height.max(1));
@@ -357,7 +379,7 @@ fn run_bake(bake: &crate::blend::shade::bake::BlendBake, cache: &mut TextureCach
         for i in 0..(w * h) as usize {
             let p = src.rgba.get(i * 4..i * 4 + 4)?;
             let texel = [srgb_to_linear(p[0]), srgb_to_linear(p[1]), srgb_to_linear(p[2]), p[3] as f32 / 255.0];
-            let c = b::run(&bake.ops, &|_| texel);
+            let c = b::texel(bake, &|_| texel);
             out.extend([linear_to_srgb(c[0]), linear_to_srgb(c[1]), linear_to_srgb(c[2]), (c[3].clamp(0.0, 1.0) * 255.0 + 0.5) as u8]);
         }
         return Some((SceneTexture { width: w, height: h, rgba: Arc::new(out) }, Some(one.affine)));
@@ -367,7 +389,7 @@ fn run_bake(bake: &crate::blend::shade::bake::BlendBake, cache: &mut TextureCach
     for y in 0..side {
         for x in 0..side {
             let uv = [(x as f32 + 0.5) / side as f32, 1.0 - (y as f32 + 0.5) / side as f32];
-            let c = b::run(&bake.ops, &|i| match srcs.get(i as usize).and_then(Option::as_ref) {
+            let c = b::texel(bake, &|i| match srcs.get(i as usize).and_then(Option::as_ref) {
                 Some(t) => t.sample_smooth(b::apply(bake.images[i as usize].affine, uv)),
                 // A missing source draws Blender's missing-image magenta.
                 None => [1.0, 0.0, 1.0, 1.0],

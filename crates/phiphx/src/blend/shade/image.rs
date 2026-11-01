@@ -83,6 +83,17 @@ impl BlendFile {
         crate::scene::texture::SceneTexture::candidates_in(&path, Some(&dir)).iter().any(|c| c.exists())
     }
 
+    /// Whether this image's Color is its stored RGB whatever is linked:
+    /// a data image, or one whose alpha is channel-packed or ignored. The
+    /// rest are premultiplied (`BBakeImage::straight`).
+    pub(crate) fn image_color_is_stored(&self, im: &BlendBlock, dna: &DnaType) -> bool {
+        const IMA_ALPHA_CHANNEL_PACKED: u8 = 2;
+        const IMA_ALPHA_IGNORE: u8 = 3;
+        let mode = self.off("Image", "alpha_mode", dna).and_then(|o| im.data.get(o)).copied();
+        let space = self.off("Image", "colorspace_settings", dna).map_or(String::new(), |o| cstr(&im.data, o, 64));
+        matches!(mode, Some(IMA_ALPHA_CHANNEL_PACKED | IMA_ALPHA_IGNORE)) || matches!(space.as_str(), "Non-Color" | "Raw" | "Linear" | "Non-Colour Data")
+    }
+
     /// How materials refer to an image: its `filepath`, or `ID.name` (no
     /// prefix) for generated / packed images saved without a path.
     pub(crate) fn image_key(&self, im: &BlendBlock, dna: &DnaType) -> String {
