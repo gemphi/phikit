@@ -135,8 +135,8 @@ Held back on purpose, each for a stated reason:
 
 Not mine, left alone: `phiber/src/modal/command/*` (the top-bar session's),
 `phiber/tests/welcome_refinement.rs` and `file_browser_accordion_refinement.rs`
-(owner being found), `phigpu/gpui_windows/directx_*` (the viewport session's),
-`phigpu/gpui/src/app/test_context.rs`.
+(owner being found), `appkit/gpu/gpui_windows/directx_*` (the viewport session's),
+`appkit/gpu/gpui/src/app/test_context.rs`.
 
 ## Rules
 

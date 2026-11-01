@@ -1,7 +1,7 @@
 //! Stage one: copy what lies below the glass into a small image of its own.
 
 use super::canvas::{to_rgb, GlassCanvas};
-use super::shape::GlassBounds;
+use super::super::shape::GlassBounds;
 
 /// A downsampled copy of a region of the canvas. It keeps its allocation
 /// between frames.

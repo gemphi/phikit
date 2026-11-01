@@ -25,7 +25,7 @@ fn check_program(binary: &str, install_hint: &str) -> Result<()> {
 }
 
 fn discover_examples() -> Result<Vec<String>> {
-    let examples_dir = Path::new("crates/phigpu/gpui/examples");
+    let examples_dir = Path::new("crates/appkit/gpu/gpui/examples");
     let mut names = Vec::new();
 
     for entry in std::fs::read_dir(examples_dir).context("failed to read crates/gpui/examples")? {

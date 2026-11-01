@@ -3,8 +3,8 @@
 
 use super::backdrop::Backdrop;
 use super::canvas::{from_rgb, to_rgb, GlassCanvas};
-use super::material::GlassMaterial;
-use super::shape::{union_distance, GlassBounds, GlassShape};
+use super::super::material::GlassMaterial;
+use super::super::shape::{union_distance, GlassBounds, GlassShape};
 
 /// How far in from the edge the rim bends light and catches it.
 const RIM_BAND: f32 = 30.0;

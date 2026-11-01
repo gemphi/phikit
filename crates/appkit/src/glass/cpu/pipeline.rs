@@ -3,9 +3,9 @@
 use super::backdrop::Backdrop;
 use super::blur::blur;
 use super::canvas::GlassCanvas;
-use super::material::GlassMaterial;
+use super::super::material::GlassMaterial;
 use super::shade::{Shader, SHADOW_REACH};
-use super::shape::{GlassBounds, GlassShape};
+use super::super::shape::{GlassBounds, GlassShape};
 
 /// Glass that renders together: one capture, one blur and one shading pass,
 /// however many shapes it has. This is what `NSGlassEffectContainerView`

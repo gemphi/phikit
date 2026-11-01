@@ -1754,10 +1754,10 @@ pub(crate) mod shader_resources {
                 Direct3D::ID3DInclude, Hlsl::D3D_COMPILE_STANDARD_FILE_INCLUDE,
             };
 
-            let shader_name = if matches!(entry, ShaderModule::EmojiRasterization) {
-                "color_text_raster.hlsl"
-            } else {
-                "shaders.hlsl"
+            let shader_name = match entry {
+                ShaderModule::EmojiRasterization => "color_text_raster.hlsl",
+                ShaderModule::Backdrop => "../../../src/glass/gpu/glass.hlsl",
+                _ => "shaders.hlsl",
             };
 
             let entry = format!(

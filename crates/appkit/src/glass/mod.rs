@@ -10,12 +10,12 @@
 //!         ▼ view.rs: shapes and a material, once per glass layer
 //!  GlassPipeline::render
 //!         │
-//!         ├─ backdrop.rs  capture the region below, downsampled
-//!         ├─ blur.rs      three box passes, close to a Gaussian
-//!         └─ shade.rs     shadow, lens, saturation, tint, edge light
+//!         ├─ cpu/backdrop.rs capture the region below, downsampled
+//!         ├─ cpu/blur.rs  three box passes, close to a Gaussian
+//!         └─ cpu/shade.rs shadow, lens, saturation, tint, edge light
 //!         │
 //!         ▼
-//!  GlassCanvas (canvas.rs): the pixels drawn so far
+//!  GlassCanvas (cpu/canvas.rs): the pixels drawn so far
 //! ```
 //!
 //! Views draw back to front into the UI buffer, the 3D viewport included, so
@@ -25,17 +25,16 @@
 //!
 //! The pipeline knows only [`GlassCanvas`], [`GlassShape`] and
 //! [`GlassMaterial`]; it has no idea what a view or a theme is.
+//!
+//! `gpu/directx.rs` and `gpu/glass.hlsl` are the same stages on the GPU, which gpui's
+//! Windows renderer compiles in and every gpui app reaches through
+//! `gpui::BackdropStyle`. They are not modules of this crate.
 
-mod backdrop;
-mod blur;
-mod canvas;
+mod cpu;
 mod material;
-mod pipeline;
-mod shade;
 mod shape;
 mod view;
 
-pub use canvas::{BufferCanvas, GlassCanvas};
+pub use cpu::{BufferCanvas, GlassCanvas, GlassLayer, GlassPipeline, GlassStats};
 pub use material::{GlassMaterial, GlassStyle};
-pub use pipeline::{GlassLayer, GlassPipeline, GlassStats};
 pub use shape::{GlassBounds, GlassShape};

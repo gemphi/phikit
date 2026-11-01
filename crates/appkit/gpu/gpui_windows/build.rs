@@ -38,7 +38,6 @@ mod shader_compilation {
             "monochrome_sprite",
             "subpixel_sprite",
             "polychrome_sprite",
-            "backdrop",
         ];
 
         let rust_binding_path = format!("{}/shaders_bytes.rs", out_dir);
@@ -61,6 +60,19 @@ mod shader_compilation {
                 .join("src/color_text_raster.hlsl");
             compile_shader_for_module(
                 "emoji_rasterization",
+                &out_dir,
+                &fxc_path,
+                shader_path.to_str().unwrap(),
+                &rust_binding_path,
+            );
+        }
+
+        {
+            let shader_path = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap())
+                .join("../../src/glass/gpu/glass.hlsl");
+            println!("cargo:rerun-if-changed={}", shader_path.display());
+            compile_shader_for_module(
+                "backdrop",
                 &out_dir,
                 &fxc_path,
                 shader_path.to_str().unwrap(),

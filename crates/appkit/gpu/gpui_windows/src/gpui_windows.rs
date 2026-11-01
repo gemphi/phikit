@@ -6,6 +6,7 @@ mod direct_manipulation;
 mod direct_write;
 mod directx_atlas;
 mod directx_devices;
+#[path = "../../../src/glass/gpu/directx.rs"]
 mod directx_backdrop;
 mod directx_renderer;
 mod dispatcher;

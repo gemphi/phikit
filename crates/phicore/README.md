@@ -1,6 +1,6 @@
 # phicore — support crates (vendored)
 
-Nothing here is UI. These are the utilities [`../phigpu`](../phigpu) and
+Nothing here is UI. These are the utilities [`../appkit/gpu`](../appkit/gpu) and
 [`../phiui`](../phiui) are built from; phiber never names them itself, it gets
 them through those two.
 

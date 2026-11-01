@@ -1,8 +1,7 @@
 //! Where glass meets the view tree: which shapes a view contributes, and when.
 
-use super::canvas::BufferCanvas;
+use super::cpu::{BufferCanvas, GlassLayer, GlassPipeline};
 use super::material::{GlassMaterial, GlassStyle};
-use super::pipeline::{GlassLayer, GlassPipeline};
 use super::shape::{GlassBounds, GlassShape};
 use crate::render::RenderContext;
 use crate::theme::keys;

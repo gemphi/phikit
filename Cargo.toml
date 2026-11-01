@@ -9,12 +9,15 @@ resolver = "2"
 members = [
     "crates/phiphx",
     "crates/phicore/collections",
-    "crates/phigpu/gpui",
-    "crates/phigpu/gpui_macros",
-    "crates/phigpu/gpui_platform",
-    "crates/phigpu/gpui_shared_string",
-    "crates/phigpu/gpui_util",
-    "crates/phigpu/gpui_windows",
+    # The common layer every app stands on (`crates/appkit`): the GPU crates
+    # below, puikit and the glass. Phiber is one app on it; a phiecs robotics
+    # app is another. Only the crates something builds are members.
+    "crates/appkit/gpu/gpui",
+    "crates/appkit/gpu/gpui_macros",
+    "crates/appkit/gpu/gpui_platform",
+    "crates/appkit/gpu/gpui_shared_string",
+    "crates/appkit/gpu/gpui_util",
+    "crates/appkit/gpu/gpui_windows",
     # gpui's wgpu renderer. A member so it keeps compiling: it is written,
     # it is clean, and nothing was building it — which is how a renderer
     # rots. It matters twice over. phiray is wgpu and gpui on Windows is
@@ -24,7 +27,7 @@ members = [
     # through this same crate, so the web build and the desktop fast path
     # are the same change. (`gpui_web` is wasm-only and cannot be a member
     # here; it is checked by building for wasm32-unknown-unknown.)
-    "crates/phigpu/gpui_wgpu",
+    "crates/appkit/gpu/gpui_wgpu",
     "crates/phicore/http_client",
     "crates/phiber",
     # The session journal every crate here logs through (`philog`): a sink
@@ -80,12 +83,12 @@ console = "0.16"
 crossbeam = "0.8.4"
 derive_refineable = { path = "crates/phicore/refineable/derive_refineable" }
 dialoguer = { version = "0.12", default-features = false }
-gpui = { path = "crates/phigpu/gpui", default-features = false }
-gpui_shared_string = { path = "crates/phigpu/gpui_shared_string" }
-gpui_linux = { path = "crates/phigpu/gpui_linux", default-features = false }
-gpui_macos = { path = "crates/phigpu/gpui_macos", default-features = false }
-gpui_macros = { path = "crates/phigpu/gpui_macros" }
-gpui_platform = { path = "crates/phigpu/gpui_platform", default-features = false }
+gpui = { path = "crates/appkit/gpu/gpui", default-features = false }
+gpui_shared_string = { path = "crates/appkit/gpu/gpui_shared_string" }
+gpui_linux = { path = "crates/appkit/gpu/gpui_linux", default-features = false }
+gpui_macos = { path = "crates/appkit/gpu/gpui_macos", default-features = false }
+gpui_macros = { path = "crates/appkit/gpu/gpui_macros" }
+gpui_platform = { path = "crates/appkit/gpu/gpui_platform", default-features = false }
 # `default-features = false` turns off gpui_web's `multithreaded`, which
 # pulls `wasm_thread`, which opens with
 # `#![cfg_attr(target_arch = "wasm32", feature(stdarch_wasm_atomic_wait))]` —
@@ -98,10 +101,10 @@ gpui_platform = { path = "crates/phigpu/gpui_platform", default-features = false
 # rayon already runs serially on wasm32 (its own documented fallback), so
 # there is no worker pool going unused. Add the feature back, with a nightly
 # toolchain, when the page is served with the headers that make it work.
-gpui_web = { path = "crates/phigpu/gpui_web", default-features = false }
-gpui_wgpu = { path = "crates/phigpu/gpui_wgpu" }
-gpui_windows = { path = "crates/phigpu/gpui_windows", default-features = false }
-gpui_util = { path = "crates/phigpu/gpui_util" }
+gpui_web = { path = "crates/appkit/gpu/gpui_web", default-features = false }
+gpui_wgpu = { path = "crates/appkit/gpu/gpui_wgpu" }
+gpui_windows = { path = "crates/appkit/gpu/gpui_windows", default-features = false }
+gpui_util = { path = "crates/appkit/gpu/gpui_util" }
 http_client = { path = "crates/phicore/http_client" }
 media = { path = "crates/phicore/media" }
 mime = "0.3.17"
