@@ -1,0 +1,9 @@
+[package]
+name = "puikit"
+version = "0.1.0"
+edition = "2021"
+description = "Phi UI Kit — SwiftUI-style declarative widgets built on NSView"
+license = "MIT"
+
+[dependencies]
+rust-appkit = { path = ".." }

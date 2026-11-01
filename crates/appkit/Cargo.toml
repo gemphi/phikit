@@ -1,0 +1,67 @@
+[package]
+name = "rust-appkit"
+version = "0.1.0"
+edition = "2021"
+authors = ["Phi Team"]
+license = "MIT"
+description = "AppKit-style UI framework for Windows using winit"
+
+[dependencies]
+# Core engine crates (reuse, don't reinvent)
+reality-foundation = { path = "../reality-foundation" }
+rust-reality-kit = { path = "../realitykit" }
+phx = { path = "../phiphx" }
+
+# Windowing
+winit = { version = "0.29", features = ["rwh_05"] }
+
+# 2D Rendering (software fallback)
+softbuffer = "0.4"
+
+# 3D Rendering (GPU) - optional
+wgpu = { version = "0.19", features = ["wgsl"], optional = true }
+
+# Math
+glam = { version = "0.25", features = ["bytemuck"] }
+bytemuck = { version = "1.14", features = ["derive"] }
+
+# Date/Time
+chrono = "0.4"
+
+# Font rendering
+fontdue = "0.8"
+
+# Image loading
+image = { version = "0.24", default-features = false, features = ["png"] }
+usvg = "0.38"
+resvg = "0.38"
+tiny-skia = "0.11"
+
+# Error handling
+thiserror = "1.0"
+
+# Logging
+log = "0.4"
+bitflags = "2.11.1"
+
+# Async blocking for GPU init
+pollster = "0.3"
+tobj = "4.0.3"
+
+# Random for SSAO
+fastrand = "2.0"
+
+# Serialization (for project files)
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# ZIP compression (for USDZ export)
+zip = { version = "0.6", default-features = false, features = ["deflate"] }
+
+[dev-dependencies]
+proptest = "1.4"
+
+[features]
+default = ["software-render", "gpu-render"]
+software-render = []
+gpu-render = ["wgpu"]

@@ -1,0 +1,10 @@
+<svg viewBox="0 0 100 100" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 1. Waistband Panel (Top) -->
+  <path d="M 12 24 Q 50 40, 88 24 L 86 31 Q 50 47, 14 31 Z" fill="currentColor" fill-opacity="0.3" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" />
+  
+  <!-- 2. Mid Lace Panel (Middle V-Shape) -->
+  <path d="M 14 31 Q 50 47, 86 31 Q 68 45, 50 56 Q 32 45, 14 31 Z" fill="currentColor" fill-opacity="0.6" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" />
+  
+  <!-- 3. Bottom Main Body Panel (Sexy Thong Crotch) -->
+  <path d="M 14 31 Q 32 45, 50 56 Q 68 45, 86 31 Q 68 60, 52 86 H 48 Q 32 60, 14 31 Z" fill="currentColor" fill-opacity="0.85" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" />
+</svg>

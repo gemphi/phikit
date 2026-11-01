@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rust Kit Pro — Icon Gallery</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg-root: #0d0d0f;
+  --bg-sidebar: #101012;
+  --bg-center: #0a0a0c;
+  --bg-controls: #101012;
+  --bg-title: #111113;
+  --bg-cell: rgba(255,255,255,0.03);
+  --bg-cell-hover: rgba(255,255,255,0.08);
+  --bg-selected: rgba(0,122,255,0.20);
+  --bg-btn: rgba(255,255,255,0.05);
+  --bg-btn-hover: rgba(255,255,255,0.10);
+  --bg-accent: rgba(0,122,255,0.65);
+  --text-primary: rgba(255,255,255,0.90);
+  --text-secondary: rgba(255,255,255,0.55);
+  --text-tertiary: rgba(255,255,255,0.35);
+  --text-accent: rgba(100,170,255,0.85);
+  --border: rgba(255,255,255,0.05);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-cell: 12px;
+  --gap: 8px;
+  --accent: #007AFF;
+  --green: #34C759;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'Inter', sans-serif;
+  background: var(--bg-root);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Title Bar */
+.title-bar {
+  height: 48px;
+  background: var(--bg-title);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.title-bar h1 { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.title-bar p { font-size: 10px; color: var(--text-tertiary); margin-top: 2px; }
+
+/* Main Layout */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar */
+.sidebar {
+  width: 200px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 12px 8px;
+  flex-shrink: 0;
+}
+.sidebar h3 {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.5px;
+  padding: 0 8px;
+  margin-bottom: 8px;
+}
+.sidebar .cat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  margin-bottom: 2px;
+}
+.sidebar .cat-btn:hover { background: var(--bg-btn-hover); color: var(--text-primary); }
+.sidebar .cat-btn.active { background: var(--bg-selected); color: var(--text-primary); }
+.sidebar .cat-btn .badge {
+  font-size: 9px;
+  background: rgba(255,255,255,0.06);
+  padding: 2px 6px;
+  border-radius: 8px;
+  color: var(--text-tertiary);
+}
+.sidebar .cat-btn.active .badge { background: rgba(0,122,255,0.3); color: var(--text-accent); }
+
+/* Center */
+.center {
+  flex: 1;
+  background: var(--bg-center);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.icon-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 10px;
+  align-content: start;
+}
+.icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px 8px;
+  background: var(--bg-cell);
+  border-radius: var(--radius-cell);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.icon-cell:hover { background: var(--bg-cell-hover); transform: scale(1.02); }
+.icon-cell img, .icon-cell svg {
+  width: 32px;
+  height: 32px;
+  opacity: 0.9;
+  filter: brightness(0.9);
+}
+.icon-cell:hover img, .icon-cell:hover svg { opacity: 1; filter: brightness(1); }
+.icon-cell span {
+  font-size: 9px;
+  color: var(--text-tertiary);
+  margin-top: 8px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.caption {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+.caption .info { color: var(--text-accent); margin-top: 4px; }
+
+/* Controls */
+.controls {
+  width: 260px;
+  background: var(--bg-controls);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 12px;
+  flex-shrink: 0;
+}
+.section { margin-bottom: 16px; }
+.section-header {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.section-header .arrow { font-size: 8px; transition: transform 0.2s; }
+.section-header.collapsed .arrow { transform: rotate(-90deg); }
+.section-content { display: flex; flex-direction: column; gap: 8px; }
+.section-content.hidden { display: none; }
+
+.control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.control-row label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  min-width: 70px;
+}
+.control-row .pills {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+.pill {
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 9px;
+  cursor: pointer;
+  background: var(--bg-btn);
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  border: none;
+  outline: none;
+}
+.pill:hover { background: var(--bg-btn-hover); color: var(--text-primary); }
+.pill.active { background: var(--bg-accent); color: white; }
+
+/* Dropdown */
+.dropdown {
+  position: relative;
+  flex: 1;
+}
+.dropdown-btn {
+  width: 100%;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-btn);
+  color: var(--text-secondary);
+  font-size: 10px;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dropdown-btn:hover { background: var(--bg-btn-hover); color: var(--text-primary); }
+.dropdown-btn .chevron { font-size: 8px; opacity: 0.5; }
+
+/* Toggle */
+.toggle {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.toggle.on { background: var(--green); }
+.toggle .knob {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: left 0.2s;
+}
+.toggle.on .knob { left: 18px; }
+
+/* Size buttons */
+.size-btns { display: flex; gap: 4px; }
+.size-btn {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 9px;
+  cursor: pointer;
+  background: var(--bg-btn);
+  color: var(--text-secondary);
+  border: none;
+  transition: all 0.15s;
+}
+.size-btn:hover { background: var(--bg-btn-hover); }
+.size-btn.active { background: var(--bg-accent); color: white; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+</style>
+</head>
+<body>
+
+<div class="title-bar">
+  <h1>Rust Kit Pro — Icon System</h1>
+  <p id="subtitle"></p>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <h3>CATEGORIES</h3>
+    <div id="categories"></div>
+  </div>
+
+  <div class="center">
+    <div class="icon-grid" id="grid"></div>
+    <div class="caption">
+      <div>SVG icons rendered via resvg · 24×24 viewBox · stroke-width 1.5 · round caps · currentColor tinted</div>
+      <div class="info" id="caption-info"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)"><span class="arrow">▼</span> APPEARANCE</div>
+      <div class="section-content">
+        <div class="control-row"><label>Mode</label><div class="pills" id="mode-pills"></div></div>
+        <div class="control-row"><label>Brand</label><div class="dropdown"><button class="dropdown-btn" id="brand-btn"><span></span><span class="chevron">▾</span></button></div></div>
+        <div class="control-row"><label>Material</label><div class="dropdown"><button class="dropdown-btn" id="material-btn"><span></span><span class="chevron">▾</span></button></div></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)"><span class="arrow">▼</span> EFFECTS</div>
+      <div class="section-content" id="effects-section"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-header" onclick="toggleSection(this)"><span class="arrow">▼</span> LAYOUT</div>
+      <div class="section-content">
+        <div class="control-row"><label>Icon Size</label><div class="size-btns" id="size-btns"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATEGORIES = [
+  { name: "3D Primitives", icons: ["circle","box","cylinder","cone","pill","square","donut"] },
+  { name: "Lights", icons: ["sun","sun","lightbulb","flashlight","sun-dim"] },
+  { name: "UI Controls", icons: ["plus","minus","pencil","settings","search","filter","sort"] },
+  { name: "Actions", icons: ["play","pause","stop","undo","redo","scissors","copy","clipboard","trash"] },
+  { name: "Transform", icons: ["select","move","rotate","scale","hand","search","video","maximize","zoom-in","zoom-out"] },
+  { name: "Navigation", icons: ["arrow-up","arrow-down","arrow-left","arrow-right","chevron-right","chevron-down","triangle-right","triangle-down"] },
+  { name: "Layout", icons: ["panel-left","panel-right","panel-bottom","panel-top","layout-dashboard","shading-solid","panel-left"] },
+  { name: "Toolbar", icons: ["plus","minus","camera","mic","volume"] },
+  { name: "Media", icons: ["image","video","music","box","palette","sparkles","component"] },
+  { name: "States", icons: ["eye","eye-off","lock","unlock","check-circle"] },
+  { name: "Tabs & Views", icons: ["workflow","brain","bar-chart","file","folder","folder-open","folder-tree","package","layers","globe","grid","magnet","blend"] },
+];
+
+const BRANDS = ["apple","windows","tesla","swift","barbie","fenty","cyberpunk"];
+const MODES = ["dark","light"];
+const MATERIALS = ["standard","glass","metal","onyx","lace","wetland","platinum"];
+const SIZES = [20,28,32,40,48];
+const EFFECTS = ["Glass Blur","Drop Shadow","Hover Glow","Animations","Debug Borders"];
+
+let state = { cat: 0, size: 32, brand: 0, mode: 0, material: 1, effects: [true,true,false,true,false] };
+
+function render() {
+  // Subtitle
+  const total = CATEGORIES.reduce((s,c) => s + c.icons.length, 0);
+  document.getElementById('subtitle').textContent = `${total} icons · ${CATEGORIES.length} categories · Lucide (MIT) · resvg anti-aliased`;
+
+  // Categories
+  const catEl = document.getElementById('categories');
+  catEl.innerHTML = CATEGORIES.map((c,i) =>
+    `<div class="cat-btn ${i===state.cat?'active':''}" onclick="state.cat=${i};render()">
+      ${c.name}<span class="badge">${c.icons.length}</span>
+    </div>`
+  ).join('');
+
+  // Grid
+  const icons = CATEGORIES[state.cat].icons;
+  const grid = document.getElementById('grid');
+  grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(${state.size+48}px, 1fr))`;
+  grid.innerHTML = icons.map(name =>
+    `<div class="icon-cell">
+      <img src="${name}.svg" width="${state.size}" height="${state.size}" alt="${name}">
+      <span>${name}</span>
+    </div>`
+  ).join('');
+
+  // Caption
+  document.getElementById('caption-info').textContent =
+    `${icons.length} icons · ${CATEGORIES[state.cat].name} · ${state.size}px · ${BRANDS[state.brand]} · ${MODES[state.mode]} · ${MATERIALS[state.material]}`;
+
+  // Mode pills
+  document.getElementById('mode-pills').innerHTML = MODES.map((m,i) =>
+    `<button class="pill ${i===state.mode?'active':''}" onclick="state.mode=${i};render()">${m}</button>`
+  ).join('');
+
+  // Brand dropdown
+  document.getElementById('brand-btn').querySelector('span').textContent = BRANDS[state.brand];
+  document.getElementById('brand-btn').onclick = () => { state.brand = (state.brand+1)%BRANDS.length; render(); };
+
+  // Material dropdown
+  document.getElementById('material-btn').querySelector('span').textContent = MATERIALS[state.material];
+  document.getElementById('material-btn').onclick = () => { state.material = (state.material+1)%MATERIALS.length; render(); };
+
+  // Effects
+  document.getElementById('effects-section').innerHTML = EFFECTS.map((e,i) =>
+    `<div class="control-row">
+      <label>${e}</label>
+      <div class="toggle ${state.effects[i]?'on':''}" onclick="state.effects[${i}]=!state.effects[${i}];render()"><div class="knob"></div></div>
+    </div>`
+  ).join('');
+
+  // Size buttons
+  document.getElementById('size-btns').innerHTML = SIZES.map(s =>
+    `<button class="size-btn ${s===state.size?'active':''}" onclick="state.size=${s};render()">${s}</button>`
+  ).join('');
+}
+
+function toggleSection(header) {
+  header.classList.toggle('collapsed');
+  header.nextElementSibling.classList.toggle('hidden');
+}
+
+render();
+</script>
+</body>
+</html>
