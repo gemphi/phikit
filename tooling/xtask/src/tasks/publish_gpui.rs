@@ -40,18 +40,18 @@ pub fn run_publish_gpui(args: PublishGpuiArgs) -> Result<()> {
 }
 
 fn read_gpui_version() -> Result<String> {
-    let gpui_cargo_toml_path = "crates/appkit/gpu/gpui/Cargo.toml";
+    let gpui_cargo_toml_path = "crates/appkit/gpu/Cargo.toml";
     let contents = std::fs::read_to_string(gpui_cargo_toml_path)
-        .context("Failed to read crates/appkit/gpu/gpui/Cargo.toml")?;
+        .context("Failed to read crates/appkit/gpu/Cargo.toml")?;
 
     let cargo_toml: toml::Value =
-        toml::from_str(&contents).context("Failed to parse crates/appkit/gpu/gpui/Cargo.toml")?;
+        toml::from_str(&contents).context("Failed to parse crates/appkit/gpu/Cargo.toml")?;
 
     let version = cargo_toml
         .get("package")
         .and_then(|p| p.get("version"))
         .and_then(|v| v.as_str())
-        .context("Failed to find version in crates/appkit/gpu/gpui/Cargo.toml")?;
+        .context("Failed to find version in crates/appkit/gpu/Cargo.toml")?;
 
     Ok(version.to_string())
 }

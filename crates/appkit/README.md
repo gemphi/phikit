@@ -7,7 +7,7 @@ UI kit of its own; they call this.
 phiber   phiecs robotics   ...        apps
    \          |            /
              appkit                   the common layer
-   gpu/       gpui and its platform renderers (DirectX, Metal, wgpu, web)
+   gpu/       gpui itself, with its platform renderers beside its src (DirectX, Metal, wgpu, web)
    pui/       declarative widgets
    src/glass  the glass material
    src/       the AppKit views, controls and panels

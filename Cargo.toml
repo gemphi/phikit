@@ -12,7 +12,7 @@ members = [
     # The common layer every app stands on (`crates/appkit`): the GPU crates
     # below, puikit and the glass. Phiber is one app on it; a phiecs robotics
     # app is another. Only the crates something builds are members.
-    "crates/appkit/gpu/gpui",
+    "crates/appkit/gpu",
     "crates/appkit/gpu/gpui_macros",
     "crates/appkit/gpu/gpui_platform",
     "crates/appkit/gpu/gpui_shared_string",
@@ -83,7 +83,7 @@ console = "0.16"
 crossbeam = "0.8.4"
 derive_refineable = { path = "crates/phicore/refineable/derive_refineable" }
 dialoguer = { version = "0.12", default-features = false }
-gpui = { path = "crates/appkit/gpu/gpui", default-features = false }
+gpui = { path = "crates/appkit/gpu", default-features = false }
 gpui_shared_string = { path = "crates/appkit/gpu/gpui_shared_string" }
 gpui_linux = { path = "crates/appkit/gpu/gpui_linux", default-features = false }
 gpui_macos = { path = "crates/appkit/gpu/gpui_macos", default-features = false }
