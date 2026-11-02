@@ -84,10 +84,12 @@ float4 backdrop_glass(float2 position) {
     // Saturation, about the pixel's own luminance.
     float luma = dot(color, float3(0.2126, 0.7152, 0.0722));
     color = lerp(float3(luma, luma, luma), color, backdrop_saturation);
-    // Tint. Clear over what is dark, and thickening over what is bright, so
-    // the glass stays see-through and the text on it stays readable. A glass
-    // with no tint at all stays untinted.
-    float thick = backdrop_tint.a > 0.0 ? max(backdrop_tint.a, 0.88 * smoothstep(0.35, 0.95, luma)) : 0.0;
+    // Tint. Clear over what is near the tint's own lightness, and thickening
+    // over what stands far from it, bright under dark glass or dark under light
+    // glass, so the glass stays see-through and the text on it stays readable.
+    // A glass with no tint at all stays untinted.
+    float tint_luma = dot(backdrop_tint.rgb, float3(0.2126, 0.7152, 0.0722));
+    float thick = backdrop_tint.a > 0.0 ? max(backdrop_tint.a, 0.88 * smoothstep(0.2, 0.6, abs(luma - tint_luma))) : 0.0;
     color = lerp(color, backdrop_tint.rgb, thick);
     // Edge light: a rim that faces the light, and a soft glow inside it.
     float rim = saturate(1.0 - abs(d + 1.0) / 2.2);
