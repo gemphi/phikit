@@ -17,6 +17,9 @@ use crate::blend::file::types::*;
 const SKY_SINGLE_SCATTERING: i32 = 2;
 const SKY_MULTIPLE_SCATTERING: i32 = 3;
 
+/// What an image Blender cannot find folds to (`eval.rs`).
+const MISSING_IMAGE: [f32; 3] = [1.0, 0.0, 1.0];
+
 /// The world as it lights the scene.
 #[derive(Clone, Debug, PartialEq)]
 pub struct BlendWorld {
@@ -112,6 +115,20 @@ impl BlendFile {
             // the file the HDRI points at on another machine, and the read
             // report names it (`SceneReadReport::warnings`).
             world.color = [1.0; 3];
+        }
+        // A missing image can reach the Background through more than a direct
+        // Environment Texture: a plain Image Texture, or through a colour node.
+        // The fold then answers magenta, and the world is the same broken dome.
+        if world.missing.is_none() && world.color == MISSING_IMAGE {
+            world.missing = nodes
+                .iter()
+                .filter(|n| matches!(self.kind(n, dna).as_str(), "ShaderNodeTexImage" | "ShaderNodeTexEnvironment"))
+                .filter_map(|n| self.block_at(self.ptr(n, self.off("bNode", "*id", dna))))
+                .find(|im| !self.image_present(im, dna))
+                .map(|im| self.image_key(im, dna));
+            if world.missing.is_some() {
+                world.color = [1.0; 3];
+            }
         }
         // A Sky Texture takes the same place as an Environment Texture: it
         // replaces `Color`, so the socket's value becomes the white tint it
