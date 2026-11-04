@@ -219,7 +219,13 @@ fn limit(t: &Topology, m: &BlendEvalMesh, v: usize, sharp: &BSharpness) -> V3 {
         let face = &m.faces[fi as usize];
         add(s, m.vertices[face[(c as usize + face.len() / 2) % face.len()] as usize])
     });
-    scale(add(add(scale(p, n * n), scale(e, 4.0)), f), 1.0 / (n * (n + 5.0)))
+    // The weights' own sum, `n(n + 5)` where faces and edges are as many: a
+    // vertex whose fan is open without a sharp edge (non-manifold, or two
+    // faces wound against each other) has fewer faces, and dividing by
+    // `n(n + 5)` there pulls it towards the origin, a metre off in a scene
+    // far from it.
+    let k = t.vert_corners(v).len() as f32;
+    scale(add(add(scale(p, n * n), scale(e, 4.0)), f), 1.0 / (n * n + 4.0 * n + k))
 }
 
 fn vertex_point(m: &BlendEvalMesh, t: &Topology, face_pts: &[V3], v: usize, s: &BSubsurf, sharp: &BSharpness) -> V3 {

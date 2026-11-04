@@ -115,3 +115,122 @@ fn rig_digest_of_env_file() {
         }
     }
 }
+
+/// Not a fixture test: point `RIG_DEFORM` at a `.blend` and `RIG_FRAMES` at
+/// frames (`5,10`), and this checks what the Armature modifier is handed. A
+/// point at the head, middle and tail of each deforming bone's rest, moved by
+/// that bone's deform (B-Bone segments included), should land on the same point
+/// of the posed bone; it prints the bones that miss most. Does nothing without
+/// the var.
+#[test]
+fn rig_deform_of_env_file() {
+    use super::math::BMat4;
+    use glam::Vec3;
+    let Ok(path) = std::env::var("RIG_DEFORM") else { return };
+    let frames: Vec<f32> = std::env::var("RIG_FRAMES").unwrap_or_else(|_| "1".into()).split(',').filter_map(|f| f.trim().parse().ok()).collect();
+    let bytes = std::fs::read(&path).expect("read");
+    let file = BlendFile::parse_bytes(&bytes).expect("parse");
+    let dna = file.dna.as_ref().expect("dna");
+    let scene = file.extract_scene().expect("scene");
+    let actions = file.actions(dna);
+    for src in file.rig_sources(&scene.objects, dna, &actions) {
+        let world = Mat4::from_cols_array_2d(&scene.objects[src.object].matrix_world);
+        for &f in &frames {
+            let pose = src.pose_at(f, world, &super::BEmptyScene);
+            let mats = src.deform_bones(&pose);
+            let mut worst: Vec<(f32, String, f32)> = Vec::new();
+            for (i, bone) in src.rig.bones.iter().enumerate() {
+                let Some(d) = mats.get(&bone.name) else { continue };
+                let head = bone.arm.loc();
+                let along = bone.arm.y_axis.truncate().normalize() * bone.length;
+                for t in [0.0f32, 0.5, 1.0] {
+                    let co = head + along * t;
+                    let got = d.matrix(co).transform_point3(co);
+                    let want = pose.pose[i].transform_point3(Vec3::new(0.0, bone.length * t, 0.0));
+                    worst.push(((got - want).length(), bone.name.clone(), t));
+                }
+            }
+            worst.sort_by(|a, b| b.0.total_cmp(&a.0));
+            for (miss, name, t) in worst.iter().take(8) {
+                println!("DEFORM frame {f} {name} at {t}: misses by {miss:.3}");
+            }
+        }
+    }
+}
+
+fn moved_for_report(v: &[[f32; 3]], d: &[Vec<(u32, f32)>], g: &[String], m: &HashMap<String, crate::blend::modifier::armature::BDeformBone>, to_arm: Mat4) -> Vec<[f32; 3]> {
+    crate::blend::modifier::armature::deform(v, d, g, m, to_arm).unwrap_or_else(|| v.to_vec())
+}
+
+/// Not a fixture test: with `RIG_DEFORM` and `RIG_FRAMES` as above and
+/// `RIG_SKIN` naming a mesh object, this poses that mesh the way a frame is
+/// rendered — the base before its Armature, skinned by the solved pose, then
+/// the modifiers after it — and prints the vertices that land far from the
+/// rest of the mesh, with their weights.
+#[test]
+fn rig_skin_of_env_file() {
+    use glam::Vec3;
+    let (Ok(path), Ok(name)) = (std::env::var("RIG_DEFORM"), std::env::var("RIG_SKIN")) else { return };
+    let frames: Vec<f32> = std::env::var("RIG_FRAMES").unwrap_or_else(|_| "1".into()).split(',').filter_map(|f| f.trim().parse().ok()).collect();
+    let bytes = std::fs::read(&path).expect("read");
+    let file = BlendFile::parse_bytes(&bytes).expect("parse");
+    let scene = file.extract_scene().expect("scene");
+    let rigs = &scene.props.rigs;
+    for skin in rigs.skins.iter().filter(|s| scene.objects[s.object].name == name) {
+        let rig = rigs.rigs.iter().find(|r| r.address == skin.armature).expect("its rig");
+        let rig_world = Mat4::from_cols_array_2d(&scene.objects[rig.object].matrix_world);
+        let world = Mat4::from_cols_array_2d(&scene.objects[skin.object].matrix_world);
+        println!("SKIN {name}: base {} verts, dverts {}, groups {}, tail {}", skin.base.vertices.len(), skin.base.dverts.len(), skin.groups.len(), skin.tail.len());
+        for &f in &frames {
+            let pose = rig.pose_at(f, rig_world, &super::BEmptyScene);
+            let mats = rig.deform_bones(&pose);
+            let to_arm = rig_world.inverse() * world;
+            let moved = crate::blend::modifier::armature::deform(&skin.base.vertices, &skin.base.dverts, &skin.groups, &mats, to_arm).unwrap_or_else(|| skin.base.vertices.clone());
+            let pts: Vec<Vec3> = moved.iter().map(|v| world.transform_point3(Vec3::from(*v))).collect();
+            let mut sorted: Vec<Vec3> = pts.clone();
+            let mut mid = |k: usize| {
+                sorted.sort_by(|a, b| a[k].total_cmp(&b[k]));
+                sorted[sorted.len() / 2][k]
+            };
+            let centre = Vec3::new(mid(0), mid(1), mid(2));
+            let mut far: Vec<(f32, usize)> = pts.iter().enumerate().map(|(i, p)| ((*p - centre).length(), i)).collect();
+            far.sort_by(|a, b| b.0.total_cmp(&a.0));
+            println!("SKIN frame {f}: centre {centre:?}, farthest {:.2} m", far[0].0);
+            for &(d, i) in far.iter().take(6) {
+                let named: Vec<(String, f32)> = skin.base.dverts.get(i).map(|dv| dv.iter().map(|&(g, w)| (skin.groups.get(g as usize).cloned().unwrap_or(format!("#{g}")), w)).collect()).unwrap_or_default();
+                println!("  vertex {i} at {d:.2} m: rest {:?} weights {named:?}", skin.base.vertices[i]);
+            }
+            let evaluated = skin.evaluate(moved, world);
+            let tail_far = evaluated.vertices.iter().map(|v| (world.transform_point3(Vec3::from(*v)) - centre).length()).fold(0.0f32, f32::max);
+            println!("SKIN frame {f}: after the tail {} verts, farthest {tail_far:.2} m", evaluated.vertices.len());
+            // The same tail over the whole base mesh, every attribute kept.
+            let mut full = skin.base.clone();
+            full.vertices = crate::blend::modifier::armature::deform(&skin.base.vertices, &skin.base.dverts, &skin.groups, &mats, to_arm).unwrap_or_else(|| skin.base.vertices.clone());
+            let worlds = HashMap::new();
+            let ctx = crate::blend::modifier::EvalCtx { world, worlds: &worlds };
+            for m in &skin.tail {
+                m.apply(&mut full, &ctx);
+            }
+            let full_far = full.vertices.iter().map(|v| (world.transform_point3(Vec3::from(*v)) - centre).length()).fold(0.0f32, f32::max);
+            println!("SKIN frame {f}: tail over the full mesh {} verts, farthest {full_far:.2} m; base vert_creases {} edge_creases {} loose {} sharp {} uvs {} smooth {}", full.vertices.len(), skin.base.vert_creases.len(), skin.base.edge_creases.len(), skin.base.loose_edges.len(), skin.base.sharp_edges.len(), skin.base.loop_uvs.len(), skin.base.face_smooth.len());
+            // Which subdivided vertices fly off, and the input vertex each starts from.
+            let mut off: Vec<(f32, usize)> = full.vertices.iter().enumerate().map(|(i, v)| ((world.transform_point3(Vec3::from(*v)) - centre).length(), i)).collect();
+            off.sort_by(|a, b| b.0.total_cmp(&a.0));
+            let n = skin.base.vertices.len();
+            let faces = &skin.base.faces;
+            for &(d, i) in off.iter().take(4) {
+                let mut near = None;
+                let p = Vec3::from(full.vertices[i]);
+                let mut best = f32::MAX;
+                for (k, v) in moved_for_report(&skin.base.vertices, &skin.base.dverts, &skin.groups, &mats, to_arm).iter().enumerate() {
+                    let e = (Vec3::from(*v) - p).length();
+                    if e < best { best = e; near = Some(k); }
+                }
+                let k = near.unwrap_or(0);
+                let around: Vec<usize> = (0..faces.len()).filter(|&fi| faces.get(fi).contains(&(k as u32))).collect();
+                let corners: Vec<Vec<u32>> = around.iter().map(|&fi| faces.get(fi).to_vec()).collect();
+                println!("  out {i} ({}) at {d:.2} m; nearest input {k} {best:.3} m away, in {} faces: {corners:?}", if i < n { "an input vertex" } else { "a new point" }, around.len());
+            }
+        }
+    }
+}
