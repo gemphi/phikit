@@ -9,8 +9,8 @@ tree and space, the journal.
 ## bot
 
 - [ ] a bot description as a data file: links with a parent, joints, limits
-- [ ] spawn it into a `World`: a word a link, `Tree`, `Skeleton`, `JointPose`
-- [ ] a bot made of bots, joined by `Pin` and `Attached`
+- [ ] spawn it into a `World`: a word a link in the `Tree`, a `Pose` each, joint angles in `ChannelSet`
+- [ ] a bot made of bots, joined at pins (named child words)
 - [ ] URDF in
 
 ## actuate
@@ -21,7 +21,7 @@ tree and space, the journal.
 
 ## sense
 
-- [ ] `Sensor { spec }` on a word attached to a link
+- [ ] `Sensor { spec }` on a word under a pin of a link
 - [ ] joint state and contact from the physics bridge
 - [ ] camera and depth from a `phiray::Tracer` view at Readout
 

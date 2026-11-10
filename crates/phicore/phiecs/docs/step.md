@@ -6,13 +6,13 @@ graph TB
     s_step["World::step(dt)<br/>world/mod.rs"]
     s_clock["Clock<br/>tick + 1 · time + dt"]
     subgraph stages["Stage::ORDER, system.rs"]
-        s_ingest["Ingest<br/>input · commands · asset loads<br/>SceneKit: update"]
-        s_pre["PreCouple<br/>animation: Playing advances,<br/>Handoff blends, JointPose written"]
-        s_couple["Couple<br/>physics: Body in, sim step,<br/>Pose out, Contact events"]
-        s_post["PostCouple<br/>constraints: Reach to IK,<br/>Tree propagate, Pin and Attached"]
-        s_readout["Readout<br/>render handoff: changed aspects<br/>to the tracer, timed aspects to the journal"]
+        s_ingest["Ingest, role Intake<br/>input · commands · asset loads<br/>SceneKit: update"]
+        s_pre["PreCouple, role Animate<br/>every Playing samples, blends<br/>and writes its bound fields"]
+        s_couple["Couple, role Simulate<br/>physics: bodies in, a step,<br/>Poses out, Contact events"]
+        s_post["PostCouple, role Constrain<br/>constraints and IK,<br/>then Tree propagate"]
+        s_readout["Readout, role Readout<br/>changed aspects to the tracer,<br/>timed aspects to the journal and the sinks"]
     end
-    s_swap["Events swap<br/>this step's events readable next step,<br/>last step's dropped"]
+    s_swap["EventQueue swap<br/>this step's events readable next step,<br/>last step's dropped"]
     s_step --> s_clock --> s_ingest --> s_pre --> s_couple --> s_post --> s_readout --> s_swap
     classDef plan stroke-dasharray: 6 4;
     class s_clock,s_swap plan;
@@ -27,7 +27,7 @@ graph TB
     o_gate{"S.when(world)"}
     o_run["S.run(world, dt)"]
     o_skip["skipped this step"]
-    o_emit["Events::emit<br/>DidAdd · WillRemove · DidChange · Contact"]
+    o_emit["EventQueue::emit<br/>DidAdd · WillRemove · DidChange · Contact"]
     o_tick["aspect store<br/>changed tick = Clock.tick on read_mut"]
     o_add --> o_bucket --> o_sort --> o_gate
     o_gate -->|true| o_run

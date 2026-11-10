@@ -35,7 +35,7 @@ graph TB
     c_report["scene/report.rs<br/>the open report says what failed"]
     c_asset["rig as an asset<br/>rest skeleton · inverse rest matrices · weights · pins"]
     c_pose["a pose a frame<br/>scene/rig.rs: bones_at"]
-    c_ecs["phiecs<br/>Skeleton, shared · JointPose, on the word"]
+    c_ecs["phiecs<br/>a word a bone in the Tree, Pose on each.<br/>The rig stays here, shared"]
     c_gltf["export/gltf: skins and joints<br/>today it writes meshes and point clouds only"]
     c_open --> c_check --> c_report
     c_check --> c_asset --> c_ecs

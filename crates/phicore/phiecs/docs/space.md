@@ -23,7 +23,7 @@ graph TB
     r_keep{"keep_world"}
     r_same["local unchanged<br/>the child jumps with its new parent"]
     r_solve["local = inverse(new parent world) x old world<br/>the child stays where it is"]
-    r_event["Events: DidReparent(child, old, new)"]
+    r_event["EventQueue: DidReparent(child, old, new)"]
     r_call --> r_keep
     r_keep -->|false| r_same
     r_keep -->|true| r_solve
@@ -33,14 +33,18 @@ graph TB
 
 ```mermaid
 graph LR
-    p_skel["rig: Skeleton + JointPose<br/>the parent's joints in world space"]
-    p_pin["Pin { joint, offset }<br/>a named point on a joint<br/>GeometricPin, RF:9088"]
-    p_att["Attached { to, pin }<br/>on the child<br/>AttachedTransformComponent, RF:13669"]
-    p_derive["attach, a PostCouple system after propagate<br/>child world = joint world x offset"]
-    p_world["child's WorldMatrix<br/>its own Pose is ignored while Attached"]
-    p_nogap["a part cannot drift from its joint:<br/>there is no second matrix to disagree"]
-    p_skel --> p_derive
-    p_pin --> p_derive
-    p_att --> p_derive
-    p_derive --> p_world --> p_nogap
+    key["one tree for everything that has a place"]
+    p_obj["a scene object"]
+    p_bone["a bone<br/>a word, child of its parent bone"]
+    p_link["a robot link"]
+    p_pin["a pin<br/>a named word, child of a bone or link,<br/>its Pose the offset<br/>GeometricPin, RF:9088"]
+    p_part["an attached part or a sensor<br/>a child of the pin<br/>AttachedTransformComponent, RF:13669"]
+    p_prop["the one propagate system<br/>gives each its WorldMatrix"]
+    p_nogap["a part cannot drift from its bone:<br/>its world matrix is derived, there is no second one to disagree"]
+    p_obj --> p_prop
+    p_bone --> p_pin --> p_part --> p_prop
+    p_link --> p_pin
+    p_bone --> p_prop
+    p_link --> p_prop
+    p_prop --> p_nogap
 ```

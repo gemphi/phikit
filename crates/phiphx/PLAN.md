@@ -30,10 +30,13 @@ Counts are `.rs` files, subfolders included.
 | Path | Holds | Read from | Order |
 |---|---|---|---|
 | `src/scene/character/check.rs` | the consistency check on a rig and the meshes it deforms, reported at open | momentum | 1 |
-| `src/scene/character/asset.rs` | a rig as an asset: rest skeleton, inverse rest matrices, weights, pins | momentum, RealityFoundation `Skeleton` | 2 |
-| `src/scene/character/pose.rs` | a frame's pose as one vector, by joint name | momentum | 2 |
+| `src/scene/character/asset.rs` | the rig as the one shared asset: rest bones, inverse rest matrices, weights, pin names | momentum, RealityFoundation `Skeleton` | 2 |
+| `src/ecs/entity/spawn.rs` | feature `ecs`: a scene into words: an object a word, a bone a word, parents into the tree | phiecs | 2 |
+| `src/ecs/comp/` | feature `ecs`: the aspects that point back at phiphx data: `Rig`, `MeshRef`, `MaterialRef` | phiecs | 2 |
+| `src/ecs/system/sample.rs` | feature `ecs`: an action and the NLA stack as a phiecs `Sample`, so curves evaluate here and nowhere else | Blender | 2 |
+| `src/ecs/system/solve.rs` | feature `ecs`: constraints and IK as a `Constrain` role | Blender | 2 |
 | `src/export/gltf/skin.rs` | skins, joints and inverse bind matrices in the glTF writer | momentum `io/gltf` | 3 |
-| `src/blend/mesh/keys.rs` | shape keys: none is read today | Blender; actionmesh for the use | 4 |
+| `src/blend/mesh/key.rs` | shape keys: none is read today | Blender; actionmesh for the use | 4 |
 | `src/splat/read.rs` | Gaussian splats from a PLY: position, scale, rotation, opacity, harmonics | vkraygs (in phiray's references) | 5 |
 | `src/splat/bind.rs` | a splat bound to the triangle or cage cell it follows | D3GA, goliath | 6 |
 | `src/import/mhr/` | the parametric body: identity, pose, correctives, levels of detail | MHR; needs its released rig files | 7 |
@@ -56,7 +59,7 @@ graph LR
     w5 --> w6
     w2 --> w7
     w4 --> w7
-    e1["phiecs: Skeleton · JointPose"]
+    e1["phiecs: bones as words · Sample · Constrain"]
     r1["phiray: splat kind"]
     w2 -.-> e1
     w5 -.-> r1
@@ -75,8 +78,8 @@ graph TB
     a_file --> a_rig --> a_def --> a_scene --> a_ray
     b_check["character/check: refused or reported at open"]
     b_asset["character/asset: shared"]
-    b_pose["character/pose: a vector a frame"]
-    b_ecs["phiecs: Rig · JointPose on a word"]
+    b_pose["ecs: bones spawned as words, an action as Sample"]
+    b_ecs["phiecs: Playing writes bone Poses, propagate"]
     b_gpu["phiray kernels::Skin on the GPU, then repose"]
     a_rig -.-> b_check -.-> b_asset
     a_rig -.-> b_pose

@@ -1,4 +1,4 @@
-# bridges
+# bridge
 
 ```mermaid
 graph LR
@@ -23,14 +23,14 @@ graph TB
     key["solid: in the code today<br/>dashed: to build"]
     subgraph inb["Ingest"]
         i_scene["phiphx SceneModel<br/>objects · parents · rigs · SceneTimeline"]
-        i_spawn["spawn a word per object<br/>bind Pose · Asset · Skeleton, fill Tree"]
+        i_spawn["spawn a word an object and a word a bone<br/>bind Pose · Asset, fill Tree"]
     end
     subgraph worldbox["phiecs World"]
-        w_pose["Pose · WorldMatrix"]
-        w_joint["JointPose"]
+        w_pose["Pose · WorldMatrix<br/>of objects"]
+        w_joint["Pose · WorldMatrix<br/>of bones"]
         w_body["Body · Collider · Velocity"]
         w_asset["Asset · Loaded"]
-        w_events["Events"]
+        w_events["EventQueue"]
     end
     subgraph couple["Couple"]
         c_sim["phiray sim::World<br/>state arrays, step, poses()"]

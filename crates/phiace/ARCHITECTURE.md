@@ -58,7 +58,7 @@ graph TB
 ## Pages, one subject each
 
 - [tick](docs/tick.md): one control step on the five stages, and the two rates
-- [layers](docs/layers.md): the robotics stack as the references divide it, and what crosses each boundary
+- [layer](docs/layer.md): the robotics stack as the references divide it, and what crosses each boundary
 
 Folders and order of work: [PLAN.md](PLAN.md) ·
 What each part must do: [SPECS.md](SPECS.md) ·

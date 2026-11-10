@@ -16,7 +16,9 @@ listed here by path (from `gemphi/`) so there is one place to look.
   `phi/crates/macos/src/{realitykit,realityfoundation,scenekit}`
 - **The full phiecs** (tree, state, conditions, queries, kit, quest):
   `phinet/crates/phiecs`
-- **phiora, the table shape a saved world follows:**
-  `puikit/app/phiora-server`
+- **phiora, where a saved world goes:** the Python service with `kinds`,
+  `items`, `links`, `meta` and `log` is `phiadk/phiora`; the Node server
+  with its own `items` table is `puikit/app/phiora-server`. The mapping is
+  `../docs/connect.md`
 
 The row-by-row mapping and the order of work are in `../docs/APPLE.md`.

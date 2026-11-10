@@ -1,7 +1,7 @@
 # time
 
 Every box on this page is to build, except `World::step(dt)`, phiphx's
-`SceneTimeline`, phiplay's tapes and phiora's table.
+`SceneTimeline`, phiplay's tapes and phiora's tables.
 
 ```mermaid
 graph LR
@@ -19,12 +19,12 @@ graph LR
 
 ```mermaid
 graph TB
-    j_aspect["an aspect marked timed<br/>Stored: KIND · fields() · from_fields()"]
+    j_aspect["an aspect marked timed<br/>Stored: KIND · save · load"]
     j_value["Value<br/>number · text · list, no dependencies"]
     j_readout["Readout stage<br/>one row for each timed aspect whose changed tick is this tick"]
     subgraph journal["Journal trait"]
         j_mem["memory impl, in the core<br/>Track&lt;A&gt;: ticks + values, sparse"]
-        j_db["database impl, outside the core<br/>phiora's one table: items(kind, id, slug, doc)"]
+        j_db["database impl, outside the core<br/>phiora: items · links · log, mapped in connect.md"]
     end
     j_at["World::at::&lt;A&gt;(word, tick)<br/>the value at or before that tick"]
     j_dump["World::dump · World::load<br/>a whole world as rows"]

@@ -25,7 +25,8 @@ graph LR
         m_project["project"]
     end
     subgraph build["to build"]
-        m_char["character<br/>the contract checked at open,<br/>a rig as asset + pose for phiecs<br/>momentum"]
+        m_char["character<br/>the contract checked at open,<br/>the rig as the one shared asset<br/>momentum"]
+        m_ecs["ecs, a feature<br/>the plugin: scene to words, actions as Sample,<br/>the rig solve as a Constrain role"]
         m_bound["bound splats<br/>Gaussians that follow a rig or a cage<br/>D3GA · goliath"]
         m_body["parametric body<br/>identity · pose · correctives · levels of detail<br/>MHR"]
         m_recon["reconstruction in<br/>cameras, depth and points from images<br/>vggt · map-anything · sam-3d-objects"]
@@ -50,6 +51,8 @@ graph LR
     m_cloud --> m_format
     m_project --> m_import
     m_char -.-> m_scene
+    m_ecs -.-> m_char
+    m_ecs -.-> m_scene
     m_char -.-> m_blend
     m_bound -.-> m_char
     m_body -.-> m_char
@@ -59,7 +62,7 @@ graph LR
     m_skinout -.-> m_export
     m_skinout -.-> m_char
     classDef plan stroke-dasharray: 6 4;
-    class m_char,m_bound,m_body,m_recon,m_skinout plan;
+    class m_char,m_ecs,m_bound,m_body,m_recon,m_skinout plan;
 ```
 
 ## A file to a frame, and where it is handed on
@@ -75,7 +78,7 @@ graph TB
     subgraph out["who takes it"]
         o_ray["phiray<br/>Scene, then Tracer::repose a frame"]
         o_ber["phiber<br/>views, Project Browser"]
-        o_ecs["phiecs<br/>a word an object: Pose · Skeleton · JointPose · Asset"]
+        o_ecs["phiecs<br/>a word an object, a word a bone:<br/>Pose · Asset, in one Tree"]
         o_files["export<br/>phx · gltf · usd · point clouds"]
     end
     f_file --> f_parse --> f_read --> f_model

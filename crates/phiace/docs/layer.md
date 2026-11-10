@@ -1,4 +1,4 @@
-# layers
+# layer
 
 The stack as Meta's repositories divide it, top to bottom, with what
 crosses each boundary and the crate that holds or will hold the layer.
@@ -39,8 +39,8 @@ graph TB
     subgraph ecs["in the phiecs world"]
         e_word["a word a link"]
         e_tree["Tree: a link's parent"]
-        e_rig["rig: Skeleton, shared · JointPose, on the bot"]
-        e_pin["Pin and Attached: a hand on an arm,<br/>a camera on a wrist"]
+        e_rig["a joint's angle in ChannelSet,<br/>turned into the link's Pose by its axis"]
+        e_pin["a pin, a named child word:<br/>a hand on an arm, a camera on a wrist"]
         e_asp["aspects: Limit · Actuator · Sensor"]
     end
     b_file --> b_link --> e_word
@@ -61,6 +61,6 @@ graph TB
     s_kinds["types read: colour · depth · normal · semantic · audio"]
     s_spec --> s_node --> s_draw --> s_obs
     s_spec --- s_kinds
-    ours["in phikit: the leaf is a word with Attached,<br/>the render is a phiray Tracer view,<br/>depth and normal are planes the tracer already keeps"]
+    ours["in phikit: the leaf is a word under a pin,<br/>the render is a phiray Tracer view,<br/>depth and normal are planes the tracer already keeps"]
     s_draw --- ours
 ```
