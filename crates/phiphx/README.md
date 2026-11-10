@@ -23,3 +23,7 @@ Rules: types own behaviour (methods and traits, no loose `pub fn`), short
 names, at most 200 substantive lines per file, every Blender-derived reader
 checked against Blender (`tests/truth`). Status: [`jobs.md`](jobs.md) here and
 in every folder.
+
+## Reference
+
+The Blender source phiphx is checked against is `crates/phiber/reference/blender`, a submodule of phiber pinned to Blender v5.2.4 (the latest release). The older copy in `ext/phiber-refs/blender` outside the repo is v5.2.0.

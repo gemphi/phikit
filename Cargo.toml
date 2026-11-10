@@ -39,6 +39,10 @@ members = [
     # looks, themes and venues as declarative sets, and the play itself on
     # phiecs (`crates/phicore/phiecs`).
     "crates/phiplay",
+    # The robotic system (`crates/phiace`): a robot as words in the phiecs world.
+    # Meta's robotics frameworks sit under `crates/phiace/ext` as submodules,
+    # references to port from, not built.
+    "crates/phiace",
     # The core of phinet's phiecs that phiber and phiplay run on, kept here
     # so phikit builds with no phinet folder beside it.
     "crates/phicore/phiecs",

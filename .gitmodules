@@ -4,3 +4,45 @@
 [submodule "crates/phiray"]
 	path = crates/phiray
 	url = https://github.com/gemphi/phiray.git
+[submodule "crates/phiace/ext/habitat-lab"]
+	path = crates/phiace/ext/habitat-lab
+	url = https://github.com/facebookresearch/habitat-lab.git
+[submodule "crates/phiace/ext/habitat-sim"]
+	path = crates/phiace/ext/habitat-sim
+	url = https://github.com/facebookresearch/habitat-sim.git
+[submodule "crates/phiace/ext/home-robot"]
+	path = crates/phiace/ext/home-robot
+	url = https://github.com/facebookresearch/home-robot.git
+[submodule "crates/phiace/ext/fairo"]
+	path = crates/phiace/ext/fairo
+	url = https://github.com/facebookresearch/fairo.git
+[submodule "crates/phiace/ext/vjepa2"]
+	path = crates/phiace/ext/vjepa2
+	url = https://github.com/facebookresearch/vjepa2.git
+[submodule "crates/phiace/ext/nwm"]
+	path = crates/phiace/ext/nwm
+	url = https://github.com/facebookresearch/nwm.git
+[submodule "crates/phiace/ext/partnr-planner"]
+	path = crates/phiace/ext/partnr-planner
+	url = https://github.com/facebookresearch/partnr-planner.git
+[submodule "crates/phiace/ext/theseus"]
+	path = crates/phiace/ext/theseus
+	url = https://github.com/facebookresearch/theseus.git
+[submodule "crates/phiace/ext/digit360"]
+	path = crates/phiace/ext/digit360
+	url = https://github.com/facebookresearch/digit360.git
+[submodule "crates/phiace/ext/neuralfeels"]
+	path = crates/phiace/ext/neuralfeels
+	url = https://github.com/facebookresearch/neuralfeels.git
+[submodule "crates/phiace/ext/GeoRT"]
+	path = crates/phiace/ext/GeoRT
+	url = https://github.com/facebookresearch/GeoRT.git
+[submodule "crates/phiace/ext/BenchMARL"]
+	path = crates/phiace/ext/BenchMARL
+	url = https://github.com/facebookresearch/BenchMARL.git
+[submodule "crates/phiace/ext/eai-vc"]
+	path = crates/phiace/ext/eai-vc
+	url = https://github.com/facebookresearch/eai-vc.git
+[submodule "crates/phiace/ext/project_superdex"]
+	path = crates/phiace/ext/project_superdex
+	url = https://github.com/facebookresearch/project_superdex.git
