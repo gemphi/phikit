@@ -5,44 +5,158 @@
 	path = crates/phiray
 	url = https://github.com/gemphi/phiray.git
 [submodule "crates/phiace/ext/habitat-lab"]
-	path = crates/phiace/ext/habitat-lab
+	path = crates/phiace/reference/habitat-lab
 	url = https://github.com/facebookresearch/habitat-lab.git
 [submodule "crates/phiace/ext/habitat-sim"]
-	path = crates/phiace/ext/habitat-sim
+	path = crates/phiace/reference/habitat-sim
 	url = https://github.com/facebookresearch/habitat-sim.git
 [submodule "crates/phiace/ext/home-robot"]
-	path = crates/phiace/ext/home-robot
+	path = crates/phiace/reference/home-robot
 	url = https://github.com/facebookresearch/home-robot.git
 [submodule "crates/phiace/ext/fairo"]
 	path = crates/phiace/ext/fairo
 	url = https://github.com/facebookresearch/fairo.git
 [submodule "crates/phiace/ext/vjepa2"]
-	path = crates/phiace/ext/vjepa2
+	path = crates/phiace/reference/vjepa2
 	url = https://github.com/facebookresearch/vjepa2.git
 [submodule "crates/phiace/ext/nwm"]
-	path = crates/phiace/ext/nwm
+	path = crates/phiace/reference/nwm
 	url = https://github.com/facebookresearch/nwm.git
 [submodule "crates/phiace/ext/partnr-planner"]
-	path = crates/phiace/ext/partnr-planner
+	path = crates/phiace/reference/partnr-planner
 	url = https://github.com/facebookresearch/partnr-planner.git
 [submodule "crates/phiace/ext/theseus"]
-	path = crates/phiace/ext/theseus
+	path = crates/phiace/reference/theseus
 	url = https://github.com/facebookresearch/theseus.git
 [submodule "crates/phiace/ext/digit360"]
-	path = crates/phiace/ext/digit360
+	path = crates/phiace/reference/digit360
 	url = https://github.com/facebookresearch/digit360.git
 [submodule "crates/phiace/ext/neuralfeels"]
-	path = crates/phiace/ext/neuralfeels
+	path = crates/phiace/reference/neuralfeels
 	url = https://github.com/facebookresearch/neuralfeels.git
 [submodule "crates/phiace/ext/GeoRT"]
-	path = crates/phiace/ext/GeoRT
+	path = crates/phiace/reference/GeoRT
 	url = https://github.com/facebookresearch/GeoRT.git
 [submodule "crates/phiace/ext/BenchMARL"]
-	path = crates/phiace/ext/BenchMARL
+	path = crates/phiace/reference/BenchMARL
 	url = https://github.com/facebookresearch/BenchMARL.git
 [submodule "crates/phiace/ext/eai-vc"]
-	path = crates/phiace/ext/eai-vc
+	path = crates/phiace/reference/eai-vc
 	url = https://github.com/facebookresearch/eai-vc.git
 [submodule "crates/phiace/ext/project_superdex"]
-	path = crates/phiace/ext/project_superdex
+	path = crates/phiace/reference/project_superdex
 	url = https://github.com/facebookresearch/project_superdex.git
+[submodule "crates/phiphx/reference/momentum"]
+	path = crates/phiphx/reference/momentum
+	url = https://github.com/facebookresearch/momentum.git
+[submodule "crates/phiphx/reference/MHR"]
+	path = crates/phiphx/reference/MHR
+	url = https://github.com/facebookresearch/MHR.git
+[submodule "crates/phiphx/reference/omnifacerig"]
+	path = crates/phiphx/reference/omnifacerig
+	url = https://github.com/facebookresearch/omnifacerig.git
+[submodule "crates/phiphx/reference/actionmesh"]
+	path = crates/phiphx/reference/actionmesh
+	url = https://github.com/facebookresearch/actionmesh.git
+[submodule "crates/phiphx/reference/DiffAvatar"]
+	path = crates/phiphx/reference/DiffAvatar
+	url = https://github.com/facebookresearch/DiffAvatar.git
+[submodule "crates/phiphx/reference/sam-3d-body"]
+	path = crates/phiphx/reference/sam-3d-body
+	url = https://github.com/facebookresearch/sam-3d-body.git
+[submodule "crates/phiphx/reference/AGRoL"]
+	path = crates/phiphx/reference/AGRoL
+	url = https://github.com/facebookresearch/AGRoL.git
+[submodule "crates/phiphx/reference/meshtalk"]
+	path = crates/phiphx/reference/meshtalk
+	url = https://github.com/facebookresearch/meshtalk.git
+[submodule "crates/phiphx/reference/audio2photoreal"]
+	path = crates/phiphx/reference/audio2photoreal
+	url = https://github.com/facebookresearch/audio2photoreal.git
+[submodule "crates/phiphx/reference/CT2Hair"]
+	path = crates/phiphx/reference/CT2Hair
+	url = https://github.com/facebookresearch/CT2Hair.git
+[submodule "crates/phiphx/reference/goliath"]
+	path = crates/phiphx/reference/goliath
+	url = https://github.com/facebookresearch/goliath.git
+[submodule "crates/phiphx/reference/ava-256"]
+	path = crates/phiphx/reference/ava-256
+	url = https://github.com/facebookresearch/ava-256.git
+[submodule "crates/phiphx/reference/D3GA"]
+	path = crates/phiphx/reference/D3GA
+	url = https://github.com/facebookresearch/D3GA.git
+[submodule "crates/phiphx/reference/dva"]
+	path = crates/phiphx/reference/dva
+	url = https://github.com/facebookresearch/dva.git
+[submodule "crates/phiphx/reference/ca_body"]
+	path = crates/phiphx/reference/ca_body
+	url = https://github.com/facebookresearch/ca_body.git
+[submodule "crates/phiphx/reference/multiface"]
+	path = crates/phiphx/reference/multiface
+	url = https://github.com/facebookresearch/multiface.git
+[submodule "crates/phiphx/reference/UHM"]
+	path = crates/phiphx/reference/UHM
+	url = https://github.com/facebookresearch/UHM.git
+[submodule "crates/phiphx/reference/tava"]
+	path = crates/phiphx/reference/tava
+	url = https://github.com/facebookresearch/tava.git
+[submodule "crates/phiphx/reference/AnimalAvatar"]
+	path = crates/phiphx/reference/AnimalAvatar
+	url = https://github.com/facebookresearch/AnimalAvatar.git
+[submodule "crates/phiphx/reference/KeypointNeRF"]
+	path = crates/phiphx/reference/KeypointNeRF
+	url = https://github.com/facebookresearch/KeypointNeRF.git
+[submodule "crates/phiphx/reference/AutoAvatar"]
+	path = crates/phiphx/reference/AutoAvatar
+	url = https://github.com/facebookresearch/AutoAvatar.git
+[submodule "crates/phiphx/reference/DeepHandMesh"]
+	path = crates/phiphx/reference/DeepHandMesh
+	url = https://github.com/facebookresearch/DeepHandMesh.git
+[submodule "crates/phiphx/reference/VCMeshConv"]
+	path = crates/phiphx/reference/VCMeshConv
+	url = https://github.com/facebookresearch/VCMeshConv.git
+[submodule "crates/phiphx/reference/banmo"]
+	path = crates/phiphx/reference/banmo
+	url = https://github.com/facebookresearch/banmo.git
+[submodule "crates/phiphx/reference/vggt"]
+	path = crates/phiphx/reference/vggt
+	url = https://github.com/facebookresearch/vggt.git
+[submodule "crates/phiphx/reference/vggsfm"]
+	path = crates/phiphx/reference/vggsfm
+	url = https://github.com/facebookresearch/vggsfm.git
+[submodule "crates/phiphx/reference/map-anything"]
+	path = crates/phiphx/reference/map-anything
+	url = https://github.com/facebookresearch/map-anything.git
+[submodule "crates/phiphx/reference/fast3r"]
+	path = crates/phiphx/reference/fast3r
+	url = https://github.com/facebookresearch/fast3r.git
+[submodule "crates/phiphx/reference/mvdust3r"]
+	path = crates/phiphx/reference/mvdust3r
+	url = https://github.com/facebookresearch/mvdust3r.git
+[submodule "crates/phiphx/reference/sam-3d-objects"]
+	path = crates/phiphx/reference/sam-3d-objects
+	url = https://github.com/facebookresearch/sam-3d-objects.git
+[submodule "crates/phiphx/reference/DeepSDF"]
+	path = crates/phiphx/reference/DeepSDF
+	url = https://github.com/facebookresearch/DeepSDF.git
+[submodule "crates/phiphx/reference/iSDF"]
+	path = crates/phiphx/reference/iSDF
+	url = https://github.com/facebookresearch/iSDF.git
+[submodule "crates/phiphx/reference/meshrcnn"]
+	path = crates/phiphx/reference/meshrcnn
+	url = https://github.com/facebookresearch/meshrcnn.git
+[submodule "crates/phiphx/reference/meshflow"]
+	path = crates/phiphx/reference/meshflow
+	url = https://github.com/facebookresearch/meshflow.git
+[submodule "crates/phiphx/reference/Large-Sparse-Reconstruction-Model"]
+	path = crates/phiphx/reference/Large-Sparse-Reconstruction-Model
+	url = https://github.com/facebookresearch/Large-Sparse-Reconstruction-Model.git
+[submodule "crates/phiphx/reference/vfusion3d"]
+	path = crates/phiphx/reference/vfusion3d
+	url = https://github.com/facebookresearch/vfusion3d.git
+[submodule "crates/phiphx/reference/AutoPartGen"]
+	path = crates/phiphx/reference/AutoPartGen
+	url = https://github.com/facebookresearch/AutoPartGen.git
+[submodule "crates/phiphx/reference/MCC"]
+	path = crates/phiphx/reference/MCC
+	url = https://github.com/facebookresearch/MCC.git

@@ -3,7 +3,7 @@ name = "phiace"
 version = "0.1.0"
 edition = "2024"
 publish = false
-description = "The robotic system: the robot as words in the phiecs world. The Meta robotics frameworks are held beside it under ext/ as references."
+description = "The robotic system: the robot as words in the phiecs world. The Meta robotics frameworks are held beside it under reference/ as references."
 [dependencies]
 # The world a robot lives in: its body, sensors and goals are words and
 # relations, the same ECS phiplay and phiber run on.
