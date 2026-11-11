@@ -146,7 +146,7 @@ impl<'a> UsdaParser<'a> {
         let mut out = [0.0f64; 16];
         for slot in out.iter_mut() {
             self.skip_whitespace();
-            while matches!(self.peek(), Some('(') | Some(',')) {
+            while matches!(self.peek(), Some('(') | Some(')') | Some(',')) {
                 self.advance();
                 self.skip_whitespace();
             }

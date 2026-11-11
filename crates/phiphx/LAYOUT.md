@@ -1,4 +1,4 @@
-﻿# phiphx layout: scene files come in variants
+# phiphx layout: scene files come in variants
 
 A scene file comes in variants. `Phx` owns import and export and delegates to a
 **device**, the way Cycles delegates to render devices, without entangling them.
@@ -73,11 +73,11 @@ pub trait Device: Sync {
 
 | Current (`src/`) | Target | Phase |
 |---|---|---|
-| `import/usd.rs`, `import/usd/*` (importer, parse, scene, usda*, usdc, usdz, tests) | `device/usd/read/`, `device/usd/package/` (usdz), `device/usd/test/` | 1 |
-| `export/usd.rs`, `export/usd/{mesh,point_cloud,writer,tests}.rs` | `device/usd/write/` | 1 |
-| `export/usd/stage.rs`, `export/usd/stage/*` (SceneModel writer) | `device/usd/write/scene/` (`UsdStage` becomes `UsdSceneWriter`) | 1 |
-| `export/blend/script_usd.rs` (`BlenderScene::to_usda`) | `device/usd/write/script.rs` | 1 |
-| usdkit (`phikit/crates/apple/src/macos/usdkit`, copied) | `device/usd/{stage,prim,attribute,xform,error}.rs`, `read/`, `write/`, `package/`, `test/` | 1 |
+| `import/usd.rs`, `import/usd/*` (importer, parse, scene, usda*, usdc, usdz, tests) | `device/usd/read/mesh/` (heuristic readers, `usdc_fallback.rs`), `device/usd/package/mesh.rs`, `device/usd/test/import.rs`; `import/usd.rs` is now a `pub use` shim | 1 done |
+| `export/usd.rs`, `export/usd/{mesh,point_cloud,writer,tests}.rs` | `device/usd/write/{exporter,mesh,point_cloud,writer}.rs`, `test/export.rs`; `export/usd.rs` is a `pub use` shim | 1 done |
+| `export/usd/stage.rs`, `export/usd/stage/*` (SceneModel writer) | `device/usd/write/scene/` (`UsdStage` becomes `UsdSceneWriter`, old name re-exported; still writes text itself, not through the usdkit printer) | 1 done |
+| `export/blend/script_usd.rs` (`BlenderScene::to_usda`) | `device/usd/write/script.rs` | 1 done |
+| usdkit (`phikit/crates/apple/src/macos/usdkit`, copied) | `device/usd/{stage,prim,attribute,xform,error}.rs`, `read/`, `write/`, `package/`, `test/` (+ `matrix4d` value) | 1 done |
 | `blend/file/*` | `device/blend/file/` | 2 |
 | `blend/{mesh,object,curve,text,scene,asset (reader half)}` | `device/blend/read/<kind>/` | 2 |
 | `blend/write/*` | `device/blend/write/` | 2 |

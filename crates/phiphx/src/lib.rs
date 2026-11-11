@@ -7,6 +7,7 @@
 //! |---|---|
 //! | [`phx`] | `Phx` — open / peek / detect, progress, errors (`phx.rs`) |
 //! | [`scene`] | `SceneModel` — the runtime scene every view draws |
+//! | [`device`] | one device per scene-file variant (Device, DeviceList); USD is here, Blend and PHX follow (LAYOUT.md) |
 //! | [`blend`] | the native `.blend` reader (file, objects, meshes, materials, modifiers) |
 //! | [`import`] | other readers: glTF, USD, PLY, PHX, OBJ; asset router |
 //! | [`export`] | writers: PHX, glTF, USD, PLY, PCD, LAS, XYZ, JSON, binary, blend scripts |

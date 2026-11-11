@@ -9,7 +9,7 @@ fn make_usdz(usda_content: &str) -> Vec<u8> {
     let buf = Vec::new();
     let cursor = Cursor::new(buf);
     let mut zip_writer = zip::ZipWriter::new(cursor);
-    let options = zip::write::FileOptions::default()
+    let options = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Stored);
     zip_writer
         .start_file("scene.usda", options)
@@ -42,7 +42,7 @@ fn no_layer_found_error() {
     let buf = Vec::new();
     let cursor = Cursor::new(buf);
     let mut zip_writer = zip::ZipWriter::new(cursor);
-    let options = zip::write::FileOptions::default()
+    let options = zip::write::SimpleFileOptions::default()
         .compression_method(zip::CompressionMethod::Stored);
     zip_writer
         .start_file("texture.png", options)
