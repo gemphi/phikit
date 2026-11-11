@@ -12,6 +12,9 @@ members = [
     # The common layer every app stands on (`crates/appkit`): the GPU crates
     # below, puikit and the glass. Phiber is one app on it; a phiecs robotics
     # app is another. Only the crates something builds are members.
+    # Cycles in Rust: Blender's renderer ported top to bottom, session first.
+    # A second engine beside phiray; no dependencies yet.
+    "crates/cycles",
     "crates/appkit/gpu",
     "crates/appkit/gpu/gpui_macros",
     "crates/appkit/gpu/gpui_platform",
