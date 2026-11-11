@@ -15,11 +15,11 @@
 //!     │
 //!  graph        nodes and sockets: what every part of a scene is made of
 //!     │
-//!  device       what a device is asked for: so far, the denoiser's settings
+//!  device       the device contract, the CPU device, the denoiser's settings
 //!     │
 //!  kernel       the kernels a path moves between
 //!
-//!  util         the clock and the reader of `data/`, under all of them
+//!  blender      phiphx's scene into a Cycles scene (the join)\n//!  truth        gate 0: render a test scene, judge it against Blender's image\n//!\n//!  util         the clock and the reader of `data/`, under all of them
 //! ```
 //!
 //! Every file names the Cycles file it is ported from. A type keeps Cycles'

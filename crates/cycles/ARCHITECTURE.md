@@ -140,6 +140,22 @@ both ways (`kernel/integrator/state.h:69, 140`), and that is the shape to
 keep: one Rust definition, an array of structs on the CPU, a struct of
 arrays on the GPU.
 
+## Device and truth
+
+`device/` is Cycles' `device/` as a contract: `Device` (memory by handle:
+alloc, zero, copy to and from, free), `DeviceQueue` (enqueue a `DeviceKernel`
+over a work size with `KernelArgument`s, synchronize) and `DeviceVector<T>`.
+`CpuDevice` runs a kernel as a Rust function from a table, and a kernel with
+no body returns `NotPorted`. phiray's gpu layer will implement the same trait
+as a `WgpuDevice`, so one kernel is run on both and the buffers compared; the
+recipe is in [src/device/README.md](src/device/README.md).
+
+`truth/` is gate 0: a scene and its reference found by Blender's layout, a
+render through the session, `oiiotool --diff` reproduced from
+`render_report.py:125-205` (a pixel fails past T, a render fails when more than
+P per cent of pixels do, T and P from `cycles_render_tests.py:337-357`), and a
+verdict with its diff images. `blender/` is the join: phiphx's `SceneModel`,
+through one file (`blender/model.rs`), into a `Scene`.
 ## Pages
 
 The render as the Rust types run it: [FLOW.md](FLOW.md) · Folders, order and gates: [PLAN.md](PLAN.md) · What each part must do, with
