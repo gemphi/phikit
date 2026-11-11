@@ -10,8 +10,10 @@ description = "Cycles in Rust: Blender's renderer ported top to bottom, session 
 # in Cycles' own order: session, integrator, scene, kernel. FLOW.md shows the
 # render as these types run it; PLAN.md says which step is done.
 [dependencies]
+bytemuck = "1.18"
 
 # The tests are in `src/tests`, apart from the code and in the same folders.
 
 [lints]
 workspace = true
+

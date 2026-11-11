@@ -15,5 +15,5 @@ pub use scheduler::{
     resolution_for_divider, round_to_power_of_two,
 };
 pub use tile::{TileSize, WorkTileScheduler};
-pub use trace::{PathTrace, PathTraceWork, RenderStatistic, TraceHost, TraceState, scale_buffer_param, slice_buffer_param};
+pub use trace::{PathTrace, PathTraceWork, PathTraceWorkCpu, RenderStatistic, TraceHost, TILE_ARGUMENT, TraceState, scale_buffer_param, slice_buffer_param};
 pub use work::{RenderStep, RenderWork, WorkAdaptive, WorkDisplay, WorkPathTrace, WorkTile};

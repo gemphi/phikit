@@ -4,6 +4,7 @@
 //! tests of the session, render with.
 
 mod buffer;
+mod cpu;
 mod pipeline;
 mod slice;
 mod work;

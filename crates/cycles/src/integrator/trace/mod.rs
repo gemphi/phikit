@@ -9,10 +9,12 @@
 //! device; here one after another. Path guiding is not ported.
 
 mod buffer;
+mod cpu;
 mod pipeline;
 mod slice;
 mod work;
 
+pub use cpu::{PathTraceWorkCpu, TILE_ARGUMENT};
 pub use slice::{scale_buffer_param, slice_buffer_param};
 pub use work::{PathTraceWork, RenderStatistic, TraceHost};
 
