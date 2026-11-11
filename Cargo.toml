@@ -648,6 +648,19 @@ phiber = { opt-level = 0 }
 collections = { codegen-units = 1, opt-level = 3 }
 refineable = { codegen-units = 1, opt-level = 3 }
 
+# Tests of the two crates being edited. `[profile.dev.package]` builds
+# phiray and phiphx at opt-level 3 so phiber's viewport is fast in a dev
+# build, and `cargo test` inherits that: a one-file change in phiphx (about
+# 400 files) meant optimising the whole crate again before any test ran.
+# opt-level 1 keeps the truth tests over real .blend files quick to run
+# while compiling far faster. Dependencies stay at 3 and are shared with
+# the dev build, so only these two crates and what depends on them diverge.
+[profile.test.package.phiphx]
+opt-level = 1
+
+[profile.test.package.phiray]
+opt-level = 1
+
 [profile.release]
 debug = "limited"
 lto = "thin"
