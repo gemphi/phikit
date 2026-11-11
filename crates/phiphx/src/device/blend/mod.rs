@@ -3,6 +3,9 @@
 //! `crate::phx::Phx`; `BlendImporter` serves the asset pipeline.
 //! Status and next steps: `jobs.md` in this folder.
 
+use super::{Device, DeviceKind, Source};
+use crate::phx::{Peek, Progress};
+use crate::scene::{DeferredModifiers, SceneLoadError, SceneModel};
 use crate::Result;
 use std::path::Path;
 
@@ -10,6 +13,7 @@ use std::path::Path;
 mod anim;
 mod file;
 pub(crate) mod modifier;
+pub(crate) mod open;
 pub mod read;
 pub mod rig;
 pub mod shade;
@@ -190,7 +194,59 @@ impl BlendImporter {
     }
 }
 
-#[cfg(test)]
+/// The Blend variant of a scene file.
+pub struct BlendDevice;
+impl Device for BlendDevice {
+    fn kind(&self) -> DeviceKind {
+        DeviceKind::Blend
+    }
+    fn extension(&self) -> &'static [&'static str] {
+        &["blend"]
+    }
+    /// `BLENDER` (plain, any header version) or the zstd frame magic of a
+    /// compressed save (Blender 3.0+ writes either).
+    fn detect(&self, head: &[u8]) -> bool {
+        head.starts_with(b"BLENDER") || head.starts_with(&[0x28, 0xB5, 0x2F, 0xFD])
+    }
+    fn peek(&self, bytes: &[u8]) -> Result<Peek> {
+        BlendFile::quick_info_bytes(bytes)
+    }
+    /// Evaluated, as `Phx::open` gives it. With a path, images resolve beside
+    /// the file; from bytes alone they read as missing (packed ones still load).
+    fn read(&self, source: &Source, progress: Progress) -> std::result::Result<SceneModel, SceneLoadError> {
+        match source.path {
+            Some(path) => {
+                set_image_source(path);
+                open::blend(path, progress)
+            }
+            None => {
+                clear_image_source();
+                open::blend_bytes(source.name, source.bytes, progress)
+            }
+        }
+    }
+    fn read_progressive(
+        &self,
+        source: &Source,
+        progress: Progress,
+    ) -> std::result::Result<(SceneModel, Option<DeferredModifiers>), SceneLoadError> {
+        match source.path {
+            Some(path) => {
+                set_image_source(path);
+                with_progressive_open(|| open::blend_progressive(path, progress))
+            }
+            None => {
+                clear_image_source();
+                with_progressive_open(|| open::blend_progressive_bytes(source.name, source.bytes, progress))
+            }
+        }
+    }
+    /// A scene is not written back as a `.blend`: the writer edits an existing
+    /// file (`write`), and a `SceneModel` carries no Blender data blocks.
+    fn write(&self, _scene: &SceneModel) -> std::result::Result<Vec<u8>, SceneLoadError> {
+        Err(SceneLoadError::Unsupported("a scene cannot be written as .blend; edit an existing file with write::".to_string()))
+    }
+}#[cfg(test)]
 #[path = "test/file.rs"]
 mod file_tests;
 
