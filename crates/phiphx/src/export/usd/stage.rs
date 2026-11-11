@@ -39,7 +39,7 @@ mod texture;
 mod tree;
 mod world;
 #[cfg(test)]
-mod tests;
+mod test;
 
 use crate::scene::SceneModel;
 use material::MaterialBook;
