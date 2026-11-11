@@ -2,7 +2,7 @@
 //! `SceneEmpty`, from the DNA read by `importer::blend::object_data`.
 
 use super::{SceneCamera, SceneEmpty, SceneLight};
-use crate::blend::{BlendObjectData, BlendSceneObject};
+use crate::device::blend::{BlendObjectData, BlendSceneObject};
 
 pub(super) fn camera_from_blend(obj: &BlendSceneObject) -> SceneCamera {
     let mut cam = SceneCamera {

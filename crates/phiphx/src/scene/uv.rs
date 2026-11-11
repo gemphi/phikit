@@ -15,7 +15,7 @@ pub struct SceneUvMap {
 impl SceneUvMap {
     /// The map of `obj`, or an empty one when it carries no UVs (or not
     /// one per corner).
-    pub fn of(obj: &crate::blend::BlendSceneObject) -> Self {
+    pub fn of(obj: &crate::device::blend::BlendSceneObject) -> Self {
         if obj.loop_uvs.is_empty() || obj.loop_uvs.len() != obj.faces.corners() {
             return Self::default();
         }

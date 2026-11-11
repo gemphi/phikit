@@ -3,7 +3,7 @@
 //! looks down `-viewinv[2]` at the pivot `-ofs`, `dist` away; `persp` 0 =
 //! ortho, 1 = perspective, 2 = through `Scene.camera`.
 
-use crate::blend::{BlendSceneObject, BlendUiState, RV3D_CAMOB, RV3D_ORTHO};
+use crate::device::blend::{BlendSceneObject, BlendUiState, RV3D_CAMOB, RV3D_ORTHO};
 
 /// Blender viewport sensor (`DEFAULT_SENSOR_WIDTH`) × initial zoom (2) over
 /// the default lens (50 mm): visible width ≈ `VIEW_WIDTH_PER_DIST * dist`
@@ -39,10 +39,10 @@ pub struct SceneView {
     /// Solid's Lighting, Color and Background as the view had them.
     pub solid_shade: Option<SceneSolidShade>,
     /// The Overlays and Gizmos popovers' switches, by RNA name.
-    pub overlay: crate::blend::BlendOverlay,
+    pub overlay: crate::device::blend::BlendOverlay,
     /// The view's own render region, outside the camera view
     /// (`View3D.render_border`, `use_render_border`).
-    pub border: crate::blend::BlendViewBorder,
+    pub border: crate::device::blend::BlendViewBorder,
 }
 
 /// `View3DShading`'s X-ray: Solid's switch and alpha (`show_xray`,
@@ -57,7 +57,7 @@ pub struct SceneXray {
 
 impl SceneXray {
     /// `V3D_SHADING_XRAY` and `V3D_SHADING_XRAY_WIREFRAME` with their alphas.
-    pub fn of(sh: &crate::blend::BlendShading) -> Self {
+    pub fn of(sh: &crate::device::blend::BlendShading) -> Self {
         Self { solid: sh.flag & (1 << 1) != 0, alpha: sh.xray_alpha[0], wireframe: sh.flag & (1 << 8) != 0, alpha_wireframe: sh.xray_alpha[1] }
     }
 }
@@ -91,7 +91,7 @@ impl SceneSolidFx {
     /// `V3D_SHADING_OBJECT_OUTLINE`, `_CAVITY`, `_SHADOW`, `_BACKFACE_CULLING`,
     /// `_SPECULAR_HIGHLIGHT`, `_DEPTH_OF_FIELD`; the RNA names of
     /// `eView3DShading_CavityType`.
-    pub fn of(sh: &crate::blend::BlendShading) -> Self {
+    pub fn of(sh: &crate::device::blend::BlendShading) -> Self {
         Self {
             outline: sh.flag & 1 != 0,
             outline_color: sh.outline_color,
@@ -129,7 +129,7 @@ pub struct SceneSolidShade {
 impl SceneSolidShade {
     /// The RNA items of `eV3DShadingLightingMode`, `eV3DShadingColorType`
     /// and `eV3DShadingBackgroundType`; `V3D_SHADING_MATCAP_FLIP_X`.
-    pub fn of(sh: &crate::blend::BlendShading) -> Self {
+    pub fn of(sh: &crate::device::blend::BlendShading) -> Self {
         Self {
             light: match sh.light { 0 => "FLAT", 2 => "MATCAP", _ => "STUDIO" },
             matcap: sh.matcap.clone(),
@@ -175,7 +175,7 @@ pub(super) fn ui_from_blend(ui: &BlendUiState, objects: &[BlendSceneObject]) -> 
                 let bz = c.matrix_world[2];
                 let n = (bz[0] * bz[0] + bz[1] * bz[1] + bz[2] * bz[2]).sqrt().max(1e-9);
                 let eye = c.matrix_world[3];
-                if let crate::blend::BlendObjectData::Camera(d) = &c.data {
+                if let crate::device::blend::BlendObjectData::Camera(d) = &c.data {
                     perspective = d.kind != 1;
                     fov = d.sensor_x.max(1e-3) / d.lens.max(1e-3);
                     width = if perspective { v.dist * fov } else { d.ortho_scale };
@@ -233,7 +233,7 @@ mod tests {
 
     #[test]
     fn the_solid_effects_read_their_flag_bits() {
-        let sh = crate::blend::BlendShading { flag: (1 << 0) | (1 << 2) | (1 << 10) | (1 << 11), ..Default::default() };
+        let sh = crate::device::blend::BlendShading { flag: (1 << 0) | (1 << 2) | (1 << 10) | (1 << 11), ..Default::default() };
         let fx = SceneSolidFx::of(&sh);
         assert!(fx.outline && fx.shadow && fx.backface_culling && fx.dof && !fx.cavity && !fx.specular);
         assert!(!SceneSolidFx::of(&Default::default()).dof, "Blender's default view has no depth of field");

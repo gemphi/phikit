@@ -3,7 +3,7 @@
 //! `BlenderScene` is the flat record a Blender-side script hands over; the
 //! writer of record is [`UsdSceneWriter`](super::scene::UsdSceneWriter) over a
 //! `SceneModel`, so this turns the record into one and lets it write.
-use crate::export::blend::types::{BlenderLightType, BlenderScene, CameraData, CameraType, LightData, MaterialData, MeshObjectData};
+use crate::device::blend::write::script::types::{BlenderLightType, BlenderScene, CameraData, CameraType, LightData, MaterialData, MeshObjectData};
 use crate::scene::{SceneCamera, SceneCollection, SceneLight, SceneMaterial, SceneMesh, SceneModel, SceneNormals, SceneObject};
 use crate::Result;
 use std::sync::Arc;
@@ -128,16 +128,16 @@ impl BlenderScene {
     /// The record's collections as a tree under one top collection: those
     /// no other collection lists as a child are its children.
     fn collection_tree(&self) -> Vec<SceneCollection> {
-        let node = |c: &crate::export::blend::types::CollectionData| SceneCollection {
+        let node = |c: &crate::device::blend::write::script::types::CollectionData| SceneCollection {
             name: c.name.clone(),
             object_indices: c.object_names.iter().filter_map(|n| self.meshes.iter().position(|m| &m.name == n)).collect(),
             extra_names: c.object_names.iter().filter(|n| self.lights.iter().any(|l| &l.name == *n) || self.camera.as_ref().is_some_and(|k| &k.name == *n)).cloned().collect(),
             ..Default::default()
         };
         let listed: std::collections::HashSet<&String> = self.collections.iter().flat_map(|c| &c.child_collection_names).collect();
-        let build = |c: &crate::export::blend::types::CollectionData| -> SceneCollection {
+        let build = |c: &crate::device::blend::write::script::types::CollectionData| -> SceneCollection {
             // Depth is bounded by the number of collections, so a cycle ends.
-            fn go(s: &BlenderScene, c: &crate::export::blend::types::CollectionData, node: &dyn Fn(&crate::export::blend::types::CollectionData) -> SceneCollection, left: usize) -> SceneCollection {
+            fn go(s: &BlenderScene, c: &crate::device::blend::write::script::types::CollectionData, node: &dyn Fn(&crate::device::blend::write::script::types::CollectionData) -> SceneCollection, left: usize) -> SceneCollection {
                 let mut out = node(c);
                 if left > 0 {
                     out.children = c.child_collection_names.iter().filter_map(|n| s.collections.iter().find(|k| &k.name == n)).map(|k| go(s, k, node, left - 1)).collect();

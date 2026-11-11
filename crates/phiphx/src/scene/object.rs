@@ -6,11 +6,11 @@ use super::SceneCorners;
 use super::material::materials_from_blend;
 use super::polyfill::triangulate;
 use super::{SceneMesh, SceneNormals, SceneObject};
-use crate::blend::BlendSceneObject;
+use crate::device::blend::BlendSceneObject;
 
 /// The triangles `src` is drawn with — its modifier-evaluated mesh's when
 /// given, as [`evaluated_object`] makes them.
-pub(super) fn evaluated_triangles(src: &BlendSceneObject, eval: Option<&crate::blend::BlendEvalMesh>) -> STriangles {
+pub(super) fn evaluated_triangles(src: &BlendSceneObject, eval: Option<&crate::device::blend::BlendEvalMesh>) -> STriangles {
     match eval {
         Some(e) => STriangles::of(&BlendSceneObject {
             vertices: e.vertices.clone(),
@@ -28,18 +28,18 @@ pub(super) fn evaluated_triangles(src: &BlendSceneObject, eval: Option<&crate::b
 /// An evaluated mesh's corner normals when it has sharp edges that split
 /// them (`Mesh::corner_normals`, `modifier/nodes_corners.rs`); empty
 /// otherwise, which draws the smooth vertex normals as before.
-fn eval_corner_normals(e: &crate::blend::BlendEvalMesh) -> Vec<[f32; 3]> {
+fn eval_corner_normals(e: &crate::device::blend::BlendEvalMesh) -> Vec<[f32; 3]> {
     let splits = e.sharp_edges.iter().any(|&(a, b)| (a as usize) < e.vertices.len() && (b as usize) < e.vertices.len());
     if !splits || !e.face_smooth.iter().any(|&s| s) {
         return Vec::new();
     }
-    crate::blend::modifier::nodes_corners::corner_normals(e)
+    crate::device::blend::modifier::nodes_corners::corner_normals(e)
 }
 
 /// Convert one `BlendSceneObject`, drawing the modifier-evaluated mesh when
 /// given; saved split normals describe the rest mesh, so an evaluated mesh
 /// recomputes its normals.
-pub(super) fn evaluated_object(src: &BlendSceneObject, eval: Option<&crate::blend::BlendEvalMesh>) -> SceneObject {
+pub(super) fn evaluated_object(src: &BlendSceneObject, eval: Option<&crate::device::blend::BlendEvalMesh>) -> SceneObject {
     evaluated_object_and_tris(src, eval, false).0
 }
 
@@ -50,7 +50,7 @@ pub(super) fn evaluated_object(src: &BlendSceneObject, eval: Option<&crate::blen
 /// one triangulation serves both rather than the mesh being cut twice.
 pub(super) fn evaluated_object_and_tris(
     src: &BlendSceneObject,
-    eval: Option<&crate::blend::BlendEvalMesh>,
+    eval: Option<&crate::device::blend::BlendEvalMesh>,
     keep: bool,
 ) -> (SceneObject, Option<STriangles>) {
     let owned;
@@ -149,7 +149,7 @@ impl STriangles {
     /// Triangulation of a modifier-evaluated mesh whose topology may have
     /// changed (a driven Subdivision level). No saved normals — every
     /// frame recomputes.
-    pub(super) fn from_eval(eval: &crate::blend::BlendEvalMesh) -> Self {
+    pub(super) fn from_eval(eval: &crate::device::blend::BlendEvalMesh) -> Self {
         let vertices = &eval.vertices;
         let vert_count = vertices.len();
         let mut t = Self::default();

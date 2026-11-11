@@ -270,7 +270,7 @@ mod tests {
 /// Decode each material's base-colour image once; returns the keys that
 /// could not be found (Blender logs these as missing images).
 /// The world's environment image, decoded the way surface textures are.
-pub(super) fn environment(p: &crate::blend::BlendSceneProps, source_path: &str) -> Option<SceneEnvironment> {
+pub(super) fn environment(p: &crate::device::blend::BlendSceneProps, source_path: &str) -> Option<SceneEnvironment> {
     // A Sky Texture is an environment image too: Blender bakes it rather
     // than evaluating it per ray (`node_shader_tex_sky.cc`), so baking it
     // here hands the sky to the one path that already carries a dome
@@ -301,7 +301,7 @@ pub(super) fn environment(p: &crate::blend::BlendSceneProps, source_path: &str) 
 /// the answer nowhere in it, so the tally leads with the folders owed and
 /// keeps Blender's lines as evidence (`texture_miss.rs`, which carries the
 /// reasoning and the divergence).
-pub(super) fn attach(objects: &mut [super::SceneObject], p: &crate::blend::BlendSceneProps, source_path: &str) -> Vec<String> {
+pub(super) fn attach(objects: &mut [super::SceneObject], p: &crate::device::blend::BlendSceneProps, source_path: &str) -> Vec<String> {
     let blend = std::path::Path::new(source_path);
     let mut cache = TextureCache::new(&p.packed_images, Some(blend));
     let mut missing = super::texture_miss::BMissingTexture::default();
@@ -311,7 +311,7 @@ pub(super) fn attach(objects: &mut [super::SceneObject], p: &crate::blend::Blend
     // crystal caves city ran 3,101 bakes for 89 distinct ones, ten minutes
     // of its open, and kept every copy. A list, not a map: `BlendBake` holds
     // floats, so it is `PartialEq` and no more, and there are few of them.
-    let mut baked: Vec<(crate::blend::shade::bake::BlendBake, Option<(SceneTexture, Option<[[f32; 3]; 2]>)>)> = Vec::new();
+    let mut baked: Vec<(crate::device::blend::shade::bake::BlendBake, Option<(SceneTexture, Option<[[f32; 3]; 2]>)>)> = Vec::new();
     for m in objects.iter_mut().flat_map(|o| o.materials.iter_mut()) {
         if let Some((key, _)) = m.normal_texture.clone() {
             m.normal_map = cache.get(&key);
@@ -369,8 +369,8 @@ const BAKE_GRID: u32 = 512;
 /// separately for the mesh's UVs. Several: the program over the UV unit
 /// square, each image sampled through its own affine. `None` when no source
 /// image resolved, so the caller falls back to the folded tint.
-fn run_bake(bake: &crate::blend::shade::bake::BlendBake, cache: &mut TextureCache) -> Option<(SceneTexture, Option<[[f32; 3]; 2]>)> {
-    use crate::blend::shade::bake as b;
+fn run_bake(bake: &crate::device::blend::shade::bake::BlendBake, cache: &mut TextureCache) -> Option<(SceneTexture, Option<[[f32; 3]; 2]>)> {
+    use crate::device::blend::shade::bake as b;
     let srcs: Vec<Option<SceneTexture>> = bake.images.iter().map(|i| cache.get(&i.key).map(|t| if i.straight { t } else { t.associated() })).collect();
     srcs.iter().any(Option::is_some).then_some(())?;
     if let (Some(one), Some(Some(src))) = (bake.single(), srcs.first()) {

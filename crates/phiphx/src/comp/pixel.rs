@@ -5,7 +5,7 @@
 //! space. Nothing here looks at a neighbour, a frame, or the image's size —
 //! that is the whole reason the compositor can run as `eval.rs` runs it.
 
-use crate::blend::shade::blend::{hsv_to_rgb, rgb_to_hsv};
+use crate::device::blend::shade::blend::{hsv_to_rgb, rgb_to_hsv};
 
 /// A pixel in flight.
 pub type BCompPixel = [f32; 4];
@@ -179,6 +179,6 @@ pub fn alpha_over(bg: BCompPixel, fg: BCompPixel, factor: f32, straight: bool, m
 /// the first input's alpha through every mode, exactly as a material's Mix
 /// does (`shade::blend::mix`, which this calls).
 pub fn mix(mode: i32, factor: f32, a: BCompPixel, b: BCompPixel, clamp: bool) -> BCompPixel {
-    let out = crate::blend::shade::blend::mix(mode.clamp(0, 255) as u8, factor, a, b);
+    let out = crate::device::blend::shade::blend::mix(mode.clamp(0, 255) as u8, factor, a, b);
     if clamp { out.map(|x| x.clamp(0.0, 1.0)) } else { out }
 }

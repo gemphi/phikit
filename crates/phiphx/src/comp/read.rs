@@ -28,7 +28,7 @@
 use super::node::BCompKind;
 use super::tree::BCompTree;
 use super::node::BCompSet;
-use crate::blend::{BlendFile, DnaType};
+use crate::device::blend::{BlendFile, DnaType};
 
 /// `R_DOCOMP` (`DNA_scene_types.h:769`): Post Processing ▸ Compositing.
 pub const R_DOCOMP: i32 = 1 << 6;
@@ -94,9 +94,9 @@ impl BlendFile {
     /// than a missing field. `CompositorNodeMixRGB` in an older file does
     /// keep it in `custom1`, with Clamp Result in `custom2`'s bit 1, so
     /// both are read and the storage wins where there is storage.
-    fn settings_of(&self, graph: &crate::blend::shade::graph::BlendNodeGraph, dna: &DnaType) -> Vec<(String, BCompSet)> {
+    fn settings_of(&self, graph: &crate::device::blend::shade::graph::BlendNodeGraph, dna: &DnaType) -> Vec<(String, BCompSet)> {
         let ps = self.header.pointer_size as usize;
-        let i8_at = |block: &crate::blend::BlendBlock, field: &str| {
+        let i8_at = |block: &crate::device::blend::BlendBlock, field: &str| {
             Self::struct_field_offset_exact("NodeShaderMix", field, dna, ps)
                 .and_then(|o| block.data.get(o))
                 .map(|b| i32::from(*b as i8))
@@ -129,9 +129,9 @@ impl BCompTree {
     /// `NODE_DO_OUTPUT`. A Viewer is the last resort: a tree with only a
     /// Viewer on the end is what the Image editor's Viewer Node pass shows,
     /// and a reader that insisted on a Composite found no output in it.
-    pub(super) fn output_of(graph: &crate::blend::shade::graph::BlendNodeGraph) -> Option<String> {
-        let kind = |n: &crate::blend::shade::graph::BlendNode| BCompKind::of(&n.idname);
-        let composite = |n: &&crate::blend::shade::graph::BlendNode| kind(n) == BCompKind::Composite;
+    pub(super) fn output_of(graph: &crate::device::blend::shade::graph::BlendNodeGraph) -> Option<String> {
+        let kind = |n: &crate::device::blend::shade::graph::BlendNode| BCompKind::of(&n.idname);
+        let composite = |n: &&crate::device::blend::shade::graph::BlendNode| kind(n) == BCompKind::Composite;
         graph
             .nodes
             .iter()

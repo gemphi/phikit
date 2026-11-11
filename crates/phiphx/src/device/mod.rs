@@ -4,6 +4,7 @@
 //! Like Cycles' render devices, they share one contract and know nothing of
 //! each other. The list and its fixed order are in [`list`]; the layout and
 //! the phases that fill it are in `LAYOUT.md`.
+pub mod blend;
 pub mod list;
 pub mod usd;
 

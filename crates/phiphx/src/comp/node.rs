@@ -13,8 +13,8 @@
 //! node there carries a `node_build_multi_function` that is its CPU
 //! implementation; those lambdas are what `pixel.rs` holds.
 
-use crate::blend::shade::graph::BlendNode;
-use crate::blend::shade::socket::BSocketDefault;
+use crate::device::blend::shade::graph::BlendNode;
+use crate::device::blend::shade::socket::BSocketDefault;
 
 /// A compositor node, by what it does to a pixel.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -131,7 +131,7 @@ pub trait BCompSetting {
 }
 
 /// The first available input socket under any of `id`.
-fn input_of<'a>(node: &'a BlendNode, id: &[&str]) -> Option<&'a crate::blend::shade::socket::BlendSocket> {
+fn input_of<'a>(node: &'a BlendNode, id: &[&str]) -> Option<&'a crate::device::blend::shade::socket::BlendSocket> {
     id.iter()
         .find_map(|want| node.inputs.iter().find(|s| s.available() && s.identifier == *want))
         .or_else(|| id.iter().find_map(|want| node.inputs.iter().find(|s| s.available() && s.name == *want)))

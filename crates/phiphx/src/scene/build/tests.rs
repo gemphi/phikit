@@ -1,6 +1,6 @@
 use super::*;
-use crate::blend::BPlay;
-use crate::blend::rig::BRigState;
+use crate::device::blend::BPlay;
+use crate::device::blend::rig::BRigState;
 use super::super::SceneMesh;
 
 /// The two-bone figure (`tests/fixtures/make_skin_rig.py`).
@@ -16,7 +16,7 @@ struct Bend {
 }
 
 impl BPlay for Bend {
-    fn rig(&self, rig: &crate::blend::rig::BRig, frame: f32) -> Option<BRigState> {
+    fn rig(&self, rig: &crate::device::blend::rig::BRig, frame: f32) -> Option<BRigState> {
         let mut state = rig.rest_state();
         if frame >= 10.0 {
             let half = std::f32::consts::FRAC_PI_4;

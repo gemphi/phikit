@@ -10,7 +10,7 @@ use super::{
     SceneAction, SceneCamera, SceneLight, SceneModel,
     SceneDisplayShading, SceneObject, SceneRender, SceneShadow, SceneSsao, SceneTimeline, SceneWorld,
 };
-use crate::blend::BlendScene;
+use crate::device::blend::BlendScene;
 use super::import_extras::{camera_from_blend, empty_from_blend, light_from_blend};
 
 /// Map an imported [`BlendScene`] into a renderable [`SceneModel`].
@@ -48,7 +48,7 @@ pub fn from_blend(blend: &BlendScene, source_path: &str) -> SceneModel {
 }
 
 /// `raw` is consumed: each object's buffers are dropped once it is converted.
-fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_path: &str) -> SceneModel {
+fn build(raw: Vec<crate::device::blend::BlendSceneObject>, blend: &BlendScene, source_path: &str) -> SceneModel {
     let mut mesh_jobs: Vec<usize> = Vec::new();
     let mut cameras: Vec<SceneCamera> = Vec::new();
     let mut lights: Vec<SceneLight> = Vec::new();
@@ -149,7 +149,7 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
         .filter(|(i, _)| wanted.contains(i))
         .map(|(i, obj)| match shared[i] {
             Some(_) => {
-                let bare = crate::blend::BlendSceneObject { vertices: Vec::new(), faces: Default::default(), loop_uvs: Vec::new(), loop_colors: Vec::new(), loop_normals: Vec::new(), ..obj };
+                let bare = crate::device::blend::BlendSceneObject { vertices: Vec::new(), faces: Default::default(), loop_uvs: Vec::new(), loop_colors: Vec::new(), loop_normals: Vec::new(), ..obj };
                 (evaluated_object(&bare, None), std::sync::Arc::default())
             }
             None => (evaluated_object(&obj, blend.props.evaluated.get(&i)), std::sync::Arc::new(super::SceneUvMap::of(&obj))),
@@ -264,7 +264,7 @@ fn build(raw: Vec<crate::blend::BlendSceneObject>, blend: &BlendScene, source_pa
 
 /// `(child, parent)` names from each object's `*parent` pointer; a parent
 /// outside the scene's objects is left out.
-fn parents_of(raw: &[crate::blend::BlendSceneObject]) -> Vec<(String, String)> {
+fn parents_of(raw: &[crate::device::blend::BlendSceneObject]) -> Vec<(String, String)> {
     let by_addr: std::collections::HashMap<u64, &str> =
         raw.iter().filter(|o| o.block_address != 0).map(|o| (o.block_address, o.name.as_str())).collect();
     raw.iter()

@@ -14,7 +14,7 @@
 use super::node::{sock, BCompKind, BCompSet, BCompSetting};
 use super::pixel::{self, BCompPixel};
 use super::tree::BCompTree;
-use crate::blend::shade::graph::BlendNode;
+use crate::device::blend::shade::graph::BlendNode;
 
 /// The tree resolved to a straight-line program.
 pub struct BCompPlan<'a> {
@@ -165,7 +165,7 @@ impl BCompPlan<'_> {
     /// An RGB or Value node's constant: the value is on its *output*
     /// socket, not on an input row.
     fn constant(&self, node: &BlendNode) -> BCompPixel {
-        use crate::blend::shade::socket::BSocketDefault;
+        use crate::device::blend::shade::socket::BSocketDefault;
         match node.outputs.first().and_then(|s| s.default.as_ref()) {
             Some(BSocketDefault::Color(c)) => *c,
             Some(BSocketDefault::Float(v)) => [*v, *v, *v, 1.0],

@@ -1,7 +1,7 @@
 //! Unified asset importer — the **single entry point** for all format imports.
 
 use super::FileFormat;
-use crate::blend::BlendImporter;
+use crate::device::blend::BlendImporter;
 #[cfg(feature = "gltf-import")]
 use super::gltf::GltfImporter;
 use super::phx::PhxImporter;

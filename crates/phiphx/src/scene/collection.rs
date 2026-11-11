@@ -5,7 +5,7 @@
 //! `LayerCollection` exclude / hide flags folded in, and the `Base` flags
 //! (selected / hidden / active) per object. Pure data, kit-agnostic.
 
-use crate::blend::{BlendCollection, BlendScene};
+use crate::device::blend::{BlendCollection, BlendScene};
 
 /// One collection node. `object_indices` index into `SceneModel::objects`
 /// **after** cameras and lights were partitioned out, so they are remapped
@@ -23,7 +23,7 @@ pub struct SceneCollection {
     /// `LAYER_COLLECTION_HIDE` — eye closed in the outliner.
     pub hide_viewport: bool,
     /// `Collection.flag`: the monitor, the arrow and the camera toggles.
-    pub visibility: crate::blend::BlendVisibility,
+    pub visibility: crate::device::blend::BlendVisibility,
 }
 
 /// Selection / visibility state of `SceneModel::objects`.
@@ -45,7 +45,7 @@ pub struct SceneSelection {
 /// cameras / lights (they live in `cameras` / `lights`).
 pub(super) fn collections_from_blend(
     blend: &BlendScene,
-    objects: &[crate::blend::BlendSceneObject],
+    objects: &[crate::device::blend::BlendSceneObject],
     remap: &[Option<usize>],
 ) -> Vec<SceneCollection> {
     blend
@@ -55,7 +55,7 @@ pub(super) fn collections_from_blend(
         .collect()
 }
 
-fn collection_node(c: &BlendCollection, objects: &[crate::blend::BlendSceneObject], remap: &[Option<usize>]) -> SceneCollection {
+fn collection_node(c: &BlendCollection, objects: &[crate::device::blend::BlendSceneObject], remap: &[Option<usize>]) -> SceneCollection {
     let mut object_indices = Vec::new();
     let mut extra_names = Vec::new();
     for &bi in &c.object_indices {
@@ -79,7 +79,7 @@ fn collection_node(c: &BlendCollection, objects: &[crate::blend::BlendSceneObjec
     }
 }
 
-pub(super) fn selection_from_blend(blend: &BlendScene, objects: &[crate::blend::BlendSceneObject]) -> SceneSelection {
+pub(super) fn selection_from_blend(blend: &BlendScene, objects: &[crate::device::blend::BlendSceneObject]) -> SceneSelection {
     let name = |i: &usize| objects.get(*i).map(|o| o.name.clone());
     SceneSelection {
         view_layer: blend.props.view_layer_name.clone(),

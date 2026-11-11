@@ -17,7 +17,7 @@ use super::object::{STriangles, evaluated_object_and_tris};
 use super::share::shared_object;
 use super::progressive_links::{parent_links, vertex_parent_of};
 use super::{SceneModel, SceneObject};
-use crate::blend::{BlendScene, BlendSceneObject, DeferredRaw, apply_eval_jobs, vertex_children_worlds};
+use crate::device::blend::{BlendScene, BlendSceneObject, DeferredRaw, apply_eval_jobs, vertex_children_worlds};
 use std::sync::Arc;
 
 /// The modifier work of a progressively-opened scene, not yet applied. Owned

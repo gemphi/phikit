@@ -37,7 +37,7 @@ pub struct SceneWorld {
     pub horizon_color: [f32; 3],
     /// The Background node that lights the render: colour × strength, the
     /// environment image behind it and its Z rotation.
-    pub background: crate::blend::BlendWorld,
+    pub background: crate::device::blend::BlendWorld,
     /// Decoded environment image (linear float RGB, equirectangular), when
     /// the file names one and it could be found.
     pub environment: Option<super::texture::SceneEnvironment>,
@@ -64,7 +64,7 @@ pub struct SceneRender {
     /// `scene["cycles"]` — the Cycles add-on's saved settings. Only values
     /// that differ from the RNA default are in the file, so a missing entry
     /// means "the default", not "zero".
-    pub cycles: crate::blend::BIdGroup,
+    pub cycles: crate::device::blend::BIdGroup,
     pub resolution_x: i32,
     pub resolution_y: i32,
     /// `Scene.r.size` — percentage of `resolution_[x,y]` actually rendered.
@@ -82,13 +82,13 @@ pub struct SceneRender {
     pub film_transparent: bool,
     /// Properties → Output: where a render is written and in what format
     /// (`blend/scene/output.rs`).
-    pub output: crate::blend::BlendOutput,
+    pub output: crate::device::blend::BlendOutput,
     /// The render region (`Scene.r.border` and its mode bits).
-    pub border: crate::blend::BlendRenderBorder,
+    pub border: crate::device::blend::BlendRenderBorder,
     /// Output → Encoding (`BlendMovie`), for FFmpeg Video.
-    pub movie: crate::blend::BlendMovie,
+    pub movie: crate::device::blend::BlendMovie,
     /// Which render passes the view layer asks for (`blend/scene/pass.rs`).
-    pub pass: crate::blend::BlendPassSet,
+    pub pass: crate::device::blend::BlendPassSet,
     /// Workbench's SSAO settings (`Scene.display`).
     pub ssao: SceneSsao,
     /// Workbench's shadow settings (`Scene.display`).
@@ -113,12 +113,12 @@ pub struct SceneDisplayShading {
 
 impl Default for SceneDisplayShading {
     fn default() -> Self {
-        Self::of(&crate::blend::BlendShading::default(), 8)
+        Self::of(&crate::device::blend::BlendShading::default(), 8)
     }
 }
 
 impl SceneDisplayShading {
-    pub fn of(sh: &crate::blend::BlendShading, render_aa: i16) -> Self {
+    pub fn of(sh: &crate::device::blend::BlendShading, render_aa: i16) -> Self {
         Self {
             shading: if sh.ty == 2 { "wireframe" } else { "solid" },
             xray: super::SceneXray::of(sh),
@@ -208,9 +208,9 @@ pub struct SceneAction {
     /// Objects whose animation data points at this action.
     pub users: Vec<String>,
     /// Every F-curve, with its keys and Graph-editor colour state.
-    pub curves: Vec<crate::blend::BFCurve>,
+    pub curves: Vec<crate::device::blend::BFCurve>,
     /// The slots, each with its run of `curves` (`ActionSlot`).
-    pub slots: Vec<crate::blend::BlendActionSlot>,
+    pub slots: Vec<crate::device::blend::BlendActionSlot>,
     /// `(object, slot handle)` per user.
     pub bindings: Vec<(String, i32)>,
     /// Manual Frame Range, when on: `(frame_start, frame_end)`.
@@ -221,10 +221,10 @@ pub struct SceneAction {
 
 /// One animated object's NLA as the NLA editor lists it: the action line
 /// and the tracks with their strips (`blend/anim/nla.rs`).
-pub type SceneNla = crate::blend::BlendNla;
+pub type SceneNla = crate::device::blend::BlendNla;
 
 /// One driven object's driver F-curves (`AnimData.drivers`).
-pub type SceneDrivers = crate::blend::BlendDrivers;
+pub type SceneDrivers = crate::device::blend::BlendDrivers;
 
 impl SceneAction {
     pub fn used_by(&self, object: &str) -> bool {
@@ -232,18 +232,18 @@ impl SceneAction {
     }
 
     /// The slot with `handle`.
-    pub fn slot(&self, handle: i32) -> Option<&crate::blend::BlendActionSlot> {
+    pub fn slot(&self, handle: i32) -> Option<&crate::device::blend::BlendActionSlot> {
         self.slots.iter().find(|slot| slot.handle == handle)
     }
 
     /// The curves `handle`'s slot keys; none for a handle the action has no
     /// slot for (an object assigned the action with no slot moves not).
-    pub fn curves_of(&self, handle: i32) -> &[crate::blend::BFCurve] {
+    pub fn curves_of(&self, handle: i32) -> &[crate::device::blend::BFCurve] {
         self.slot(handle).and_then(|slot| self.curves.get(slot.curves.clone())).unwrap_or(&[])
     }
 
     /// The slot `object` is bound to in the file.
-    pub fn slot_of(&self, object: &str) -> Option<&crate::blend::BlendActionSlot> {
+    pub fn slot_of(&self, object: &str) -> Option<&crate::device::blend::BlendActionSlot> {
         self.bindings.iter().find(|(o, _)| o == object).and_then(|(_, h)| self.slot(*h))
     }
 }

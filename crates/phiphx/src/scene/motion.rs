@@ -4,7 +4,7 @@
 //! 3D viewport during playback — so the still model stays what it is and a
 //! frame is a lookup, never a second import.
 
-use crate::blend::{BMotionAt, BlendMotion, BlendMotionList};
+use crate::device::blend::{BMotionAt, BlendMotion, BlendMotionList};
 
 /// What moves, and who moves with it.
 #[derive(Clone, Debug, Default, PartialEq)]

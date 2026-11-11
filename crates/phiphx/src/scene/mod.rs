@@ -64,7 +64,7 @@ pub struct SceneObject {
     pub color: [f32; 4],
     /// Whether it casts a shadow — in the viewport (Viewport Display ▸
     /// Shadow) and to rays (Ray Visibility ▸ Shadow).
-    pub shadow: crate::blend::BlendShadowCast,
+    pub shadow: crate::device::blend::BlendShadowCast,
 }
 
 impl SceneObject {
@@ -177,9 +177,9 @@ pub struct SceneModel {
     /// Every object's transform over time and who moves with it.
     pub motion: SceneMotion,
     /// The timeline markers, in file order.
-    pub markers: Vec<crate::blend::BlendMarker>,
+    pub markers: Vec<crate::device::blend::BlendMarker>,
     /// The Playback popover's settings, as the file has them.
-    pub playback: crate::blend::BlendPlayback,
+    pub playback: crate::device::blend::BlendPlayback,
     /// `(child, parent)` by object name, for every object whose `Object.parent`
     /// is in the scene — the Outliner's Object Children.
     pub parents: Vec<(String, String)>,
@@ -194,7 +194,7 @@ pub struct SceneModel {
     /// what the UV editor draws. Empty for sources without faces.
     pub uv_maps: Vec<std::sync::Arc<SceneUvMap>>,
     /// The 3D cursor, as the file left it.
-    pub cursor: crate::blend::BlendCursor,
+    pub cursor: crate::device::blend::BlendCursor,
     /// The scene's compositor tree (`comp/`), as the file has it: `None`
     /// when there is none. A render goes through it
     /// (`BCompTree::plan`); the viewport does not, which is Blender's own
@@ -205,7 +205,7 @@ pub struct SceneModel {
     /// World, each body and joint, cloth, colliders, force fields and soft
     /// bodies, as the Physics tabs show them. Settings only; nothing
     /// simulates them yet (`phiray/docs/ROADMAP.md` §2).
-    pub physics: crate::blend::BlendPhysics,
+    pub physics: crate::device::blend::BlendPhysics,
 }
 
 impl SceneModel {

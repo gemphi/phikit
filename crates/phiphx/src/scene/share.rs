@@ -8,7 +8,7 @@
 //! and places them per instance (phiray, roadmap §4.4, Step 1).
 
 use super::SceneObject;
-use crate::blend::BlendSceneObject;
+use crate::device::blend::BlendSceneObject;
 use std::collections::{HashMap, HashSet};
 
 /// The object each instance shares its geometry with: blend index → the

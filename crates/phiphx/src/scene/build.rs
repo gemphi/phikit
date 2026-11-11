@@ -19,9 +19,9 @@
 //! one figure holds one figure's data eleven times by reference.
 
 use super::{SceneCollection, SceneMaterial, SceneModel, SceneObject, SceneSkin};
-use crate::blend::BPlayRef;
-use crate::blend::ObjectTransformRaw;
-use crate::blend::{BFaces, BlendEvalMesh, BlendMotion};
+use crate::device::blend::BPlayRef;
+use crate::device::blend::ObjectTransformRaw;
+use crate::device::blend::{BFaces, BlendEvalMesh, BlendMotion};
 use std::sync::Arc;
 
 /// A mesh to be deformed by a rig: polygons over vertices, a UV per
@@ -72,7 +72,7 @@ impl SceneModel {
         let rig_motion = self.motion.motion.list.len();
         self.motion.motion.list.push(BlendMotion { name: rename(&old_rig.name), play: Some(play.clone()), parent: None, ..old_rig.clone() });
         let new_rig = self.motion.rigs.rigs.len();
-        self.motion.rigs.rigs.push(Arc::new(crate::blend::rig::BlendRigSource {
+        self.motion.rigs.rigs.push(Arc::new(crate::device::blend::rig::BlendRigSource {
             object: rig_motion,
             moves: true,
             play: Some(play),
@@ -150,7 +150,7 @@ impl SceneModel {
         let template = &self.motion.motion.list[beside.motion];
         let motion = BlendMotion { name: name.to_string(), play: None, ..template.clone() };
         let index = self.push_object(object, motion);
-        let source = crate::blend::modifier::BlendSkinSource::bare(index, beside.source.armature, base, mesh.groups);
+        let source = crate::device::blend::modifier::BlendSkinSource::bare(index, beside.source.armature, base, mesh.groups);
         self.motion.rigs.skins.push(Arc::new(SceneSkin { object: index, motion: self.motion.object[index], rig, source: Arc::new(source), tris }));
         Some(index)
     }

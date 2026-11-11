@@ -6,18 +6,18 @@
 
 use super::SceneMesh;
 use super::object::STriangles;
-use crate::blend::modifier::BlendSkinSource;
-use crate::blend::modifier::driven::BlendDrivenSource;
-use crate::blend::modifier::armature::deform;
-use crate::blend::BMotionAt;
-use crate::blend::rig::{BEmptyScene, BlendRigSource};
+use crate::device::blend::modifier::BlendSkinSource;
+use crate::device::blend::modifier::driven::BlendDrivenSource;
+use crate::device::blend::modifier::armature::deform;
+use crate::device::blend::BMotionAt;
+use crate::device::blend::rig::{BEmptyScene, BlendRigSource};
 use glam::Mat4;
 use rayon::prelude::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 /// One frame's driven modifier settings, by the object's saved address.
-pub type DrivenAt = HashMap<u64, Vec<(crate::blend::BModWrite, crate::blend::BModValue)>>;
+pub type DrivenAt = HashMap<u64, Vec<(crate::device::blend::BModWrite, crate::device::blend::BModValue)>>;
 
 /// One deformed mesh.
 #[derive(Debug)]
@@ -56,7 +56,7 @@ pub struct SceneRigs {
     ///
     /// Empty for almost every file, and an empty set costs one lookup and no
     /// clone.
-    pub drivers: Vec<crate::blend::BModifierDrivers>,
+    pub drivers: Vec<crate::device::blend::BModifierDrivers>,
     /// Each rig's bones (`pose_mat`) at the saved frame, by rig index —
     /// what the viewport draws until a frame poses them.
     pub saved: Vec<Arc<Vec<Mat4>>>,
@@ -115,7 +115,7 @@ impl SceneRigs {
     /// hold one.
     pub fn meshes_at(&self, at: &BMotionAt, driven_at: &DrivenAt) -> Vec<(usize, SceneMesh)> {
         let skinned = self.skinned_at(at);
-        let none: Vec<(crate::blend::BModWrite, crate::blend::BModValue)> = Vec::new();
+        let none: Vec<(crate::device::blend::BModWrite, crate::device::blend::BModValue)> = Vec::new();
         let mut out: Vec<(usize, SceneMesh)> = self.skins
             .par_iter()
             .zip(skinned)
@@ -141,7 +141,7 @@ impl SceneRigs {
 
     /// This frame's driven modifier settings, by object address — empty when
     /// no object in the scene carries a modifier driver.
-    pub fn driven_at(&self, motion: &crate::blend::BlendMotionList, frame: f32) -> DrivenAt {
+    pub fn driven_at(&self, motion: &crate::device::blend::BlendMotionList, frame: f32) -> DrivenAt {
         if self.drivers.iter().all(|set| set.is_empty()) {
             return DrivenAt::new();
         }

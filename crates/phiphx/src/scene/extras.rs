@@ -29,7 +29,7 @@ pub struct SceneCamera {
     pub display_size: f32,
     /// Depth of field (`blend/object/dof.rs`). Off by default, which makes a
     /// pinhole camera the ordinary case rather than a special one.
-    pub dof: crate::blend::BlendDof,
+    pub dof: crate::device::blend::BlendDof,
 }
 
 /// A light object — Blender `Light` DNA plus the owning object's transform.

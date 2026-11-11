@@ -1,7 +1,7 @@
 //! PHX binary reader: import a point cloud from PHX data.
 
 use super::mesh::read_mesh_chunk;
-use crate::export::blend::chunks::{PHX_VERSION, PhxChunkType, PhxHeader};
+use crate::device::blend::write::script::chunks::{PHX_VERSION, PhxChunkType, PhxHeader};
 use crate::{PointCloud, PointCloudError, Result, Vertex};
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::Read;

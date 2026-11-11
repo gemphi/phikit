@@ -3,7 +3,7 @@
 //! constraint's target to the object it constrains — by motion index, at a
 //! frame, so a line follows what moves.
 
-use crate::blend::BMotionAt;
+use crate::device::blend::BMotionAt;
 
 /// One relationship line, in world space.
 #[derive(Clone, Copy, Debug, PartialEq)]

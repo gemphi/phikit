@@ -4,12 +4,12 @@
 //! `crate::import`, `crate::scene`; callers never reach into them.
 //! Status and next steps: `phx/jobs.md` moved to `src/jobs.md`.
 
-use crate::blend::BlendFile;
+use crate::device::blend::BlendFile;
 use crate::import::FileFormat;
 use std::path::Path;
 
-pub use crate::blend::BlendQuickInfo as Peek;
-pub use crate::blend::{CpuSkin, SKIN_MIN, SkinJob, SkinPair, Skinner};
+pub use crate::device::blend::BlendQuickInfo as Peek;
+pub use crate::device::blend::{CpuSkin, SKIN_MIN, SkinJob, SkinPair, Skinner};
 pub use crate::scene::{SceneLoadError as PhxError, SceneModel};
 
 /// Progress sink: `(fraction 0..=1, stage)`; return `false` to cancel.
@@ -26,7 +26,7 @@ impl Phx {
 
     /// Open a file into a scene, reporting progress.
     pub fn open_with(path: &Path, progress: Progress) -> Result<SceneModel, PhxError> {
-        crate::blend::set_image_source(path);
+        crate::device::blend::set_image_source(path);
         blend(path, progress)
     }
 
@@ -40,8 +40,8 @@ impl Phx {
         path: &Path,
         progress: Progress,
     ) -> Result<(SceneModel, Option<crate::scene::DeferredModifiers>), PhxError> {
-        crate::blend::set_image_source(path);
-        crate::blend::with_progressive_open(|| blend_progressive(path, progress))
+        crate::device::blend::set_image_source(path);
+        crate::device::blend::with_progressive_open(|| blend_progressive(path, progress))
     }
 
     /// Open a `.blend` that is already in memory, under the name to record
@@ -64,14 +64,14 @@ impl Phx {
     /// Progress starts at the "Indexing blocks" stage rather than "Reading
     /// file": the caller has already done the reading.
     pub fn open_bytes_with(name: &str, data: &[u8], progress: Progress) -> Result<SceneModel, PhxError> {
-        crate::blend::clear_image_source();
+        crate::device::blend::clear_image_source();
         blend_bytes(name, data, progress)
     }
 
     /// Install the batch skinner used for Armature deform while opening files
     /// (Phiber installs a GPU one; `None` restores the built-in CPU path).
     pub fn use_skinner(skinner: Option<std::sync::Arc<dyn Skinner>>) {
-        crate::blend::set_skinner(skinner);
+        crate::device::blend::set_skinner(skinner);
     }
 
     /// Version, render info and embedded thumbnail — header blocks only.
@@ -87,7 +87,7 @@ impl Phx {
 
     /// Modifier types the viewport evaluates (Blender RNA ids).
     pub fn modifiers() -> Vec<&'static str> {
-        crate::blend::supported_modifiers().collect()
+        crate::device::blend::supported_modifiers().collect()
     }
 
     /// Format from magic bytes, else from the extension.
@@ -101,7 +101,7 @@ impl Phx {
 
 // ── Opening a `.blend` ────────────────────────────────────────────────────
 use crate::scene::SceneLoadError;
-use crate::blend::BlendImporter;
+use crate::device::blend::BlendImporter;
 
 /// Read `path` into a [`SceneModel`]. `progress` is called from the
 /// reading thread; returning `false` settles as [`SceneLoadError::Cancelled`].
@@ -140,8 +140,8 @@ pub(super) fn blend_bytes(
 /// Parse under `catch_unwind`, so a parser panic on a malformed file settles
 /// as [`SceneLoadError::Malformed`] rather than taking the host down.
 fn guarded(
-    read: impl FnOnce() -> crate::Result<crate::blend::BlendScene>,
-) -> Result<crate::blend::BlendScene, SceneLoadError> {
+    read: impl FnOnce() -> crate::Result<crate::device::blend::BlendScene>,
+) -> Result<crate::device::blend::BlendScene, SceneLoadError> {
     match std::panic::catch_unwind(std::panic::AssertUnwindSafe(read)) {
         Ok(Ok(scene)) => Ok(scene),
         Ok(Err(err)) => Err(classify_native_error(err)),
@@ -154,7 +154,7 @@ fn guarded(
 /// Map a parsed scene to a [`SceneModel`] and fill its report. A zero-object
 /// result is still a success.
 fn settle(
-    scene: crate::blend::BlendScene,
+    scene: crate::device::blend::BlendScene,
     source: &str,
     started: web_time::Instant,
     progress: Progress,

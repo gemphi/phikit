@@ -3,7 +3,7 @@
 //! A `.usda` layer opens with a metadata block; the default prim and the
 //! time range are read from it. A `.usdc` crate has a version in its first
 //! bytes. Neither has a thumbnail to give.
-use crate::blend::{BlendQuickInfo, BlendRenderInfo};
+use crate::device::blend::{BlendQuickInfo, BlendRenderInfo};
 use crate::{PointCloudError, Result};
 
 pub fn peek(bytes: &[u8]) -> Result<BlendQuickInfo> {

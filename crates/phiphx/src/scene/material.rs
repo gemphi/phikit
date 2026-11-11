@@ -1,6 +1,6 @@
 //! Material slot data shared by the viewport and the Properties panel.
 
-use crate::blend::BlendSceneObject;
+use crate::device::blend::BlendSceneObject;
 
 /// A single material slot on a [`SceneObject`], mirrored from Blender's
 /// Principled BSDF: an RGBA base colour plus the two PBR scalars and an
@@ -21,7 +21,7 @@ pub struct SceneMaterial {
     /// The material's node tree as the Shader editor draws it
     /// (`blend::shade::graph`). Empty for a material with no tree, and for a
     /// `.phx` import, which carries no graph.
-    pub graph: crate::blend::shade::graph::BlendNodeGraph,
+    pub graph: crate::device::blend::shade::graph::BlendNodeGraph,
     /// Base-colour image texture path (Blender `//`-relative or absolute), if
     /// the material's shader graph links an Image Texture node. `None` when
     /// the material is a flat colour.
@@ -31,9 +31,9 @@ pub struct SceneMaterial {
     /// Principled BSDF inputs (emission, alpha, transmission, IOR …).
     pub bsdf: SceneBsdf,
     /// A Mix Shader's two lobes, when the surface is one (`BlendMix`).
-    pub mix: Option<crate::blend::shade::surface::BlendMix>,
+    pub mix: Option<crate::device::blend::shade::surface::BlendMix>,
     /// The procedural textures the surface reads per pixel (`BlendProcedural`).
-    pub procedural: crate::blend::shade::procedural::BlendProcedural,
+    pub procedural: crate::device::blend::shade::procedural::BlendProcedural,
     /// Normal map image key and strength (Normal Map node), if linked.
     pub normal_texture: Option<(String, f32)>,
     /// Decoded normal map (raw, non-colour bytes).
@@ -42,7 +42,7 @@ pub struct SceneMaterial {
     pub maps: SceneMaps,
     /// The Base Color chain compiled to a bake (`blend::shade::bake`);
     /// `texture` holds its result once textures attach.
-    pub bake: Option<crate::blend::shade::bake::BlendBake>,
+    pub bake: Option<crate::device::blend::shade::bake::BlendBake>,
     /// A baked single image's Mapping, to apply to the mesh's UVs —
     /// `u' = m[0]·(u, v, 1)`, `v' = m[1]·(u, v, 1)`.
     pub uv_affine: Option<[[f32; 3]; 2]>,
@@ -79,7 +79,7 @@ impl SceneMaps {
     }
 
     /// From the file's image keys.
-    fn of(m: &crate::blend::BlendMaps) -> Self {
+    fn of(m: &crate::device::blend::BlendMaps) -> Self {
         let mut out = Self::default();
         for (slot, key) in out.each_mut_pub().into_iter().zip(m.each()) {
             *slot = key.clone().map(|key| SceneMap { key, image: None });
@@ -89,7 +89,7 @@ impl SceneMaps {
 }
 
 /// Principled BSDF inputs as read from the file.
-pub type SceneBsdf = crate::blend::BlendBsdf;
+pub type SceneBsdf = crate::device::blend::BlendBsdf;
 
 impl SceneMaterial {
     /// A neutral opaque-grey material used when a source object declares no
@@ -99,7 +99,7 @@ impl SceneMaterial {
             name: String::from("Material"),
             base_color: [0.8, 0.8, 0.8, 1.0],
             viewport_color: [0.8, 0.8, 0.8, 1.0],
-            viewport_pbr: crate::blend::VIEWPORT_PBR,
+            viewport_pbr: crate::device::blend::VIEWPORT_PBR,
             roughness: 0.5,
             metallic: 0.0,
             // A stand-in material has no tree.
@@ -164,7 +164,7 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
         name: String::from("Material"),
         base_color: obj.base_color,
         viewport_color: obj.base_color,
-        viewport_pbr: crate::blend::VIEWPORT_PBR,
+        viewport_pbr: crate::device::blend::VIEWPORT_PBR,
         roughness: obj.roughness,
         metallic: obj.metallic,
         // The object's flat colour fields, not a tree.

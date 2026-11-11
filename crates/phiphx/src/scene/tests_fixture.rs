@@ -1,7 +1,7 @@
 //! Shared test fixtures for the scene traversal tests (`tests_traversal`,
 //! `tests_material`).  Both files `use super::tests_fixture::*`.
 
-use crate::blend::{BlendScene, BlendSceneObject};
+use crate::device::blend::{BlendScene, BlendSceneObject};
 
 /// Minimal mesh object carrying only the fields the traversal reads
 /// (`name`, `vertices`, `faces`, `loop_normals`); everything else inert.

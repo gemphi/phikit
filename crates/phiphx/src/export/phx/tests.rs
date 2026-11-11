@@ -1,6 +1,6 @@
 use crate::Mesh as ImportMesh;
 use crate::Vertex;
-use crate::export::blend::chunks::{
+use crate::device::blend::write::script::chunks::{
     PHX_MAGIC, PHX_VERSION, PhxChunkType, PhxHeader, PhxChunks,
 };
 

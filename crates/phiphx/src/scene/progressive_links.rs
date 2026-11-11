@@ -5,7 +5,7 @@
 //! it cannot stand right before that mesh exists.
 
 use super::SceneModel;
-use crate::blend::{BlendSceneObject, DeferredRaw, is_vertex_parent};
+use crate::device::blend::{BlendSceneObject, DeferredRaw, is_vertex_parent};
 use std::collections::HashSet;
 
 /// Every blend object's parent links (transforms only, no geometry; the
