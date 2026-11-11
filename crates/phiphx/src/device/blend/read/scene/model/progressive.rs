@@ -1,9 +1,9 @@
 //! Progressive open: build the base scene now, finish the modifiers later.
 //!
 //! [`SceneModel::from_blend_progressive`] returns the base meshes immediately
-//! (as if no object had a modifier) plus a [`DeferredModifiers`] carrying the
+//! (as if no object had a modifier) plus a [`DeferredModifierList`] carrying the
 //! captured modifier work. The host shows the base scene, runs
-//! [`DeferredModifiers::finish`] on a worker thread, and swaps the evaluated
+//! [`DeferredModifierList::finish`] on a worker thread, and swaps the evaluated
 //! objects it returns into the scene — each at its `objects` index.
 //!
 //! `finish()` produces exactly what an eager open would: it runs the same
@@ -13,16 +13,16 @@
 //! was evaluated into (`rig.rs`), and those are only known here, so the swap
 //! hands them to the rig as well.
 
-use super::object::{STriangles, evaluated_object_and_tris};
+use super::object::{STriangleList, evaluated_object_and_tris};
 use super::share::shared_object;
-use super::progressive_links::{parent_links, vertex_parent_of};
+use super::progressive_link::{parent_links, vertex_parent_of};
 use crate::scene::{SceneModel, SceneObject};
 use crate::device::blend::{BlendScene, BlendSceneObject, DeferredRaw, apply_eval_jobs, vertex_children_worlds};
 use std::sync::Arc;
 
 /// The modifier work of a progressively-opened scene, not yet applied. Owned
 /// and `Send`, so it travels to a worker thread.
-pub struct DeferredModifiers {
+pub struct DeferredModifierList {
     raw: Arc<DeferredRaw>,
     /// One entry per modified mesh object: its `objects` index, its raw index
     /// (the key in the evaluated map), the raw object the conversion needs,
@@ -51,14 +51,14 @@ pub struct SceneSwap {
     pub object: SceneObject,
     /// For a mesh a rig deforms, the triangles its evaluated mesh was cut
     /// into — what every pose of it is drawn with. `None` otherwise.
-    tris: Option<STriangles>,
+    tris: Option<STriangleList>,
     /// `(blend object index, world)` of the vertex-parented children (and
     /// their descendants) that hang from this object's evaluated vertices
     /// — placed by `give_parvert` only once the mesh is evaluated.
     moved: Vec<(usize, [[f32; 4]; 4])>,
 }
 
-impl DeferredModifiers {
+impl DeferredModifierList {
     /// Nothing to do — no object in the scene carries a modifier.
     pub fn is_empty(&self) -> bool {
         self.targets.is_empty()
@@ -147,7 +147,7 @@ impl SceneModel {
     pub fn from_blend_progressive(
         mut blend: BlendScene,
         source_path: &str,
-    ) -> (SceneModel, Option<DeferredModifiers>) {
+    ) -> (SceneModel, Option<DeferredModifierList>) {
         let raw = blend.deferred.take();
         // The `objects` index of each blend object, by the same rule the base
         // build uses (cameras / lights / empties are not objects). A modifier
@@ -200,7 +200,7 @@ impl SceneModel {
         let model = SceneModel::from_blend_owned(blend, source_path);
         let deferred = raw
             .filter(|r| !r.is_empty())
-            .map(|raw| DeferredModifiers { raw, targets, aliases, links });
+            .map(|raw| DeferredModifierList { raw, targets, aliases, links });
         (model, deferred)
     }
 }

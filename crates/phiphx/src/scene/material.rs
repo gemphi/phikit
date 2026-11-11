@@ -39,7 +39,7 @@ pub struct SceneMaterial {
     /// Decoded normal map (raw, non-colour bytes).
     pub normal_map: Option<super::texture::SceneTexture>,
     /// Roughness / Metallic / Emission Color images (keys, then decoded).
-    pub maps: SceneMaps,
+    pub maps: SceneMapList,
     /// The Base Color chain compiled to a bake (`blend::shade::bake`);
     /// `texture` holds its result once textures attach.
     pub bake: Option<crate::device::blend::shade::bake::BlendBake>,
@@ -61,13 +61,13 @@ pub struct SceneMap {
 
 /// The mapped inputs of one material (see `blend::shade::map`).
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct SceneMaps {
+pub struct SceneMapList {
     pub rough: Option<SceneMap>,
     pub metal: Option<SceneMap>,
     pub emit: Option<SceneMap>,
 }
 
-impl SceneMaps {
+impl SceneMapList {
     /// Decoded image per input, in field order.
     pub fn images(&self) -> [Option<&super::texture::SceneTexture>; 3] {
         [&self.rough, &self.metal, &self.emit].map(|m| m.as_ref()?.image.as_ref())
@@ -111,7 +111,7 @@ impl SceneMaterial {
             procedural: Default::default(),
             normal_texture: None,
             normal_map: None,
-            maps: SceneMaps::default(),
+            maps: SceneMapList::default(),
             bake: None,
             uv_affine: None,
             baked: false,
@@ -145,7 +145,7 @@ pub(crate) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
                 procedural: m.procedural.clone(),
                 normal_texture: m.normal_map.as_ref().map(|n| (n.image.clone(), n.strength)),
                 normal_map: None,
-                maps: SceneMaps::of(&m.maps),
+                maps: SceneMapList::of(&m.maps),
                 bake: m.bake.clone(),
                 uv_affine: None,
                 baked: false,
@@ -176,7 +176,7 @@ pub(crate) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
         procedural: Default::default(),
         normal_texture: None,
         normal_map: None,
-        maps: SceneMaps::default(),
+        maps: SceneMapList::default(),
         bake: None,
         uv_affine: None,
         baked: false,

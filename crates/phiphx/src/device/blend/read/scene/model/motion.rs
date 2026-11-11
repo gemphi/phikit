@@ -20,7 +20,7 @@ pub struct SceneMotion {
     /// `empties[i]` moves with `motion.list[empty[i]]`.
     pub empty: Vec<usize>,
     /// The rigs that move and the meshes they deform.
-    pub rigs: crate::scene::SceneRigs,
+    pub rigs: crate::scene::SceneRigList,
 }
 
 /// Every world matrix at one frame, ready to be read by object, camera,

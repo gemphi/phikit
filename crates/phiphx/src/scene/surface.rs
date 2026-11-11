@@ -191,7 +191,7 @@ impl Default for SceneRender {
     }
 }
 
-pub use super::extras::{SceneCamera, SceneEmpty, SceneLight};
+pub use super::extra::{SceneCamera, SceneEmpty, SceneLight};
 
 /// One action / animation clip as the animation editors list it: its
 /// range, its channel count, the frames that carry a key, and its users.
@@ -224,7 +224,7 @@ pub struct SceneAction {
 pub type SceneNla = crate::device::blend::BlendNla;
 
 /// One driven object's driver F-curves (`AnimData.drivers`).
-pub type SceneDrivers = crate::device::blend::BlendDriverList;
+pub type SceneDriverList = crate::device::blend::BlendDriverList;
 
 impl SceneAction {
     pub fn used_by(&self, object: &str) -> bool {

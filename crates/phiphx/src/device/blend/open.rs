@@ -73,13 +73,13 @@ fn settle(
 }
 
 /// Like [`blend`], but the modifier work is captured rather than applied:
-/// returns the base [`SceneModel`] and the [`DeferredModifiers`] to finish
+/// returns the base [`SceneModel`] and the [`DeferredModifierList`] to finish
 /// later. Must run inside `with_progressive_open` (so the reader defers);
 /// [`Phx::open_progressive`] arranges that.
 pub(crate) fn blend_progressive(
     path: &Path,
     progress: Progress,
-) -> Result<(SceneModel, Option<crate::scene::DeferredModifiers>), SceneLoadError> {
+) -> Result<(SceneModel, Option<crate::scene::DeferredModifierList>), SceneLoadError> {
     let source_path = path.to_string_lossy().into_owned();
     let started = web_time::Instant::now();
 
@@ -97,7 +97,7 @@ pub(crate) fn blend_progressive_bytes(
     name: &str,
     data: &[u8],
     progress: Progress,
-) -> Result<(SceneModel, Option<crate::scene::DeferredModifiers>), SceneLoadError> {
+) -> Result<(SceneModel, Option<crate::scene::DeferredModifierList>), SceneLoadError> {
     let started = web_time::Instant::now();
     let scene = guarded(|| BlendImporter::import_blend_bytes_with_progress(data, progress))?;
     settle_progressive(scene, name, started, progress)
@@ -109,7 +109,7 @@ fn settle_progressive(
     source: &str,
     started: web_time::Instant,
     progress: Progress,
-) -> Result<(SceneModel, Option<crate::scene::DeferredModifiers>), SceneLoadError> {
+) -> Result<(SceneModel, Option<crate::scene::DeferredModifierList>), SceneLoadError> {
     if !progress(0.97, "Building scene") {
         return Err(SceneLoadError::Cancelled);
     }

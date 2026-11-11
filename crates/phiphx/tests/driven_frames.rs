@@ -6,7 +6,7 @@
 //! frame's settings and gives Blender's.
 //!
 //! It matters because a mesh is evaluated once at open, so every driven
-//! modifier value was frozen at `frame_current` until `SceneRigs::driven_at`
+//! modifier value was frozen at `frame_current` until `SceneRigList::driven_at`
 //! existed. `MODDRIVERS` drives a Subdivision's level 0 → 2 → 0 → 11 → 0
 //! across its five frames, which is the clearest possible witness: a setting
 //! that both switches the modifier off and takes it past its cap.

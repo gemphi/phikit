@@ -2,7 +2,7 @@
 
 use crate::geom::vertex::Vertex;
 
-use super::types::{PointCloud, PointCloudMetadata};
+use super::data::{PointCloud, PointCloudMetadata};
 
 impl serde::Serialize for PointCloud {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>

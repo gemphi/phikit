@@ -9,7 +9,8 @@ pub mod read;
 pub mod scene;
 pub mod sidecar;
 use super::{Device, DeviceKind, Source};
-use crate::phx::{Peek, Progress};
+use crate::device::Peek;
+use crate::phx::Progress;
 use crate::scene::{SceneLoadError, SceneModel};
 /// The PHX variant of a scene file.
 pub struct PhxDevice;

@@ -5,7 +5,7 @@
 //! triangles are, and the tracer takes it as a new pose (`Tracer::repose`).
 
 use crate::scene::SceneMesh;
-use super::object::STriangles;
+use super::object::STriangleList;
 use crate::device::blend::modifier::BlendSkinSource;
 use crate::device::blend::modifier::driven::BlendDrivenSource;
 use crate::device::blend::modifier::armature::deform;
@@ -26,10 +26,10 @@ pub struct SceneSkin {
     pub object: usize,
     /// Index into the motion list (the object's blend index).
     pub motion: usize,
-    /// Index into [`SceneRigs::rigs`].
+    /// Index into [`SceneRigList::rigs`].
     pub rig: usize,
     pub source: Arc<BlendSkinSource>,
-    pub tris: STriangles,
+    pub tris: STriangleList,
 }
 
 /// A non-rigged mesh with modifier drivers, re-evaluated per frame.
@@ -46,7 +46,7 @@ pub struct SceneDriven {
 
 /// The rigs and the meshes the moving ones deform.
 #[derive(Clone, Debug, Default)]
-pub struct SceneRigs {
+pub struct SceneRigList {
     pub rigs: Vec<Arc<BlendRigSource>>,
     pub skins: Vec<Arc<SceneSkin>>,
     /// Modifier drivers, by the OBJECT they sit on. A frame's values land on
@@ -65,7 +65,7 @@ pub struct SceneRigs {
     pub driven: Vec<Arc<SceneDriven>>,
 }
 
-impl PartialEq for SceneRigs {
+impl PartialEq for SceneRigList {
     fn eq(&self, other: &Self) -> bool {
         self.rigs.len() == other.rigs.len()
             && self.rigs.iter().zip(&other.rigs).all(|(a, b)| Arc::ptr_eq(a, b))
@@ -74,7 +74,7 @@ impl PartialEq for SceneRigs {
     }
 }
 
-impl SceneRigs {
+impl SceneRigList {
     /// Does a rig move a mesh, or does a driver move a non-rigged one?
     pub fn animated(&self) -> bool {
         !self.skins.is_empty() || !self.driven.is_empty()
@@ -93,7 +93,7 @@ impl SceneRigs {
     /// are the original half, coarse, and nothing of the mirrored one.
     ///
     /// An object has one skin at most: its first Armature modifier's.
-    pub(super) fn retriangulate(&mut self, object: usize, tris: STriangles) {
+    pub(super) fn retriangulate(&mut self, object: usize, tris: STriangleList) {
         if let Some(skin) = self.skins.iter_mut().find(|s| s.object == object) {
             *skin = Arc::new(SceneSkin { object, motion: skin.motion, rig: skin.rig, source: skin.source.clone(), tris });
         }
@@ -131,7 +131,7 @@ impl SceneRigs {
             .filter_map(|d| {
                 let values = driven_at.get(&d.source.object_address)?;
                 let eval = d.source.evaluate_at(Self::world(&at.world, d.motion), values);
-                let tris = STriangles::from_eval(&eval);
+                let tris = STriangleList::from_eval(&eval);
                 Some((d.object, tris.mesh(eval.vertices, &[], &[])))
             })
             .collect();

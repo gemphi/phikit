@@ -4,7 +4,7 @@
 use phiphx::phx::Phx;
 use std::path::PathBuf;
 
-/// The socket names of `SceneMaps::images()`, in order.
+/// The socket names of `SceneMapList::images()`, in order.
 const SOCKETS: [&str; 3] = ["Roughness", "Metallic", "Emission Color"];
 
 #[test]

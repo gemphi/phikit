@@ -1,7 +1,7 @@
 //! What a loaded scene costs in memory — Blender's `MEM_get_memory_in_use`
 //! for the buffers we actually keep.
 
-use super::{SceneModel, SceneNormals};
+use super::{SceneModel, SceneNormalList};
 
 impl SceneModel {
     /// Approximate heap bytes held by this scene's mesh buffers.
@@ -17,7 +17,7 @@ impl SceneModel {
     fn object_bytes(obj: &super::SceneObject) -> u64 {
         let m = &obj.mesh;
         let normals = match &m.normals {
-            SceneNormals::PerVertex(v) | SceneNormals::PerFace(v) => v.len(),
+            SceneNormalList::PerVertex(v) | SceneNormalList::PerFace(v) => v.len(),
         };
         let mut bytes = 0u64;
         bytes += (m.vertices.len() * size_of::<[f32; 3]>()) as u64;

@@ -8,7 +8,7 @@ use std::collections::HashMap;
 /// `normal(c)` for corner `c` (`indices[c]`); id 0 is the flat marker (zero normal).
 /// Empty when every face is flat.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct SceneCorners {
+pub struct SceneCornerList {
     /// One id per corner (`len == indices.len()`), or none.
     pub ids: Vec<u32>,
     /// Unique unit normals; `normals[0] == [0; 3]` when not empty.
@@ -18,7 +18,7 @@ pub struct SceneCorners {
     pub colors: Vec<[f32; 3]>,
 }
 
-impl SceneCorners {
+impl SceneCornerList {
     pub fn is_empty(&self) -> bool {
         self.ids.is_empty()
     }

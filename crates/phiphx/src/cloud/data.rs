@@ -1,6 +1,6 @@
 //! Point cloud data structures.
 
-use crate::geom::bounds::BoundingBox;
+use crate::geom::bound::BoundingBox;
 use crate::geom::vertex::Vertex;
 
 /// Point cloud data structure
@@ -30,7 +30,7 @@ pub struct PointCloudMetadata {
 
 /// Statistics for a point cloud
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct PointCloudStats {
+pub struct PointCloudStat {
     /// Number of vertices
     pub vertex_count: usize,
     /// Bounding box

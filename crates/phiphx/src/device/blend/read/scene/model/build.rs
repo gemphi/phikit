@@ -138,7 +138,7 @@ impl SceneModel {
             dverts: mesh.weights.clone(),
             ..Default::default()
         };
-        let mut tris = super::object::STriangles::from_eval(&base);
+        let mut tris = super::object::STriangleList::from_eval(&base);
         let drawn = tris.mesh(mesh.vertices.clone(), &[], &[]);
         let material_indices = std::mem::take(&mut tris.material_indices);
         let object = SceneObject {

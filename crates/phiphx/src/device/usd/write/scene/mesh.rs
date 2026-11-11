@@ -7,7 +7,7 @@
 use super::material::MaterialBook;
 use super::out::UsdOut;
 use super::text::UsdText;
-use crate::scene::{SceneMesh, SceneNormals, SceneObject};
+use crate::scene::{SceneMesh, SceneNormalList, SceneObject};
 use std::collections::BTreeSet;
 
 /// Writes the `Mesh` prim of one object.
@@ -64,8 +64,8 @@ impl UsdMesh {
             (0..n).map(|c| Some(mesh.corners.normal(c)).filter(|v| *v != [0.0; 3]).unwrap_or_else(|| face(c / 3))).collect()
         } else {
             match &mesh.normals {
-                SceneNormals::PerVertex(v) if v.len() == mesh.vertices.len() => mesh.indices.iter().map(|&i| v[i as usize]).collect(),
-                SceneNormals::PerFace(v) if v.len() == n / 3 => (0..n).map(|c| v[c / 3]).collect(),
+                SceneNormalList::PerVertex(v) if v.len() == mesh.vertices.len() => mesh.indices.iter().map(|&i| v[i as usize]).collect(),
+                SceneNormalList::PerFace(v) if v.len() == n / 3 => (0..n).map(|c| v[c / 3]).collect(),
                 _ => (0..n).map(|c| face(c / 3)).collect(),
             }
         };

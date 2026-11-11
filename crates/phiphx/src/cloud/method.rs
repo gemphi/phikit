@@ -1,12 +1,12 @@
 //! Point cloud methods.
 
-use crate::geom::bounds::BoundingBox;
+use crate::geom::bound::BoundingBox;
 use crate::error::{PointCloudError, Result};
 use crate::export::PointCloudExporter;
 use crate::format::PointCloudFormat;
 use crate::geom::vertex::Vertex;
 
-use super::types::{PointCloud, PointCloudMetadata, PointCloudStats};
+use super::data::{PointCloud, PointCloudMetadata, PointCloudStat};
 
 impl PointCloud {
     /// Create a new empty point cloud
@@ -63,7 +63,7 @@ impl PointCloud {
     }
 
     /// Calculate statistics
-    pub fn statistics(&self) -> PointCloudStats {
+    pub fn statistics(&self) -> PointCloudStat {
         let bbox = self.calculate_bounds();
         let volume = bbox.size()[0] * bbox.size()[1] * bbox.size()[2];
         let density = if volume > 0.0 {
@@ -79,7 +79,7 @@ impl PointCloud {
             0.0
         };
 
-        PointCloudStats {
+        PointCloudStat {
             vertex_count: self.vertex_count(),
             bounding_box: bbox,
             average_density: density,

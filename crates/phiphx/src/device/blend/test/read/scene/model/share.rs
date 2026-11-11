@@ -33,7 +33,7 @@ fn an_instance_shares_its_member_or_the_first_instance_of_it() {
 
 #[test]
 fn a_shared_object_holds_the_sources_arcs_under_its_own_placement() {
-    let mesh = crate::scene::SceneMesh { vertices: vec![[1.0; 3]], indices: vec![0, 0, 0], normals: crate::scene::SceneNormals::PerFace(Vec::new()), corners: Default::default() };
+    let mesh = crate::scene::SceneMesh { vertices: vec![[1.0; 3]], indices: vec![0, 0, 0], normals: crate::scene::SceneNormalList::PerFace(Vec::new()), corners: Default::default() };
     let mut from = SceneObject::identity("Car", mesh);
     from.uvs = Arc::new(vec![[0.5, 0.5]]);
     let mut src = object("Lot/Car", 0, Some(10), 3);
@@ -41,7 +41,7 @@ fn a_shared_object_holds_the_sources_arcs_under_its_own_placement() {
     let got = shared_object(&src, &from);
     assert!(Arc::ptr_eq(&got.mesh, &from.mesh) && Arc::ptr_eq(&got.uvs, &from.uvs) && Arc::ptr_eq(&got.material_indices, &from.material_indices));
     assert_eq!((got.name.as_str(), got.matrix_world[3]), ("Lot/Car", [4.0, 5.0, 6.0, 1.0]));
-    let mut objects = vec![from, SceneObject::identity("Other", crate::scene::SceneMesh { vertices: Vec::new(), indices: Vec::new(), normals: crate::scene::SceneNormals::PerFace(Vec::new()), corners: Default::default() })];
+    let mut objects = vec![from, SceneObject::identity("Other", crate::scene::SceneMesh { vertices: Vec::new(), indices: Vec::new(), normals: crate::scene::SceneNormalList::PerFace(Vec::new()), corners: Default::default() })];
     alias(&mut objects, 0, 1);
     assert!(Arc::ptr_eq(&objects[0].mesh, &objects[1].mesh));
     alias(&mut objects, 0, 7);

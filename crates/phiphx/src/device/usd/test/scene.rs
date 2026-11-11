@@ -1,7 +1,7 @@
 //! The stage writer on small hand-built scenes, and the checker on bad layers.
 use crate::device::usd::write::scene::check::UsdCheck;
 use crate::device::usd::write::scene::name::{UsdName, UsdNameBook};
-use crate::scene::{SceneCamera, SceneLight, SceneMaterial, SceneMesh, SceneModel, SceneNormals, SceneObject};
+use crate::scene::{SceneCamera, SceneLight, SceneMaterial, SceneMesh, SceneModel, SceneNormalList, SceneObject};
 use std::sync::Arc;
 
 /// Two triangles forming a quad, with a UV per vertex.
@@ -9,7 +9,7 @@ fn quad() -> SceneMesh {
     SceneMesh {
         vertices: vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [1.0, 1.0, 0.0], [0.0, 1.0, 0.0]],
         indices: vec![0, 1, 2, 0, 2, 3],
-        normals: SceneNormals::PerFace(vec![[0.0, 0.0, 1.0]; 2]),
+        normals: SceneNormalList::PerFace(vec![[0.0, 0.0, 1.0]; 2]),
         corners: Default::default(),
     }
 }

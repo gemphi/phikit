@@ -11,7 +11,7 @@ use crate::scene::{
     SceneDisplayShading, SceneObject, SceneRender, SceneShadow, SceneSsao, SceneTimeline, SceneWorld,
 };
 use crate::device::blend::BlendScene;
-use super::import_extras::{camera_from_blend, empty_from_blend, light_from_blend};
+use super::import_extra::{camera_from_blend, empty_from_blend, light_from_blend};
 
 /// Map an imported [`BlendScene`] into a renderable [`SceneModel`].
 ///
@@ -27,7 +27,7 @@ use super::import_extras::{camera_from_blend, empty_from_blend, light_from_blend
 /// - Drops any corner whose vertex index is out of range for that object's
 ///   vertex buffer.
 /// - Takes normals from `loop_normals` when present (one per triangle,
-///   [`SceneNormals::PerFace`]), otherwise synthesizes a per-face normal.
+///   [`SceneNormalList::PerFace`]), otherwise synthesizes a per-face normal.
 ///
 /// Cameras and lights are partitioned into `cameras` / `lights` vectors so
 /// the Rendering / Shading spaces can iterate them without a full scan.
@@ -100,7 +100,7 @@ fn build(raw: Vec<crate::device::blend::BlendSceneObject>, blend: &BlendScene, s
         .map(|o| (o.name.clone(), o.matrix_local))
         .collect();
     // The meshes a rig deforms keep their triangles, to be posed again.
-    let rigs = crate::scene::SceneRigs {
+    let rigs = crate::scene::SceneRigList {
         rigs: blend.props.rigs.rigs.clone(),
         skins: blend
             .props

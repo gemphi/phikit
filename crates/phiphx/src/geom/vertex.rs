@@ -10,12 +10,12 @@ pub struct Vertex {
     /// Color [r, g, b, a] (optional, 0-255)
     pub color: Option<[u8; 4]>,
     /// Additional attributes
-    pub attributes: VertexAttributes,
+    pub attributes: VertexAttributeList,
 }
 
 /// Additional vertex attributes
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
-pub struct VertexAttributes {
+pub struct VertexAttributeList {
     /// Texture coordinates [u, v]
     pub uv: Option<[f32; 2]>,
     /// Intensity value (for LiDAR data)
@@ -31,7 +31,7 @@ impl Vertex {
             position: [x, y, z],
             normal: None,
             color: None,
-            attributes: VertexAttributes::default(),
+            attributes: VertexAttributeList::default(),
         }
     }
 
@@ -121,7 +121,7 @@ impl<'de> serde::Deserialize<'de> for Vertex {
             normal: Option<[f32; 3]>,
             color: Option<[u8; 4]>,
             #[serde(default)]
-            attributes: VertexAttributes,
+            attributes: VertexAttributeList,
         }
 
         let data = VertexData::deserialize(deserializer)?;
@@ -135,13 +135,13 @@ impl<'de> serde::Deserialize<'de> for Vertex {
     }
 }
 
-impl serde::Serialize for VertexAttributes {
+impl serde::Serialize for VertexAttributeList {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
         use serde::ser::SerializeStruct;
-        let mut state = serializer.serialize_struct("VertexAttributes", 3)?;
+        let mut state = serializer.serialize_struct("VertexAttributeList", 3)?;
         state.serialize_field("uv", &self.uv)?;
         state.serialize_field("intensity", &self.intensity)?;
         state.serialize_field("classification", &self.classification)?;
@@ -149,7 +149,7 @@ impl serde::Serialize for VertexAttributes {
     }
 }
 
-impl<'de> serde::Deserialize<'de> for VertexAttributes {
+impl<'de> serde::Deserialize<'de> for VertexAttributeList {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,

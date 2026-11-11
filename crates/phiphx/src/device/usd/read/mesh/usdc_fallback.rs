@@ -139,7 +139,7 @@ impl UsdImporter {
                 position: [x, y, z],
                 normal: Some([0.0, 1.0, 0.0]),
                 color: Some([204, 204, 204, 255]),
-                attributes: crate::VertexAttributes::default(),
+                attributes: crate::VertexAttributeList::default(),
             });
             offset += 12;
         }

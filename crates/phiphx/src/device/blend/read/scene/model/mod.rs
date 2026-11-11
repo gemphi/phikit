@@ -5,11 +5,11 @@
 pub mod build;
 pub mod collection;
 pub(crate) mod import;
-pub(crate) mod import_extras;
+pub(crate) mod import_extra;
 pub mod motion;
 pub(crate) mod object;
 pub mod progressive;
-pub(crate) mod progressive_links;
+pub(crate) mod progressive_link;
 pub mod relation;
 pub mod rig;
 pub(crate) mod share;#[cfg(test)]

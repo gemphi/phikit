@@ -4,11 +4,11 @@
 //! Optimized for PHI PHX workflow.
 
 mod base64;
-mod buffers;
+mod buffer;
 mod mesh;
 mod point_cloud;
 
-pub use buffers::{
+pub use buffer::{
     ARRAY_BUFFER, COMPONENT_TYPE_FLOAT, COMPONENT_TYPE_UNSIGNED_SHORT, ELEMENT_ARRAY_BUFFER,
     GltfBufferWriter, PRIMITIVE_MODE_POINTS, PRIMITIVE_MODE_TRIANGLES,
 };

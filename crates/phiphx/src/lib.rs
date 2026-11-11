@@ -39,11 +39,11 @@ pub use cloud::config::{MeshToCloudConfig, SamplingMethod};
 pub use error::{PointCloudError, Result};
 pub use export::*;
 pub use format::*;
-pub use geom::bounds::BoundingBox;
+pub use geom::bound::BoundingBox;
 pub use geom::bvh::{BvhNode, SimpleRng};
 pub use geom::mesh::{Mesh, SampledPoint};
 pub use geom::selector::{MeshSource, SubjectSelector};
-pub use geom::vertex::{Vertex, VertexAttributes};
+pub use geom::vertex::{Vertex, VertexAttributeList};
 pub use import::{
     AssetImportResult, AssetImporter, ImportedCollection, ImportedMaterial, ImportedObject,
 };

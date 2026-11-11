@@ -3,8 +3,8 @@
 use super::cloud::chunk::PHX_MAGIC;
 use super::scene::PhxScene;
 use crate::device::Source;
-use crate::phx::Peek;
-use crate::scene::{SceneLoadError, SceneMesh, SceneModel, SceneNormals, SceneObject};
+use crate::device::{Peek, PeekScene};
+use crate::scene::{SceneLoadError, SceneMesh, SceneModel, SceneNormalList, SceneObject};
 use crate::{PointCloudError, Result};
 use super::scene::PhxMesh;
 /// Version, name and frame of a PHX scene, without building a model.
@@ -16,7 +16,7 @@ pub fn peek(bytes: &[u8]) -> Result<Peek> {
     let frame = scene.frame;
     Ok(Peek {
         version: scene.format,
-        scenes: vec![crate::device::blend::BlendRenderInfo { scene: scene.name, frame_start: frame, frame_end: frame }],
+        scenes: vec![PeekScene { scene: scene.name, frame_start: frame, frame_end: frame }],
         thumbnail: None,
     })
 }
@@ -41,9 +41,9 @@ pub fn model(phx: &PhxScene) -> SceneModel {
     model.report.scene = phx.name.clone();
     for m in &phx.meshes {
         let normals = if m.normals.len() == m.vertices.len() {
-            SceneNormals::PerVertex(m.normals.clone())
+            SceneNormalList::PerVertex(m.normals.clone())
         } else {
-            SceneNormals::PerFace(Vec::new())
+            SceneNormalList::PerFace(Vec::new())
         };
         let flat = m.indices.iter().flatten().copied().collect();
         let shape = SceneMesh { vertices: m.vertices.clone(), indices: flat, normals, corners: Default::default() };
@@ -64,8 +64,8 @@ pub fn to_phx(scene: &SceneModel) -> PhxScene {
     let mut phx = PhxScene::new(name);
     for o in &scene.objects {
         let normals = match &o.mesh.normals {
-            SceneNormals::PerVertex(n) => n.clone(),
-            SceneNormals::PerFace(_) => Vec::new(),
+            SceneNormalList::PerVertex(n) => n.clone(),
+            SceneNormalList::PerFace(_) => Vec::new(),
         };
         phx.add_mesh(PhxMesh {
             name: o.name.clone(),

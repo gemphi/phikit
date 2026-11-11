@@ -2,7 +2,7 @@
 //! out-of-range index dropping, degenerate-face skipping, and normal
 //! synthesis. Material / UV / colour tests live in `tests_material`.
 
-use crate::scene::{SceneModel, SceneNormals};
+use crate::scene::{SceneModel, SceneNormalList};
 use super::fixture::{blend_obj, blend_scene};
 
 #[test]
@@ -73,7 +73,7 @@ fn scene_from_blend_synthesizes_per_face_normals() {
     );
     let model = SceneModel::from_blend(&blend_scene(vec![obj]), "t.blend");
     match &model.objects[0].mesh.normals {
-        SceneNormals::PerFace(ns) => {
+        SceneNormalList::PerFace(ns) => {
             assert_eq!(ns.len(), 1);
             let n = ns[0];
             assert!((n[0]).abs() < 1e-5 && (n[1]).abs() < 1e-5 && (n[2] - 1.0).abs() < 1e-5);
@@ -92,7 +92,7 @@ fn scene_from_blend_uses_loop_normals_when_present() {
     );
     let model = SceneModel::from_blend(&blend_scene(vec![obj]), "t.blend");
     match &model.objects[0].mesh.normals {
-        SceneNormals::PerFace(ns) => {
+        SceneNormalList::PerFace(ns) => {
             assert_eq!(ns.len(), 1);
             assert_eq!(ns[0], [0.0, 1.0, 0.0]);
         }
@@ -117,7 +117,7 @@ fn scene_from_blend_normals_cardinality_matches_triangles() {
     let mesh = &model.objects[0].mesh;
     let tri_count = mesh.indices.len() / 3;
     match &mesh.normals {
-        SceneNormals::PerFace(ns) => assert_eq!(ns.len(), tri_count),
+        SceneNormalList::PerFace(ns) => assert_eq!(ns.len(), tri_count),
         other => panic!("expected PerFace, got {other:?}"),
     }
 }

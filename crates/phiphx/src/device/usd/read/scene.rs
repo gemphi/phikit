@@ -12,7 +12,7 @@ use crate::device::usd::stage::UsdStage;
 use crate::device::usd::xform::XformResolver;
 use crate::device::usd::attribute::UsdValue;
 use super::mesh::UsdImporter;
-use crate::scene::{SceneLoadError, SceneMesh, SceneModel, SceneNormals, SceneObject};
+use crate::scene::{SceneLoadError, SceneMesh, SceneModel, SceneNormalList, SceneObject};
 use crate::Mesh;
 use glam::Mat4;
 
@@ -120,8 +120,8 @@ pub fn model(name: &str, mesh: Vec<Mesh>) -> SceneModel {
     model.report.scene = name.to_string();
     for m in mesh {
         let normals = match m.normals {
-            Some(n) => SceneNormals::PerVertex(n),
-            None => SceneNormals::PerFace(Vec::new()),
+            Some(n) => SceneNormalList::PerVertex(n),
+            None => SceneNormalList::PerFace(Vec::new()),
         };
         let flat = m.indices.iter().flatten().copied().collect();
         let shape = SceneMesh { vertices: m.positions, indices: flat, normals, corners: Default::default() };

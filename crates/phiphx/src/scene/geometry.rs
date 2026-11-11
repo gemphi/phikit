@@ -1,7 +1,7 @@
 //! Pure geometry helpers shared by the blend and phx mappers: per-vertex
 //! UVs from per-corner UVs, and normal selection / synthesis.
 
-use super::SceneNormals;
+use super::SceneNormalList;
 
 /// Build a per-vertex UV buffer from the object's per-loop UVs.
 ///
@@ -37,7 +37,7 @@ pub(crate) fn per_vertex_uvs(faces: &crate::device::blend::BFaceList, loop_uvs: 
 /// When `loop_normals` covers a triangle's leading corner it is reused
 /// (per-face), otherwise the normal is synthesized from the triangle's
 /// winding (`(b - a) × (c - a)`, normalized). The result always has exactly
-/// `tri_count` entries so it satisfies the [`SceneNormals::PerFace`]
+/// `tri_count` entries so it satisfies the [`SceneNormalList::PerFace`]
 /// invariant.
 pub(crate) fn build_normals(
     vertices: &[[f32; 3]],
@@ -46,7 +46,7 @@ pub(crate) fn build_normals(
     tri_loop_starts: &[usize],
     tri_count: usize,
     tri_smooth: &[bool],
-) -> SceneNormals {
+) -> SceneNormalList {
     // Custom split normals win (Blender draws them verbatim).
     if !loop_normals.is_empty() {
         let normals = (0..tri_count)
@@ -58,11 +58,11 @@ pub(crate) fn build_normals(
                     .unwrap_or_else(|| tri_face_normal(vertices, indices, t))
             })
             .collect();
-        return SceneNormals::PerFace(normals);
+        return SceneNormalList::PerFace(normals);
     }
     let face: Vec<[f32; 3]> = (0..tri_count).map(|t| tri_face_normal(vertices, indices, t)).collect();
     if !tri_smooth.iter().any(|s| *s) {
-        return SceneNormals::PerFace(face);
+        return SceneNormalList::PerFace(face);
     }
     // Smooth faces: corner-angle-weighted vertex normals over the smooth
     // triangles (Blender `mesh::normals_calc_verts`), then each smooth
@@ -84,7 +84,7 @@ pub(crate) fn build_normals(
             normalize(n).unwrap_or(face[t])
         })
         .collect();
-    SceneNormals::PerFace(normals)
+    SceneNormalList::PerFace(normals)
 }
 
 pub(crate) fn tri_face_normal(vertices: &[[f32; 3]], indices: &[u32], t: usize) -> [f32; 3] {

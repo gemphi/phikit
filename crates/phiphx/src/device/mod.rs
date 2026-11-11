@@ -6,13 +6,15 @@
 //! the phases that fill it are in `LAYOUT.md`.
 pub mod blend;
 pub mod list;
+pub mod peek;
 pub mod phx;
 pub mod usd;
 
 pub use list::DeviceList;
+pub use peek::{Peek, PeekScene, PeekThumbnail};
 
-use crate::phx::{Peek, Progress};
-use crate::scene::{DeferredModifiers, SceneLoadError, SceneModel};
+use crate::phx::Progress;
+use crate::scene::{DeferredModifierList, SceneLoadError, SceneModel};
 use std::path::Path;
 
 /// Which variant a device reads and writes.
@@ -44,6 +46,16 @@ pub trait Device: Sync {
 
     /// Header-only look: version, render info, thumbnail. No scene is built.
     fn peek(&self, bytes: &[u8]) -> crate::Result<Peek>;
+    /// [Device::peek] for a file on disk. A device that can look at the head of a
+    /// big file without loading it overrides this; the default reads it whole.
+    fn peek_path(&self, path: &Path) -> crate::Result<Peek> {
+        self.peek(&std::fs::read(path)?)
+    }
+    /// Whether `read` loads the file itself from `Source::path` (so the caller
+    /// need not put its bytes in memory first).
+    fn streams(&self) -> bool {
+        false
+    }
 
     /// Read into a scene. A device that evaluates (Blend) hands back the
     /// evaluated scene.
@@ -55,7 +67,7 @@ pub trait Device: Sync {
         &self,
         source: &Source,
         progress: Progress,
-    ) -> Result<(SceneModel, Option<DeferredModifiers>), SceneLoadError> {
+    ) -> Result<(SceneModel, Option<DeferredModifierList>), SceneLoadError> {
         Ok((self.read(source, progress)?, None))
     }
 

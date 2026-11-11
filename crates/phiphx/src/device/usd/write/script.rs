@@ -4,7 +4,7 @@
 //! writer of record is [`UsdSceneWriter`](super::scene::UsdSceneWriter) over a
 //! `SceneModel`, so this turns the record into one and lets it write.
 use crate::device::blend::write::script::kind::{BlenderLightType, BlenderScene, CameraData, CameraType, LightData, MaterialData, MeshObjectData};
-use crate::scene::{SceneCamera, SceneCollection, SceneLight, SceneMaterial, SceneMesh, SceneModel, SceneNormals, SceneObject};
+use crate::scene::{SceneCamera, SceneCollection, SceneLight, SceneMaterial, SceneMesh, SceneModel, SceneNormalList, SceneObject};
 use crate::Result;
 use std::sync::Arc;
 
@@ -46,9 +46,9 @@ impl BlenderScene {
     fn object(&self, m: &MeshObjectData) -> SceneObject {
         let tri = m.indices.len();
         let normals = match m.normals.len() {
-            n if n == m.vertices.len() => SceneNormals::PerVertex(m.normals.clone()),
-            n if n == tri => SceneNormals::PerFace(m.normals.clone()),
-            _ => SceneNormals::PerFace(Vec::new()),
+            n if n == m.vertices.len() => SceneNormalList::PerVertex(m.normals.clone()),
+            n if n == tri => SceneNormalList::PerFace(m.normals.clone()),
+            _ => SceneNormalList::PerFace(Vec::new()),
         };
         let mesh = SceneMesh { vertices: m.vertices.clone(), indices: m.indices.iter().flatten().copied().collect(), normals, corners: Default::default() };
         let mut o = SceneObject::identity(m.name.clone(), mesh);

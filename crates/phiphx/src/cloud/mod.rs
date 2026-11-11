@@ -3,8 +3,8 @@
 //! Status and next steps: `jobs.md` in this folder.
 
 pub mod config;
-mod methods;
+mod method;
 mod serde_impl;
-mod types;
+mod data;
 
-pub use types::{PointCloud, PointCloudMetadata, PointCloudStats};
+pub use data::{PointCloud, PointCloudMetadata, PointCloudStat};

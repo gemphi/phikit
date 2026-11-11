@@ -93,8 +93,8 @@ fn check(path: &Path, truth_path: &Path, full: bool) -> usize {
             let n = match (&o.mesh.normals, o.mesh.corners.is_empty()) {
                 (_, false) => o.mesh.corners.normal(c),
                 // All flat: the triangle's own normal stands for the corner.
-                (phiphx::scene::SceneNormals::PerFace(f), true) => f[c / 3],
-                (phiphx::scene::SceneNormals::PerVertex(n), true) => n[v as usize],
+                (phiphx::scene::SceneNormalList::PerFace(f), true) => f[c / 3],
+                (phiphx::scene::SceneNormalList::PerVertex(n), true) => n[v as usize],
             };
             ours.entry(v).or_default().push(n);
         }

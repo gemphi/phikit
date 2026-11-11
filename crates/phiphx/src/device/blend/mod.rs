@@ -4,8 +4,9 @@
 //! Status and next steps: `jobs.md` in this folder.
 
 use super::{Device, DeviceKind, Source};
-use crate::phx::{Peek, Progress};
-use crate::scene::{DeferredModifiers, SceneLoadError, SceneModel};
+use crate::device::Peek;
+use crate::phx::Progress;
+use crate::scene::{DeferredModifierList, SceneLoadError, SceneModel};
 use crate::Result;
 use std::path::Path;
 
@@ -25,7 +26,6 @@ pub(crate) use shade::image::clear_source as clear_image_source;
 pub mod physics;
 pub use physics::BlendPhysics;
 
-pub use file::quick::{BlendQuickInfo, BlendRenderInfo, BlendThumbnail};
 pub use file::kind::{
     BHeadType, BlendBlock, BlendCollection, BlendFile, BlendHeader, BlendMaterial, BlendScene,
     BlendSceneObject, DnaField, DnaStruct, DnaType,
@@ -196,6 +196,17 @@ impl BlendImporter {
 
 /// The Blend variant of a scene file.
 pub struct BlendDevice;
+impl BlendDevice {
+    /// Install the batch skinner used for Armature deform while opening files
+    /// (None restores the built-in CPU path).
+    pub fn use_skinner(skinner: Option<std::sync::Arc<dyn Skinner>>) {
+        set_skinner(skinner);
+    }
+    /// Modifier types the viewport evaluates (Blender RNA ids).
+    pub fn modifier() -> Vec<&'static str> {
+        supported_modifiers().collect()
+    }
+}
 impl Device for BlendDevice {
     fn kind(&self) -> DeviceKind {
         DeviceKind::Blend
@@ -210,6 +221,14 @@ impl Device for BlendDevice {
     }
     fn peek(&self, bytes: &[u8]) -> Result<Peek> {
         BlendFile::quick_info_bytes(bytes)
+    }
+    /// Streams the header blocks of the file; a 200 MB scene costs a few KB.
+    fn peek_path(&self, path: &Path) -> Result<Peek> {
+        BlendFile::read_quick_info(path)
+    }
+    /// `read` opens `Source::path` itself.
+    fn streams(&self) -> bool {
+        true
     }
     /// Evaluated, as `Phx::open` gives it. With a path, images resolve beside
     /// the file; from bytes alone they read as missing (packed ones still load).
@@ -229,7 +248,7 @@ impl Device for BlendDevice {
         &self,
         source: &Source,
         progress: Progress,
-    ) -> std::result::Result<(SceneModel, Option<DeferredModifiers>), SceneLoadError> {
+    ) -> std::result::Result<(SceneModel, Option<DeferredModifierList>), SceneLoadError> {
         match source.path {
             Some(path) => {
                 set_image_source(path);

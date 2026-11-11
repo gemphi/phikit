@@ -7,35 +7,12 @@
 
 use crate::device::blend::file::kind::*;
 use crate::Result;
+use crate::device::{Peek, PeekScene, PeekThumbnail};
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::Path;
 
 /// `BLEN_THUMB_SIZE * 2` upper bound Blender accepts for stored previews.
 const THUMB_MAX: i32 = 512;
-
-/// Preview image, **top-down** RGBA8 rows (Blender stores them bottom-up).
-#[derive(Debug, Clone, PartialEq)]
-pub struct BlendThumbnail {
-    pub width: u32,
-    pub height: u32,
-    pub rgba: Vec<u8>,
-}
-
-/// One `RenderInfo` record: a scene written with its frame range.
-#[derive(Debug, Clone, PartialEq)]
-pub struct BlendRenderInfo {
-    pub scene: String,
-    pub frame_start: i32,
-    pub frame_end: i32,
-}
-
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct BlendQuickInfo {
-    /// "5.2" style version from the header.
-    pub version: String,
-    pub scenes: Vec<BlendRenderInfo>,
-    pub thumbnail: Option<BlendThumbnail>,
-}
 
 /// Read-only stream that only reports its position (enough for `read_block`).
 struct Counting<R> {
@@ -87,7 +64,7 @@ fn cstr(b: &[u8]) -> String {
     String::from_utf8_lossy(&b[..n]).into_owned()
 }
 
-fn thumbnail(data: &[u8], le: bool) -> Option<BlendThumbnail> {
+fn thumbnail(data: &[u8], le: bool) -> Option<PeekThumbnail> {
     let int = |o: usize| {
         let b: [u8; 4] = data.get(o..o + 4)?.try_into().ok()?;
         Some(if le { i32::from_le_bytes(b) } else { i32::from_be_bytes(b) })
@@ -102,27 +79,27 @@ fn thumbnail(data: &[u8], le: bool) -> Option<BlendThumbnail> {
     for row in (0..h).rev() {
         rgba.extend_from_slice(&px[row * w * 4..(row + 1) * w * 4]);
     }
-    Some(BlendThumbnail { width: w as u32, height: h as u32, rgba })
+    Some(PeekThumbnail { width: w as u32, height: h as u32, rgba })
 }
 
 impl BlendFile {
     /// Header version, `REND` scenes and the `TEST` thumbnail, without
     /// reading the rest of the file.
-    pub fn read_quick_info(path: &Path) -> Result<BlendQuickInfo> {
+    pub fn read_quick_info(path: &Path) -> Result<Peek> {
         Self::quick_info_from(open(path)?)
     }
 
     /// The same, from bytes already in memory (`Phx::peek_bytes`) — the
     /// version a browser can call on a file it has just been handed, to show
     /// its thumbnail and frame range before parsing anything.
-    pub fn quick_info_bytes(data: &[u8]) -> Result<BlendQuickInfo> {
+    pub fn quick_info_bytes(data: &[u8]) -> Result<Peek> {
         Self::quick_info_from(decode(data)?)
     }
 
-    fn quick_info_from(reader: impl Read) -> Result<BlendQuickInfo> {
+    fn quick_info_from(reader: impl Read) -> Result<Peek> {
         let mut r = Counting { inner: reader, pos: 0 };
         let header = Self::read_header(&mut r)?;
-        let mut info = BlendQuickInfo { version: header.version_label(), ..Default::default() };
+        let mut info = Peek { version: header.version_label(), ..Default::default() };
         let le = header.little_endian;
         for _ in 0..64 {
             let block = Self::read_block(&mut r, &header)?;
@@ -137,7 +114,7 @@ impl BlendFile {
                             })
                             .unwrap_or(0)
                     };
-                    info.scenes.push(BlendRenderInfo {
+                    info.scenes.push(PeekScene {
                         frame_start: int(0),
                         frame_end: int(4),
                         scene: cstr(d.get(8..).unwrap_or(&[])),

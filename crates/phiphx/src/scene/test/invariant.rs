@@ -1,7 +1,7 @@
 //! Basic scene-type invariants (Default, Clone, PartialEq). Split from the
 //! traversal tests so both files stay under the 200-line cap.
 
-use crate::scene::{SceneMesh, SceneModel, SceneNormals, SceneObject};
+use crate::scene::{SceneMesh, SceneModel, SceneNormalList, SceneObject};
 
 #[test]
 fn scene_model_default_is_empty() {
@@ -17,7 +17,7 @@ fn scene_object_clone_eq() {
         mesh: SceneMesh {
             vertices: vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
             indices: vec![0, 1, 2],
-            normals: SceneNormals::PerFace(vec![[0.0, 0.0, 1.0]]),
+            normals: SceneNormalList::PerFace(vec![[0.0, 0.0, 1.0]]),
             corners: Default::default(),
         }.into(),
         location: [0.0, 0.0, 0.0],
@@ -34,8 +34,8 @@ fn scene_object_clone_eq() {
 
 #[test]
 fn scene_normals_variants_distinct() {
-    let per_vertex = SceneNormals::PerVertex(vec![[0.0, 1.0, 0.0]]);
-    let per_face = SceneNormals::PerFace(vec![[0.0, 1.0, 0.0]]);
+    let per_vertex = SceneNormalList::PerVertex(vec![[0.0, 1.0, 0.0]]);
+    let per_face = SceneNormalList::PerFace(vec![[0.0, 1.0, 0.0]]);
     assert_ne!(per_vertex, per_face);
 }
 
@@ -47,7 +47,7 @@ fn scene_model_holds_objects_and_path() {
             mesh: SceneMesh {
                 vertices: vec![[0.0, 0.0, 0.0]],
                 indices: vec![],
-                normals: SceneNormals::PerVertex(vec![[0.0, 0.0, 1.0]]),
+                normals: SceneNormalList::PerVertex(vec![[0.0, 0.0, 1.0]]),
                 corners: Default::default(),
             }.into(),
             location: [0.0, 0.0, 0.0],

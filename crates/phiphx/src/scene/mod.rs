@@ -7,8 +7,8 @@
 //! ## File split (200-line file cap)
 //!
 //! - `mod.rs` (this file) — core types (`SceneObject`, `SceneMesh`,
-//!   `SceneNormals`, `SceneModel`) + child module declarations + re-exports.
-//! - `types_ext.rs` — extended scene surfaces (timeline / world / render /
+//!   `SceneNormalList`, `SceneModel`) + child module declarations + re-exports.
+//! - `surface.rs` — extended scene surfaces (timeline / world / render /
 //!   camera / light / action) read by non-mesh spaces.
 //! - `error.rs` — `SceneLoadError` + its message clamp.
 //! - `import.rs` — blend → scene conversion helpers (fan-triangulation,
@@ -124,16 +124,16 @@ pub struct SceneMesh {
     /// Triangle list, `len % 3 == 0`.
     pub indices: Vec<u32>,
     /// Per-vertex OR per-face normals.
-    pub normals: SceneNormals,
+    pub normals: SceneNormalList,
     /// Shading normal per triangle corner (`len == indices.len()`) for
     /// renderers that interpolate: split/custom normals, smooth faces; a zero
     /// entry means flat. Empty when every face is flat.
-    pub corners: SceneCorners,
+    pub corners: SceneCornerList,
 }
 
 /// Normal layout for a [`SceneMesh`].
 #[derive(Clone, Debug, PartialEq)]
-pub enum SceneNormals {
+pub enum SceneNormalList {
     /// One normal per vertex; `len == vertices.len()`.
     PerVertex(Vec<[f32; 3]>),
     /// One normal per triangle; `len == indices.len() / 3`.
@@ -160,7 +160,7 @@ pub struct SceneModel {
     /// Every animated object's NLA: its action line and tracks.
     pub nla: Vec<SceneNla>,
     /// Every driven object's drivers.
-    pub drivers: Vec<SceneDrivers>,
+    pub drivers: Vec<SceneDriverList>,
     /// Collection tree (Scene Collection first) with view-layer flags.
     pub collections: Vec<SceneCollection>,
     /// Active / selected / hidden objects of the opened view layer.
@@ -221,15 +221,15 @@ impl SceneModel {
 mod heap;
 
 pub use crate::device::blend::read::scene::model::{build, collection, motion, progressive, relation, rig};
-mod corners;
+mod corner;
 pub use motion::{SceneMotion, SceneMotionFrame};
-pub use rig::{SceneDriven, SceneRigs, SceneSkin};
+pub use rig::{SceneDriven, SceneRigList, SceneSkin};
 pub use relation::SceneRelation;
 pub mod uv;
 pub use uv::SceneUvMap;
-pub use progressive::{DeferredModifiers, SceneSwap};
+pub use progressive::{DeferredModifierList, SceneSwap};
 mod error;
-mod extras;
+mod extra;
 pub(crate) mod geometry;
 pub(crate) mod material;
 pub(crate) mod polyfill;
@@ -239,19 +239,19 @@ pub(crate) mod texture;
 pub(crate) mod texture_find;
 /// What a file asked for and could not be given, said once.
 pub(crate) mod texture_miss;
-mod types_ext;
+mod surface;
 pub(crate) mod ui;
 
 #[cfg(test)]
 mod test;
 
 pub use collection::{SceneCollection, SceneSelection};
-pub use corners::SceneCorners;
+pub use corner::SceneCornerList;
 pub use error::{MESSAGE_MAX, SceneLoadError};
-pub use material::{SceneBsdf, SceneMap, SceneMaps, SceneMaterial};
+pub use material::{SceneBsdf, SceneMap, SceneMapList, SceneMaterial};
 pub use report::SceneReadReport;
 pub use texture::{SceneEnvironment, SceneTexture, TextureCache};
 pub use ui::{SceneSolidFx, SceneSolidShade, SceneUi, SceneView, SceneXray, VIEW_WIDTH_PER_DIST};
-pub use types_ext::{
-    SceneAction, SceneCamera, SceneDrivers, SceneEmpty, SceneLight, SceneNla, SceneDisplayShading, SceneRender, SceneShadow, SceneSsao, SceneTimeline, SceneWorld,
+pub use surface::{
+    SceneAction, SceneCamera, SceneDriverList, SceneEmpty, SceneLight, SceneNla, SceneDisplayShading, SceneRender, SceneShadow, SceneSsao, SceneTimeline, SceneWorld,
 };

@@ -2,17 +2,17 @@
 //! triangulation, bounds-safe indices, normals, UVs and material slots.
 
 use crate::scene::geometry::{build_normals, per_vertex_uvs};
-use crate::scene::SceneCorners;
+use crate::scene::SceneCornerList;
 use crate::scene::material::materials_from_blend;
 use crate::scene::polyfill::triangulate;
-use crate::scene::{SceneMesh, SceneNormals, SceneObject};
+use crate::scene::{SceneMesh, SceneNormalList, SceneObject};
 use crate::device::blend::BlendSceneObject;
 
 /// The triangles `src` is drawn with — its modifier-evaluated mesh's when
 /// given, as [`evaluated_object`] makes them.
-pub(super) fn evaluated_triangles(src: &BlendSceneObject, eval: Option<&crate::device::blend::BlendEvalMesh>) -> STriangles {
+pub(super) fn evaluated_triangles(src: &BlendSceneObject, eval: Option<&crate::device::blend::BlendEvalMesh>) -> STriangleList {
     match eval {
-        Some(e) => STriangles::of(&BlendSceneObject {
+        Some(e) => STriangleList::of(&BlendSceneObject {
             vertices: e.vertices.clone(),
             faces: e.faces.clone(),
             face_materials: e.face_materials.clone(),
@@ -21,7 +21,7 @@ pub(super) fn evaluated_triangles(src: &BlendSceneObject, eval: Option<&crate::d
             loose_edges: e.loose_edges.clone(),
             ..src.clone()
         }),
-        None => STriangles::of(src),
+        None => STriangleList::of(src),
     }
 }
 
@@ -52,7 +52,7 @@ pub(super) fn evaluated_object_and_tris(
     src: &BlendSceneObject,
     eval: Option<&crate::device::blend::BlendEvalMesh>,
     keep: bool,
-) -> (SceneObject, Option<STriangles>) {
+) -> (SceneObject, Option<STriangleList>) {
     let owned;
     let obj = match eval {
         Some(e) => {
@@ -75,7 +75,7 @@ pub(super) fn evaluated_object_and_tris(
     };
     let vertices = obj.vertices.clone();
     let vert_count = vertices.len();
-    let mut tris = STriangles::of(obj);
+    let mut tris = STriangleList::of(obj);
     let mesh = tris.mesh(vertices, &obj.loop_normals, &obj.loop_colors);
     // Kept triangles keep their slots too, as `evaluated_triangles` does.
     let material_indices = match keep {
@@ -104,7 +104,7 @@ pub(super) fn evaluated_object_and_tris(
 /// pose (`rig.rs`) is drawn with the same triangles: indices, which face
 /// corners each came from, and which were smooth.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct STriangles {
+pub struct STriangleList {
     pub indices: Vec<u32>,
     tri_loop_starts: Vec<usize>,
     tri_loops: Vec<[usize; 3]>,
@@ -113,7 +113,7 @@ pub struct STriangles {
     pub material_indices: Vec<u16>,
 }
 
-impl STriangles {
+impl STriangleList {
     /// Blender-style triangulation of `obj`'s faces, bounds-safe.
     pub fn of(obj: &BlendSceneObject) -> Self {
         let vertices = &obj.vertices;
@@ -187,7 +187,7 @@ impl STriangles {
             return mesh;
         }
         let normals = build_normals(&vertices, &self.indices, loop_normals, &self.tri_loop_starts, self.indices.len() / 3, &self.tri_smooth);
-        let mut corners = SceneCorners::build(&vertices, &self.indices, loop_normals, &self.tri_loops, &self.tri_smooth);
+        let mut corners = SceneCornerList::build(&vertices, &self.indices, loop_normals, &self.tri_loops, &self.tri_smooth);
         corners.colors = self.corner_colors(loop_colors);
         SceneMesh { vertices, indices: self.indices.clone(), normals, corners }
     }
@@ -203,7 +203,7 @@ impl STriangles {
     /// `mesh` for smooth faces without saved normals — every frame of a
     /// rigged mesh: the face normals and the vertex normals worked out once
     /// for both the triangles' normals and the corners' (what
-    /// `build_normals` and `SceneCorners::build` each work out alone).
+    /// `build_normals` and `SceneCornerList::build` each work out alone).
     fn smooth_mesh(&self, vertices: Vec<[f32; 3]>) -> SceneMesh {
         use crate::scene::geometry::{normalize, smooth_vertex_normals, tri_face_normal};
         use rayon::prelude::*;
@@ -227,6 +227,6 @@ impl STriangles {
         let mut table = vec![[0.0; 3]];
         table.par_extend(accum.par_iter().map(|n| normalize(*n).unwrap_or([0.0; 3])));
         let ids = (0..indices.len()).map(|c| if self.tri_smooth.get(c / 3).copied().unwrap_or(false) { indices[c] + 1 } else { 0 }).collect();
-        SceneMesh { vertices, indices: indices.clone(), normals: SceneNormals::PerFace(normals), corners: SceneCorners { ids, normals: table, colors: Vec::new() } }
+        SceneMesh { vertices, indices: indices.clone(), normals: SceneNormalList::PerFace(normals), corners: SceneCornerList { ids, normals: table, colors: Vec::new() } }
     }
 }

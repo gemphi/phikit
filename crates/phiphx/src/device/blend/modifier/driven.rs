@@ -12,7 +12,7 @@
 //! **Topology changes per frame.** A driven Subdivision level can go from
 //! 0 to 2 between frames, which changes the vertex and triangle counts,
 //! so the triangles cannot be kept from the open — each frame builds its
-//! own `STriangles` and `SceneMesh`.
+//! own `STriangleList` and `SceneMesh`.
 
 use super::driver::{BModValue, BModWrite};
 use super::{BModifier, BlendEvalMesh, EvalCtx};

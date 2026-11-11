@@ -3,7 +3,7 @@
 //! primary-subject selector.
 //! Status and next steps: `jobs.md` in this folder.
 
-pub mod bounds;
+pub mod bound;
 pub mod bvh;
 pub mod mesh;
 pub mod selector;

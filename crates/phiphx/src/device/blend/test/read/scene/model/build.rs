@@ -100,7 +100,7 @@ fn an_added_object_moves_with_its_play() {
             (1.0, 10.0)
         }
     }
-    let mesh = SceneMesh { vertices: vec![[0.0; 3], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], indices: vec![0, 1, 2], normals: crate::scene::SceneNormals::PerFace(vec![[0.0, 0.0, 1.0]]), corners: Default::default() };
+    let mesh = SceneMesh { vertices: vec![[0.0; 3], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], indices: vec![0, 1, 2], normals: crate::scene::SceneNormalList::PerFace(vec![[0.0, 0.0, 1.0]]), corners: Default::default() };
     let mut model = SceneModel::default();
     let ball = model.add_object(SceneObject::identity("Ball", mesh), Some(BPlayRef(Arc::new(Slide))));
     assert!(model.motion.animated());
