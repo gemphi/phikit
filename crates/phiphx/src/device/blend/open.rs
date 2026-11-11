@@ -2,7 +2,7 @@
 //! A read is guarded (a parser panic settles as `Malformed`), then the parsed
 //! scene is settled into a `SceneModel`.
 use crate::scene::{SceneLoadError, SceneModel};
-use super::BlendImporter;
+use crate::device::blend::mesh::BlendImporter;
 use crate::phx::Progress;
 use std::path::Path;
 

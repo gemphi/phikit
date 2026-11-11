@@ -1,4 +1,4 @@
-//! PHX format importer.
+//! `PhxImporter`: reads a PHX scene for the asset pipeline.
 
 use crate::AssetImportResult;
 use crate::device::phx::scene as exporter_scene;

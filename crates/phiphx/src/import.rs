@@ -13,7 +13,7 @@ pub use asset::{
     AssetImportResult, AssetImporter, ImportedCollection, ImportedMaterial, ImportedObject,
 };
 pub use format::{FileFormat, ObjImporter};
-pub use crate::device::phx::read::PhxImporter;
+pub use crate::device::phx::mesh::PhxImporter;
 pub use ply::PlyImporter;
 
 use crate::{PointCloud, Result};

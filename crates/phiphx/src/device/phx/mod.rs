@@ -1,11 +1,10 @@
 //! The PHX device: the engine's own scene file. `cloud/` is the point cloud
-//! (`PHX\0` chunks), `scene/` the scene (`PHX_SCENE\x01` + JSON), `read.rs`
-//! the asset-import view, `sidecar.rs` the `.phx` written beside other files,
+//! (`PHX\0` chunks), `scene/` the scene (`PHX_SCENE\x01` + JSON), `mesh/` the asset-import view, `sidecar.rs` the `.phx` written beside other files,
 //! `project.rs` the project folder.
 pub mod cloud;
+pub mod mesh;
 pub mod open;
 pub mod project;
-pub mod read;
 pub mod scene;
 pub mod sidecar;
 use super::{Device, DeviceKind, Source};
