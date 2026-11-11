@@ -4,7 +4,7 @@
 //! 2.79 file and an `int` in a 5.0 one. Plus the block-level helpers a
 //! patch needs: an ID block by name, a new `DATA` block, a block dropped.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// The dimensions in `[4][4]`.
 fn dims(spec: &str) -> Vec<usize> {

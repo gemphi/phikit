@@ -19,10 +19,10 @@
 //! are `procscalar.rs`.
 
 use super::eval::BGraph;
-use super::links::BLink;
+use super::link::BLink;
 use super::principled::BSocket;
 use super::scalar::BScalarOp;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `eNodeSocketDatatype::SOCK_RGBA`, a Mix node over colours.
 const SOCK_RGBA: u8 = 2;

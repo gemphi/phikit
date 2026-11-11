@@ -1,6 +1,6 @@
 //! `CustomData` float3 layers (`position`, legacy vdata) and layer helpers.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Read float3 data from a CustomData struct's layers (Blender 3.5+).

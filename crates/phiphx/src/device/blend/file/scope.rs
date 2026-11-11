@@ -8,7 +8,7 @@
 //! [`BlendFile::scoped`], a repeated address resolves to the first copy
 //! written after that ID block.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use std::sync::atomic::Ordering;
 
 impl BlendFile {

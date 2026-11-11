@@ -14,10 +14,10 @@
 //! fields through a node type `nodes_field.rs` does not have, is not read,
 //! and the modifier is reported as skipped as it was before (`report.rs`).
 
-use super::nodes_field::{BCompare, BDomain, BEval, BInput, shade_domain, shade_fields};
-use super::nodes_topo::BTopo;
+use super::node_field::{BCompare, BDomain, BEval, BInput, shade_domain, shade_fields};
+use super::node_topo::BTopo;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::shade::graph::{BlendNode, BlendNodeGraph};
 use std::collections::HashMap;
 
@@ -36,7 +36,7 @@ const FIELD_NODES: &[&str] = &[
 ];
 
 #[derive(Clone)]
-pub(crate) struct BNodes {
+pub(crate) struct BNodeList {
     graph: BlendNodeGraph,
     inputs: HashMap<String, BInput>,
     compares: HashMap<String, BCompare>,
@@ -66,9 +66,9 @@ pub(crate) fn read(f: &BlendFile, md: &BlendBlock, _ob: &BlendBlock, dna: &DnaTy
 /// file's own group, the one Blender's legacy conversion invents
 /// (`nodes_legacy.rs`), or a test's. `None` when this evaluator does not
 /// cover the tree.
-pub(crate) fn from_parts(graph: BlendNodeGraph, inputs: HashMap<String, BInput>, compares: HashMap<String, BCompare>) -> Option<BNodes> {
+pub(crate) fn from_parts(graph: BlendNodeGraph, inputs: HashMap<String, BInput>, compares: HashMap<String, BCompare>) -> Option<BNodeList> {
     let chain = geometry_chain(&graph)?;
-    let built = BNodes { graph, inputs, compares, chain };
+    let built = BNodeList { graph, inputs, compares, chain };
     built.supported().then_some(built)
 }
 
@@ -108,7 +108,7 @@ fn geometry_chain(graph: &BlendNodeGraph) -> Option<Vec<String>> {
     None
 }
 
-impl BNodes {
+impl BNodeList {
     fn node(&self, name: &str) -> Option<&BlendNode> {
         self.graph.nodes.iter().find(|n| n.name == name)
     }
@@ -146,7 +146,7 @@ impl BNodes {
     }
 }
 
-impl BModifier for BNodes {
+impl BModifier for BNodeList {
     /// `MOD_nodes.cc` `modify_mesh` for this group: each Set Shade Smooth
     /// in turn over the flags the previous one left, then the flags back
     /// on the mesh. A field that cannot be evaluated leaves the mesh as it

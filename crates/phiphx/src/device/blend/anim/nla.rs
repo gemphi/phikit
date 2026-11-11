@@ -3,7 +3,7 @@
 //! draws around them: the active action, how it extends
 //! (`act_extendmode`), tweak and solo flags.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `eNlaStrip_Extrapolate_Mode`.
 pub const EXTEND_HOLD: u32 = 0;
@@ -140,7 +140,7 @@ impl BlendFile {
             slot: self.int_field(block, "NlaStrip", "action_slot_handle", dna) as i32,
             slot_name: self
                 .field_span("NlaStrip", "action_slot_name", dna)
-                .map_or(String::new(), |(o, n)| crate::device::blend::shade::nodes::read_cstr(&block.data, o, n)),
+                .map_or(String::new(), |(o, n)| crate::device::blend::shade::node::read_cstr(&block.data, o, n)),
             address: block.old_address,
         }
     }
@@ -175,7 +175,7 @@ impl BlendFile {
     }
 
     /// Every animated object's NLA, in object order.
-    pub(crate) fn nla_list(&self, objects: &[crate::device::blend::read::scene::types::BlendSceneObject], dna: &DnaType) -> Vec<BlendNla> {
+    pub(crate) fn nla_list(&self, objects: &[crate::device::blend::read::scene::kind::BlendSceneObject], dna: &DnaType) -> Vec<BlendNla> {
         objects
             .iter()
             .filter_map(|object| self.nla(&object.name, self.block_at(object.block_address)?, dna))

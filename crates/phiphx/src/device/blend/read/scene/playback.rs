@@ -11,7 +11,7 @@
 //! (`ToolSettings.snap_flag_playhead`, `snap_playhead_mode`, the steps and
 //! the distance, where the file's Blender has them).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `AudioData.flag`.
 pub const AUDIO_MUTE: u32 = 1 << 0;

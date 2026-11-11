@@ -18,7 +18,7 @@
 //! group, the system side on top, so `cycles/samples` answers whichever
 //! layout the file has.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use std::collections::HashMap;
 
 /// `eIDPropertyType`.

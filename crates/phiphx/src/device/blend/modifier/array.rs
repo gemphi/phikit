@@ -9,7 +9,7 @@ use super::{BModifier, BlendEvalMesh, EvalCtx};
 #[path = "array_merge.rs"]
 mod array_merge;
 use super::driver::BModValue;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::{Mat4, Vec3};
 
 const OFF_CONST: u32 = 1 << 0;

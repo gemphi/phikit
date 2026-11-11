@@ -7,7 +7,7 @@
 
 use super::{BModifier, BlendEvalMesh, EvalCtx};
 use super::driver::BModValue;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 pub(crate) struct BTriangulate {
     /// Faces with fewer corners than this are left alone (Blender's default
@@ -51,7 +51,7 @@ impl BModifier for BTriangulate {
         if faces == 0 {
             return;
         }
-        let mut out = crate::device::blend::BFaces::default();
+        let mut out = crate::device::blend::BFaceList::default();
         let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(mesh.loop_uvs.len());
         let mut colors: Vec<[f32; 3]> = Vec::with_capacity(mesh.loop_colors.len());
         let mut materials: Vec<u16> = Vec::with_capacity(faces);

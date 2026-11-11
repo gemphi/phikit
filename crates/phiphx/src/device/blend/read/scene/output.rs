@@ -14,7 +14,7 @@
 //!   (`ImColorMode`: BW 8, BW+A 16, RGB 24, RGBA 32), which is why 5.x could
 //!   rename the old `planes` field to `color_mode` without changing a value.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `ImageFormatData.imtype` — the file format a render is written in.
 /// Only the ones a still render can produce are named; anything else

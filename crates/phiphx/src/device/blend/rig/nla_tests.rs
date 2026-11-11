@@ -5,7 +5,7 @@
 //! on a track of its own. Each bone's saved pose is off its default, so the
 //! frames no strip covers check that evaluation starts from the default.
 
-use crate::device::blend::file::types::BlendFile;
+use crate::device::blend::file::kind::BlendFile;
 use std::collections::HashMap;
 
 const FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/nla_rig.blend");

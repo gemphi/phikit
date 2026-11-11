@@ -3,9 +3,9 @@
 //! `tests/fixtures/make_smooth_by_angle.py`'s Blender) over a cube, and
 //! the corner normals Blender draws the result with.
 
-use super::nodes::from_parts;
-use super::nodes_corners::{corner_normals, safe_acos_approx};
-use super::nodes_field::{BCompare, BInput};
+use super::node::from_parts;
+use super::node_corner::{corner_normals, safe_acos_approx};
+use super::node_field::{BCompare, BInput};
 use super::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::shade::graph::{BlendNode, BlendNodeGraph, BlendNodeLink};
 use crate::device::blend::shade::socket::{BSocketDefault, BlendSocket};

@@ -226,9 +226,9 @@ impl PhxMeshChunk {
 }
 
 /// PHX binary writers (header, chunks, end marker).
-pub struct PhxChunks;
+pub struct PhxChunkList;
 
-impl PhxChunks {
+impl PhxChunkList {
 /// A single mesh as PHX bytes.
 pub fn mesh(mesh: &ImportMesh, name: &str) -> Result<Vec<u8>> {
     let mut output = Vec::new();
@@ -389,7 +389,7 @@ mod tests {
         mesh.normals = Some(vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]);
         mesh.indices = vec![[0, 1, 2]];
 
-        let phx_data = PhxChunks::mesh(&mesh, "test_mesh").unwrap();
+        let phx_data = PhxChunkList::mesh(&mesh, "test_mesh").unwrap();
         assert!(!phx_data.is_empty());
         assert_eq!(&phx_data[0..4], PHX_MAGIC);
     }

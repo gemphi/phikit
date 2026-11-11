@@ -7,7 +7,7 @@
 //! Rigify does not move visibly until those land.
 
 use super::read::BAction;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::Mat4;
 use std::collections::HashMap;
 
@@ -61,7 +61,7 @@ pub fn bases_at(channels: &[BChannel], action: Option<&BAction>, slot: i32, fram
     let curves = action.map_or(&[][..], |a| a.curves(slot));
     channels
         .iter()
-        .map(|c| super::channels::basis_at(c.raw, curves.iter().filter(|f| f.bone() == Some(c.name.as_str())), frame))
+        .map(|c| super::channel::basis_at(c.raw, curves.iter().filter(|f| f.bone() == Some(c.name.as_str())), frame))
         .collect()
 }
 

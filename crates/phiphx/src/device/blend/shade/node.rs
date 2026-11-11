@@ -2,7 +2,7 @@
 //! the first Image Texture's
 //! `Image.filepath` (`DNA_node_types.h`, `DNA_material_types.h`).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Walk the material's node tree looking for an Image Texture node and

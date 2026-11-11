@@ -8,7 +8,7 @@
 //! overflow and scale-to-fit, text on a curve and combining-mark placement
 //! are not done (a zero-width glyph simply does not advance).
 
-use super::chars::TChars;
+use super::character::TCharList;
 use super::{BText, TCharInfo, TNurb, TSpline, CU_CHINFO_SMALLCAPS, CU_CHINFO_UNDERLINE};
 use glam::{Vec2, Vec3};
 
@@ -29,8 +29,8 @@ pub fn vfont_to_curve(cu: &BText) -> Vec<TNurb> {
     let slen = cu.text.len();
     let mem = |i: usize| cu.text.get(i).copied().unwrap_or('\0');
     let info = |i: usize| cu.info.get(i).copied().unwrap_or_default();
-    let mut chars = TChars::new(cu);
-    let metrics = TChars::metrics_of(&cu.fonts);
+    let mut chars = TCharList::new(cu);
+    let metrics = TCharList::metrics_of(&cu.fonts);
     let font_size = cu.fsize;
     let off_scale = Vec2::new(safe_divide(cu.xof, font_size), safe_divide(cu.yof, font_size));
     let tb = cu.textbox.map(|v| v * safe_divide(1.0, font_size));
@@ -141,7 +141,7 @@ fn width(w: f32, smallcaps: bool, cu: &BText) -> f32 {
 }
 
 /// The vertical alignment's offset, with or without a box height.
-fn align_y(cu: &BText, m: &super::font::BFontMetrics, lines: usize, box_h: f32) -> f32 {
+fn align_y(cu: &BText, m: &super::font::BFontMetric, lines: usize, box_h: f32) -> f32 {
     let lines_extra = (lines as f32 - 1.0) * cu.linedist;
     match box_h != 0.0 {
         false => match cu.align_y {

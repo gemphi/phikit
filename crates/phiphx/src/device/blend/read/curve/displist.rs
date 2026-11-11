@@ -1,12 +1,12 @@
 //! A curve object's display list (`evaluate_curve_type_object`,
-//! `displist.cc`): its bevel lists ([`super::lists`]) swept by the bevel
+//! `displist.cc`): its bevel lists ([`super::list`]) swept by the bevel
 //! profile, or, with neither profile nor width correction, every valid
 //! spline's evaluated outline (`curve_to_displist`); then the flat fill.
 //! The sweep, the profile and the fill are the text pipeline's
 //! (`blend/text/sweep`), which is Blender's one pipeline for both.
 
 use super::bevel::BBevelList;
-use super::lists::bevel_lists;
+use super::list::bevel_lists;
 use super::{BCurve, CU_BEZIER, CU_NURBS, CU_POLY};
 use crate::device::blend::read::text::bevlist::forward_diff;
 use crate::device::blend::read::text::displist::{TDispList, TDlKind};

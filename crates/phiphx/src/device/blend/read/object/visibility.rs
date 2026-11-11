@@ -14,7 +14,7 @@
 //! The eye is not here: it is the view layer's `BASE_HIDDEN` /
 //! `LAYER_COLLECTION_HIDE` (`layer.rs`), per layer rather than per datablock.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 pub const OB_HIDE_VIEWPORT: u32 = 1 << 0;
 pub const OB_HIDE_SELECT: u32 = 1 << 1;

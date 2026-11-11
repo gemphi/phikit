@@ -4,7 +4,7 @@
 //! `layer.rs` and `collection.rs` make to read, kept to block indices so
 //! the writer can patch what they find.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// One object's `Base` in the view layer.
 #[derive(Clone, Debug, PartialEq, Eq)]

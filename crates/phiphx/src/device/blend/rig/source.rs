@@ -7,7 +7,7 @@ use super::{BONE_NO_DEFORM, BRig, BRigAnim, BRigPose, BSceneView};
 use crate::device::blend::anim::fcurve::BFCurve;
 use crate::device::blend::anim::nla::TRACK_MUTED;
 use crate::device::blend::anim::nla_eval::BMotionTrack;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::modifier::armature::BDeformBone;
 use crate::device::blend::modifier::bbone;
 use glam::Mat4;
@@ -104,7 +104,7 @@ impl BlendRigSource {
 /// as a read scene carries them. Shared, not copied: a clone is two `Arc` lists, and two are equal
 /// when they hold the same sources.
 #[derive(Clone, Debug, Default)]
-pub struct BlendRigs {
+pub struct BlendRigList {
     pub rigs: Vec<std::sync::Arc<BlendRigSource>>,
     pub skins: Vec<std::sync::Arc<crate::device::blend::modifier::BlendSkinSource>>,
     /// Non-rigged meshes with modifier drivers, retained for per-frame
@@ -112,7 +112,7 @@ pub struct BlendRigs {
     pub driven: Vec<std::sync::Arc<crate::device::blend::modifier::driven::BlendDrivenSource>>,
 }
 
-impl PartialEq for BlendRigs {
+impl PartialEq for BlendRigList {
     fn eq(&self, other: &Self) -> bool {
         self.rigs.len() == other.rigs.len()
             && self.rigs.iter().zip(&other.rigs).all(|(x, y)| std::sync::Arc::ptr_eq(x, y))
@@ -130,13 +130,13 @@ impl BlendFile {
         objects: &[BlendSceneObject],
         dna: &DnaType,
         actions: &HashMap<u64, crate::device::blend::anim::read::BAction>,
-    ) -> BlendRigs {
+    ) -> BlendRigList {
         let rigs = self.rig_sources(objects, dna, actions);
         let driven = self.driven_sources(objects, dna).into_iter().map(std::sync::Arc::new).collect();
         if rigs.is_empty() {
-            return BlendRigs { rigs: Vec::new(), skins: Vec::new(), driven };
+            return BlendRigList { rigs: Vec::new(), skins: Vec::new(), driven };
         }
         let skins = self.skin_sources(objects, dna).into_iter().filter(|s| rigs.iter().any(|r| r.moves && r.address == s.armature)).map(std::sync::Arc::new).collect();
-        BlendRigs { rigs: rigs.into_iter().map(std::sync::Arc::new).collect(), skins, driven }
+        BlendRigList { rigs: rigs.into_iter().map(std::sync::Arc::new).collect(), skins, driven }
     }
 }

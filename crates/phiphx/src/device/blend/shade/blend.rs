@@ -1,6 +1,6 @@
 //! Colour math of Blender's Mix / Color Ramp / Hue-Saturation nodes.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `MA_RAMP_*` blend of `b` over `a` by `t`, keeping `a`'s alpha — what a
 /// material's Mix node does (Cycles' `svm_mix` takes the first colour's

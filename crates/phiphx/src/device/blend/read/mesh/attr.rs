@@ -8,7 +8,7 @@
 //! *sharing_info, int64 size }`. 5.x meshes write geometry here and leave
 //! the `CustomData` layers empty.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use std::borrow::Cow;
 
 /// Bytes per element for `AttrType` (String and unknown types: 0).

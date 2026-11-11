@@ -95,7 +95,7 @@ pub struct BLightDriver {
 
 /// Every driver one light carries.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct BLightDrivers {
+pub struct BLightDriverList {
     /// The `Light` datablock's name, which is how a caller matches it to
     /// the light it read.
     pub light: String,
@@ -107,7 +107,7 @@ pub struct BLightDrivers {
     pub drivers: Vec<BLightDriver>,
 }
 
-impl BLightDrivers {
+impl BLightDriverList {
     pub fn is_empty(&self) -> bool {
         self.drivers.is_empty()
     }

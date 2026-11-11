@@ -9,7 +9,7 @@
 use super::geom::vertex_normals;
 use super::driver::BModValue;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::Vec3;
 
 /// `MOD_DISP_DIR_*`.

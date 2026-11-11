@@ -21,7 +21,7 @@
 
 pub mod bevel;
 pub mod displist;
-pub mod lists;
+pub mod list;
 mod mesh_read;
 mod orient;
 pub mod path;

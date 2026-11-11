@@ -6,7 +6,7 @@
 //! this, every field read walked the type list and the struct's members
 //! with string compares — two thirds of a 24-second open of a rigged file.
 
-use super::types::{DnaStruct, DnaType};
+use super::kind::{DnaStruct, DnaType};
 use std::collections::HashMap;
 
 /// One struct's members laid out.
@@ -124,7 +124,7 @@ impl DnaType {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::device::blend::file::types::DnaField;
+    use crate::device::blend::file::kind::DnaField;
 
     fn dna() -> DnaType {
         DnaType {

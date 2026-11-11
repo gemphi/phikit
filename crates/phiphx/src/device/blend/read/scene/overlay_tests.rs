@@ -6,7 +6,7 @@
 //! and the lines of an object target, a bone target at `head_tail`, a Follow
 //! Path curve, with none for a folded constraint or Clamp To.
 
-use crate::device::blend::file::types::BlendFile;
+use crate::device::blend::file::kind::BlendFile;
 use crate::scene::SceneRelation;
 
 const DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests");

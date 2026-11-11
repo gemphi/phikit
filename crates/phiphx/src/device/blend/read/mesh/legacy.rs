@@ -1,6 +1,6 @@
 //! Pre-4.x mesh arrays: `mvert`, `mpoly` / `mloop`, `poly_offsets`.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Follow the `*mvert` pointer and decode the vertex positions.

@@ -8,7 +8,7 @@
 //! `gizmo_show_object`. Each switch is read by its RNA name, which is the
 //! name Phiber keys it by, so a reader of this list never needs the bits.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// Where one switch lives, and whether its bit hides or shows.
 #[derive(Clone, Copy)]

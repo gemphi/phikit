@@ -2,7 +2,7 @@
 //! live in `Object.softflag`; the numbers in the `SoftBody` block.
 
 use super::string_at;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `Object.softflag` bits.
 const OB_SB_GOAL: u32 = 1 << 1;

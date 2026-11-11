@@ -1,6 +1,6 @@
 //! Export configuration types for Blender native scene export.
 
-use super::types::BlenderSceneFormat;
+use super::kind::BlenderSceneFormat;
 
 /// Point cloud export configuration
 #[derive(Debug, Clone, Copy)]

@@ -8,7 +8,7 @@
 //! smooth flags are inherited; UVs are interpolated linearly. Not yet: UV
 //! smoothing.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use super::driver::BModValue;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
 use super::crease::{BCreaseLevel, BRule, BSharpness};

@@ -13,6 +13,6 @@
 ## Done
 
 - [x] `PointCloudExporter`; PLY, PCD, LAS, XYZ, JSON, binary, glTF, USD, PHX writers
-- [x] Loose `export_*` functions folded into their types (`PhxScene`, `PhxChunks`, `BlenderScene`, `PointCloud::from_phx`); duplicate glTF/USD exporters removed
+- [x] Loose `export_*` functions folded into their types (`PhxScene`, `PhxChunkList`, `BlenderScene`, `PointCloud::from_phx`); duplicate glTF/USD exporters removed
 
 Format: one line per job, `- [ ]` open / `- [x]` done; move a line from Todo to Done when it lands, with its test.

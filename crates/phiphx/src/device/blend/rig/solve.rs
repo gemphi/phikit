@@ -11,7 +11,7 @@ use super::math::{BEulerOrder, BMat4, BQuat, BVec3, BCompose};
 use super::space::BParentTransform;
 use super::view::BSceneView;
 use super::{BONE_CONNECTED, BRig, BRigState};
-use crate::device::blend::anim::channels::channel_mut;
+use crate::device::blend::anim::channel::channel_mut;
 use crate::device::blend::anim::fcurve::BFCurve;
 use crate::device::blend::anim::nla_eval::{BMotionTrack, BNlaTarget};
 use crate::device::blend::read::object::transform::ObjectTransformRaw;
@@ -90,12 +90,12 @@ impl<'a> BRigAnim<'a> {
 /// The bones' channels as the NLA writes them: a curve's when its path is
 /// a pose bone's transform (`pose.bones["arm"].location`) — not one of its
 /// constraints' settings or custom properties.
-struct BBoneChannels<'r> {
+struct BBoneChannelList<'r> {
     rig: &'r BRig,
     raw: &'r mut [ObjectTransformRaw],
 }
 
-impl BNlaTarget for BBoneChannels<'_> {
+impl BNlaTarget for BBoneChannelList<'_> {
     fn slot(&mut self, curve: &BFCurve) -> Option<&mut f32> {
         let path = BRnaPath::parse(&curve.path)?;
         let [BRnaStep::Field(p), BRnaStep::Field(b), BRnaStep::Key(bone), BRnaStep::Field(property)] = path.0.as_slice() else { return None };
@@ -125,7 +125,7 @@ impl BRig {
                 .map(|b| b.constraints.iter().map(|c| if let BConstraintKind::Armature { targets, .. } = &c.kind { targets.iter().map(|t| t.1).collect() } else { Vec::new() }).collect())
                 .collect(),
         };
-        BMotionTrack::play(anim.nla, anim.solo, &mut BBoneChannels { rig: self, raw: &mut state.raw }, frame);
+        BMotionTrack::play(anim.nla, anim.solo, &mut BBoneChannelList { rig: self, raw: &mut state.raw }, frame);
         for c in anim.curves.iter().filter(|c| !c.muted()) {
             let Some(v) = c.eval(frame) else { continue };
             let Some(path) = BRnaPath::parse(&c.path) else { continue };

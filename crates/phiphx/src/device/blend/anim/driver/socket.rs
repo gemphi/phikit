@@ -18,8 +18,8 @@
 //!
 //! [`shade::driver`]: crate::device::blend::shade::driver
 
-use crate::device::blend::file::types::*;
-use crate::device::blend::shade::nodes::read_cstr;
+use crate::device::blend::file::kind::*;
+use crate::device::blend::shade::node::read_cstr;
 
 /// `eNodeSocketDatatype::SOCK_RGBA`.
 const SOCK_RGBA: u16 = 2;

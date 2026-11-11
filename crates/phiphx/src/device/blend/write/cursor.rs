@@ -4,7 +4,7 @@
 //! (`View3DCursor::set_matrix`), so the N panel shows the cursor as the user
 //! left it set up.
 
-use crate::device::blend::file::types::{BlendFile, DnaType};
+use crate::device::blend::file::kind::{BlendFile, DnaType};
 use glam::{EulerRot, Mat4};
 
 impl BlendFile {
@@ -49,7 +49,7 @@ impl BlendFile {
 
 #[cfg(test)]
 mod tests {
-    use crate::device::blend::file::types::BlendFile;
+    use crate::device::blend::file::kind::BlendFile;
     use glam::{Mat4, Quat, Vec3};
 
     const DIR: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests");
@@ -60,7 +60,7 @@ mod tests {
         let bytes = std::fs::read(format!("{DIR}/fixtures/overlays.blend")).unwrap();
         let mut file = BlendFile::parse_bytes(&bytes).unwrap();
         let want = Mat4::from_rotation_translation(Quat::from_euler(glam::EulerRot::XYZ, 0.4, -0.7, 1.9), Vec3::new(-3.0, 2.5, 0.75));
-        let edits = crate::device::blend::write::BlendEdits { cursor: Some(want.to_cols_array_2d()), ..Default::default() };
+        let edits = crate::device::blend::write::BlendEditList { cursor: Some(want.to_cols_array_2d()), ..Default::default() };
         let report = edits.apply(&mut file);
         assert!(report.patched >= 6, "{report:?}");
         let out = std::env::temp_dir().join("phiphx_cursor_write.blend");

@@ -1,7 +1,7 @@
 //! `Mesh` field offsets (modern 4.x/5.x attribute layout + legacy fields),
 //! computed from the file's DNA, plus the count / pointer readers.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// Byte offsets (within a Mesh block) of the geometry pointers and counts.
 ///
@@ -17,7 +17,7 @@ use crate::device::blend::file::types::*;
 /// `mloop` pointers and their `tot*` counts are all `DNA_DEPRECATED` and are
 /// retained here only for reading old files.
 #[derive(Default)]
-pub(crate) struct MeshOffsets {
+pub(crate) struct MeshOffsetList {
     // --- Modern (Blender 4.x) layout — primary path ---
     /// Offset of the `faces_num` int count.
     pub faces_num: Option<usize>,
@@ -60,8 +60,8 @@ impl BlendFile {
         mesh_struct: &DnaStruct,
         dna: &DnaType,
         ptr_size: usize,
-    ) -> MeshOffsets {
-        let mut o = MeshOffsets::default();
+    ) -> MeshOffsetList {
+        let mut o = MeshOffsetList::default();
         let mut offset = 0usize;
         for field in &mesh_struct.fields {
             if (field.type_index as usize) >= dna.types.len()

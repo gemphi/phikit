@@ -19,7 +19,7 @@
 //! (removed in 5.0) are not read, as Blender no longer reads them.
 
 use super::cloth_cache::{BCacheFrame, DATA_INDEX, DATA_LOCATION, DATA_SIZE, DATA_VELOCITY};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use std::path::PathBuf;
 
 /// `PTCACHE_TYPE_CLOTH`, `PTCACHE_TYPEFLAG_COMPRESS`, `PTCACHE_TYPEFLAG_TYPEMASK`.

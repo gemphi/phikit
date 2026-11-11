@@ -10,10 +10,10 @@
 //! stack keeps, because Blender writes a driven value whether or not the
 //! modifier is switched on.
 
-use super::driver::{BModDriver, BModWrite, BModifierDrivers, setting};
-use crate::device::blend::file::types::*;
+use super::driver::{BModDriver, BModWrite, BModifierDriverList, setting};
+use crate::device::blend::file::kind::*;
 use crate::device::blend::modifier::KINDS;
-use crate::device::blend::read::scene::types::BlendSceneObject;
+use crate::device::blend::read::scene::kind::BlendSceneObject;
 
 const MODIFIERS_PREFIX: &str = "modifiers[\"";
 const NAME_END: &str = "\"].";
@@ -35,7 +35,7 @@ pub(crate) fn modifier_path(path: &str) -> Option<(String, String)> {
 
 impl BlendFile {
     /// Every object that carries a modifier driver, in object order.
-    pub(crate) fn modifier_drivers(&self, objects: &[BlendSceneObject], dna: &DnaType) -> Vec<BModifierDrivers> {
+    pub(crate) fn modifier_drivers(&self, objects: &[BlendSceneObject], dna: &DnaType) -> Vec<BModifierDriverList> {
         objects
             .iter()
             .filter_map(|object| {
@@ -48,8 +48,8 @@ impl BlendFile {
 
     /// One object's modifier drivers, with each modifier's type resolved
     /// from its own stack.
-    fn object_modifier_drivers(&self, name: String, ob: &BlendBlock, dna: &DnaType) -> BModifierDrivers {
-        let mut set = BModifierDrivers { object: name, address: ob.old_address, drivers: Vec::new() };
+    fn object_modifier_drivers(&self, name: String, ob: &BlendBlock, dna: &DnaType) -> BModifierDriverList {
+        let mut set = BModifierDriverList { object: name, address: ob.old_address, drivers: Vec::new() };
         let stack = self.modifier_kinds(ob, dna);
         if stack.is_empty() {
             return set;

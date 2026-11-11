@@ -1,7 +1,7 @@
 //! Face-domain readers: `CustomData` int layers (`material_index`,
 //! `.corner_vert`) and `face_offset_indices`.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Read int data from a CustomData struct's layers (Blender 3.5+).

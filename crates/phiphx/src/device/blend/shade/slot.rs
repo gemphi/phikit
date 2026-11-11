@@ -1,7 +1,7 @@
 //! Material slot resolution: `Object/Mesh.**mat` + `totcol` → `MA` blocks,
 //! and the exact-name DNA field-offset lookup the material readers use.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Follow `<struct>.**mat` and return ALL material blocks (not just the first).

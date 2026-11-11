@@ -40,7 +40,7 @@ pub struct BWorldDriver {
 
 /// Every driver the world carries, over both its IDs.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct BWorldDrivers {
+pub struct BWorldDriverList {
     pub world: String,
     /// The `World` datablock's saved address. A file may hold several
     /// worlds while the scene uses one, so the address is what says which
@@ -51,7 +51,7 @@ pub struct BWorldDrivers {
     pub inputs: Vec<(String, Vec<BDriverSocket>)>,
 }
 
-impl BWorldDrivers {
+impl BWorldDriverList {
     pub fn is_empty(&self) -> bool {
         self.drivers.is_empty()
     }
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn the_background_colour_and_strength_land_on_the_world() {
-        let set = BWorldDrivers {
+        let set = BWorldDriverList {
             inputs: sockets(false),
             drivers: vec![
                 BWorldDriver { write: sock(BG_COLOR, 0), driver: constant(0.25) },
@@ -167,7 +167,7 @@ mod tests {
 
     #[test]
     fn a_link_into_the_background_keeps_the_world_where_it_was() {
-        let set = BWorldDrivers {
+        let set = BWorldDriverList {
             inputs: sockets(true),
             drivers: vec![BWorldDriver { write: sock(BG_COLOR, 0), driver: constant(0.9) }],
             ..Default::default()
@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn a_strength_socket_takes_a_negative_and_a_colour_does_not() {
-        let set = BWorldDrivers { inputs: sockets(false), ..Default::default() };
+        let set = BWorldDriverList { inputs: sockets(false), ..Default::default() };
         assert_eq!(socket_clamp(set.sockets(BACKGROUND), BG_STRENGTH, -2.0), -2.0, "a float socket is unclamped");
         assert_eq!(socket_clamp(set.sockets(BACKGROUND), BG_COLOR, -2.0), 0.0, "an RGBA socket clamps at 0");
         assert_eq!(socket_clamp(set.sockets(BACKGROUND), BG_COLOR, 4.0), 4.0, "and is free above 1");

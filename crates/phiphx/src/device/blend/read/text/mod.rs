@@ -23,7 +23,7 @@
 //! bevel profile mode, combining marks, fallback fonts.
 
 pub mod bevlist;
-mod chars;
+mod character;
 pub mod displist;
 pub mod fill;
 pub mod font;

@@ -1,6 +1,6 @@
 //! Per-corner UVs: legacy `MLoopUV` and 3.5+ float2 `CustomData` layers.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Read per-loop UV coordinates from the Mesh's `*mloopuv` pointer.

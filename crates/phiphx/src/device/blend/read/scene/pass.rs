@@ -9,7 +9,7 @@
 //! name inside a multi-layer EXR and is what a compositor looks for. Those
 //! come from `RE_PASSNAME_*`, also in `DNA_scene_enums.h`.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// One render pass. Only the ones phiray can actually produce are named;
 /// a file asking for others still reads, it just does not get them.

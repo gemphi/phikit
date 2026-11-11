@@ -53,7 +53,7 @@
 
 use super::state::BDriverState;
 use crate::device::blend::read::object::data::BlendObjectData;
-use crate::device::blend::read::scene::types::BlendScene;
+use crate::device::blend::read::scene::kind::BlendScene;
 
 impl BDriverState {
     /// Write this frame's driven values over everything in `scene` that is

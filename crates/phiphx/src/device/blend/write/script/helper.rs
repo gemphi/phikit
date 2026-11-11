@@ -1,6 +1,6 @@
 //! Blender type-name parsing (`From<&str>`).
 
-use super::types::{BlenderLightType, BlenderObjectType};
+use super::kind::{BlenderLightType, BlenderObjectType};
 
 /// Blender RNA type name → object type (unknown → Empty).
 impl From<&str> for BlenderObjectType {

@@ -2,7 +2,7 @@
 //! (`DNA_camera_types.h`), `Light` (`DNA_light_types.h`) and the empty
 //! display fields on `Object` (`empty_drawtype`, `empty_drawsize`).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `Camera` display data. `kind`: 0 = PERSP, 1 = ORTHO, 2 = PANO.
 #[derive(Debug, Clone, PartialEq)]
@@ -175,7 +175,7 @@ mod digest {
     fn scene_cam_digest_of_env_file() {
         let Ok(path) = std::env::var("SCENE_CAM_DIGEST") else { return };
         let bytes = std::fs::read(&path).expect("read");
-        let f = crate::device::blend::file::types::BlendFile::parse_bytes(&bytes).expect("parse");
+        let f = crate::device::blend::file::kind::BlendFile::parse_bytes(&bytes).expect("parse");
         let scene = f.extract_scene().expect("scene");
         println!("Scene.camera = {:?} cfra {} range {}..{}", scene.props.camera, scene.props.frame_current, scene.props.frame_start, scene.props.frame_end);
         println!("motion tracks: {}", scene.props.motion.list.len());
@@ -211,7 +211,7 @@ mod digest {
     fn cam_digest_of_env_file() {
         let Ok(path) = std::env::var("CAM_DIGEST") else { return };
         let bytes = std::fs::read(&path).expect("read");
-        let f = crate::device::blend::file::types::BlendFile::parse_bytes(&bytes).expect("parse");
+        let f = crate::device::blend::file::kind::BlendFile::parse_bytes(&bytes).expect("parse");
         let dna = f.dna.clone().expect("dna");
         for ca in f.blocks.iter().filter(|b| b.code_str == "CA") {
             let name = f.extract_name_from_block(ca, "id.name").unwrap_or_default();
@@ -230,23 +230,23 @@ mod digest {
         }
         let ps = f.header.pointer_size as usize;
         let cams: std::collections::HashSet<u64> = f.blocks.iter().filter(|b| b.code_str == "CA").map(|b| b.old_address).collect();
-        let data_off = crate::device::blend::file::types::BlendFile::struct_field_offset_exact("Object", "*data", &dna, ps).unwrap();
+        let data_off = crate::device::blend::file::kind::BlendFile::struct_field_offset_exact("Object", "*data", &dna, ps).unwrap();
         for ob in f.blocks.iter().filter(|b| b.code_str == "OB") {
-            let data = crate::device::blend::file::types::BlendFile::read_ptr(&ob.data, data_off, ps, f.header.little_endian);
+            let data = crate::device::blend::file::kind::BlendFile::read_ptr(&ob.data, data_off, ps, f.header.little_endian);
             if cams.contains(&data) {
                 println!("OB {} -> CA {data:#x} at {:#x}", f.extract_name_from_block(ob, "id.name").unwrap_or_default(), ob.old_address);
             }
         }
-        let r_off = crate::device::blend::file::types::BlendFile::struct_field_offset_exact("Scene", "r", &dna, ps).expect("Scene.r");
+        let r_off = crate::device::blend::file::kind::BlendFile::struct_field_offset_exact("Scene", "r", &dna, ps).expect("Scene.r");
         for sc in f.blocks.iter().filter(|b| b.code_str == "SC") {
             let name = f.extract_name_from_block(sc, "id.name").unwrap_or_default();
             let r = |n: &str| {
-                let o = r_off + crate::device::blend::file::types::BlendFile::struct_field_offset_exact("RenderData", n, &dna, ps)?;
+                let o = r_off + crate::device::blend::file::kind::BlendFile::struct_field_offset_exact("RenderData", n, &dna, ps)?;
                 (o + 4 <= sc.data.len()).then(|| f.read_i32(&sc.data[o..o + 4]))
             };
             println!("SC {name}: res {:?}x{:?}", r("xsch"), r("ysch"));
-            if let Some(o) = crate::device::blend::file::types::BlendFile::struct_field_offset_exact("Scene", "*camera", &dna, ps) {
-                let addr = crate::device::blend::file::types::BlendFile::read_ptr(&sc.data, o, ps, f.header.little_endian);
+            if let Some(o) = crate::device::blend::file::kind::BlendFile::struct_field_offset_exact("Scene", "*camera", &dna, ps) {
+                let addr = crate::device::blend::file::kind::BlendFile::read_ptr(&sc.data, o, ps, f.header.little_endian);
                 let ob = f.blocks.iter().find(|b| b.code_str == "OB" && b.old_address == addr);
                 let cam_name = ob.map(|b| f.extract_name_from_block(b, "id.name").unwrap_or_default());
                 println!("SC {name}: camera -> {addr:#x} {cam_name:?}");
@@ -264,7 +264,7 @@ mod bone_digest {
     fn bone_digest_of_env_file() {
         let Ok(path) = std::env::var("BONE_DIGEST") else { return };
         let bytes = std::fs::read(&path).expect("read");
-        let f = crate::device::blend::file::types::BlendFile::parse_bytes(&bytes).expect("parse");
+        let f = crate::device::blend::file::kind::BlendFile::parse_bytes(&bytes).expect("parse");
         let dna = f.dna.clone().expect("dna");
         let layouts = dna.layout(f.header.pointer_size as usize);
         let ps = f.header.pointer_size as usize;
@@ -282,8 +282,8 @@ mod bone_digest {
         for pc in f.blocks.iter().filter(|b| {
             dna.structs.get(b.sdna_index as usize).and_then(|s| dna.types.get(s.type_index as usize)).map(String::as_str) == Some("bPoseChannel")
         }) {
-            if let Some(o) = crate::device::blend::file::types::BlendFile::struct_field_offset_exact("bPoseChannel", "*bone", &dna, ps) {
-                let addr = crate::device::blend::file::types::BlendFile::read_ptr(&pc.data, o, ps, f.header.little_endian);
+            if let Some(o) = crate::device::blend::file::kind::BlendFile::struct_field_offset_exact("bPoseChannel", "*bone", &dna, ps) {
+                let addr = crate::device::blend::file::kind::BlendFile::read_ptr(&pc.data, o, ps, f.header.little_endian);
                 println!("PCHAN *bone = {addr:#x} block_at {:?}", f.block_at(addr).map(|b| (b.code_str.clone(), b.old_address, b.count)));
             }
         }
@@ -315,7 +315,7 @@ mod bone_digest {
                 continue;
             }
             let name_o = layout.fields.get("name").map(|(o, _)| *o).unwrap_or(0);
-            let name = crate::device::blend::shade::nodes::read_cstr(&b.data, name_o, 64);
+            let name = crate::device::blend::shade::node::read_cstr(&b.data, name_o, 64);
             let g = |field: &str, n: usize| -> Vec<f32> {
                 layout.fields.get(field).map_or(vec![], |(o, _)| (0..n).map(|k| f.read_f32(&b.data[o + 4 * k..o + 4 * k + 4])).collect())
             };

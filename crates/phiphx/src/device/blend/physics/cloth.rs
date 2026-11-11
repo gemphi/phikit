@@ -2,7 +2,7 @@
 //! `ClothSimSettings`, and `coll_parms`, a `ClothCollSettings`). The RNA
 //! names the Physics tab shows are given beside the DNA names they read.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `CLOTH_SIMSETTINGS_FLAG_PRESSURE`.
 const SIM_FLAG_PRESSURE: u32 = 1 << 5;

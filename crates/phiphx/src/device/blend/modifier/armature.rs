@@ -13,7 +13,7 @@
 //! all use it.
 //! Not yet: envelopes, dual quaternions, multi-modifier.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use super::bbone::BBone;
 use super::skin::{SkinJob, SkinPair};
 use super::{BModifier, BlendEvalMesh, EvalCtx};
@@ -105,7 +105,7 @@ impl BDeformBone {
 /// (`deform.rs`).
 struct BArmatureDeform {
     armature: u64,
-    mats: std::sync::Arc<super::deform::BDeformMats>,
+    mats: std::sync::Arc<super::deform::BDeformMatList>,
     groups: Vec<String>,
 }
 

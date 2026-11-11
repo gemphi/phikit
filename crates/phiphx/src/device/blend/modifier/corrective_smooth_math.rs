@@ -171,7 +171,7 @@ fn tangent_loop(prev: V3, next: V3) -> (M3, bool) {
 /// `calc_tangent_spaces`: one frame per face corner, and — when `weights` is
 /// asked for — each corner's angle weight and their sum per vertex.
 pub(super) fn tangent_spaces(
-    faces: &crate::device::blend::BFaces,
+    faces: &crate::device::blend::BFaceList,
     cos: &[V3],
     weights: Option<(&mut [f32], &mut [f32])>,
 ) -> Vec<M3> {

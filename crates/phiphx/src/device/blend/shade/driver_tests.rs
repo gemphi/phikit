@@ -1,8 +1,8 @@
-//! `BMaterialDrivers`'s own units: the clamp each write path takes, and
+//! `BMaterialDriverList`'s own units: the clamp each write path takes, and
 //! where a socket's value lands in the BSDF.
 
 use super::*;
-use crate::device::blend::read::scene::types::BlendMaterial;
+use crate::device::blend::read::scene::kind::BlendMaterial;
 use crate::device::blend::shade::material::VIEWPORT_PBR;
 
 /// A material as the reader leaves a node-less one: the defaults a driver
@@ -53,7 +53,7 @@ fn a_path_names_the_property_it_writes() {
 
 #[test]
 fn a_float_socket_keeps_what_a_driver_gives_it_and_an_rgba_socket_clamps_at_zero() {
-    let set = BMaterialDrivers { inputs: sockets(), ..Default::default() };
+    let set = BMaterialDriverList { inputs: sockets(), ..Default::default() };
     let sock = |input: usize, component: usize| BMatWrite::Socket {
         node: "Principled BSDF".to_string(),
         input,
@@ -73,7 +73,7 @@ fn a_float_socket_keeps_what_a_driver_gives_it_and_an_rgba_socket_clamps_at_zero
 
 #[test]
 fn an_unknown_node_leaves_the_value_alone() {
-    let set = BMaterialDrivers { inputs: sockets(), ..Default::default() };
+    let set = BMaterialDriverList { inputs: sockets(), ..Default::default() };
     let write = BMatWrite::Socket { node: "Nope".to_string(), input: 0, component: 0 };
     assert_eq!(set.clamp_for(&write, -5.0), -5.0, "no socket list, no clamp to apply");
 }
@@ -82,7 +82,7 @@ fn an_unknown_node_leaves_the_value_alone() {
 fn a_linked_socket_is_written_but_never_folded_into_the_surface() {
     let mut m = material();
     let before = m.bsdf.roughness;
-    let set = BMaterialDrivers { inputs: sockets(), surface: Some("Principled BSDF".to_string()), ..Default::default() };
+    let set = BMaterialDriverList { inputs: sockets(), surface: Some("Principled BSDF".to_string()), ..Default::default() };
     // Roughness is linked in `sockets()`, so the fold skips it.
     set.fold(&mut m, &BMatWrite::Socket { node: "Principled BSDF".into(), input: 2, component: 0 }, 0.123);
     assert_eq!(m.bsdf.roughness, before, "a link feeds the shader, not `default_value`");
@@ -94,7 +94,7 @@ fn a_linked_socket_is_written_but_never_folded_into_the_surface() {
 #[test]
 fn only_the_surfaces_own_node_reaches_the_bsdf() {
     let mut m = material();
-    let set = BMaterialDrivers { inputs: sockets(), surface: Some("Other".to_string()), ..Default::default() };
+    let set = BMaterialDriverList { inputs: sockets(), surface: Some("Other".to_string()), ..Default::default() };
     set.fold(&mut m, &BMatWrite::Socket { node: "Principled BSDF".into(), input: 1, component: 0 }, 0.9);
     assert_eq!(m.bsdf.metallic, 0.0, "this Principled is not the one the Output reaches");
 }
@@ -102,7 +102,7 @@ fn only_the_surfaces_own_node_reaches_the_bsdf() {
 #[test]
 fn a_colour_component_lands_on_its_own_channel() {
     let mut m = material();
-    let set = BMaterialDrivers { inputs: sockets(), surface: Some("Principled BSDF".to_string()), ..Default::default() };
+    let set = BMaterialDriverList { inputs: sockets(), surface: Some("Principled BSDF".to_string()), ..Default::default() };
     for c in 0..4 {
         set.fold(&mut m, &BMatWrite::Socket { node: "Principled BSDF".into(), input: 0, component: c }, 0.1 * c as f32);
     }

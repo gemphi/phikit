@@ -33,7 +33,7 @@ fn eval_corner_normals(e: &crate::device::blend::BlendEvalMesh) -> Vec<[f32; 3]>
     if !splits || !e.face_smooth.iter().any(|&s| s) {
         return Vec::new();
     }
-    crate::device::blend::modifier::nodes_corners::corner_normals(e)
+    crate::device::blend::modifier::node_corner::corner_normals(e)
 }
 
 /// Convert one `BlendSceneObject`, drawing the modifier-evaluated mesh when

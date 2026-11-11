@@ -27,7 +27,7 @@
 use super::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::read::curve::bevel::BBevelList;
 use crate::device::blend::read::curve::{BCurvePath, CU_PATH_RADIUS};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::rig::math::BQuat;
 use glam::{Mat4, Vec3};
 

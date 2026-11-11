@@ -10,7 +10,7 @@
 //! the face centre — Blender's `corner_u, corner_v` after
 //! `rotate_quad_to_corner`, and a non-quad's PTEX `(u, v)`.
 
-use crate::device::blend::BFaces;
+use crate::device::blend::BFaceList;
 
 /// Blender `rotate_quad_to_corner`: the corner of a quad PTEX face `(u, v)`
 /// falls in, and the point in that corner's coordinates.
@@ -41,7 +41,7 @@ pub(super) fn ptex_to_grid(u: f32, v: f32) -> (f32, f32) {
 
 /// Every coarse corner's grid of refined-cage vertices, and the PTEX
 /// bookkeeping of `displacement_data_init_mapping`.
-pub(super) struct BGrids {
+pub(super) struct BGridList {
     /// Grid side less one, `2^(level - 1)`.
     pub r: usize,
     /// The cage vertex at each grid point, `(r + 1)²` per coarse corner,
@@ -57,14 +57,14 @@ pub(super) struct BGrids {
     pub face_size: Vec<usize>,
 }
 
-impl BGrids {
+impl BGridList {
     /// The grids of `coarse` refined `level` (≥ 1) times into `cage`, as
     /// `subsurf.rs` refines: the first level turns corner `c` of a face into
     /// the quad `[corner, next edge point, face point, previous edge point]`
     /// at the corner's loop index, every later level splits quad `q` into
     /// `4q + i`, the child at its corner `i` laid out the same way. `None`
     /// when `cage` is not that refinement (a refinement cut short).
-    pub(super) fn build(coarse: &BFaces, cage: &BFaces, level: u32) -> Option<Self> {
+    pub(super) fn build(coarse: &BFaceList, cage: &BFaceList, level: u32) -> Option<Self> {
         if level == 0 {
             return None;
         }

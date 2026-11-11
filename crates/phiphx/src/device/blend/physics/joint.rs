@@ -2,7 +2,7 @@
 //! Constraint): the joint an object (usually an empty) places between two
 //! bodies.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 const RBC_FLAG_ENABLED: u32 = 1 << 0;
 const RBC_FLAG_DISABLE_COLLISIONS: u32 = 1 << 2;

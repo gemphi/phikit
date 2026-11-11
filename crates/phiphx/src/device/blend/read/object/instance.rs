@@ -24,9 +24,9 @@
 //! per member (`modifier/mod.rs`). Not yet: an Armature-deformed member's
 //! pose, Geometry Nodes instances, the background (`Scene.set`) scene.
 
-use super::instance_members::{collection_generator, DupliMember};
+use super::instance_member::{collection_generator, DupliMember};
 use super::transform::IDENTITY4;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::{Mat4, Vec3};
 use std::collections::HashMap;
 
@@ -36,7 +36,7 @@ const MAX_DUPLI_RECUR: u32 = 8;
 
 /// What one `object_duplilist` call works from: the members of every
 /// collection met so far, read once each.
-struct Duplis<'a> {
+struct DupliList<'a> {
     file: &'a BlendFile,
     dna: &'a DnaType,
     scene: HashMap<u64, &'a BlendSceneObject>,
@@ -50,7 +50,7 @@ impl BlendFile {
     pub(crate) fn expand_collection_instances(&self, objects: &mut Vec<BlendSceneObject>, dna: &DnaType) {
         let bases = self.viewport_bases(dna);
         let field = self.object_visibility_field(dna);
-        let mut duplis = Duplis {
+        let mut duplis = DupliList {
             file: self,
             dna,
             scene: objects.iter().filter(|o| o.block_address != 0).map(|o| (o.block_address, o)).collect(),
@@ -84,7 +84,7 @@ impl BlendFile {
     }
 }
 
-impl Duplis<'_> {
+impl DupliList<'_> {
     /// `make_duplis_collection` for the instancer at `ob` standing at
     /// `world`, inside the dupli space `space` at recursion `level`, with
     /// `make_recursive_duplis` for each member that instances in turn.

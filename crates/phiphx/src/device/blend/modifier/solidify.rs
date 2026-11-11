@@ -5,20 +5,20 @@
 //!
 //! `offset` places the shell relative to the original surface: −1 puts it
 //! entirely inside, +1 entirely outside, 0 centres it. The shell carries
-//! the mesh's creases and the rim writes its own (`solidify_creases.rs`).
+//! the mesh's creases and the rim writes its own (`solidify_crease.rs`).
 //! Not yet: the complex (non-manifold) mode, per-vertex-group thickness, rim
 //! material offsets.
 
 use super::geom::open_corners as rim;
-#[path = "solidify_normals.rs"]
+#[path = "solidify_normal.rs"]
 mod normals;
 use normals::vertex_normals;
-#[path = "solidify_creases.rs"]
+#[path = "solidify_crease.rs"]
 mod creases;
-pub(crate) use creases::BSolidifyCreases;
+pub(crate) use creases::BSolidifyCreaseList;
 use super::driver::BModValue;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::Vec3;
 
 /// `MOD_SOLIDIFY_RIM` — close the open boundary between the two shells
@@ -32,7 +32,7 @@ pub(crate) struct BSolidify {
     pub offset: f32,
     pub flag: u32,
     /// `crease_inner` / `crease_outer` / `crease_rim`.
-    pub creases: BSolidifyCreases,
+    pub creases: BSolidifyCreaseList,
 }
 
 pub(super) fn read(
@@ -45,7 +45,7 @@ pub(super) fn read(
         thickness: f.float_field(md, "SolidifyModifierData", "offset", dna, 0.01),
         offset: f.float_field(md, "SolidifyModifierData", "offset_fac", dna, -1.0),
         flag: f.int_field(md, "SolidifyModifierData", "flag", dna),
-        creases: BSolidifyCreases {
+        creases: BSolidifyCreaseList {
             inner: f.float_field(md, "SolidifyModifierData", "crease_inner", dna, 0.0),
             outer: f.float_field(md, "SolidifyModifierData", "crease_outer", dna, 0.0),
             rim: f.float_field(md, "SolidifyModifierData", "crease_rim", dna, 0.0),
@@ -59,7 +59,7 @@ pub(super) fn read(
 impl BSolidify {
     #[cfg(test)]
     pub(crate) fn for_test() -> Self {
-        Self { thickness: 0.01, offset: -1.0, flag: 0, creases: BSolidifyCreases::default() }
+        Self { thickness: 0.01, offset: -1.0, flag: 0, creases: BSolidifyCreaseList::default() }
     }
 
     fn driven(&mut self, prop: &str, value: BModValue) -> bool {
@@ -186,7 +186,7 @@ impl BModifier for BSolidify {
         }
         if flip {
             // FLIP turns the original shell over as well.
-            let mut faces = crate::device::blend::BFaces::default();
+            let mut faces = crate::device::blend::BFaceList::default();
             let mut flipped_uvs = Vec::with_capacity(mesh.loop_uvs.len());
             let mut flipped_colors = Vec::with_capacity(mesh.loop_colors.len());
             for f in 0..mesh.faces.len() {

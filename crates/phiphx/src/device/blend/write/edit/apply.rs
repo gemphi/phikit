@@ -1,7 +1,7 @@
-//! `BlendEdits::apply`: the session's edits written through the file.
+//! `BlendEditList::apply`: the session's edits written through the file.
 use super::*;
 
-impl BlendEdits {
+impl BlendEditList {
     /// Write the edits through `file`.
     pub fn apply(&self, file: &mut BlendFile) -> BlendSaveReport {
         let mut report = BlendSaveReport { patched: 0, warnings: self.unwritable.clone() };

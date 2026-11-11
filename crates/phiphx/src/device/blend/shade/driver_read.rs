@@ -7,14 +7,14 @@
 //! input list, which is the `bNode.inputs` ListBase order the file stores.
 //! The component is the curve's `array_index`, not part of the path.
 
-use super::driver::{BMatProp, BMatWrite, BMaterialDriver, BMaterialDrivers};
+use super::driver::{BMatProp, BMatWrite, BMaterialDriver, BMaterialDriverList};
 use crate::device::blend::anim::driver::socket_path;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Every material in the file that carries a driver, by block address —
     /// what a frame's pass needs to write the materials it reads.
-    pub(crate) fn material_drivers(&self, dna: &DnaType) -> Vec<(u64, BMaterialDrivers)> {
+    pub(crate) fn material_drivers(&self, dna: &DnaType) -> Vec<(u64, BMaterialDriverList)> {
         self.blocks
             .iter()
             .filter(|block| block.code_str == "MA")
@@ -27,9 +27,9 @@ impl BlendFile {
 
     /// One material's drivers over both its IDs, with the socket lists a
     /// socket index is resolved through.
-    pub(crate) fn material_driver_set(&self, ma: &BlendBlock, dna: &DnaType) -> BMaterialDrivers {
+    pub(crate) fn material_driver_set(&self, ma: &BlendBlock, dna: &DnaType) -> BMaterialDriverList {
         self.scoped(ma, || {
-            let mut set = BMaterialDrivers { material: self.id_name(ma, dna), ..Default::default() };
+            let mut set = BMaterialDriverList { material: self.id_name(ma, dna), ..Default::default() };
             for (block, owner) in [(Some(ma), "Material"), (self.node_tree(ma, "Material", dna), "bNodeTree")] {
                 let Some(block) = block else { continue };
                 for fc in self.adt_driver_curves(block, owner, dna) {
@@ -63,7 +63,7 @@ impl BlendFile {
 
     /// The input sockets of every node a driver on `set` writes, and the
     /// name of the surface's Principled node.
-    fn fill_sockets(&self, set: &mut BMaterialDrivers, ma: &BlendBlock, dna: &DnaType) {
+    fn fill_sockets(&self, set: &mut BMaterialDriverList, ma: &BlendBlock, dna: &DnaType) {
         if set.is_empty() {
             return;
         }

@@ -7,7 +7,7 @@
 //! 3.6 file: layers, bone groups and hidden bones, its widgets' meshes read
 //! in their own scope) at three — every custom shape's edges too.
 
-use crate::device::blend::file::types::BlendFile;
+use crate::device::blend::file::kind::BlendFile;
 use glam::Mat4;
 use std::collections::HashMap;
 

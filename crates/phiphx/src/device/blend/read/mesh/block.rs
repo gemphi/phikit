@@ -1,6 +1,6 @@
 //! Vertex/face extraction from a single ME (Mesh) data block.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Extract vertices and faces from a ME (Mesh) block.
@@ -50,7 +50,7 @@ impl BlendFile {
         // Blender 5.x: geometry lives in `attribute_storage` (`attr_storage.rs`).
         if vertices.is_empty() {
             vertices = self.attr_float3(block, dna, "position", verts_num);
-            let cv = self.attr_int32(block, dna, ".corner_vert", crate::device::blend::read::mesh::attrs::DOMAIN_CORNER, corners_num);
+            let cv = self.attr_int32(block, dna, ".corner_vert", crate::device::blend::read::mesh::attr::DOMAIN_CORNER, corners_num);
             if let (false, Some(cv), true) = (vertices.is_empty(), cv, offsets.len() >= 2) {
                 faces = build_faces(&offsets, &cv, vertices.len());
             }

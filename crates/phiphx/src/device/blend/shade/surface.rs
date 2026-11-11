@@ -15,10 +15,10 @@
 //! Mix of unlike closures renders as both, not as one in-between lobe.
 
 use super::eval::BGraph;
-use super::links::BLink;
-use super::nodes::read_cstr;
-use crate::device::blend::file::types::*;
-use crate::device::blend::read::scene::types::BlendBsdf;
+use super::link::BLink;
+use super::node::read_cstr;
+use crate::device::blend::file::kind::*;
+use crate::device::blend::read::scene::kind::BlendBsdf;
 
 /// The Mix Shader a material's surface is: its two closures, each folded,
 /// `fac` the weight of the second (0 all the first, 1 all the second), and

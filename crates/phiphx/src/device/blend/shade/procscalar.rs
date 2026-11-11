@@ -9,7 +9,7 @@
 use super::procedural::{BProcFinder, RAMP_STOPS};
 use super::texnode::BlendMath;
 use super::scalar::BScalarOp;
-use crate::device::blend::file::types::BlendBlock;
+use crate::device::blend::file::kind::BlendBlock;
 
 /// `NODE_MATH_MULTIPLY_ADD`: what a linear Map Range is as a Math tail.
 const MATH_MULTIPLY_ADD: u32 = 36;

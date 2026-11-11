@@ -14,8 +14,8 @@
 //! the same as previous versions"*.
 
 use super::BlendEvalMesh;
-use super::nodes_corners::{V3, dot, safe_acos_approx, sub};
-use super::nodes_corners::normalize;
+use super::node_corner::{V3, dot, safe_acos_approx, sub};
+use super::node_corner::normalize;
 use std::collections::HashSet;
 
 /// One corner of the vertex being fanned (`VertCornerInfo`).

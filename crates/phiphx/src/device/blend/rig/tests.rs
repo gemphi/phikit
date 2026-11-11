@@ -4,7 +4,7 @@
 //! legs' IK — and every driver's value.
 
 use super::BRig;
-use crate::device::blend::file::types::BlendFile;
+use crate::device::blend::file::kind::BlendFile;
 use glam::Mat4;
 use std::collections::HashMap;
 

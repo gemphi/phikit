@@ -3,7 +3,7 @@
 //! rig with one bone under each constraint batch 89 ports, at six frames,
 //! with two animated control bones and an animated Empty as targets.
 
-use crate::device::blend::file::types::BlendFile;
+use crate::device::blend::file::kind::BlendFile;
 use crate::device::blend::rig::BRig;
 use glam::Mat4;
 use std::collections::HashMap;

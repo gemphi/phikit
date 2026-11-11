@@ -4,14 +4,14 @@
 //! evaluation (`subsurf.rs`), derivative directions from the vertex rings
 //! (`multires_tangent.rs`).
 
-use super::grid::BGrids;
+use super::grid::BGridList;
 use super::tangent::{BRing, D3};
 use super::super::topology::Topology;
 use super::super::BlendEvalMesh;
 
 /// What the derivatives are read from.
 pub(super) struct BLimit<'a> {
-    pub grids: &'a BGrids,
+    pub grids: &'a BGridList,
     /// The cage refined to the grid's level, and its adjacency.
     pub cage: &'a BlendEvalMesh,
     pub topology: &'a Topology,

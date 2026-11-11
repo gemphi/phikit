@@ -16,7 +16,7 @@
 
 use super::driver::{BModValue, BModWrite};
 use super::{BModifier, BlendEvalMesh, EvalCtx};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::Mat4;
 use std::collections::HashMap;
 

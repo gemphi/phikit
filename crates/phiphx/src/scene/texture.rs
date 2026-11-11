@@ -270,7 +270,7 @@ mod tests {
 /// Decode each material's base-colour image once; returns the keys that
 /// could not be found (Blender logs these as missing images).
 /// The world's environment image, decoded the way surface textures are.
-pub(super) fn environment(p: &crate::device::blend::BlendSceneProps, source_path: &str) -> Option<SceneEnvironment> {
+pub(super) fn environment(p: &crate::device::blend::BlendSceneProp, source_path: &str) -> Option<SceneEnvironment> {
     // A Sky Texture is an environment image too: Blender bakes it rather
     // than evaluating it per ray (`node_shader_tex_sky.cc`), so baking it
     // here hands the sky to the one path that already carries a dome
@@ -301,7 +301,7 @@ pub(super) fn environment(p: &crate::device::blend::BlendSceneProps, source_path
 /// the answer nowhere in it, so the tally leads with the folders owed and
 /// keeps Blender's lines as evidence (`texture_miss.rs`, which carries the
 /// reasoning and the divergence).
-pub(super) fn attach(objects: &mut [super::SceneObject], p: &crate::device::blend::BlendSceneProps, source_path: &str) -> Vec<String> {
+pub(super) fn attach(objects: &mut [super::SceneObject], p: &crate::device::blend::BlendSceneProp, source_path: &str) -> Vec<String> {
     let blend = std::path::Path::new(source_path);
     let mut cache = TextureCache::new(&p.packed_images, Some(blend));
     let mut missing = super::texture_miss::BMissingTexture::default();

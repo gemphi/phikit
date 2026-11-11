@@ -5,10 +5,10 @@
 //! `Scene.r` is an embedded `RenderData`, so its fields are read at
 //! `offset(Scene.r) + offset(RenderData.<field>)`.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct BlendSceneProps {
+pub struct BlendSceneProp {
     pub frame_current: i32,
     pub frame_start: i32,
     pub frame_end: i32,
@@ -70,7 +70,7 @@ pub struct BlendSceneProps {
     /// Workspace + 3D view to restore ("Load UI", `ui_state.rs`).
     pub ui: crate::device::blend::read::scene::ui::BlendUiState,
     /// Packed image bytes by image key (`image.rs`).
-    pub packed_images: crate::device::blend::shade::image::PackedImages,
+    pub packed_images: crate::device::blend::shade::image::PackedImageList,
     /// Modifier-evaluated meshes by object index (`modifier/`); the
     /// object's own geometry stays the rest mesh (`Object.data`).
     pub evaluated: std::collections::HashMap<usize, crate::device::blend::modifier::BlendEvalMesh>,
@@ -79,29 +79,29 @@ pub struct BlendSceneProps {
     /// Every animated object's NLA — action line and tracks (`anim/nla.rs`).
     pub nla: Vec<crate::device::blend::anim::nla::BlendNla>,
     /// Every driven object's driver F-curves (`AnimData.drivers`).
-    pub drivers: Vec<crate::device::blend::anim::drivers::BlendDrivers>,
+    pub drivers: Vec<crate::device::blend::anim::driver_list::BlendDriverList>,
     /// Every object's transform over time, in object order (`anim/motion.rs`).
     pub motion: crate::device::blend::anim::motion::BlendMotionList,
     /// Every material that carries a driver, by material name
     /// (`shade/driver.rs`). Applied per frame over the materials the
     /// objects were read with, after the objects' own driver pass.
-    pub material_drivers: Vec<crate::device::blend::shade::driver::BMaterialDrivers>,
+    pub material_drivers: Vec<crate::device::blend::shade::driver::BMaterialDriverList>,
     /// Every light that carries a driver, by `Light` name
     /// (`object/light_driver.rs`).
-    pub light_drivers: Vec<crate::device::blend::read::object::light_driver::BLightDrivers>,
+    pub light_drivers: Vec<crate::device::blend::read::object::light_driver::BLightDriverList>,
     /// Every world that carries a driver, over its own `color` and its
     /// Background node's sockets (`shade/world_driver.rs`).
-    pub world_drivers: Vec<crate::device::blend::shade::world_driver::BWorldDrivers>,
+    pub world_drivers: Vec<crate::device::blend::shade::world_driver::BWorldDriverList>,
     /// Every object that carries a driver on one of its modifiers'
     /// settings (`modifier/driver.rs`). Read, typed and clamped; not yet
     /// written into the evaluation stack — see that module's header.
-    pub modifier_drivers: Vec<crate::device::blend::modifier::driver::BModifierDrivers>,
+    pub modifier_drivers: Vec<crate::device::blend::modifier::driver::BModifierDriverList>,
     /// The timeline markers (`scene/marker.rs`).
     pub markers: Vec<crate::device::blend::read::scene::marker::BlendMarker>,
     /// The Playback popover's settings (`scene/playback.rs`).
     pub playback: crate::device::blend::BlendPlayback,
     /// The rigs that move and the meshes they deform (`rig/source.rs`).
-    pub rigs: crate::device::blend::rig::BlendRigs,
+    pub rigs: crate::device::blend::rig::BlendRigList,
     /// The 3D cursor (`scene/cursor.rs`).
     pub cursor: crate::device::blend::BlendCursor,
     /// The scene's compositor tree (`comp/read.rs`), read whichever of the
@@ -114,7 +114,7 @@ pub struct BlendSceneProps {
     pub physics: crate::device::blend::BlendPhysics,
 }
 
-impl Default for BlendSceneProps {
+impl Default for BlendSceneProp {
     fn default() -> Self {
         Self {
             compositor: None,
@@ -193,11 +193,11 @@ impl BlendFile {
         }
     }
 
-    pub(crate) fn extract_scene_props(&self, sc: &BlendBlock, dna: &DnaType) -> BlendSceneProps {
+    pub(crate) fn extract_scene_props(&self, sc: &BlendBlock, dna: &DnaType) -> BlendSceneProp {
         let ps = self.header.pointer_size as usize;
         let le = self.header.little_endian;
         let d = &sc.data;
-        let dflt = BlendSceneProps::default();
+        let dflt = BlendSceneProp::default();
         let frs_sec = self.sp_i16(d, self.rd_off("frs_sec", dna), 24) as f32;
         let frs_sec_base = self.sp_f32(d, self.rd_off("frs_sec_base", dna), 1.0).max(1e-6);
         let engine = self
@@ -259,7 +259,7 @@ impl BlendFile {
             Some(crate::device::blend::BIdValue::Group(g)) => g.clone(),
             _ => Default::default(),
         };
-        BlendSceneProps {
+        BlendSceneProp {
             // Read from the Scene block in `read.rs`, which has the DNA to
             // hand; the props reader does not reach the node tree.
             compositor: None,

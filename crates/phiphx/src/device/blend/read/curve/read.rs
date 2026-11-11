@@ -2,8 +2,8 @@
 //! `BezTriple` / `BPoint` arrays) through the file's own DNA.
 
 use super::{BBezPoint, BCurve, BCurvePoint, BNurb, CU_3D, CU_PATH_RADIUS};
-use crate::device::blend::file::types::*;
-use crate::device::blend::rig::read::BFields;
+use crate::device::blend::file::kind::*;
+use crate::device::blend::rig::read::BFieldReader;
 use glam::{Vec3, Vec4};
 
 /// A struct array inside one block: element `i` of DNA struct `st`.
@@ -40,7 +40,7 @@ impl BlendFile {
     /// The curve datablock of curve object `ob`.
     pub(crate) fn object_curve(&self, ob: &BlendBlock, dna: &DnaType) -> Option<BCurve> {
         let cu = self.block_at_code(self.ptr(ob, self.off("Object", "*data", dna)), "CU")?;
-        let c = BFields::new(self, dna, cu, "Curve");
+        let c = BFieldReader::new(self, dna, cu, "Curve");
         let flag = c.int("flag");
         // `CU_DO_RADIUS` (`extrude` / `bevel_radius` were `ext1` / `ext2`).
         let extrude = if c.has("extrude") { c.f32("extrude", 0.0) } else { c.f32("ext1", 0.0) };
@@ -60,7 +60,7 @@ impl BlendFile {
     }
 
     fn nurb(&self, nu: &BlendBlock, dna: &DnaType) -> BNurb {
-        let n = BFields::new(self, dna, nu, "Nurb");
+        let n = BFieldReader::new(self, dna, nu, "Nurb");
         let pntsu = n.int("pntsu") as i32 as usize;
         let pntsv = (n.int("pntsv") as i32).max(1) as usize;
         let ps = self.header.pointer_size as usize;

@@ -26,7 +26,7 @@ mod tree;
 
 use super::driver::BModValue;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::{Mat3, Mat4, Vec3};
 use math::{interp, normalize};
 use std::sync::Arc;

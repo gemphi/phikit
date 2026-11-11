@@ -27,7 +27,7 @@ mod subsurf;
 mod topology;
 mod triangulate;
 mod weld;
-mod merge_verts;
+mod merge_vertex;
 mod lattice;
 mod crease;
 mod corrective_smooth;
@@ -41,14 +41,14 @@ mod surface_deform_read;
 mod cloth;
 mod cloth_cache;
 mod cloth_disk;
-mod nodes;
-pub(crate) mod nodes_corners;
-mod nodes_fans;
-mod nodes_ops;
-mod nodes_topo;
-mod nodes_field;
-mod nodes_inputs;
-mod nodes_legacy;
+mod node;
+pub(crate) mod node_corner;
+mod node_fan;
+mod node_op;
+mod node_topo;
+mod node_field;
+mod node_input;
+mod node_legacy;
 #[cfg(test)]
 mod nodes_tests;
 pub(crate) mod report;
@@ -66,7 +66,7 @@ pub(crate) use kind::KINDS;
 pub use kind::supported_modifiers;
 pub use source::BlendSkinSource;
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::Mat4;
 use std::collections::HashMap;
 
@@ -77,7 +77,7 @@ const MODE_REALTIME: u32 = 1;
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct BlendEvalMesh {
     pub vertices: Vec<[f32; 3]>,
-    pub faces: crate::device::blend::BFaces,
+    pub faces: crate::device::blend::BFaceList,
     /// Per-corner UVs in face-corner order (empty when the mesh has none).
     pub loop_uvs: Vec<[f32; 2]>,
     /// The colour attribute per corner, in the same order (empty when the

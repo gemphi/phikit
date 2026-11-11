@@ -6,7 +6,7 @@
 //! Follow Path (animated, fixed, with radius, without following). The file
 //! is saved at frame 12.
 
-use crate::device::blend::file::types::BlendFile;
+use crate::device::blend::file::kind::BlendFile;
 use glam::Mat4;
 use std::collections::HashMap;
 

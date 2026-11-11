@@ -14,12 +14,12 @@
 //! The pieces: [`BlendFile::to_bytes`] and [`BlendFile::write_to`] here,
 //! the field writers in `field.rs`, the view layer's blocks in `layer.rs`,
 //! the marker list in `marker.rs`, and the session's edits as one value in
-//! `edit.rs` (`BlendEdits`).
+//! `edit.rs` (`BlendEditList`).
 
 pub mod action;
 mod cursor;
 pub mod edit;
-pub mod keys;
+pub mod key;
 pub mod field;
 pub mod layer;
 pub mod link;
@@ -33,13 +33,13 @@ pub mod relink;
 pub mod script;
 mod render;
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use std::io::Write;
 
-pub use edit::{BlendCollectionEdit, BlendDuplicate, BlendEdits, BlendNewObject, BlendObjectEdit, BlendSaveReport};
+pub use edit::{BlendCollectionEdit, BlendDuplicate, BlendEditList, BlendNewObject, BlendObjectEdit, BlendSaveReport};
 pub use action::{BlendActionAssign, BlendActionRange};
-pub use keys::BlendKeyInsert;
+pub use key::BlendKeyInsert;
 pub use nla::BlendNlaStack;
 pub use mesh::BlendNewMesh;
 

@@ -8,7 +8,7 @@ pub(crate) mod light_driver_read;
 pub mod dof;
 pub(crate) mod dna;
 pub(crate) mod instance;
-pub(crate) mod instance_members;
+pub(crate) mod instance_member;
 #[cfg(test)]
 mod instance_tests;
 pub(crate) mod kind;

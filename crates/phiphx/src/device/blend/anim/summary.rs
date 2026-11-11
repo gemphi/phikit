@@ -10,8 +10,8 @@
 
 use super::fcurve::BFCurve;
 use super::read::BAction;
-use crate::device::blend::file::types::*;
-use crate::device::blend::read::scene::types::BlendSceneObject;
+use crate::device::blend::file::kind::*;
+use crate::device::blend::read::scene::kind::BlendSceneObject;
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct BlendActionSummary {

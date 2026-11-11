@@ -1,7 +1,7 @@
 //! The edits that change structure: the Outliner's drops, added and deleted objects.
 use super::*;
 
-impl BlendEdits {
+impl BlendEditList {
     /// The Outliner's drops, once every other object edit is in: moves
     /// into a collection, then parents (`write/relink.rs`).
     pub(super) fn relink(&self, file: &mut BlendFile, report: &mut BlendSaveReport) -> usize {

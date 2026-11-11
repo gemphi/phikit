@@ -10,7 +10,7 @@ use super::SceneNormals;
 /// per-vertex sample, so each vertex takes the UV of the first loop that
 /// references it. Returns an empty vec when the source carried no UV layer,
 /// which the renderer reads as "no UVs".
-pub(super) fn per_vertex_uvs(faces: &crate::device::blend::BFaces, loop_uvs: &[[f32; 2]], vert_count: usize) -> Vec<[f32; 2]> {
+pub(super) fn per_vertex_uvs(faces: &crate::device::blend::BFaceList, loop_uvs: &[[f32; 2]], vert_count: usize) -> Vec<[f32; 2]> {
     if loop_uvs.is_empty() || vert_count == 0 {
         return Vec::new();
     }

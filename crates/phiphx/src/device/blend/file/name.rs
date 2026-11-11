@@ -1,6 +1,6 @@
 //! `ID.name` decoding (DNA-driven, with a heuristic fallback).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::Result;
 
 impl BlendFile {

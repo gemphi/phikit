@@ -2,8 +2,8 @@
 //! its type names, through the file's own DNA.
 
 use super::*;
-use crate::device::blend::file::types::*;
-use crate::device::blend::rig::read::BFields;
+use crate::device::blend::file::kind::*;
+use crate::device::blend::rig::read::BFieldReader;
 use std::collections::HashMap;
 
 /// `bRotLimitConstraint.flag`'s `LIMIT_ROT_LEGACY_BEHAVIOR`.
@@ -11,12 +11,12 @@ const LIMIT_ROT_LEGACY_BEHAVIOR: u32 = 1 << 3;
 
 /// What a constraint's targets resolve against: its owner's object (a rig
 /// or not) and the rig's bones by name.
-pub struct BTargetNames<'a> {
+pub struct BTargetNameList<'a> {
     pub object: u64,
     pub bones: &'a HashMap<String, usize>,
 }
 
-impl BTargetNames<'_> {
+impl BTargetNameList<'_> {
     /// A `tar` pointer and `subtarget` name as a target: the owner's own
     /// rig, another object, or a bone (or vertex group) of one.
     pub fn resolve(&self, tar: u64, sub: &str) -> BTarget {
@@ -32,7 +32,7 @@ impl BTargetNames<'_> {
 
 impl BlendFile {
     /// Every constraint on the pose channel `pc`, in order.
-    pub(crate) fn rig_constraints(&self, pc: &BlendBlock, dna: &DnaType, names: &BTargetNames) -> Vec<BConstraint> {
+    pub(crate) fn rig_constraints(&self, pc: &BlendBlock, dna: &DnaType, names: &BTargetNameList) -> Vec<BConstraint> {
         let first = self.ptr(pc, self.off("bPoseChannel", "constraints", dna));
         self.list(first, self.off("bConstraint", "*next", dna)).into_iter().map(|con| self.rig_constraint(con, dna, names)).collect()
     }
@@ -41,12 +41,12 @@ impl BlendFile {
     pub(crate) fn object_constraints(&self, ob: &BlendBlock, dna: &DnaType) -> Vec<BConstraint> {
         let first = self.ptr(ob, self.off("Object", "constraints", dna));
         let bones = HashMap::new();
-        let names = BTargetNames { object: ob.old_address, bones: &bones };
+        let names = BTargetNameList { object: ob.old_address, bones: &bones };
         self.list(first, self.off("bConstraint", "*next", dna)).into_iter().map(|con| self.rig_constraint(con, dna, &names)).collect()
     }
 
-    fn rig_constraint(&self, con: &BlendBlock, dna: &DnaType, names: &BTargetNames) -> BConstraint {
-        let c = BFields::new(self, dna, con, "bConstraint");
+    fn rig_constraint(&self, con: &BlendBlock, dna: &DnaType, names: &BTargetNameList) -> BConstraint {
+        let c = BFieldReader::new(self, dna, con, "bConstraint");
         let ty = c.int("type") as u16;
         let data = self.block_at(c.ptr("*data"));
         let kind = data.map_or(BConstraintKind::Other(ty), |d| self.constraint_kind(ty, d, dna, names));
@@ -76,7 +76,7 @@ impl BlendFile {
         }
     }
 
-    fn constraint_kind(&self, ty: u16, d: &BlendBlock, dna: &DnaType, names: &BTargetNames) -> BConstraintKind {
+    fn constraint_kind(&self, ty: u16, d: &BlendBlock, dna: &DnaType, names: &BTargetNameList) -> BConstraintKind {
         let st = match ty {
             TYPE_TRANSLIKE => "bTransLikeConstraint",
             TYPE_LOCLIKE => "bLocateLikeConstraint",
@@ -102,7 +102,7 @@ impl BlendFile {
             TYPE_CLAMPTO => "bClampToConstraint",
             _ => return BConstraintKind::Other(ty),
         };
-        let f = BFields::new(self, dna, d, st);
+        let f = BFieldReader::new(self, dna, d, st);
         let target = || names.resolve(f.ptr("*tar"), &f.name("subtarget[64]"));
         match ty {
             TYPE_TRANSLIKE => BConstraintKind::CopyTransforms { target: target(), mix: f.int("mix_mode") as u8, flag: f.int("flag") },
@@ -134,7 +134,7 @@ impl BlendFile {
                     .list(first, self.off("bConstraintTarget", "*next", dna))
                     .into_iter()
                     .map(|t| {
-                        let t = BFields::new(self, dna, t, "bConstraintTarget");
+                        let t = BFieldReader::new(self, dna, t, "bConstraintTarget");
                         (names.resolve(t.ptr("*tar"), &t.name("subtarget[64]")), t.f32("weight", 0.0))
                     })
                     .collect();
@@ -185,7 +185,7 @@ impl BlendFile {
     }
 
     /// `bTransformConstraint`'s mapping and its three pairs of ranges.
-    fn transform_data(&self, f: &BFields) -> BTransformData {
+    fn transform_data(&self, f: &BFieldReader) -> BTransformData {
         let map = f.bytes("map[3]", 3);
         let range = |min: &str, max: &str| [f.vec3(min, Vec3::ZERO), f.vec3(max, Vec3::ZERO)];
         BTransformData {
@@ -209,7 +209,7 @@ impl BlendFile {
 
     /// `bActionConstraint`, with its action's pose-bone curves for the slot
     /// it names (the only slot when it names none).
-    fn action_data(&self, f: &BFields, dna: &DnaType) -> BActionData {
+    fn action_data(&self, f: &BFieldReader, dna: &DnaType) -> BActionData {
         let act = f.ptr("*act");
         let curves = match act {
             0 => Vec::new(),

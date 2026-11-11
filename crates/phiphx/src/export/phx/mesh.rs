@@ -1,7 +1,7 @@
 //! PHX mesh chunk reader.
 
 use crate::Result;
-use crate::device::blend::write::script::chunks::PhxMeshChunk;
+use crate::device::blend::write::script::chunk::PhxMeshChunk;
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::Read;
 

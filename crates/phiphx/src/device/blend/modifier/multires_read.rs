@@ -4,22 +4,22 @@
 //! the `MDisps` array as one block, each grid's `disps` as a float3 block
 //! of its own.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `CD_MDISPS` (`DNA_customdata_types.h`).
 const CD_MDISPS: i32 = 19;
 
 /// One `MDisps.disps` per mesh corner, in corner order; `None` where the
 /// grid has no data (Blender's `disps == nullptr`, which reads as zero).
-pub(super) type BMDisps = Vec<Option<Vec<[f32; 3]>>>;
+pub(super) type BMDispList = Vec<Option<Vec<[f32; 3]>>>;
 
 /// The `CD_MDISPS` layer of the mesh `me`, if it has one. Read inside the
 /// mesh's pointer scope, since the grids are that ID's data.
-pub(super) fn read_mdisps(f: &BlendFile, me: &BlendBlock, dna: &DnaType) -> Option<BMDisps> {
+pub(super) fn read_mdisps(f: &BlendFile, me: &BlendBlock, dna: &DnaType) -> Option<BMDispList> {
     f.scoped(me, || read_layer(f, me, dna))
 }
 
-fn read_layer(f: &BlendFile, me: &BlendBlock, dna: &DnaType) -> Option<BMDisps> {
+fn read_layer(f: &BlendFile, me: &BlendBlock, dna: &DnaType) -> Option<BMDispList> {
     let ps = f.header.pointer_size as usize;
     let le = f.header.little_endian;
     let cd = ["corner_data", "ldata"]

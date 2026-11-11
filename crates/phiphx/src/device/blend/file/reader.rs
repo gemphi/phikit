@@ -1,6 +1,6 @@
 //! Low-level little-endian byte readers.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Read u64 from bytes (little endian)

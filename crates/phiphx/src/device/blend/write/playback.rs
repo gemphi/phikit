@@ -4,7 +4,7 @@
 //! `redraws_flag` — the same places `rna_scene.cc` and `rna_screen.cc` put
 //! them.
 
-use crate::device::blend::file::types::{BlendFile, DnaType};
+use crate::device::blend::file::kind::{BlendFile, DnaType};
 use crate::device::blend::read::scene::playback::*;
 
 fn with_bit(flag: u32, bit: u32, on: bool) -> u32 {
@@ -67,7 +67,7 @@ impl BlendFile {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::device::blend::write::BlendEdits;
+    use crate::device::blend::write::BlendEditList;
 
     #[test]
     fn the_playback_settings_read_back_as_written_in_every_layout() {
@@ -96,7 +96,7 @@ mod tests {
                 snap_seconds: 2,
                 snap_distance: 12,
             };
-            let report = BlendEdits { playback: Some(wanted), ..Default::default() }.apply(&mut file);
+            let report = BlendEditList { playback: Some(wanted), ..Default::default() }.apply(&mut file);
             assert!(report.warnings.is_empty(), "{name}: {:?}", report.warnings);
             let again = BlendFile::parse_bytes(&file.to_bytes()).unwrap().extract_scene().unwrap().props.playback;
             // A file from before the loop mode (5.1) has no field for it: it

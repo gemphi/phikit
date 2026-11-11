@@ -56,7 +56,7 @@ pub struct SceneRigs {
     ///
     /// Empty for almost every file, and an empty set costs one lookup and no
     /// clone.
-    pub drivers: Vec<crate::device::blend::BModifierDrivers>,
+    pub drivers: Vec<crate::device::blend::BModifierDriverList>,
     /// Each rig's bones (`pose_mat`) at the saved frame, by rig index —
     /// what the viewport draws until a frame poses them.
     pub saved: Vec<Arc<Vec<Mat4>>>,

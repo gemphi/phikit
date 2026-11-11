@@ -7,7 +7,7 @@
 //! the DNA rather than a constant, since the struct has grown.
 
 use super::space::BDriverSpace;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// One target as the file spells it.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -27,14 +27,14 @@ pub struct BDriverTarget {
 }
 
 /// Reading the targets of a `DriverVar` block.
-pub trait BDriverTargets {
+pub trait BDriverTargetList {
     /// Target `slot` of this variable, when the DNA has it.
     fn driver_target(&self, var: &BlendBlock, slot: usize, dna: &DnaType) -> Option<BDriverTarget>;
     /// `DriverVar.num_targets`, at least one.
     fn driver_target_count(&self, var: &BlendBlock, dna: &DnaType) -> usize;
 }
 
-impl BDriverTargets for BlendFile {
+impl BDriverTargetList for BlendFile {
     fn driver_target(&self, var: &BlendBlock, slot: usize, dna: &DnaType) -> Option<BDriverTarget> {
         let base = self.off("DriverVar", "targets[8]", dna)? + slot * self.target_stride(dna)?;
         let ps = self.header.pointer_size as usize;
@@ -61,14 +61,14 @@ impl BDriverTargets for BlendFile {
 
 /// The byte helpers the target reader needs, kept here so no other module
 /// grows a second way of reading a fixed string out of a block.
-trait BDriverBytes {
+trait BDriverByteReader {
     fn target_stride(&self, dna: &DnaType) -> Option<usize>;
     fn int_at(&self, data: &[u8], off: usize, width: usize) -> u32;
     fn field_str(data: &[u8], off: usize, len: usize) -> String;
     fn cstr(data: &[u8]) -> String;
 }
 
-impl BDriverBytes for BlendFile {
+impl BDriverByteReader for BlendFile {
     /// `sizeof(DriverTarget)` from the DNA, so `targets[1]` lands right
     /// whatever the file's version wrote.
     fn target_stride(&self, dna: &DnaType) -> Option<usize> {

@@ -3,21 +3,21 @@
 //! placeholder box Blender draws for a character no font provides
 //! (`vfont_placeholder_ensure`).
 
-use super::font::{BFont, BFontMetrics};
+use super::font::{BFont, BFontMetric};
 use super::glyph::{char_curves, TChar};
 use super::{BText, TBez, TCharInfo, CU_CHINFO_BOLD, CU_CHINFO_ITALIC, HD_VECT};
 use glam::Vec3;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-pub struct TChars<'a> {
+pub struct TCharList<'a> {
     fonts: &'a [Option<Arc<BFont>>; 4],
     cache: HashMap<(usize, u32), Option<TChar>>,
     space: TChar,
     boxed: TChar,
 }
 
-impl<'a> TChars<'a> {
+impl<'a> TCharList<'a> {
     pub fn new(cu: &'a BText) -> Self {
         let metrics = Self::metrics_of(&cu.fonts);
         let (space, boxed) = placeholders(&metrics);
@@ -25,8 +25,8 @@ impl<'a> TChars<'a> {
     }
 
     /// The metrics all text uses: the regular font's, or the defaults.
-    pub fn metrics_of(fonts: &[Option<Arc<BFont>>; 4]) -> BFontMetrics {
-        fonts[0].as_ref().map_or_else(BFontMetrics::default, |f| f.metrics)
+    pub fn metrics_of(fonts: &[Option<Arc<BFont>>; 4]) -> BFontMetric {
+        fonts[0].as_ref().map_or_else(BFontMetric::default, |f| f.metrics)
     }
 
     /// `vfont_from_charinfo`: the style's font, else the regular one.
@@ -61,7 +61,7 @@ impl<'a> TChars<'a> {
 
 /// `vfont_placeholder_ensure`: an en-wide space, and an en-wide hollow
 /// rectangle (outer outline, then the hole wound the other way).
-fn placeholders(m: &BFontMetrics) -> (TChar, TChar) {
+fn placeholders(m: &BFontMetric) -> (TChar, TChar) {
     let ascent = m.ascent();
     let line_width = 0.05 * m.em_ratio;
     let size_factor = [0.9f32, 0.9 - line_width * 2.0];

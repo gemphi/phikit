@@ -17,7 +17,7 @@
 //! `.corner_edge` per corner, `sharp_face` per face (a fresh primitive is
 //! flat-shaded), the face offsets, and the counts.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// The oldest file layout the mesh writer produces (`poly_offset_indices`).
 pub const OLDEST_MESH_LAYOUT: u32 = 306;

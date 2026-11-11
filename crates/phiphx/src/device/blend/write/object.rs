@@ -9,7 +9,7 @@
 //! its neighbours. Then the new object's own values go in: its name, its
 //! mesh, its transform.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `Object.type` for a mesh (`OB_MESH`).
 pub const OB_MESH: i64 = 1;

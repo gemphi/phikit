@@ -2,7 +2,7 @@
 //! pre-2.9 `Mesh.dvert` array): `MDeformVert { MDeformWeight *dw; int
 //! totweight; int flag }`, `MDeformWeight { int def_nr; float weight }`.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 const CD_MDEFORMVERT: i32 = 2;
 

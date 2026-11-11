@@ -15,13 +15,13 @@
 //! Every step is checked against Blender at several frames
 //! (`tests/truth/thymus_anim.txt`, made by `truth/blender_anim.py`).
 
-pub mod channels;
+pub mod channel;
 pub mod driver;
-pub mod drivers;
+pub mod driver_list;
 pub mod easing;
 pub mod fcurve;
 pub mod follow;
-pub mod handles;
+pub mod handle;
 pub mod motion;
 pub mod nla;
 pub mod nla_edit;

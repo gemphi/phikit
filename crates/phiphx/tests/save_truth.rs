@@ -5,7 +5,7 @@
 //! zstd-wrapped one, each re-read through phiphx's own reader.
 
 use phiphx::blend::write::mesh::BlendNewMesh;
-use phiphx::blend::write::{BlendCompression, BlendDuplicate, BlendEdits, BlendNewObject, BlendObjectEdit};
+use phiphx::blend::write::{BlendCompression, BlendDuplicate, BlendEditList, BlendNewObject, BlendObjectEdit};
 use phiphx::blend::{BlendFile, BlendVisibility};
 
 const FIXTURES: &[&str] = &["THYMUS-BOLDROID-WAVE-003.blend", "nla_cube.blend", "DEPTH-OF-FIELD.blend"];
@@ -39,7 +39,7 @@ fn the_edits_are_the_only_difference_and_read_back_in_every_layout() {
         let mut file = BlendFile::parse_bytes(&bytes).expect("parse");
         let before = file.extract_scene().expect("scene");
         let first = before.objects.first().map(|o| o.name.clone()).expect("an object");
-        let edits = BlendEdits {
+        let edits = BlendEditList {
             frame: Some(42),
             frame_start: Some(3),
             frame_end: Some(77),
@@ -97,7 +97,7 @@ fn new_objects_are_written_and_read_back_with_their_geometry() {
         let before = file.extract_scene().expect("scene");
         let first = before.objects[0].name.clone();
         let last = before.objects.last().unwrap().name.clone();
-        let edits = BlendEdits {
+        let edits = BlendEditList {
             added: vec![BlendNewObject { name: "Crate".into(), mesh: cube.clone(), location: [1.0, 2.0, 3.0], scale: [1.0; 3], collection: String::new(), selected: true, visibility: None }],
             duplicated: vec![BlendDuplicate { copy: format!("{first}.001"), source: first.clone(), selected: false }],
             deleted: vec![last.clone()],
@@ -150,7 +150,7 @@ fn every_startup_template_saves_through_in_its_own_layout() {
             faces: vec![vec![0, 1, 2, 3], vec![4, 7, 6, 5], vec![0, 4, 5, 1], vec![1, 5, 6, 2], vec![2, 6, 7, 3], vec![3, 7, 4, 0]],
         };
         let added = BlendNewObject { name: "Added".into(), mesh: cube, location: [3.0, 0.0, 0.0], scale: [1.0; 3], collection: String::new(), selected: true, visibility: None };
-        let edits = BlendEdits { added: vec![added], ..Default::default() };
+        let edits = BlendEditList { added: vec![added], ..Default::default() };
         let report = edits.apply(&mut blend);
         assert!(report.warnings.is_empty(), "{file}: {:?}", report.warnings);
         let again = BlendFile::parse_bytes(&blend.to_bytes()).unwrap().extract_scene().unwrap();

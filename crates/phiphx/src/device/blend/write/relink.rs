@@ -7,7 +7,7 @@
 //! what the old parent contributed, so `parent · parentinv · local` is the
 //! world matrix it had.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::Mat4;
 
 /// `Object.partype` for object parenting (`PAROBJECT`).

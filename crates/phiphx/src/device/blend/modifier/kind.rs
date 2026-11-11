@@ -29,7 +29,7 @@ pub(crate) const KINDS: &[BModifierKind] = &[
     BModifierKind { dna_type: 28, name: "SIMPLE_DEFORM", read: simple_deform::read },
     BModifierKind { dna_type: 53, name: "SURFACE_DEFORM", read: surface_deform::read },
     BModifierKind { dna_type: 22, name: "CLOTH", read: cloth::read },
-    BModifierKind { dna_type: nodes::DNA_TYPE, name: "NODES", read: nodes::read },
+    BModifierKind { dna_type: node::DNA_TYPE, name: "NODES", read: node::read },
 ];
 
 /// Names of the modifiers the viewport evaluates (Blender's RNA type ids).

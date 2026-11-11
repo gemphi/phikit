@@ -1,6 +1,6 @@
 //! DNA block parsing (SDNA structure definitions).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::{PointCloudError, Result};
 use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
 use std::io::{Read, Seek, SeekFrom};

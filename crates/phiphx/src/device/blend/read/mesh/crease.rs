@@ -7,7 +7,7 @@
 //! (`BKE_mesh_legacy_crease_to_generic`); before those, in
 //! `MEdge.crease_legacy` as a byte (`BKE_mesh_legacy_edge_crease_to_layers`).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use std::borrow::Cow;
 
 const DOMAIN_POINT: i8 = 0;
@@ -18,7 +18,7 @@ const CD_CREASE: i32 = 30;
 
 /// A mesh's creases as the file has them, `0..1`.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct BlendCreases {
+pub struct BlendCreaseList {
     /// `(a, b, crease)` with `a < b`, for every edge with a crease above 0.
     pub edge: Vec<(u32, u32, f32)>,
     /// One per vertex, or empty when no vertex is creased.
@@ -27,7 +27,7 @@ pub struct BlendCreases {
 
 impl BlendFile {
     /// `me`'s creases (none when the mesh has no crease attributes).
-    pub(crate) fn mesh_creases(&self, me: &BlendBlock, dna: &DnaType, verts: usize) -> BlendCreases {
+    pub(crate) fn mesh_creases(&self, me: &BlendBlock, dna: &DnaType, verts: usize) -> BlendCreaseList {
         self.scoped(me, || {
             let edges = self.crease_edges(me, dna);
             let crease: Vec<f32> = match self.crease_layer(me, dna, "crease_edge", DOMAIN_EDGE, 4) {
@@ -45,7 +45,7 @@ impl BlendFile {
                 .map(|b| b.chunks_exact(4).take(verts).map(|c| self.read_f32(c).clamp(0.0, 1.0)).collect::<Vec<_>>())
                 .filter(|v| v.len() == verts && v.iter().any(|&c| c > 0.0))
                 .unwrap_or_default();
-            BlendCreases { edge, vert }
+            BlendCreaseList { edge, vert }
         })
     }
 
@@ -138,7 +138,7 @@ impl BlendFile {
         &self,
         me: &BlendBlock,
         dna: &DnaType,
-        faces: &crate::device::blend::BFaces,
+        faces: &crate::device::blend::BFaceList,
         verts: usize,
     ) -> Vec<(u32, u32)> {
         let all = self.scoped(me, || self.mesh_edges(me, dna));

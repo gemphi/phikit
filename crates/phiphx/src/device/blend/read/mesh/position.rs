@@ -1,6 +1,6 @@
 //! 4.x/5.x `position` and `.corner_vert` attributes (attribute storage or CustomData).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Read the `position` float3 attribute (Blender 4.x), matched by EXACT

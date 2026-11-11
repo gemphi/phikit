@@ -22,7 +22,7 @@
 - [x] Find Missing Files (`texture_find.rs`): an image whose path is another machine's (`E:\…`, `//../../../…`) is looked for by file name under the `.blend`'s folder tree and its `textures/`, as `BKE_bpath_missing_files_find` does on command — automatically here, recorded as a divergence; `image_present` and `SceneTexture::candidates_in` read the same list so "present" and "found" agree (`texture_find::tests`)
 - [x] A missing world HDRI is recorded, not reproduced (`BlendWorld::missing`): Blender lights the scene magenta; the world now carries the file name, a white tint, and the read report's warning, and phiber lights with Blender's studio `forest` instead (`tests/world_truth.rs`, pose 26's `autumn_field_puresky_4k.exr`)
 - [x] Split `tests_traversal.rs` (275 lines) into `tests_traversal` (geometry, 123), `tests_material` (97) and a shared `tests_fixture` (61)
-- [x] `BFaces` (`blend/mesh/list.rs`): every face's corners in one array with a start per face, instead of a `Vec` per face — HEXA-COMBINED opens with 580 MB less (2009 MB peak) and 2.5 s faster
+- [x] `BFaceList` (`blend/mesh/list.rs`): every face's corners in one array with a start per face, instead of a `Vec` per face — HEXA-COMBINED opens with 580 MB less (2009 MB peak) and 2.5 s faster
 - [x] `SceneModel::from_blend_owned`: each object's raw buffers are freed as it converts, so the raw file arrays and the runtime scene are not both held
 - [x] `SceneMesh::corners`: shading normal per triangle corner (split normals, else smooth vertex normals on smooth faces; zero = flat) (`tests/corners.rs`)
 - [x] `SceneCorners` (`corners.rs`): a 4-byte normal id per corner into a table of unique normals (was 12 bytes) — HEXA-COMBINED keeps ~500 MB less

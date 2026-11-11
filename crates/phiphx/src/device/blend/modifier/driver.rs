@@ -166,7 +166,7 @@ impl PartialEq for BModSetting {
 
 /// Every modifier driver one object carries.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct BModifierDrivers {
+pub struct BModifierDriverList {
     pub object: String,
     /// The object's saved address. The name is for reporting; this is what
     /// the stack reader matches on, the way a lamp's and the world's sets
@@ -175,7 +175,7 @@ pub struct BModifierDrivers {
     pub drivers: Vec<BModDriver>,
 }
 
-impl BModifierDrivers {
+impl BModifierDriverList {
     pub fn is_empty(&self) -> bool {
         self.drivers.is_empty()
     }

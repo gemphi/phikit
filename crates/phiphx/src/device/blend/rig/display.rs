@@ -11,10 +11,10 @@
 //! per used layer, visible when the armature shows the layer, and one per
 //! bone group, hidden.
 
-use super::read::BFields;
+use super::read::BFieldReader;
 use super::math::BEulerOrder;
 use super::BRig;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::{Mat4, Vec3};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -156,14 +156,14 @@ impl BRigLook {
 
 /// An armature's bone collections as the file keeps them, or as Blender
 /// makes them from layers and bone groups.
-struct BCollections {
+struct BCollectionList {
     solo: bool,
     /// Each bone's collections (by `Bone` address): (visible with its
     /// parents, soloed).
     of_bone: HashMap<u64, Vec<(bool, bool)>>,
 }
 
-impl BCollections {
+impl BCollectionList {
     fn shows(&self, bone: u64) -> bool {
         match self.of_bone.get(&bone).filter(|c| !c.is_empty()) {
             None => !self.solo,
@@ -180,9 +180,9 @@ impl BlendFile {
     }
 
     fn rig_look_scoped(&self, ob: &BlendBlock, rig: &BRig, dna: &DnaType) -> Option<BRigLook> {
-        let o = BFields::new(self, dna, ob, "Object");
+        let o = BFieldReader::new(self, dna, ob, "Object");
         let arm = self.block_at_code(o.ptr("*data"), "AR")?;
-        let a = BFields::new(self, dna, arm, "bArmature");
+        let a = BFieldReader::new(self, dna, arm, "bArmature");
         let pose = self.block_at(o.ptr("*pose"));
         let rest = self.bones_by_name(ob, dna);
         let collections = self.scoped(arm, || self.bone_collections(&a, pose, rig, dna, &rest));
@@ -201,11 +201,11 @@ impl BlendFile {
         })
     }
 
-    fn bone_look(&self, chan: u64, rig: &BRig, collections: &BCollections, pose_hide: bool, dna: &DnaType, rest: &std::collections::HashMap<String, &BlendBlock>) -> BBoneLook {
+    fn bone_look(&self, chan: u64, rig: &BRig, collections: &BCollectionList, pose_hide: bool, dna: &DnaType, rest: &std::collections::HashMap<String, &BlendBlock>) -> BBoneLook {
         let Some(pc) = self.block_at(chan) else { return BBoneLook::default() };
-        let c = BFields::new(self, dna, pc, "bPoseChannel");
+        let c = BFieldReader::new(self, dna, pc, "bPoseChannel");
         let bone = self.pchan_bone(pc, dna, rest);
-        let b = bone.map(|b| BFields::new(self, dna, b, "Bone"));
+        let b = bone.map(|b| BFieldReader::new(self, dna, b, "Bone"));
         let flag = b.as_ref().map_or(0, |b| b.int("flag"));
         let drawtype = b.as_ref().filter(|b| b.has("drawtype")).map(|b| b.int("drawtype") as u8 as i8).filter(|&t| t >= 0);
         let hidden = if pose_hide { c.int("drawflag") & PCHAN_DRAW_HIDDEN != 0 } else { flag & BONE_HIDDEN_P != 0 };
@@ -225,13 +225,13 @@ impl BlendFile {
 
     /// The armature's bone collections (4.0+), or the ones Blender makes of
     /// a 3.x file's layers and bone groups.
-    fn bone_collections(&self, a: &BFields, pose: Option<&BlendBlock>, rig: &BRig, dna: &DnaType, rest: &HashMap<String, &BlendBlock>) -> BCollections {
+    fn bone_collections(&self, a: &BFieldReader, pose: Option<&BlendBlock>, rig: &BRig, dna: &DnaType, rest: &HashMap<String, &BlendBlock>) -> BCollectionList {
         let mut of_bone: HashMap<u64, Vec<(bool, bool)>> = HashMap::new();
         // The file keeps the array as the `collections` list, in its order
         // (`armature_blend_write`); Blender builds the array again on read.
         if a.has("**collection_array") {
             let list = self.list(a.ptr("collections"), self.off("BoneCollection", "*next", dna));
-            let fields: Vec<BFields> = list.iter().map(|b| BFields::new(self, dna, b, "BoneCollection")).collect();
+            let fields: Vec<BFieldReader> = list.iter().map(|b| BFieldReader::new(self, dna, b, "BoneCollection")).collect();
             // A collection is visible with its parents: roots first, each
             // collection's children in `child_index .. + child_count`.
             let mut visible: Vec<bool> = fields.iter().map(|f| f.int("flags") & BONE_COLLECTION_VISIBLE != 0).collect();
@@ -247,25 +247,25 @@ impl BlendFile {
                 let solo = f.int("flags") & BONE_COLLECTION_SOLO != 0;
                 let next = self.off("BoneCollectionMember", "*next", dna);
                 for member in self.list(f.ptr("bones"), next) {
-                    let bone = BFields::new(self, dna, member, "BoneCollectionMember").ptr("*bone");
+                    let bone = BFieldReader::new(self, dna, member, "BoneCollectionMember").ptr("*bone");
                     of_bone.entry(bone).or_default().push((visible[i], solo));
                 }
             }
-            return BCollections { solo: a.int("flag") & ARM_BCOLL_SOLO_ACTIVE != 0, of_bone };
+            return BCollectionList { solo: a.int("flag") & ARM_BCOLL_SOLO_ACTIVE != 0, of_bone };
         }
         // Layers: a collection per used layer, visible when shown; bone
         // groups: a hidden collection each.
         let (used, shown) = (a.int("layer_used"), a.int("layer"));
         let groups = pose.map_or(0, |p| {
-            let first = BFields::new(self, dna, p, "bPose").ptr("agroups");
+            let first = BFieldReader::new(self, dna, p, "bPose").ptr("agroups");
             self.list(first, self.off("bActionGroup", "*next", dna)).len()
         });
         for b in &rig.bones {
             let Some(pc) = self.block_at(b.address) else { continue };
-            let c = BFields::new(self, dna, pc, "bPoseChannel");
+            let c = BFieldReader::new(self, dna, pc, "bPoseChannel");
             let _ = &c;
             let Some(bone) = self.pchan_bone(pc, dna, rest) else { continue };
-            let layer = BFields::new(self, dna, bone, "Bone").int("layer") & used;
+            let layer = BFieldReader::new(self, dna, bone, "Bone").int("layer") & used;
             let mut list: Vec<(bool, bool)> = (0..32).filter(|l| layer & (1 << l) != 0).map(|l| (shown & (1 << l) != 0, false)).collect();
             let group = c.int("agrp_index") as u16 as i16;
             if group > 0 && group as usize <= groups {
@@ -273,14 +273,14 @@ impl BlendFile {
             }
             of_bone.insert(bone.old_address, list);
         }
-        BCollections { solo: false, of_bone }
+        BCollectionList { solo: false, of_bone }
     }
 
     /// A custom shape object's mesh as edges, in its own space. An empty or
     /// another kind of object as a shape draws nothing here.
     fn bone_shape(&self, address: u64, dna: &DnaType) -> Option<BBoneShape> {
         let ob = self.block_at_code(address, "OB")?;
-        let o = BFields::new(self, dna, ob, "Object");
+        let o = BFieldReader::new(self, dna, ob, "Object");
         if o.int("type") != OB_MESH {
             return None;
         }

@@ -9,7 +9,7 @@
 
 use super::{BModifier, BlendEvalMesh, EvalCtx};
 use super::driver::BModValue;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::Vec3;
 
 /// `MOD_WELD_MODE_CONNECTED`.
@@ -33,9 +33,9 @@ pub(super) fn read(
 }
 
 /// Disjoint sets over vertex indices, path-halving.
-struct Groups(Vec<u32>);
+struct GroupList(Vec<u32>);
 
-impl Groups {
+impl GroupList {
     fn new(n: usize) -> Self {
         Self((0..n as u32).collect())
     }
@@ -132,7 +132,7 @@ impl BModifier for BWeld {
         if self.merge_dist <= 0.0 || mesh.vertices.is_empty() {
             return;
         }
-        let mut groups = Groups::new(mesh.vertices.len());
+        let mut groups = GroupList::new(mesh.vertices.len());
         for (a, b) in self.pairs(mesh) {
             groups.join(a, b);
         }
@@ -153,7 +153,7 @@ impl BModifier for BWeld {
         }
         let has_uvs = !mesh.loop_uvs.is_empty();
         let has_colors = !mesh.loop_colors.is_empty();
-        let mut faces = crate::device::blend::BFaces::default();
+        let mut faces = crate::device::blend::BFaceList::default();
         let (mut uvs, mut colors, mut materials, mut smooth) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
         for face in 0..mesh.faces.len() {
             let start = mesh.faces.start(face);

@@ -30,9 +30,9 @@ pub use cloth::{BCloth, BClothCollision};
 pub use deflect::{BCollider, BFieldKind, BFieldShape, BForceField};
 pub use joint::{BJointKind, BRigidJoint, BSpringKind};
 pub use soft::{BSoftBody, BSoftCollision};
-pub use world::{BEffectorWeights, BPointCache, BRigidWorld};
+pub use world::{BEffectorWeight, BPointCache, BRigidWorld};
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::BlendSceneObject;
 
 /// `eModifierType` of the modifiers whose presence turns a setting on.

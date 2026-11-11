@@ -11,21 +11,21 @@
 //!
 //! [`anim::driver::socket`]: crate::device::blend::anim::driver::socket
 
-use super::light_driver::{BLightDriver, BLightDrivers, BLightProp};
+use super::light_driver::{BLightDriver, BLightDriverList, BLightProp};
 use crate::device::blend::anim::driver::socket_path;
-use crate::device::blend::file::types::*;
-use crate::device::blend::shade::world_driver::{BWorldDriver, BWorldDrivers, BWorldWrite};
+use crate::device::blend::file::kind::*;
+use crate::device::blend::shade::world_driver::{BWorldDriver, BWorldDriverList, BWorldWrite};
 
 impl BlendFile {
     /// Every light in the file that carries a driver, by `Light` name.
-    pub(crate) fn light_drivers(&self, dna: &DnaType) -> Vec<BLightDrivers> {
+    pub(crate) fn light_drivers(&self, dna: &DnaType) -> Vec<BLightDriverList> {
         self.blocks
             .iter()
             .filter(|block| block.code_str == "LA")
             .filter_map(|la| {
                 self.scoped(la, || {
                     let mut set =
-                        BLightDrivers { light: self.id_name(la, dna), address: la.old_address, drivers: Vec::new() };
+                        BLightDriverList { light: self.id_name(la, dna), address: la.old_address, drivers: Vec::new() };
                     for fc in self.adt_driver_curves(la, Self::lamp_struct(dna), dna) {
                         let Some(curve) = self.fcurve(fc, dna) else { continue };
                         let Some(prop) = BLightProp::of(&curve.path, curve.index as usize) else { continue };
@@ -39,14 +39,14 @@ impl BlendFile {
     }
 
     /// Every world in the file that carries a driver, over both its IDs.
-    pub(crate) fn world_drivers(&self, dna: &DnaType) -> Vec<BWorldDrivers> {
+    pub(crate) fn world_drivers(&self, dna: &DnaType) -> Vec<BWorldDriverList> {
         self.blocks
             .iter()
             .filter(|block| block.code_str == "WO")
             .filter_map(|wo| {
                 self.scoped(wo, || {
                     let mut set =
-                        BWorldDrivers { world: self.id_name(wo, dna), address: wo.old_address, ..Default::default() };
+                        BWorldDriverList { world: self.id_name(wo, dna), address: wo.old_address, ..Default::default() };
                     // `World.color` on the ID itself.
                     for fc in self.adt_driver_curves(wo, "World", dna) {
                         let Some(curve) = self.fcurve(fc, dna) else { continue };

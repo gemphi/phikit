@@ -59,7 +59,7 @@ pub struct SceneMap {
     pub image: Option<super::texture::SceneTexture>,
 }
 
-/// The mapped inputs of one material (see `blend::shade::maps`).
+/// The mapped inputs of one material (see `blend::shade::map`).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct SceneMaps {
     pub rough: Option<SceneMap>,
@@ -79,7 +79,7 @@ impl SceneMaps {
     }
 
     /// From the file's image keys.
-    fn of(m: &crate::device::blend::BlendMaps) -> Self {
+    fn of(m: &crate::device::blend::BlendMapList) -> Self {
         let mut out = Self::default();
         for (slot, key) in out.each_mut_pub().into_iter().zip(m.each()) {
             *slot = key.clone().map(|key| SceneMap { key, image: None });

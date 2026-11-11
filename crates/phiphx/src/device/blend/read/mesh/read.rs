@@ -1,6 +1,6 @@
 //! Mesh data resolution, heuristic vertex scanning, and triangulation.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Extract mesh data from linked ME block or embedded data

@@ -8,8 +8,8 @@
 //! render uses — reading it instead of the graph is why our ambient light was
 //! wrong.
 
-use super::links::BLink;
-use crate::device::blend::file::types::*;
+use super::link::BLink;
+use crate::device::blend::file::kind::*;
 
 /// `NodeSkyType`: the two models this atmosphere is (`sky_single_scattering
 /// .cpp`). Preetham (0) and Hosek/Wilkie (1) are a different model with

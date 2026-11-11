@@ -5,7 +5,7 @@
 //! Streams the file (zstd / gzip transparently) and stops at the first block
 //! that is neither `REND` nor `TEST`, so a 200 MB scene costs a few KB.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::Result;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::Path;

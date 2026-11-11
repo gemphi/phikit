@@ -13,7 +13,7 @@
 //! (`action.rs`). Writing the same stack twice gives the same file.
 
 use crate::device::blend::anim::nla::{BNlaStrip, BlendNla};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// One object's NLA as the session has it.
 #[derive(Clone, Debug, Default, PartialEq)]

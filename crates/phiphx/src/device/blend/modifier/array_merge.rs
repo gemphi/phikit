@@ -10,7 +10,7 @@
 //! leads to is still close enough).
 
 use super::BlendEvalMesh;
-use super::super::merge_verts::merge_verts;
+use super::super::merge_vertex::merge_verts;
 
 /// `SortVertsElem`: a vertex and the sum of its coordinates.
 struct SortVert {

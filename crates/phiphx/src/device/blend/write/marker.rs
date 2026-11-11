@@ -4,7 +4,7 @@
 //! block; one that was removed has its block dropped; the list is relinked
 //! in frame order through `next` / `prev` and the scene's `ListBase`.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// The `TimeMarker` blocks of the scene at `scene`, in list order.
@@ -30,7 +30,7 @@ impl BlendFile {
         let reads = |file: &Self, index: usize| -> (i32, String) {
             let block = &file.blocks[index];
             let frame = file.int_field(block, "TimeMarker", "frame", &dna) as i32;
-            let name = file.off("TimeMarker", "name[64]", &dna).map(|o| crate::device::blend::shade::nodes::read_cstr(&block.data, o, 64)).unwrap_or_default();
+            let name = file.off("TimeMarker", "name[64]", &dna).map(|o| crate::device::blend::shade::node::read_cstr(&block.data, o, 64)).unwrap_or_default();
             (frame, name)
         };
         for (frame, name) in markers {

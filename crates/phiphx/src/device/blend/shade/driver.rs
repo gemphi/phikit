@@ -25,7 +25,7 @@
 //! `RNA_property_float_set`'s clamp.
 
 use crate::device::blend::anim::driver::{BlendDriver, BlendDriverScene, socket_clamp};
-use crate::device::blend::read::scene::types::{BlendBsdf, BlendMaterial};
+use crate::device::blend::read::scene::kind::{BlendBsdf, BlendMaterial};
 
 /// A property of the `Material` ID itself that a driver may write, with the
 /// RNA hard range its write is clamped to.
@@ -37,7 +37,7 @@ pub enum BMatProp {
     Metallic,
     /// `Material.specular_intensity`, hard 0..1. Read for the Drivers
     /// editor and clamped like the rest; [`BlendMaterial`] has no field for
-    /// it, so [`BMaterialDrivers::apply`] writes nothing for it.
+    /// it, so [`BMaterialDriverList::apply`] writes nothing for it.
     SpecularIntensity,
     /// `Material.diffuse_color[c]` — the `r/g/b/a` fields, hard 0..∞.
     DiffuseColor(usize),
@@ -89,7 +89,7 @@ pub struct BMaterialDriver {
 
 /// Every driver one material carries, over both its IDs.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct BMaterialDrivers {
+pub struct BMaterialDriverList {
     pub material: String,
     pub drivers: Vec<BMaterialDriver>,
     /// The input sockets of each node a driver writes, in storage order —
@@ -101,7 +101,7 @@ pub struct BMaterialDrivers {
     pub surface: Option<String>,
 }
 
-impl BMaterialDrivers {
+impl BMaterialDriverList {
     pub fn is_empty(&self) -> bool {
         self.drivers.is_empty()
     }
@@ -166,7 +166,7 @@ impl BMaterialDrivers {
     }
 }
 
-impl BMaterialDrivers {
+impl BMaterialDriverList {
     /// `value` folded into `material`'s surface, when `write` names a
     /// socket of the node the Material Output reaches and nothing is
     /// linked into it. A linked socket's `default_value` never reaches a

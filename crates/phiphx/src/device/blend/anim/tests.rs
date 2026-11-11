@@ -6,7 +6,7 @@
 //! alone.
 
 use super::pose::{bases_at, poses_at};
-use crate::device::blend::file::types::BlendFile;
+use crate::device::blend::file::kind::BlendFile;
 use glam::Mat4;
 use std::collections::HashMap;
 
@@ -56,7 +56,7 @@ fn the_metarig_object_moves_where_blender_moves_it() {
     // frame — the keys are flat — so this pins agreement, not motion; the
     // motion check is the rig test below.)
     for f in FRAMES {
-        let ours = super::channels::basis_at(raw, action.curves(b.slot).iter(), f as f32);
+        let ours = super::channel::basis_at(raw, action.curves(b.slot).iter(), f as f32);
         let theirs = want[&(f, "OB".into(), "Character-Metarig".into())];
         assert!(close(ours, theirs) < 2e-3, "frame {f}: differs from Blender by {}", close(ours, theirs));
     }

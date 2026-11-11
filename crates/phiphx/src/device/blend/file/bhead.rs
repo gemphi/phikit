@@ -1,7 +1,7 @@
 //! Block headers — `BHead4`, `SmallBHead8`, `LargeBHead8`
 //! (`blenloader_core/BLO_core_bhead.hh`), chosen by `BlendHeader::bhead_type`.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::{PointCloudError, Result};
 use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use std::io::{Read, Seek};

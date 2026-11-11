@@ -8,9 +8,9 @@
 //! here, by the same `channel_mut` table the animation system writes
 //! through, so a driver can only write a channel the renderer can read.
 
-use super::target::{BDriverTarget, BDriverTargets};
+use super::target::{BDriverTarget, BDriverTargetList};
 use super::{BlendDriver, BlendDriverEnd, BlendDriverRead, BlendDriverSet, BlendDriverVar, BlendObjectDriver, BlendPropDriver};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::rig::driver::expr::BExpr;
 
 /// `eDriverVar_Types`.
@@ -19,7 +19,7 @@ const DVAR_ROT_DIFF: u32 = 1;
 const DVAR_LOC_DIFF: u32 = 2;
 const DVAR_TRANSFORM_CHAN: u32 = 3;
 
-/// The channels a driver may write, as `anim::channels::channel_mut` reads
+/// The channels a driver may write, as `anim::channel::channel_mut` reads
 /// them — the property's name and how many indices it has.
 const CHANNELS: [(&str, usize); 5] =
     [("location", 3), ("rotation_euler", 3), ("rotation_quaternion", 4), ("rotation_axis_angle", 4), ("scale", 3)];
@@ -42,7 +42,7 @@ impl BlendFile {
     /// Everything object `ob` brings to a frame's driver pass: the drivers
     /// on its own transform channels, the drivers on its own custom
     /// properties, and those properties as saved. A driver on anything else
-    /// — a material, a modifier, a shape key — is read by `anim::drivers`
+    /// — a material, a modifier, a shape key — is read by `anim::driver_list`
     /// for the Drivers editor to list and is not evaluated here.
     pub(crate) fn object_driver_set(&self, ob: &BlendBlock, dna: &DnaType) -> BlendDriverSet {
         let saved = self.id_properties(ob, dna);

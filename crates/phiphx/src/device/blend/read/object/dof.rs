@@ -19,7 +19,7 @@
 //! middle. Getting that wrong curves the plane of focus and shows up as a
 //! blurred centre or blurred corners depending on which way it is wrong.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `Camera.dof` — Properties → Object Data → Depth of Field.
 #[derive(Debug, Clone, PartialEq)]

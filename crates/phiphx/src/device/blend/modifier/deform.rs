@@ -22,12 +22,12 @@
 //! does not change for the life of a [`BlendFile`].
 
 use super::armature::BDeformBone;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 /// An armature's deforming bones by name — what an Armature modifier reads.
-pub(crate) type BDeformMats = HashMap<String, BDeformBone>;
+pub(crate) type BDeformMatList = HashMap<String, BDeformBone>;
 
 impl BlendFile {
     /// [`Self::pose_deform_mats`] for `arm`, read once and shared.
@@ -37,7 +37,7 @@ impl BlendFile {
     /// a file read, and the read re-enters the file. Two callers racing on
     /// a cold entry both read and the second's store wins, which costs one
     /// duplicate read and is still correct — the two results are equal.
-    pub(crate) fn deform_mats(&self, arm: &BlendBlock, dna: &DnaType) -> Arc<BDeformMats> {
+    pub(crate) fn deform_mats(&self, arm: &BlendBlock, dna: &DnaType) -> Arc<BDeformMatList> {
         let key = arm.old_address;
         if let Some(hit) = self.deform_memo.lock().ok().and_then(|seen| seen.get(&key).cloned()) {
             return hit;

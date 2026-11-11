@@ -6,8 +6,8 @@
 //! `pose.bones["…"].hide`, after the object's own drivers.
 
 use super::fcurve::BFCurve;
-use crate::device::blend::file::types::*;
-use crate::device::blend::read::scene::types::BlendSceneObject;
+use crate::device::blend::file::kind::*;
+use crate::device::blend::read::scene::kind::BlendSceneObject;
 
 /// `hide_prop_prefix` and `hide_prop_suffix`.
 const HIDE_PREFIX: &str = "bones[";
@@ -22,7 +22,7 @@ const ARMATURE: &str = "ARMATURE";
 
 /// One object's drivers, as the Drivers editor lists them.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct BlendDrivers {
+pub struct BlendDriverList {
     pub object: String,
     pub curves: Vec<BFCurve>,
 }
@@ -90,7 +90,7 @@ impl BlendFile {
 
     /// Every object's drivers, in object order, for objects that have any —
     /// the object's own first, then the ones versioning moves onto it.
-    pub(crate) fn drivers_list(&self, objects: &[BlendSceneObject], dna: &DnaType) -> Vec<BlendDrivers> {
+    pub(crate) fn drivers_list(&self, objects: &[BlendSceneObject], dna: &DnaType) -> Vec<BlendDriverList> {
         let versioned = self.has_armature_hide_drivers(dna);
         objects
             .iter()
@@ -100,7 +100,7 @@ impl BlendFile {
                 if versioned {
                     curves.extend(self.bone_hide_drivers(object, ob, dna));
                 }
-                (!curves.is_empty()).then(|| BlendDrivers { object: object.name.clone(), curves })
+                (!curves.is_empty()).then(|| BlendDriverList { object: object.name.clone(), curves })
             })
             .collect()
     }

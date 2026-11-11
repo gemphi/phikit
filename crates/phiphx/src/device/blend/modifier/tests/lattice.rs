@@ -3,7 +3,7 @@
 //! disabled, vertices dumped by `lattice_truth.py`. Skipped when the file is
 //! not on this machine (it is a 178 MB production asset, not a fixture).
 
-use crate::device::blend::file::types::BlendFile;
+use crate::device::blend::file::kind::BlendFile;
 use crate::device::blend::modifier::{BlendEvalMesh, EvalCtx};
 use glam::Mat4;
 use std::collections::HashMap;

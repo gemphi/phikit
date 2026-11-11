@@ -6,7 +6,7 @@
 //! keeps the defaults there.
 
 use super::fcurve::BFCurve;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::read::object::transform::ObjectTransformRaw;
 
 /// The transform value a curve of `property` / `index` drives, if any.

@@ -1,6 +1,6 @@
 //! glTF 2.0 scene writer (delegates to `gltf_native`).
 
-use super::types::BlenderScene;
+use super::kind::BlenderScene;
 use crate::Result;
 
 impl BlenderScene {

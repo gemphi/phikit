@@ -11,7 +11,7 @@
 //! object (a parent, a constraint target) simply loses it, as
 //! `BKE_id_delete` would leave it.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// The next `*next` / last of a `ListBase` at `field` of block `owner`.

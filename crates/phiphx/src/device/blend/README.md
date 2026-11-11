@@ -17,7 +17,7 @@ Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its 
 | `modifier/` | The viewport modifier stack (Blender `mesh_calc_modifiers`), limited to modifiers that change how an existing mesh looks. Declarative: [`KINDS`]… |
 | `object/` | Objects. DNA fields, transforms and parent chain, rotation modes, kind, camera/light/empty data, collections, view layer, world. |
 | `scene/` | Scene assembly. `extract_scene`, scene properties, result types, saved UI (workspace, 3D view). |
-| `write/` | Writing the file back: `to_bytes` / `write_to`, field patching by DNA, the view layer's blocks, the marker list, `BlendEdits`. |
+| `write/` | Writing the file back: `to_bytes` / `write_to`, field patching by DNA, the view layer's blocks, the marker list, `BlendEditList`. |
 | `shade/` | Materials. Slots, viewport colour and Principled inputs, shader node tree, images (keys and packed bytes). |
 | `tests/` | Tests for this folder. |
 

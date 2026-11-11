@@ -4,9 +4,9 @@
 //! `BKE_multires_construct_tangent_matrix`, and on a grid's seams averaged
 //! with the neighbouring grids (`average_displacement`).
 
-use super::grid::{ptex_to_grid, rotate_grid_to_quad, rotate_quad_to_corner, BGrids};
+use super::grid::{ptex_to_grid, rotate_grid_to_quad, rotate_quad_to_corner, BGridList};
 use super::limit::BLimit;
-use super::read::BMDisps;
+use super::read::BMDispList;
 
 type F3 = [f32; 3];
 
@@ -21,9 +21,9 @@ enum BAverageWith {
 
 /// `MultiresDisplacementData`.
 pub(super) struct BDisplacement<'a> {
-    pub grids: &'a BGrids,
+    pub grids: &'a BGridList,
     pub limit: &'a BLimit<'a>,
-    pub mdisps: &'a BMDisps,
+    pub mdisps: &'a BMDispList,
     /// `grid_size_from_level(totlvl)`: the saved grids are always at the top
     /// level, so a lower viewport level reads them at a stride.
     pub grid_size: usize,

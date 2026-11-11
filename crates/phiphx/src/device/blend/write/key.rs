@@ -12,7 +12,7 @@
 //! keys made can be given.
 
 use crate::device::blend::anim::fcurve::BFCurve;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// One slot's curves as the session left them: each whole, keys and
 /// Blender's handles (`BFCurve::insert`).
@@ -112,7 +112,7 @@ impl BlendFile {
 
         // The group, the curves.
         let mut groups = self.pointer_list(act, bag, bag_st, "**group_array", "group_array_num");
-        let name_of = |file: &Self, g: u64| file.owned(act, g).and_then(|i| file.field_span("bActionGroup", "name", &dna).map(|(o, n)| crate::device::blend::shade::nodes::read_cstr(&file.blocks[i].data, o, n)));
+        let name_of = |file: &Self, g: u64| file.owned(act, g).and_then(|i| file.field_span("bActionGroup", "name", &dna).map(|(o, n)| crate::device::blend::shade::node::read_cstr(&file.blocks[i].data, o, n)));
         let group = match groups.iter().copied().find(|&g| name_of(self, g).as_deref() == Some(insert.group.as_str())) {
             Some(group) => group,
             None => {

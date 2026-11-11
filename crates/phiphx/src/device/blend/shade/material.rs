@@ -7,7 +7,7 @@
 //! Eevee/Principled scalar defaults). This is the colour without parsing the
 //! shader node tree — enough for skin vs garment differentiation.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// Default surface when no material is linked.
 const DEFAULT: ([f32; 4], f32, f32) = ([0.8, 0.8, 0.8, 1.0], 0.5, 0.0);
@@ -56,7 +56,7 @@ impl BlendFile {
         &self,
         obj_block: &BlendBlock,
         dna: &DnaType,
-    ) -> (Vec<crate::device::blend::file::types::BlendMaterial>, Vec<String>) {
+    ) -> (Vec<crate::device::blend::file::kind::BlendMaterial>, Vec<String>) {
         let ps = self.header.pointer_size as usize;
         let le = self.header.little_endian;
         let mut materials = Vec::new();
@@ -96,7 +96,7 @@ impl BlendFile {
                         }
                     }
                     let graph = self.material_graph(ma, dna).unwrap_or_default();
-                    materials.push(crate::device::blend::file::types::BlendMaterial {
+                    materials.push(crate::device::blend::file::kind::BlendMaterial {
                         name,
                         graph,
                         base_color: color,
@@ -118,7 +118,7 @@ impl BlendFile {
 
         if materials.is_empty() {
             let (color, roughness, metallic) = self.extract_object_material(obj_block, dna);
-            materials.push(crate::device::blend::file::types::BlendMaterial {
+            materials.push(crate::device::blend::file::kind::BlendMaterial {
                 name: String::new(),
                 base_color: color,
                 viewport_color: color,
@@ -144,7 +144,7 @@ impl BlendFile {
         &self,
         ma: &BlendBlock,
         dna: &DnaType,
-    ) -> ([f32; 4], f32, f32, crate::device::blend::read::scene::types::BlendBsdf) {
+    ) -> ([f32; 4], f32, f32, crate::device::blend::read::scene::kind::BlendBsdf) {
         let ps = self.header.pointer_size as usize;
         let f = |name: &str, default: f32| -> f32 {
             match Self::struct_field_offset_exact("Material", name, dna, ps) {
@@ -161,7 +161,7 @@ impl BlendFile {
             None => {
                 let color = [f("r", 0.8), f("g", 0.8), f("b", 0.8), f("a", 1.0)];
                 let (r, m) = (f("roughness", 0.5).clamp(0.0, 1.0), f("metallic", 0.0).clamp(0.0, 1.0));
-                let bsdf = crate::device::blend::read::scene::types::BlendBsdf { base: color, roughness: r, metallic: m, ..Default::default() };
+                let bsdf = crate::device::blend::read::scene::kind::BlendBsdf { base: color, roughness: r, metallic: m, ..Default::default() };
                 (color, r, m, bsdf)
             }
         }

@@ -8,7 +8,7 @@
 //! Blender opens the layer `FileGlobal.cur_view_layer` points at; we fall
 //! back to the first one.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use std::collections::HashMap;
 
 pub const BASE_SELECTED: u32 = 1 << 0;

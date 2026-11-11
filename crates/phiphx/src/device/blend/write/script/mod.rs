@@ -20,16 +20,16 @@
 //! - **glTF**: `EXT_mesh_gpu_instancing` extension
 //! - **PHX Scene**: Instance transforms with prototype references
 
-pub mod chunks;
+pub mod chunk;
 mod config;
-mod helpers;
+mod helper;
 mod script_gltf;
 mod script_phx;
-pub(crate) mod types;
+pub(crate) mod kind;
 
 pub use config::{PointCloudConfig, SceneExportConfig};
-pub use chunks::PhxChunks;
-pub use types::{
+pub use chunk::PhxChunkList;
+pub use kind::{
     BlenderLightType, BlenderObjectType, BlenderScene, BlenderSceneFormat, CameraData, CameraType,
     CollectionData, InstanceData, LightData, MaterialData, MeshObjectData,
 };

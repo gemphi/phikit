@@ -17,7 +17,7 @@
 //! that moved nothing.
 
 use super::surface_deform::{MODE_CENTROID, MODE_CORNER_TRIS};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// One `SDefBind`.
 #[derive(Clone, Debug, PartialEq)]

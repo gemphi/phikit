@@ -20,8 +20,8 @@
 //! instance's links land on the same sockets and the first instance's
 //! win. Groups nest to [`MAX_DEPTH`].
 
-use super::links::BLink;
-use crate::device::blend::file::types::*;
+use super::link::BLink;
+use crate::device::blend::file::kind::*;
 
 /// Groups within groups within groups: how deep the expansion goes.
 const MAX_DEPTH: u32 = 8;
@@ -68,7 +68,7 @@ impl BlendFile {
     /// Group Input output share.
     fn sock_id(&self, addr: u64, dna: &DnaType) -> String {
         match (self.block_at(addr), self.off("bNodeSocket", "identifier", dna)) {
-            (Some(s), Some(o)) => super::nodes::read_cstr(&s.data, o, 64),
+            (Some(s), Some(o)) => super::node::read_cstr(&s.data, o, 64),
             _ => String::new(),
         }
     }

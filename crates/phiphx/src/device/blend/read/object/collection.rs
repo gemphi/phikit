@@ -1,6 +1,6 @@
 //! `Scene.master_collection` → `Collection.children` / `gobject` walk.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Recursively extract collection hierarchy.

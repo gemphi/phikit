@@ -16,7 +16,7 @@
 mod copy;
 
 use super::{BModifier, BlendEvalMesh, EvalCtx};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 const S: &str = "MaskModifierData";
 /// `MaskModifierMode`.

@@ -17,7 +17,7 @@
 use super::subsurf::BSubsurf;
 use super::topology::Topology;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use std::sync::Arc;
 
 #[path = "multires_disp.rs"]
@@ -47,7 +47,7 @@ pub(crate) struct BMultires {
     pub keep_corners: bool,
     /// The object's `CD_MDISPS` grids, per base-mesh corner; `None` when the
     /// mesh has no such layer (dynamic topology), which subdivides only.
-    pub mdisps: Option<Arc<read::BMDisps>>,
+    pub mdisps: Option<Arc<read::BMDispList>>,
     /// The scene's Simplify cap (`BlendFile::simplify_subsurf`).
     pub simplify: Option<u32>,
 }
@@ -119,7 +119,7 @@ impl BModifier for BMultires {
         // `displacement_attach_from_multires`: nothing to add without the
         // layer, or with one that no longer matches the corners it reaches.
         let Some(mdisps) = self.mdisps.as_deref().filter(|m| m.len() == coarse.corners()) else { return };
-        let Some(grids) = grid::BGrids::build(&coarse, &cage.faces, level) else { return };
+        let Some(grids) = grid::BGridList::build(&coarse, &cage.faces, level) else { return };
         if cage.vertices.len() != mesh.vertices.len() {
             return;
         }

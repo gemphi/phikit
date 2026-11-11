@@ -3,7 +3,7 @@
 //! `material_index` (`CD_PROP_INT32`). Blender ref: `DNA_customdata_types.h`,
 //! `BKE_mesh_legacy_convert` (ME_SMOOTH → `sharp_face`).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// Blender file version from which `sharp_face` replaces `ME_SMOOTH`.
 const SHARP_FACE_SINCE: u32 = 305;
@@ -101,7 +101,7 @@ impl BlendFile {
         // within this mesh's data (`scope.rs`).
         self.scoped(me, || {
             let named = self.read_customdata_named(me, fd, dna, "sharp_face").map(std::borrow::Cow::Borrowed)
-                .or_else(|| self.attr_bool(me, dna, "sharp_face", crate::device::blend::read::mesh::attrs::DOMAIN_FACE));
+                .or_else(|| self.attr_bool(me, dna, "sharp_face", crate::device::blend::read::mesh::attr::DOMAIN_FACE));
             if let Some(bytes) = named {
                 return (0..faces).map(|i| bytes.get(i).is_none_or(|b| *b == 0)).collect();
             }
@@ -120,7 +120,7 @@ impl BlendFile {
                 .map(|i| bytes.get(i * 4..i * 4 + 4).map(|b| self.read_i32(b).max(0) as u16).unwrap_or(0))
                 .collect();
         }
-        if let Some(v) = self.attr_int32(me, dna, "material_index", crate::device::blend::read::mesh::attrs::DOMAIN_FACE, faces) {
+        if let Some(v) = self.attr_int32(me, dna, "material_index", crate::device::blend::read::mesh::attr::DOMAIN_FACE, faces) {
             return v.into_iter().map(|m| m.max(0) as u16).collect();
         }
         self.legacy_mpoly(me, fd, dna, faces)

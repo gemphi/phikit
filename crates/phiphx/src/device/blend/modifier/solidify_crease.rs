@@ -14,7 +14,7 @@ use std::collections::HashMap;
 
 /// `SolidifyModifierData.crease_inner` / `crease_outer` / `crease_rim`.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub(crate) struct BSolidifyCreases {
+pub(crate) struct BSolidifyCreaseList {
     pub inner: f32,
     pub outer: f32,
     pub rim: f32,
@@ -51,7 +51,7 @@ fn add(mesh: &mut BlendEvalMesh, at: &mut HashMap<(u32, u32), usize>, a: u32, b:
 /// original surface and the next `base` its shell. `open` is the original
 /// surface's open edges (the rim's), empty without a rim — Blender writes
 /// the three rim creases only `if (do_rim)`.
-pub(super) fn shell_creases(mesh: &mut BlendEvalMesh, base: u32, open: &[(u32, u32)], creases: BSolidifyCreases) {
+pub(super) fn shell_creases(mesh: &mut BlendEvalMesh, base: u32, open: &[(u32, u32)], creases: BSolidifyCreaseList) {
     // `edge_interp.copy(0, edges_num, edges_num)`: the shell's edges carry
     // the creases of the edges they copy.
     let copied: Vec<(u32, u32, f32)> = mesh.edge_creases.iter().map(|&(a, b, c)| (a + base, b + base, c)).collect();
@@ -61,7 +61,7 @@ pub(super) fn shell_creases(mesh: &mut BlendEvalMesh, base: u32, open: &[(u32, u
         true => mesh.vert_creases.extend_from_within(..),
         false => mesh.vert_creases.clear(),
     }
-    if open.is_empty() || creases == BSolidifyCreases::default() {
+    if open.is_empty() || creases == BSolidifyCreaseList::default() {
         return;
     }
     let mut at: HashMap<(u32, u32), usize> = HashMap::new();

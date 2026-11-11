@@ -37,7 +37,7 @@ pub struct BlendSceneObject {
     /// Whether it casts a shadow, in the viewport and to rays.
     pub shadow: crate::device::blend::BlendShadowCast,
     pub vertices: Vec<[f32; 3]>,
-    pub faces: crate::device::blend::BFaces,
+    pub faces: crate::device::blend::BFaceList,
     /// Per-loop normals (one per loop/corner, indexed same as face loops).
     /// Empty when the file carries no custom or smooth normals.
     pub loop_normals: Vec<[f32; 3]>,
@@ -114,9 +114,9 @@ pub struct BlendMaterial {
     /// (`shade/graph.rs`). Empty for a material with no tree.
     pub graph: crate::device::blend::shade::graph::BlendNodeGraph,
     /// Tangent-space normal map feeding the Principled `Normal` input.
-    pub normal_map: Option<crate::device::blend::shade::links::BlendNormalMap>,
+    pub normal_map: Option<crate::device::blend::shade::link::BlendNormalMap>,
     /// Images linked to Roughness / Metallic / Emission Color.
-    pub maps: crate::device::blend::shade::maps::BlendMaps,
+    pub maps: crate::device::blend::shade::map::BlendMapList,
     /// The procedural textures the surface reads per pixel
     /// (`shade/procedural.rs`) — what the colour fold can only average.
     pub procedural: crate::device::blend::shade::procedural::BlendProcedural,
@@ -205,7 +205,7 @@ pub struct BlendScene {
     /// Indices of objects hidden in the view layer (`BASE_HIDDEN`).
     pub hidden: Vec<usize>,
     /// Frame range / fps / resolution / engine / world colour.
-    pub props: crate::device::blend::read::scene::props::BlendSceneProps,
+    pub props: crate::device::blend::read::scene::prop::BlendSceneProp,
     /// Progressive open only: the modifier work captured but not yet applied,
     /// so the base meshes show first and the evaluated ones swap in when the
     /// apply finishes (`SceneModel::from_blend_progressive`). `None` on an

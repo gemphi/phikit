@@ -2,7 +2,7 @@
 //! (flex, hint replacement) and `seac` (accented composites), for
 //! [`super::Run`].
 
-use super::super::names::standard_name;
+use super::super::name::standard_name;
 use super::super::BTag;
 use super::Run;
 

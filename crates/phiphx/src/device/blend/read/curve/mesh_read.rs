@@ -8,8 +8,8 @@
 
 use super::displist::curve_displist;
 use super::profile::{create_samples, BProfilePoint, PROF_SAMPLE_STRAIGHT_EDGES};
-use crate::device::blend::file::types::*;
-use crate::device::blend::rig::read::BFields;
+use crate::device::blend::file::kind::*;
+use crate::device::blend::rig::read::BFieldReader;
 use crate::device::blend::read::text::displist::{TDispList, TDlKind};
 use crate::device::blend::read::text::mesh::from_displist;
 use crate::device::blend::read::text::profile::from_object_list;
@@ -39,7 +39,7 @@ impl BlendFile {
         let cu = self.block_at_code(self.ptr(ob, self.off("Object", "*data", dna)), "CU")?;
         self.scoped(cu, || {
             let curve = self.object_curve(ob, dna)?;
-            let c = BFields::new(self, dna, cu, "Curve");
+            let c = BFieldReader::new(self, dna, cu, "Curve");
             let either = |new: &str, old: &str| if c.has(new) { c.f32(new, 0.0) } else { c.f32(old, 0.0) };
             let bevresol = (c.int("bevresol") as i16).max(0) as usize;
             let mut shape = TCurveShape {
@@ -63,7 +63,7 @@ impl BlendFile {
                 .list(first, self.off("Nurb", "*next", dna))
                 .into_iter()
                 .map(|nu| {
-                    let n = BFields::new(self, dna, nu, "Nurb");
+                    let n = BFieldReader::new(self, dna, nu, "Nurb");
                     TSplineInfo { col: n.int("mat_nr") as i16, charidx: n.int("charidx") as i32, smooth: n.int("flag") & CU_SMOOTH != 0 }
                 })
                 .collect();
@@ -83,12 +83,12 @@ impl BlendFile {
     fn bevel_object(&self, addr: u64, dna: &DnaType, depth: usize) -> Vec<TDispList> {
         let Some(ob) = self.curve_object(addr, dna) else { return Vec::new() };
         let Some(cu) = self.block_at_code(self.ptr(ob, self.off("Object", "*data", dna)), "CU") else { return Vec::new() };
-        let c = BFields::new(self, dna, cu, "Curve");
+        let c = BFieldReader::new(self, dna, cu, "Curve");
         let either = |new: &str, old: &str| if c.has(new) { c.f32(new, 0.0) } else { c.f32(old, 0.0) };
         if either("extrude", "ext1") != 0.0 || either("bevel_radius", "ext2") != 0.0 {
             return Vec::new();
         }
-        let o = BFields::new(self, dna, ob, "Object");
+        let o = BFieldReader::new(self, dna, ob, "Object");
         let scale = match o.has("scale[3]") {
             true => o.vec3("scale[3]", glam::Vec3::ONE),
             false => o.vec3("size[3]", glam::Vec3::ONE),
@@ -110,7 +110,7 @@ impl BlendFile {
     /// read: `segments_len` samples of the saved path.
     fn profile_samples(&self, addr: u64, bevresol: usize, dna: &DnaType) -> Option<Vec<Vec2>> {
         let pr = self.block_at(addr)?;
-        let p = BFields::new(self, dna, pr, "CurveProfile");
+        let p = BFieldReader::new(self, dna, pr, "CurveProfile");
         let n_path = (p.int("path_len") as i16).max(0) as usize;
         let segments = match (p.int("segments_len") as i16).max(0) as usize {
             0 => bevresol + 1,

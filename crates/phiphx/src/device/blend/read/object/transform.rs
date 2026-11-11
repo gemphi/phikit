@@ -11,7 +11,7 @@
 //! Matrices use Blender's `float[4][4]` layout: `m[col][row]`, translation in
 //! `m[3]`. This is also glam's column layout (`Mat4::from_cols_array_2d`).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 pub(crate) use crate::device::blend::read::object::rotation::{compose_world, object_to_mat4};
 
 /// Blender `eObject_Partype` (low 4 bits of `Object.partype`).

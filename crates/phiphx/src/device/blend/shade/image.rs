@@ -7,11 +7,11 @@
 //! *packedfile (legacy) }`, `PackedFile { int size; int seek; *data }`.
 //! The data is written as its own block at the old `data` address.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use std::sync::Arc;
 
 /// `(image key, packed file bytes)` for every packed image in the file.
-pub type PackedImages = Vec<(String, Arc<Vec<u8>>)>;
+pub type PackedImageList = Vec<(String, Arc<Vec<u8>>)>;
 
 /// The folder of the `.blend` being opened, so `//`-relative image paths can
 /// be checked while materials are folded. `None` (no file) treats every image
@@ -114,8 +114,8 @@ impl BlendFile {
     }
 
     /// Packed image bytes keyed like [`Self::image_key`].
-    pub(crate) fn packed_images(&self, dna: &DnaType) -> PackedImages {
-        let mut out = PackedImages::new();
+    pub(crate) fn packed_images(&self, dna: &DnaType) -> PackedImageList {
+        let mut out = PackedImageList::new();
         for im in self.blocks.iter().filter(|b| b.code_str == "IM") {
             let bytes = self.scoped(im, || {
                 let first = self.ptr(im, self.off("Image", "packedfiles", dna));

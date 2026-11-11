@@ -46,18 +46,18 @@ impl BlendDriverSet {
 /// What a frame's pass leaves behind: every object's custom properties as
 /// the drivers left them, by block address, for a caller that shows or
 /// writes them.
-pub type BDriverProps = HashMap<u64, BIdGroup>;
+pub type BDriverPropMap = HashMap<u64, BIdGroup>;
 
 /// A frame's drivers written over a snapshot of the scene.
 pub trait BDriverRun {
     /// Run every object's drivers at `frame`, writing the channel drivers
     /// into `raw` and returning the custom properties as driven.
-    fn run(&self, raw: &mut [ObjectTransformRaw], index: &HashMap<u64, usize>, frame: f32) -> BDriverProps;
+    fn run(&self, raw: &mut [ObjectTransformRaw], index: &HashMap<u64, usize>, frame: f32) -> BDriverPropMap;
 }
 
 impl BDriverRun for [BlendDriverSet] {
-    fn run(&self, raw: &mut [ObjectTransformRaw], index: &HashMap<u64, usize>, frame: f32) -> BDriverProps {
-        let mut props: BDriverProps = self.iter().filter(|s| s.address != 0).map(|s| (s.address, s.saved.clone())).collect();
+    fn run(&self, raw: &mut [ObjectTransformRaw], index: &HashMap<u64, usize>, frame: f32) -> BDriverPropMap {
+        let mut props: BDriverPropMap = self.iter().filter(|s| s.address != 0).map(|s| (s.address, s.saved.clone())).collect();
         if self.iter().all(BlendDriverSet::is_empty) {
             return props;
         }
@@ -94,7 +94,7 @@ impl BlendDriverSet {
         &self,
         before: &[ObjectTransformRaw],
         world: &[[[f32; 4]; 4]],
-        props: &BDriverProps,
+        props: &BDriverPropMap,
         index: &HashMap<u64, usize>,
         frame: f32,
     ) -> Vec<(String, f32)> {

@@ -22,7 +22,7 @@
 //! fits the block it has is written there, a longer one gets a new block.
 
 use crate::device::blend::BIdValue;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::modifier::armature::name64;
 use crate::device::blend::{BlendImageFormat, BlendOutput};
 

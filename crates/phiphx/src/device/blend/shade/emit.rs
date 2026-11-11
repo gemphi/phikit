@@ -2,7 +2,7 @@
 //! instead of one value, so an image that drives a Mix's factor keeps doing
 //! so per texel instead of folding to white.
 use super::eval::{BGraph, SOCK_RGBA};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use super::bake::{BBakeImage, BBakeOp, BlendBake, IDENTITY, compose, mapping_affine};
 
 impl BlendFile {
@@ -248,7 +248,7 @@ mod bake_digest {
     fn bake_digest_of_env_file() {
         let Ok(path) = std::env::var("BAKE_DIGEST") else { return };
         let bytes = std::fs::read(&path).expect("read");
-        let f = crate::device::blend::file::types::BlendFile::parse_bytes(&bytes).expect("parse");
+        let f = crate::device::blend::file::kind::BlendFile::parse_bytes(&bytes).expect("parse");
         let dna = f.dna.clone().expect("dna");
         for ma in f.blocks.iter().filter(|b| b.code_str == "MA") {
             let name = f.extract_name_from_block(ma, "id.name").unwrap_or_default();
@@ -272,14 +272,14 @@ mod image_digest {
     fn image_digest_of_env_file() {
         let Ok(path) = std::env::var("IMG_DIGEST") else { return };
         let bytes = std::fs::read(&path).expect("read");
-        let f = crate::device::blend::file::types::BlendFile::parse_bytes(&bytes).expect("parse");
+        let f = crate::device::blend::file::kind::BlendFile::parse_bytes(&bytes).expect("parse");
         let dna = f.dna.clone().expect("dna");
         let ps = f.header.pointer_size as usize;
         for im in f.blocks.iter().filter(|b| b.code_str == "IM") {
             let name = f.extract_name_from_block(im, "id.name").unwrap_or_default();
-            let path_o = crate::device::blend::file::types::BlendFile::struct_field_offset_exact("Image", "filepath[1024]", &dna, ps)
-                .or_else(|| crate::device::blend::file::types::BlendFile::struct_field_offset_exact("Image", "name[1024]", &dna, ps));
-            let fp = path_o.map(|o| crate::device::blend::shade::nodes::read_cstr(&im.data, o, 1024)).unwrap_or_default();
+            let path_o = crate::device::blend::file::kind::BlendFile::struct_field_offset_exact("Image", "filepath[1024]", &dna, ps)
+                .or_else(|| crate::device::blend::file::kind::BlendFile::struct_field_offset_exact("Image", "name[1024]", &dna, ps));
+            let fp = path_o.map(|o| crate::device::blend::shade::node::read_cstr(&im.data, o, 1024)).unwrap_or_default();
             let legacy = f.ptr(im, f.off("Image", "*packedfile", &dna));
             let list = f.ptr(im, f.off("Image", "packedfiles", &dna));
             println!("IM {name}: packed {} path {fp}", legacy != 0 || list != 0);

@@ -8,7 +8,7 @@
 //! font lacks a character (`use_fallback`), and synthesized bold / italic.
 
 mod charstring;
-mod names;
+mod name;
 mod sfnt;
 mod type1;
 
@@ -36,21 +36,21 @@ pub struct BGlyph {
 
 /// `VFontData_Metrics`.
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub struct BFontMetrics {
+pub struct BFontMetric {
     /// Font units to Blender units: one over the face's bounding-box height.
     pub scale: f32,
     pub em_ratio: f32,
     pub ascend_ratio: f32,
 }
 
-impl Default for BFontMetrics {
+impl Default for BFontMetric {
     /// `BKE_vfontdata_metrics_get_defaults`.
     fn default() -> Self {
         Self { scale: 1.0 / 1000.0, em_ratio: 1.0, ascend_ratio: 0.8 }
     }
 }
 
-impl BFontMetrics {
+impl BFontMetric {
     /// `BLF_get_vfont_metrics` from FreeType's face fields.
     pub fn from_face(ascender: i32, descender: i32, bbox_ymax: i32, bbox_ymin: i32) -> Self {
         let mut m = Self::default();
@@ -90,7 +90,7 @@ enum BFace {
 #[derive(Debug)]
 pub struct BFont {
     face: BFace,
-    pub metrics: BFontMetrics,
+    pub metrics: BFontMetric,
 }
 
 impl BFont {

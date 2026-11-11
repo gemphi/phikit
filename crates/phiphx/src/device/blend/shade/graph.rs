@@ -28,9 +28,9 @@
 //! than a parsing one. `position_of` tries each spelling against the file's OWN
 //! DNA, so whichever the file was written with is the one read.
 
-use super::nodes::read_cstr;
+use super::node::read_cstr;
 use super::socket::BlendSocket;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// One node of a material's tree, as the editor draws it.
 #[derive(Clone, Debug, Default, PartialEq)]

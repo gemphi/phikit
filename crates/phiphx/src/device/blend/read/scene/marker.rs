@@ -2,8 +2,8 @@
 //! name[64], flag, camera }` (`DNA_scene_types.h`), the ones the Timeline
 //! draws along its foot and the Marker menu jumps between.
 
-use crate::device::blend::file::types::*;
-use crate::device::blend::shade::nodes::read_cstr;
+use crate::device::blend::file::kind::*;
+use crate::device::blend::shade::node::read_cstr;
 
 /// One marker: the frame it stands at and its name.
 #[derive(Clone, Debug, PartialEq, Eq)]

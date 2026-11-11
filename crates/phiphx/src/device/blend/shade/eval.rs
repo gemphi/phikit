@@ -7,9 +7,9 @@
 //! Formulas follow Blender's GPU nodes (`gpu_shader_material_mix_color.glsl`,
 //! `…_hue_sat_val.glsl`, `BKE_colorband_evaluate`).
 
-use super::links::BLink;
-use crate::device::blend::shade::nodes::read_cstr;
-use crate::device::blend::file::types::*;
+use super::link::BLink;
+use crate::device::blend::shade::node::read_cstr;
+use crate::device::blend::file::kind::*;
 
 /// A folded socket value: colour (floats are grey), and whether it is exact.
 #[derive(Clone, Copy, Debug, PartialEq)]

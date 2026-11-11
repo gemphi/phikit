@@ -156,11 +156,11 @@ fn solidify_copies_the_creases_to_the_shell_and_writes_the_rims() {
     // `MOD_solidify_extrude.cc`: the shell copies every crease, then the rim
     // adds `crease_outer` / `crease_inner` to the open edge and its copy
     // (held to 1) and sets `crease_rim` on each edge across the gap.
-    use super::super::solidify::BSolidifyCreases;
+    use super::super::solidify::BSolidifyCreaseList;
     let mut m = quad();
     m.edge_creases = vec![(0, 1, 0.5)];
     m.vert_creases = vec![0.9, 0.0, 0.0, 0.0];
-    let creases = BSolidifyCreases { inner: 1.0, outer: 0.7, rim: 0.4 };
+    let creases = BSolidifyCreaseList { inner: 1.0, outer: 0.7, rim: 0.4 };
     eval(&mut m, &BSolidify { thickness: 0.1, offset: -1.0, flag: 1 << 0, creases });
     let mut got = m.edge_creases.clone();
     got.sort_by_key(|&(a, b, _)| (a, b));

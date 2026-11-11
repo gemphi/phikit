@@ -1,7 +1,7 @@
 //! Actions a session made, reassigned or retimed — the Action Editor's
 //! `template_action` (`action.new`, `action.unlink`, picking an action or
 //! a slot) and the sidebar's Action panel — written through
-//! (`BlendEdits::actions`, `assigned`, `ranges`).
+//! (`BlendEditList::actions`, `assigned`, `ranges`).
 //!
 //! A new action is `BKE_action_add`: an empty `bAction` with Blender's first
 //! slot handle. A copy is `BKE_id_copy`: the ID block and every `DATA`
@@ -9,7 +9,7 @@
 //! Blender writes an ID's data — under fresh addresses, each pointer that
 //! named one of them pointing at its copy; pointers to other IDs stay.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use std::collections::HashMap;
 
 /// `DNA_DEFAULT_ACTION_LAST_SLOT_HANDLE`: a new action's first slot is one
@@ -116,7 +116,7 @@ impl BlendFile {
         self.scoped(ac, || {
             self.ptr_array(ac, "bAction", "**slot_array", "slot_array_num", dna).into_iter().find_map(|slot| {
                 let slot = self.block_at(slot)?;
-                (crate::device::blend::shade::nodes::read_cstr(&slot.data, off, n) == identifier).then(|| i64::from(self.int_field(slot, "ActionSlot", "handle", dna) as i32))
+                (crate::device::blend::shade::node::read_cstr(&slot.data, off, n) == identifier).then(|| i64::from(self.int_field(slot, "ActionSlot", "handle", dna) as i32))
             })
         })
     }
@@ -185,7 +185,7 @@ pub struct BlendActionRange {
     pub cyclic: bool,
 }
 
-impl super::edit::BlendEdits {
+impl super::edit::BlendEditList {
     /// The actions made, the keys inserted (making the slots they key),
     /// then who uses which, each NLA stack edited, then the ranges. After the
     /// objects' renames: every name here is the one the file ends up with.

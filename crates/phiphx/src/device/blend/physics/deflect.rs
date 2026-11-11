@@ -2,7 +2,7 @@
 //! modifier's settings (Physics ▸ Collision, its `pdef_*` members) and a
 //! force field (Physics ▸ Force Field, its `f_*` members).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `PDEFLE_KILL_PART`: Kill Particles.
 const PDEFLE_KILL_PART: u32 = 1 << 4;

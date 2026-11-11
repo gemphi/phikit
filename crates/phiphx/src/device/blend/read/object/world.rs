@@ -1,7 +1,7 @@
 //! World-matrix resolution and view-layer flag application — the parts of
 //! `BKE_object_where_is_calc` / `BKE_layer_collection_sync` Phiber needs.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::read::object::rotation::compose_world;
 use crate::device::blend::read::object::vertex_parent::{is_vertex_parent, parent_matrix};
 use glam::Mat4;

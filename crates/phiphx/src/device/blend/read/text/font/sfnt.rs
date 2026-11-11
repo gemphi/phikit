@@ -8,10 +8,10 @@
 //! "virtual conic on-curve points" of `blf_glyph_to_curves`), with the
 //! same handles, so the curves agree.
 
-use super::{BFontMetrics, BGlyph, BTag};
+use super::{BFontMetric, BGlyph, BTag};
 
 /// `BLF_get_vfont_metrics` for an sfnt face.
-pub fn metrics(data: &[u8]) -> Option<BFontMetrics> {
+pub fn metrics(data: &[u8]) -> Option<BFontMetric> {
     let face = ttf_parser::Face::parse(data, 0).ok()?;
     let hhea = face.tables().hhea;
     // FreeType falls back to OS/2 when `hhea` has neither (`sfobjs.c`).
@@ -20,7 +20,7 @@ pub fn metrics(data: &[u8]) -> Option<BFontMetrics> {
         pair => pair,
     };
     let bbox = face.global_bounding_box();
-    Some(BFontMetrics::from_face(asc as i32, desc as i32, bbox.y_max as i32, bbox.y_min as i32))
+    Some(BFontMetric::from_face(asc as i32, desc as i32, bbox.y_max as i32, bbox.y_min as i32))
 }
 
 /// The glyph for `unicode`, `None` when the face maps no glyph to it.

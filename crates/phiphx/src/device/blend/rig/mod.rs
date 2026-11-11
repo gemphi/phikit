@@ -54,7 +54,7 @@ pub use constraint::{BConstraint, BConstraintKind, BObjectWork, BTarget};
 pub use display::{BBoneDraw, BBoneLook, BBoneShape, BBoneShown, BRigLook};
 pub use driver::{BDriven, BDriverSource, BDriverVar, BRigDriver};
 pub use solve::{BRigAnim, BRigPose};
-pub use source::{BlendRigSource, BlendRigs};
+pub use source::{BlendRigSource, BlendRigList};
 pub use space::BRigSpace;
 pub use view::{BEmptyScene, BObjectSpace, BSceneView};
 

@@ -224,7 +224,7 @@ pub struct SceneAction {
 pub type SceneNla = crate::device::blend::BlendNla;
 
 /// One driven object's driver F-curves (`AnimData.drivers`).
-pub type SceneDrivers = crate::device::blend::BlendDrivers;
+pub type SceneDrivers = crate::device::blend::BlendDriverList;
 
 impl SceneAction {
     pub fn used_by(&self, object: &str) -> bool {

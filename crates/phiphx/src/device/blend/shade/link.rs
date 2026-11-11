@@ -2,9 +2,9 @@
 //! tosock}`): follows Principled `Normal` ← Normal Map ← Image Texture, the
 //! chain Blender builds for tangent-space normal maps.
 
-use super::nodes::read_cstr;
+use super::node::read_cstr;
 use super::principled::BSocket;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// Nodes a colour search does not pass through (they carry normals).
 const SKIP: [&str; 2] = ["Bump", "NormalMap"];

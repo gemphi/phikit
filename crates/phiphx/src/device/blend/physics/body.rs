@@ -1,6 +1,6 @@
 //! One object's rigid body (`RigidBodyOb`, Physics ▸ Rigid Body).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 const RBO_FLAG_KINEMATIC: u32 = 1 << 0;
 const RBO_FLAG_DISABLED: u32 = 1 << 5;

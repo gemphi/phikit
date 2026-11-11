@@ -19,8 +19,8 @@
 //! `Boolean` / `Int`), which is what Blender falls back to
 //! (`GeometryNodesInputType::Fallback`).
 
-use super::nodes_field::BInput;
-use crate::device::blend::file::types::*;
+use super::node_field::BInput;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::read::idprop::{BIdGroup, BIdValue};
 use std::collections::HashMap;
 

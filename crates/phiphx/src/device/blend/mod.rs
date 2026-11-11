@@ -26,13 +26,13 @@ pub mod physics;
 pub use physics::BlendPhysics;
 
 pub use file::quick::{BlendQuickInfo, BlendRenderInfo, BlendThumbnail};
-pub use file::types::{
+pub use file::kind::{
     BHeadType, BlendBlock, BlendCollection, BlendFile, BlendHeader, BlendMaterial, BlendScene,
     BlendSceneObject, DnaField, DnaStruct, DnaType,
 };
 pub use modifier::BlendEvalMesh;
 pub use modifier::driven::BlendDrivenSource;
-pub use modifier::driver::{BModValue, BModWrite, BModifierDrivers};
+pub use modifier::driver::{BModValue, BModWrite, BModifierDriverList};
 pub use modifier::skin::{CpuSkin, SKIN_MIN, SkinJob, SkinPair, Skinner, set_skinner};
 pub(crate) use modifier::supported_modifiers;
 pub(crate) use modifier::{DeferredRaw, apply_eval_jobs};
@@ -73,12 +73,12 @@ pub use anim::easing::{EASE_AUTO, EASE_IN, EASE_IN_OUT, EASE_OUT, IPO_BACK, IPO_
 pub use anim::fcurve::{EXTRAPOLATE_CONSTANT, EXTRAPOLATE_LINEAR};
 /// Keyframe Type (`eBezTriple_KeyframeType`, kept in `BezTriple.hide`).
 pub use anim::fcurve::{KEYTYPE_BREAKDOWN, KEYTYPE_EXTREME, KEYTYPE_GENERATED, KEYTYPE_JITTER, KEYTYPE_KEYFRAME, KEYTYPE_MOVEHOLD};
-pub use anim::drivers::BlendDrivers;
+pub use anim::driver_list::BlendDriverList;
 pub use anim::driver::chan::TRANSCHAN_SCALE_AVG;
 pub use anim::driver::space::BDriverSpace;
 pub use anim::driver::BlendDriverRead;
 pub use anim::nla_eval::{BMotionClip, BMotionTrack};
-pub use anim::nla_edit::{BNlaAt, BNlaPick, BNlaStacks, NEW_TRACK};
+pub use anim::nla_edit::{BNlaAt, BNlaPick, BNlaStackList, NEW_TRACK};
 pub use anim::nla_stack::{BNlaPlaced, STASH_TRACK};
 pub use anim::nla::{BLEND_ADD, BLEND_COMBINE, BLEND_MULTIPLY, BLEND_REPLACE, BLEND_SUBTRACT, STRIP_SYNC_LENGTH, STRIP_USR_INFLUENCE, STRIP_USR_TIME_CYCLIC, TRACK_PROTECTED, BNlaStrip, BNlaTrack, BlendNla, EXTEND_HOLD, EXTEND_HOLD_FORWARD, EXTEND_NOTHING, STRIP_ACTIVE, STRIP_CLIP, STRIP_META, STRIP_MUTED, STRIP_SELECT, STRIP_SOUND, STRIP_TRANSITION, TRACK_ACTIVE, TRACK_MUTED, TRACK_SELECTED, TRACK_SOLO, ADT_EDIT_ON, ADT_SOLO_TRACK, ADT_UI_ACTIVE, ADT_UI_SELECTED};
 pub use anim::summary::{BlendActionSlot, BlendActionSummary};
@@ -98,14 +98,14 @@ pub use scene::movie::BlendMovie;
 pub use scene::border::{BlendRenderBorder, BlendViewBorder};
 pub use scene::output::{BlendImageFormat, BlendOutput};
 pub use scene::pass::{BPassKind, BlendPassSet};
-pub use scene::props::BlendSceneProps;
-pub use scene::types::BlendBsdf;
-pub use shade::links::BlendNormalMap;
+pub use scene::prop::BlendSceneProp;
+pub use scene::kind::BlendBsdf;
+pub use shade::link::BlendNormalMap;
 pub use shade::world::BlendWorld;
-pub use shade::maps::BlendMaps;
-pub use mesh::list::BFaces;
+pub use shade::map::BlendMapList;
+pub use mesh::list::BFaceList;
 pub use scene::ui::{BlendUiState, BlendView3d, RV3D_CAMOB, RV3D_ORTHO};
-pub use shade::image::PackedImages;
+pub use shade::image::PackedImageList;
 
 /// Structure encapsulating all Blender (.blend) asset import capabilities.
 pub struct BlendImporter;
@@ -246,7 +246,8 @@ impl Device for BlendDevice {
     fn write(&self, _scene: &SceneModel) -> std::result::Result<Vec<u8>, SceneLoadError> {
         Err(SceneLoadError::Unsupported("a scene cannot be written as .blend; edit an existing file with write::".to_string()))
     }
-}#[cfg(test)]
+}
+#[cfg(test)]
 #[path = "test/file.rs"]
 mod file_tests;
 

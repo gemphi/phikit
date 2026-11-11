@@ -9,7 +9,7 @@
 //! which is the ordering Blender's depsgraph gives — custom property first,
 //! then whatever reads it.
 
-use super::pass::{BDriverProps, BDriverRun};
+use super::pass::{BDriverPropMap, BDriverRun};
 use super::space::BDriverWorld;
 use super::var::BlendDriverScene;
 use crate::device::blend::anim::motion::BlendMotionList;
@@ -25,7 +25,7 @@ pub struct BDriverState {
     /// Each object's world matrix over those transforms.
     pub world: Vec<[[f32; 4]; 4]>,
     /// Every object's custom properties as the pass drove them.
-    pub props: BDriverProps,
+    pub props: BDriverPropMap,
     /// Block address → index, which a driver variable's target names.
     pub index: HashMap<u64, usize>,
 }

@@ -109,7 +109,7 @@ pub struct BlendFile {
     /// than once per Armature modifier pointing at it
     /// (`modifier/deform.rs`, which says why).
     pub(crate) deform_memo: std::sync::Mutex<
-        std::collections::HashMap<u64, std::sync::Arc<crate::device::blend::modifier::deform::BDeformMats>>,
+        std::collections::HashMap<u64, std::sync::Arc<crate::device::blend::modifier::deform::BDeformMatList>>,
     >,
     /// Meshes a stack has reached just before its Armature, left by whichever
     /// of the two consumers applied the prefix for the other to take
@@ -134,7 +134,7 @@ pub struct BlendFile {
     >,
 }
 
-pub use crate::device::blend::read::scene::types::*;
+pub use crate::device::blend::read::scene::kind::*;
 
 #[cfg(all(test, feature = "proptest"))]
 #[path = "types_tests.rs"]

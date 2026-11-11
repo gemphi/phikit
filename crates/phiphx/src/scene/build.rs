@@ -21,7 +21,7 @@
 use super::{SceneCollection, SceneMaterial, SceneModel, SceneObject, SceneSkin};
 use crate::device::blend::BPlayRef;
 use crate::device::blend::ObjectTransformRaw;
-use crate::device::blend::{BFaces, BlendEvalMesh, BlendMotion};
+use crate::device::blend::{BFaceList, BlendEvalMesh, BlendMotion};
 use std::sync::Arc;
 
 /// A mesh to be deformed by a rig: polygons over vertices, a UV per
@@ -124,7 +124,7 @@ impl SceneModel {
             return None;
         }
         let beside = self.motion.rigs.skins.iter().find(|s| s.rig == rig)?.clone();
-        let mut faces = BFaces::default();
+        let mut faces = BFaceList::default();
         for face in &mesh.faces {
             faces.push(face);
         }

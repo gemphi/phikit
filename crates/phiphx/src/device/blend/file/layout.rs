@@ -1,6 +1,6 @@
 //! DNA field/struct layout helpers: field sizes, offsets, pointer reads.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Get the size of a DNA field based on its type and array dimensions

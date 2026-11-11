@@ -5,7 +5,7 @@
 //! animated influence, and objects that follow an animated rig's bones by
 //! constraints and bone parents. The file is saved at frame 13.
 
-use crate::device::blend::file::types::BlendFile;
+use crate::device::blend::file::kind::BlendFile;
 use glam::Mat4;
 use std::collections::HashMap;
 

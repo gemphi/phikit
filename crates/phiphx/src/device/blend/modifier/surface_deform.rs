@@ -17,7 +17,7 @@
 use super::driver::BModValue;
 use super::surface_deform_read::{BSdefVert, count, read_binds};
 use super::{BModifier, BlendEvalMesh, EvalCtx};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::{Mat4, Vec3};
 use std::sync::Arc;
 

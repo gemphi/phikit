@@ -1,6 +1,6 @@
 //! PHX scene format writer (binary: magic + JSON).
 
-use super::types::{BlenderLightType, BlenderScene, CameraType};
+use super::kind::{BlenderLightType, BlenderScene, CameraType};
 use crate::{PointCloudError, Result};
 
 impl BlenderScene {

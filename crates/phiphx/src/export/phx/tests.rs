@@ -1,7 +1,7 @@
 use crate::Mesh as ImportMesh;
 use crate::Vertex;
-use crate::device::blend::write::script::chunks::{
-    PHX_MAGIC, PHX_VERSION, PhxChunkType, PhxHeader, PhxChunks,
+use crate::device::blend::write::script::chunk::{
+    PHX_MAGIC, PHX_VERSION, PhxChunkType, PhxHeader, PhxChunkList,
 };
 
 #[test]
@@ -25,7 +25,7 @@ fn test_export_import_mesh_roundtrip() {
     mesh.normals = Some(vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0]]);
     mesh.indices = vec![[0, 1, 2]];
 
-    let phx_data = PhxChunks::mesh(&mesh, "test_mesh").unwrap();
+    let phx_data = PhxChunkList::mesh(&mesh, "test_mesh").unwrap();
     assert!(!phx_data.is_empty());
     assert_eq!(&phx_data[0..4], PHX_MAGIC);
 }
@@ -38,7 +38,7 @@ fn test_export_point_cloud_roundtrip() {
     cloud.add_vertex(Vertex::new(1.0, 2.0, 3.0).with_color(255, 128, 64, 255));
     cloud.add_vertex(Vertex::new(4.0, 5.0, 6.0).with_normal(0.0, 1.0, 0.0));
 
-    let phx_data = PhxChunks::cloud(&cloud).unwrap();
+    let phx_data = PhxChunkList::cloud(&cloud).unwrap();
     assert!(!phx_data.is_empty());
     assert_eq!(&phx_data[0..4], PHX_MAGIC);
 

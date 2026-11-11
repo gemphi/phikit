@@ -26,9 +26,9 @@
 //! with Harden Normals (they generate custom normals), and an object that
 //! already has an auto-smooth node modifier.
 
-use super::nodes::{self, BNodes};
-use super::nodes_field::BInput;
-use crate::device::blend::file::types::*;
+use super::node::{self, BNodeList};
+use super::node_field::BInput;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::shade::graph::{BlendNode, BlendNodeGraph, BlendNodeLink};
 use crate::device::blend::shade::socket::{BSocketDefault, BlendSocket};
 use std::collections::HashMap;
@@ -52,7 +52,7 @@ const COMPARE_LESS_EQUAL: i32 = 1;
 impl BlendFile {
     /// The "Auto Smooth" modifier Blender adds to `ob` at load, or `None`
     /// when this object is not converted (`BKE_main_mesh_legacy_convert_auto_smooth`).
-    pub(crate) fn legacy_auto_smooth(&self, ob: &BlendBlock, dna: &DnaType) -> Option<BNodes> {
+    pub(crate) fn legacy_auto_smooth(&self, ob: &BlendBlock, dna: &DnaType) -> Option<BNodeList> {
         let me = self.mesh_block_of(ob, dna)?;
         if self.int_field(me, "Mesh", "flag", dna) & ME_AUTOSMOOTH == 0 {
             return None;
@@ -67,8 +67,8 @@ impl BlendFile {
             return None;
         }
         let inputs = HashMap::from([("Socket_2".to_string(), BInput::Float(angle))]);
-        let compares = HashMap::from([("Compare".to_string(), super::nodes_field::BCompare { operation: COMPARE_LESS_EQUAL, data_type: 0, mode: 0 })]);
-        nodes::from_parts(auto_smooth_graph(), inputs, compares)
+        let compares = HashMap::from([("Compare".to_string(), super::node_field::BCompare { operation: COMPARE_LESS_EQUAL, data_type: 0, mode: 0 })]);
+        node::from_parts(auto_smooth_graph(), inputs, compares)
     }
 
     /// `mesh->attribute_storage.lookup("custom_normal")`, and the layer the
@@ -95,7 +95,7 @@ impl BlendFile {
             match self.int_field(md, "ModifierData", "type", dna) {
                 MOD_WEIGHTED_NORMAL | MOD_NORMAL_EDIT => true,
                 MOD_BEVEL => self.int_field(md, "BevelModifierData", "flags", dna) & MOD_BEVEL_HARDEN_NORMALS != 0,
-                nodes::DNA_TYPE => self.ptr(md, self.off("NodesModifierData", "*node_group", dna)) != 0,
+                node::DNA_TYPE => self.ptr(md, self.off("NodesModifierData", "*node_group", dna)) != 0,
                 _ => false,
             }
         })

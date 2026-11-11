@@ -5,7 +5,7 @@
 //! (`Object.adt → AnimData.action / slot_handle`).
 
 use super::fcurve::{BFCurve, BKey, HANDLE_AUTO_ANIM};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use std::collections::HashMap;
 
 /// An action's curves, grouped by the slot they animate. Legacy actions have
@@ -134,7 +134,7 @@ impl BlendFile {
     fn fcurve_group(&self, fc: &BlendBlock, dna: &DnaType) -> Option<String> {
         let group = self.block_at(self.ptr(fc, self.off("FCurve", "*grp", dna)))?;
         let (o, n) = self.field_span("bActionGroup", "name", dna)?;
-        Some(crate::device::blend::shade::nodes::read_cstr(&group.data, o, n)).filter(|name| !name.is_empty())
+        Some(crate::device::blend::shade::node::read_cstr(&group.data, o, n)).filter(|name| !name.is_empty())
     }
 
     /// `FCURVE.modifiers`: the first Generator in polynomial mode, as its
@@ -187,7 +187,7 @@ impl BlendFile {
                 let identifier = self.field_span("ActionSlot", "identifier", dna).or_else(|| self.field_span("ActionSlot", "name", dna));
                 for slot in self.ptr_array(ac, "bAction", "**slot_array", "slot_array_num", dna) {
                     let Some(slot) = self.block_at(slot) else { continue };
-                    let identifier = identifier.map_or(String::new(), |(o, n)| crate::device::blend::shade::nodes::read_cstr(&slot.data, o, n));
+                    let identifier = identifier.map_or(String::new(), |(o, n)| crate::device::blend::shade::node::read_cstr(&slot.data, o, n));
                     action.slots.push(BActionSlot { handle: self.int_field(slot, "ActionSlot", "handle", dna) as i32, identifier });
                 }
                 // Layered: every strip's keyframe data, every channelbag.

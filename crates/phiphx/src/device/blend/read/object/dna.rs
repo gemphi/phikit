@@ -1,6 +1,6 @@
 //! Legacy full-DNA object extraction (kept for the asset pipeline).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::Result;
 
 impl BlendFile {

@@ -2,7 +2,7 @@
 //! (`collection.rs`), resolves world matrices (`world.rs`) and folds in the
 //! view layer (`view_layer.rs`) and scene properties (`scene_props.rs`).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::Result;
 
 impl BlendFile {

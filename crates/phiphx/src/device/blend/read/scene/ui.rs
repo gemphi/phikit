@@ -10,7 +10,7 @@
 //! When a screen has several 3D views, the largest one wins (the one a
 //! user reads as "the viewport").
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 pub const SPACE_VIEW3D: u8 = 1;
 pub const RGN_TYPE_WINDOW: u32 = 0;

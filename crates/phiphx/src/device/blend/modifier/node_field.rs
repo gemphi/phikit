@@ -22,9 +22,9 @@
 //! The edges the fields are evaluated over are [`BTopo`] (`nodes_topo.rs`).
 
 use super::BlendEvalMesh;
-use super::nodes_corners::face_normal_calc;
-use super::nodes_ops::{angle_normalized, boolean_math, compare, invert};
-use super::nodes_topo::BTopo;
+use super::node_corner::face_normal_calc;
+use super::node_op::{angle_normalized, boolean_math, compare, invert};
+use super::node_topo::BTopo;
 use crate::device::blend::shade::graph::{BlendNode, BlendNodeGraph};
 use crate::device::blend::shade::socket::BSocketDefault;
 use std::collections::HashMap;

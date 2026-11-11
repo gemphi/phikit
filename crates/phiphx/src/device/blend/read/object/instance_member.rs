@@ -15,7 +15,7 @@
 
 use super::layer::{BASE_HIDDEN, LAYER_COLLECTION_EXCLUDE};
 use super::visibility::{COLLECTION_HIDE_VIEWPORT, OB_HIDE_VIEWPORT};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use std::collections::HashSet;
 
 /// `Object.transflag` bits (`DNA_object_types.h`).

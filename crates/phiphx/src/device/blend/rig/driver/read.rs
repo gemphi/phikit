@@ -4,8 +4,8 @@
 
 use super::expr::BExpr;
 use super::{BDriven, BDriverSource, BDriverVar, BRigDriver, BRnaPath};
-use crate::device::blend::file::types::*;
-use crate::device::blend::rig::read::BFields;
+use crate::device::blend::file::kind::*;
+use crate::device::blend::rig::read::BFieldReader;
 use crate::device::blend::rig::BRig;
 
 /// `DVAR_TYPE_SINGLE_PROP`.
@@ -24,7 +24,7 @@ impl BlendFile {
     fn rig_driver_raw(&self, fc: &BlendBlock, dna: &DnaType, rig: u64) -> Option<BRigDriver> {
         let curve = self.fcurve(fc, dna)?;
         let driver = self.block_at(self.ptr(fc, self.off("FCurve", "*driver", dna)))?;
-        let d = BFields::new(self, dna, driver, "ChannelDriver");
+        let d = BFieldReader::new(self, dna, driver, "ChannelDriver");
         let expression = d.text("expression[256]", 256);
         let vars = self
             .list(d.ptr("variables"), self.off("DriverVar", "*next", dna))
@@ -38,7 +38,7 @@ impl BlendFile {
     /// rig is kept as its path (in `Prop`, bone `usize::MAX`) until the rig
     /// resolves it; anything else is unsupported.
     fn driver_var_raw(&self, var: &BlendBlock, dna: &DnaType, rig: u64) -> BDriverVar {
-        let v = BFields::new(self, dna, var, "DriverVar");
+        let v = BFieldReader::new(self, dna, var, "DriverVar");
         let name = v.name("name[64]");
         let target = self.off("DriverVar", "targets[8]", dna);
         let (Some(target), Some(id_o), Some(path_o)) = (target, self.off("DriverTarget", "*id", dna), self.off("DriverTarget", "*rna_path", dna)) else {

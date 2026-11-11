@@ -18,7 +18,7 @@
 use super::super::{BlendEvalMesh, EvalCtx};
 use super::tree::Target;
 use super::OB_MESH;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::Mat4;
 use std::cell::RefCell;
 use std::collections::HashMap;

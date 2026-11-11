@@ -2,21 +2,21 @@
 //! Roughness, Metallic and Emission Color. A linked image replaces the
 //! socket value (Blender ignores the slider once something is linked).
 
-use super::nodes::read_cstr;
-use crate::device::blend::file::types::*;
+use super::node::read_cstr;
+use crate::device::blend::file::kind::*;
 
 /// Image keys (see `image.rs`) per textured Principled input.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct BlendMaps {
+pub struct BlendMapList {
     pub rough: Option<String>,
     pub metal: Option<String>,
     pub emit: Option<String>,
 }
 
-/// The Principled socket each map reads, in [`BlendMaps`] field order.
+/// The Principled socket each map reads, in [`BlendMapList`] field order.
 pub const MAPPED: [&str; 3] = ["Roughness", "Metallic", "Emission Color"];
 
-impl BlendMaps {
+impl BlendMapList {
     /// The three keys in field order.
     pub fn each(&self) -> [&Option<String>; 3] {
         [&self.rough, &self.metal, &self.emit]
@@ -37,8 +37,8 @@ impl BlendFile {
     /// what reaches the socket, and using it alone as the value turned a
     /// mostly black pattern mask into a mirror. Those keep the value the
     /// graph folds to (`principled.rs`).
-    pub(crate) fn shade_maps(&self, ma: &BlendBlock, dna: &DnaType) -> BlendMaps {
-        let mut maps = BlendMaps::default();
+    pub(crate) fn shade_maps(&self, ma: &BlendBlock, dna: &DnaType) -> BlendMapList {
+        let mut maps = BlendMapList::default();
         for (slot, socket) in maps.each_mut().into_iter().zip(MAPPED) {
             *slot = self.direct_image(ma, dna, socket);
         }

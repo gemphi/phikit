@@ -8,7 +8,7 @@
 
 use super::{BEmptyScene, BRig, BRigAnim};
 use crate::device::blend::anim::fcurve::BFCurve;
-use crate::device::blend::file::types::BlendFile;
+use crate::device::blend::file::kind::BlendFile;
 use glam::Mat4;
 use std::collections::HashMap;
 

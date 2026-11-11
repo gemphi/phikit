@@ -15,7 +15,7 @@
 use super::layer::BlendCollectionAt;
 use super::mesh::BlendNewMesh;
 use crate::device::blend::{BlendShadowCast, BlendVisibility};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::read::object::layer::{BASE_HIDDEN, BASE_SELECTED, LAYER_COLLECTION_EXCLUDE, LAYER_COLLECTION_HIDE};
 use crate::device::blend::read::object::visibility::{COLLECTION_HIDE_RENDER, COLLECTION_HIDE_SELECT, COLLECTION_HIDE_VIEWPORT, OB_HIDE_RENDER, OB_HIDE_SELECT, OB_HIDE_VIEWPORT};
 
@@ -74,7 +74,7 @@ pub struct BlendDuplicate {
 
 /// Everything a save writes through.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct BlendEdits {
+pub struct BlendEditList {
     pub added: Vec<BlendNewObject>,
     pub duplicated: Vec<BlendDuplicate>,
     /// Objects removed, by the file's name for them.
@@ -130,7 +130,7 @@ pub struct BlendEdits {
     /// Actions' Manual Frame Range and Cyclic Animation.
     pub ranges: Vec<super::action::BlendActionRange>,
     /// Keys inserted (`I`): each object's touched curves, whole.
-    pub keys: Vec<super::keys::BlendKeyInsert>,
+    pub keys: Vec<super::key::BlendKeyInsert>,
     /// Each object's NLA as the session left it — Push Down, Stash, the
     /// NLA editor's edits (`write/nla.rs`).
     pub nla: Vec<super::nla::BlendNlaStack>,
@@ -163,7 +163,7 @@ mod tests {
     fn the_edits_land_in_the_file_and_read_back_through_the_scene_reader() {
         let path = format!("{}/tests/fixtures/nla_cube.blend", env!("CARGO_MANIFEST_DIR"));
         let mut file = BlendFile::parse_bytes(&std::fs::read(&path).expect("fixture")).expect("parse");
-        let edits = BlendEdits {
+        let edits = BlendEditList {
             frame: Some(42),
             frame_start: Some(10),
             frame_end: Some(120),

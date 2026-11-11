@@ -1,7 +1,7 @@
 //! Per-corner custom / split normals.
 
-use crate::device::blend::read::mesh::offsets::MeshOffsets;
-use crate::device::blend::file::types::*;
+use crate::device::blend::read::mesh::offset::MeshOffsetList;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Read per-loop normals from the Mesh's custom split normal pointer or
@@ -13,7 +13,7 @@ impl BlendFile {
     pub(crate) fn read_loop_normals(
         &self,
         block: &BlendBlock,
-        off: &MeshOffsets,
+        off: &MeshOffsetList,
         loop_count: usize,
         dna: &DnaType,
     ) -> Vec<[f32; 3]> {

@@ -12,7 +12,7 @@
 
 use super::cloth::{PTCACHE_DISK_CACHE, PTCACHE_EXTERNAL};
 use super::cloth_disk;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::Vec3;
 
 /// `ePointCache_DataType`.

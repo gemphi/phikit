@@ -4,7 +4,7 @@
 //! (`tests/fixtures/make_collection_instances.py`, Blender's
 //! `depsgraph.object_instances` in `tests/truth/collection_instances.txt`).
 
-use crate::device::blend::file::types::BlendFile;
+use crate::device::blend::file::kind::BlendFile;
 
 const FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/collection_instances.blend");
 const TRUTH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/truth/collection_instances.txt");

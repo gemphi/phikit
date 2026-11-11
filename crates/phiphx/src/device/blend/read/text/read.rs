@@ -6,8 +6,8 @@
 
 use super::font::BFont;
 use super::{text_mesh, BText, TCharInfo, TMesh};
-use crate::device::blend::file::types::*;
-use crate::device::blend::rig::read::BFields;
+use crate::device::blend::file::kind::*;
+use crate::device::blend::rig::read::BFieldReader;
 use std::sync::Arc;
 
 /// `FO_BUILTIN_NAME`.
@@ -23,7 +23,7 @@ impl BlendFile {
     }
 
     fn read_text(&self, cu: &BlendBlock, dna: &DnaType) -> Option<BText> {
-        let c = BFields::new(self, dna, cu, "Curve");
+        let c = BFieldReader::new(self, dna, cu, "Curve");
         let either = |new: &str, old: &str| if c.has(new) { c.f32(new, 0.0) } else { c.f32(old, 0.0) };
         let len = c.int("len") as usize;
         let bytes = self.block_at(c.ptr("*str")).map_or_else(Vec::new, |b| b.data.iter().take(len).copied().collect());
@@ -82,7 +82,7 @@ impl BlendFile {
     /// A `VFont`'s face: builtin, packed, or read from its path.
     fn vfont(&self, addr: u64, dna: &DnaType) -> Option<Arc<BFont>> {
         let vf = self.block_at_code(addr, "VF")?;
-        let v = BFields::new(self, dna, vf, "VFont");
+        let v = BFieldReader::new(self, dna, vf, "VFont");
         let path = match v.has("filepath[1024]") {
             true => v.text("filepath[1024]", 1024),
             false => v.text("name[1024]", 1024),

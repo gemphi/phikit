@@ -2,9 +2,9 @@
 use super::*;
 
 /// `IK_CreateSegment`'s joints from the degrees of freedom.
-pub(super) struct BJoints;
+pub(super) struct BJointBuilder;
 
-impl BJoints {
+impl BJointBuilder {
     /// `CreateSegment`: the joint for `flag`'s three bits.
     pub(super) fn joint(flag: u32, translate: bool) -> Option<BJoint> {
         let axes: Vec<usize> = (0..3).filter(|&i| flag & (1 << i) != 0).collect();
@@ -37,8 +37,8 @@ impl BIkSolver {
     /// `IK_CreateSegment`: the rotation joint, with the translation joint
     /// as its composite; returns the segment the tree refers to.
     pub(super) fn create(&mut self, flag: u32) -> usize {
-        let rot = BJoints::joint(flag, false);
-        let trans = BJoints::joint(flag >> 3, true);
+        let rot = BJointBuilder::joint(flag, false);
+        let trans = BJointBuilder::joint(flag >> 3, true);
         match (rot, trans) {
             (None, None) => self.push(BSegment::new(BJoint::Null)),
             (None, Some(t)) => self.push(BSegment::new(t)),

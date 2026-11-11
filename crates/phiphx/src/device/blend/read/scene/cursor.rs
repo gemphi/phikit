@@ -3,7 +3,7 @@
 //! object does — a quaternion, an Euler order or an axis and angle, by
 //! `rotation_mode` (`View3DCursor::rotation`).
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::read::object::transform::{ObjectTransformRaw, object_to_mat4};
 
 /// The 3D cursor: its place and turn as one matrix.

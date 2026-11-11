@@ -1,6 +1,6 @@
 //! Object metadata extraction: modifiers and instance info.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// Extract modifiers from Object struct (if modifiers field exists)

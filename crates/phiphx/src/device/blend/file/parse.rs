@@ -9,7 +9,7 @@
 //! - `OldNewMap` — every block's saved address is indexed in a hash map once,
 //!   so pointer dereferences are O(1) instead of a linear scan per pointer.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::{PointCloudError, Result};
 use std::collections::HashMap;
 use std::io::{Read, Seek};

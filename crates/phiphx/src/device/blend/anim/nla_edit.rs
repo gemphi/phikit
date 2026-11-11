@@ -38,7 +38,7 @@ pub type BNlaAt = (usize, usize, usize);
 
 /// The stacks the NLA editor shows.
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct BNlaStacks(pub Vec<BlendNla>);
+pub struct BNlaStackList(pub Vec<BlendNla>);
 
 impl BlendNla {
     /// Has a track new strips can go in (`nlaedit_get_editable_tracks`:
@@ -54,7 +54,7 @@ impl BlendNla {
     /// action. Whether it went in.
     pub fn add_clip(&mut self, mut strip: BNlaStrip, frame: f32) -> bool {
         if self.tracks.is_empty() && self.flag & ADT_UI_SELECTED != 0 {
-            BNlaStacks::add_tracks_to(self, &[0]);
+            BNlaStackList::add_tracks_to(self, &[0]);
         }
         let Some(at) = self.tracks.iter().position(|t| t.flag & TRACK_ACTIVE != 0 && t.flag & TRACK_PROTECTED == 0) else { return false };
         (strip.end, strip.start) = (strip.end + frame - strip.start, frame);
@@ -62,7 +62,7 @@ impl BlendNla {
         let at = match Self::has_space(&self.tracks[at].strips, strip.start, strip.end) {
             true => at,
             false => {
-                BNlaStacks::add_tracks_to(self, &[self.tracks.len()]);
+                BNlaStackList::add_tracks_to(self, &[self.tracks.len()]);
                 self.tracks.len() - 1
             }
         };
@@ -103,7 +103,7 @@ impl BNlaTrack {
     }
 }
 
-impl BNlaStacks {
+impl BNlaStackList {
     fn strips(&mut self) -> impl Iterator<Item = &mut BNlaStrip> {
         self.0.iter_mut().flat_map(|n| n.tracks.iter_mut()).flat_map(|t| t.strips.iter_mut())
     }
@@ -259,19 +259,19 @@ mod tests {
     /// `nla_cube.blend` as read: Base Layer (Walk 1–97) under Overlay
     /// (Walk Again 120–168, muted), both tracks and both strips selected,
     /// Overlay active.
-    fn cube() -> BNlaStacks {
+    fn cube() -> BNlaStackList {
         let strip = |name: &str, start: f32, end: f32, flag: u32| BNlaStrip { name: name.into(), start, end, flag, ..Default::default() };
         let base = BNlaTrack { name: "Base Layer".into(), flag: TRACK_SELECTED, strips: vec![strip("Walk", 1.0, 97.0, STRIP_SELECT)], address: 0 };
         let overlay = BNlaTrack { name: "Overlay".into(), flag: TRACK_SELECTED | TRACK_ACTIVE | TRACK_MUTED, strips: vec![strip("Walk Again", 120.0, 168.0, STRIP_SELECT | STRIP_MUTED)], address: 0 };
-        BNlaStacks(vec![BlendNla { object: "Cube".into(), tracks: vec![base, overlay], ..Default::default() }])
+        BNlaStackList(vec![BlendNla { object: "Cube".into(), tracks: vec![base, overlay], ..Default::default() }])
     }
 
-    fn picks(s: &BNlaStacks) -> Vec<(String, u32, u32, u32)> {
+    fn picks(s: &BNlaStackList) -> Vec<(String, u32, u32, u32)> {
         let n = &s.0[0];
         n.tracks.iter().flat_map(|t| t.strips.iter().map(|x| (x.name.clone(), x.flag & STRIP_SELECT, x.flag & STRIP_ACTIVE, x.flag & STRIP_MUTED))).collect()
     }
 
-    fn tracks(s: &BNlaStacks) -> Vec<(String, bool, bool)> {
+    fn tracks(s: &BNlaStackList) -> Vec<(String, bool, bool)> {
         s.0[0].tracks.iter().map(|t| (t.name.clone(), t.flag & TRACK_SELECTED != 0, t.flag & TRACK_ACTIVE != 0)).collect()
     }
 

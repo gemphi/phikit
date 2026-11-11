@@ -12,7 +12,7 @@
 //! few ULP off it.
 
 use super::BlendEvalMesh;
-use super::nodes_fans::fan_vertex;
+use super::node_fan::fan_vertex;
 use std::collections::HashSet;
 
 pub(super) type V3 = [f32; 3];

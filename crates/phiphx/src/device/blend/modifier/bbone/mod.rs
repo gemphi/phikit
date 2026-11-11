@@ -26,7 +26,7 @@ use curve::*;
 use roll::*;
 use spline::*;
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::{Mat3, Mat4, Vec3};
 use std::collections::HashMap;
 

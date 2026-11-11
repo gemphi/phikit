@@ -13,7 +13,7 @@
 //! lattice moves the clothing 3.5–4.7 cm on average, and without it the body
 //! comes through the clothes.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use super::driver::BModValue;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
 use glam::{Mat3, Vec3};

@@ -2,7 +2,7 @@
 //! collections, solver settings, effector weights and point cache.
 
 use super::string_at;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// `RBW_FLAG_MUTED`: the world is paused.
 const RBW_FLAG_MUTED: u32 = 1 << 0;
@@ -14,7 +14,7 @@ const PTCACHE_BAKED: u32 = 1 << 0;
 /// `EffectorWeights`: how much of each force field kind, and of gravity,
 /// a simulation feels (`weight[14]` in `ePFieldType` order).
 #[derive(Debug, Clone, PartialEq)]
-pub struct BEffectorWeights {
+pub struct BEffectorWeight {
     /// The collection the effectors are taken from; empty for all.
     pub collection: String,
     /// `weight[0]`, "All".
@@ -26,7 +26,7 @@ pub struct BEffectorWeights {
     pub gravity: f32,
 }
 
-impl Default for BEffectorWeights {
+impl Default for BEffectorWeight {
     fn default() -> Self {
         Self { collection: String::new(), all: 1.0, weights: [1.0; 13], gravity: 1.0 }
     }
@@ -60,7 +60,7 @@ pub struct BRigidWorld {
     pub solver_iterations: u32,
     pub split_impulse: bool,
     pub time_scale: f32,
-    pub effector_weights: BEffectorWeights,
+    pub effector_weights: BEffectorWeight,
     pub cache: BPointCache,
 }
 
@@ -112,14 +112,14 @@ impl BlendFile {
     }
 
     /// The `EffectorWeights` at `addr`, or the defaults.
-    pub(crate) fn effector_weights(&self, addr: u64, dna: &DnaType) -> BEffectorWeights {
-        let Some(ew) = self.block_at(addr) else { return BEffectorWeights::default() };
+    pub(crate) fn effector_weights(&self, addr: u64, dna: &DnaType) -> BEffectorWeight {
+        let Some(ew) = self.block_at(addr) else { return BEffectorWeight::default() };
         let ps = self.header.pointer_size as usize;
         let weights = Self::struct_field_offset_exact("EffectorWeights", "weight[14]", dna, ps)
             .filter(|o| o + 14 * 4 <= ew.data.len())
             .map(|o| std::array::from_fn::<f32, 14, _>(|k| self.read_f32(&ew.data[o + 4 * k..o + 4 * k + 4])))
             .unwrap_or([1.0; 14]);
-        BEffectorWeights {
+        BEffectorWeight {
             collection: self.collection_name_at(self.ptr(ew, self.off("EffectorWeights", "*group", dna))),
             all: weights[0],
             weights: std::array::from_fn(|k| weights[k + 1]),

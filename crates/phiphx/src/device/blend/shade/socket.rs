@@ -28,8 +28,8 @@
 //! a C++ enum in 5.x and was a `short` in older files, so the DNA is the only
 //! honest source for how wide it is in THIS file.
 
-use super::nodes::read_cstr;
-use crate::device::blend::file::types::*;
+use super::node::read_cstr;
+use crate::device::blend::file::kind::*;
 
 /// One socket of a node, as the editor needs it.
 #[derive(Clone, Debug, Default, PartialEq)]

@@ -2,23 +2,23 @@
 //! bPose.chanbase`) with its `Bone`, constraints and custom properties, and
 //! the object's drivers.
 
-use super::constraint::read::BTargetNames;
+use super::constraint::read::BTargetNameList;
 use super::{BRig, BRigBone};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::device::blend::modifier::armature::name64;
 use glam::{Mat3, Mat4, Vec3};
 use std::collections::HashMap;
 
 /// One block read as the DNA struct `st`: fields by name, with a default
 /// where the file's version has no such field.
-pub struct BFields<'a> {
+pub struct BFieldReader<'a> {
     file: &'a BlendFile,
     dna: &'a DnaType,
     block: &'a BlendBlock,
     st: &'static str,
 }
 
-impl<'a> BFields<'a> {
+impl<'a> BFieldReader<'a> {
     pub fn new(file: &'a BlendFile, dna: &'a DnaType, block: &'a BlendBlock, st: &'static str) -> Self {
         Self { file, dna, block, st }
     }
@@ -135,9 +135,9 @@ impl BlendFile {
             let pose = self.block_at(self.ptr(ob, self.off("Object", "*pose", dna)))?;
             let first = self.ptr(pose, self.off("bPose", "chanbase", dna));
             let chans = self.list(first, self.off("bPoseChannel", "*next", dna));
-            let by_name: HashMap<String, usize> = chans.iter().enumerate().map(|(i, pc)| (BFields::new(self, dna, pc, "bPoseChannel").name("name[64]"), i)).collect();
+            let by_name: HashMap<String, usize> = chans.iter().enumerate().map(|(i, pc)| (BFieldReader::new(self, dna, pc, "bPoseChannel").name("name[64]"), i)).collect();
             let by_address: HashMap<u64, usize> = chans.iter().enumerate().map(|(i, pc)| (pc.old_address, i)).collect();
-            let names = BTargetNames { object: ob.old_address, bones: &by_name };
+            let names = BTargetNameList { object: ob.old_address, bones: &by_name };
             let rest = self.bones_by_name(ob, dna);
             let bones = chans.iter().map(|pc| self.rig_bone(pc, dna, &by_address, &names, &rest)).collect();
             let drivers = self.rig_drivers(ob, dna);
@@ -147,10 +147,10 @@ impl BlendFile {
         })
     }
 
-    fn rig_bone(&self, pc: &BlendBlock, dna: &DnaType, by_address: &HashMap<u64, usize>, names: &BTargetNames, rest: &HashMap<String, &BlendBlock>) -> BRigBone {
-        let c = BFields::new(self, dna, pc, "bPoseChannel");
+    fn rig_bone(&self, pc: &BlendBlock, dna: &DnaType, by_address: &HashMap<u64, usize>, names: &BTargetNameList, rest: &HashMap<String, &BlendBlock>) -> BRigBone {
+        let c = BFieldReader::new(self, dna, pc, "bPoseChannel");
         let bone = self.pchan_bone(pc, dna, rest);
-        let b = bone.map(|b| BFields::new(self, dna, b, "Bone"));
+        let b = bone.map(|b| BFieldReader::new(self, dna, b, "Bone"));
         let flag = b.as_ref().map_or(0, |b| b.int("flag"));
         let inherit_scale = match &b {
             Some(b) if b.has("inherit_scale_mode") => b.int("inherit_scale_mode") as u8,

@@ -14,8 +14,8 @@
 //! phiphx meant it; a file Blender cannot open has no lines at all.
 
 use phiphx::blend::write::mesh::BlendNewMesh;
-use phiphx::blend::{BFCurve, BNlaStacks, BNlaStrip, BlendNla, STRIP_ACTIVE, STRIP_MUTED, STRIP_SELECT, STRIP_SYNC_LENGTH, STRIP_USR_TIME_CYCLIC, TRACK_ACTIVE, TRACK_MUTED, TRACK_PROTECTED, TRACK_SELECTED};
-use phiphx::blend::write::{BlendActionAssign, BlendActionRange, BlendCollectionEdit, BlendKeyInsert, BlendNlaStack, BlendCompression, BlendDuplicate, BlendEdits, BlendNewObject, BlendObjectEdit};
+use phiphx::blend::{BFCurve, BNlaStackList, BNlaStrip, BlendNla, STRIP_ACTIVE, STRIP_MUTED, STRIP_SELECT, STRIP_SYNC_LENGTH, STRIP_USR_TIME_CYCLIC, TRACK_ACTIVE, TRACK_MUTED, TRACK_PROTECTED, TRACK_SELECTED};
+use phiphx::blend::write::{BlendActionAssign, BlendActionRange, BlendCollectionEdit, BlendKeyInsert, BlendNlaStack, BlendCompression, BlendDuplicate, BlendEditList, BlendNewObject, BlendObjectEdit};
 use phiphx::blend::{BIdValue, BlendFile, BlendImageFormat, BlendOutput, BlendPlayback, BlendScene, BlendSyncMode, BlendVisibility};
 use std::path::PathBuf;
 
@@ -39,7 +39,7 @@ fn cube() -> BlendNewMesh {
 
 /// A session's edits to `scene`: its first mesh renamed and kept out of
 /// renders, its first object duplicated, its last object deleted.
-fn edits(scene: &BlendScene) -> BlendEdits {
+fn edits(scene: &BlendScene) -> BlendEditList {
     let mesh = scene.objects.iter().find(|o| o.object_type == "MESH").map(|o| o.name.clone()).expect("a mesh");
     let first = scene.objects[0].name.clone();
     let last = scene.objects.last().unwrap().name.clone();
@@ -50,7 +50,7 @@ fn edits(scene: &BlendScene) -> BlendEdits {
         transform: Some(([1.0, -2.0, 3.0], [0.0, std::f32::consts::FRAC_PI_2, 0.0], [1.0; 3])),
         ..Default::default()
     });
-    BlendEdits {
+    BlendEditList {
         frame: Some(42),
         frame_start: Some(3),
         frame_end: Some(77),
@@ -109,9 +109,9 @@ fn edits(scene: &BlendScene) -> BlendEdits {
 /// the Crate that slot. Then the Action menu: Push Down on the object that
 /// took Spin (a new track named Spin), Stash on the Cube (its copy in an
 /// "[Action Stash]" track), each object left with no action.
-fn actions(scene: &BlendScene) -> BlendEdits {
+fn actions(scene: &BlendScene) -> BlendEditList {
     if !scene.props.actions.iter().any(|a| a.name == "CubeAction") {
-        return BlendEdits { nla: nla_editor(scene), ..Default::default() };
+        return BlendEditList { nla: nla_editor(scene), ..Default::default() };
     }
     let assign = |object: &str, action: &str, slot: Option<&str>| BlendActionAssign { object: object.into(), action: Some(action.into()), slot: slot.map(str::to_string) };
     let unlinked = |object: &str, slot: &str| BlendActionAssign { object: object.into(), action: None, slot: Some(slot.into()) };
@@ -128,7 +128,7 @@ fn actions(scene: &BlendScene) -> BlendEdits {
         };
         keyed(BFCurve::keyed(path, i), &[(1.0, at_1), (20.0, at_20)])
     }).collect();
-    BlendEdits {
+    BlendEditList {
         actions: vec![("CubeAction.001".into(), "CubeAction".into()), ("Action".into(), String::new())],
         // After the Action menu: Spin pushed down on the other object, the
         // Cube's copy stashed — both then play no action.
@@ -167,7 +167,7 @@ fn nla_editor(scene: &BlendScene) -> Vec<BlendNlaStack> {
         return Vec::new();
     }
     vec![stack(scene, "Cube", "Renamed", |n| {
-        let mut shown = BNlaStacks(vec![std::mem::take(n)]);
+        let mut shown = BNlaStackList(vec![std::mem::take(n)]);
         shown.click(Some((0, 0, 0)), false);
         shown.mute_strips();
         shown.add_tracks(true);

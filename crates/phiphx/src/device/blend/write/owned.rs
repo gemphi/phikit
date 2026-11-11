@@ -4,7 +4,7 @@
 //! found there by address.
 
 use crate::device::blend::anim::fcurve::BFCurve;
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 impl BlendFile {
     /// The ID block at `address` with `code`.

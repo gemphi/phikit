@@ -17,7 +17,7 @@
 use super::bake::{BBakeOp, BlendBake};
 use super::eval::{BGraph, BVal};
 use super::{scalar, sepcomb, vector};
-use crate::device::blend::file::types::BlendBlock;
+use crate::device::blend::file::kind::BlendBlock;
 
 /// `eCustomDataType`: `CD_PROP_FLOAT3`, a Map Range over vectors.
 const CD_PROP_FLOAT3: u8 = 48;

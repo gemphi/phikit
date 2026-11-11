@@ -2,7 +2,7 @@
 //! and the Workbench render engine's (`Scene.display.shading`, what F12
 //! draws with) are the one struct, read from a base offset into a block.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 
 /// The fields Phiber draws from, raw (`DNA_view3d_types.h`).
 #[derive(Debug, Clone, PartialEq)]

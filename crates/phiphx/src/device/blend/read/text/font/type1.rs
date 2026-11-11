@@ -5,8 +5,8 @@
 //! `CharStrings`, each charstring decrypted with its `lenIV` bytes dropped.
 
 use super::charstring;
-use super::names::unicode_of;
-use super::{BFontMetrics, BGlyph};
+use super::name::unicode_of;
+use super::{BFontMetric, BGlyph};
 use std::collections::HashMap;
 
 /// `eexec` and charstring encryption keys (Adobe Type 1 Font Format §7).
@@ -45,8 +45,8 @@ impl BType1 {
 
     /// FreeType's face metrics for a Type 1 font (`T1_Face_Init`): the
     /// ascender and descender are the `FontBBox`'s top and bottom.
-    pub fn metrics(&self) -> BFontMetrics {
-        BFontMetrics::from_face(self.bbox[3], self.bbox[1], self.bbox[3], self.bbox[1])
+    pub fn metrics(&self) -> BFontMetric {
+        BFontMetric::from_face(self.bbox[3], self.bbox[1], self.bbox[3], self.bbox[1])
     }
 
     /// The glyph for `unicode` at `FT_LOAD_NO_SCALE` (font units).
@@ -102,12 +102,12 @@ fn find(hay: &[u8], needle: &[u8], from: usize) -> Option<usize> {
 }
 
 /// A PostScript token reader over the private dictionary.
-struct Tokens<'a> {
+struct TokenReader<'a> {
     data: &'a [u8],
     at: usize,
 }
 
-impl<'a> Tokens<'a> {
+impl<'a> TokenReader<'a> {
     fn next(&mut self) -> Option<&'a [u8]> {
         while self.data.get(self.at)?.is_ascii_whitespace() {
             self.at += 1;
@@ -135,13 +135,13 @@ impl<'a> Tokens<'a> {
 
 fn number_after(data: &[u8], key: &[u8]) -> Option<i64> {
     let at = find(data, key, 0)? + key.len();
-    Tokens { data, at }.int()
+    TokenReader { data, at }.int()
 }
 
 /// `/Subrs n array` then `dup i len RD <bytes> NP` entries.
 fn read_subrs(data: &[u8]) -> Vec<Vec<u8>> {
     let Some(at) = find(data, b"/Subrs", 0) else { return Vec::new() };
-    let mut t = Tokens { data, at: at + 6 };
+    let mut t = TokenReader { data, at: at + 6 };
     let n = t.int().unwrap_or(0).max(0) as usize;
     let mut subrs = vec![Vec::new(); n];
     t.next();
@@ -165,7 +165,7 @@ fn read_subrs(data: &[u8]) -> Vec<Vec<u8>> {
 fn read_charstrings(data: &[u8]) -> Vec<(String, Vec<u8>)> {
     let Some(at) = find(data, b"/CharStrings", 0) else { return Vec::new() };
     let Some(begin) = find(data, b"begin", at) else { return Vec::new() };
-    let mut t = Tokens { data, at: begin + 5 };
+    let mut t = TokenReader { data, at: begin + 5 };
     let mut out = Vec::new();
     while let Some(tok) = t.next() {
         if tok == b"end" {

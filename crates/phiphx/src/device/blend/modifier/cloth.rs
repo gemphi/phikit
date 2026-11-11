@@ -22,7 +22,7 @@
 
 use super::cloth_cache::{BClothRead, frame_read};
 use super::{BModifier, BlendEvalMesh, EvalCtx};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use glam::Vec3;
 use std::sync::Arc;
 

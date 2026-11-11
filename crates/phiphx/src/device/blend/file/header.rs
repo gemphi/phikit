@@ -3,7 +3,7 @@
 //! `BLENDER-v305` header and the format-version-1 17-byte
 //! `BLENDER17-01v0502` header Blender 5.0+ writes by default.
 
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use crate::{PointCloudError, Result};
 use std::io::Read;
 

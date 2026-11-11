@@ -6,7 +6,7 @@
 //! on-the-fly collaboration (open the `.phx`, no Blender or original blend
 //! required). Written best-effort and skipped when already fresh.
 
-use crate::device::blend::file::types::{BlendCollection, BlendScene};
+use crate::device::blend::file::kind::{BlendCollection, BlendScene};
 use crate::export::scene::{
     PhxCollection, PhxMaterial, PhxMesh, PhxScene,
 };

@@ -18,7 +18,7 @@ mod math;
 
 use super::driver::BModValue;
 use super::{BModifier, BlendEvalMesh, EvalCtx};
-use crate::device::blend::file::types::*;
+use crate::device::blend::file::kind::*;
 use math::{M3, SMOOTH_LENGTH_WEIGHT};
 use std::sync::Arc;
 
