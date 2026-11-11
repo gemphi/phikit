@@ -11,6 +11,8 @@ description = "Cycles in Rust: Blender's renderer ported top to bottom, session 
 # render as these types run it; PLAN.md says which step is done.
 [dependencies]
 bytemuck = "1.18"
+# Reads the reference images (PNG, EXR) the way oiiotool does; the workspace's own.
+image = { workspace = true }
 
 # The tests are in `src/tests`, apart from the code and in the same folders.
 

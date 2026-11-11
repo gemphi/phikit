@@ -32,6 +32,7 @@ pub mod integrator;
 pub mod kernel;
 pub mod scene;
 pub mod session;
+pub mod truth;
 pub mod util;
 
 #[cfg(test)]

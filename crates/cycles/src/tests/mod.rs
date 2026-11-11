@@ -10,4 +10,5 @@ mod integrator;
 mod kernel;
 mod scene;
 mod session;
+mod truth;
 mod util;
