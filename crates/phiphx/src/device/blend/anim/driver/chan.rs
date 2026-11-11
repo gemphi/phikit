@@ -139,5 +139,5 @@ impl BRotPart for Mat4 {
 }
 
 #[cfg(test)]
-#[path = "chan_tests.rs"]
-mod chan_tests;
+#[path = "../../test/anim/driver/chan.rs"]
+mod chan_test;

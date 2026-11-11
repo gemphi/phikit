@@ -235,7 +235,7 @@ pub fn apply(m: [[f32; 3]; 2], uv: [f32; 2]) -> [f32; 2] {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     /// The floor's shape: `lerp(dark red, orange, image)` — a black texel

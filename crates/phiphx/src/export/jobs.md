@@ -7,8 +7,8 @@
 ## Todo
 
 - [ ] Tests for LAS / PCD / XYZ round trips
-- [ ] Rename `export/blend` (it writes PHX / glTF / USD from a `BlenderScene`, not `.blend`)
-- [ ] Split `export/blend/chunks.rs` (274 lines)
+- [x] `export/blend` moved to `device/blend/write/script/` (it writes PHX / glTF / USD from a `BlenderScene`, not `.blend`); `export/blend.rs` is a `pub use` shim
+- [ ] `device/blend/write/script/chunk.rs` is 274 code lines: under 300, split if it grows
 
 ## Done
 

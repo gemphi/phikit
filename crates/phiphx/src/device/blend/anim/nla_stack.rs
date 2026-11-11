@@ -155,7 +155,7 @@ impl BlendNla {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     /// As Blender 5.0 lays them (`bpy`, `action.push_down` / `action.stash`

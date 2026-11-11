@@ -11,8 +11,7 @@ Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its 
 | File | What it is |
 |---|---|
 | `binary.rs` | Custom PHX binary format exporter and helper base64 utilities. |
-| `blend/` | Blender Native Exporter — Full Scene Export with Instancing This module provides comprehensive Blender scene export capabilities: - Mesh geometry… |
-| `blend.rs` | Blender Native Exporter — Full Scene Export with Instancing |
+| `blend.rs` | Shim: `pub use` of the Blender script writers, which live in `device/blend/write/script/`. |
 | `gltf/` | Native glTF 2.0 Exporter Direct export to glTF format without external dependencies. Optimized for PHI PHX workflow. |
 | `gltf.rs` | Native glTF 2.0 Exporter |
 | `json.rs` | JSON format exporter and importer. |

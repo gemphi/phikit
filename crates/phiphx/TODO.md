@@ -49,7 +49,7 @@ the real files that use it diff clean.
 
 ## In progress
 
-1. **Rigify pose** — compare every bone's `pose_bone.matrix` with Blender's at the saved frame, fix the first diverging constraint, repeat. Files: `blend/rig/`, `blend/anim/`, `scene/rig.rs`. Test: a Rigify-like leg fixture.
+1. **Rigify pose** — compare every bone's `pose_bone.matrix` with Blender's at the saved frame, fix the first diverging constraint, repeat. Files: `device/blend/rig/`, `device/blend/anim/`, `scene/rig.rs`. Test: a Rigify-like leg fixture.
 2. **Vertex parenting** — `ob_parvert3` / `give_parvert` on the parent's evaluated mesh; `object/transform.rs`, world-matrix resolution, progressive open, per-frame poser.
 3. **Simple Deform** — register in `KINDS`, fixture + truth test, check CRYSTAL-CAVES-CITY.
 4. **Surface Deform** — `MOD_surfacedeform.cc`, saved binds on the target's evaluated mesh.
@@ -69,7 +69,7 @@ The same census lists every shader, world and compositor node, light and
 camera the files use (`aggregate.py ... shader world light camera`).
 phiray's own audit is `crates/phiray/docs/ROADMAP.md`.
 
-- **Shader nodes** (in progress): `blend/shade` bakes a fixed Principled
+- **Shader nodes** (in progress): `device/blend/shade` bakes a fixed Principled
   record and knows 29 node types; the files use 55. Not handled: node groups
   (88 files), Map Range (88), Separate/Combine XYZ (89/72), Vector Rotate
   (72), Vertex Color (72), Separate/Combine Color (68), White Noise (60),
@@ -98,7 +98,7 @@ phiray's own audit is `crates/phiray/docs/ROADMAP.md`.
   the default match headless, screenshot the host at high resolution, list
   what the sets declare that the scene does not show, fix.
 - **Physics** (ROADMAP §2, XPBD): not started; the ball's bounce is keyed, not
-  simulated. `blend/physics` reads every setting; 3 of its 6 truth tests fail
+  simulated. `device/blend/physics` reads every setting; 3 of its 6 truth tests fail
   on flag names (being fixed).
 
 ## Open after that

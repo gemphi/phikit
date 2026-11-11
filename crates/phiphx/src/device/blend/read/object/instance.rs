@@ -168,7 +168,7 @@ fn instance_of(member: &BlendSceneObject, instancer: &str, world: Mat4) -> Blend
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     #[test]

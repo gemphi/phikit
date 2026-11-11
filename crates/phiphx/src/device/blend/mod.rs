@@ -248,9 +248,12 @@ impl Device for BlendDevice {
     }
 }
 #[cfg(test)]
-#[path = "test/file.rs"]
-mod file_tests;
+#[path = "test/blend/device.rs"]
+mod device_test;
+#[cfg(test)]
+#[path = "test/blend/file.rs"]
+mod file_test;
 
 #[cfg(test)]
-#[path = "test/blend.rs"]
-mod tests;
+#[path = "test/blend/scene.rs"]
+mod scene_test;

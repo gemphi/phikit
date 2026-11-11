@@ -223,7 +223,7 @@ impl BlendFile {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     fn fixture() -> BlendFile {

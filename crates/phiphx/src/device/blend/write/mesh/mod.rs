@@ -50,7 +50,7 @@ use new::{edges_of, le_bytes};
 pub use new::BlendNewMesh;
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     fn cube() -> BlendNewMesh {

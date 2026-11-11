@@ -114,7 +114,7 @@ pub(crate) fn clamp(range: u16, value: f32, min: f32, max: f32) -> f32 {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     #[test]

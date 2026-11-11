@@ -91,7 +91,7 @@ impl BlendBsdf {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::BlendBsdf;
 
     fn f0(eta: f32) -> f32 {

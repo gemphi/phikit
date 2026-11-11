@@ -22,19 +22,17 @@ Blender's instancing is exported via:
 - **glTF**: `EXT_mesh_gpu_instancing` extension
 - **PHX Scene**: Instance transforms with prototype references
 
-Callers enter through [`phx::Phx`](../../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../../../../phx.rs); this folder is one of its parts.
 
 ## Files
 
 | File | What it is |
 |---|---|
-| `chunks.rs` | Native Blender Exporters for PHX Format |
+| `chunk.rs` | Native Blender Exporters for PHX Format |
 | `config.rs` | Export configuration types for Blender native scene export. |
-| `helpers.rs` | Blender type-name parsing (`From<&str>`). |
+| `helper.rs` | Blender type-name parsing (`From<&str>`). |
 | `script_gltf.rs` | glTF 2.0 scene writer (delegates to `gltf_native`). |
 | `script_phx.rs` | PHX scene format writer (binary: magic + JSON). |
-| `script_usd.rs` | USDA scene writer (delegates to `usd_native`). |
-| `tests.rs` | Unit tests for Blender native scene export. |
-| `types.rs` | Core data types for Blender native scene export. |
+| `kind.rs` | Core data types for Blender native scene export. |
 
 Status and next steps: [`jobs.md`](jobs.md).

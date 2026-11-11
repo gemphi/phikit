@@ -1,6 +1,6 @@
 //! `BlendSocket`'s own tests — split out of `socket.rs`, which outgrew the
 //! 240-line read budget when the nine display shapes landed. Reached by
-//! `#[path]` from it, so the module path is still `shade::socket::tests`.
+//! `#[path]` from it, so the module path is still `shade::socket::socket_test`.
 
 use super::*;
 

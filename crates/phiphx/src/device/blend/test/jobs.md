@@ -1,4 +1,4 @@
-# Jobs — `phiphx/blend/tests`
+# Jobs — `phiphx/device/blend/test`
 
 | State | Open | Done |
 |---|---|---|

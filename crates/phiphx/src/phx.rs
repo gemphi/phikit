@@ -1,6 +1,6 @@
 //! **The phiphx front door.** Everything a host does with a file goes
 //! through [`Phx`]: open it into a [`SceneModel`], peek at its preview
-//! without parsing, or detect its format. Parts live in `crate::blend`,
+//! without parsing, or detect its format. Parts live in `crate::device` (`device::blend` for `.blend`),
 //! `crate::import`, `crate::scene`; callers never reach into them.
 //! Status and next steps: `phx/jobs.md` moved to `src/jobs.md`.
 

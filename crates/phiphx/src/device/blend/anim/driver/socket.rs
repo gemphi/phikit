@@ -117,7 +117,7 @@ pub fn socket_clamp(sockets: &[BDriverSocket], input: usize, raw: f32) -> f32 {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::socket_path;
 
     #[test]

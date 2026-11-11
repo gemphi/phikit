@@ -41,6 +41,8 @@ pub mod summary;
 
 
 #[cfg(test)]
-mod follow_tests;
+#[path = "../test/anim/follow.rs"]
+mod follow_test;
 #[cfg(test)]
-mod tests;
+#[path = "../test/anim/pose.rs"]
+mod pose_test;

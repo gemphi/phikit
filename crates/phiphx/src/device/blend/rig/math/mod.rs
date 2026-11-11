@@ -16,7 +16,7 @@ pub use quat::BQuat;
 pub use vec::{BMat3, BVec3};
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
     use glam::{Mat3, Vec3};
 

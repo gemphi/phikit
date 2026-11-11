@@ -92,7 +92,7 @@ impl From<Vec<Vec<u32>>> for BFaceList {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     #[test]

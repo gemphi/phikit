@@ -103,7 +103,7 @@ impl BlendFile {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::modifier_path;
 
     #[test]

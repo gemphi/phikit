@@ -2,7 +2,7 @@
 
 Objects. DNA fields, transforms and parent chain, rotation modes, kind, camera/light/empty data, collections, view layer, world.
 
-Callers enter through [`phx::Phx`](../../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../../../../phx.rs); this folder is one of its parts.
 
 ## Files
 
@@ -19,7 +19,6 @@ Callers enter through [`phx::Phx`](../../phx/README.md); this folder is one of i
 | `mod.rs` | Objects. |
 | `read.rs` | Object block extraction (assembling `BlendSceneObject`s). |
 | `rotation.rs` | Rotation / matrix math — ports of `eulO_to_mat3`, `quat_to_mat3`, `axis_angle_to_mat3` (`blenlib/intern/math_rotation.cc`) and… |
-| `rotation_tests.rs` | Tests for the `BKE_object_to_mat4` port. |
 | `transform.rs` | Object transform extraction — a port of Blender's `BKE_object_to_mat4` (`blenkernel/intern/object.cc`) and `eulO_to_mat3` / `quat_to_mat3` /… |
 | `world.rs` | World-matrix resolution and view-layer flag application — the parts of `BKE_object_where_is_calc` / `BKE_layer_collection_sync` Phiber needs. |
 

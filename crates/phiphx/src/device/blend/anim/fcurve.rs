@@ -307,7 +307,7 @@ fn bezier(a: &BKey, b: &BKey, frame: f32) -> f32 {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     fn key(x: f32, y: f32, ipo: u8) -> BKey {

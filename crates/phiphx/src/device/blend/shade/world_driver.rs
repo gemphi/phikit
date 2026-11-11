@@ -105,7 +105,7 @@ impl BWorldDriverList {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
     use crate::device::blend::anim::driver::state::BDriverState;
 

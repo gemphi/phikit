@@ -143,5 +143,5 @@ impl BlendFile {
 
 
 #[cfg(test)]
-#[path = "parse_tests.rs"]
-mod header_tests;
+#[path = "../test/file/parse.rs"]
+mod header_test;

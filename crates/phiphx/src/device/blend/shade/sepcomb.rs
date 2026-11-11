@@ -62,7 +62,7 @@ pub(crate) fn hsl_to_rgb(hsl: [f32; 3]) -> [f32; 3] {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     fn close(a: [f32; 3], b: [f32; 3]) -> bool {

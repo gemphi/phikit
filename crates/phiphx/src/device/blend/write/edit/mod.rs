@@ -156,7 +156,7 @@ mod apply;
 mod structure;
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     #[test]

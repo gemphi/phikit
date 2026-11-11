@@ -172,7 +172,7 @@ fn mem_frame(f: &BlendFile, pm: &BlendBlock, dna: &DnaType) -> Option<BCacheFram
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     #[test]

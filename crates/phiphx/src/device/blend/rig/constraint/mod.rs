@@ -15,7 +15,8 @@ mod path;
 pub(crate) mod read;
 mod stack;
 #[cfg(test)]
-mod tests;
+#[path = "../../test/rig/constraint.rs"]
+mod constraint_test;
 mod track;
 mod transform;
 

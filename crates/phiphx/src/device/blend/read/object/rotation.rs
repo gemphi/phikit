@@ -104,5 +104,5 @@ pub(crate) fn compose_world(
 
 
 #[cfg(test)]
-#[path = "rotation_tests.rs"]
-mod tests;
+#[path = "../../test/read/object/rotation.rs"]
+mod rotation_test;

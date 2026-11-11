@@ -90,7 +90,7 @@ pub(crate) fn parent_matrix(partype: u8, par: [i32; 3], parent_world: Mat4, vert
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     fn close(a: Mat4, b: Mat4) -> bool {

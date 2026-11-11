@@ -185,7 +185,7 @@ impl BlendFile {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     fn moving_x(from: (f32, f32), to: (f32, f32)) -> BFCurve {

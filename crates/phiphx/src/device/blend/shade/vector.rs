@@ -169,7 +169,7 @@ pub(crate) fn vector_rotate(ty: u32, invert: bool, vector: V3, center: V3, axis:
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
     use std::f32::consts::FRAC_PI_2;
 

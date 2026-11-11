@@ -295,7 +295,7 @@ impl BParse<'_> {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     fn run(text: &str, vars: &[(&str, f64)]) -> Option<f64> {

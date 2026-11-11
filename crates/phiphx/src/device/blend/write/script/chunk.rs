@@ -365,7 +365,7 @@ pub fn cloud(cloud: &PointCloud) -> Result<Vec<u8>> {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     #[test]

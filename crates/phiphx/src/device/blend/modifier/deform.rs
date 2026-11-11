@@ -51,5 +51,5 @@ impl BlendFile {
 }
 
 #[cfg(test)]
-#[path = "deform_tests.rs"]
-mod deform_tests;
+#[path = "../test/modifier/deform.rs"]
+mod deform_test;

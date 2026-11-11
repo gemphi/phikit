@@ -215,5 +215,5 @@ fn write_bsdf(bsdf: &mut BlendBsdf, socket: &str, component: usize, value: f32) 
 }
 
 #[cfg(test)]
-#[path = "driver_tests.rs"]
-mod driver_tests;
+#[path = "../test/shade/driver.rs"]
+mod driver_test;

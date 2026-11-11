@@ -137,5 +137,5 @@ pub struct BlendFile {
 pub use crate::device::blend::read::scene::kind::*;
 
 #[cfg(all(test, feature = "proptest"))]
-#[path = "types_tests.rs"]
-mod primary_object_tests;
+#[path = "../test/file/kind.rs"]
+mod primary_object_test;

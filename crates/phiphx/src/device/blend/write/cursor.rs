@@ -48,7 +48,7 @@ impl BlendFile {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use crate::device::blend::file::kind::BlendFile;
     use glam::{Mat4, Quat, Vec3};
 

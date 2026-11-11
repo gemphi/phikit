@@ -154,7 +154,7 @@ impl BlendFile {
 const OB_MBALL: u32 = 5;
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     #[test]

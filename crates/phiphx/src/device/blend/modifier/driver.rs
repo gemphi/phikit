@@ -192,5 +192,5 @@ impl BModifierDriverList {
 }
 
 #[cfg(test)]
-#[path = "driver_tests.rs"]
-mod driver_tests;
+#[path = "../test/modifier/driver.rs"]
+mod driver_test;

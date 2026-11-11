@@ -11,7 +11,7 @@ glTF, USD and point-cloud formats.
 |---|---|
 | [`src/phx.rs`](src/phx.rs) | entry point (`Phx`; tests in `src/phx_tests.rs`) |
 | [`src/scene`](src/scene/README.md) | `SceneModel` — what every view draws |
-| [`src/blend`](src/blend/README.md) | native `.blend` reader |
+| [`src/device/blend`](src/device/blend/README.md) | the Blend device: native `.blend` reader, writer and Blender evaluation |
 | [`src/import`](src/import/README.md) | other readers + asset router |
 | [`src/export`](src/export/README.md) | writers |
 | [`src/cloud`](src/cloud/README.md) | point clouds |

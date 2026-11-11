@@ -28,7 +28,8 @@ pub mod path;
 pub mod profile;
 pub(crate) mod read;
 #[cfg(test)]
-mod tests;
+#[path = "../../test/read/curve/path.rs"]
+mod path_test;
 
 pub use path::{BCurvePath, BPathAt, BPathPoint};
 

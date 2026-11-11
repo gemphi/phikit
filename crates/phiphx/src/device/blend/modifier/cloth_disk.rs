@@ -178,7 +178,7 @@ fn parse(bytes: &[u8], frame: i32) -> Option<BCacheFrame> {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     #[test]

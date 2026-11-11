@@ -122,7 +122,7 @@ impl DnaType {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
     use crate::device::blend::file::kind::DnaField;
 

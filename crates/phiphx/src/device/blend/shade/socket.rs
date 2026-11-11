@@ -227,5 +227,5 @@ impl BlendFile {
     }
 }
 #[cfg(test)]
-#[path = "socket_tests.rs"]
-mod tests;
+#[path = "../test/shade/socket.rs"]
+mod socket_test;

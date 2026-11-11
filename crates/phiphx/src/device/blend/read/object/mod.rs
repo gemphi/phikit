@@ -10,7 +10,8 @@ pub(crate) mod dna;
 pub(crate) mod instance;
 pub(crate) mod instance_member;
 #[cfg(test)]
-mod instance_tests;
+#[path = "../../test/read/object/instance.rs"]
+mod instance_test;
 pub(crate) mod kind;
 pub mod layer;
 pub(crate) mod meta;

@@ -262,7 +262,7 @@ fn elastic_in_out(time: f32, b: f32, c: f32, d: f32, mut amplitude: f32, mut per
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     const KINDS: [u8; 10] = [IPO_BACK, IPO_BOUNCE, IPO_CIRC, IPO_CUBIC, IPO_ELASTIC, IPO_EXPO, IPO_QUAD, IPO_QUART, IPO_QUINT, IPO_SINE];

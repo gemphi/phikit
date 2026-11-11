@@ -13,9 +13,11 @@ pub(crate) mod deform;
 pub(crate) mod driven;
 pub(crate) mod prefix;
 #[cfg(test)]
-mod prefix_tests;
+#[path = "../test/modifier/prefix.rs"]
+mod prefix_test;
 #[cfg(test)]
-mod driven_tests;
+#[path = "../test/modifier/driven.rs"]
+mod driven_test;
 pub(crate) mod bbone;
 mod array;
 mod displace;
@@ -50,10 +52,12 @@ mod node_field;
 mod node_input;
 mod node_legacy;
 #[cfg(test)]
-mod nodes_tests;
+#[path = "../test/modifier/node.rs"]
+mod node_test;
 pub(crate) mod report;
 #[cfg(test)]
-mod tests;
+#[path = "../test/modifier/eval/mod.rs"]
+mod eval_test;
 
 mod deferred;
 mod job;

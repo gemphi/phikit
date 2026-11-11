@@ -5,7 +5,8 @@ pub mod cursor;
 pub mod marker;
 pub mod overlay;
 #[cfg(test)]
-mod overlay_tests;
+#[path = "../../test/read/scene/overlay.rs"]
+mod overlay_test;
 pub mod movie;
 pub mod output;
 pub mod pass;

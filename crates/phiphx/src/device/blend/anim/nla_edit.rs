@@ -253,7 +253,7 @@ impl BNlaStackList {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
 
     /// `nla_cube.blend` as read: Base Layer (Walk 1–97) under Overlay

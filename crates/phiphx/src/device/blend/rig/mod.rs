@@ -42,13 +42,17 @@ mod source;
 mod space;
 mod view;
 #[cfg(test)]
-mod tests;
+#[path = "../test/rig/thymus.rs"]
+mod thymus_test;
 #[cfg(test)]
-mod display_tests;
+#[path = "../test/rig/display.rs"]
+mod display_test;
 #[cfg(test)]
-mod nla_tests;
+#[path = "../test/rig/nla.rs"]
+mod nla_test;
 #[cfg(test)]
-mod leg_tests;
+#[path = "../test/rig/leg.rs"]
+mod leg_test;
 
 pub use constraint::{BConstraint, BConstraintKind, BObjectWork, BTarget};
 pub use display::{BBoneDraw, BBoneLook, BBoneShape, BBoneShown, BRigLook};

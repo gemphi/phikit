@@ -35,4 +35,5 @@ pub use kind::{
 };
 
 #[cfg(test)]
-mod tests;
+#[path = "../../test/write/script.rs"]
+mod script_test;

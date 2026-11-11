@@ -112,7 +112,7 @@ impl<R: std::io::BufRead> Read for MultiFrame<R> {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
     use crate::device::blend::BlendFile;
 

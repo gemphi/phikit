@@ -155,5 +155,5 @@ pub(super) fn split_index(path: &str) -> (String, usize) {
 }
 
 #[cfg(test)]
-#[path = "read_tests.rs"]
-mod read_tests;
+#[path = "../../test/anim/driver/read.rs"]
+mod read_test;
