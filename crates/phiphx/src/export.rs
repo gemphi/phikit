@@ -4,10 +4,8 @@
 
 pub mod blend;
 pub mod gltf;
-pub mod phx;
-pub mod scene;
 pub mod usd;
-pub use scene::*;
+pub use crate::device::phx::scene::*;
 
 pub mod binary;
 pub mod json;

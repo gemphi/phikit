@@ -4,7 +4,7 @@ use super::FileFormat;
 use crate::device::blend::BlendImporter;
 #[cfg(feature = "gltf-import")]
 use super::gltf::GltfImporter;
-use super::phx::PhxImporter;
+use crate::device::phx::read::PhxImporter;
 use super::ply::PlyImporter;
 use super::usd::UsdImporter;
 use glam::Vec3;

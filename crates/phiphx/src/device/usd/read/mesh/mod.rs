@@ -80,76 +80,8 @@ impl UsdImporter {
 
     /// Write `<usd>.phx` next to the source USD file (best-effort, freshness-gated).
     pub fn write_phx_sidecar(usd_path: &Path, meshes: &[crate::Mesh]) {
-        use crate::export::scene::{
-            PhxMaterial, PhxMesh, PhxScene,
-        };
-
-        let phx_path = usd_path.with_extension("phx");
-        let should_write =
-            if let (Ok(p), Ok(b)) = (std::fs::metadata(&phx_path), std::fs::metadata(usd_path)) {
-                p.modified().unwrap() < b.modified().unwrap()
-            } else {
-                true
-            };
-
-        if !should_write {
-            println!("[USD] .phx sidecar up to date: {:?}", phx_path);
-            return;
-        }
-
-        let mut phx = PhxScene::new(&usd_path.file_stem().unwrap_or_default().to_string_lossy());
-        for m in meshes {
-            if m.positions.is_empty() {
-                continue;
-            }
-            let colors = m
-                .colors
-                .clone()
-                .unwrap_or_else(|| vec![[0.8, 0.8, 0.8, 1.0]; m.positions.len()]);
-            let transform_matrix = m
-                .transform
-                .unwrap_or(glam::Mat4::IDENTITY)
-                .to_cols_array_2d();
-            phx.add_mesh(PhxMesh {
-                name: m.name.clone(),
-                vertices: m.positions.clone(),
-                normals: m.normals.clone().unwrap_or_default(),
-                uvs: m.uvs.clone().unwrap_or_default(),
-                colors,
-                indices: m.indices.clone(),
-                materials: vec![format!("{}_mat", m.name)],
-                matrix_world: transform_matrix,
-                visible: true,
-            });
-            phx.add_material(PhxMaterial {
-                name: format!("{}_mat", m.name),
-                base_color: [0.8, 0.8, 0.8, 1.0],
-                metallic: 0.1,
-                roughness: 0.8,
-                emission: [0.0, 0.0, 0.0],
-                emission_strength: 0.0,
-                alpha: 1.0,
-                use_nodes: true,
-                base_color_texture: None,
-                normal_texture: None,
-                roughness_texture: None,
-            });
-        }
-
-        match phx.to_bytes() {
-            Ok(bytes) => match std::fs::write(&phx_path, &bytes) {
-                Ok(_) => println!(
-                    "[USD] wrote .phx sidecar ({} meshes, {} bytes): {:?}",
-                    phx.meshes.len(),
-                    bytes.len(),
-                    phx_path
-                ),
-                Err(e) => eprintln!("[USD] failed to write .phx: {}", e),
-            },
-            Err(e) => eprintln!("[USD] failed to serialize .phx: {:?}", e),
-        }
+        crate::device::phx::sidecar::write_for_usd(usd_path, meshes);
     }
-
     /// Simple USDA mesh for testing.
     pub fn sample_usda() -> &'static str {
         r#"#usda 1.0

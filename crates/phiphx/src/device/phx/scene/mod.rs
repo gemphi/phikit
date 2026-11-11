@@ -45,14 +45,15 @@
 //! ```
 
 mod read;
-mod scene;
-mod types;
+mod build;
+mod part;
 mod write;
 
-pub use types::{
+pub use part::{
     PHX_SCENE_MAGIC, PHX_SCENE_VERSION, PhxCamera, PhxCollection, PhxInstance, PhxLight,
     PhxMaterial, PhxMesh, PhxScene,
 };
 
 #[cfg(test)]
-mod tests;
+#[path = "../test/scene.rs"]
+mod scene_test;

@@ -1,7 +1,7 @@
 //! PHX format importer.
 
 use crate::AssetImportResult;
-use crate::export::scene as exporter_scene;
+use crate::device::phx::scene as exporter_scene;
 use std::path::Path;
 
 /// Importer for PHX binary scenes.

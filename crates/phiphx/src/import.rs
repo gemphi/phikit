@@ -4,7 +4,6 @@
 
 #[cfg(feature = "gltf-import")]
 pub mod gltf;
-pub mod phx;
 pub mod ply;
 pub mod usd;
 
@@ -15,7 +14,7 @@ pub use asset::{
     AssetImportResult, AssetImporter, ImportedCollection, ImportedMaterial, ImportedObject,
 };
 pub use format::{FileFormat, ObjImporter};
-pub use phx::PhxImporter;
+pub use crate::device::phx::read::PhxImporter;
 pub use ply::PlyImporter;
 
 use crate::{PointCloud, Result};

@@ -6,6 +6,7 @@
 //! the phases that fill it are in `LAYOUT.md`.
 pub mod blend;
 pub mod list;
+pub mod phx;
 pub mod usd;
 
 pub use list::DeviceList;

@@ -26,7 +26,7 @@ impl BlendImporter {
         {
             if phx_meta.modified().ok() >= blend_meta.modified().ok() {
                 progress(0.10, "Loading .phx sidecar (skipping .blend parse)...");
-                match crate::import::phx::PhxImporter::import(&phx_path, progress) {
+                match crate::device::phx::read::PhxImporter::import(&phx_path, progress) {
                     Ok(mut r) => {
                         // Keep the original .blend path as the reference.
                         r.mesh_path = clean;

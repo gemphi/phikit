@@ -1,5 +1,5 @@
 //! The devices, in a fixed order: USD, Blend, PHX. A device whose feature is
-//! off is not in the list. PHX joins in phase 3.
+//! off is not in the list.
 use super::{Device, DeviceKind};
 
 /// Every device this build has, in the order they are asked.
@@ -10,7 +10,7 @@ pub struct DeviceList {
 impl DeviceList {
     /// The devices of this build.
     pub fn new() -> Self {
-        Self { device: vec![&super::usd::UsdDevice, &super::blend::BlendDevice] }
+        Self { device: vec![&super::usd::UsdDevice, &super::blend::BlendDevice, &super::phx::PhxDevice] }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &'static dyn Device> + '_ {

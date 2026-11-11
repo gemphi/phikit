@@ -31,7 +31,6 @@ pub mod import;
 pub mod phx;
 #[cfg(test)]
 mod phx_tests;
-pub mod project;
 pub mod scene;
 pub mod sky;
 pub mod spatial;
@@ -51,7 +50,8 @@ pub use import::{
     AssetImportResult, AssetImporter, ImportedCollection, ImportedMaterial, ImportedObject,
 };
 pub use phx::Phx;
-pub use project::*;
+pub use device::phx::project;
+pub use device::phx::project::*;
 pub use spatial::{
     MeshSpaceConversion, PhiQuiMeshType, SpatialObject3D, SpatialSpring, SpatialTransform3D,
 };

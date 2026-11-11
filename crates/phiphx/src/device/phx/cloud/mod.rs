@@ -3,6 +3,7 @@
 //! Direct export to PHX binary format.
 //! Optimized for PHI workflow.
 
+pub mod chunk;
 mod mesh;
 mod read;
 mod write;
@@ -10,4 +11,5 @@ mod write;
 pub use write::PhxPointCloudChunk;
 
 #[cfg(test)]
-mod tests;
+#[path = "../test/cloud.rs"]
+mod cloud_test;

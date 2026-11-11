@@ -1,6 +1,6 @@
 //! PHX point cloud chunk and binary writer.
 
-use crate::device::blend::write::script::chunk::PhxChunkType;
+use crate::device::phx::cloud::chunk::PhxChunkType;
 use crate::{PointCloud, Result};
 use byteorder::{LittleEndian, WriteBytesExt};
 use std::io::Write;
