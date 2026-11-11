@@ -1,4 +1,4 @@
-# Jobs — `phiphx/export/phx`
+# Jobs — `phiphx/device/phx/cloud`
 
 | State | Open | Done |
 |---|---|---|

@@ -4,7 +4,7 @@ Geometry primitives shared by every reader and exporter: vertices,
 bounds, triangle meshes with surface sampling, the sampling BVH and the
 primary-subject selector.
 
-Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../phx.rs); this folder is one of its parts.
 
 ## Files
 

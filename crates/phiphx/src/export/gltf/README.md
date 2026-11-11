@@ -5,7 +5,7 @@ Native glTF 2.0 Exporter
 Direct export to glTF format without external dependencies.
 Optimized for PHI PHX workflow.
 
-Callers enter through [`phx::Phx`](../../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../../phx.rs); this folder is one of its parts.
 
 ## Files
 

@@ -5,12 +5,11 @@
 //!
 //! | Module | What it holds |
 //! |---|---|
-//! | [`phx`] | `Phx` — open / peek / detect, progress, errors (`phx.rs`) |
-//! | [`scene`] | `SceneModel` — the runtime scene every view draws |
-//! | [`device`] | one device per scene-file variant (Device, DeviceList); USD is here, Blend and PHX follow (LAYOUT.md) |
-//! | [`blend`] | the native `.blend` reader (file, objects, meshes, materials, modifiers) |
-//! | [`import`] | other readers: glTF, USD, PLY, PHX, OBJ; asset router |
-//! | [`export`] | writers: PHX, glTF, USD, PLY, PCD, LAS, XYZ, JSON, binary, blend scripts |
+//! | [`phx`] | `Phx`: open / peek / detect, progress, errors (`phx.rs`) |
+//! | [`device`] | one device per scene-file variant: `Device`, `DeviceList`, `Peek`; `usd`, `blend` (the native `.blend` reader), `phx` |
+//! | [`scene`] | `SceneModel`: the runtime scene every view draws |
+//! | [`import`] | other readers: glTF, PLY, OBJ; asset router |
+//! | [`export`] | writers: glTF, PLY, PCD, LAS, XYZ, JSON, binary |
 //! | [`cloud`] | point clouds and mesh → cloud sampling |
 //! | [`geom`] | vertices, bounds, meshes, BVH, subject selection |
 //! | [`format`] | output formats and material descriptions |

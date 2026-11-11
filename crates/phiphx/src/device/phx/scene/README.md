@@ -1,4 +1,4 @@
-# export/scene
+# device/phx/scene
 
 PHX Scene Format — Extended PHX with Scene Metadata
 
@@ -46,16 +46,16 @@ PHX_SCENE\x01                    # Magic + version
 }
 ```
 
-Callers enter through [`phx::Phx`](../../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../../../phx.rs); this folder is one of its parts.
 
 ## Files
 
 | File | What it is |
 |---|---|
 | `read.rs` | PHX scene binary deserialization. |
-| `scene.rs` | `PhxScene` construction and conversion methods. |
-| `tests.rs` | tests |
-| `types.rs` | PHX Scene data types and format constants. |
+| `build.rs` | `PhxScene` construction and conversion methods. |
+| `../test/scene.rs` | tests |
+| `part.rs` | PHX Scene data types and format constants. |
 | `write.rs` | PHX scene binary serialization and conversion helpers. |
 
 Status and next steps: [`jobs.md`](jobs.md).

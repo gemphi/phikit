@@ -1,4 +1,4 @@
-# Jobs — `phiphx/export/scene`
+# Jobs — `phiphx/device/phx/scene`
 
 | State | Open | Done |
 |---|---|---|

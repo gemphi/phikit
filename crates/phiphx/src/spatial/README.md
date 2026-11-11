@@ -2,7 +2,7 @@
 
 PhiQui — Native Rust GPUI 3D Spatial UI & Mesh Engine
 
-Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../phx.rs); this folder is one of its parts.
 
 ## Files
 

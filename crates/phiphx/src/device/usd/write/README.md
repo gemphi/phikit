@@ -2,9 +2,9 @@
 Native USD Exporter
 Direct export to USDA/USDC format without external dependencies.
 Optimized for PHI PHX workflow.
-Callers enter through [`phx::Phx`](../../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../../../phx.rs); this folder is one of its parts.
 
-**Scenes** go through one writer: [`UsdStage`](stage.rs) turns a `SceneModel` into a
+**Scenes** go through one writer: [`UsdStage`](scene/) turns a `SceneModel` into a
 USD 1.0 text layer (`SceneModel::to_usda`, and `BlenderScene::to_usda` by way of it).
 Z-up, `metersPerUnit = 1` (Blender's convention), `defaultPrim = "World"`.
 Meshes, point clouds alone use the older writers below.

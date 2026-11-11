@@ -4,7 +4,7 @@ This document tracks the seven Blender assets in `ext/phx/assets` plus the nativ
 
 > **📋 Complete API Coverage**: See [`BLENDER_API_COVERAGE.md`](BLENDER_API_COVERAGE.md) for the full mapping of Blender DNA fields to Apple frameworks (RealityKit, VisualKit, Foundation), implementation status, and priority phases.
 
-> **📁 Per-Asset Details**: Each `.blend` file has a corresponding `.md` file (e.g., [`HEXA-COMBINED-T-48.md`](assets/HEXA-COMBINED-T-48.md)) with scene-specific modifiers, instances, and Blender feature analysis.
+> **📁 Per-Asset Details**: Each `.blend` file has a corresponding `.md` file (e.g., `HEXA-COMBINED-T-48.md`) with scene-specific modifiers, instances, and Blender feature analysis.
 
 | Blender File | Blend Size (MB) | PHX Size (bytes) | Scenes | Collections | Objects | Status | Notes |
 |--------------|-----------------|------------------|--------|-------------|---------|--------|-------|

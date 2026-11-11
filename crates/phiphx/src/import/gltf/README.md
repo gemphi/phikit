@@ -4,7 +4,7 @@
 
 Converts glTF 2.0 scenes to point clouds and meshes.
 
-Callers enter through [`phx::Phx`](../../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../../phx.rs); this folder is one of its parts.
 
 ## Files
 

@@ -4,7 +4,7 @@ Point cloud exporter.
 
 Implements export to various point cloud formats.
 
-Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../phx.rs); this folder is one of its parts.
 
 ## Files
 

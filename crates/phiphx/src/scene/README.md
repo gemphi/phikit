@@ -1,45 +1,32 @@
 # scene
 
-Kit-agnostic runtime scene data + the single blend→scene traversal.
+`SceneModel`: the kit-agnostic runtime scene every view draws. Pure Rust, no
+gpui, no OS deps. Consumers reach these types via `crate::scene::...`.
 
-Pure Rust — no gpui, no OS deps — mirroring the
-`apple::services::outliner` pattern. Consumers reach these types via
-`crate::scene::…`.
+Blender-specific reading (`SceneModel::from_blend`, the progressive open, the
+rigs, motion and collection tables) is in
+[`device/blend/read/scene/model`](../device/blend/read/scene/model/README.md);
+its public types are re-exported here, so `phiphx::scene::SceneRigList` and
+`phiphx::scene::motion::SceneMotion` keep their paths.
 
-## File split (200-line file cap)
-
-- `mod.rs` (this file) — core types (`SceneObject`, `SceneMesh`,
-`SceneNormals`, `SceneModel`) + child module declarations + re-exports.
-- `types_ext.rs` — extended scene surfaces (timeline / world / render /
-camera / light / action) read by non-mesh spaces.
-- `error.rs` — `SceneLoadError` + its message clamp.
-- `import.rs` — blend → scene conversion helpers (fan-triangulation,
-per-face normal synthesis, camera / light partitioning).
-- `tests_traversal.rs` — traversal tests (opening lives in `crate::phx`).
-
-Requirements: 6.1, 6.3, 7.2
-
-Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../phx.rs); this folder is one of its parts.
 
 ## Files
-
 | File | What it is |
 |---|---|
-| `collection.rs` | Collection tree + view-layer state of a loaded scene — what Blender's Outliner "View Layer" mode draws (`tree_display_view_layer.cc`). |
-| `error.rs` | Load-error surface — `SceneLoadError` + its message clamp. |
-| `extras.rs` | Non-mesh objects the viewport overlay draws: cameras, lights, empties. |
-| `geometry.rs` | Pure geometry helpers shared by the blend and phx mappers: per-vertex UVs from per-corner UVs, and normal selection / synthesis. |
-| `import.rs` | Blend → scene conversion helpers. |
-| `import_extras.rs` | Camera / light / empty objects → `SceneCamera` / `SceneLight` / `SceneEmpty`, from the DNA read by `importer::blend::object_data`. |
-| `material.rs` | Material slot data shared by the viewport and the Properties panel (Principled inputs, normal map). |
-| `object.rs` | One read object → renderable `SceneObject` (triangulation, normals, UVs, slots). |
-| `mod.rs` | Kit-agnostic runtime scene data + the single blend→scene traversal. |
-| `polyfill.rs` | Face triangulation, following Blender's `mesh_calc_tessellation_for_face`: triangles as-is, quads split (0,1,2)+(0,2,3), n-gons ear-clipped in 2D… |
-| `report.rs` | What Blender prints after a file read (`file_read_reports_finalize`, wm_files.cc) and shows in the status bar (`info_stats.cc`): timings, scene… |
-| `tests_traversal.rs` | `SceneModel::from_blend` traversal tests. |
-| `tests_types.rs` | Basic scene-type invariants (Default, Clone, PartialEq). |
-| `texture.rs` | Base-colour and normal-map textures: decode, cache, attach to materials (#26). |
-| `types_ext.rs` | Extended scene surfaces read by non-mesh spaces (Animation / Rendering / Shading / Compositing / Info). |
-| `ui.rs` | "Load UI" (#28): the workspace and 3D view a `.blend` restores, reduced to what the viewport consumes. |
+| `mod.rs` | `SceneObject`, `SceneMesh`, `SceneNormalList`, `SceneModel`, child modules and re-exports. |
+| `surface.rs` | Extended scene surfaces read by non-mesh spaces (timeline, world, render, action, NLA, drivers). |
+| `extra.rs` | Cameras, lights and empties the overlay draws. |
+| `corner.rs` | `SceneCornerList`: shading normals per triangle corner. |
+| `error.rs` | `SceneLoadError` and its message clamp. |
+| `geometry.rs` | Per-vertex UVs from per-corner UVs; normal selection and synthesis. |
+| `material.rs` | Material slot data shared by the viewport and the Properties panel. |
+| `polyfill.rs` | Face triangulation, following Blender's `mesh_calc_tessellation_for_face`. |
+| `report.rs` | What Blender prints after a file read, and the status bar's figures. |
+| `heap.rs` | What a loaded scene costs in memory. |
+| `texture.rs`, `texture_find.rs`, `texture_miss.rs` | Base-colour and normal-map textures; Find Missing Files; the tally of what is missing. |
+| `ui.rs` | "Load UI": the workspace and 3D view a `.blend` restores. |
+| `uv.rs` | A mesh's active UV map as the UV editor draws it. |
+| `test/` | Unit tests; modules reach them by `#[path]`. |
 
 Status and next steps: [`jobs.md`](jobs.md).

@@ -30,7 +30,7 @@ block's saved `old_address`, effectively rebuilding the in-memory graph. Field
 byte offsets are computed from the DNA at runtime rather than hard-coded, which
 keeps the reader tolerant across Blender versions whose struct layouts differ.
 
-Every successful import also writes a portable [`.phx`](../../exporters/phx_scene.rs)
+Every successful import also writes a portable [`.phx`](../../src/device/phx/scene/mod.rs)
 sidecar next to the source blend (see `phx_export`) so the scene re-imports
 instantly and can be shared for collaboration.
 

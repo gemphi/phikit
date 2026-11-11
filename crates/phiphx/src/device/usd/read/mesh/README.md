@@ -5,7 +5,7 @@
 Converts Universal Scene Description files to point clouds and meshes.
 Handles USDA (ASCII), USDC (binary crate), and USDZ (zip container).
 
-Callers enter through [`phx::Phx`](../../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../../../../phx.rs); this folder is one of its parts.
 
 ## Files
 

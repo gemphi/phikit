@@ -1,162 +1,120 @@
-# phiphx layout: scene files come in variants
+# phiphx layout: scene files come in variants (done)
 
 A scene file comes in variants. `Phx` owns import and export and delegates to a
 **device**, the way Cycles delegates to render devices, without entangling them.
-Three devices for now: **USD**, **Blend**, **PHX**. glTF, PLY, OBJ, STL, PCD,
-LAS and XYZ stay exactly where they are and keep working.
+Three devices: **USD**, **Blend**, **PHX**. glTF, PLY, OBJ, STL, PCD, LAS and
+XYZ stay where they were and keep working.
 
-Phases: **1** trait + USD (done), **2** Blend (done), **3** PHX + scene + names, sizes, tests.
+Phases: **1** trait + USD (done), **2** Blend (done), **3** PHX + scene + names,
+sizes, tests, shims, docs (done).
 
-## Target tree (`crates/phiphx/src`)
+## Tree (`crates/phiphx/src`)
 
 ```text
-phx.rs                 Phx::open / peek / detect: find the device by bytes or
-                       extension and delegate; no format logic of its own
-device/
+phx.rs                 Phx::open / peek / detect: asks DeviceList which device owns
+                       the file (bytes, then extension; Blend if none) and delegates
+error.rs lib.rs        crate error, module list
+device/                (469 .rs files)
   mod.rs               trait Device, DeviceKind, Source
-  list.rs              DeviceList: usd, blend, phx in that order, feature-gated
-  usd/                 usdkit's object model + everything USD
+  list.rs              DeviceList: usd, blend, phx in that order
+  peek.rs              Peek, PeekScene, PeekThumbnail: what any device can say about a file
+  usd/ (61)            usdkit's object model + everything USD
     stage.rs prim.rs attribute.rs xform.rs error.rs
     read/              parser (usda text), mesh/scene builder, usdc fallback
     write/             printer, SceneModel -> stage writer (scene/), point cloud, mesh
     package/           usdz
-    test/              unit tests
-  blend/               (phase 2, done)
-    file/              container, SDNA, zstd
-    read/<kind>/       one folder per data kind: mesh, object, curve, text, ...
-    write/             .blend writer, script writers
-    modifier/ rig/ anim/ driver/ physics/ shade/   Blender's own evaluation
     test/
-  phx/                 (phase 3)
-    cloud.rs           the PHX point cloud
-    scene/             the PHX scene
-    sidecar.rs         the .phx sidecar
-scene/                 SceneModel only (phase 3 trims what is not the model)
+  blend/ (386)         file/ read/<kind>/ write/ (write/script/) modifier/ rig/ anim/
+                       driver/ physics/ shade/ test/ ; read/scene/model/ is the
+                       SceneModel built from Blender data
+  phx/ (19)            the PHX device
+    open.rs            PHX <-> SceneModel, peek
+    read.rs            PhxImporter (asset pipeline)
+    sidecar.rs         the .phx sidecar (from a .blend or a USD file)
+    project.rs         ProjectScaffold
+    cloud/             the PHX point cloud: chunk.rs (PhxChunkList), read, write, mesh
+    scene/             the PHX scene: part.rs (PhxScene and its parts), build, read, write
+    test/
+scene/ (24)            SceneModel, the generic model (+ surface, extra, corner, material,
+                       texture*, report, polyfill, geometry, ui, uv, test/)
+cloud/ (5) comp/ (6) export/ (12) format/ (2) geom/ (6) import/ (11) sky/ (3)
+spatial/ (18, glyph/ spatial_object/ test/) test/ (1: Phx tests) uv/ (10)
 ```
 
-Everything else (`cloud`, `geom`, `format`, `sky`, `spatial`, `uv`, `comp`,
-`import/{gltf,ply,asset,format}`, `export/{gltf,ply,pcd,las,xyz,json,binary}`)
-is **untouched for now**.
+Total 572 `.rs` files. No file in `src` is over 300 code lines. No plural file,
+folder or type name (collective noun, `...List`, `P`/`B`-prefixed singular), apart
+from `jobs.md` (the status-file name), `physics` and `multires` (not plurals), and
+`PointCloudStat`-style singulars for `stats`.
 
 ## The `Device` trait
 
 ```rust
 pub enum DeviceKind { Usd, Blend, Phx }
-
-/// Where a scene comes from: a name, an optional path (for sibling files such
-/// as textures), and the bytes.
 pub struct Source<'a> { pub name: &'a str, pub path: Option<&'a Path>, pub bytes: &'a [u8] }
-
 pub trait Device: Sync {
     fn kind(&self) -> DeviceKind;
-    /// File extensions this device owns, lower case, no dot.
-    fn extension(&self) -> &'static [&'static str];
-    /// Does this head of a file belong to the device?
-    fn detect(&self, head: &[u8]) -> bool;
-    /// Header-only look: version, render info, thumbnail.
-    fn peek(&self, bytes: &[u8]) -> crate::Result<Peek>;
-    /// Read into a scene (evaluated, for Blend).
-    fn read(&self, source: &Source, progress: Progress) -> Result<SceneModel, PhxError>;
-    /// The progressive open path: base scene now, deferred work after.
-    /// Default: `read` with nothing deferred.
+    fn extension(&self) -> &'static [&'static str];        // lower case, no dot
+    fn detect(&self, head: &[u8]) -> bool;                  // by magic bytes
+    fn peek(&self, bytes: &[u8]) -> Result<Peek>;           // header only
+    fn peek_path(&self, path: &Path) -> Result<Peek>;       // default: read, then peek
+    fn streams(&self) -> bool;                              // read() opens Source::path itself
+    fn read(&self, source: &Source, progress: Progress) -> Result<SceneModel, SceneLoadError>;
     fn read_progressive(&self, source: &Source, progress: Progress)
-        -> Result<(SceneModel, Option<DeferredModifiers>), PhxError>;
-    /// Write a scene as this device's file.
-    fn write(&self, scene: &SceneModel) -> Result<Vec<u8>, PhxError>;
+        -> Result<(SceneModel, Option<DeferredModifierList>), SceneLoadError>;
+    fn write(&self, scene: &SceneModel) -> Result<Vec<u8>, SceneLoadError>;
 }
 ```
 
-`DeviceList::get(kind)`, `DeviceList::detect(head)`, `DeviceList::by_extension(ext)`,
-`DeviceList::iter()`.
+`DeviceList::get(kind)`, `detect(head)`, `by_extension(ext)`, `iter()`.
 
-## Map: current -> target
+| Device | Extension | Detects | `write` |
+|---|---|---|---|
+| `UsdDevice` | usd usda usdc usdz | `#usda`, `PXR-USDC`, zip | `SceneModel::to_usda` |
+| `BlendDevice` | blend | `BLENDER`, zstd frame | refuses (edit an existing file with `write::`) |
+| `PhxDevice` | phx | `PHX_SCENE\x01`, `PHX\0` | `PhxScene` bytes |
 
-| Current (`src/`) | Target | Phase |
-|---|---|---|
-| `import/usd.rs`, `import/usd/*` (importer, parse, scene, usda*, usdc, usdz, tests) | `device/usd/read/mesh/` (heuristic readers, `usdc_fallback.rs`), `device/usd/package/mesh.rs`, `device/usd/test/import.rs`; `import/usd.rs` is now a `pub use` shim | 1 done |
-| `export/usd.rs`, `export/usd/{mesh,point_cloud,writer,tests}.rs` | `device/usd/write/{exporter,mesh,point_cloud,writer}.rs`, `test/export.rs`; `export/usd.rs` is a `pub use` shim | 1 done |
-| `export/usd/stage.rs`, `export/usd/stage/*` (SceneModel writer) | `device/usd/write/scene/` (`UsdStage` becomes `UsdSceneWriter`, old name re-exported; still writes text itself, not through the usdkit printer) | 1 done |
-| `export/blend/script_usd.rs` (`BlenderScene::to_usda`) | `device/usd/write/script.rs` | 1 done |
-| usdkit (`phikit/crates/apple/src/macos/usdkit`, copied) | `device/usd/{stage,prim,attribute,xform,error}.rs`, `read/`, `write/`, `package/`, `test/` (+ `matrix4d` value) | 1 done |
-| `blend/file/*` | `device/blend/file/` (`types.rs` is now `kind.rs`) | 2 done |
-| `blend/{mesh,object,curve,text,scene,asset}`, `blend/idprop.rs` | `device/blend/read/<kind>/`, `read/idprop.rs` | 2 done |
-| `blend/write/*` | `device/blend/write/` | 2 done |
-| `blend/{modifier,rig,anim,physics,shade}` | `device/blend/{modifier,rig,anim,physics,shade}/` (the driver code stays in `anim/driver/`, `rig/driver/`, `modifier/driver*.rs`, `shade/driver*.rs`, as it is split by what it drives) | 2 done |
-| `blend/tests/*`, `*_tests.rs` beside code | `device/blend/test/<folder tested>/`, reached by `#[path]` from the module they test (so they still see its private items); inline `mod tests` is `mod test` | 2 done |
-| `export/blend.rs`, `export/blend/*` (script writers: chunks, config, script_phx, script_gltf, types) | `device/blend/write/script/` (`chunk.rs`, `helper.rs`, `kind.rs`); `export/blend.rs` is a `pub use` shim | 2 done |
-| `phx.rs` functions `blend`, `blend_bytes`, `blend_progressive`, `guarded`, `settle`, `classify_native_error` | `device/blend/open.rs`; `BlendDevice` (`impl Device`: detect, peek, read, read_progressive; write says it cannot) in `device/blend/mod.rs`, registered after USD. `Phx::open*` still call `open::*` | 2 done |
-| `export/phx.rs`, `export/phx/*` (PHX point cloud) | `device/phx/cloud.rs` + `cloud/` | 3 |
-| `import/phx.rs` (`PhxImporter`) | `device/phx/read.rs` | 3 |
-| `export/scene.rs`, `export/scene/*` (PHX scene) | `device/phx/scene/` | 3 |
-| `blend/asset/phx.rs`, `import/usd.rs::write_phx_sidecar` | `device/phx/sidecar.rs` | 3 |
-| `project.rs` | `device/phx/project.rs` | 3 |
-| `scene/*` | `scene/` (SceneModel only; `scene/import.rs`, `import_extras.rs`, `progressive*.rs` go to `device/blend/read/`) | 3 |
-| `phx_tests.rs`, `scene/*_tests*.rs` | `test/` folders | 3 |
+## `Phx` delegation
 
-Old public paths (`phiphx::export::usd`, `phiphx::import::usd`,
-`phiphx::export::UsdExporter`, `phiphx::blend::*`, ...) keep working through
-`pub use` re-exports until phber moves to the device paths.
+`Phx::open*`, `open_progressive`, `open_bytes*`, `peek*` ask `DeviceList` for the
+device: its first 16 bytes by `detect`, then the extension, and a file no device
+claims goes to Blend, so its errors read as before. `Phx::detect` returns a
+`FileFormat`: the old magic checks (glTF, USD, OBJ), then the devices' (so
+`BLENDER` and `PHX` heads are known), then the extension. `Phx::use_skinner` and
+`modifiers` go through `BlendDevice`.
 
-## Untouched for now
+## Map: where things went
 
-glTF (`import/gltf*`, `export/gltf*`), PLY (`import/ply.rs`, `export/ply.rs`),
-OBJ (`import/format.rs`), STL, PCD (`export/pcd.rs`), LAS (`export/las.rs`),
-XYZ (`export/xyz.rs`), JSON/binary point cloud exports, and the shared pieces
-`cloud`, `geom`, `format`, `sky`, `spatial`, `uv`, `comp`, `import/asset.rs`.
+| Was | Now |
+|---|---|
+| `import/usd*`, `export/usd*`, `export/blend/script_usd.rs` | `device/usd/` (phase 1) |
+| `blend/*`, `export/blend*` | `device/blend/` (phase 2) |
+| `export/phx*` (point cloud), `PhxChunkList` and the chunk format | `device/phx/cloud/` |
+| `export/scene*` (PHX scene), `types.rs` | `device/phx/scene/` (`part.rs`) |
+| `import/phx.rs` | `device/phx/read.rs` |
+| `blend/asset/phx.rs`, `write_phx_sidecar` | `device/phx/sidecar.rs` |
+| `project.rs` | `device/phx/project.rs` |
+| `scene/{import,import_extras,object,share,progressive*,build,rig,motion,collection,relation}.rs` | `device/blend/read/scene/model/` |
+| `scene/{corners,extras,types_ext}.rs` | `scene/{corner,extra,surface}.rs` |
+| `BlendQuickInfo`, `BlendRenderInfo`, `BlendThumbnail` | `device::{Peek, PeekScene, PeekThumbnail}` |
+| `DeferredModifiers` | `DeferredModifierList` |
+| `SceneRigs` `SceneCorners` `SceneMaps` `SceneNormals` `SceneDrivers` `STriangles` `VertexAttributes` `PointCloudStats` | `...List` / `PointCloudStat` |
+| `phx_tests.rs`, `scene/tests_*.rs`, inline `mod tests { }` | `test/` folders reached by `#[path]` |
+| `spatial/spatial_object.rs` (535), `spatial/glyph.rs` (331) | `spatial/spatial_object/{mod,solid,round}.rs`, `spatial/glyph/{mod,low,high}.rs` |
 
-## Phase 2 (Blend): done
-`device/blend/` holds `BlendDevice`, the container (`file/`), the readers
-(`read/{asset,curve,mesh,object,scene,text}/`, `read/idprop.rs`), the writer
-(`write/`, `write/script/`), Blender's evaluation (`modifier/`, `rig/`, `anim/`,
-`physics/`, `shade/`) and the unit tests (`test/`). Old paths
-(`phiphx::blend::*`, `phiphx::export::blend`) are two small `pub use` shims
-(`src/blend.rs`, `src/export/blend.rs`); renamed modules keep no alias, so
-`phiber` was moved to the new names (branch `variant-layout` in its repo).
-### The 8 files that were over 300 code lines
-| Was | File | Now |
-|---|---|---|
-| 589 | `modifier/bbone.rs` | `modifier/bbone/{mod 53, curve 57, roll 45, spline 139, shape 64, pose 172, read 75}.rs` |
-| 518 | `rig/math.rs` | `rig/math/{mod 40, euler 93, quat 129, vec 85, mat4 119, ortho 38, symmetric 38}.rs` |
-| 451 | `shade/eval.rs` | `shade/eval.rs` 197 + `shade/emit.rs` 256 (the bake walk) |
-| 424 | `modifier/mod.rs` | `mod.rs` 106 + `kind.rs` 30, `source.rs` 60, `stack.rs` 42, `job.rs` 140, `deferred.rs` 66 |
-| 419 | `rig/ik/mod.rs` | `mod.rs` 42 + `tree.rs` 116, `build.rs` 83, `execute.rs` 185 |
-| 398 | `write/edit.rs` | `write/edit/{mod 127, apply 163, structure 113}.rs` |
-| 358 | `write/mesh.rs` | `write/mesh/{mod 84, new 106, add 95, storage 82}.rs` |
-| 328 | `rig/ik/segment.rs` | `segment.rs` 201 + `rotation.rs` 129 (`BIkMath`) |
-No file in `device/blend` is over 300 code lines now (largest: `read/curve/bevel.rs` 291).
-(`spatial/spatial_object.rs` 535 and `spatial/glyph.rs` 331 are outside the
-three devices and stay as they are.)
-### Names
-Plural files, folders and types in `device/blend` are singular or take a
-collective: `anim/{channel,driver_list,handle}`, `file/{name,reader,kind}`,
-`read/mesh/{attr,face,group,normal,offset,position}`, `read/scene/{prop,kind}`,
-`read/text/{character,font/name}`, `read/object/instance_member`,
-`modifier/{merge_vertex,node*,solidify_crease,solidify_normal}`,
-`shade/{link,map,node,slot}`, `write/key`, `write/script/{chunk,helper,kind}`;
-types `BlendDriverList`, `BlendEditList`, `BlendSceneProp`, `BFaceList`,
-`BNlaStackList`, `BModifierDriverList`, `PhxChunkList`, ... (36 in all, see git
-history). Kept on purpose: `physics` and `multires` are not plurals (an
-uncountable noun, a contraction), and every folder's `jobs.md` is the repo's
-status-file name.
-## Left for phase 3
-- **PHX device**: `export/phx*`, `import/phx.rs`, `export/scene*`, `project.rs`
-  into `device/phx/`; `read/asset/phx.rs` (`.phx` sidecar, called by
-  `BlendScene::write_sidecar`) and `import/usd.rs::write_phx_sidecar` into
-  `device/phx/sidecar.rs`; `PhxChunkList` (now in `device/blend/write/script/`)
-  belongs with the PHX scene.
-- **`scene/`**: trim to `SceneModel`. What is Blender reading and moves to
-  `device/blend/read/scene/`: `scene/import.rs`, `import_extras.rs`,
-  `progressive*.rs`, `build.rs` (`SceneModel::from_blend_owned`,
-  `from_blend_progressive`), `rig.rs`, `motion.rs`, `collection.rs`,
-  `relation.rs`, `share.rs`-style Blender glue. `scene/corners.rs`, `extras.rs`,
-  `types_ext.rs` and `tests_types.rs` still have plural or `tests_` names.
-- **`Phx` delegation**: `Phx::open*`, `open_bytes*`, `open_progressive`, `peek*`
-  and `detect` still call `device::blend::open::*`, `BlendFile` and
-  `FileFormat`; they should ask `DeviceList` (`detect` by head then extension,
-  then `device.read`), with `Phx::use_skinner`/`modifiers` going through the
-  Blend device. `FileFormat::detect` does not know `.blend` (by extension only).
-- **Remaining names and tests**: `phx_tests.rs` and `scene/*_tests*.rs` into
-  `test/` folders; `export/scene/types.rs`, `export/phx` plural names; the
-  generic `import/*`/`export/*` stay as they are.
-- **Shims**: once `phiber` and the examples use `device::blend` paths, drop
-  `src/blend.rs`, `src/export/blend.rs` and the old USD shims.
+## Shims
+
+Removed: `src/blend.rs`, `src/export/blend.rs`, `import::usd`, `export::usd`.
+`phiber`, `phipro`, the examples, tests and benches use `phiphx::device::{blend,usd}`
+paths. Kept on purpose: `phiphx::scene::{build,collection,motion,progressive,relation,rig}`
+and the `SceneModel` types they define are re-exported from `scene/` so
+`phiphx::scene::*` paths hold; `export::*` still re-exports the PHX scene types
+(`PhxScene`, `PhxMesh`, ...) and `lib.rs` still re-exports `project`, so
+`phiphx::PhxScene` and `phiphx::project::ProjectScaffold` resolve.
+
+## Untouched
+
+glTF (`import/gltf*`, `export/gltf*`), PLY, OBJ (`import/format.rs`), STL, PCD,
+LAS, XYZ, JSON/binary point cloud exports, and the shared pieces `cloud`, `geom`,
+`format`, `sky`, `spatial`, `uv`, `comp`, `import/asset.rs`. Only their plural
+names and inline tests changed (`cloud/{method,data}.rs`, `export/gltf/buffer.rs`,
+`geom/bound.rs`, `test/` folders).

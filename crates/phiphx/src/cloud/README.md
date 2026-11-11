@@ -3,7 +3,7 @@
 Point clouds: the `PointCloud` type, statistics and layout adapters,
 serde, and the mesh → cloud sampling configuration.
 
-Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../phx.rs); this folder is one of its parts.
 
 ## Files
 

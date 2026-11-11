@@ -4,7 +4,7 @@ Point cloud importer.
 
 Handles importing 3D formats (USD, glTF, OBJ) and converting to point clouds.
 
-Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its parts.
+Callers enter through [`phx::Phx`](../phx.rs); this folder is one of its parts.
 
 ## Files
 
