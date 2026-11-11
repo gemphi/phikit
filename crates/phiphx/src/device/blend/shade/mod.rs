@@ -14,6 +14,7 @@ pub mod bake;
 pub(crate) mod blend;
 pub mod driver;
 pub(crate) mod driver_read;
+pub(crate) mod emit;
 pub(crate) mod eval;
 pub(crate) mod links;
 pub(crate) mod maps;

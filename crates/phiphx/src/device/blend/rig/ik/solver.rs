@@ -4,7 +4,8 @@
 //! plane first.
 
 use super::jacobian::BJacobian;
-use super::segment::{BIkMath, BSegment};
+use super::rotation::BIkMath;
+use super::segment::BSegment;
 use glam::{DMat3, DVec3};
 
 /// A goal on a segment's tip.
@@ -227,7 +228,7 @@ impl BIkSolver {
             for i in 0..self.segs[s].num_dof {
                 if clamp[i] && !self.segs[s].locked[i] {
                     let absdelta = delta[i].abs();
-                    if absdelta < super::segment::IK_EPSILON {
+                    if absdelta < super::rotation::IK_EPSILON {
                         self.segs[s].lock(i, &mut self.jacobian, &delta);
                         locked = true;
                     } else if absdelta < minabsdelta {
