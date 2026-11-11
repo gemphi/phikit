@@ -4,10 +4,10 @@
 //! `curve_bevel.cc`) swept along every bevel list ([`super::sweep`]), and
 //! then the flat fill (`curve_to_filledpoly`, `bevels_to_filledpoly`).
 
-use super::bevlist::{bezier_points, TBevList};
-use super::fill::triangulate;
-use super::sweep::{sweep, TSplineInfo};
-use super::{BText, TNurb, TSpline, CU_3D, CU_BACK, CU_FRONT};
+use crate::device::blend::read::text::bevlist::{bezier_points, TBevList};
+use crate::device::blend::read::text::fill::triangulate;
+use crate::device::blend::read::text::sweep::{sweep, TSplineInfo};
+use crate::device::blend::read::text::{BText, TNurb, TSpline, CU_3D, CU_BACK, CU_FRONT};
 use glam::{Vec2, Vec3};
 
 /// `DispList.type`.

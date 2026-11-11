@@ -5,9 +5,9 @@
 
 use std::io::{Cursor, Read};
 
-use super::error::UsdaError;
-use super::read::UsdaParser;
-use super::stage::UsdStage;
+use crate::device::usd::error::UsdaError;
+use crate::device::usd::read::UsdaParser;
+use crate::device::usd::stage::UsdStage;
 
 mod mesh;
 

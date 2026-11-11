@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::read::scene::movie::*;
 
 #[test]
 fn a_movie_is_named_after_its_range_and_container() {

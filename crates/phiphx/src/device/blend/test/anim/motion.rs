@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::anim::motion::*;
 use crate::device::blend::anim::fcurve::BKey;
 
 fn located(x: f32) -> ObjectTransformRaw {

@@ -8,7 +8,7 @@
 //! STEP 3 ([`autohole`]) and the flat STEP 4 ([`cosines`]) serve curve
 //! objects too, whose lists come from `blend/curve/bevel`.
 
-use super::{BText, TNurb, TSpline, HD_VECT};
+use crate::device::blend::read::text::{BText, TNurb, TSpline, HD_VECT};
 use crate::device::blend::rig::math::BVec3;
 use glam::Vec3;
 

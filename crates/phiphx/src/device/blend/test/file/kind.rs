@@ -1,6 +1,6 @@
 //! Primary-object selection tests (split from `types.rs`).
 
-use super::*;
+use crate::device::blend::file::kind::*;
     use proptest::prelude::*;
 
     /// Build a minimal `BlendSceneObject` with the given name and vertex count.

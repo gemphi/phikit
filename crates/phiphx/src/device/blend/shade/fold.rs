@@ -14,9 +14,9 @@
 //! The same nodes emitted to a Base Color bake (`bake.rs`): the colour
 //! ones as ops, the rest as the constant they fold to when exact.
 
-use super::bake::{BBakeOp, BlendBake};
-use super::eval::{BGraph, BVal};
-use super::{scalar, sepcomb, vector};
+use crate::device::blend::shade::bake::{BBakeOp, BlendBake};
+use crate::device::blend::shade::eval::{BGraph, BVal};
+use crate::device::blend::shade::{scalar, sepcomb, vector};
 use crate::device::blend::file::kind::BlendBlock;
 
 /// `eCustomDataType`: `CD_PROP_FLOAT3`, a Map Range over vectors.

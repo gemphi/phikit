@@ -3,8 +3,8 @@
 
 use glam::{Mat4, Quat, Vec3};
 
-use super::attribute::UsdValue;
-use super::prim::UsdPrim;
+use crate::device::usd::attribute::UsdValue;
+use crate::device::usd::prim::UsdPrim;
 
 /// Composes `xformOp:*` attributes on a prim into a single `Mat4`.
 pub struct XformResolver;

@@ -7,8 +7,8 @@
 //! curvature at each end — solved and then held inside the neighbours'
 //! values (`tridiagonal_solve_with_limits`, the auto-clamp).
 
-use super::fcurve::{BKey, HANDLE_AUTO, HANDLE_AUTO_ANIM, HANDLE_VECT};
-use super::tridiagonal::BSystem;
+use crate::device::blend::anim::fcurve::{BKey, HANDLE_AUTO, HANDLE_AUTO_ANIM, HANDLE_VECT};
+use crate::device::blend::anim::tridiagonal::BSystem;
 
 /// The smoothing pass over one curve's keys.
 pub struct BSmooth;

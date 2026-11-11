@@ -3,8 +3,8 @@
 //! a Bézier point for every on-curve point and for every virtual one
 //! between two conic controls, scaled by the font's `metrics.scale`.
 
-use super::font::{BGlyph, BTag};
-use super::{TBez, HD_ALIGN, HD_FREE, HD_VECT};
+use crate::device::blend::read::text::font::{BGlyph, BTag};
+use crate::device::blend::read::text::{TBez, HD_ALIGN, HD_FREE, HD_VECT};
 use glam::Vec3;
 
 /// `VChar`: a character's splines and advance (`che->width`), in the

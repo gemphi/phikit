@@ -125,7 +125,7 @@ pub struct BlendMaterial {
     pub bake: Option<crate::device::blend::shade::bake::BlendBake>,
 }
 
-pub use super::bsdf::BlendBsdf;
+pub use crate::device::blend::read::scene::bsdf::BlendBsdf;
 
 impl crate::MeshSource for BlendSceneObject {
     fn name(&self) -> &str {

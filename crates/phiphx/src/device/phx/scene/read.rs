@@ -1,6 +1,6 @@
 //! PHX scene binary deserialization.
 
-use super::part::{PHX_SCENE_MAGIC, PhxScene};
+use crate::device::phx::scene::part::{PHX_SCENE_MAGIC, PhxScene};
 use crate::{PointCloudError, Result};
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::io::Read;

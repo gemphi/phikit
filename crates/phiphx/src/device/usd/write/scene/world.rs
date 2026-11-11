@@ -1,6 +1,6 @@
 //! `SceneWorld` as a `DomeLight`.
-use super::out::UsdOut;
-use super::text::UsdText;
+use crate::device::usd::write::scene::out::UsdOut;
+use crate::device::usd::write::scene::text::UsdText;
 use crate::scene::SceneWorld;
 
 /// Writes the world's light.

@@ -3,8 +3,8 @@
 //! (nothing is merged), a swept list's grid becomes quads, a fill its
 //! triangles, and an unfilled outline loose edges.
 
-use super::displist::{TDispList, TDlKind, DL_CYCL_U, DL_CYCL_V};
-use super::{TMesh, CU_3D, CU_BACK, CU_FRONT};
+use crate::device::blend::read::text::displist::{TDispList, TDlKind, DL_CYCL_U, DL_CYCL_V};
+use crate::device::blend::read::text::{TMesh, CU_3D, CU_BACK, CU_FRONT};
 
 pub fn from_displist(flag: u32, disp: &[TDispList]) -> TMesh {
     // 2D polys are filled as `DL_INDEX3`; an unfilled text keeps them.

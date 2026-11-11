@@ -1,5 +1,5 @@
 //! Euler rotations in Blender's six orders (`math_rotation_c.cc`).
-use super::vec::BMat3;
+use crate::device::blend::rig::math::vec::BMat3;
 use glam::{Mat3, Mat4, Vec3};
 
 /// A rotation order, `eRotationModes` 1–6 (`ROT_MODE_XYZ` … `ZYX`); the

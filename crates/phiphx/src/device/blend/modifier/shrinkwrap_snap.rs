@@ -1,9 +1,9 @@
 //! Where a hit becomes a position: `BKE_shrinkwrap_snap_point_to_surface`
 //! and its helpers in Blender's `shrinkwrap.cc`, translated.
 
-use super::math::{interp, interp_weights_tri, normalize};
-use super::tree::Target;
-use super::Space;
+use crate::device::blend::modifier::shrinkwrap::math::{interp, interp_weights_tri, normalize};
+use crate::device::blend::modifier::shrinkwrap::tree::Target;
+use crate::device::blend::modifier::shrinkwrap::Space;
 use glam::Vec3;
 
 /// `eShrinkwrapModifierMode`.

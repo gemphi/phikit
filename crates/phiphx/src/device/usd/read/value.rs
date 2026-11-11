@@ -2,9 +2,9 @@
 //! variants. Scalar and inferred-type parsing lives here; array/tuple readers
 //! are in the sibling `arrays` module.
 
-use super::super::attribute::UsdValue;
-use super::super::error::UsdaError;
-use super::UsdaParser;
+use crate::device::usd::attribute::UsdValue;
+use crate::device::usd::error::UsdaError;
+use crate::device::usd::read::UsdaParser;
 
 impl<'a> UsdaParser<'a> {
     /// Parse a value based on the declared type hint.

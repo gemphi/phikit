@@ -1,7 +1,7 @@
 //! What every placed prim opens with: its name, its transform, its visibility.
-use super::name::UsdName;
-use super::out::UsdOut;
-use super::text::UsdText;
+use crate::device::usd::write::scene::name::UsdName;
+use crate::device::usd::write::scene::out::UsdOut;
+use crate::device::usd::write::scene::text::UsdText;
 
 /// The common start of an Xform, camera or light prim.
 pub(crate) struct UsdHead {

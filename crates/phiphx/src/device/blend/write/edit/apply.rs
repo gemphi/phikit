@@ -1,5 +1,5 @@
 //! `BlendEditList::apply`: the session's edits written through the file.
-use super::*;
+use crate::device::blend::write::edit::*;
 
 impl BlendEditList {
     /// Write the edits through `file`.

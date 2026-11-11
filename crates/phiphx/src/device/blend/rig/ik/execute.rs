@@ -1,5 +1,5 @@
 //! Running a tree: `iksolver_execute_tree`, `execute_posetree` and laying the change back.
-use super::*;
+use crate::device::blend::rig::ik::*;
 
 impl BPoseWork<'_> {
     /// `iksolver_execute_tree` for one tree: the chain posed as without IK,

@@ -20,7 +20,7 @@
 //! instance's links land on the same sockets and the first instance's
 //! win. Groups nest to [`MAX_DEPTH`].
 
-use super::link::BLink;
+use crate::device::blend::shade::link::BLink;
 use crate::device::blend::file::kind::*;
 
 /// Groups within groups within groups: how deep the expansion goes.

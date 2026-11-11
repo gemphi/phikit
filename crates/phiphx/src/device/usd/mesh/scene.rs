@@ -8,7 +8,7 @@
 use crate::Result;
 use crate::{Mesh, SubjectSelector};
 
-use super::UsdImporter;
+use crate::device::usd::mesh::UsdImporter;
 
 /// A parsed USD scene: the extracted per-prim meshes plus the same
 /// primary/active-subject selection semantics used by the blend importer.

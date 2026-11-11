@@ -4,9 +4,9 @@
 //! fan-triangulated: `scene/import.rs`), so the layer carries triangles and
 //! `subdivisionScheme = "none"`; letting USD subdivide again would apply the
 //! modifier twice.
-use super::material::MaterialBook;
-use super::out::UsdOut;
-use super::text::UsdText;
+use crate::device::usd::write::scene::material::MaterialBook;
+use crate::device::usd::write::scene::out::UsdOut;
+use crate::device::usd::write::scene::text::UsdText;
 use crate::scene::{SceneMesh, SceneNormalList, SceneObject};
 use std::collections::BTreeSet;
 

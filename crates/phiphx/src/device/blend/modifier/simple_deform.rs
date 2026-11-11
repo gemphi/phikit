@@ -11,8 +11,8 @@
 //! divided by the limited extent, so the deform is the same however large
 //! the mesh is.
 
-use super::driver::BModValue;
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::driver::BModValue;
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::file::kind::*;
 use glam::{Mat4, Vec3};
 

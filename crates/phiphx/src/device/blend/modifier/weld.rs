@@ -7,8 +7,8 @@
 //! order-independent the way Blender's is. Not yet: the vertex-group filter
 //! and the `loose_edges` option.
 
-use super::{BModifier, BlendEvalMesh, EvalCtx};
-use super::driver::BModValue;
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::driver::BModValue;
 use crate::device::blend::file::kind::*;
 use glam::Vec3;
 

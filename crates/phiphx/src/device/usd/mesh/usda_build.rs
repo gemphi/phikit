@@ -4,7 +4,7 @@
 //! `faceVertexCounts`/`faceVertexIndices` into either point-cloud vertices
 //! or full `Mesh` records, preserving the original behaviour exactly.
 
-use super::UsdImporter;
+use crate::device::usd::mesh::UsdImporter;
 use crate::{Mesh, MeshToCloudConfig};
 use crate::{PointCloud, Vertex};
 

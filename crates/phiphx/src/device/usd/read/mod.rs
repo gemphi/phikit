@@ -14,8 +14,8 @@ pub mod scene;
 mod skip;
 mod value;
 
-use super::error::UsdaError;
-use super::stage::UsdStage;
+use crate::device::usd::error::UsdaError;
+use crate::device::usd::stage::UsdStage;
 
 /// A hand-written recursive-descent parser over USDA text.
 ///

@@ -8,7 +8,7 @@
 //! `bNode.custom1` — with each
 //! socket's default from `node_shader_tex_*.cc` when the file lacks it.
 
-use super::procedural::BProcFinder;
+use crate::device::blend::shade::procedural::BProcFinder;
 use crate::device::blend::file::kind::*;
 
 /// What the texture is and the output read (`Proc::kind` in the tracer).

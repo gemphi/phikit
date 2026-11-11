@@ -21,7 +21,7 @@
 //! which object's scope was ambient when the modifier was read; and the DNA
 //! does not change for the life of a [`BlendFile`].
 
-use super::armature::BDeformBone;
+use crate::device::blend::modifier::armature::BDeformBone;
 use crate::device::blend::file::kind::*;
 use std::collections::HashMap;
 use std::sync::Arc;

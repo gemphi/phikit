@@ -1,4 +1,4 @@
-use super::BlendBsdf;
+use crate::device::blend::read::scene::bsdf::BlendBsdf;
 
 fn f0(eta: f32) -> f32 {
     ((eta - 1.0) / (eta + 1.0)).powi(2)

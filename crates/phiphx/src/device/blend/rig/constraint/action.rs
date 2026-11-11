@@ -2,7 +2,7 @@
 //! action's pose of this bone, at a frame picked by one of the target's
 //! channels (or a fixed evaluation time), mixed into the owner.
 
-use super::{BCob, BConstraint, BConstraintHost, BTarget};
+use crate::device::blend::rig::constraint::{BCob, BConstraint, BConstraintHost, BTarget};
 use crate::device::blend::anim::fcurve::BFCurve;
 use crate::device::blend::read::object::transform::ObjectTransformRaw;
 use crate::device::blend::rig::driver::{BRnaPath, BRnaStep};

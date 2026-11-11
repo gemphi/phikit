@@ -3,10 +3,10 @@
 //! `tests/fixtures/make_smooth_by_angle.py`'s Blender) over a cube, and
 //! the corner normals Blender draws the result with.
 
-use super::node::from_parts;
-use super::node_corner::{corner_normals, safe_acos_approx};
-use super::node_field::{BCompare, BInput};
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::node::from_parts;
+use crate::device::blend::modifier::node_corner::{corner_normals, safe_acos_approx};
+use crate::device::blend::modifier::node_field::{BCompare, BInput};
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::shade::graph::{BlendNode, BlendNodeGraph, BlendNodeLink};
 use crate::device::blend::shade::socket::{BSocketDefault, BlendSocket};
 use std::collections::HashMap;

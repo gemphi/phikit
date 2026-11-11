@@ -1,6 +1,6 @@
 //! Mesh/scene → USDA exporter
 
-use super::UsdaWriter;
+use crate::device::usd::write::UsdaWriter;
 use crate::Result;
 use std::fmt::Write as FmtWrite;
 

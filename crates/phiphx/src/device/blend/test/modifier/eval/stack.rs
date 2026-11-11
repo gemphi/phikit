@@ -1,9 +1,9 @@
 //! Array, Triangulate and Solidify: modifiers that rebuild the face list.
 
-use super::super::array::BArray;
-use super::super::solidify::BSolidify;
-use super::super::triangulate::BTriangulate;
-use super::{eval, quad};
+use crate::device::blend::modifier::array::BArray;
+use crate::device::blend::modifier::solidify::BSolidify;
+use crate::device::blend::modifier::triangulate::BTriangulate;
+use crate::device::blend::modifier::eval_test::{eval, quad};
 
 #[test]
 fn array_repeats_the_mesh_and_everything_that_travels_with_it() {
@@ -156,7 +156,7 @@ fn solidify_copies_the_creases_to_the_shell_and_writes_the_rims() {
     // `MOD_solidify_extrude.cc`: the shell copies every crease, then the rim
     // adds `crease_outer` / `crease_inner` to the open edge and its copy
     // (held to 1) and sets `crease_rim` on each edge across the gap.
-    use super::super::solidify::BSolidifyCreaseList;
+    use crate::device::blend::modifier::solidify::BSolidifyCreaseList;
     let mut m = quad();
     m.edge_creases = vec![(0, 1, 0.5)];
     m.vert_creases = vec![0.9, 0.0, 0.0, 0.0];
@@ -214,8 +214,8 @@ fn the_colour_attribute_rides_the_stack_as_the_uvs_do() {
 /// outline, a closed cube has none, and an edge three faces share is not one.
 #[test]
 fn the_boundary_is_the_edges_one_face_uses() {
-    use super::super::geom::boundary;
-    use super::super::BlendEvalMesh;
+    use crate::device::blend::modifier::geom::boundary;
+    use crate::device::blend::modifier::BlendEvalMesh;
     // Two quads side by side: six outline edges, the shared one left out.
     let two = BlendEvalMesh {
         vertices: vec![[0., 0., 0.], [1., 0., 0.], [2., 0., 0.], [0., 1., 0.], [1., 1., 0.], [2., 1., 0.]],

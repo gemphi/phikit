@@ -13,9 +13,9 @@
 //! *"due to floating point precision it is required for the output to be
 //! the same as previous versions"*.
 
-use super::BlendEvalMesh;
-use super::node_corner::{V3, dot, safe_acos_approx, sub};
-use super::node_corner::normalize;
+use crate::device::blend::modifier::BlendEvalMesh;
+use crate::device::blend::modifier::node_corner::{V3, dot, safe_acos_approx, sub};
+use crate::device::blend::modifier::node_corner::normalize;
 use std::collections::HashSet;
 
 /// One corner of the vertex being fanned (`VertCornerInfo`).

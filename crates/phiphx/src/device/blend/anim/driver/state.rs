@@ -9,9 +9,9 @@
 //! which is the ordering Blender's depsgraph gives — custom property first,
 //! then whatever reads it.
 
-use super::pass::{BDriverPropMap, BDriverRun};
-use super::space::BDriverWorld;
-use super::var::BlendDriverScene;
+use crate::device::blend::anim::driver::pass::{BDriverPropMap, BDriverRun};
+use crate::device::blend::anim::driver::space::BDriverWorld;
+use crate::device::blend::anim::driver::var::BlendDriverScene;
 use crate::device::blend::anim::motion::BlendMotionList;
 use crate::device::blend::read::object::transform::ObjectTransformRaw;
 use std::collections::HashMap;

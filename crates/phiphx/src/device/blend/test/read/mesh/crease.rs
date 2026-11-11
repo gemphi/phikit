@@ -1,4 +1,4 @@
-use super::edge_verts_are_good;
+use crate::device::blend::read::mesh::crease::edge_verts_are_good;
 
 /// Blender's `find_edges_bad_verts`, rule for rule. Before this, an edge
 /// naming vertex 24 of a 24-vertex mesh reached the modifier stack and

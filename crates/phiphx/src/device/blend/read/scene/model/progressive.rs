@@ -13,9 +13,9 @@
 //! was evaluated into (`rig.rs`), and those are only known here, so the swap
 //! hands them to the rig as well.
 
-use super::object::{STriangleList, evaluated_object_and_tris};
-use super::share::shared_object;
-use super::progressive_link::{parent_links, vertex_parent_of};
+use crate::device::blend::read::scene::model::object::{STriangleList, evaluated_object_and_tris};
+use crate::device::blend::read::scene::model::share::shared_object;
+use crate::device::blend::read::scene::model::progressive_link::{parent_links, vertex_parent_of};
 use crate::scene::{SceneModel, SceneObject};
 use crate::device::blend::{BlendScene, BlendSceneObject, DeferredRaw, apply_eval_jobs, vertex_children_worlds};
 use std::sync::Arc;

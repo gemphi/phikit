@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::shade::surface::*;
 
 #[test]
 fn mixing_lerps_and_adding_sums() {

@@ -5,7 +5,7 @@
 //! turn into a matrix. A pose channel has no delta transforms, so its raw
 //! keeps the defaults there.
 
-use super::fcurve::BFCurve;
+use crate::device::blend::anim::fcurve::BFCurve;
 use crate::device::blend::file::kind::*;
 use crate::device::blend::read::object::transform::ObjectTransformRaw;
 

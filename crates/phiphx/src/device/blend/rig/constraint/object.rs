@@ -4,7 +4,7 @@
 //! other rigs' bones, read through the scene around it; its local space is
 //! its parent's world through `parentinv`, or its own rotation.
 
-use super::{BCob, BConstraint, BConstraintHost, BConstraintKind, BConstraintStack, BTarget};
+use crate::device::blend::rig::constraint::{BCob, BConstraint, BConstraintHost, BConstraintKind, BConstraintStack, BTarget};
 use crate::device::blend::anim::fcurve::BFCurve;
 use crate::device::blend::rig::driver::{BRnaPath, BRnaStep};
 use crate::device::blend::rig::space::BSpaceOwner;

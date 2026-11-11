@@ -3,9 +3,9 @@
 //! with joint limits locked in turn, a pole target turning the chain's
 //! plane first.
 
-use super::jacobian::BJacobian;
-use super::rotation::BIkMath;
-use super::segment::BSegment;
+use crate::device::blend::rig::ik::jacobian::BJacobian;
+use crate::device::blend::rig::ik::rotation::BIkMath;
+use crate::device::blend::rig::ik::segment::BSegment;
 use glam::{DMat3, DVec3};
 
 /// A goal on a segment's tip.

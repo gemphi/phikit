@@ -1,6 +1,6 @@
 //! `.blend` reader tests against Blender's upstream `tests/files`.
 
-    use super::*;
+    use crate::device::blend::*;
     use std::path::{Path, PathBuf};
 
     /// Root of Blender's upstream test files (`tests/files`) inside REFS.

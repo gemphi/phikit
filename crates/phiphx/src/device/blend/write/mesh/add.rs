@@ -1,5 +1,5 @@
 //! Adding a mesh block to the file, from the file's own template mesh.
-use super::*;
+use crate::device::blend::write::mesh::*;
 
 impl BlendFile {
     /// Whether this file's meshes are ones the writer can add to.

@@ -16,8 +16,8 @@
 //!
 //! Creases are not taken into account (a smooth ring is assumed).
 
-use super::super::topology::Topology;
-use super::super::BlendEvalMesh;
+use crate::device::blend::modifier::topology::Topology;
+use crate::device::blend::modifier::BlendEvalMesh;
 use std::f64::consts::PI;
 
 pub(super) type D3 = [f64; 3];

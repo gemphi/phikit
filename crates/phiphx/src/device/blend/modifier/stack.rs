@@ -1,5 +1,5 @@
 //! A mesh object's modifier stack, read from the file in stack order.
-use super::*;
+use crate::device::blend::modifier::*;
 
 impl BlendFile {
     /// Enabled viewport modifiers of `ob`, in stack order (supported ones).

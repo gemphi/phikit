@@ -1,7 +1,7 @@
 //! USD stage — the root container that composes layers into a prim hierarchy.
 
-use super::prim::UsdPrim;
-use super::write::UsdaPrinter;
+use crate::device::usd::prim::UsdPrim;
+use crate::device::usd::write::UsdaPrinter;
 
 /// A USD stage: the composed scene rooted at a default prim, with stage
 /// metadata (up axis, meters-per-unit).

@@ -14,9 +14,9 @@
 //! time), never through either object's current world, so moving the
 //! target object moves nothing — only its mesh does.
 
-use super::driver::BModValue;
-use super::surface_deform_read::{BSdefVert, count, read_binds};
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::driver::BModValue;
+use crate::device::blend::modifier::surface_deform_read::{BSdefVert, count, read_binds};
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::file::kind::*;
 use glam::{Mat4, Vec3};
 use std::sync::Arc;

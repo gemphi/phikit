@@ -6,8 +6,8 @@
 //! Not yet: bisect, clipping (an edit-mode option).
 
 use crate::device::blend::file::kind::*;
-use super::driver::BModValue;
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::driver::BModValue;
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use glam::{Mat4, Vec3};
 
 const AXIS_X: u32 = 1 << 3;

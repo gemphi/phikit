@@ -6,8 +6,8 @@
 //! field, with the reader's own guards still applied, and that a setting with
 //! no field to land in says so instead of being dropped.
 
-use super::driver::BModValue;
-use super::{BModifier, array, displace, lattice, mirror, solidify, subsurf, triangulate, weld};
+use crate::device::blend::modifier::driver::BModValue;
+use crate::device::blend::modifier::{BModifier, array, displace, lattice, mirror, solidify, subsurf, triangulate, weld};
 
 fn f(v: f32) -> BModValue {
     BModValue::Float(v)

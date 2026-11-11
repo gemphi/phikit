@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::write::edit::*;
 
 #[test]
 fn the_edits_land_in_the_file_and_read_back_through_the_scene_reader() {

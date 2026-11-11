@@ -4,10 +4,10 @@
 //! `Arc<SceneMesh>` (`scene/share.rs`); here that sharing becomes USD native
 //! instancing: one `Xform` under `/World/Prototype` that every user
 //! references with `instanceable = true`.
-use super::material::MaterialBook;
-use super::mesh::UsdMesh;
-use super::name::{UsdName, UsdNameBook};
-use super::out::UsdOut;
+use crate::device::usd::write::scene::material::MaterialBook;
+use crate::device::usd::write::scene::mesh::UsdMesh;
+use crate::device::usd::write::scene::name::{UsdName, UsdNameBook};
+use crate::device::usd::write::scene::out::UsdOut;
 use crate::scene::SceneModel;
 use std::collections::HashMap;
 use std::sync::Arc;

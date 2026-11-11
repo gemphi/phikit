@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::read::object::visibility::*;
 
 #[test]
 fn the_bits_are_blenders() {

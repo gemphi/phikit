@@ -13,7 +13,7 @@
 //!
 //! [`anim::driver::socket`]: crate::device::blend::anim::driver::socket
 
-use super::world::BlendWorld;
+use crate::device::blend::shade::world::BlendWorld;
 use crate::device::blend::anim::driver::{BDriverSocket, BlendDriver, BlendDriverScene, socket_clamp};
 
 /// The node a world's background is read from (`world.rs`).

@@ -3,10 +3,10 @@
 //! rigs' poses — and the object half of `BKE_constraint_mat_convertspace`
 //! ([`BObjectSpace`]).
 
-use super::constraint::BTarget;
+use crate::device::blend::rig::constraint::BTarget;
 use crate::device::blend::read::curve::BPathAt;
-use super::math::BMat4;
-use super::space::{BRigSpace, BSpaceOwner, SPACE_CUSTOM, SPACE_LOCAL, SPACE_WORLD};
+use crate::device::blend::rig::math::BMat4;
+use crate::device::blend::rig::space::{BRigSpace, BSpaceOwner, SPACE_CUSTOM, SPACE_LOCAL, SPACE_WORLD};
 use glam::{Mat4, Vec3};
 
 /// The scene around a constraint's owner, by object block address.

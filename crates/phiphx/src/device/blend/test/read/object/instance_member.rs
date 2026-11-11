@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::read::object::instance_member::*;
 
 #[test]
 fn only_a_shown_collection_instancer_generates() {

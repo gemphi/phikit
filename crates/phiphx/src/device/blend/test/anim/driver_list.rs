@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::anim::driver_list::*;
 
 fn curve(path: &str) -> BFCurve {
     BFCurve::new(path, 0, Vec::new())

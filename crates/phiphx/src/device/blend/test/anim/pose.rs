@@ -5,7 +5,7 @@
 //! `matrix_basis` (`PBB`), which is the F-curves and `BKE_pchan_to_mat4`
 //! alone.
 
-use super::pose::{bases_at, poses_at};
+use crate::device::blend::anim::pose::{bases_at, poses_at};
 use crate::device::blend::file::kind::BlendFile;
 use glam::Mat4;
 use std::collections::HashMap;

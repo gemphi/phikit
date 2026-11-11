@@ -6,8 +6,8 @@
 //! `autohole`); STEP 4 a 3D curve's rotations by its twist method,
 //! smoothed and tilted ([`super::orient`]), or a flat one's 2D cosines.
 
-use super::bevel::BBevelList;
-use super::{BCurve, CU_3D, CU_BEZIER, CU_NURBS, CU_POLY, CU_TWIST_TANGENT};
+use crate::device::blend::read::curve::bevel::BBevelList;
+use crate::device::blend::read::curve::{BCurve, CU_3D, CU_BEZIER, CU_NURBS, CU_POLY, CU_TWIST_TANGENT};
 use crate::device::blend::rig::math::BQuat;
 use crate::device::blend::read::text::bevlist::{autohole, cosines, TBevList, TBevPoint};
 

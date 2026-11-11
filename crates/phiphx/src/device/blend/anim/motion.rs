@@ -9,9 +9,9 @@
 //! — its rest transform — so a child of an animated parent moves with it.
 //! Constraints and bone parents are solved with it ([`follow`](super::follow)).
 
-use super::channel;
-use super::fcurve::BFCurve;
-use super::read::BAction;
+use crate::device::blend::anim::channel;
+use crate::device::blend::anim::fcurve::BFCurve;
+use crate::device::blend::anim::read::BAction;
 use crate::device::blend::file::kind::*;
 use crate::device::blend::modifier::armature::name64;
 use crate::device::blend::read::object::transform::{ObjectTransformRaw, compose_world, object_to_mat4};

@@ -2,7 +2,7 @@
 //! Maintain Volume (`rotlimit_evaluate`, `distlimit_evaluate`,
 //! `loclimit_evaluate`, `sizelimit_evaluate`, `samevolume_evaluate`).
 
-use super::BCob;
+use crate::device::blend::rig::constraint::BCob;
 use crate::device::blend::rig::math::{BCompose, BEulerOrder, BMat4};
 use glam::{Mat4, Vec3};
 

@@ -14,8 +14,8 @@
 //! so the triangles cannot be kept from the open — each frame builds its
 //! own `STriangleList` and `SceneMesh`.
 
-use super::driver::{BModValue, BModWrite};
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::driver::{BModValue, BModWrite};
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::file::kind::*;
 use glam::Mat4;
 use std::collections::HashMap;

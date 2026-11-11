@@ -11,7 +11,7 @@ mod writer;
 
 pub use writer::UsdaWriter;
 
-use super::stage::{UsdStage, UsdUpAxis};
+use crate::device::usd::stage::{UsdStage, UsdUpAxis};
 
 pub use value::print_value;
 

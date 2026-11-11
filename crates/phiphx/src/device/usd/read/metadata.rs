@@ -1,8 +1,8 @@
 //! Stage metadata parsing — populates `UsdStage` fields from the `( ... )`
 //! metadata block that follows the `#usda 1.0` header.
 
-use super::super::stage::{UsdStage, UsdUpAxis};
-use super::UsdaParser;
+use crate::device::usd::stage::{UsdStage, UsdUpAxis};
+use crate::device::usd::read::UsdaParser;
 
 impl<'a> UsdaParser<'a> {
     /// Parse the stage metadata block (already past the opening `(`).

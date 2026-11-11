@@ -1,5 +1,5 @@
 //! A mesh's geometry as the file's Blender stores it: attribute storage (5.0) or custom-data layers.
-use super::*;
+use crate::device::blend::write::mesh::*;
 
 impl BlendFile {
     /// Blender 5.0: `Mesh.attribute_storage`.

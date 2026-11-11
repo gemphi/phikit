@@ -1,5 +1,5 @@
 //! Reading B-Bone properties from the file.
-use super::*;
+use crate::device::blend::modifier::bbone::*;
 
 impl BlendFile {
     fn f3(&self, b: &BlendBlock, st: &str, field: &str, dna: &DnaType) -> Vec3 {

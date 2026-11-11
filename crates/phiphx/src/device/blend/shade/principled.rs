@@ -3,7 +3,7 @@
 //! (`surface.rs`; the first in the tree when none does). Socket names
 //! follow Blender 4.x, with the 2.8–3.x spellings as aliases.
 
-use super::node::read_cstr;
+use crate::device::blend::shade::node::read_cstr;
 use crate::device::blend::file::kind::*;
 use crate::device::blend::read::scene::kind::BlendBsdf;
 

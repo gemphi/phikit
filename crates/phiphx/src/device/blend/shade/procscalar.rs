@@ -6,9 +6,9 @@
 //! as the slot's tail (`BlendMath`, `svm_math` in the kernel), a linear Map
 //! Range as the Multiply Add it is.
 
-use super::procedural::{BProcFinder, RAMP_STOPS};
-use super::texnode::BlendMath;
-use super::scalar::BScalarOp;
+use crate::device::blend::shade::procedural::{BProcFinder, RAMP_STOPS};
+use crate::device::blend::shade::texnode::BlendMath;
+use crate::device::blend::shade::scalar::BScalarOp;
 use crate::device::blend::file::kind::BlendBlock;
 
 /// `NODE_MATH_MULTIPLY_ADD`: what a linear Map Range is as a Math tail.

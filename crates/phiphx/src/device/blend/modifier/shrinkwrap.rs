@@ -24,8 +24,8 @@ mod snap;
 #[path = "shrinkwrap_tree.rs"]
 mod tree;
 
-use super::driver::BModValue;
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::driver::BModValue;
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::file::kind::*;
 use glam::{Mat3, Mat4, Vec3};
 use math::{interp, normalize};

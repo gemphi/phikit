@@ -5,7 +5,7 @@
 //! objects. What the parser does not read (time samples, value types it has
 //! no variant for) and the binary crate format go to the heuristic readers
 //! in [`super::mesh`], which are named as fallbacks and kept for those files.
-use super::UsdaParser;
+use crate::device::usd::read::UsdaParser;
 use crate::device::Source;
 use crate::device::usd::prim::UsdPrim;
 use crate::device::usd::stage::UsdStage;

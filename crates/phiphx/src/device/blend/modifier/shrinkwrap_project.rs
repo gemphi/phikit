@@ -1,10 +1,10 @@
 //! Project mode: `shrinkwrap_calc_normal_projection` and
 //! `BKE_shrinkwrap_project_normal` in Blender's `shrinkwrap.cc`, translated.
 
-use super::math::{interp, normalize, vertex_normals};
-use super::snap::snap_point_to_surface;
-use super::tree::{Hit, Target};
-use super::{BShrinkwrap, Space};
+use crate::device::blend::modifier::shrinkwrap::math::{interp, normalize, vertex_normals};
+use crate::device::blend::modifier::shrinkwrap::snap::snap_point_to_surface;
+use crate::device::blend::modifier::shrinkwrap::tree::{Hit, Target};
+use crate::device::blend::modifier::shrinkwrap::{BShrinkwrap, Space};
 use crate::device::blend::modifier::BlendEvalMesh;
 use glam::Vec3;
 

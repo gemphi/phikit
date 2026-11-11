@@ -1,7 +1,7 @@
 //! Skip helpers — balanced-delimiter skipping and statement-boundary detection
 //! for the USDA recursive-descent parser.
 
-use super::UsdaParser;
+use crate::device::usd::read::UsdaParser;
 
 impl<'a> UsdaParser<'a> {
     pub(crate) fn skip_value(&mut self) {

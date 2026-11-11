@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::phx::*;
 use crate::device::{Device, DeviceKind, DeviceList, Source};
 fn triangle() -> SceneModel {
     let mut phx = scene::PhxScene::new("Tri");

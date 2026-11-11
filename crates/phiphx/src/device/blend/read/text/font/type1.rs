@@ -4,9 +4,9 @@
 //! `eexec`-encrypted private dictionary with its `Subrs` and
 //! `CharStrings`, each charstring decrypted with its `lenIV` bytes dropped.
 
-use super::charstring;
-use super::name::unicode_of;
-use super::{BFontMetric, BGlyph};
+use crate::device::blend::read::text::font::charstring;
+use crate::device::blend::read::text::font::name::unicode_of;
+use crate::device::blend::read::text::font::{BFontMetric, BGlyph};
 use std::collections::HashMap;
 
 /// `eexec` and charstring encryption keys (Adobe Type 1 Font Format §7).

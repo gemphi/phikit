@@ -31,7 +31,7 @@
 //! subdivided mesh is not held once its second reader has it, and nothing has
 //! to clear the box afterwards.
 
-use super::BlendEvalMesh;
+use crate::device::blend::modifier::BlendEvalMesh;
 use std::collections::HashMap;
 use std::sync::Mutex;
 

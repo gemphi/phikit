@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::rig::quat::*;
 
 #[test]
 fn a_quaternion_turns_a_vector_as_its_matrix_does() {

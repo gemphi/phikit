@@ -8,7 +8,7 @@
 //! render uses — reading it instead of the graph is why our ambient light was
 //! wrong.
 
-use super::link::BLink;
+use crate::device::blend::shade::link::BLink;
 use crate::device::blend::file::kind::*;
 
 /// `NodeSkyType`: the two models this atmosphere is (`sky_single_scattering

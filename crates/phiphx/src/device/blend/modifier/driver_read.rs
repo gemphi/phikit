@@ -10,7 +10,7 @@
 //! stack keeps, because Blender writes a driven value whether or not the
 //! modifier is switched on.
 
-use super::driver::{BModDriver, BModWrite, BModifierDriverList, setting};
+use crate::device::blend::modifier::driver::{BModDriver, BModWrite, BModifierDriverList, setting};
 use crate::device::blend::file::kind::*;
 use crate::device::blend::modifier::KINDS;
 use crate::device::blend::read::scene::kind::BlendSceneObject;

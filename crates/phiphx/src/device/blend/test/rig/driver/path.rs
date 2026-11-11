@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::rig::driver::path::*;
 
 #[test]
 fn paths_split_into_fields_keys_and_indices() {

@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::modifier::cloth_disk::*;
 
 #[test]
 fn an_uncompressed_file_reads_point_by_point() {

@@ -1,6 +1,6 @@
 //! USDA (ASCII) → point cloud parser.
 
-use super::UsdImporter;
+use crate::device::usd::mesh::UsdImporter;
 use crate::MeshToCloudConfig;
 use crate::{PointCloud, Result};
 

@@ -2,7 +2,7 @@
 //! (`translike_evaluate`, `loclike_evaluate`, `rotlike_evaluate`,
 //! `sizelike_evaluate`).
 
-use super::BCob;
+use crate::device::blend::rig::constraint::BCob;
 use crate::device::blend::rig::math::{BCompose, BEulerOrder, BMat4};
 use glam::{Mat3, Mat4, Vec3};
 

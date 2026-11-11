@@ -1,9 +1,9 @@
 //! Baking: the same walk as the fold in `eval.rs`, emitting a program (`bake.rs`)
 //! instead of one value, so an image that drives a Mix's factor keeps doing
 //! so per texel instead of folding to white.
-use super::eval::{BGraph, SOCK_RGBA};
+use crate::device::blend::shade::eval::{BGraph, SOCK_RGBA};
 use crate::device::blend::file::kind::*;
-use super::bake::{BBakeImage, BBakeOp, BlendBake, IDENTITY, compose, mapping_affine};
+use crate::device::blend::shade::bake::{BBakeImage, BBakeOp, BlendBake, IDENTITY, compose, mapping_affine};
 
 impl BlendFile {
     /// The Base Color chain compiled to a bake, when it holds at least one

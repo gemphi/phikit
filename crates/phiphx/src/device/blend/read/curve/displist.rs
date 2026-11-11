@@ -5,9 +5,9 @@
 //! The sweep, the profile and the fill are the text pipeline's
 //! (`blend/text/sweep`), which is Blender's one pipeline for both.
 
-use super::bevel::BBevelList;
-use super::list::bevel_lists;
-use super::{BCurve, CU_BEZIER, CU_NURBS, CU_POLY};
+use crate::device::blend::read::curve::bevel::BBevelList;
+use crate::device::blend::read::curve::list::bevel_lists;
+use crate::device::blend::read::curve::{BCurve, CU_BEZIER, CU_NURBS, CU_POLY};
 use crate::device::blend::read::text::bevlist::forward_diff;
 use crate::device::blend::read::text::displist::{TDispList, TDlKind};
 use crate::device::blend::read::text::sweep::{sweep, TSplineInfo};

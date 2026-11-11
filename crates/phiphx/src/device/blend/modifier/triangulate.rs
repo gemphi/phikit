@@ -5,8 +5,8 @@
 //! viewport already uses to draw n-gons, so a triangulated mesh and an
 //! untriangulated one are shaded identically — which is what Blender shows.
 
-use super::{BModifier, BlendEvalMesh, EvalCtx};
-use super::driver::BModValue;
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::driver::BModValue;
 use crate::device::blend::file::kind::*;
 
 pub(crate) struct BTriangulate {

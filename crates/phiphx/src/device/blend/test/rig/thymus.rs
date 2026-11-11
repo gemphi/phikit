@@ -3,7 +3,7 @@
 //! 40, 66, 100 and 132 — after its drivers, its 330 constraints and the
 //! legs' IK — and every driver's value.
 
-use super::BRig;
+use crate::device::blend::rig::BRig;
 use crate::device::blend::file::kind::BlendFile;
 use glam::Mat4;
 use std::collections::HashMap;
@@ -124,7 +124,7 @@ fn rig_digest_of_env_file() {
 /// the var.
 #[test]
 fn rig_deform_of_env_file() {
-    use super::math::BMat4;
+    use crate::device::blend::rig::math::BMat4;
     use glam::Vec3;
     let Ok(path) = std::env::var("RIG_DEFORM") else { return };
     let frames: Vec<f32> = std::env::var("RIG_FRAMES").unwrap_or_else(|_| "1".into()).split(',').filter_map(|f| f.trim().parse().ok()).collect();

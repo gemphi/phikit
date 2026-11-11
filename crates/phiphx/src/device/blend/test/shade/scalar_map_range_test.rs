@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::shade::scalar::*;
 
 /// 0.3 of 0..1 onto 0.2..0.8 is 0.5; stepped at 4 steps floors to
 /// quarters; smoothstep eases; clamp holds an out-of-range value to

@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::phx::scene::*;
 
 #[test]
 fn test_phx_scene_roundtrip() {

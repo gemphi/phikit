@@ -2,7 +2,7 @@
 //! object as targets, the bone's spaces, the rig state's animated
 //! influences, mutes and weights, and the Action constraint.
 
-use super::{BCob, BConstraint, BConstraintHost, BConstraintKind, BConstraintStack, BTarget};
+use crate::device::blend::rig::constraint::{BCob, BConstraint, BConstraintHost, BConstraintKind, BConstraintStack, BTarget};
 use crate::device::blend::rig::solve::BPoseWork;
 use crate::device::blend::rig::space::{BSpaceOwner, SPACE_WORLD};
 use crate::device::blend::rig::view::BSceneView;

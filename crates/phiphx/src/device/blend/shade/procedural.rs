@@ -18,16 +18,16 @@
 //! The scalar nodes on the way — Math, Map Range — and the ramp's bake
 //! are `procscalar.rs`.
 
-use super::eval::BGraph;
-use super::link::BLink;
-use super::principled::BSocket;
-use super::scalar::BScalarOp;
+use crate::device::blend::shade::eval::BGraph;
+use crate::device::blend::shade::link::BLink;
+use crate::device::blend::shade::principled::BSocket;
+use crate::device::blend::shade::scalar::BScalarOp;
 use crate::device::blend::file::kind::*;
 
 /// `eNodeSocketDatatype::SOCK_RGBA`, a Mix node over colours.
 const SOCK_RGBA: u8 = 2;
 
-pub use super::texnode::{BlendMapping, BlendMath, BlendProc, BlendProcCoord, BlendProcKind};
+pub use crate::device::blend::shade::texnode::{BlendMapping, BlendMath, BlendProc, BlendProcCoord, BlendProcKind};
 
 /// The second texture of a Base Color Mix node, with the mode and factor
 /// it is mixed over the first by (`svm_mix`, `ramp_blend`): a floor whose

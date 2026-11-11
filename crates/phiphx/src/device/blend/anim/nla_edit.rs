@@ -8,7 +8,7 @@
 //! Add ▸ Action (`nla.actionclip_add`). Strips on a locked track are not
 //! deleted or muted, nor added to (`ANIMFILTER_FOREDIT`).
 
-use super::nla::*;
+use crate::device::blend::anim::nla::*;
 
 /// The name a new track starts from (`BKE_nlatrack_insert_before/after`).
 pub const NEW_TRACK: &str = "NlaTrack";

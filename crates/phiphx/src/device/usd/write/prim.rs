@@ -1,7 +1,7 @@
 //! Prim serialization for USDA text output.
 
 use crate::device::usd::prim::UsdPrim;
-use super::value::print_attribute;
+use crate::device::usd::write::value::print_attribute;
 
 /// Serialize a `UsdPrim` as a `def <type_name> "<name>"` block with indented
 /// attributes and recursively nested children.

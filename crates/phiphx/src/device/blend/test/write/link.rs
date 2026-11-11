@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::write::link::*;
 use crate::device::blend::write::mesh::BlendNewMesh;
 
 fn triangle(name: &str) -> BlendNewMesh {

@@ -1,5 +1,5 @@
 //! The supported modifier kinds: `eModifierType` to reader.
-use super::*;
+use crate::device::blend::modifier::*;
 
 type Reader = fn(&BlendFile, &BlendBlock, &BlendBlock, &DnaType) -> Option<Box<dyn BModifier>>;
 

@@ -6,10 +6,10 @@
 //! procedural textures, the node graph) UsdPreviewSurface has no input for
 //! and is left out; an image only reaches the layer by the path the scene
 //! holds, and a packed image is not extracted.
-use super::name::{UsdName, UsdNameBook};
-use super::out::UsdOut;
-use super::text::UsdText;
-use super::texture::UsdTexture;
+use crate::device::usd::write::scene::name::{UsdName, UsdNameBook};
+use crate::device::usd::write::scene::out::UsdOut;
+use crate::device::usd::write::scene::text::UsdText;
+use crate::device::usd::write::scene::texture::UsdTexture;
 use crate::scene::{SceneMaterial, SceneModel};
 use std::collections::HashMap;
 

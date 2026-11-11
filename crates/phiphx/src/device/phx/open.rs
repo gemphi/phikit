@@ -1,12 +1,12 @@
 //! A PHX file as a `SceneModel`, and back. A PHX scene is JSON plus a magic;
 //! a PHX point cloud (`PHX\0` chunks) is not a scene and is refused.
-use super::cloud::chunk::PHX_MAGIC;
-use super::scene::PhxScene;
+use crate::device::phx::cloud::chunk::PHX_MAGIC;
+use crate::device::phx::scene::PhxScene;
 use crate::device::Source;
 use crate::device::{Peek, PeekScene};
 use crate::scene::{SceneLoadError, SceneMesh, SceneModel, SceneNormalList, SceneObject};
 use crate::{PointCloudError, Result};
-use super::scene::PhxMesh;
+use crate::device::phx::scene::PhxMesh;
 /// Version, name and frame of a PHX scene, without building a model.
 pub fn peek(bytes: &[u8]) -> Result<Peek> {
     if bytes.starts_with(PHX_MAGIC) {

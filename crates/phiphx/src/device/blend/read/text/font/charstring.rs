@@ -9,8 +9,8 @@
 //! composite (`seac`, `t1operator_seac`) is its base glyph's outline then
 //! its accent's, moved by the accent's offset.
 
-use super::type1::BType1;
-use super::{BGlyph, BTag};
+use crate::device::blend::read::text::font::type1::BType1;
+use crate::device::blend::read::text::font::{BGlyph, BTag};
 
 mod othersubr;
 

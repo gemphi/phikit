@@ -15,7 +15,7 @@
 #[path = "mask_copy.rs"]
 mod copy;
 
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::file::kind::*;
 
 const S: &str = "MaskModifierData";

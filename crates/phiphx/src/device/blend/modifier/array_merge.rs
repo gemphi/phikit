@@ -9,8 +9,8 @@
 //! map is the one before it, moved along by a copy (when the vertex it
 //! leads to is still close enough).
 
-use super::BlendEvalMesh;
-use super::super::merge_vertex::merge_verts;
+use crate::device::blend::modifier::array::BlendEvalMesh;
+use crate::device::blend::modifier::merge_vertex::merge_verts;
 
 /// `SortVertsElem`: a vertex and the sum of its coordinates.
 struct SortVert {

@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::read::object::instance::*;
 
 #[test]
 fn an_instance_stands_where_its_instancer_puts_the_member() {

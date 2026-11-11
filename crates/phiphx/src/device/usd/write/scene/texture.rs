@@ -1,6 +1,6 @@
 //! The image nodes of a `UsdPreviewSurface`: a UV reader and `UsdUVTexture`s.
-use super::out::UsdOut;
-use super::text::UsdText;
+use crate::device::usd::write::scene::out::UsdOut;
+use crate::device::usd::write::scene::text::UsdText;
 
 /// One image feeding one input of the surface.
 pub(super) struct UsdTexture<'a> {

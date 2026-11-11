@@ -6,9 +6,9 @@
 //! scene unit"; for a perspective camera only focal length over aperture
 //! matters, and for an orthographic one the aperture is the view width, so
 //! that is written as `ortho_scale x 10` (scene units are metres here).
-use super::head::UsdHead;
-use super::out::UsdOut;
-use super::text::UsdText;
+use crate::device::usd::write::scene::head::UsdHead;
+use crate::device::usd::write::scene::out::UsdOut;
+use crate::device::usd::write::scene::text::UsdText;
 use crate::scene::SceneCamera;
 
 /// Writes one camera prim.

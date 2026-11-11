@@ -2,7 +2,7 @@
 //! building one from an axis and angle or from a direction to track, turning
 //! a vector by one, and re-aiming one for an object's track and up axes.
 
-use super::math::{BQuat, BVec3};
+use crate::device::blend::rig::math::{BQuat, BVec3};
 use glam::Vec3;
 
 /// `M_SQRT1_2`.

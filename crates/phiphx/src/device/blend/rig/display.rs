@@ -11,9 +11,9 @@
 //! per used layer, visible when the armature shows the layer, and one per
 //! bone group, hidden.
 
-use super::read::BFieldReader;
-use super::math::BEulerOrder;
-use super::BRig;
+use crate::device::blend::rig::read::BFieldReader;
+use crate::device::blend::rig::math::BEulerOrder;
+use crate::device::blend::rig::BRig;
 use crate::device::blend::file::kind::*;
 use glam::{Mat4, Vec3};
 use std::collections::HashMap;

@@ -14,9 +14,9 @@
 //! fields through a node type `nodes_field.rs` does not have, is not read,
 //! and the modifier is reported as skipped as it was before (`report.rs`).
 
-use super::node_field::{BCompare, BDomain, BEval, BInput, shade_domain, shade_fields};
-use super::node_topo::BTopo;
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::node_field::{BCompare, BDomain, BEval, BInput, shade_domain, shade_fields};
+use crate::device::blend::modifier::node_topo::BTopo;
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::file::kind::*;
 use crate::device::blend::shade::graph::{BlendNode, BlendNodeGraph};
 use std::collections::HashMap;

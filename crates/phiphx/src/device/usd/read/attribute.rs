@@ -1,9 +1,9 @@
 //! Attribute parsing — decodes typed attribute assignments from USDA text
 //! into `UsdAttribute` / `UsdValue` pairs.
 
-use super::super::attribute::UsdAttribute;
-use super::super::error::UsdaError;
-use super::UsdaParser;
+use crate::device::usd::attribute::UsdAttribute;
+use crate::device::usd::error::UsdaError;
+use crate::device::usd::read::UsdaParser;
 
 impl<'a> UsdaParser<'a> {
     /// Parse a single attribute line. Returns `Ok(None)` for lines that are

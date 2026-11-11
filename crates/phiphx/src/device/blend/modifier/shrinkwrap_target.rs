@@ -15,9 +15,9 @@
 //! whose stack leads back to an object being read (a cycle the depsgraph
 //! would break) is wrapped to its saved mesh.
 
-use super::super::{BlendEvalMesh, EvalCtx};
-use super::tree::Target;
-use super::OB_MESH;
+use crate::device::blend::modifier::{BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::shrinkwrap::tree::Target;
+use crate::device::blend::modifier::shrinkwrap::OB_MESH;
 use crate::device::blend::file::kind::*;
 use glam::Mat4;
 use std::cell::RefCell;

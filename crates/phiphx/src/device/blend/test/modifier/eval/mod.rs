@@ -4,8 +4,8 @@ mod merge;
 mod stack;
 mod lattice;
 
-use super::subsurf::BSubsurf;
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::subsurf::BSubsurf;
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use std::collections::HashMap;
 
 pub(super) fn cube() -> BlendEvalMesh {
@@ -45,7 +45,7 @@ fn limit_surface_pulls_corners_further_in() {
 
 #[test]
 fn mirror_names_flip_like_blender() {
-    use super::mirror::flip_side;
+    use crate::device::blend::modifier::mirror::flip_side;
     assert_eq!(flip_side("hand.L"), "hand.R");
     assert_eq!(flip_side("DEF-arm_r.001"), "DEF-arm_l.001");
     assert_eq!(flip_side("L_eye"), "R_eye");

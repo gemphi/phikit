@@ -2,7 +2,7 @@
 //! boundary. Blender computes both once per evaluated mesh; here each
 //! modifier that needs them asks for them, which keeps the stack order free.
 
-use super::BlendEvalMesh;
+use crate::device::blend::modifier::BlendEvalMesh;
 use glam::Vec3;
 
 /// Area-weighted vertex normals, as Blender's deform modifiers use.

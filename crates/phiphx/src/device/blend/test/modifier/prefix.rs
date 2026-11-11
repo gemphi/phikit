@@ -2,8 +2,8 @@
 //! outside: that the prefix is applied once rather than twice, whichever
 //! consumer gets there first.
 
-use super::prefix::{BPrefixBox, BPrefixKey};
-use super::BlendEvalMesh;
+use crate::device::blend::modifier::prefix::{BPrefixBox, BPrefixKey};
+use crate::device::blend::modifier::BlendEvalMesh;
 
 fn mesh(vertices: usize) -> BlendEvalMesh {
     BlendEvalMesh { vertices: vec![[1.0, 2.0, 3.0]; vertices], ..Default::default() }

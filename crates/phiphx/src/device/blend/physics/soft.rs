@@ -1,7 +1,7 @@
 //! `Object.soft`, a `SoftBody` (Physics ▸ Soft Body). The on/off switches
 //! live in `Object.softflag`; the numbers in the `SoftBody` block.
 
-use super::string_at;
+use crate::device::blend::physics::string_at;
 use crate::device::blend::file::kind::*;
 
 /// `Object.softflag` bits.

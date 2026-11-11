@@ -6,7 +6,7 @@
 //! constraint and driver are stages (b) and (c) of task 17; a rig like
 //! Rigify does not move visibly until those land.
 
-use super::read::BAction;
+use crate::device::blend::anim::read::BAction;
 use crate::device::blend::file::kind::*;
 use glam::Mat4;
 use std::collections::HashMap;

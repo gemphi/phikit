@@ -9,15 +9,15 @@
 //! Not yet: the complex (non-manifold) mode, per-vertex-group thickness, rim
 //! material offsets.
 
-use super::geom::open_corners as rim;
+use crate::device::blend::modifier::geom::open_corners as rim;
 #[path = "solidify_normal.rs"]
 mod normals;
 use normals::vertex_normals;
 #[path = "solidify_crease.rs"]
 mod creases;
 pub(crate) use creases::BSolidifyCreaseList;
-use super::driver::BModValue;
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::driver::BModValue;
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::file::kind::*;
 use glam::Vec3;
 

@@ -9,7 +9,7 @@
 //! the open edge of the original surface and `crease_inner` to its copy,
 //! each sum held to 1 ("without wrapping").
 
-use super::super::BlendEvalMesh;
+use crate::device::blend::modifier::BlendEvalMesh;
 use std::collections::HashMap;
 
 /// `SolidifyModifierData.crease_inner` / `crease_outer` / `crease_rim`.

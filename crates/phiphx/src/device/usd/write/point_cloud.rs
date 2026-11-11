@@ -1,6 +1,6 @@
 //! Point cloud → USDA exporters
 
-use super::UsdaWriter;
+use crate::device::usd::write::UsdaWriter;
 use crate::{PointCloud, PointCloudError, Result};
 use std::fmt::Write as FmtWrite;
 

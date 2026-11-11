@@ -4,10 +4,10 @@
 //! evaluation (`subsurf.rs`), derivative directions from the vertex rings
 //! (`multires_tangent.rs`).
 
-use super::grid::BGridList;
-use super::tangent::{BRing, D3};
-use super::super::topology::Topology;
-use super::super::BlendEvalMesh;
+use crate::device::blend::modifier::multires::grid::BGridList;
+use crate::device::blend::modifier::multires::tangent::{BRing, D3};
+use crate::device::blend::modifier::topology::Topology;
+use crate::device::blend::modifier::BlendEvalMesh;
 
 /// What the derivatives are read from.
 pub(super) struct BLimit<'a> {

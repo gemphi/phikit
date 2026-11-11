@@ -1,9 +1,9 @@
 //! Each joint's step (`UpdateAngle`, `Lock`, `UpdateAngleApply`): the
 //! Jacobian's change applied, clamped to the joint's limits.
 
-use super::jacobian::BJacobian;
-use super::rotation::BIkMath;
-use super::segment::{BJoint, BSegment};
+use crate::device::blend::rig::ik::jacobian::BJacobian;
+use crate::device::blend::rig::ik::rotation::BIkMath;
+use crate::device::blend::rig::ik::segment::{BJoint, BSegment};
 use glam::DVec3;
 
 impl BSegment {

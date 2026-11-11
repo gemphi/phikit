@@ -2,7 +2,7 @@
 //! `tests_traversal`, which keeps the geometry half).
 
 use crate::scene::SceneModel;
-use super::fixture::{blend_obj, blend_scene};
+use crate::device::blend::read::scene::model::test::fixture::{blend_obj, blend_scene};
 
 #[test]
 fn scene_from_blend_carries_the_single_material_slot() {

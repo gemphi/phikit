@@ -1,5 +1,5 @@
 //! Evaluating a scene's modifier stacks: the read, the captured jobs and the skin batches.
-use super::*;
+use crate::device::blend::modifier::*;
 
 impl BlendFile {
     /// Evaluated meshes for every mesh object whose stack changes it, keyed

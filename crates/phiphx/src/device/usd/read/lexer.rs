@@ -1,7 +1,7 @@
 //! Lexer helpers — low-level character consumption, whitespace skipping,
 //! identifier and literal reading for the USDA recursive-descent parser.
 
-use super::UsdaParser;
+use crate::device::usd::read::UsdaParser;
 
 impl<'a> UsdaParser<'a> {
     pub(crate) fn peek(&self) -> Option<char> {

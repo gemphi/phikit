@@ -4,7 +4,7 @@
 //! scale it; Clamp To (`clampto_evaluate`) moves it onto the path at the
 //! fraction its own place makes along one axis of the curve's box.
 
-use super::BCob;
+use crate::device::blend::rig::constraint::BCob;
 use crate::device::blend::read::curve::BCurvePath;
 use crate::device::blend::read::curve::path::FOLLOWPATH_RADIUS;
 use crate::device::blend::rig::math::BMat4;

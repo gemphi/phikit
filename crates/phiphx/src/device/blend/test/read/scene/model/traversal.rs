@@ -3,7 +3,7 @@
 //! synthesis. Material / UV / colour tests live in `tests_material`.
 
 use crate::scene::{SceneModel, SceneNormalList};
-use super::fixture::{blend_obj, blend_scene};
+use crate::device::blend::read::scene::model::test::fixture::{blend_obj, blend_scene};
 
 #[test]
 fn scene_from_blend_sets_source_path() {

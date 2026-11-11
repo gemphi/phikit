@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::file::zst::*;
 use crate::device::blend::BlendFile;
 
 /// A frame the C encoder wrote, decoded by whichever decoder this build

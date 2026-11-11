@@ -1,7 +1,7 @@
 //! Header / BHead decoding tests (split from `parse.rs`).
 
-use super::super::kind::*;
-use super::super::kind::BlendFile;
+use crate::device::blend::file::kind::*;
+use crate::device::blend::file::kind::BlendFile;
 
     #[test]
     fn legacy_header_decodes() {

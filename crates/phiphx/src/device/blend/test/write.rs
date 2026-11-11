@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::write::*;
 
 #[test]
 fn a_parsed_file_written_back_is_the_same_bytes() {

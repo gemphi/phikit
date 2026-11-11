@@ -6,7 +6,7 @@
 //! Separate / Combine RGB and HSV nodes, which are the same with the mode
 //! fixed.
 
-use super::blend::{hsv_to_rgb, rgb_to_hsv};
+use crate::device::blend::shade::blend::{hsv_to_rgb, rgb_to_hsv};
 
 /// `NodeCombSepColorMode` (`DNA_node_types.h`).
 pub(crate) const COMBSEP_RGB: u32 = 0;

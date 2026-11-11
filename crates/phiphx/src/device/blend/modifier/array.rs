@@ -5,10 +5,10 @@
 //! where they meet ("Merge", `array_merge.rs`).
 //! Not yet: start/end caps, fit-to-curve and fit-to-length.
 
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 #[path = "array_merge.rs"]
 mod array_merge;
-use super::driver::BModValue;
+use crate::device::blend::modifier::driver::BModValue;
 use crate::device::blend::file::kind::*;
 use glam::{Mat4, Vec3};
 

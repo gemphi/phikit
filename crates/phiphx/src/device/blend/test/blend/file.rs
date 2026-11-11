@@ -1,6 +1,6 @@
 //! Reader tests that need real files: textures (#26) and DNA layout.
 
-    use super::*;
+    use crate::device::blend::*;
     use std::path::Path;
 
     fn tests_files() -> std::path::PathBuf {

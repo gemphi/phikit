@@ -1,5 +1,5 @@
 //! A pose's B-Bone spline parameters and segment matrices (`BKE_pchan_bbone_*`).
-use super::*;
+use crate::device::blend::modifier::bbone::*;
 
 impl Pose {
     /// The same armature in another pose: each channel `pose_of` names

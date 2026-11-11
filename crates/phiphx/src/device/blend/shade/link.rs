@@ -2,8 +2,8 @@
 //! tosock}`): follows Principled `Normal` ← Normal Map ← Image Texture, the
 //! chain Blender builds for tangent-space normal maps.
 
-use super::node::read_cstr;
-use super::principled::BSocket;
+use crate::device::blend::shade::node::read_cstr;
+use crate::device::blend::shade::principled::BSocket;
 use crate::device::blend::file::kind::*;
 
 /// Nodes a colour search does not pass through (they carry normals).

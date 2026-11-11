@@ -3,7 +3,7 @@
 //! (`interp_m4_m4m4`). What a bone and an object differ in — where the
 //! targets are, what the owner's spaces are — is its [`BConstraintHost`].
 
-use super::{BConstraint, BConstraintKind, BCob, BTarget, CONSTRAINT_DISABLE, CONSTRAINT_OFF, CONSTRAINT_SPACEONCE};
+use crate::device::blend::rig::constraint::{BConstraint, BConstraintKind, BCob, BTarget, CONSTRAINT_DISABLE, CONSTRAINT_OFF, CONSTRAINT_SPACEONCE};
 use crate::device::blend::rig::math::BMat4;
 use crate::device::blend::rig::space::{BSpaceOwner, SPACE_CUSTOM, SPACE_WORLD};
 use crate::device::blend::rig::view::BSceneView;

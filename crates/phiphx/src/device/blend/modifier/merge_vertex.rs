@@ -12,7 +12,7 @@
 //! with the same edges only the first stays (`weld_poly_find_doubles`). The
 //! corners that became one mix their UVs and colours (`mix_groups`).
 
-use super::BlendEvalMesh;
+use crate::device::blend::modifier::BlendEvalMesh;
 use std::collections::HashSet;
 
 /// A face being rebuilt: per corner, its vertex (an index before the merge)

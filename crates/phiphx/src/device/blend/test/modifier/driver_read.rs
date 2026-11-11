@@ -1,4 +1,4 @@
-use super::modifier_path;
+use crate::device::blend::modifier::driver_read::modifier_path;
 
 #[test]
 fn a_modifier_path_is_a_name_and_a_property() {

@@ -1,5 +1,5 @@
 //! The solver's segments from a tree's bones (`IK_CreateSegment` and friends).
-use super::*;
+use crate::device::blend::rig::ik::*;
 
 /// `IK_CreateSegment`'s joints from the degrees of freedom.
 pub(super) struct BJointBuilder;

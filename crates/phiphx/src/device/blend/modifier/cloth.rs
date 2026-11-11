@@ -20,8 +20,8 @@
 //! frame at or after 1, so an old cached frame is shown rather than
 //! simulated past.
 
-use super::cloth_cache::{BClothRead, frame_read};
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::cloth_cache::{BClothRead, frame_read};
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::file::kind::*;
 use glam::Vec3;
 use std::sync::Arc;

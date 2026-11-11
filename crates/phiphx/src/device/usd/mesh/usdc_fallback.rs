@@ -1,6 +1,6 @@
 //! USDC (binary crate) heuristic extraction.
 
-use super::UsdImporter;
+use crate::device::usd::mesh::UsdImporter;
 use crate::{Mesh, MeshToCloudConfig};
 use crate::{PointCloud, PointCloudError, Result, Vertex};
 

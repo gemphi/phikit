@@ -1,6 +1,6 @@
 //! Blender type-name parsing (`From<&str>`).
 
-use super::kind::{BlenderLightType, BlenderObjectType};
+use crate::device::blend::write::script::kind::{BlenderLightType, BlenderObjectType};
 
 /// Blender RNA type name → object type (unknown → Empty).
 impl From<&str> for BlenderObjectType {

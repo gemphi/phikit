@@ -1,4 +1,4 @@
-use super::socket_path;
+use crate::device::blend::anim::driver::socket::socket_path;
 
 #[test]
 fn a_socket_path_is_a_node_name_and_an_input_index() {

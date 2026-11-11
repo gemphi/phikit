@@ -1,9 +1,9 @@
 //! Prim parsing — creates `UsdPrim` nodes from `def <Type> "<Name>"` blocks
 //! with correct absolute path construction and recursive child handling.
 
-use super::super::error::UsdaError;
-use super::super::prim::UsdPrim;
-use super::UsdaParser;
+use crate::device::usd::error::UsdaError;
+use crate::device::usd::prim::UsdPrim;
+use crate::device::usd::read::UsdaParser;
 
 impl<'a> UsdaParser<'a> {
     /// Parse a single prim definition block and its children recursively.

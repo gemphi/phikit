@@ -8,8 +8,8 @@
 //! here, by the same `channel_mut` table the animation system writes
 //! through, so a driver can only write a channel the renderer can read.
 
-use super::target::{BDriverTarget, BDriverTargetList};
-use super::{BlendDriver, BlendDriverEnd, BlendDriverRead, BlendDriverSet, BlendDriverVar, BlendObjectDriver, BlendPropDriver};
+use crate::device::blend::anim::driver::target::{BDriverTarget, BDriverTargetList};
+use crate::device::blend::anim::driver::{BlendDriver, BlendDriverEnd, BlendDriverRead, BlendDriverSet, BlendDriverVar, BlendObjectDriver, BlendPropDriver};
 use crate::device::blend::file::kind::*;
 use crate::device::blend::rig::driver::expr::BExpr;
 

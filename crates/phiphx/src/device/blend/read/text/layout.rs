@@ -8,8 +8,8 @@
 //! overflow and scale-to-fit, text on a curve and combining-mark placement
 //! are not done (a zero-width glyph simply does not advance).
 
-use super::character::TCharList;
-use super::{BText, TCharInfo, TNurb, TSpline, CU_CHINFO_SMALLCAPS, CU_CHINFO_UNDERLINE};
+use crate::device::blend::read::text::character::TCharList;
+use crate::device::blend::read::text::{BText, TCharInfo, TNurb, TSpline, CU_CHINFO_SMALLCAPS, CU_CHINFO_UNDERLINE};
 use glam::{Vec2, Vec3};
 
 /// `CharTrans`.

@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::read::object::light_driver::*;
 
 #[test]
 fn each_property_carries_its_own_hard_range() {

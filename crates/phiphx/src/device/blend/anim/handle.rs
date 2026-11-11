@@ -9,7 +9,7 @@
 //! Blender keeps the handles it wrote; it does not recompute them on load,
 //! so a key phiphx writes must carry Blender's own.
 
-use super::fcurve::{BFCurve, BKey, COLOR_AUTO_RAINBOW, COLOR_AUTO_RGB, COLOR_AUTO_YRGB, FLAG_SELECTED, HANDLE_AUTO, HANDLE_AUTO_ANIM, HANDLE_VECT, IPO_BEZ};
+use crate::device::blend::anim::fcurve::{BFCurve, BKey, COLOR_AUTO_RAINBOW, COLOR_AUTO_RGB, COLOR_AUTO_YRGB, FLAG_SELECTED, HANDLE_AUTO, HANDLE_AUTO_ANIM, HANDLE_VECT, IPO_BEZ};
 
 /// `FCURVE_VISIBLE`: the curve is drawn in the Graph editor.
 pub const FLAG_VISIBLE: u32 = 1;

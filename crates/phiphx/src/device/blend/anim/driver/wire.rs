@@ -51,7 +51,7 @@
 //! Fixing it the Blender way means moving the modifier evaluation after the
 //! motion read — not threading values backwards.
 
-use super::state::BDriverState;
+use crate::device::blend::anim::driver::state::BDriverState;
 use crate::device::blend::read::object::data::BlendObjectData;
 use crate::device::blend::read::scene::kind::BlendScene;
 

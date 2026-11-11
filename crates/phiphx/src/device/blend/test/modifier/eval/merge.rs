@@ -1,9 +1,9 @@
 //! Displace and Weld: modifiers that move or remove vertices.
 
-use super::super::displace::BDisplace;
-use super::super::weld::BWeld;
-use super::{eval, quad};
-use super::super::BlendEvalMesh;
+use crate::device::blend::modifier::displace::BDisplace;
+use crate::device::blend::modifier::weld::BWeld;
+use crate::device::blend::modifier::eval_test::{eval, quad};
+use crate::device::blend::modifier::BlendEvalMesh;
 
 #[test]
 fn displace_moves_along_an_axis_by_strength_above_midlevel() {

@@ -10,8 +10,8 @@
 //! cubic Hermite of the two (`interp_cubic_v3`, the velocities scaled by
 //! the frame gap), as `psys_interpolate_particle(-1, …)` does for cloth.
 
-use super::cloth::{PTCACHE_DISK_CACHE, PTCACHE_EXTERNAL};
-use super::cloth_disk;
+use crate::device::blend::modifier::cloth::{PTCACHE_DISK_CACHE, PTCACHE_EXTERNAL};
+use crate::device::blend::modifier::cloth_disk;
 use crate::device::blend::file::kind::*;
 use glam::Vec3;
 

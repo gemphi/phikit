@@ -1,5 +1,5 @@
 //! The edits that change structure: the Outliner's drops, added and deleted objects.
-use super::*;
+use crate::device::blend::write::edit::*;
 
 impl BlendEditList {
     /// The Outliner's drops, once every other object edit is in: moves

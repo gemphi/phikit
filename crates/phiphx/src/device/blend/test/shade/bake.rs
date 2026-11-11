@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::shade::bake::*;
 
 /// The floor's shape: `lerp(dark red, orange, image)` — a black texel
 /// takes A, a white one B, exactly as the Mix node reads its factor.

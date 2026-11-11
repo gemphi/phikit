@@ -11,7 +11,7 @@ use crate::scene::{
     SceneDisplayShading, SceneObject, SceneRender, SceneShadow, SceneSsao, SceneTimeline, SceneWorld,
 };
 use crate::device::blend::BlendScene;
-use super::import_extra::{camera_from_blend, empty_from_blend, light_from_blend};
+use crate::device::blend::read::scene::model::import_extra::{camera_from_blend, empty_from_blend, light_from_blend};
 
 /// Map an imported [`BlendScene`] into a renderable [`SceneModel`].
 ///
@@ -274,4 +274,4 @@ fn parents_of(raw: &[crate::device::blend::BlendSceneObject]) -> Vec<(String, St
 }
 }
 
-use super::object::evaluated_object;
+use crate::device::blend::read::scene::model::object::evaluated_object;

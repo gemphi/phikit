@@ -6,8 +6,8 @@
 //! display list (`displist_calc_taper`), each object evaluated the same
 //! way — and its splines' materials and smoothing.
 
-use super::displist::curve_displist;
-use super::profile::{create_samples, BProfilePoint, PROF_SAMPLE_STRAIGHT_EDGES};
+use crate::device::blend::read::curve::displist::curve_displist;
+use crate::device::blend::read::curve::profile::{create_samples, BProfilePoint, PROF_SAMPLE_STRAIGHT_EDGES};
 use crate::device::blend::file::kind::*;
 use crate::device::blend::rig::read::BFieldReader;
 use crate::device::blend::read::text::displist::{TDispList, TDlKind};

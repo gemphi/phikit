@@ -6,9 +6,9 @@
 //! Not yet: texture sampling (so `RGB_XYZ`, which needs one, is a no-op, as
 //! it is in Blender), custom normals and per-vertex-group strength.
 
-use super::geom::vertex_normals;
-use super::driver::BModValue;
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::geom::vertex_normals;
+use crate::device::blend::modifier::driver::BModValue;
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::file::kind::*;
 use glam::Vec3;
 

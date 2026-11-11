@@ -2,7 +2,7 @@
 //! 240-line read budget when the nine display shapes landed. Reached by
 //! `#[path]` from it, so the module path is still `shade::socket::socket_test`.
 
-use super::*;
+use crate::device::blend::shade::socket::*;
 
 fn sock(flag: i32) -> BlendSocket {
     BlendSocket { flag, ..Default::default() }

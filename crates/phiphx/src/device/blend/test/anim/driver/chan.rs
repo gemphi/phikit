@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::anim::driver::chan::*;
 use crate::device::blend::rig::math::BEulerOrder;
 use glam::{Mat4, Quat, Vec3};
 

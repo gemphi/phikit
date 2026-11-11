@@ -6,10 +6,10 @@
 //! below left by its blend mode and influence (`nla_blend_value`). The
 //! object's own action is then written over it (`motion.rs`).
 
-use super::channel::channel_mut;
-use super::fcurve::BFCurve;
-use super::nla::*;
-use super::read::BAction;
+use crate::device::blend::anim::channel::channel_mut;
+use crate::device::blend::anim::fcurve::BFCurve;
+use crate::device::blend::anim::nla::*;
+use crate::device::blend::anim::read::BAction;
 use crate::device::blend::file::kind::*;
 use crate::device::blend::read::object::transform::ObjectTransformRaw;
 use std::collections::HashMap;

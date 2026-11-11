@@ -4,7 +4,7 @@
 //! Not yet: dual quaternions (Preserve Volume), envelopes, and a B-Bone
 //! target's segments (its whole-bone deform is used).
 
-use super::{BCob, BTarget};
+use crate::device::blend::rig::constraint::{BCob, BTarget};
 use glam::Mat4;
 
 impl BCob {

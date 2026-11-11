@@ -14,11 +14,11 @@ mod segment;
 mod solver;
 mod tree;
 
-use super::constraint::{BConstraintKind, BIkData, CONSTRAINT_DISABLE};
-use super::math::{BMat3, BMat4, BQuat, BVec3};
-use super::solve::BPoseWork;
-use super::space::SPACE_WORLD;
-use super::{BRig, BRigState};
+use crate::device::blend::rig::constraint::{BConstraintKind, BIkData, CONSTRAINT_DISABLE};
+use crate::device::blend::rig::math::{BMat3, BMat4, BQuat, BVec3};
+use crate::device::blend::rig::solve::BPoseWork;
+use crate::device::blend::rig::space::SPACE_WORLD;
+use crate::device::blend::rig::{BRig, BRigState};
 use glam::{DMat3, DVec3, Mat3, Mat4, Vec3};
 use segment::{BJoint, BSegment};
 use solver::BIkSolver;

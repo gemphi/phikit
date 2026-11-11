@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::file::sdna::*;
 use crate::device::blend::file::kind::DnaField;
 
 fn dna() -> DnaType {

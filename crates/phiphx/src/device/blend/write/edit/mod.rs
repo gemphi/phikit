@@ -12,8 +12,8 @@
 //! file the new objects come back as a warning in [`BlendSaveReport`], so
 //! the save says what it left out.
 
-use super::layer::BlendCollectionAt;
-use super::mesh::BlendNewMesh;
+use crate::device::blend::write::layer::BlendCollectionAt;
+use crate::device::blend::write::mesh::BlendNewMesh;
 use crate::device::blend::{BlendShadowCast, BlendVisibility};
 use crate::device::blend::file::kind::*;
 use crate::device::blend::read::object::layer::{BASE_HIDDEN, BASE_SELECTED, LAYER_COLLECTION_EXCLUDE, LAYER_COLLECTION_HIDE};

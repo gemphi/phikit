@@ -7,7 +7,7 @@ pub mod open;
 pub mod project;
 pub mod scene;
 pub mod sidecar;
-use super::{Device, DeviceKind, Source};
+use crate::device::{Device, DeviceKind, Source};
 use crate::device::Peek;
 use crate::phx::Progress;
 use crate::scene::{SceneLoadError, SceneModel};

@@ -4,7 +4,7 @@
 //! `curves` list — and which action and slot an object uses
 //! (`Object.adt → AnimData.action / slot_handle`).
 
-use super::fcurve::{BFCurve, BKey, HANDLE_AUTO_ANIM};
+use crate::device::blend::anim::fcurve::{BFCurve, BKey, HANDLE_AUTO_ANIM};
 use crate::device::blend::file::kind::*;
 use std::collections::HashMap;
 

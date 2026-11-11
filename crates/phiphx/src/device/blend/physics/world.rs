@@ -1,7 +1,7 @@
 //! The Rigid Body World (`RigidBodyWorld`, Scene ▸ Rigid Body World): its
 //! collections, solver settings, effector weights and point cache.
 
-use super::string_at;
+use crate::device::blend::physics::string_at;
 use crate::device::blend::file::kind::*;
 
 /// `RBW_FLAG_MUTED`: the world is paused.

@@ -1,7 +1,7 @@
 //! Reading a curve datablock (`Curve`, its `Nurb` list and their
 //! `BezTriple` / `BPoint` arrays) through the file's own DNA.
 
-use super::{BBezPoint, BCurve, BCurvePoint, BNurb, CU_3D, CU_PATH_RADIUS};
+use crate::device::blend::read::curve::{BBezPoint, BCurve, BCurvePoint, BNurb, CU_3D, CU_PATH_RADIUS};
 use crate::device::blend::file::kind::*;
 use crate::device::blend::rig::read::BFieldReader;
 use glam::{Vec3, Vec4};

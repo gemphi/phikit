@@ -8,7 +8,7 @@
 //! "virtual conic on-curve points" of `blf_glyph_to_curves`), with the
 //! same handles, so the curves agree.
 
-use super::{BFontMetric, BGlyph, BTag};
+use crate::device::blend::read::text::font::{BFontMetric, BGlyph, BTag};
 
 /// `BLF_get_vfont_metrics` for an sfnt face.
 pub fn metrics(data: &[u8]) -> Option<BFontMetric> {

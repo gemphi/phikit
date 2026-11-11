@@ -2,9 +2,9 @@
 //! (flex, hint replacement) and `seac` (accented composites), for
 //! [`super::Run`].
 
-use super::super::name::standard_name;
-use super::super::BTag;
-use super::Run;
+use crate::device::blend::read::text::font::name::standard_name;
+use crate::device::blend::read::text::font::BTag;
+use crate::device::blend::read::text::font::charstring::Run;
 
 impl Run<'_> {
     /// `callothersubr`: flex and hint replacement; any other result goes

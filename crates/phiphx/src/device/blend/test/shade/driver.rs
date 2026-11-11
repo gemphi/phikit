@@ -1,7 +1,7 @@
 //! `BMaterialDriverList`'s own units: the clamp each write path takes, and
 //! where a socket's value lands in the BSDF.
 
-use super::*;
+use crate::device::blend::shade::driver::*;
 use crate::device::blend::read::scene::kind::BlendMaterial;
 use crate::device::blend::shade::material::VIEWPORT_PBR;
 

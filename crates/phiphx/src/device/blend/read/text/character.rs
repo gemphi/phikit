@@ -3,9 +3,9 @@
 //! placeholder box Blender draws for a character no font provides
 //! (`vfont_placeholder_ensure`).
 
-use super::font::{BFont, BFontMetric};
-use super::glyph::{char_curves, TChar};
-use super::{BText, TBez, TCharInfo, CU_CHINFO_BOLD, CU_CHINFO_ITALIC, HD_VECT};
+use crate::device::blend::read::text::font::{BFont, BFontMetric};
+use crate::device::blend::read::text::glyph::{char_curves, TChar};
+use crate::device::blend::read::text::{BText, TBez, TCharInfo, CU_CHINFO_BOLD, CU_CHINFO_ITALIC, HD_VECT};
 use glam::Vec3;
 use std::collections::HashMap;
 use std::sync::Arc;

@@ -8,8 +8,8 @@
 //! row is the union over the visible channels, which is what `keys` is for
 //! one action; the editor unions the actions it shows.
 
-use super::fcurve::BFCurve;
-use super::read::BAction;
+use crate::device::blend::anim::fcurve::BFCurve;
+use crate::device::blend::anim::read::BAction;
 use crate::device::blend::file::kind::*;
 use crate::device::blend::read::scene::kind::BlendSceneObject;
 

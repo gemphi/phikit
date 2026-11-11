@@ -18,7 +18,7 @@
 //! points in order, each data type's record in turn. LZO and LZMA caches
 //! (removed in 5.0) are not read, as Blender no longer reads them.
 
-use super::cloth_cache::{BCacheFrame, DATA_INDEX, DATA_LOCATION, DATA_SIZE, DATA_VELOCITY};
+use crate::device::blend::modifier::cloth_cache::{BCacheFrame, DATA_INDEX, DATA_LOCATION, DATA_SIZE, DATA_VELOCITY};
 use crate::device::blend::file::kind::*;
 use std::path::PathBuf;
 

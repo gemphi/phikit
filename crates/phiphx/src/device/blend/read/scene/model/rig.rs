@@ -5,7 +5,7 @@
 //! triangles are, and the tracer takes it as a new pose (`Tracer::repose`).
 
 use crate::scene::SceneMesh;
-use super::object::STriangleList;
+use crate::device::blend::read::scene::model::object::STriangleList;
 use crate::device::blend::modifier::BlendSkinSource;
 use crate::device::blend::modifier::driven::BlendDrivenSource;
 use crate::device::blend::modifier::armature::deform;

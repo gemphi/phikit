@@ -10,7 +10,7 @@
 //! `eval_final_point`). Either way the displacement lands on the limit
 //! position.
 
-use super::disp::BDisplacement;
+use crate::device::blend::modifier::multires::disp::BDisplacement;
 use rayon::prelude::*;
 
 type F3 = [f32; 3];

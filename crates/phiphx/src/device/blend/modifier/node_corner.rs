@@ -11,8 +11,8 @@
 //! digit, so a normal here is the normal Blender draws rather than one a
 //! few ULP off it.
 
-use super::BlendEvalMesh;
-use super::node_fan::fan_vertex;
+use crate::device::blend::modifier::BlendEvalMesh;
+use crate::device::blend::modifier::node_fan::fan_vertex;
 use std::collections::HashSet;
 
 pub(super) type V3 = [f32; 3];

@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::write::object::*;
 
 #[test]
 fn a_cloned_object_keeps_its_values_and_points_nowhere() {

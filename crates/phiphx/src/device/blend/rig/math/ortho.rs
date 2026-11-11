@@ -1,5 +1,5 @@
 //! Stable orthogonalisation (`orthogonalize_stable`).
-use super::vec::BVec3;
+use crate::device::blend::rig::math::vec::BVec3;
 use glam::Vec3;
 
 /// `orthogonalize_stable` (the plane projection that keeps the volume).

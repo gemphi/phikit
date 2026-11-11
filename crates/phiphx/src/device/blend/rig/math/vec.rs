@@ -1,6 +1,6 @@
 //! Vector and 3x3 matrix helpers (`math_vector_c.cc`, `math_matrix_c.cc`).
-use super::quat::BQuat;
-use super::symmetric::BSymmetric;
+use crate::device::blend::rig::math::quat::BQuat;
+use crate::device::blend::rig::math::symmetric::BSymmetric;
 use glam::{DMat3, DVec3, Mat3, Vec3};
 
 /// Blender's `normalize_v3`: the length, the vector scaled to 1 (zero

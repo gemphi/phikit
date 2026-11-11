@@ -5,8 +5,8 @@
 //! profile (`bevel_quarter_fill`), or the bevel object's outlines
 //! (`curve_bevel_make_from_object`).
 
-use super::displist::{TDispList, TDlKind, DL_BACK_CURVE, DL_FRONT_CURVE};
-use super::{TCurveShape, CU_BACK, CU_FRONT};
+use crate::device::blend::read::text::displist::{TDispList, TDlKind, DL_BACK_CURVE, DL_FRONT_CURVE};
+use crate::device::blend::read::text::{TCurveShape, CU_BACK, CU_FRONT};
 use glam::Vec3;
 
 /// `CU_BEV_MODE_OBJECT`, `CU_BEV_MODE_CURVE_PROFILE`.

@@ -26,8 +26,8 @@
 //! with Harden Normals (they generate custom normals), and an object that
 //! already has an auto-smooth node modifier.
 
-use super::node::{self, BNodeList};
-use super::node_field::BInput;
+use crate::device::blend::modifier::node::{self, BNodeList};
+use crate::device::blend::modifier::node_field::BInput;
 use crate::device::blend::file::kind::*;
 use crate::device::blend::shade::graph::{BlendNode, BlendNodeGraph, BlendNodeLink};
 use crate::device::blend::shade::socket::{BSocketDefault, BlendSocket};

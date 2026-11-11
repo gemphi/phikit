@@ -1,4 +1,4 @@
-use super::{own_channel, own_prop, split_index};
+use crate::device::blend::anim::driver::read::{own_channel, own_prop, split_index};
 
 #[test]
 fn a_path_names_a_channel_only_when_it_is_the_objects_own_and_in_range() {

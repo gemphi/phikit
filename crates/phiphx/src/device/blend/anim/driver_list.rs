@@ -5,7 +5,7 @@
 //! moves a copy to every object using that armature as
 //! `pose.bones["…"].hide`, after the object's own drivers.
 
-use super::fcurve::BFCurve;
+use crate::device::blend::anim::fcurve::BFCurve;
 use crate::device::blend::file::kind::*;
 use crate::device::blend::read::scene::kind::BlendSceneObject;
 

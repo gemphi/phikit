@@ -10,8 +10,8 @@ mod read;
 
 pub use path::{BRnaPath, BRnaStep};
 
-use super::solve::BChannelValue;
-use super::{BRig, BRigState};
+use crate::device::blend::rig::solve::BChannelValue;
+use crate::device::blend::rig::{BRig, BRigState};
 use crate::device::blend::anim::fcurve::BFCurve;
 use expr::BExpr;
 

@@ -1,6 +1,6 @@
 //! Low-level USDA array parsing helpers.
 
-use super::UsdImporter;
+use crate::device::usd::mesh::UsdImporter;
 
 impl UsdImporter {
     /// Parse a vec3 array from USDA format

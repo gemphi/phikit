@@ -16,9 +16,9 @@
 //!   scale as the tracer's lamp record does (`view3d/rendered/lamp.rs`).
 //!
 //! A light has no exposure here (`inputs:exposure` stays 0).
-use super::head::UsdHead;
-use super::out::UsdOut;
-use super::text::UsdText;
+use crate::device::usd::write::scene::head::UsdHead;
+use crate::device::usd::write::scene::out::UsdOut;
+use crate::device::usd::write::scene::text::UsdText;
 use crate::scene::SceneLight;
 use std::f32::consts::PI;
 

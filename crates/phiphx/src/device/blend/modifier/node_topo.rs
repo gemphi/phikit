@@ -12,7 +12,7 @@
 //! The order matters: it is the order the Set Shade Smooth node writes
 //! `sharp_edge` in and the order a field's values line up with.
 
-use super::BlendEvalMesh;
+use crate::device::blend::modifier::BlendEvalMesh;
 use std::collections::HashMap;
 
 /// The mesh's edges, as the tree sees them: every face edge, then the

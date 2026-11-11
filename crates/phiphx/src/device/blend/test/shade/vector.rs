@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::shade::vector::*;
 use std::f32::consts::FRAC_PI_2;
 
 fn close(a: V3, b: V3) -> bool {

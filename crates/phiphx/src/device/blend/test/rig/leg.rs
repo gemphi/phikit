@@ -6,7 +6,7 @@
 //! local Copy Transforms, DEF bones with Stretch To — at frames 1, 4, 7
 //! and 10, with the driver's value.
 
-use super::{BEmptyScene, BRig, BRigAnim};
+use crate::device::blend::rig::{BEmptyScene, BRig, BRigAnim};
 use crate::device::blend::anim::fcurve::BFCurve;
 use crate::device::blend::file::kind::BlendFile;
 use glam::Mat4;

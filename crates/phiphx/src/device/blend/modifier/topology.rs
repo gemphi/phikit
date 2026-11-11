@@ -2,7 +2,7 @@
 //! corner list (no hashing), per-corner edge ids and CSR vertex → edge /
 //! vertex → corner tables.
 
-use super::BlendEvalMesh;
+use crate::device::blend::modifier::BlendEvalMesh;
 
 pub(crate) struct Topology {
     /// Edge endpoints (`a < b`) and how many faces use each edge.

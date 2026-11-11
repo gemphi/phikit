@@ -10,10 +10,10 @@
 //! The bevel factors are read as Blender's default mapping: every point,
 //! no blending at the ends (`calc_bevfac_mapping_default`).
 
-use super::bevlist::{TBevList, TBevPoint};
-use super::displist::{curve_to_filledpoly, fill, TDispList, TDlKind, DL_BACK_CURVE, DL_CYCL_U, DL_CYCL_V, DL_FRONT_CURVE};
-use super::profile::bevel_profile;
-use super::{TCurveShape, CU_3D, CU_FILL_CAPS};
+use crate::device::blend::read::text::bevlist::{TBevList, TBevPoint};
+use crate::device::blend::read::text::displist::{curve_to_filledpoly, fill, TDispList, TDlKind, DL_BACK_CURVE, DL_CYCL_U, DL_CYCL_V, DL_FRONT_CURVE};
+use crate::device::blend::read::text::profile::bevel_profile;
+use crate::device::blend::read::text::{TCurveShape, CU_3D, CU_FILL_CAPS};
 use crate::device::blend::rig::math::BQuat;
 use glam::Vec3;
 

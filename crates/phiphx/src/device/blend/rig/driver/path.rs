@@ -2,7 +2,7 @@
 //! `pose.bones["thigh.L"].constraints["IK"].influence`,
 //! `pose.bones["torso"]["neck_follow"]`, `pose.bones["x"].scale.y`.
 
-use super::{BDriven, BDriverSource};
+use crate::device::blend::rig::driver::{BDriven, BDriverSource};
 use crate::device::blend::rig::BRig;
 
 /// One step of a path.

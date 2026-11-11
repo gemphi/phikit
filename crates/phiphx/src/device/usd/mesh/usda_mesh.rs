@@ -1,6 +1,6 @@
 //! USDA (ASCII) → full mesh parser (preserves triangles and transforms).
 
-use super::UsdImporter;
+use crate::device::usd::mesh::UsdImporter;
 use crate::Mesh;
 use crate::{PointCloudError, Result};
 

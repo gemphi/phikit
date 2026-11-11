@@ -1,5 +1,5 @@
 //! The spline parameters (`BBoneSplineParameters`) and the matrices computed from them.
-use super::*;
+use crate::device::blend::modifier::bbone::*;
 
 /// `BBoneSplineParameters`.
 #[derive(Clone, Debug, Default)]

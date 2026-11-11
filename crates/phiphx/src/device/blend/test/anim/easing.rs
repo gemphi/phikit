@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::anim::easing::*;
 
 const KINDS: [u8; 10] = [IPO_BACK, IPO_BOUNCE, IPO_CIRC, IPO_CUBIC, IPO_ELASTIC, IPO_EXPO, IPO_QUAD, IPO_QUART, IPO_QUINT, IPO_SINE];
 

@@ -9,7 +9,7 @@
 //! best so far (`>=` prunes), a primitive replaces the best only when it is
 //! strictly closer — so the answer is the same up to exact ties.
 
-use super::math::{closest_on_tri, face_normal, normal_tri, quad_tris, ray_tri_watertight, vertex_normals, RayPrecalc};
+use crate::device::blend::modifier::shrinkwrap::math::{closest_on_tri, face_normal, normal_tri, quad_tris, ray_tri_watertight, vertex_normals, RayPrecalc};
 use glam::Vec3;
 
 /// `BVHTreeNearest`.

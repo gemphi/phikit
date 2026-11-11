@@ -11,7 +11,7 @@
 //!
 //! [`anim::driver::socket`]: crate::device::blend::anim::driver::socket
 
-use super::light_driver::{BLightDriver, BLightDriverList, BLightProp};
+use crate::device::blend::read::object::light_driver::{BLightDriver, BLightDriverList, BLightProp};
 use crate::device::blend::anim::driver::socket_path;
 use crate::device::blend::file::kind::*;
 use crate::device::blend::shade::world_driver::{BWorldDriver, BWorldDriverList, BWorldWrite};

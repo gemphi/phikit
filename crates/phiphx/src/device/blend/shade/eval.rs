@@ -7,7 +7,7 @@
 //! Formulas follow Blender's GPU nodes (`gpu_shader_material_mix_color.glsl`,
 //! `…_hue_sat_val.glsl`, `BKE_colorband_evaluate`).
 
-use super::link::BLink;
+use crate::device::blend::shade::link::BLink;
 use crate::device::blend::shade::node::read_cstr;
 use crate::device::blend::file::kind::*;
 

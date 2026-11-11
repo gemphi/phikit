@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::shade::graph::*;
 
 #[test]
 fn a_node_shows_its_label_when_it_has_one_and_its_name_otherwise() {

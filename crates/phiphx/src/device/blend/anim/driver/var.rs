@@ -7,8 +7,8 @@
 //! which a file alone does not fix, so it stays [`BlendDriverRead::Unsupported`]
 //! and reads 0 the way a driver nobody can resolve does.
 
-use super::chan::{BTransChan, ROT_MODE_EUL};
-use super::space::BDriverSpace;
+use crate::device::blend::anim::driver::chan::{BTransChan, ROT_MODE_EUL};
+use crate::device::blend::anim::driver::space::BDriverSpace;
 use crate::device::blend::read::idprop::BIdGroup;
 use crate::device::blend::read::object::transform::{IDENTITY4, ObjectTransformRaw, object_to_mat4};
 use crate::device::blend::rig::math::{BMat3, BQuat};

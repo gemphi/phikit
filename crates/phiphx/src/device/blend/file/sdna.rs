@@ -6,7 +6,7 @@
 //! this, every field read walked the type list and the struct's members
 //! with string compares — two thirds of a 24-second open of a rigged file.
 
-use super::kind::{DnaStruct, DnaType};
+use crate::device::blend::file::kind::{DnaStruct, DnaType};
 use std::collections::HashMap;
 
 /// One struct's members laid out.

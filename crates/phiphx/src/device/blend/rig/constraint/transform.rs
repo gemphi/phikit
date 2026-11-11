@@ -2,7 +2,7 @@
 //! location, rotation or scale mapped, range to range, onto one of the
 //! owner's, mixed in by that channel's mix mode.
 
-use super::BCob;
+use crate::device::blend::rig::constraint::BCob;
 use crate::device::blend::rig::math::{BCompose, BEulerOrder, BMat4, BQuat};
 use glam::{Mat3, Mat4, Vec3};
 

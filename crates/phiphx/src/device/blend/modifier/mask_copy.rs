@@ -8,7 +8,7 @@
 //! new vertices are appended in. An edge both of whose vertices survive but
 //! whose faces do not stays, as Blender keeps it: a loose edge now.
 
-use super::super::BlendEvalMesh;
+use crate::device::blend::modifier::BlendEvalMesh;
 use std::collections::{HashMap, HashSet};
 
 /// `use_smooth`'s inputs: each vertex's weight in the mask group and the

@@ -1,12 +1,12 @@
 //! Collections and objects as the Xform tree.
-use super::camera::UsdCamera;
-use super::head::UsdHead;
-use super::light::UsdLight;
-use super::mesh::UsdMesh;
-use super::name::UsdName;
-use super::node::NodeKind;
-use super::text::UsdText;
-use super::UsdSceneWriter;
+use crate::device::usd::write::scene::camera::UsdCamera;
+use crate::device::usd::write::scene::head::UsdHead;
+use crate::device::usd::write::scene::light::UsdLight;
+use crate::device::usd::write::scene::mesh::UsdMesh;
+use crate::device::usd::write::scene::name::UsdName;
+use crate::device::usd::write::scene::node::NodeKind;
+use crate::device::usd::write::scene::text::UsdText;
+use crate::device::usd::write::scene::UsdSceneWriter;
 use crate::scene::SceneCollection;
 
 impl UsdSceneWriter<'_> {

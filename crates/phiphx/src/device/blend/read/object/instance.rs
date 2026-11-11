@@ -24,8 +24,8 @@
 //! per member (`modifier/mod.rs`). Not yet: an Armature-deformed member's
 //! pose, Geometry Nodes instances, the background (`Scene.set`) scene.
 
-use super::instance_member::{collection_generator, DupliMember};
-use super::transform::IDENTITY4;
+use crate::device::blend::read::object::instance_member::{collection_generator, DupliMember};
+use crate::device::blend::read::object::transform::IDENTITY4;
 use crate::device::blend::file::kind::*;
 use glam::{Mat4, Vec3};
 use std::collections::HashMap;

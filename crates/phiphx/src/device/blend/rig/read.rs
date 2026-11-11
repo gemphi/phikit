@@ -2,8 +2,8 @@
 //! bPose.chanbase`) with its `Bone`, constraints and custom properties, and
 //! the object's drivers.
 
-use super::constraint::read::BTargetNameList;
-use super::{BRig, BRigBone};
+use crate::device::blend::rig::constraint::read::BTargetNameList;
+use crate::device::blend::rig::{BRig, BRigBone};
 use crate::device::blend::file::kind::*;
 use crate::device::blend::modifier::armature::name64;
 use glam::{Mat3, Mat4, Vec3};

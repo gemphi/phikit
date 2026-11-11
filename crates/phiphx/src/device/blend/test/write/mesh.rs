@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::write::mesh::*;
 
 fn cube() -> BlendNewMesh {
     let v = |x: f32, y: f32, z: f32| [x, y, z];

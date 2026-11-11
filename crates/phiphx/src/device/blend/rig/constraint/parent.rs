@@ -1,7 +1,7 @@
 //! Child Of, Floor and Pivot (`childof_evaluate`, `minmax_evaluate`,
 //! `pivotcon_evaluate`).
 
-use super::BCob;
+use crate::device::blend::rig::constraint::BCob;
 use crate::device::blend::rig::math::{BCompose, BEulerOrder, BMat3, BMat4, BQuat};
 use glam::{Mat3, Mat4, Vec3};
 

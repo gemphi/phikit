@@ -25,7 +25,7 @@ pub use stage::{UsdStage, UsdUpAxis};
 pub use write::UsdaPrinter;
 pub use xform::XformResolver;
 
-use super::{Device, DeviceKind, Source};
+use crate::device::{Device, DeviceKind, Source};
 use crate::device::Peek;
 use crate::phx::Progress;
 use crate::scene::{SceneLoadError, SceneModel};

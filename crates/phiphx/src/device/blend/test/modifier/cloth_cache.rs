@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::modifier::cloth_cache::*;
 
 #[test]
 fn the_hermite_passes_through_both_ends() {

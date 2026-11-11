@@ -7,9 +7,9 @@
 //! on something else. Within each step the values come from a snapshot, so
 //! the order objects are visited in cannot change the answer.
 
-use super::var::BlendDriverScene;
-use super::space::BDriverWorld;
-use super::{BlendDriver, BlendObjectDriver};
+use crate::device::blend::anim::driver::var::BlendDriverScene;
+use crate::device::blend::anim::driver::space::BDriverWorld;
+use crate::device::blend::anim::driver::{BlendDriver, BlendObjectDriver};
 use crate::device::blend::read::idprop::{BIdGroup, BIdValue};
 use crate::device::blend::read::object::transform::ObjectTransformRaw;
 use crate::device::blend::rig::solve::BChannelValue;

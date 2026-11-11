@@ -4,8 +4,8 @@
 //! object parented to the curve rides (`ob_parcurve`) and what Follow Path
 //! puts its owner on (`followpath_get_tarmat`).
 
-use super::bevel::{BBevelList, BBevelPoint, KEY_BSPLINE, KEY_CARDINAL, KEY_LINEAR, position_weights};
-use super::{BCurve, CU_FOLLOW, CU_NURB_CYCLIC, CU_PATH, CU_PATH_CLAMP, CU_PATH_RADIUS, CU_POLY, CU_BEZIER, CU_NURBS};
+use crate::device::blend::read::curve::bevel::{BBevelList, BBevelPoint, KEY_BSPLINE, KEY_CARDINAL, KEY_LINEAR, position_weights};
+use crate::device::blend::read::curve::{BCurve, CU_FOLLOW, CU_NURB_CYCLIC, CU_PATH, CU_PATH_CLAMP, CU_PATH_RADIUS, CU_POLY, CU_BEZIER, CU_NURBS};
 use crate::device::blend::rig::math::{BMat4, BQuat};
 use glam::{Mat4, Vec3};
 

@@ -35,7 +35,7 @@ pub use pass::{BlendDriverSet, BlendPropDriver};
 pub use socket::{BDriverSocket, socket_clamp, socket_path};
 pub use var::{BDriverValue, BlendDriverEnd, BlendDriverRead, BlendDriverScene};
 
-use super::fcurve::BFCurve;
+use crate::device::blend::anim::fcurve::BFCurve;
 use crate::device::blend::rig::driver::expr::BExpr;
 
 /// `DRIVER_TYPE_*`, as `rig/driver` names them.

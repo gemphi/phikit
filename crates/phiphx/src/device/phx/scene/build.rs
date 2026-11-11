@@ -1,6 +1,6 @@
 //! `PhxScene` construction and conversion methods.
 
-use super::part::{
+use crate::device::phx::scene::part::{
     PhxCamera, PhxCollection, PhxInstance, PhxMaterial, PhxMesh, PhxScene,
 };
 use crate::{PointCloud, Vertex};

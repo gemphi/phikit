@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::write::marker::*;
 
 #[test]
 fn the_list_is_rewritten_over_the_blocks_the_file_had_and_reads_back_in_order() {

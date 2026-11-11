@@ -2,8 +2,8 @@
 //! its `ChannelDriver` — type, expression, and `DriverVar`s whose first
 //! `DriverTarget` names what they read.
 
-use super::expr::BExpr;
-use super::{BDriven, BDriverSource, BDriverVar, BRigDriver, BRnaPath};
+use crate::device::blend::rig::driver::expr::BExpr;
+use crate::device::blend::rig::driver::{BDriven, BDriverSource, BDriverVar, BRigDriver, BRnaPath};
 use crate::device::blend::file::kind::*;
 use crate::device::blend::rig::read::BFieldReader;
 use crate::device::blend::rig::BRig;

@@ -1,5 +1,5 @@
 //! Blender names as USD prim names.
-use super::text::UsdText;
+use crate::device::usd::write::scene::text::UsdText;
 use std::collections::HashSet;
 
 /// Blender allows any text in a name ("Lot/Car", "Cube.001", "Wall é");

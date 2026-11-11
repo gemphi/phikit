@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::read::scene::border::*;
 
 #[test]
 fn the_view_s_own_border_reads_its_flag() {

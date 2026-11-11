@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::anim::fcurve::*;
 
 fn key(x: f32, y: f32, ipo: u8) -> BKey {
     BKey::new([x - 1.0, y], [x, y], [x + 1.0, y], ipo)

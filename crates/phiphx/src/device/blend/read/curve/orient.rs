@@ -3,8 +3,8 @@
 //! (`make_bevel_list_3D_minimum_twist`, `_tangent`, `_zup`), smoothed and
 //! tilted — or, for a flat curve, tracked with Z up (`make_bevel_list_2D`).
 
-use super::bevel::BBevelList;
-use super::{CU_TWIST_MINIMUM, CU_TWIST_TANGENT};
+use crate::device::blend::read::curve::bevel::BBevelList;
+use crate::device::blend::read::curve::{CU_TWIST_MINIMUM, CU_TWIST_TANGENT};
 use crate::device::blend::rig::math::{BQuat, BVec3};
 use glam::Vec3;
 

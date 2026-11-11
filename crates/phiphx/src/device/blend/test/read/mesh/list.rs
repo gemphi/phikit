@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::read::mesh::list::*;
 
 #[test]
 fn keeps_faces_and_costs_one_array() {

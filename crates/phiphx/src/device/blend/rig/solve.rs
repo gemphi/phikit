@@ -3,14 +3,14 @@
 //! its parent, its constraints' targets and custom space — an IK chain as
 //! one unit (`BKE_pose_where_is_bone`, `iksolver_execute_tree`).
 
-use super::constraint::{BCob, BConstraintKind, BTarget, CONSTRAINT_OFF};
-use super::driver::BRnaPath;
-use super::driver::BRnaStep;
-use super::ik::BIkTree;
-use super::math::{BEulerOrder, BMat4, BQuat, BVec3, BCompose};
-use super::space::BParentTransform;
-use super::view::BSceneView;
-use super::{BONE_CONNECTED, BRig, BRigState};
+use crate::device::blend::rig::constraint::{BCob, BConstraintKind, BTarget, CONSTRAINT_OFF};
+use crate::device::blend::rig::driver::BRnaPath;
+use crate::device::blend::rig::driver::BRnaStep;
+use crate::device::blend::rig::ik::BIkTree;
+use crate::device::blend::rig::math::{BEulerOrder, BMat4, BQuat, BVec3, BCompose};
+use crate::device::blend::rig::space::BParentTransform;
+use crate::device::blend::rig::view::BSceneView;
+use crate::device::blend::rig::{BONE_CONNECTED, BRig, BRigState};
 use crate::device::blend::anim::channel::channel_mut;
 use crate::device::blend::anim::fcurve::BFCurve;
 use crate::device::blend::anim::nla_eval::{BMotionTrack, BNlaTarget};

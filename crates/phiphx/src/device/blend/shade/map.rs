@@ -2,7 +2,7 @@
 //! Roughness, Metallic and Emission Color. A linked image replaces the
 //! socket value (Blender ignores the slider once something is linked).
 
-use super::node::read_cstr;
+use crate::device::blend::shade::node::read_cstr;
 use crate::device::blend::file::kind::*;
 
 /// Image keys (see `image.rs`) per textured Principled input.

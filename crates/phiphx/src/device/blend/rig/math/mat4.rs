@@ -1,7 +1,7 @@
 //! 4x4 matrix helpers and the loc/rot/size composers (`math_matrix_c.cc`).
-use super::euler::BEulerOrder;
-use super::ortho::BOrtho;
-use super::vec::{BMat3, BVec3};
+use crate::device::blend::rig::math::euler::BEulerOrder;
+use crate::device::blend::rig::math::ortho::BOrtho;
+use crate::device::blend::rig::math::vec::{BMat3, BVec3};
 use glam::{Mat3, Mat4, Vec3};
 
 /// 4×4 matrix helpers.

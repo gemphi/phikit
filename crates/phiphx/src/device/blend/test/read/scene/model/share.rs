@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::read::scene::model::share::*;
 use std::sync::Arc;
 
 fn object(name: &str, block: u64, source: Option<u64>, verts: usize) -> BlendSceneObject {

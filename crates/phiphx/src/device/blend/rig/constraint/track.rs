@@ -1,7 +1,7 @@
 //! Damped Track and Stretch To (`damptrack_do_transform`,
 //! `stretchto_evaluate`).
 
-use super::{BCob, BConstraintKind};
+use crate::device::blend::rig::constraint::{BCob, BConstraintKind};
 use crate::device::blend::rig::math::{BCompose, BMat4, BVec3};
 use glam::{Mat3, Mat4, Vec3};
 

@@ -4,9 +4,9 @@
 //! `BKE_multires_construct_tangent_matrix`, and on a grid's seams averaged
 //! with the neighbouring grids (`average_displacement`).
 
-use super::grid::{ptex_to_grid, rotate_grid_to_quad, rotate_quad_to_corner, BGridList};
-use super::limit::BLimit;
-use super::read::BMDispList;
+use crate::device::blend::modifier::multires::grid::{ptex_to_grid, rotate_grid_to_quad, rotate_quad_to_corner, BGridList};
+use crate::device::blend::modifier::multires::limit::BLimit;
+use crate::device::blend::modifier::multires::read::BMDispList;
 
 type F3 = [f32; 3];
 

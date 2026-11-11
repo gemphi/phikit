@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::shade::scalar::*;
 
 #[test]
 fn bright_contrast_and_gamma_follow_the_glsl() {

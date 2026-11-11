@@ -1,5 +1,5 @@
 //! Gathering IK constraints into trees at their chain roots (`initialize_posetree`).
-use super::*;
+use crate::device::blend::rig::ik::*;
 
 impl BRig {
     pub(super) fn ik_data(&self, bone: usize, con: usize) -> Option<&BIkData> {

@@ -14,9 +14,9 @@
 //! Simplify cap on the level, external displacement files, custom normals,
 //! and UV smoothing (UVs are interpolated as `subsurf.rs` does).
 
-use super::subsurf::BSubsurf;
-use super::topology::Topology;
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::subsurf::BSubsurf;
+use crate::device::blend::modifier::topology::Topology;
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::file::kind::*;
 use std::sync::Arc;
 

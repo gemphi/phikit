@@ -8,7 +8,7 @@
 //! a mesh of uneven quads (the CW-POSES `console_middle_geo`, Mirror →
 //! Solidify) that put shell vertices up to 6 mm from Blender's.
 
-use super::super::BlendEvalMesh;
+use crate::device::blend::modifier::BlendEvalMesh;
 use glam::Vec3;
 
 /// `normalize_v3`: the zero vector stays zero.

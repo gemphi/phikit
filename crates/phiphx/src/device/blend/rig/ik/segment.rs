@@ -5,7 +5,7 @@
 //! joint along Y chained after it (a "composite").
 
 
-use super::rotation::BIkMath;
+use crate::device::blend::rig::ik::rotation::BIkMath;
 use glam::{DMat3, DVec3};
 
 /// What a segment's joint is.

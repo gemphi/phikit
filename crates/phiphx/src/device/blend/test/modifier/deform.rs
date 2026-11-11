@@ -1,6 +1,6 @@
 //! The memo answers the same thing the read does, and only reads once.
 
-use super::*;
+use crate::device::blend::modifier::deform::*;
 
 fn file() -> BlendFile {
     let path = format!("{}/tests/fixtures/FLORIS_BOLDRIOD_RIG.blend", env!("CARGO_MANIFEST_DIR"));

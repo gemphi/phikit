@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::shade::sepcomb::*;
 
 fn close(a: [f32; 3], b: [f32; 3]) -> bool {
     a.iter().zip(b).all(|(x, y)| (x - y).abs() < 1e-5)

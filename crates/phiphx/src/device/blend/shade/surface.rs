@@ -14,9 +14,9 @@
 //! (`surface_mix`, [`BlendMix`]), each side folded, and shades both — so a
 //! Mix of unlike closures renders as both, not as one in-between lobe.
 
-use super::eval::BGraph;
-use super::link::BLink;
-use super::node::read_cstr;
+use crate::device::blend::shade::eval::BGraph;
+use crate::device::blend::shade::link::BLink;
+use crate::device::blend::shade::node::read_cstr;
 use crate::device::blend::file::kind::*;
 use crate::device::blend::read::scene::kind::BlendBsdf;
 

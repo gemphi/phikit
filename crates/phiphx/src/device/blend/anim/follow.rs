@@ -6,7 +6,7 @@
 //! for `PARBONE`, `BKE_object_get_parent_matrix`) through `parentinv`, then
 //! its constraints (`BObjectWork`).
 
-use super::motion::{BlendMotion, BlendMotionList};
+use crate::device::blend::anim::motion::{BlendMotion, BlendMotionList};
 use crate::device::blend::read::curve::BPathAt;
 use crate::device::blend::read::object::transform::object_to_mat4;
 use crate::device::blend::rig::{BObjectSpace, BObjectWork, BRigPose, BRigSpace, BSceneView, BlendRigSource};

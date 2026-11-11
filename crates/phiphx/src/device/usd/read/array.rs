@@ -1,8 +1,8 @@
 //! Array and tuple readers — parse `(x, y, z)` tuples and `[...]` array
 //! literals into typed Rust vectors for the USDA parser.
 
-use super::super::error::UsdaError;
-use super::UsdaParser;
+use crate::device::usd::error::UsdaError;
+use crate::device::usd::read::UsdaParser;
 
 impl<'a> UsdaParser<'a> {
     pub(crate) fn read_tuple3(

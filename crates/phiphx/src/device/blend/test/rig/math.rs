@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::rig::math::*;
 use glam::{Mat3, Vec3};
 
 #[test]

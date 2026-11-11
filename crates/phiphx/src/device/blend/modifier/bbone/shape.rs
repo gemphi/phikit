@@ -1,5 +1,5 @@
 //! What is read from one armature: bone and channel shapes, keyed by address.
-use super::*;
+use crate::device::blend::modifier::bbone::*;
 
 /// A bone's saved B-Bone properties and rest placement.
 #[derive(Clone, Debug, Default)]

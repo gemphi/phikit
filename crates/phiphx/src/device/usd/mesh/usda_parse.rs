@@ -7,7 +7,7 @@
 //! that shared logic so the two entry points stay small and identical in
 //! behaviour.
 
-use super::UsdImporter;
+use crate::device::usd::mesh::UsdImporter;
 
 impl UsdImporter {
     /// Update the attribute flags from a mesh-body line.

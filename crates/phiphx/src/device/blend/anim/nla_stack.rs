@@ -9,7 +9,7 @@
 //! plays no action after. The session (phiber) and the writer
 //! (`write/nla.rs`) both lay strips with these, so what shows is what saves.
 
-use super::nla::*;
+use crate::device::blend::anim::nla::*;
 
 /// `STASH_TRACK_NAME`.
 pub const STASH_TRACK: &str = "[Action Stash]";

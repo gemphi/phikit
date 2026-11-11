@@ -9,10 +9,10 @@
 //! smoothing.
 
 use crate::device::blend::file::kind::*;
-use super::driver::BModValue;
-use super::{BModifier, BlendEvalMesh, EvalCtx};
-use super::crease::{BCreaseLevel, BRule, BSharpness};
-use super::topology::Topology;
+use crate::device::blend::modifier::driver::BModValue;
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::crease::{BCreaseLevel, BRule, BSharpness};
+use crate::device::blend::modifier::topology::Topology;
 use rayon::prelude::*;
 
 const RECURSIVE: u32 = 1 << 6;

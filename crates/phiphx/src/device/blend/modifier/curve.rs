@@ -24,7 +24,7 @@
 //! What zips the CW-POSES garments: the stitching and zip teeth are arrays
 //! bent along their seams.
 
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use crate::device::blend::read::curve::bevel::BBevelList;
 use crate::device::blend::read::curve::{BCurvePath, CU_PATH_RADIUS};
 use crate::device::blend::file::kind::*;

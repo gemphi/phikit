@@ -7,7 +7,7 @@
 //! input list, which is the `bNode.inputs` ListBase order the file stores.
 //! The component is the curve's `array_index`, not part of the path.
 
-use super::driver::{BMatProp, BMatWrite, BMaterialDriver, BMaterialDriverList};
+use crate::device::blend::shade::driver::{BMatProp, BMatWrite, BMaterialDriver, BMaterialDriverList};
 use crate::device::blend::anim::driver::socket_path;
 use crate::device::blend::file::kind::*;
 

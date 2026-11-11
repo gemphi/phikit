@@ -1,7 +1,7 @@
 //! Track To and Locked Track (`trackto_evaluate` with `vectomat`,
 //! `locktrack_evaluate`).
 
-use super::BCob;
+use crate::device::blend::rig::constraint::BCob;
 use crate::device::blend::rig::math::{BMat3, BMat4, BVec3};
 use glam::{Mat3, Mat4, Vec3};
 

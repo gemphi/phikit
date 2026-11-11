@@ -6,7 +6,7 @@
 //! same linked list and returns the names of the ones that were dropped,
 //! so the open can surface them.
 
-use super::KINDS;
+use crate::device::blend::modifier::KINDS;
 use crate::device::blend::file::kind::*;
 
 /// `eModifierType` → user-facing Blender name (`DNA_modifier_types.h`).

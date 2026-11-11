@@ -8,7 +8,7 @@ use crate::device::usd::read::UsdaParser;
 use crate::device::usd::write::UsdaPrinter;
 use crate::device::usd::stage::UsdStage;
 
-use super::generator::arb_stage;
+use crate::device::usd::test::generator::arb_stage;
 
 /// Compare two stages for equivalence in metadata, prim paths, types, and
 /// attribute values. Uses structural equality via `PartialEq`.

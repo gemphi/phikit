@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::anim::summary::*;
 use crate::device::blend::anim::fcurve::{BFCurve, BKey};
 
 fn key(frame: f32) -> BKey {

@@ -4,8 +4,8 @@
 //! builtin, packed (`PackedFile`) or a file beside the `.blend`
 //! (`BKE_vfont_data_ensure`).
 
-use super::font::BFont;
-use super::{text_mesh, BText, TCharInfo, TMesh};
+use crate::device::blend::read::text::font::BFont;
+use crate::device::blend::read::text::{text_mesh, BText, TCharInfo, TMesh};
 use crate::device::blend::file::kind::*;
 use crate::device::blend::rig::read::BFieldReader;
 use std::sync::Arc;

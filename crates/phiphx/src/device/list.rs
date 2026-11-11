@@ -1,6 +1,6 @@
 //! The devices, in a fixed order: USD, Blend, PHX. A device whose feature is
 //! off is not in the list.
-use super::{Device, DeviceKind};
+use crate::device::{Device, DeviceKind};
 
 /// Every device this build has, in the order they are asked.
 pub struct DeviceList {

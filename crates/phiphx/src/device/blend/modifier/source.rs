@@ -1,5 +1,5 @@
 //! A mesh an Armature modifier deforms, kept so its rig can pose it at any frame.
-use super::*;
+use crate::device::blend::modifier::*;
 
 /// A mesh an Armature modifier deforms, kept so its rig can pose it at any
 /// frame (`scene/rig.rs`): the mesh the Armature modifier receives (the

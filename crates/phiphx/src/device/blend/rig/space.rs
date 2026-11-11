@@ -4,10 +4,10 @@
 //! `BKE_constraint_mat_convertspace` (world, pose, local, local with
 //! parent, owner local, custom).
 
-use super::math::BMat4;
-use super::solve::BPoseWork;
-use super::view::BObjectSpace;
-use super::{BONE_HINGE, BONE_NO_LOCAL_LOCATION, BRig, BRigBone};
+use crate::device::blend::rig::math::BMat4;
+use crate::device::blend::rig::solve::BPoseWork;
+use crate::device::blend::rig::view::BObjectSpace;
+use crate::device::blend::rig::{BONE_HINGE, BONE_NO_LOCAL_LOCATION, BRig, BRigBone};
 use glam::{Mat3, Mat4, Vec3};
 
 /// `CONSTRAINT_SPACE_*`.

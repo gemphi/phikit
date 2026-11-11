@@ -3,7 +3,7 @@
 //! `crate::phx::Phx`; `BlendImporter` serves the asset pipeline.
 //! Status and next steps: `jobs.md` in this folder.
 
-use super::{Device, DeviceKind, Source};
+use crate::device::{Device, DeviceKind, Source};
 use crate::device::Peek;
 use crate::phx::Progress;
 use crate::scene::{DeferredModifierList, SceneLoadError, SceneModel};

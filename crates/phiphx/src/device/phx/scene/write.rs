@@ -1,6 +1,6 @@
 //! PHX scene binary serialization and conversion helpers.
 
-use super::part::{PHX_SCENE_MAGIC, PhxMaterial, PhxMesh, PhxScene};
+use crate::device::phx::scene::part::{PHX_SCENE_MAGIC, PhxMaterial, PhxMesh, PhxScene};
 use crate::{PointCloudError, Result};
 use byteorder::{LittleEndian, WriteBytesExt};
 use std::io::Write;

@@ -13,8 +13,8 @@
 //! Boundary and non-manifold edges are infinitely sharp, and so, when the
 //! modifier keeps corners, is a boundary vertex with one face.
 
-use super::BlendEvalMesh;
-use super::topology::Topology;
+use crate::device::blend::modifier::BlendEvalMesh;
+use crate::device::blend::modifier::topology::Topology;
 
 /// OpenSubdiv's `SHARPNESS_INFINITE`.
 const INFINITE: f32 = 10.0;

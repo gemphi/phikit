@@ -16,7 +16,7 @@
 //! the new names left every bind empty, which showed as a Surface Deform
 //! that moved nothing.
 
-use super::surface_deform::{MODE_CENTROID, MODE_CORNER_TRIS};
+use crate::device::blend::modifier::surface_deform::{MODE_CENTROID, MODE_CORNER_TRIS};
 use crate::device::blend::file::kind::*;
 
 /// One `SDefBind`.

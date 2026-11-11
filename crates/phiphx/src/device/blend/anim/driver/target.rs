@@ -6,7 +6,7 @@
 //! second target is one `DriverTarget` further along; the stride comes from
 //! the DNA rather than a constant, since the struct has grown.
 
-use super::space::BDriverSpace;
+use crate::device::blend::anim::driver::space::BDriverSpace;
 use crate::device::blend::file::kind::*;
 
 /// One target as the file spells it.

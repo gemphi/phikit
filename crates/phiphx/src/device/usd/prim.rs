@@ -1,6 +1,6 @@
 //! USD prims — the nodes of the USD scene graph, addressed by path.
 
-use super::attribute::{UsdAttribute, UsdValue};
+use crate::device::usd::attribute::{UsdAttribute, UsdValue};
 
 /// A prim (primitive) in a USD stage: a typed, named node with attributes and
 /// children, addressed by an absolute path like `/Root/FlatTerrain`.

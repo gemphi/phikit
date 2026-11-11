@@ -1,5 +1,5 @@
 //! Modifier work captured as owned jobs, so the apply can run off the read thread.
-use super::*;
+use crate::device::blend::modifier::*;
 
 /// One mesh object's modifier work, captured so the apply can run off the read
 /// thread (progressive open). Owned and `Send` — the base mesh, the stack and

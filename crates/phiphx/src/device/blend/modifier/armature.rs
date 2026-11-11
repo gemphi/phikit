@@ -14,9 +14,9 @@
 //! Not yet: envelopes, dual quaternions, multi-modifier.
 
 use crate::device::blend::file::kind::*;
-use super::bbone::BBone;
-use super::skin::{SkinJob, SkinPair};
-use super::{BModifier, BlendEvalMesh, EvalCtx};
+use crate::device::blend::modifier::bbone::BBone;
+use crate::device::blend::modifier::skin::{SkinJob, SkinPair};
+use crate::device::blend::modifier::{BModifier, BlendEvalMesh, EvalCtx};
 use glam::{Mat4, Vec3};
 use std::collections::HashMap;
 

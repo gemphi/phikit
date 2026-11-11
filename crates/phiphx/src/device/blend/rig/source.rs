@@ -2,8 +2,8 @@
 //! deforming bone's matrix and B-Bone segments for the Armature modifier
 //! (`modifier/armature.rs`), from a solved pose rather than the saved one.
 
-use super::math::BMat4;
-use super::{BONE_NO_DEFORM, BRig, BRigAnim, BRigPose, BSceneView};
+use crate::device::blend::rig::math::BMat4;
+use crate::device::blend::rig::{BONE_NO_DEFORM, BRig, BRigAnim, BRigPose, BSceneView};
 use crate::device::blend::anim::fcurve::BFCurve;
 use crate::device::blend::anim::nla::TRACK_MUTED;
 use crate::device::blend::anim::nla_eval::BMotionTrack;

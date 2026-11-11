@@ -1,5 +1,5 @@
 //! Blender's quaternion, `(w, x, y, z)` (`math_rotation_c.cc`).
-use super::vec::BMat3;
+use crate::device::blend::rig::math::vec::BMat3;
 use glam::{Mat3, Vec3};
 
 /// A Blender quaternion, `(w, x, y, z)`.

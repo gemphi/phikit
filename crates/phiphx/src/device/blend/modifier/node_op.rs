@@ -12,7 +12,7 @@
 //! file is free to have saved any of them and `nodes.rs` turns a modifier
 //! down rather than guess (an operation outside the tables is `None`).
 
-use super::node_field::BField;
+use crate::device::blend::modifier::node_field::BField;
 
 /// `angle_normalized_v3v3`: `acos` of the dot, by the more accurate chord.
 pub(crate) fn angle_normalized(a: [f32; 3], b: [f32; 3]) -> f32 {

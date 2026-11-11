@@ -1,6 +1,6 @@
 //! Unit tests for Blender native scene export.
 
-use super::*;
+use crate::device::blend::write::script::*;
 
 #[test]
 fn test_default_scene_export_config() {

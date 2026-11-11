@@ -2,7 +2,7 @@
 //! integer property, and a table keyed by modifier *type* because the
 //! property name alone is ambiguous.
 
-use super::*;
+use crate::device::blend::modifier::driver::*;
 
 #[test]
 fn an_integer_setting_truncates_toward_zero_and_does_not_round_or_floor() {

@@ -1,4 +1,4 @@
-use super::*;
+use crate::device::blend::write::field::*;
 
 fn fixture() -> BlendFile {
     let path = format!("{}/tests/fixtures/nla_cube.blend", env!("CARGO_MANIFEST_DIR"));

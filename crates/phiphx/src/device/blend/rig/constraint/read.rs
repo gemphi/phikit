@@ -1,7 +1,7 @@
 //! Reading a pose channel's constraints: `bConstraint` and the data struct
 //! its type names, through the file's own DNA.
 
-use super::*;
+use crate::device::blend::rig::constraint::*;
 use crate::device::blend::file::kind::*;
 use crate::device::blend::rig::read::BFieldReader;
 use std::collections::HashMap;

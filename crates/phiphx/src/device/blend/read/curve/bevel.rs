@@ -3,7 +3,7 @@
 //! each point's direction and rotation (`make_bevel_list_3D_*`,
 //! `make_bevel_list_2D`).
 
-use super::{BCurve, BNurb, CU_3D, CU_BEZIER, CU_NURBS, CU_POLY, CU_TWIST_TANGENT};
+use crate::device::blend::read::curve::{BCurve, BNurb, CU_3D, CU_BEZIER, CU_NURBS, CU_POLY, CU_TWIST_TANGENT};
 use crate::device::blend::rig::math::{BQuat, BVec3};
 use glam::Vec3;
 
