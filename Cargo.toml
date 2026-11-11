@@ -39,6 +39,8 @@ members = [
     # looks, themes and venues as declarative sets, and the play itself on
     # phiecs (`crates/phicore/phiecs`).
     "crates/phiplay",
+    # Cycles in Rust, ported top to bottom (`crates/cycles`).
+    "crates/cycles",
     # The core of phinet's phiecs that phiber and phiplay run on, kept here
     # so phikit builds with no phinet folder beside it.
     "crates/phicore/phiecs",
