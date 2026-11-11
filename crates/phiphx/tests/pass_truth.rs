@@ -8,7 +8,7 @@
 //! Mist's single channel is "Z" rather than "V", the two index passes use
 //! "X", Ambient Occlusion is three channels, and UV is "U", "V", "A".
 
-use phiphx::blend::BPassKind;
+use phiphx::device::blend::BPassKind;
 use std::collections::BTreeSet;
 
 fn blender_channels() -> BTreeSet<String> {
@@ -42,7 +42,7 @@ fn a_pass_we_name_has_as_many_channels_as_blender_gives_it() {
 
 #[test]
 fn the_pass_bits_are_distinct_and_combined_is_always_asked_for() {
-    use phiphx::blend::BlendPassSet;
+    use phiphx::device::blend::BlendPassSet;
     // The flag has holes in it — several bits are passes Blender removed —
     // so a typo would silently alias two passes onto one bit.
     let bits: BTreeSet<u32> = BPassKind::list().iter().map(|k| k.bit()).collect();

@@ -5,7 +5,7 @@
 //! the outline on and black, Cavity off, its type Screen, every factor 1,
 //! Shadow off at intensity 0.5, no Backface Culling, Specular Lighting on.
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use phiphx::scene::{SceneModel, SceneShadow, SceneSolidFx, SceneSolidShade, SceneSsao};
 use std::path::PathBuf;
 

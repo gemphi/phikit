@@ -4,7 +4,7 @@
 //! this test computes the
 //! same digests with phiphx. Files missing on this machine are skipped.
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use std::path::PathBuf;
 
 fn digest(file: &str, path: &PathBuf) -> Vec<String> {

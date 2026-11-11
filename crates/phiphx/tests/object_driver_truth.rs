@@ -14,7 +14,7 @@
 //! where a driver's result lands; the matrices are decomposed so each
 //! channel can be compared on its own.
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use std::path::PathBuf;
 
 const FRAMES: [f32; 5] = [1.0, 6.0, 11.0, 16.0, 21.0];
@@ -89,7 +89,7 @@ fn a_driven_objects_channels_are_blenders_at_every_frame() {
 /// still moves something, so the kinds are pinned by name.
 #[test]
 fn each_driver_is_read_with_its_kind_its_variables_and_its_curve() {
-    use phiphx::blend::BlendDriverRead;
+    use phiphx::device::blend::BlendDriverRead;
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/OBJDRIVERS.blend");
     let Ok(bytes) = std::fs::read(&path) else { return eprintln!("no OBJDRIVERS.blend; skipped") };
     let scene = BlendFile::parse_bytes(&bytes).expect("parse").extract_scene().expect("scene");

@@ -27,8 +27,8 @@
 //! modifier stack — see `blend/modifier/driver.rs`'s header for why that
 //! is a separate change.
 
-use phiphx::blend::BlendFile;
-use phiphx::blend::{BModValue, BModWrite};
+use phiphx::device::blend::BlendFile;
+use phiphx::device::blend::{BModValue, BModWrite};
 use std::path::PathBuf;
 
 const FRAMES: [f32; 5] = [1.0, 6.0, 11.0, 16.0, 21.0];

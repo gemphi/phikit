@@ -11,7 +11,7 @@
 //! f-stop stops being a ratio and becomes a length — and the formula
 //! differs between a perspective and an orthographic camera.
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use std::path::PathBuf;
 
 fn model_of(path: &std::path::Path) -> phiphx::scene::SceneModel {

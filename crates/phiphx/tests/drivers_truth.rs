@@ -11,7 +11,7 @@ const TRUTH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/truth/thymus_dri
 #[test]
 fn every_driven_object_lists_blenders_driver_curves_and_generators() {
     let bytes = std::fs::read(FILE).expect("fixture");
-    let blend = phiphx::blend::BlendFile::parse_bytes(&bytes).expect("parse").extract_scene().expect("scene");
+    let blend = phiphx::device::blend::BlendFile::parse_bytes(&bytes).expect("parse").extract_scene().expect("scene");
     let model = SceneModel::from_blend_owned(blend, FILE);
     let want: Vec<String> = std::fs::read_to_string(TRUTH).expect("truth").lines().map(str::to_string).collect();
     let have: Vec<String> = model

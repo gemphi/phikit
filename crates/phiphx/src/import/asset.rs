@@ -6,7 +6,7 @@ use crate::device::blend::BlendImporter;
 use super::gltf::GltfImporter;
 use crate::device::phx::read::PhxImporter;
 use super::ply::PlyImporter;
-use super::usd::UsdImporter;
+use crate::device::usd::read::mesh::UsdImporter;
 use glam::Vec3;
 use std::path::Path;
 

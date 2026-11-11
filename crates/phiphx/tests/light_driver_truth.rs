@@ -23,11 +23,11 @@
 //!   driven negative (a float socket, unclamped) and its `Color` R and B
 //!   (RGBA, clamped at 0).
 
-use phiphx::blend::BlendFile;
-use phiphx::blend::BLightProp;
-use phiphx::blend::{AREA_ENERGY_SCALE, LA_AREA};
-use phiphx::blend::SPOT_SIZE_MIN;
-use phiphx::blend::shade::world_driver::{BG_COLOR, BG_STRENGTH, BWorldWrite};
+use phiphx::device::blend::BlendFile;
+use phiphx::device::blend::BLightProp;
+use phiphx::device::blend::{AREA_ENERGY_SCALE, LA_AREA};
+use phiphx::device::blend::SPOT_SIZE_MIN;
+use phiphx::device::blend::shade::world_driver::{BG_COLOR, BG_STRENGTH, BWorldWrite};
 use std::path::PathBuf;
 
 const FRAMES: [f32; 5] = [1.0, 6.0, 11.0, 16.0, 21.0];
@@ -122,7 +122,7 @@ fn every_light_driver_writes_what_blender_writes() {
     let saved = |name: &str| -> (f32, [f32; 3]) {
         let object = scene.objects.iter().find(|o| o.name == format!("OB_{name}")).expect("the lamp's object");
         match &object.data {
-            phiphx::blend::BlendObjectData::Light(light) => {
+            phiphx::device::blend::BlendObjectData::Light(light) => {
                 let watts = if light.kind == LA_AREA { light.energy / AREA_ENERGY_SCALE } else { light.energy };
                 (watts, light.color)
             }
@@ -259,7 +259,7 @@ fn applying_moves_the_light_and_the_world_the_renderer_reads() {
 
     // At frame 11 SOURCE's Z is 0.6: energy ← 30, radius ← 0.12.
     let object = scene.objects.iter().find(|o| o.name == "OB_L_POINT").expect("OB_L_POINT");
-    let phiphx::blend::BlendObjectData::Light(mut light) = object.data.clone() else { panic!("not a light") };
+    let phiphx::device::blend::BlendObjectData::Light(mut light) = object.data.clone() else { panic!("not a light") };
     let set = scene.props.light_drivers.iter().find(|s| s.light == "L_POINT").expect("L_POINT");
     set.apply(&mut light, &ds, 11.0);
     assert!((light.energy - 30.0).abs() < 1e-3, "energy {}", light.energy);
@@ -268,7 +268,7 @@ fn applying_moves_the_light_and_the_world_the_renderer_reads() {
 
     // An area light: the driven watts land in the field's stored units.
     let object = scene.objects.iter().find(|o| o.name == "OB_L_AREA").expect("OB_L_AREA");
-    let phiphx::blend::BlendObjectData::Light(mut area) = object.data.clone() else { panic!("not a light") };
+    let phiphx::device::blend::BlendObjectData::Light(mut area) = object.data.clone() else { panic!("not a light") };
     assert_eq!(area.kind, LA_AREA);
     let set = scene.props.light_drivers.iter().find(|s| s.light == "L_AREA").expect("L_AREA");
     set.apply(&mut area, &ds, 11.0);

@@ -7,7 +7,7 @@
 //! `bsdf` is that surface folded (`surface_truth.rs`), where the script read
 //! the Principled node it leaves unlinked.
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 

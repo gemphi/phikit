@@ -5,7 +5,7 @@
 //! object that is read but draws nothing shows up here as a mesh with no
 //! faces, which is where a missing garment goes missing.
 
-use phiphx::blend::{BlendFile, BlendScene};
+use phiphx::device::blend::{BlendFile, BlendScene};
 
 fn main() {
     let path = std::env::args().nth(1).expect("usage: why_missing <file.blend>");

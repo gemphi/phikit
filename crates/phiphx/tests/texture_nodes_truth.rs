@@ -4,8 +4,8 @@
 //! two Voronoi features (`shade/texnode.rs`). The numbers are the ones the
 //! script set; the enums are `DNA_node_types.h`'s.
 
-use phiphx::blend::BlendFile;
-use phiphx::blend::shade::procedural::{BlendProc, BlendProcKind};
+use phiphx::device::blend::BlendFile;
+use phiphx::device::blend::shade::procedural::{BlendProc, BlendProcKind};
 use phiphx::scene::SceneModel;
 use std::path::PathBuf;
 

@@ -12,7 +12,7 @@
 //! scene draw its mesh three times there — nothing merges coincident
 //! copies, `make_duplis_collection` runs once per instancer.
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 
 const FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/instance_visibility.blend");
 const TRUTH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/truth/instance_visibility.txt");

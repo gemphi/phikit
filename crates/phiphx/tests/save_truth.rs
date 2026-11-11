@@ -4,9 +4,9 @@
 //! `SmallBHead8` file (3.x), the 5.0 `LargeBHead8` file, and a
 //! zstd-wrapped one, each re-read through phiphx's own reader.
 
-use phiphx::blend::write::mesh::BlendNewMesh;
-use phiphx::blend::write::{BlendCompression, BlendDuplicate, BlendEditList, BlendNewObject, BlendObjectEdit};
-use phiphx::blend::{BlendFile, BlendVisibility};
+use phiphx::device::blend::write::mesh::BlendNewMesh;
+use phiphx::device::blend::write::{BlendCompression, BlendDuplicate, BlendEditList, BlendNewObject, BlendObjectEdit};
+use phiphx::device::blend::{BlendFile, BlendVisibility};
 
 const FIXTURES: &[&str] = &["THYMUS-BOLDROID-WAVE-003.blend", "nla_cube.blend", "DEPTH-OF-FIELD.blend"];
 

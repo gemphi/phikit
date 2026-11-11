@@ -9,7 +9,7 @@
 //! are, what their sockets say, the order they run in — against Blender,
 //! not just the arithmetic (`composite_truth.rs` does that).
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use phiphx::comp::{BCompKind, BCompPixel};
 use std::path::PathBuf;
 

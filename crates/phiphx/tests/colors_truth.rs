@@ -3,7 +3,7 @@
 //! read back linear — and the plane's float colours a point, spread over
 //! its corners. Skipped until the fixture is made (it takes Blender).
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use std::path::PathBuf;
 
 #[test]

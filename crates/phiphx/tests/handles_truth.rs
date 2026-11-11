@@ -3,7 +3,7 @@
 //! (made by `truth/blender_handles.py`: `keyframe_insert`, auto-clamped
 //! handles, Continuous Acceleration smoothing, Blender 5.0).
 
-use phiphx::blend::BFCurve;
+use phiphx::device::blend::BFCurve;
 use std::collections::BTreeMap;
 
 const TRUTH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/truth/handles.txt");

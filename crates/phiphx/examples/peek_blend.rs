@@ -4,7 +4,7 @@ fn main() {
     let mut args = std::env::args().skip(1);
     let path = args.next().expect("path to .blend");
     let t = std::time::Instant::now();
-    let info = phiphx::blend::BlendFile::read_quick_info(std::path::Path::new(&path)).expect("peek");
+    let info = phiphx::device::blend::BlendFile::read_quick_info(std::path::Path::new(&path)).expect("peek");
     println!("{path}: Blender {} in {:.2?}", info.version, t.elapsed());
     for s in &info.scenes {
         println!("  scene {:?} frames {}–{}", s.scene, s.frame_start, s.frame_end);

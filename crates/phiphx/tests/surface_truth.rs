@@ -5,7 +5,7 @@
 //! left unlinked beside a Glass node does not shade the glass — nor the
 //! other way round. The production files are checked when present.
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use phiphx::scene::SceneModel;
 use std::path::PathBuf;
 

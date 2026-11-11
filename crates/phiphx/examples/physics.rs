@@ -2,7 +2,7 @@
 //! `cargo run -p phiphx --example physics -- file.blend`
 //!
 //! Settings only, as the Physics tabs show them. Nothing simulates them yet.
-use phiphx::blend::physics::BlendPhysics;
+use phiphx::device::blend::physics::BlendPhysics;
 
 fn main() {
     for path in std::env::args().skip(1) {

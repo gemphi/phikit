@@ -3,8 +3,8 @@
 //! bpy). Every setting in the fixture is away from its default, so a value
 //! that comes back as the default is a field that was not read.
 
-use phiphx::blend::physics::*;
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::physics::*;
+use phiphx::device::blend::BlendFile;
 use std::path::PathBuf;
 
 fn physics() -> BlendPhysics {

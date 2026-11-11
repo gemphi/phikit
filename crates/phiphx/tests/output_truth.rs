@@ -9,7 +9,7 @@
 //! them are set to FFMPEG with an absolute Windows path, which is what a real
 //! file from an animation project looks like.
 
-use phiphx::blend::{BlendFile, BlendImageFormat};
+use phiphx::device::blend::{BlendFile, BlendImageFormat};
 use std::path::PathBuf;
 
 /// Blender reports an imtype phiber does not name as a bare number, so the

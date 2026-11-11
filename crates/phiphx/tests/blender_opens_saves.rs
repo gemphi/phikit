@@ -13,10 +13,10 @@
 //! layouts alike. A line that differs is an edit Blender does not see as
 //! phiphx meant it; a file Blender cannot open has no lines at all.
 
-use phiphx::blend::write::mesh::BlendNewMesh;
-use phiphx::blend::{BFCurve, BNlaStackList, BNlaStrip, BlendNla, STRIP_ACTIVE, STRIP_MUTED, STRIP_SELECT, STRIP_SYNC_LENGTH, STRIP_USR_TIME_CYCLIC, TRACK_ACTIVE, TRACK_MUTED, TRACK_PROTECTED, TRACK_SELECTED};
-use phiphx::blend::write::{BlendActionAssign, BlendActionRange, BlendCollectionEdit, BlendKeyInsert, BlendNlaStack, BlendCompression, BlendDuplicate, BlendEditList, BlendNewObject, BlendObjectEdit};
-use phiphx::blend::{BIdValue, BlendFile, BlendImageFormat, BlendOutput, BlendPlayback, BlendScene, BlendSyncMode, BlendVisibility};
+use phiphx::device::blend::write::mesh::BlendNewMesh;
+use phiphx::device::blend::{BFCurve, BNlaStackList, BNlaStrip, BlendNla, STRIP_ACTIVE, STRIP_MUTED, STRIP_SELECT, STRIP_SYNC_LENGTH, STRIP_USR_TIME_CYCLIC, TRACK_ACTIVE, TRACK_MUTED, TRACK_PROTECTED, TRACK_SELECTED};
+use phiphx::device::blend::write::{BlendActionAssign, BlendActionRange, BlendCollectionEdit, BlendKeyInsert, BlendNlaStack, BlendCompression, BlendDuplicate, BlendEditList, BlendNewObject, BlendObjectEdit};
+use phiphx::device::blend::{BIdValue, BlendFile, BlendImageFormat, BlendOutput, BlendPlayback, BlendScene, BlendSyncMode, BlendVisibility};
 use std::path::PathBuf;
 
 /// The cases: a file each Blender version wrote, and one with animation.
@@ -194,7 +194,7 @@ fn keyed(mut curve: BFCurve, keys: &[(f32, f32)]) -> BFCurve {
 
 /// Does the file have a collection called `name`?
 fn has(scene: &BlendScene, name: &str) -> bool {
-    fn walk(c: &phiphx::blend::BlendCollection, name: &str) -> bool {
+    fn walk(c: &phiphx::device::blend::BlendCollection, name: &str) -> bool {
         c.name == name || c.children.iter().any(|k| walk(k, name))
     }
     scene.collections.iter().any(|c| walk(c, name))
@@ -207,7 +207,7 @@ fn summary(case: &str, scene: &BlendScene) -> Vec<String> {
     let mut out = vec![format!("{case} frame {} {} {}", p.frame_current, p.frame_start, p.frame_end)];
     let active = scene.active_object.map(|i| scene.objects[i].name.clone()).unwrap_or_default();
     out.push(format!("{case} active {active}"));
-    let mut objects: Vec<(usize, &phiphx::blend::BlendSceneObject)> = scene.objects.iter().enumerate().collect();
+    let mut objects: Vec<(usize, &phiphx::device::blend::BlendSceneObject)> = scene.objects.iter().enumerate().collect();
     objects.sort_by(|a, b| a.1.name.cmp(&b.1.name));
     for (i, o) in objects {
         let kind = if o.object_type == "LAMP" { "LIGHT" } else { o.object_type.as_str() };
@@ -215,11 +215,11 @@ fn summary(case: &str, scene: &BlendScene) -> Vec<String> {
         // An animated object stands where its action puts it at the frame,
         // which Blender evaluates on load; its stored location is not that.
         // So does a child of one, wherever it is itself.
-        let animated = |o: &phiphx::blend::BlendSceneObject| {
+        let animated = |o: &phiphx::device::blend::BlendSceneObject| {
             let playing = |n: &&BlendNla| n.object == o.name && n.tracks.iter().any(|t| t.flag & TRACK_MUTED == 0 && !t.strips.is_empty());
             p.actions.iter().any(|a| a.users.contains(&o.name)) || p.nla.iter().any(|n| playing(&n))
         };
-        let parent_of = |o: &phiphx::blend::BlendSceneObject| scene.objects.iter().find(|p| o.parent_address != 0 && p.block_address == o.parent_address);
+        let parent_of = |o: &phiphx::device::blend::BlendSceneObject| scene.objects.iter().find(|p| o.parent_address != 0 && p.block_address == o.parent_address);
         let carried = std::iter::successors(parent_of(o), |p| parent_of(p)).any(animated);
         let [x, y, z] = o.location;
         let at = if animated(o) {
@@ -243,7 +243,7 @@ fn summary(case: &str, scene: &BlendScene) -> Vec<String> {
             u8::from(scene.selected.contains(&i))
         ));
     }
-    fn collections(case: &str, c: &phiphx::blend::BlendCollection, parent: &str, out: &mut Vec<String>) {
+    fn collections(case: &str, c: &phiphx::device::blend::BlendCollection, parent: &str, out: &mut Vec<String>) {
         let path = if parent.is_empty() { c.name.clone() } else { format!("{parent}/{}", c.name) };
         let mut names = c.object_names.clone();
         names.sort();
@@ -262,7 +262,7 @@ fn summary(case: &str, scene: &BlendScene) -> Vec<String> {
         collections(case, c, "", &mut out);
     }
     // Every action, and who uses which through which slot.
-    let mut actions: Vec<&phiphx::blend::BlendActionSummary> = p.actions.iter().collect();
+    let mut actions: Vec<&phiphx::device::blend::BlendActionSummary> = p.actions.iter().collect();
     actions.sort_by(|a, b| a.name.cmp(&b.name));
     for a in &actions {
         let slots: Vec<&str> = a.slots.iter().map(|s| s.identifier.as_str()).collect();

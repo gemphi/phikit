@@ -5,7 +5,6 @@
 #[cfg(feature = "gltf-import")]
 pub mod gltf;
 pub mod ply;
-pub mod usd;
 
 pub mod asset;
 pub mod format;

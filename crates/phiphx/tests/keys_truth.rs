@@ -26,7 +26,7 @@ fn truth() -> HashMap<String, (usize, Vec<String>, Vec<f32>, String)> {
 
 /// The same counts from phiphx's curves, in Blender's spelling.
 fn state_of(action: &phiphx::scene::SceneAction) -> String {
-    use phiphx::blend::{COLOR_AUTO_RAINBOW, COLOR_AUTO_RGB, COLOR_AUTO_YRGB, COLOR_CUSTOM, HANDLE_ALIGN, HANDLE_AUTO, HANDLE_AUTO_ANIM, HANDLE_FREE, HANDLE_VECT};
+    use phiphx::device::blend::{COLOR_AUTO_RAINBOW, COLOR_AUTO_RGB, COLOR_AUTO_YRGB, COLOR_CUSTOM, HANDLE_ALIGN, HANDLE_AUTO, HANDLE_AUTO_ANIM, HANDLE_FREE, HANDLE_VECT};
     let count = |mode: u32| action.curves.iter().filter(|c| c.color_mode == mode).count();
     let keys = || action.curves.iter().flat_map(|c| c.keys.iter());
     let handles = |kind: u8| keys().map(|k| usize::from(k.h1_type == kind) + usize::from(k.h2_type == kind)).sum::<usize>();
@@ -50,7 +50,7 @@ fn state_of(action: &phiphx::scene::SceneAction) -> String {
 #[test]
 fn every_action_has_blenders_key_columns_and_users() {
     let bytes = std::fs::read(FILE).expect("fixture");
-    let blend = phiphx::blend::BlendFile::parse_bytes(&bytes).expect("parse").extract_scene().expect("scene");
+    let blend = phiphx::device::blend::BlendFile::parse_bytes(&bytes).expect("parse").extract_scene().expect("scene");
     let model = SceneModel::from_blend_owned(blend, FILE);
     let want = truth();
     assert_eq!(want.len(), 3, "the fixture carries three actions");

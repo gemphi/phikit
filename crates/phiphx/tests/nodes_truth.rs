@@ -13,8 +13,8 @@
 //! ramp, one after a texture as the slot's tail, a Vertex Color as white,
 //! a White Noise reached through a group.
 
-use phiphx::blend::BlendFile;
-use phiphx::blend::shade::procedural::{BlendProcCoord, BlendProcKind, RAMP_STOPS};
+use phiphx::device::blend::BlendFile;
+use phiphx::device::blend::shade::procedural::{BlendProcCoord, BlendProcKind, RAMP_STOPS};
 use phiphx::scene::{SceneMaterial, SceneModel};
 use std::path::PathBuf;
 

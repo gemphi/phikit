@@ -4,8 +4,8 @@
 //! a Voronoi Bump on the normal, a Noise on a Mix Shader's factor through a
 //! reroute, and a Voronoi's colour over UVs.
 
-use phiphx::blend::BlendFile;
-use phiphx::blend::shade::procedural::{BlendProcCoord, BlendProcKind, RAMP_STOPS};
+use phiphx::device::blend::BlendFile;
+use phiphx::device::blend::shade::procedural::{BlendProcCoord, BlendProcKind, RAMP_STOPS};
 use phiphx::scene::{SceneMaterial, SceneModel};
 use std::path::PathBuf;
 

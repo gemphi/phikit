@@ -3,7 +3,7 @@
 //! the factory startup's (off in Solid at 0.5, on in Wireframe at 0), and a
 //! file Blender saved with every value changed (`fixtures/make_xray.py`).
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use phiphx::scene::{SceneModel, SceneXray};
 use std::path::PathBuf;
 

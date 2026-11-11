@@ -25,7 +25,7 @@
 //! The reference is taken from the **evaluated** depsgraph copy, which is
 //! where a driver's result lands.
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use std::path::PathBuf;
 
 const FRAMES: [f32; 5] = [1.0, 6.0, 11.0, 16.0, 21.0];
@@ -96,7 +96,7 @@ fn every_driver_variable_kind_puts_its_object_where_blender_puts_it() {
 /// name rather than left to the matrices alone.
 #[test]
 fn each_variable_is_read_as_the_kind_the_file_gives_it() {
-    use phiphx::blend::{BDriverSpace, BlendDriverRead};
+    use phiphx::device::blend::{BDriverSpace, BlendDriverRead};
     let Some(bytes) = fixture() else { return eprintln!("no DRIVERVARS.blend; skipped") };
     let scene = BlendFile::parse_bytes(&bytes).expect("parse").extract_scene().expect("scene");
     let set = |name: &str| scene.props.motion.named(name).map(|m| m.drivers.clone()).unwrap_or_default();
@@ -115,7 +115,7 @@ fn each_variable_is_read_as_the_kind_the_file_gives_it() {
         );
     }
     assert!(
-        reads.iter().any(|r| matches!(r, BlendDriverRead::Transform { chan, .. } if *chan == phiphx::blend::TRANSCHAN_SCALE_AVG)),
+        reads.iter().any(|r| matches!(r, BlendDriverRead::Transform { chan, .. } if *chan == phiphx::device::blend::TRANSCHAN_SCALE_AVG)),
         "and one of them is the average scale"
     );
 

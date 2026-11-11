@@ -1,7 +1,7 @@
 //! Dump what Phiber will show for a `.blend`: header, active scene, the
 //! View Layer collection tree with flags, and every object with type, parent
 //! and world position. Usage: `cargo run -p phiphx --example inspect_blend -- file.blend`
-use phiphx::blend::{BlendCollection, BlendFile, BlendScene};
+use phiphx::device::blend::{BlendCollection, BlendFile, BlendScene};
 
 fn tree(c: &BlendCollection, scene: &BlendScene, depth: usize) {
     let pad = "  ".repeat(depth);

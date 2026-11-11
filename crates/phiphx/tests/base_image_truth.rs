@@ -1,7 +1,7 @@
 //! The colour texture of each material is the first image upstream of
 //! Principled Base Color, as `truth/blender_base_image.py` (Blender 5.0.1) finds it.
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 

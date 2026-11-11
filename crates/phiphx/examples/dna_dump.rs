@@ -1,7 +1,7 @@
 //! Print DNA struct layouts: `cargo run --example dna_dump -- file.blend Struct...`
 fn main() {
     let a: Vec<String> = std::env::args().collect();
-    let f = phiphx::blend::BlendFile::parse_bytes(&std::fs::read(&a[1]).unwrap()).unwrap();
+    let f = phiphx::device::blend::BlendFile::parse_bytes(&std::fs::read(&a[1]).unwrap()).unwrap();
     let dna = f.dna.as_ref().unwrap();
     for want in &a[2..] {
         for s in dna.structs.iter().filter(|s| &dna.types[s.type_index as usize] == want) {

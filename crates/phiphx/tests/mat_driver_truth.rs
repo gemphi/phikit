@@ -25,8 +25,8 @@
 //! The reference is the **evaluated** depsgraph copy of each material,
 //! which is where a driver's result lands.
 
-use phiphx::blend::BlendFile;
-use phiphx::blend::shade::driver::{BMatProp, BMatWrite};
+use phiphx::device::blend::BlendFile;
+use phiphx::device::blend::shade::driver::{BMatProp, BMatWrite};
 use std::path::PathBuf;
 
 const FRAMES: [f32; 5] = [1.0, 6.0, 11.0, 16.0, 21.0];

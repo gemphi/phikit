@@ -4,7 +4,7 @@
 fn main() {
     let path = std::env::args().nth(1).expect("usage: saved_view <file.blend>");
     let bytes = std::fs::read(&path).expect("read");
-    let file = phiphx::blend::BlendFile::parse_bytes(&bytes).expect("parse");
+    let file = phiphx::device::blend::BlendFile::parse_bytes(&bytes).expect("parse");
     let scene = file.extract_scene().expect("scene");
     let Some(view) = scene.props.ui.view3d.as_ref() else {
         println!("no saved 3D view in this file");

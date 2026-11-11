@@ -5,8 +5,8 @@
 //! must not lose or invent geometry on the way out. Loading the layer in
 //! `pxr` (usd-core) is an extra check that runs when `python -c "import
 //! pxr"` works and is skipped, loudly, when it does not.
-use phiphx::blend::BlendFile;
-use phiphx::export::usd::stage::check::{UsdCheck, UsdReport};
+use phiphx::device::blend::BlendFile;
+use phiphx::device::usd::write::scene::check::{UsdCheck, UsdReport};
 use phiphx::scene::SceneModel;
 use std::collections::HashSet;
 use std::path::PathBuf;

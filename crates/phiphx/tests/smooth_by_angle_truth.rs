@@ -12,7 +12,7 @@
 //! phiphx's triangle corners must carry one of Blender's corner normals at
 //! that vertex, and each of Blender's must appear.
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use phiphx::phx::Phx;
 use std::collections::{BTreeSet, HashMap};
 use std::path::{Path, PathBuf};

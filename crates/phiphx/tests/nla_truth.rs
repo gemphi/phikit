@@ -3,7 +3,7 @@
 //! against `truth/nla_cube.txt`, made by `truth/blender_nla.py` from the
 //! fixture `truth/blender_nla_fixture.py` builds.
 
-use phiphx::blend::{BNlaStrip, BNlaTrack, BlendNla, EXTEND_HOLD, STRIP_CLIP, STRIP_MUTED, STRIP_SELECT, TRACK_MUTED};
+use phiphx::device::blend::{BNlaStrip, BNlaTrack, BlendNla, EXTEND_HOLD, STRIP_CLIP, STRIP_MUTED, STRIP_SELECT, TRACK_MUTED};
 use phiphx::scene::SceneModel;
 
 const FILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/nla_cube.blend");
@@ -11,7 +11,7 @@ const TRUTH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/truth/nla_cube.t
 
 fn model() -> SceneModel {
     let bytes = std::fs::read(FILE).expect("fixture");
-    let blend = phiphx::blend::BlendFile::parse_bytes(&bytes).expect("parse").extract_scene().expect("scene");
+    let blend = phiphx::device::blend::BlendFile::parse_bytes(&bytes).expect("parse").extract_scene().expect("scene");
     SceneModel::from_blend_owned(blend, FILE)
 }
 
@@ -44,7 +44,7 @@ fn strip_line(strip: &BNlaStrip) -> String {
 }
 
 fn track_line(track: &BNlaTrack) -> String {
-    format!("track\t{}\tmute={}\tsolo={}", track.name, u8::from(track.flag & TRACK_MUTED != 0), u8::from(track.flag & phiphx::blend::TRACK_SOLO != 0))
+    format!("track\t{}\tmute={}\tsolo={}", track.name, u8::from(track.flag & TRACK_MUTED != 0), u8::from(track.flag & phiphx::device::blend::TRACK_SOLO != 0))
 }
 
 /// The NLA as the truth file spells it: tracks last first, as the editor lists them.

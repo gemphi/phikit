@@ -7,7 +7,7 @@
 //! use, and reading `radius` for a sun gave every sun Blender's default
 //! 0.526° however wide the file's was.
 
-use phiphx::blend::BlendFile;
+use phiphx::device::blend::BlendFile;
 use phiphx::scene::{SceneLight, SceneModel};
 use std::path::PathBuf;
 
