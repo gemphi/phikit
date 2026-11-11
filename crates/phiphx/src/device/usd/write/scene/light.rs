@@ -23,7 +23,7 @@ use crate::scene::SceneLight;
 use std::f32::consts::PI;
 
 /// Writes one light prim.
-pub(super) struct UsdLight;
+pub(crate) struct UsdLight;
 
 impl UsdLight {
     /// The UsdLux prim type for `light`: a SphereLight for POINT and SPOT,

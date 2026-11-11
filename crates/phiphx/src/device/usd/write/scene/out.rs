@@ -3,7 +3,7 @@
 /// Text of a layer being written, with the open-block depth it tracks so a
 /// block left open is caught where it is written, not when USD refuses it.
 #[derive(Debug, Default)]
-pub(super) struct UsdOut {
+pub(crate) struct UsdOut {
     text: String,
     depth: usize,
 }

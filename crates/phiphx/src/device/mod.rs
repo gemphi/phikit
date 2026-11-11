@@ -5,6 +5,7 @@
 //! each other. The list and its fixed order are in [`list`]; the layout and
 //! the phases that fill it are in `LAYOUT.md`.
 pub mod list;
+pub mod usd;
 
 pub use list::DeviceList;
 

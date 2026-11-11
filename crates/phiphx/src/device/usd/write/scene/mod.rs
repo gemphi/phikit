@@ -24,22 +24,20 @@
 //!
 //! Not written: UsdSkel, animation (`timeSamples`), modifiers' inputs
 //! (meshes are the evaluated result), packed image bytes, node graphs.
-mod camera;
+pub(crate) mod camera;
 pub mod check;
-mod head;
-mod light;
-mod material;
-mod mesh;
-mod name;
-mod node;
-mod out;
-mod proto;
-mod text;
-mod texture;
-mod tree;
-mod world;
-#[cfg(test)]
-mod test;
+pub(crate) mod head;
+pub(crate) mod light;
+pub(crate) mod material;
+pub(crate) mod mesh;
+pub(crate) mod name;
+pub(crate) mod node;
+pub(crate) mod out;
+pub(crate) mod proto;
+pub(crate) mod text;
+pub(crate) mod texture;
+pub(crate) mod tree;
+pub(crate) mod world;
 
 use crate::scene::SceneModel;
 use material::MaterialBook;
@@ -50,8 +48,8 @@ use proto::ProtoList;
 use std::collections::HashSet;
 use text::UsdText;
 
-/// A scene being written. Build with [`UsdStage::write`].
-pub struct UsdStage<'a> {
+/// A scene being written. Build with [`UsdSceneWriter::write`].
+pub struct UsdSceneWriter<'a> {
     scene: &'a SceneModel,
     out: UsdOut,
     names: UsdNameBook,
@@ -63,7 +61,7 @@ pub struct UsdStage<'a> {
     hidden: HashSet<&'a str>,
 }
 
-impl<'a> UsdStage<'a> {
+impl<'a> UsdSceneWriter<'a> {
     /// The USDA text of `scene`.
     pub fn write(scene: &'a SceneModel) -> String {
         let mut names = UsdNameBook::default();
@@ -129,8 +127,8 @@ impl<'a> UsdStage<'a> {
 }
 
 impl SceneModel {
-    /// This scene as a USD ASCII layer (see [`UsdStage`]).
+    /// This scene as a USD ASCII layer (see [`UsdSceneWriter`]).
     pub fn to_usda(&self) -> String {
-        UsdStage::write(self)
+        UsdSceneWriter::write(self)
     }
 }

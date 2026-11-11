@@ -1,6 +1,6 @@
 //! The stage writer on small hand-built scenes, and the checker on bad layers.
-use super::check::UsdCheck;
-use super::name::{UsdName, UsdNameBook};
+use crate::device::usd::write::scene::check::UsdCheck;
+use crate::device::usd::write::scene::name::{UsdName, UsdNameBook};
 use crate::scene::{SceneCamera, SceneLight, SceneMaterial, SceneMesh, SceneModel, SceneNormals, SceneObject};
 use std::sync::Arc;
 
@@ -101,7 +101,7 @@ fn a_shared_mesh_is_a_prototype_and_a_parent_nests_its_child() {
 
 #[test]
 fn light_units_follow_the_law_in_light_rs() {
-    use super::light::UsdLight;
+    use crate::device::usd::write::scene::light::UsdLight;
     assert_eq!(UsdLight::intensity(&light("POINT", "")), 100.0);
     assert_eq!(UsdLight::intensity(&light("SUN", "")), 100.0);
     // Area energy is stored as 4/pi of the UI watts; the layer has the UI watts.
@@ -115,7 +115,7 @@ fn light_units_follow_the_law_in_light_rs() {
 
 #[test]
 fn camera_film_follows_sensor_fit() {
-    use super::camera::UsdCamera;
+    use crate::device::usd::write::scene::camera::UsdCamera;
     let c = camera();
     assert_eq!(UsdCamera::film(&c, 2.0), (36.0, 18.0));
     assert_eq!(UsdCamera::film(&c, 0.5), (18.0, 36.0));
@@ -146,4 +146,15 @@ fn the_checker_names_what_is_wrong() {
     assert!(UsdCheck::run(&bad_name).unwrap_err().contains("not a valid prim name"));
     let twice = good.replacen("def Scope \"Prototype\"", "def Scope \"Material\"", 1);
     assert!(UsdCheck::run(&twice).unwrap_err().contains("twice"));
+}
+
+#[test]
+fn stage_read_back_places_the_mesh() {
+    use crate::device::usd::read::{scene::mesh_list, UsdaParser};
+    let text = "#usda 1.0\n(\n    upAxis = \"Z\"\n)\ndef Xform \"A\"\n{\n    matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (2, 3, 4, 1) )\n    uniform token[] xformOpOrder = [\"xformOp:transform\"]\n    def Mesh \"M\"\n    {\n        int[] faceVertexCounts = [4]\n        int[] faceVertexIndices = [0, 1, 2, 3]\n        point3f[] points = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0)]\n    }\n}\n";
+    let list = mesh_list(&UsdaParser::parse(text).expect("parses"));
+    assert_eq!(list.len(), 1);
+    assert_eq!(list[0].indices.len(), 2);
+    let t = list[0].transform.unwrap().to_cols_array_2d();
+    assert_eq!(&t[3][..3], &[2.0, 3.0, 4.0]);
 }

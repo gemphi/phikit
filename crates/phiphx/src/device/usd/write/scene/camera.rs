@@ -12,7 +12,7 @@ use super::text::UsdText;
 use crate::scene::SceneCamera;
 
 /// Writes one camera prim.
-pub(super) struct UsdCamera;
+pub(crate) struct UsdCamera;
 
 impl UsdCamera {
     /// The film `(horizontal, vertical)` the camera exposes for an image of

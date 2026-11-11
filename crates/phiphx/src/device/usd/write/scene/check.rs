@@ -1,4 +1,4 @@
-//! A parser-level check that a layer from [`UsdStage`](super::UsdStage) is
+//! A parser-level check that a layer from [`UsdSceneWriter`](super::UsdSceneWriter) is
 //! well formed. It is not a USD parser: it reads the layout this writer
 //! produces (one brace per line, one array per line) and answers what a
 //! test needs, without `pxr`. When `pxr` is at hand, the integration test

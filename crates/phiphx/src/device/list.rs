@@ -10,7 +10,7 @@ pub struct DeviceList {
 impl DeviceList {
     /// The devices of this build.
     pub fn new() -> Self {
-        Self { device: Vec::new() }
+        Self { device: vec![&super::usd::UsdDevice] }
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &'static dyn Device> + '_ {

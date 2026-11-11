@@ -6,10 +6,10 @@ use super::mesh::UsdMesh;
 use super::name::UsdName;
 use super::node::NodeKind;
 use super::text::UsdText;
-use super::UsdStage;
+use super::UsdSceneWriter;
 use crate::scene::SceneCollection;
 
-impl UsdStage<'_> {
+impl UsdSceneWriter<'_> {
     /// A collection as a `Scope` and what it holds. The scene's top
     /// collection (`top`) is /World itself, not a Scope under it.
     ///

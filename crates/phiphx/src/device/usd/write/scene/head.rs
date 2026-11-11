@@ -4,7 +4,7 @@ use super::out::UsdOut;
 use super::text::UsdText;
 
 /// The common start of an Xform, camera or light prim.
-pub(super) struct UsdHead {
+pub(crate) struct UsdHead {
     /// Unique prim name.
     pub id: String,
     /// The Blender name, kept as `displayName` when `id` is not it.

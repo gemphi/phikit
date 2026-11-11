@@ -4,7 +4,7 @@ use std::collections::HashSet;
 
 /// Blender allows any text in a name ("Lot/Car", "Cube.001", "Wall é");
 /// a USD prim name is `[A-Za-z_][A-Za-z0-9_]*`.
-pub(super) struct UsdName;
+pub(crate) struct UsdName;
 
 impl UsdName {
     /// The identifier for `raw`: every character outside `[A-Za-z0-9_]`
@@ -27,7 +27,7 @@ impl UsdName {
 
 /// Every prim path handed out, so two siblings never share a name.
 #[derive(Debug, Default)]
-pub(super) struct UsdNameBook {
+pub(crate) struct UsdNameBook {
     taken: HashSet<String>,
 }
 

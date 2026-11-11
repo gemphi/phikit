@@ -1,6 +1,6 @@
-use super::mesh::export_mesh_usda;
-use super::point_cloud::export_point_cloud_usda;
-use super::*;
+use crate::device::usd::write::mesh::export_mesh_usda;
+use crate::device::usd::write::point_cloud::export_point_cloud_usda;
+use crate::device::usd::write::UsdaWriter;
 use crate::{PointCloud, Vertex};
 
 #[test]

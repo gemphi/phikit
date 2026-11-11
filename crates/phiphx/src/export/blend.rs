@@ -25,8 +25,7 @@ mod config;
 mod helpers;
 mod script_gltf;
 mod script_phx;
-mod script_usd;
-mod types;
+pub(crate) mod types;
 
 pub use config::{PointCloudConfig, SceneExportConfig};
 pub use chunks::PhxChunks;
