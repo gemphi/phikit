@@ -1,4 +1,4 @@
-use super::*;
+use crate::scene::polyfill::*;
 
 fn area(p: &[[f32; 3]], tris: &[[usize; 3]]) -> f32 {
     tris.iter()

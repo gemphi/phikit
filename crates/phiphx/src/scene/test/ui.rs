@@ -1,4 +1,4 @@
-use super::*;
+use crate::scene::ui::*;
 
 #[test]
 fn front_view_looks_along_plus_y_level() {

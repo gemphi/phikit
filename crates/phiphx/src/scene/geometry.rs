@@ -1,7 +1,7 @@
 //! Pure geometry helpers shared by the blend and phx mappers: per-vertex
 //! UVs from per-corner UVs, and normal selection / synthesis.
 
-use super::SceneNormalList;
+use crate::scene::SceneNormalList;
 
 /// Build a per-vertex UV buffer from the object's per-loop UVs.
 ///

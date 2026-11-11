@@ -7,8 +7,8 @@
 //! independently changes their relative texel density — which is the thing
 //! a UV layout is *for*.
 
-use super::island::BUvIsland;
-use super::{BUvMesh, BUvPin};
+use crate::uv::island::BUvIsland;
+use crate::uv::{BUvMesh, BUvPin};
 
 /// The box an island's UVs span.
 fn box_of(mesh: BUvMesh<'_>, part: &BUvIsland, uv: &[[f32; 2]]) -> ([f32; 2], [f32; 2]) {

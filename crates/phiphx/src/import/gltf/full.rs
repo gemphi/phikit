@@ -4,7 +4,7 @@ use crate::export::binary::BinaryExporter;
 use crate::{Mesh, MeshToCloudConfig};
 use crate::{PointCloud, PointCloudError, Result};
 
-use super::mesh::GltfMeshExtractor;
+use crate::import::gltf::mesh::GltfMeshExtractor;
 
 /// Import a glTF/GLB file into a single combined triangle [`Mesh`], loading
 /// every buffer (embedded base64, external `.bin`, or GLB blob) and merging

@@ -1,4 +1,4 @@
-use super::*;
+use crate::import::gltf::scene::*;
 
 fn mesh_named(name: &str, verts: usize) -> Mesh {
     let mut m = Mesh::new();

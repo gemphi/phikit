@@ -1,11 +1,11 @@
 //! Unified asset importer — the **single entry point** for all format imports.
 
-use super::FileFormat;
+use crate::import::FileFormat;
 use crate::device::blend::BlendImporter;
 #[cfg(feature = "gltf-import")]
-use super::gltf::GltfImporter;
+use crate::import::gltf::GltfImporter;
 use crate::device::phx::mesh::PhxImporter;
-use super::ply::PlyImporter;
+use crate::import::ply::PlyImporter;
 use crate::device::usd::mesh::UsdImporter;
 use glam::Vec3;
 use std::path::Path;

@@ -1,7 +1,7 @@
 //! Tests for the glTF importer.
 
-use super::importer::GltfImporter;
-use super::transform::transform_point;
+use crate::import::gltf::importer::GltfImporter;
+use crate::import::gltf::transform::transform_point;
 
 // Minimal valid glTF JSON
 const MINIMAL_GLTF: &str = r#"{

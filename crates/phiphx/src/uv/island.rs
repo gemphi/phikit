@@ -6,7 +6,7 @@
 //! map needs a boundary, so that case is the one to watch rather than to
 //! pretend about.
 
-use super::BUvMesh;
+use crate::uv::BUvMesh;
 
 /// One island: the faces in it.
 #[derive(Clone, Debug, Default, PartialEq)]

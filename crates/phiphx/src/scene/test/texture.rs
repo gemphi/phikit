@@ -1,4 +1,4 @@
-use super::*;
+use crate::scene::texture::*;
 
 #[test]
 fn a_pattern_held_in_the_alpha_reads_black_in_its_holes() {

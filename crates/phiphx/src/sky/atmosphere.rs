@@ -9,7 +9,7 @@
 //! scattering type has the same spectrum everywhere, so only a scalar per
 //! type is carried along the ray instead of a full spectrum.
 
-use super::spectrum::{BANDS, IRRADIANCE, OZONE_COEFF, QUADRATURE, RAYLEIGH_COEFF};
+use crate::sky::spectrum::{BANDS, IRRADIANCE, OZONE_COEFF, QUADRATURE, RAYLEIGH_COEFF};
 
 /// Rayleigh scale height, m.
 const RAYLEIGH_SCALE: f32 = 8e3;

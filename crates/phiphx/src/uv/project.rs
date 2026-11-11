@@ -6,7 +6,7 @@
 //! in space mapped to a point in the square — and the only question is
 //! which point.
 
-use super::{BUnwrap, BUvMesh};
+use crate::uv::{BUnwrap, BUvMesh};
 
 /// The mesh's bounds and their centre.
 fn bounds(mesh: BUvMesh<'_>) -> ([f32; 3], [f32; 3]) {

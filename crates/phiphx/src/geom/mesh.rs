@@ -1,8 +1,8 @@
 //! Triangle mesh representation and sampling methods.
 
-use super::bvh::{BvhNode, SimpleRng};
+use crate::geom::bvh::{BvhNode, SimpleRng};
 use crate::cloud::config::{MeshToCloudConfig, SamplingMethod};
-use super::selector::MeshSource;
+use crate::geom::selector::MeshSource;
 use crate::{PointCloud, Vertex};
 
 /// A point sampled from a mesh triangle

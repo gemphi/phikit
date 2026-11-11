@@ -1,4 +1,4 @@
-use super::*;
+use crate::spatial::spatial_object::*;
 use crate::spatial::mesh_converter::PhiQuiMeshType;
 
 #[test]

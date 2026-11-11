@@ -191,7 +191,7 @@ impl Default for SceneRender {
     }
 }
 
-pub use super::extra::{SceneCamera, SceneEmpty, SceneLight};
+pub use crate::scene::extra::{SceneCamera, SceneEmpty, SceneLight};
 
 /// One action / animation clip as the animation editors list it: its
 /// range, its channel count, the frames that carry a key, and its users.

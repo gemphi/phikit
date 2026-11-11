@@ -1,6 +1,6 @@
-use super::super::uv_test::grid;
-use super::super::{BUnwrap, BUvPin, unwrap};
-use super::*;
+use crate::uv::uv_test::grid;
+use crate::uv::{BUnwrap, BUvPin, unwrap};
+use crate::uv::pack::*;
 
 /// Two islands come back inside the square and not on top of each
 /// other.

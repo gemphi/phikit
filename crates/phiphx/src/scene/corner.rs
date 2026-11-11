@@ -2,7 +2,7 @@
 //! table of unique normals (4 bytes a corner instead of 12), and the
 //! corners' colours when the mesh has a colour attribute.
 
-use super::geometry::{normalize, smooth_vertex_normals, tri_face_normal};
+use crate::scene::geometry::{normalize, smooth_vertex_normals, tri_face_normal};
 use std::collections::HashMap;
 
 /// `normal(c)` for corner `c` (`indices[c]`); id 0 is the flat marker (zero normal).

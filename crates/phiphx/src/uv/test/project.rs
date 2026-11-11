@@ -1,4 +1,4 @@
-use super::*;
+use crate::uv::project::*;
 
 /// A unit cube's six faces, each its own quad.
 fn cube() -> (Vec<[f32; 3]>, Vec<u32>, Vec<u32>) {

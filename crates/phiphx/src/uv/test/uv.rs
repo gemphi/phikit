@@ -1,4 +1,4 @@
-use super::*;
+use crate::uv::*;
 
 /// A quad grid: `n x n` quads over `(n+1)²` vertices on the XY plane.
 pub(super) fn grid(n: usize) -> (Vec<[f32; 3]>, Vec<u32>, Vec<u32>) {

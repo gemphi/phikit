@@ -1,6 +1,6 @@
-use super::super::uv_test::grid;
-use super::super::{BUnwrap, BUvPin, unwrap};
-use super::*;
+use crate::uv::uv_test::grid;
+use crate::uv::{BUnwrap, BUvPin, unwrap};
+use crate::uv::lscm::*;
 
 /// The angle a triangle's UVs make at each corner, against the angle
 /// the mesh makes there: a conformal map keeps them.

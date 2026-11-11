@@ -1,7 +1,7 @@
 //! Triangle mesh glTF export.
 
-use super::base64::base64_encode;
-use super::buffer::{
+use crate::export::gltf::base64::base64_encode;
+use crate::export::gltf::buffer::{
     ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER, GltfBufferWriter, PRIMITIVE_MODE_TRIANGLES,
 };
 use crate::{PointCloudError, Result};

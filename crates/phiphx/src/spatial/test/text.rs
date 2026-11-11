@@ -1,4 +1,4 @@
-use super::*;
+use crate::spatial::text::*;
 
 /// The baked font is there and says what a font says.
 #[test]

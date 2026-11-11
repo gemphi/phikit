@@ -6,7 +6,7 @@ use crate::export::PointCloudExporter;
 use crate::format::PointCloudFormat;
 use crate::geom::vertex::Vertex;
 
-use super::data::{PointCloud, PointCloudMetadata, PointCloudStat};
+use crate::cloud::data::{PointCloud, PointCloudMetadata, PointCloudStat};
 
 impl PointCloud {
     /// Create a new empty point cloud

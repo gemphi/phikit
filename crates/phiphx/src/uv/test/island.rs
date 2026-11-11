@@ -1,5 +1,5 @@
-use super::super::uv_test::grid;
-use super::*;
+use crate::uv::uv_test::grid;
+use crate::uv::island::*;
 
 #[test]
 fn a_grid_with_no_seam_is_one_island() {

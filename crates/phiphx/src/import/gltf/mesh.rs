@@ -3,8 +3,8 @@
 use crate::{Mesh, MeshToCloudConfig};
 use crate::{PointCloud, PointCloudError, Result};
 
-use super::importer::GltfImporter;
-use super::transform::transform_point;
+use crate::import::gltf::importer::GltfImporter;
+use crate::import::gltf::transform::transform_point;
 
 impl GltfImporter {
     /// Extract mesh data from glTF primitive

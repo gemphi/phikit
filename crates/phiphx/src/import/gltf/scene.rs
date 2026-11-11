@@ -8,7 +8,7 @@
 use crate::Result;
 use crate::{Mesh, SubjectSelector};
 
-use super::full::import_gltf_meshes;
+use crate::import::gltf::full::import_gltf_meshes;
 
 /// A parsed glTF scene: the extracted per-node meshes plus the same
 /// primary/active-subject selection semantics used by the blend importer.

@@ -17,7 +17,7 @@
 //! can take. It is the standard construction and it is why a letter's
 //! counter comes out as a hole rather than as a filled blob.
 
-use super::glyph::{FIRST, GLYPH};
+use crate::spatial::glyph::{FIRST, GLYPH};
 
 type P2 = (f32, f32);
 

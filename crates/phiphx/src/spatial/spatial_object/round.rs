@@ -1,5 +1,5 @@
 //! The rounded primitives: sphere, torus, Suzanne, icosahedron, ico sphere, metaball.
-use super::*;
+use crate::spatial::spatial_object::*;
 impl SpatialObject3D {
     pub(super) fn build_sphere_mesh() -> (Vec<(f32, f32, f32)>, Vec<u32>, Vec<(f32, f32, f32)>) {
         // Blender's `Add ▸ Mesh ▸ UV Sphere` default: 32 segments, 16

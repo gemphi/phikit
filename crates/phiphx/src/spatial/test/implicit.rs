@@ -1,4 +1,4 @@
-use super::*;
+use crate::spatial::implicit::*;
 
 /// One blob is a ball: every vertex sits at the radius where the field
 /// crosses the threshold, and every triangle faces out.

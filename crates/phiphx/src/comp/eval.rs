@@ -11,9 +11,9 @@
 //! which is what Blender's implicit socket conversion does, and a colour
 //! feeding a float input takes its first channel.
 
-use super::node::{sock, BCompKind, BCompSet, BCompSetting};
-use super::pixel::{self, BCompPixel};
-use super::tree::BCompTree;
+use crate::comp::node::{sock, BCompKind, BCompSet, BCompSetting};
+use crate::comp::pixel::{self, BCompPixel};
+use crate::comp::tree::BCompTree;
 use crate::device::blend::shade::graph::BlendNode;
 
 /// The tree resolved to a straight-line program.

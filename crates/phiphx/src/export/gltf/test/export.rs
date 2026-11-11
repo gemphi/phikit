@@ -1,6 +1,6 @@
-use super::mesh::export_mesh_gltf;
-use super::point_cloud::export_point_cloud_gltf;
-use super::*;
+use crate::export::gltf::mesh::export_mesh_gltf;
+use crate::export::gltf::point_cloud::export_point_cloud_gltf;
+use crate::export::gltf::*;
 use crate::{PointCloud, Vertex};
 
 #[test]

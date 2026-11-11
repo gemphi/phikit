@@ -1,4 +1,4 @@
-use super::*;
+use crate::scene::texture_miss::*;
 
 fn tally(keys: &[(&str, bool)]) -> BMissingTexture {
     let mut m = BMissingTexture::default();

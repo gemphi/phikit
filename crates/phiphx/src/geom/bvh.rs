@@ -1,6 +1,6 @@
 //! BVH spatial acceleration for point cloud sampling.
 
-use super::mesh::Mesh;
+use crate::geom::mesh::Mesh;
 
 /// Bounding box for BVH nodes
 #[derive(Debug, Clone, Copy, PartialEq, Default)]

@@ -1,6 +1,6 @@
 //! Transform helpers: node transforms, TRS conversion, point transformation.
 
-use super::importer::GltfImporter;
+use crate::import::gltf::importer::GltfImporter;
 
 impl GltfImporter {
     /// Extract transform matrix from node

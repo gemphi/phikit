@@ -1,7 +1,7 @@
 //! Point cloud glTF/GLB export.
 
-use super::base64::{base64_decode, base64_encode};
-use super::buffer::{ARRAY_BUFFER, GltfBufferWriter, PRIMITIVE_MODE_POINTS};
+use crate::export::gltf::base64::{base64_decode, base64_encode};
+use crate::export::gltf::buffer::{ARRAY_BUFFER, GltfBufferWriter, PRIMITIVE_MODE_POINTS};
 use crate::{PointCloud, PointCloudError, Result};
 use byteorder::{LittleEndian, WriteBytesExt};
 use serde_json::json;

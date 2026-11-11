@@ -1,5 +1,5 @@
 //! The flat-sided and extruded primitives: cube, plane, grid, circle, cylinder, cone.
-use super::*;
+use crate::spatial::spatial_object::*;
 impl SpatialObject3D {
     pub(super) fn build_cube_mesh() -> (Vec<(f32, f32, f32)>, Vec<u32>, Vec<(f32, f32, f32)>) {
         // Unique verts per face so averaged normals stay faceted.

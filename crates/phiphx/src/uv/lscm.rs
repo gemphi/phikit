@@ -22,8 +22,8 @@
 //! forms `AᵀA` — each iteration is one `A x` and one `Aᵀ y` over the rows,
 //! so the cost is the triangle count and the memory is the mesh.
 
-use super::island::{self, BUvIsland};
-use super::{BUvMesh, BUvPin};
+use crate::uv::island::{self, BUvIsland};
+use crate::uv::{BUvMesh, BUvPin};
 
 /// One row of the system: `Σ coef · unknown = rhs`.
 struct Row {

@@ -1,6 +1,6 @@
 //! The tree itself: the nodes in the order they have to run, and what runs.
 
-use super::node::{BCompKind, BCompSet};
+use crate::comp::node::{BCompKind, BCompSet};
 use crate::device::blend::shade::graph::{BlendNode, BlendNodeGraph};
 
 /// A scene's compositor tree, read and ready to run.

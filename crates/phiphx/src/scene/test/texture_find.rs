@@ -1,4 +1,4 @@
-use super::*;
+use crate::scene::texture_find::*;
 
 #[test]
 fn a_texture_moved_into_a_subfolder_is_found_by_its_name_whatever_its_case() {

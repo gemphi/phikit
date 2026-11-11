@@ -25,9 +25,9 @@
 //! Processing ▸ Compositing. It is on in a new scene, so a file that has
 //! never been touched there still composites.
 
-use super::node::BCompKind;
-use super::tree::BCompTree;
-use super::node::BCompSet;
+use crate::comp::node::BCompKind;
+use crate::comp::tree::BCompTree;
+use crate::comp::node::BCompSet;
 use crate::device::blend::{BlendFile, DnaType};
 
 /// `R_DOCOMP` (`DNA_scene_types.h:769`): Post Processing ▸ Compositing.

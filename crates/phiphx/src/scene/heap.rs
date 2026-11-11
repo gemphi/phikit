@@ -1,7 +1,7 @@
 //! What a loaded scene costs in memory — Blender's `MEM_get_memory_in_use`
 //! for the buffers we actually keep.
 
-use super::{SceneModel, SceneNormalList};
+use crate::scene::{SceneModel, SceneNormalList};
 
 impl SceneModel {
     /// Approximate heap bytes held by this scene's mesh buffers.
