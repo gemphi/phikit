@@ -64,4 +64,5 @@ impl GltfImporter {
 }
 
 #[cfg(test)]
-mod tests;
+#[path = "gltf/test/import.rs"]
+mod import_test;

@@ -114,34 +114,8 @@ pub(crate) fn clamp(range: u16, value: f32, min: f32, max: f32) -> f32 {
 }
 
 #[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn bright_contrast_and_gamma_follow_the_glsl() {
-        assert_eq!(bright_contrast([0.5, 0.25, 1.0, 0.7], 0.1, 0.4), [0.5 * 1.4 - 0.1, 0.25 * 1.4 - 0.1, 1.4 - 0.1, 0.7]);
-        assert_eq!(bright_contrast([0.0, 0.0, 0.0, 1.0], -1.0, 0.0), [0.0, 0.0, 0.0, 1.0], "clamped at zero");
-        let g = gamma([0.25, -0.5, 0.0, 1.0], 0.5);
-        assert!((g[0] - 0.5).abs() < 1e-6);
-        assert_eq!((g[1], g[2], g[3]), (-0.5, 0.0, 1.0), "only positive channels are raised");
-    }
-
-    #[test]
-    fn math_is_blenders_table() {
-        assert_eq!(math(3, 1.0, 0.0, 0.0), Some(0.0), "safe divide");
-        assert_eq!(math(10, -2.0, 3.0, 0.0), Some(-8.0), "compatible pow keeps a negative base");
-        assert_eq!(math(17, 7.5, 2.0, 0.0), Some(1.5));
-        assert_eq!(math(33, 7.3, 2.0, 0.0), Some(6.0), "snap");
-        assert_eq!(math(34, 5.5, 0.0, 2.0), Some(1.5), "wrap into [0, 2)");
-        assert_eq!(math(35, 1.0, 1.0004, 0.001), Some(1.0), "compare within epsilon");
-        assert_eq!(math(36, 2.0, 3.0, 4.0), Some(10.0), "multiply add");
-        assert_eq!(math(37, 3.0, 2.0, 0.0), Some(1.0), "ping-pong");
-        assert_eq!(math(40, -1.0, 3.0, 0.0), Some(2.0), "floored modulo");
-        assert_eq!(math(41, 1.0, 1.0, 1.0), None, "an unknown operation folds to nothing");
-        assert_eq!(clamp(1, 0.5, 1.0, 0.0), 0.5, "range clamp accepts swapped bounds");
-        assert_eq!(clamp(0, 0.5, 1.0, 0.0), 0.0, "min/max clamp applies min then max");
-    }
-}
+#[path = "../test/shade/scalar.rs"]
+mod scalar_test;
 
 /// `svm_node_map_range` (`kernel/svm/map_range.h`): `value` taken from
 /// `[from_min, from_max]` to `[to_min, to_max]` by `ty`
@@ -200,24 +174,5 @@ impl BScalarOp {
 }
 
 #[cfg(test)]
-mod map_range_tests {
-    use super::*;
-
-    /// 0.3 of 0..1 onto 0.2..0.8 is 0.5; stepped at 4 steps floors to
-    /// quarters; smoothstep eases; clamp holds an out-of-range value to
-    /// the target range, whichever way round it is.
-    #[test]
-    fn map_range_follows_svm_node_map_range() {
-        assert!((map_range(0, 0.3, 0.0, 1.0, 0.2, 0.8, 4.0, false) - 0.38).abs() < 1e-6);
-        assert!((map_range(1, 0.3, 0.0, 1.0, 0.0, 1.0, 4.0, false) - 0.25).abs() < 1e-6, "stepped");
-        assert!((map_range(2, 0.25, 0.0, 1.0, 0.0, 1.0, 4.0, false) - 0.15625).abs() < 1e-6, "smoothstep");
-        assert!((map_range(3, 0.5, 0.0, 1.0, 0.0, 1.0, 4.0, false) - 0.5).abs() < 1e-6, "smootherstep");
-        assert_eq!(map_range(0, 2.0, 0.0, 1.0, 0.0, 1.0, 4.0, true), 1.0, "clamped");
-        assert_eq!(map_range(0, 2.0, 0.0, 1.0, 0.0, 1.0, 4.0, false), 2.0, "unclamped");
-        assert_eq!(map_range(0, 2.0, 0.0, 1.0, 1.0, 0.0, 4.0, true), 0.0, "clamped to a reversed target");
-        assert_eq!(map_range(0, 0.5, 1.0, 1.0, 0.0, 1.0, 4.0, false), 0.0, "no source range");
-        let op = BScalarOp::MapRange { ty: 0, from_min: 0.0, from_max: 1.0, to_min: 0.2, to_max: 0.8, steps: 4.0, clamp: true };
-        assert!((op.apply(0.3) - 0.38).abs() < 1e-6);
-        assert_eq!(BScalarOp::Math { op: 2, b: 3.0, c: 0.0, clamp: true }.apply(0.5), 1.0);
-    }
-}
+#[path = "../test/shade/scalar_map_range_test.rs"]
+mod map_range_test;

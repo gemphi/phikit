@@ -39,4 +39,5 @@ impl GltfExporter {
 }
 
 #[cfg(test)]
-mod tests;
+#[path = "gltf/test/export.rs"]
+mod export_test;

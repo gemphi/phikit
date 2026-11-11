@@ -110,3 +110,7 @@ pub(crate) fn classify_native_error_test_hook(
 ) -> PhxError {
     crate::device::blend::open::classify_native_error(err)
 }
+
+#[cfg(test)]
+#[path = "test/phx.rs"]
+mod phx_test;

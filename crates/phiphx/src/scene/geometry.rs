@@ -10,7 +10,7 @@ use super::SceneNormals;
 /// per-vertex sample, so each vertex takes the UV of the first loop that
 /// references it. Returns an empty vec when the source carried no UV layer,
 /// which the renderer reads as "no UVs".
-pub(super) fn per_vertex_uvs(faces: &crate::device::blend::BFaceList, loop_uvs: &[[f32; 2]], vert_count: usize) -> Vec<[f32; 2]> {
+pub(crate) fn per_vertex_uvs(faces: &crate::device::blend::BFaceList, loop_uvs: &[[f32; 2]], vert_count: usize) -> Vec<[f32; 2]> {
     if loop_uvs.is_empty() || vert_count == 0 {
         return Vec::new();
     }
@@ -39,7 +39,7 @@ pub(super) fn per_vertex_uvs(faces: &crate::device::blend::BFaceList, loop_uvs: 
 /// winding (`(b - a) × (c - a)`, normalized). The result always has exactly
 /// `tri_count` entries so it satisfies the [`SceneNormals::PerFace`]
 /// invariant.
-pub(super) fn build_normals(
+pub(crate) fn build_normals(
     vertices: &[[f32; 3]],
     indices: &[u32],
     loop_normals: &[[f32; 3]],
@@ -87,7 +87,7 @@ pub(super) fn build_normals(
     SceneNormals::PerFace(normals)
 }
 
-pub(super) fn tri_face_normal(vertices: &[[f32; 3]], indices: &[u32], t: usize) -> [f32; 3] {
+pub(crate) fn tri_face_normal(vertices: &[[f32; 3]], indices: &[u32], t: usize) -> [f32; 3] {
     let base = t * 3;
     face_normal(
         vertices[indices[base] as usize],
@@ -98,7 +98,7 @@ pub(super) fn tri_face_normal(vertices: &[[f32; 3]], indices: &[u32], t: usize) 
 
 /// Corner-angle-weighted vertex normals over the smooth triangles
 /// (Blender `mesh::normals_calc_verts`), unnormalised.
-pub(super) fn smooth_vertex_normals(vertices: &[[f32; 3]], indices: &[u32], face: &[[f32; 3]], smooth: &[bool]) -> Vec<[f32; 3]> {
+pub(crate) fn smooth_vertex_normals(vertices: &[[f32; 3]], indices: &[u32], face: &[[f32; 3]], smooth: &[bool]) -> Vec<[f32; 3]> {
     let mut accum = vec![[0.0f32; 3]; vertices.len()];
     for t in (0..face.len()).filter(|&t| smooth.get(t).copied().unwrap_or(false)) {
         let ids = [indices[t * 3], indices[t * 3 + 1], indices[t * 3 + 2]].map(|i| i as usize);
@@ -122,7 +122,7 @@ fn corner_angle(p: [f32; 3], a: [f32; 3], b: [f32; 3]) -> f32 {
     }
 }
 
-pub(super) fn normalize(n: [f32; 3]) -> Option<[f32; 3]> {
+pub(crate) fn normalize(n: [f32; 3]) -> Option<[f32; 3]> {
     let len = (n[0] * n[0] + n[1] * n[1] + n[2] * n[2]).sqrt();
     (len > f32::EPSILON).then(|| [n[0] / len, n[1] / len, n[2] / len])
 }
@@ -131,7 +131,7 @@ pub(super) fn normalize(n: [f32; 3]) -> Option<[f32; 3]> {
 ///
 /// Falls back to `[0, 0, 1]` for a degenerate (zero-area) triangle so the
 /// result is always a finite unit-ish vector.
-pub(super) fn face_normal(a: [f32; 3], b: [f32; 3], c: [f32; 3]) -> [f32; 3] {
+pub(crate) fn face_normal(a: [f32; 3], b: [f32; 3], c: [f32; 3]) -> [f32; 3] {
     let u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
     let v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
     let n = [

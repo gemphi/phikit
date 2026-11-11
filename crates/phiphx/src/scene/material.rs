@@ -74,7 +74,7 @@ impl SceneMaps {
     }
 
     /// Each input slot, for attaching decoded images.
-    pub(super) fn each_mut_pub(&mut self) -> [&mut Option<SceneMap>; 3] {
+    pub(crate) fn each_mut_pub(&mut self) -> [&mut Option<SceneMap>; 3] {
         [&mut self.rough, &mut self.metal, &mut self.emit]
     }
 
@@ -125,7 +125,7 @@ impl SceneMaterial {
 /// object's flat `base_color` / `roughness` / `metallic` when only the
 /// single-material fields are populated, and returns an empty vec when the
 /// object declared no material at all (renderer then uses its neutral colour).
-pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial> {
+pub(crate) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial> {
     if !obj.materials.is_empty() {
         return obj
             .materials

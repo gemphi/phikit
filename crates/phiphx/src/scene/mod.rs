@@ -220,48 +220,30 @@ impl SceneModel {
 /// What a loaded scene costs in memory (`SceneModel::heap_bytes`).
 mod heap;
 
-#[cfg(test)]
-mod bytes_tests;
-pub mod build;
-mod collection;
+pub use crate::device::blend::read::scene::model::{build, collection, motion, progressive, relation, rig};
 mod corners;
-pub mod motion;
 pub use motion::{SceneMotion, SceneMotionFrame};
-pub mod rig;
 pub use rig::{SceneDriven, SceneRigs, SceneSkin};
-pub mod relation;
 pub use relation::SceneRelation;
 pub mod uv;
 pub use uv::SceneUvMap;
-pub mod progressive;
-mod progressive_links;
 pub use progressive::{DeferredModifiers, SceneSwap};
 mod error;
 mod extras;
-mod geometry;
-mod import;
-mod import_extras;
-mod material;
-mod object;
+pub(crate) mod geometry;
+pub(crate) mod material;
 pub(crate) mod polyfill;
-mod report;
-mod share;
+pub(crate) mod report;
 pub(crate) mod texture;
 /// Find Missing Files: an image by its name under the `.blend`'s folder.
 pub(crate) mod texture_find;
 /// What a file asked for and could not be given, said once.
 pub(crate) mod texture_miss;
 mod types_ext;
-mod ui;
+pub(crate) mod ui;
 
 #[cfg(test)]
-mod tests_fixture;
-#[cfg(test)]
-mod tests_material;
-#[cfg(test)]
-mod tests_traversal;
-#[cfg(test)]
-mod tests_types;
+mod test;
 
 pub use collection::{SceneCollection, SceneSelection};
 pub use corners::SceneCorners;

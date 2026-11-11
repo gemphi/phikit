@@ -17,4 +17,5 @@ pub mod shading;
 pub mod border;
 pub mod bsdf;
 pub mod kind;
+pub mod model;
 pub mod ui;

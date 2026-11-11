@@ -29,8 +29,6 @@ pub mod format;
 pub mod geom;
 pub mod import;
 pub mod phx;
-#[cfg(test)]
-mod phx_tests;
 pub mod scene;
 pub mod sky;
 pub mod spatial;
