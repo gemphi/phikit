@@ -23,7 +23,7 @@ impl UsdExporter {
             face_vertex_indices.push(tri[2] as i32);
         }
         let transform = mesh.transform.map(|m| m.to_cols_array_2d());
-        super::mesh::export_mesh_usda(
+        crate::device::usd::write::mesh::export_mesh_usda(
             name,
             positions,
             normals,
@@ -37,7 +37,7 @@ impl UsdExporter {
 
     /// Export a point cloud to USDA format.
     pub fn export_point_cloud_usda(cloud: &crate::PointCloud) -> crate::Result<String> {
-        super::point_cloud::export_point_cloud_usda(cloud)
+        crate::device::usd::write::point_cloud::export_point_cloud_usda(cloud)
     }
 
     /// Export a point cloud to USDA format using spheres representation.
@@ -45,12 +45,12 @@ impl UsdExporter {
         cloud: &crate::PointCloud,
         radius: f32,
     ) -> crate::Result<String> {
-        super::point_cloud::export_point_cloud_usda_with_spheres(cloud, radius as f64)
+        crate::device::usd::write::point_cloud::export_point_cloud_usda_with_spheres(cloud, radius as f64)
     }
 
     /// Export a point cloud to USDC format (binary USD).
     pub fn export_usdc(cloud: &crate::PointCloud) -> crate::Result<Vec<u8>> {
-        super::point_cloud::export_usdc(cloud)
+        crate::device::usd::write::point_cloud::export_usdc(cloud)
     }
 }
 

@@ -8,6 +8,7 @@ pub mod attribute;
 pub mod error;
 #[cfg(feature = "usdz-import")]
 pub mod package;
+pub mod mesh;
 pub mod prim;
 pub mod read;
 pub mod stage;
@@ -42,7 +43,7 @@ impl Device for UsdDevice {
     }
 
     fn detect(&self, head: &[u8]) -> bool {
-        read::mesh::UsdImporter::can_import(head)
+        crate::device::usd::mesh::UsdImporter::can_import(head)
     }
 
     fn peek(&self, bytes: &[u8]) -> crate::Result<Peek> {

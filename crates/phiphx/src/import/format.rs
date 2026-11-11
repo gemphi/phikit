@@ -64,7 +64,7 @@ impl FileFormat {
         if crate::import::gltf::GltfImporter::can_import(data) {
             return Some(FileFormat::Gltf);
         }
-        if crate::device::usd::read::mesh::UsdImporter::can_import(data) {
+        if crate::device::usd::mesh::UsdImporter::can_import(data) {
             return Some(FileFormat::Usd);
         }
         if data.starts_with(b"# OBJ") || data.starts_with(b"o ") || data.starts_with(b"v ") {

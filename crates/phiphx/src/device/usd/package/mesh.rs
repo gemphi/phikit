@@ -1,6 +1,6 @@
 //! USDZ (zip container) handling.
 
-use crate::device::usd::read::mesh::UsdImporter;
+use crate::device::usd::mesh::UsdImporter;
 use crate::{Mesh, MeshToCloudConfig};
 use crate::{PointCloud, PointCloudError, Result};
 use std::io::Read;

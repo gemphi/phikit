@@ -11,7 +11,7 @@ use crate::device::usd::prim::UsdPrim;
 use crate::device::usd::stage::UsdStage;
 use crate::device::usd::xform::XformResolver;
 use crate::device::usd::attribute::UsdValue;
-use super::mesh::UsdImporter;
+use crate::device::usd::mesh::UsdImporter;
 use crate::scene::{SceneLoadError, SceneMesh, SceneModel, SceneNormalList, SceneObject};
 use crate::Mesh;
 use glam::Mat4;

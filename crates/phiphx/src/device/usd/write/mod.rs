@@ -1,7 +1,6 @@
 //! USDA text serializer — converts a `UsdStage` back to the human-readable
 //! `.usda` format. Mirrors the export path of Apple's USDKit framework.
 
-pub mod exporter;
 pub mod mesh;
 pub(crate) mod point_cloud;
 pub mod prim;
@@ -10,7 +9,6 @@ pub mod script;
 pub mod value;
 mod writer;
 
-pub use exporter::UsdExporter;
 pub use writer::UsdaWriter;
 
 use super::stage::{UsdStage, UsdUpAxis};

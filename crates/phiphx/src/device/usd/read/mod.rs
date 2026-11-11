@@ -5,7 +5,6 @@
 //! sublayer-free `.usda` documents.
 
 mod array;
-pub mod mesh;
 mod attribute;
 mod lexer;
 mod metadata;

@@ -5,7 +5,8 @@
 
 use std::path::Path;
 
-mod importer;
+pub mod exporter;
+pub mod importer;
 mod parse;
 mod scene;
 mod usda;
@@ -14,6 +15,7 @@ mod usda_mesh;
 mod usda_parse;
 mod usdc_fallback;
 
+pub use exporter::UsdExporter;
 pub use importer::UsdImporter;
 pub use scene::UsdScene;
 

@@ -1,6 +1,6 @@
 //! USD importer smoke tests.
 
-use crate::device::usd::read::mesh::UsdImporter;
+use crate::device::usd::mesh::UsdImporter;
 
 #[test]
 fn detects_usda_magic() {
