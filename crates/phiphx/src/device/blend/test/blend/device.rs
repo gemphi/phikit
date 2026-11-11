@@ -4,9 +4,9 @@ use crate::device::{DeviceKind, DeviceList, Source};
 const FIXTURE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/actions.blend");
 
 #[test]
-fn the_list_asks_usd_then_blend() {
+fn the_list_asks_usd_then_blend_then_phx() {
     let kinds: Vec<DeviceKind> = DeviceList::new().iter().map(|d| d.kind()).collect();
-    assert_eq!(kinds, vec![DeviceKind::Usd, DeviceKind::Blend]);
+    assert_eq!(kinds, vec![DeviceKind::Usd, DeviceKind::Blend, DeviceKind::Phx]);
 }
 
 #[test]

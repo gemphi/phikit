@@ -12,6 +12,9 @@ use super::{Device, DeviceKind, Source};
 use crate::device::Peek;
 use crate::phx::Progress;
 use crate::scene::{SceneLoadError, SceneModel};
+#[cfg(test)]
+#[path = "test/device.rs"]
+mod device_test;
 /// The PHX variant of a scene file.
 pub struct PhxDevice;
 impl Device for PhxDevice {

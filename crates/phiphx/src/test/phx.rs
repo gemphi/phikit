@@ -62,3 +62,15 @@ fn classify_native_error_defaults_to_malformed() {
         SceneLoadError::Malformed(_)
     ));
 }
+
+#[test]
+fn detect_knows_blend_by_its_magic_before_the_extension() {
+    use crate::import::FileFormat;
+    let path = std::path::Path::new("scene.bin");
+    assert_eq!(Phx::detect(path, b"BLENDER17-01v0502"), Some(FileFormat::Blend));
+    assert_eq!(Phx::detect(path, &[0x28, 0xB5, 0x2F, 0xFD, 0, 0]), Some(FileFormat::Blend));
+    assert_eq!(Phx::detect(path, b"PHX_SCENE\x01"), Some(FileFormat::Phx));
+    assert_eq!(Phx::detect(path, b"#usda 1.0"), Some(FileFormat::Usd));
+    assert_eq!(Phx::detect(std::path::Path::new("a.blend"), b"junk"), Some(FileFormat::Blend));
+    assert_eq!(Phx::detect(path, b"junk"), None);
+}
