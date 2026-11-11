@@ -3,6 +3,7 @@
 //! tests `session/tile.rs`. Blender keeps its unit tests the same way, in a
 //! `tests` folder beside the code they test.
 
+mod blender;
 mod bvh;
 mod device;
 mod graph;

@@ -169,3 +169,14 @@ impl Mul for Transform {
         Transform { x: row(self.x), y: row(self.y), z: row(self.z) }
     }
 }
+
+impl Transform {
+    /// `transform_clear_scale`: each of the three axes made unit length.
+    pub fn clear_scale(&self) -> Transform {
+        let mut result = *self;
+        for column in 0..3 {
+            result.set_column(column, super::vector::normalize(self.column(column)));
+        }
+        result
+    }
+}

@@ -25,6 +25,7 @@
 //! Every file names the Cycles file it is ported from. A type keeps Cycles'
 //! name made singular (`SessionParams` is [`session::SessionParam`]).
 
+pub mod blender;
 pub mod bvh;
 pub mod device;
 pub mod graph;

@@ -13,6 +13,8 @@ description = "Cycles in Rust: Blender's renderer ported top to bottom, session 
 bytemuck = "1.18"
 # Reads the reference images (PNG, EXR) the way oiiotool does; the workspace's own.
 image = { workspace = true }
+# The join reads a .blend through phiphx's SceneModel; only blender/model.rs names it.
+phiphx = { path = "../phiphx", default-features = false }
 
 # The tests are in `src/tests`, apart from the code and in the same folders.
 

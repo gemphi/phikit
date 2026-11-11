@@ -14,6 +14,7 @@ mod mesh;
 mod object;
 mod param;
 mod pass;
+mod scene;
 mod shader;
 mod table;
 
@@ -28,4 +29,5 @@ pub use object::{Object, ObjectInput, ObjectManager};
 pub use param::SceneParam;
 pub use shader::{InputId, OutputId, ShaderBump, ShaderGraph, ShaderInput, ShaderNode, ShaderNodeSpecialType, ShaderOutput};
 pub use pass::{Pass, PassInfo, PassMode, PassType};
+pub use scene::{Scene, Surface, World};
 pub use table::LookupTableSet;

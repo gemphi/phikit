@@ -1,0 +1,53 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
+// SPDX-License-Identifier: Apache-2.0
+//! Ported from `intern/cycles/blender/sync.cpp` (`BlenderSync::sync_data`),
+//! `blender/object.cpp` (`sync_object`), `blender/shader.cpp`
+//! (`sync_materials`, `sync_world`) and `blender/camera.cpp`
+//! (`sync_camera`): a [`SceneSource`] into a Cycles [`Scene`]. A material
+//! is a diffuse colour or an emission; the node graph waits for gate 2.
+use super::camera::{sync_camera, transform_of};
+use super::mesh::sync_mesh;
+use super::source::{MaterialSource, SceneSource};
+use crate::scene::{Object, Scene, Surface, World};
+
+/// A material as the surface it stands for: an emission when it emits,
+/// else a diffuse of its base colour (`sync_materials`, until the graph).
+pub fn surface_of(material: &MaterialSource) -> Surface {
+    let emits = material.emission_strength > 0.0 && material.emission_color.iter().any(|&channel| channel > 0.0);
+    match emits {
+        true => Surface::Emission { color: material.emission_color, strength: material.emission_strength },
+        false => Surface::Diffuse { color: material.base_color },
+    }
+}
+
+/// `sync_data`: the scene of `source`. A source with no camera keeps the
+/// scene's default one at the source's size.
+pub fn sync_scene(source: &SceneSource) -> Scene {
+    let mut scene = Scene::new();
+    let (width, height) = (source.width.max(1), source.height.max(1));
+    if let Some(camera) = &source.camera {
+        scene.camera = sync_camera(camera, width, height);
+    }
+    scene.world = World { color: source.world_color, strength: source.world_strength };
+    // `sync_materials`: a shader for each distinct material.
+    let mut known: Vec<MaterialSource> = Vec::new();
+    let mut shader_of = |scene: &mut Scene, material: &MaterialSource| match known.iter().position(|seen| seen == material) {
+        Some(place) => place,
+        None => {
+            known.push(material.clone());
+            scene.add_shader(surface_of(material))
+        }
+    };
+    // `sync_mesh`: each mesh once, on the shaders of its slots.
+    for mesh in &source.mesh {
+        let shader: Vec<usize> = mesh.material.iter().map(|material| shader_of(&mut scene, material)).collect();
+        scene.mesh.push(sync_mesh(mesh, &shader));
+    }
+    // `sync_object`: each object places its mesh.
+    for object in &source.object {
+        let mut placed = Object::new(object.mesh);
+        placed.set_transform(transform_of(&object.matrix));
+        scene.object.push(placed);
+    }
+    scene
+}
