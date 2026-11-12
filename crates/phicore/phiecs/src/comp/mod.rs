@@ -2,4 +2,5 @@
 pub mod aspect;
 pub mod resources;
 pub mod space;
+pub mod stored;
 pub mod time;

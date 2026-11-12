@@ -24,13 +24,19 @@ pub use entity::{relation, tree, word, world};
 
 pub mod prelude {
     pub use crate::aspect::Aspect;
+    pub use crate::entity::kind::{Kind, KindList, KindOf};
+    pub use crate::entity::spawn::{Enabled, Name};
     pub use crate::comp::space::{Pose, WorldMatrix};
+    pub use crate::comp::stored::{Fields, Owner, Stored, Value, stable_id};
+    pub use crate::comp::time::{Journal, MemoryJournal, Row, Track};
+    pub use crate::system::sink::{MemorySink, Sink};
+    pub use crate::system::time::{Recorder, record};
     pub use crate::comp::time::Clock;
     pub use crate::relation::{Edge, Relation, Register};
     pub use crate::resources::Resources;
     pub use crate::tree::{DidReparent, Tree};
     pub use crate::system::space::propagate;
-    pub use crate::system::{DidAdd, EventQueue, FnSystem, Stage, System, WillRemove};
+    pub use crate::system::{DidAdd, DidChange, EventQueue, FnSystem, Stage, System, WillRemove};
     pub use crate::word::{Lexicon, Word};
     pub use crate::world::{World, WordBuilder};
 }

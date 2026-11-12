@@ -15,7 +15,11 @@ pub struct Pose {
     pub s: [f32; 3],
 }
 
-impl Aspect for Pose {}
+impl Aspect for Pose {
+    fn name() -> &'static str {
+        "pose"
+    }
+}
 
 impl Default for Pose {
     fn default() -> Self {
@@ -58,7 +62,11 @@ impl Pose {
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub struct WorldMatrix(pub [[f32; 4]; 4]);
 
-impl Aspect for WorldMatrix {}
+impl Aspect for WorldMatrix {
+    fn name() -> &'static str {
+        "world"
+    }
+}
 
 impl Default for WorldMatrix {
     fn default() -> Self {

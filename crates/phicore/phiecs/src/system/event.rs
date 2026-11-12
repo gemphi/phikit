@@ -17,6 +17,13 @@ pub struct DidAdd(pub Word);
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct WillRemove(pub Word);
 
+/// An aspect was set or taken &mut (Apple's ComponentEvents.DidChange,
+/// RF:7242). One event a word, aspect and tick, however many writes.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub struct DidChange {
+    pub word: Word,
+    pub aspect: &'static str,
+}
 /// One event type's two buffers.
 struct Buffer<E> {
     last: Vec<E>,
@@ -73,6 +80,11 @@ impl EventQueue {
         b.into_iter().flat_map(|b| b.last.iter().chain(b.now.iter()))
     }
 
+    /// Every E emitted in the step now running; last step's are left out.
+    pub fn read_now<E: Send + Sync + 'static>(&self) -> impl Iterator<Item = &E> {
+        let b = self.slots.get(&TypeId::of::<E>()).and_then(|s| s.as_any().downcast_ref::<Buffer<E>>());
+        b.into_iter().flat_map(|b| b.now.iter())
+    }
     /// Ends a step: this step's events become last step's, and last step's
     /// are dropped.
     pub fn swap(&mut self) {

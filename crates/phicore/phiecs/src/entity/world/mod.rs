@@ -1,9 +1,14 @@
 //! The world: its words, their aspects and edges, its resources and systems.
+mod change;
 mod relate;
 #[cfg(test)]
 mod tests;
 use crate::aspect::{Aspect, AspectStore, Dense};
+use crate::comp::space::{Pose, WorldMatrix};
+use crate::comp::stored::Owner;
 use crate::comp::time::Clock;
+use crate::entity::spawn::{Enabled, Name};
+use crate::system::time::Recorder;
 use crate::relation::{Graph, Register};
 use crate::tree::Tree;
 use crate::resources::Resources;
@@ -18,8 +23,8 @@ pub struct World {
     pub edges: Graph,
     pub resources: Resources,
     pub tree: Tree,
-    stores: HashMap<TypeId, Box<dyn AspectStore>>,
-    words: Vec<Word>,
+    pub(crate) stores: HashMap<TypeId, Box<dyn AspectStore>>,
+    pub(crate) words: Vec<Word>,
     pub(crate) systems: Vec<Box<dyn System>>,
 }
 impl Default for World {
@@ -33,7 +38,8 @@ impl World {
         let mut resources = Resources::new();
         resources.insert(Clock::default());
         resources.insert(EventQueue::new());
-        Self {
+        resources.insert(Recorder::default());
+        let mut world = Self {
             lexicon: Lexicon::new(),
             relations: Register::new(),
             edges: Graph::new(),
@@ -42,7 +48,13 @@ impl World {
             stores: HashMap::new(),
             words: Vec::new(),
             systems: Vec::new(),
-        }
+        };
+        world.register_stored::<Pose>();
+        world.register_stored::<WorldMatrix>();
+        world.register_stored::<Name>();
+        world.register_stored::<Enabled>();
+        world.register_stored::<Owner>();
+        world
     }
     /// The word spelled `spelling`, coined now if it is new, to bind
     /// aspects to as it is made.
@@ -94,12 +106,16 @@ impl World {
     /// Binds `aspect` to `word`, handing back the one it replaces.
     pub fn bind<A: Aspect>(&mut self, word: Word, aspect: A) -> Option<A> {
         self.register::<A>();
-        self.store_mut::<A>()?.insert(word, aspect)
+        let old = self.store_mut::<A>()?.insert(word, aspect);
+        self.mark::<A>(word);
+        old
     }
     pub fn read<A: Aspect>(&self, word: Word) -> Option<&A> {
         self.store::<A>()?.get(word)
     }
+    /// Hands out &mut, and counts the aspect changed at this tick.
     pub fn read_mut<A: Aspect>(&mut self, word: Word) -> Option<&mut A> {
+        self.mark::<A>(word);
         self.store_mut::<A>()?.get_mut(word)
     }
     pub fn unbind<A: Aspect>(&mut self, word: Word) -> Option<A> {
@@ -109,10 +125,10 @@ impl World {
     pub fn each<A: Aspect>(&self) -> impl Iterator<Item = (Word, &A)> {
         self.store::<A>().into_iter().flat_map(Dense::iter)
     }
-    fn store<A: Aspect>(&self) -> Option<&Dense<A>> {
+    pub(crate) fn store<A: Aspect>(&self) -> Option<&Dense<A>> {
         self.stores.get(&TypeId::of::<A>())?.as_any().downcast_ref()
     }
-    fn store_mut<A: Aspect>(&mut self) -> Option<&mut Dense<A>> {
+    pub(crate) fn store_mut<A: Aspect>(&mut self) -> Option<&mut Dense<A>> {
         self.stores.get_mut(&TypeId::of::<A>())?.as_any_mut().downcast_mut()
     }
     /// The world's clock.
