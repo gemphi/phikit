@@ -47,7 +47,7 @@ pub(crate) fn plane(half: f32, z: f32) -> MeshSource {
         slot: vec![0, 0],
         smooth: vec![false, false],
         uv: Vec::new(),
-        material: vec![MaterialSource { name: "m".into(), base_color: [0.8; 3], emission_color: [0.0; 3], emission_strength: 0.0, node: NodeSurface::Unknown, node_kind: Vec::new() }],
+        material: vec![MaterialSource { name: "m".into(), base_color: [0.8; 3], emission_color: [0.0; 3], emission_strength: 0.0, diffuse_color: [0.8; 3], node: NodeSurface::Unknown, node_kind: Vec::new() }],
     }
 }
 

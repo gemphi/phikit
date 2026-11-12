@@ -55,6 +55,10 @@ pub struct MaterialSource {
     pub base_color: [f32; 3],
     pub emission_color: [f32; 3],
     pub emission_strength: f32,
+    /// `Material.diffuse_color`: the colour of a material that has no node tree,
+    /// which Cycles shades as a diffuse BSDF of it (`blender/shader.cpp`,
+    /// the branch for a material that does not use nodes).
+    pub diffuse_color: [f32; 3],
     /// What the graph's Material Output takes its surface from.
     pub node: NodeSurface,
     /// The idname of every node of the graph, for knowing what a scene uses.

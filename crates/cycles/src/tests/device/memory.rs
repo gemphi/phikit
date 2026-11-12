@@ -123,3 +123,20 @@ fn a_block_reads_as_typed_slices() {
         assert_eq!(memory.slice::<u64>(ptr).unwrap().len(), 1);
     });
 }
+#[test]
+fn two_blocks_are_borrowed_at_once_for_a_kernel_that_reads_one_and_writes_the_other() {
+    let device = CpuDevice::new();
+    let (a, b) = (device.mem_alloc(4, MemoryType::ReadWrite).unwrap(), device.mem_alloc(8, MemoryType::ReadWrite).unwrap());
+    device.with_memory(|memory| {
+        let (first, second) = memory.bytes_pair_mut(a, b).unwrap();
+        assert_eq!((first.len(), second.len()), (4, 8));
+        first.fill(1);
+        second.fill(2);
+        // The same block twice, and a block that is not there, are errors.
+        assert_eq!(memory.bytes_pair_mut(a, a).err(), Some(DeviceError::BadPointer(a)));
+        assert_eq!(memory.bytes_pair_mut(a, DevicePtr(99)).err(), Some(DeviceError::BadPointer(DevicePtr(99))));
+    });
+    let mut out = [0u8; 4];
+    device.mem_copy_from(a, 0, &mut out).unwrap();
+    assert_eq!(out, [1; 4]);
+}

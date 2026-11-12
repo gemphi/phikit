@@ -146,6 +146,11 @@ fn main() {
                 println!("  integrator: pattern {} seed {} blue_noise_length {} index_mask {:#x} max_bounce {} min_bounce {} diffuse {} clamp {} {}", int("sampling_pattern"), int("seed") as u32, int("blue_noise_sequence_length"), int("sobol_index_mask") as u32, int("max_bounce"), int("min_bounce"), int("max_diffuse_bounce"), data.float("integrator", "sample_clamp_direct"), data.float("integrator", "sample_clamp_indirect"));
                 println!("  film: stride {} exposure {} filter offset {}", data.int("film", "pass_stride"), data.float("film", "exposure"), data.int("tables", "filter_table_offset"));
                 println!("  camera: type {} fov-ish width {} height {}", data.int("cam", "type"), data.float("cam", "width"), data.float("cam", "height"));
+                for mesh in &source.mesh {
+                    for material in &mesh.material {
+                        println!("  material {:?}: {:?} nodes {:?} base {:?} diffuse color {:?}", material.name, material.node, material.node_kind, material.base_color, material.diffuse_color);
+                    }
+                }
                 for (index, surface) in synced.surface.iter().enumerate() {
                     println!("  shader {index}: {surface:?}");
                 }

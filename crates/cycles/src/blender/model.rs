@@ -85,6 +85,7 @@ fn material_of(material: &SceneMaterial) -> MaterialSource {
         base_color: [r, g, b],
         emission_color: material.bsdf.emission,
         emission_strength: material.bsdf.emission_strength,
+        diffuse_color: [material.viewport_color[0], material.viewport_color[1], material.viewport_color[2]],
         node: node_surface(material),
         node_kind: material.graph.nodes.iter().map(|node| node.idname.clone()).collect(),
     }

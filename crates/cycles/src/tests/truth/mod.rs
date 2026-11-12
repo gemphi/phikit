@@ -4,4 +4,5 @@
 //! and the renderer.
 mod compare;
 mod display;
+mod engine;
 pub(crate) mod verdict;

@@ -192,3 +192,33 @@ fn a_camera_with_a_wide_frame_fits_the_sensor_width() {
     let (plane, _, _) = viewplane(&shifted, 100, 100);
     assert_eq!((plane.left, plane.right), (0.0, 2.0));
 }
+#[test]
+fn the_output_a_cycles_render_uses_decides_the_surface() {
+    // Two Material Output nodes, one for each engine: the file's blue
+    // emission is the one Cycles shades, not the red one beside it.
+    let Some((_, source, scene, _)) = join("shader", "material_output_selection") else { return };
+    assert_eq!(source.mesh.iter().flat_map(|mesh| &mesh.material).count(), 1);
+    assert!(scene.surface.contains(&Surface::Emission { color: [0.0, 0.0, 1.0], strength: 1.0 }), "{:?}", scene.surface);
+    assert!(!scene.surface.iter().any(|surface| matches!(surface, Surface::Emission { color, .. } if color[0] > 0.5)));
+}
+
+#[test]
+fn a_graph_that_is_more_than_one_closure_is_not_taken_for_one() {
+    // `shader/emission` colours a diffuse with a checker texture: the join
+    // does not pretend that it is the node's own colour.
+    let Some((_, source, _, _)) = join("shader", "emission") else { return };
+    let materials: Vec<_> = source.mesh.iter().flat_map(|mesh| &mesh.material).collect();
+    assert!(materials.iter().any(|material| material.node_kind.iter().any(|kind| kind == "ShaderNodeTexChecker")));
+    assert!(materials.iter().any(|material| material.node == NodeSurface::Unknown));
+}
+
+#[test]
+fn the_scene_s_colour_management_lights_and_cycles_settings_are_read() {
+    let Some((model, source, _, _)) = join("shader", "material_output_selection") else { return };
+    assert_eq!(source.view_transform, model.render.view_transform);
+    assert_eq!(source.light_count, 0);
+    assert_eq!(source.cycles.get("samples"), Some(&25.0));
+    assert_eq!(source.cycles.get("sampling_pattern"), Some(&1.0));
+    let Some((_, lit, _, _)) = join("bsdf", "diffuse") else { return };
+    assert_eq!(lit.light_count, 1);
+}

@@ -20,6 +20,10 @@ pub fn surface_of(material: &MaterialSource) -> Surface {
         NodeSurface::Emission { color, strength } => return Surface::Emission { color: *color, strength: *strength },
         NodeSurface::Unknown => {}
     }
+    // A material with no node tree is a diffuse BSDF of its diffuse colour.
+    if material.node_kind.is_empty() {
+        return Surface::Diffuse { color: material.diffuse_color };
+    }
     let emits = material.emission_strength > 0.0 && material.emission_color.iter().any(|&channel| channel > 0.0);
     match emits {
         true => Surface::Emission { color: material.emission_color, strength: material.emission_strength },
