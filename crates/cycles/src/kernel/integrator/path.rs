@@ -6,10 +6,10 @@
 //! `path_state_continuation_probability` (270) and the RNG state of a path
 //! (`path_state_rng_*`, 330-400). Volumes, ray portals, path guiding and
 //! the shadow catcher are not ported.
-use super::state::IntegratorState;
-use crate::kernel::KernelGlobals;
+use crate::kernel::integrator::state::IntegratorState;
+use crate::kernel::KernelGlobal;
 use crate::kernel::sample::{path_rng_1d, path_rng_2d, path_rng_3d};
-use crate::kernel::types::*;
+use crate::kernel::bit::*;
 use crate::kernel::DeviceKernel;
 use crate::kernel::KernelWorkTile;
 
@@ -48,7 +48,7 @@ pub fn path_state_init_integrator(state: &mut IntegratorState, sample: i32, rng_
 
 /// `path_state_next`: the counters, the flags and the visibility after a
 /// bounce with this `label` (`LABEL_*`) off a shader with `shader_flag`.
-pub fn path_state_next(kg: &KernelGlobals, state: &mut IntegratorState, label: u32, shader_flag: u32) {
+pub fn path_state_next(kg: &KernelGlobal, state: &mut IntegratorState, label: u32, shader_flag: u32) {
     let integrator = &kg.integrator;
     let mut flag = state.path.flag;
     // A ray through a transparent surface keeps the flags of the one
@@ -132,7 +132,7 @@ pub fn path_state_ray_visibility(state: &IntegratorState) -> u32 {
 /// `path_state_continuation_probability`: one for the first bounces, else
 /// the square root of the throughput's largest part (about the view
 /// transform's curve, so paths end a little later).
-pub fn path_state_continuation_probability(kg: &KernelGlobals, state: &IntegratorState, path_flag: u32) -> f32 {
+pub fn path_state_continuation_probability(kg: &KernelGlobal, state: &IntegratorState, path_flag: u32) -> f32 {
     let integrator = &kg.integrator;
     if path_flag & PATH_RAY_TRANSPARENT != 0 {
         if state.path.transparent_bounce as i32 <= integrator.transparent_min_bounce {
@@ -161,17 +161,17 @@ pub fn path_state_rng_load(state: &IntegratorState) -> RngState {
 }
 
 /// `path_state_rng_1D`.
-pub fn path_state_rng_1d(kg: &KernelGlobals, rng: &RngState, dimension: u32) -> f32 {
+pub fn path_state_rng_1d(kg: &KernelGlobal, rng: &RngState, dimension: u32) -> f32 {
     path_rng_1d(&kg.integrator.sampler, &kg.scene.sample_pattern_lut, rng.rng_pixel, rng.sample, rng.rng_offset + dimension)
 }
 
 /// `path_state_rng_2D`.
-pub fn path_state_rng_2d(kg: &KernelGlobals, rng: &RngState, dimension: u32) -> [f32; 2] {
+pub fn path_state_rng_2d(kg: &KernelGlobal, rng: &RngState, dimension: u32) -> [f32; 2] {
     path_rng_2d(&kg.integrator.sampler, &kg.scene.sample_pattern_lut, rng.rng_pixel, rng.sample, rng.rng_offset + dimension)
 }
 
 /// `path_state_rng_3D`.
-pub fn path_state_rng_3d(kg: &KernelGlobals, rng: &RngState, dimension: u32) -> [f32; 3] {
+pub fn path_state_rng_3d(kg: &KernelGlobal, rng: &RngState, dimension: u32) -> [f32; 3] {
     path_rng_3d(&kg.integrator.sampler, &kg.scene.sample_pattern_lut, rng.rng_pixel, rng.sample, rng.rng_offset + dimension)
 }
 

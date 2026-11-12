@@ -9,7 +9,7 @@ mod perspective;
 use super::near;
 use crate::graph::Value;
 use crate::kernel::camera::*;
-use crate::kernel::{KernelGlobals, Ray, RaySelfPrimitive, flag};
+use crate::kernel::{KernelGlobal, Ray, RaySelfPrimitive, flag};
 use crate::scene::{Camera, DeviceScene, LookupTableSet, MotionType};
 use crate::tests::kernel::rig::Rig;
 use crate::util::Transform;
@@ -29,7 +29,7 @@ fn still(setup: impl FnOnce(&mut Camera)) -> (Camera, DeviceScene) {
 /// The ray through the top left corner of `pixel`, for the random numbers
 /// `time` and `lens`, and what the camera lets through.
 fn ray_of(dscene: &DeviceScene, pixel: [i32; 2], time: f32, lens: [f32; 2]) -> (Ray, [f32; 3]) {
-    let kg = KernelGlobals::of(dscene);
+    let kg = KernelGlobal::of(dscene);
     let mut ray = Ray::default();
     let through = camera_sample(&kg, pixel[0], pixel[1], [0.5; 2], time, lens, &mut ray);
     (ray, through)
@@ -65,7 +65,7 @@ fn a_camera_that_was_moved_sends_its_rays_from_where_it_is() {
     });
     let (ray, _) = ray_of(&dscene, [512, 256], 0.0, [0.0; 2]);
     assert!(near(&ray.p, &[1.0, 2.0, 3.0]) && near(&ray.d, &[0.0, 0.0, 1.0]), "{ray:?}");
-    let kg = KernelGlobals::of(&dscene);
+    let kg = KernelGlobal::of(&dscene);
     assert_eq!(camera_position(&kg), [1.0, 2.0, 3.0]);
     assert!(near(&[camera_distance(&kg, [1.0, 2.0, 7.0]), camera_distance(&kg, [4.0, 6.0, 3.0])], &[4.0, 5.0]));
 }
@@ -75,13 +75,13 @@ fn the_lens_is_a_disk_or_a_polygon_of_blades_squeezed_for_an_anamorphic_one() {
     let (_, dscene) = still(|camera| {
         camera.node.set("aperture_ratio", Value::Float(2.0));
     });
-    let round = KernelGlobals::of(&dscene).cam;
+    let round = KernelGlobal::of(&dscene).cam;
     assert!(near(&camera_sample_aperture(&round, [1.0, 0.5]), &[0.5, 0.0]));
     assert!(near(&camera_sample_aperture(&round, [0.5, 1.0]), &[0.0, 1.0]));
     let (_, dscene) = still(|camera| {
         camera.node.set("blades", Value::Int(4));
     });
-    let square = KernelGlobals::of(&dscene).cam;
+    let square = KernelGlobal::of(&dscene).cam;
     let corner = std::f32::consts::FRAC_1_SQRT_2;
     assert!(near(&camera_sample_aperture(&square, [0.0, 0.0]), &[corner, corner]));
     assert!(near(&camera_sample_aperture(&square, [0.25, 0.0]), &[-corner, corner]));
@@ -130,7 +130,7 @@ fn the_pixel_filter_s_table_places_a_ray_within_its_pixel() {
     dscene.lookup_table = (0..size).map(|index| index as f32 / (size - 1) as f32).collect();
     dscene.data.set_int("tables", "filter_table_offset", 0);
     dscene.data.set_float2("integrator", "pixel_jitter", [f32::MAX; 2]);
-    let kg = KernelGlobals::of(&dscene);
+    let kg = KernelGlobal::of(&dscene);
     let mut ray = Ray::default();
     // The table's last entry is one pixel: from 511, 255 to the middle.
     camera_sample(&kg, 511, 255, [1.0; 2], 0.0, [0.0; 2], &mut ray);

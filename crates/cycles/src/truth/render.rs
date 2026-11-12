@@ -8,7 +8,7 @@
 //! [`TruthError::Device`] and not as a black picture.
 use std::sync::Arc;
 
-use super::display::ViewSettings;
+use super::display::ViewSetting;
 use super::{Image, Renderer, TestScene, TruthError};
 use crate::device::CpuDevice;
 use crate::integrator::{PathTrace, PathTraceWorkCpu, RenderScheduler, RenderWork, TraceHost};
@@ -98,14 +98,14 @@ impl Renderer for SessionRenderer {
 /// Filmic and AgX views, and the look, come with the colour management of
 /// gate 2.) Alpha is the sum over `sample_count`, clamped.
 pub fn display(buffer: &RenderBuffer, sample_count: i32, transparent: bool) -> Image {
-    display_view(buffer, sample_count, transparent, &ViewSettings::default())
+    display_view(buffer, sample_count, transparent, &ViewSetting::default())
 }
 
 /// The combined pass as the picture the scene's view settings give. With
 /// `view.cycles_buffer` the buffer is read as Cycles keeps it: the bottom
 /// row of the image first, and the fourth float the transparency the path
 /// added (`film_write_transparent`), alpha being one less its average.
-pub fn display_view(buffer: &RenderBuffer, sample_count: i32, transparent: bool, view: &ViewSettings) -> Image {
+pub fn display_view(buffer: &RenderBuffer, sample_count: i32, transparent: bool, view: &ViewSetting) -> Image {
     let (width, height) = (buffer.param.width as usize, buffer.param.height as usize);
     let scale = 1.0 / sample_count.max(1) as f32;
     let channels = if transparent { 4 } else { 3 };

@@ -51,7 +51,7 @@ fn with_an_open_lens_the_rays_of_a_pixel_meet_where_it_is_sharp() {
 #[test]
 fn the_distance_to_an_orthographic_camera_is_to_its_plane() {
     let (_, dscene) = still(flat);
-    let kg = KernelGlobals::of(&dscene);
+    let kg = KernelGlobal::of(&dscene);
     assert!(near(&[camera_distance(&kg, [5.0, 5.0, 3.0])], &[3.0]));
 }
 #[test]

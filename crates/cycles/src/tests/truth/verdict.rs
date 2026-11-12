@@ -4,7 +4,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use crate::device::{CpuDevice, CpuKernels, DeviceError, KernelArgument};
+use crate::device::{CpuDevice, CpuKernel, DeviceError, KernelArgument};
 use crate::kernel::DeviceKernel;
 use crate::truth::*;
 
@@ -54,8 +54,8 @@ fn a_reference_png_reads_as_bytes_over_255() {
     let Some(root) = root() else { return };
     let scene = TestScene::new(&root, "bsdf", "diffuse");
     let image = Image::read(&scene.reference).unwrap();
-    assert!(image.width > 0 && image.height > 0 && image.channels == 3, "the references are opaque RGB");
-    assert_eq!(image.pixel.len(), image.width * image.height * image.channels);
+    assert!(image.width > 0 && image.height > 0 && image.channel_count == 3, "the references are opaque RGB");
+    assert_eq!(image.pixel.len(), image.width * image.height * image.channel_count);
     // Every value is a byte over 255.
     assert!(image.pixel.iter().all(|value| (value * 255.0 - (value * 255.0).round()).abs() < 1e-3 && (0.0..=1.0).contains(value)));
 }
@@ -71,7 +71,7 @@ fn a_real_reference_passes_against_itself_and_writes_its_diff() {
     let comparison = verdict.comparison.unwrap();
     assert_eq!((comparison.failed_pixel, comparison.max_error), (0, 0.0));
     let diff = Image::read(verdict.diff_color.as_ref().unwrap()).unwrap();
-    assert_eq!((diff.width, diff.height, diff.channels), (reference.width, reference.height, 3));
+    assert_eq!((diff.width, diff.height, diff.channel_count), (reference.width, reference.height, 3));
     assert!(diff.pixel.iter().all(|value| *value == 0.0), "no difference is a black diff");
     assert!(verdict.diff_alpha.is_none(), "an RGB reference has no alpha to diff");
     std::fs::remove_dir_all(out).unwrap();
@@ -88,7 +88,7 @@ fn a_real_reference_perturbed_fails_at_the_documented_threshold() {
     let one_percent = pixel / 100;
     let raise = |count: usize, by: f32| {
         let mut image = reference.clone();
-        let stride = reference.channels;
+        let stride = reference.channel_count;
         for index in 0..count {
             let red = reference.pixel[index * stride];
             image.pixel[index * stride] = if red < 0.5 { red + by } else { red - by };
@@ -150,7 +150,7 @@ fn a_render_error_is_the_verdict_and_not_a_black_picture() {
 
 /// A megakernel that writes `sample_count` into red and alpha of each pixel.
 fn white_kernel() -> CpuDevice {
-    let mut kernels = CpuKernels::new();
+    let mut kernels = CpuKernel::new();
     kernels.set(
         DeviceKernel::IntegratorMegakernel,
         Arc::new(|memory, _work_size, args| {
@@ -175,13 +175,13 @@ fn white_kernel() -> CpuDevice {
 fn the_session_renderer_turns_a_ported_kernel_into_a_picture() {
     let mut renderer = SessionRenderer::new(Arc::new(white_kernel()), (16, 8), 4);
     let image = renderer.render(&TestScene::new(Path::new("root"), "bsdf", "diffuse")).unwrap();
-    assert_eq!((image.width, image.height, image.channels), (16, 8, 3));
+    assert_eq!((image.width, image.height, image.channel_count), (16, 8, 3));
     // The kernel wrote the sample count of its round; the rounds add up to
     // the whole count and the picture divides it out: white.
     assert!(image.pixel.iter().all(|value| (*value - 1.0).abs() < 1e-6), "{:?}", &image.pixel[..3]);
     let mut transparent = SessionRenderer::new(Arc::new(white_kernel()), (4, 4), 1);
     transparent.transparent = true;
-    assert_eq!(transparent.render(&TestScene::new(Path::new("root"), "bsdf", "diffuse")).unwrap().channels, 4);
+    assert_eq!(transparent.render(&TestScene::new(Path::new("root"), "bsdf", "diffuse")).unwrap().channel_count, 4);
 }
 
 #[test]

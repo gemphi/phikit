@@ -5,7 +5,7 @@
 //! boxes of an inner node. The unaligned node, which hair has, is not
 //! ported: the build makes none.
 
-use crate::kernel::KernelGlobals;
+use crate::kernel::KernelGlobal;
 
 /// Cycles' `max` and `min` of two floats: the second when either is not a
 /// number, which keeps a box the ray runs along from being lost.
@@ -27,7 +27,7 @@ fn least(a: f32, b: f32) -> f32 {
 /// `node_addr` the ray enters between `tmin` and `tmax`, as bit 1 for the
 /// first and bit 2 for the second, and how far along the ray each starts.
 /// A child no ray of this `visibility` may see counts as missed.
-pub fn bvh_aligned_node_intersect(kg: &KernelGlobals, p: [f32; 3], idir: [f32; 3], tmin: f32, tmax: f32, node_addr: i32, visibility: u32) -> (u32, [f32; 2]) {
+pub fn bvh_aligned_node_intersect(kg: &KernelGlobal, p: [f32; 3], idir: [f32; 3], tmin: f32, tmax: f32, node_addr: i32, visibility: u32) -> (u32, [f32; 2]) {
     let node = &kg.scene.bvh_node[node_addr as usize..node_addr as usize + 4];
     let float = |row: usize, column: usize| f32::from_bits(node[row][column] as u32);
     // Rows 1 to 3 are x, y and z: each the low side of both children, then

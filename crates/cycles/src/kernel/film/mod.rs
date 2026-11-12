@@ -8,8 +8,8 @@
 //! | File | Ported from |
 //! |---|---|
 //! | `write.rs` | `write.h`: the pixel of a path, adding to a pass |
-//! | `light_passes.rs` | `light_passes.h`: the combined pass, background, emission, clamping |
-mod light_passes;
+//! | `light.rs` | `light_passes.h`: the combined pass, background, emission, clamping |
+mod light;
 mod write;
-pub use light_passes::{film_clamp_light, film_write_background, film_write_combined_transparent_pass, film_write_sample, film_write_surface_emission};
+pub use light::{film_clamp_light, film_write_background, film_write_combined_transparent_pass, film_write_sample, film_write_surface_emission};
 pub use write::{film_pass_pixel_render_buffer, film_write_pass_float4, film_write_pass_spectrum};

@@ -16,7 +16,7 @@
 //! are left out.
 use bytemuck::{Pod, Zeroable};
 
-use crate::kernel::types::NONE;
+use crate::kernel::bit::NONE;
 use crate::kernel::{Intersection, Ray, RaySelfPrimitive};
 
 /// `IntegratorStateCPU::path`.

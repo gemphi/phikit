@@ -4,14 +4,14 @@
 //! (`triangle_intersect`, lines 24-62). The local intersection, for
 //! subsurface scattering, and the refinement of a hit come later.
 use super::triangle_vertices;
-use crate::kernel::{Intersection, KernelGlobals};
+use crate::kernel::{Intersection, KernelGlobal};
 use crate::util::ray_triangle_intersect;
 /// `triangle_intersect`: the ray from `p` along `dir` against triangle
 /// `prim` of `object`, which is entry `prim_addr` of the tree's
 /// primitives. A hit between `tmin` and `tmax` that a ray of this
 /// `visibility` may see is written into `isect`.
 #[allow(clippy::too_many_arguments, reason = "the arguments Cycles gives it")]
-pub fn triangle_intersect(kg: &KernelGlobals, isect: &mut Intersection, p: [f32; 3], dir: [f32; 3], tmin: f32, tmax: f32, visibility: u32, object: i32, prim: i32, prim_addr: i32) -> bool {
+pub fn triangle_intersect(kg: &KernelGlobal, isect: &mut Intersection, p: [f32; 3], dir: [f32; 3], tmin: f32, tmax: f32, visibility: u32, object: i32, prim: i32, prim_addr: i32) -> bool {
     let [a, b, c] = triangle_vertices(kg, object, prim);
     let Some(hit) = ray_triangle_intersect(p, dir, tmin, tmax, a, b, c) else {
         return false;

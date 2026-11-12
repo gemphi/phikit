@@ -13,7 +13,7 @@
 use super::{bvh_aligned_node_intersect, intersection_skip_self_shadow};
 use crate::kernel::geom::triangle::triangle_intersect;
 use crate::kernel::geom::{bvh_clamp_direction, bvh_instance_pop, bvh_instance_push, bvh_inverse_direction};
-use crate::kernel::{Intersection, KernelGlobals, Ray};
+use crate::kernel::{Intersection, KernelGlobal, Ray};
 /// `BVH_STACK_SIZE`: 64 object, 64 mesh and 64 for object node splitting.
 const BVH_STACK_SIZE: usize = 192;
 /// The walk's place in the tree, and the ray as that place sees it.
@@ -44,7 +44,7 @@ impl Walk {
 /// The inner nodes from `node_addr` down to a leaf or the end of the
 /// tree: of two children the ray enters, the nearer is visited first and
 /// the other put aside.
-fn descend(kg: &KernelGlobals, walk: &mut Walk, mut node_addr: i32, tmin: f32, tmax: f32, visibility: u32) -> i32 {
+fn descend(kg: &KernelGlobal, walk: &mut Walk, mut node_addr: i32, tmin: f32, tmax: f32, visibility: u32) -> i32 {
     let sentinel = kg.bvh.sentinel;
     while node_addr >= 0 && node_addr != sentinel {
         let (mask, dist) = bvh_aligned_node_intersect(kg, walk.p, walk.idir, tmin, tmax, node_addr, visibility);
@@ -67,7 +67,7 @@ fn descend(kg: &KernelGlobals, walk: &mut Walk, mut node_addr: i32, tmin: f32, t
 }
 /// The primitives of a leaf, from `start` to `end` in the tree's arrays,
 /// each against the ray. True when a shadow ray needs to look no further.
-fn leaf(kg: &KernelGlobals, walk: &Walk, ray: &Ray, isect: &mut Intersection, visibility: u32, range: (i32, i32), kind: u32) -> bool {
+fn leaf(kg: &KernelGlobal, walk: &Walk, ray: &Ray, isect: &mut Intersection, visibility: u32, range: (i32, i32), kind: u32) -> bool {
     let (scene, bvh) = (&*kg.scene, &kg.bvh);
     for prim_addr in range.0..range.1 {
         let prim_object = match walk.object == bvh.object_none {
@@ -91,7 +91,7 @@ fn leaf(kg: &KernelGlobals, walk: &Walk, ray: &Ray, isect: &mut Intersection, vi
 /// `scene_intersect` for Cycles' own tree, `bvh_intersect`: the nearest
 /// thing `ray` hits that a ray of this `visibility` may see, written into
 /// `isect`. False when it hits nothing.
-pub fn bvh_intersect(kg: &KernelGlobals, ray: &Ray, isect: &mut Intersection, visibility: u32) -> bool {
+pub fn bvh_intersect(kg: &KernelGlobal, ray: &Ray, isect: &mut Intersection, visibility: u32) -> bool {
     let (scene, bvh) = (&*kg.scene, &kg.bvh);
     let sentinel = bvh.sentinel;
     let dir = bvh_clamp_direction(ray.d);

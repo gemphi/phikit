@@ -6,14 +6,15 @@
 //! Ray differentials, the `dPdu`/`dPdv` and motion are not set.
 use super::object::{object_normal_transform, object_position_transform};
 use super::triangle::{triangle_normal, triangle_smooth_normal};
-use crate::kernel::types::{SD_BACKFACING, SD_OBJECT_TRANSFORM_APPLIED, SHADER_MASK, SHADER_SMOOTH_NORMAL, ShaderData};
-use crate::kernel::{Intersection, KernelGlobals, Ray};
+use crate::kernel::bit::{SD_BACKFACING, SD_OBJECT_TRANSFORM_APPLIED, SHADER_MASK, SHADER_SMOOTH_NORMAL};
+use crate::kernel::ShaderData;
+use crate::kernel::{Intersection, KernelGlobal, Ray};
 use crate::util::vector::dot;
 
 /// `shader_setup_from_ray`: the shading point of a triangle hit. The hit
 /// is a static triangle in the object's own space; its point and normals
 /// are brought to world space when the object's transform is not applied.
-pub fn shader_setup_from_ray(kg: &KernelGlobals, isect: &Intersection, ray: &Ray) -> ShaderData {
+pub fn shader_setup_from_ray(kg: &KernelGlobal, isect: &Intersection, ray: &Ray) -> ShaderData {
     let mut sd = ShaderData {
         u: isect.u,
         v: isect.v,
@@ -57,7 +58,7 @@ pub fn shader_setup_from_ray(kg: &KernelGlobals, isect: &Intersection, ray: &Ray
 
 /// `shader_setup_from_background`: the shading point of a ray that hit
 /// nothing. `P` is the ray's direction and the normals point back at it.
-pub fn shader_setup_from_background(kg: &KernelGlobals, ray: &Ray) -> ShaderData {
+pub fn shader_setup_from_background(kg: &KernelGlobal, ray: &Ray) -> ShaderData {
     let back = ray.d.map(|part| -part);
     let shader = kg.background.surface_shader;
     ShaderData {

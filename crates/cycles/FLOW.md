@@ -300,13 +300,13 @@ graph TB
 
 ### The ray a camera sends
 
-The first thing a path does is leave the camera. That much of the kernel
-is ported: from a pixel and the random numbers of one sample to a `Ray`.
+The first thing a path does is leave the camera: from a pixel and the
+random numbers of one sample to a `Ray`.
 
 ```mermaid
 graph TB
     r0["DeviceScene.data · lookup_table · camera_motion<br/>src/scene/device.rs<br/>written by Camera, Film and Integrator"]
-    r1["KernelGlobal::new<br/>src/kernel/global.rs<br/>cam: KernelCamera, pixel_jitter, filter_table_offset"]
+    r1["KernelGlobal::new(Arc of DeviceScene)<br/>src/kernel/global.rs<br/>cam: KernelCamera, integrator.pixel_jitter, filter_table_offset"]
     r2["camera_sample(kg, x, y, filter_uv, time, lens_uv, ray)<br/>src/kernel/camera/mod.rs"]
     r3["lookup_table_read<br/>src/kernel/util/table.rs<br/>where in the pixel, by the filter; when in the shutter, by its curve"]
     r4["camera_sample_perspective<br/>perspective.rs"]
@@ -315,8 +315,8 @@ graph TB
     r7["camera_to_world<br/>motion_array_interpolate over camera_motion"]
     r8["Ray { p, d, tmin, tmax, time, dp, dd, own }<br/>src/kernel/ray.rs<br/>differential_make_compact, src/kernel/util/differential.rs"]
     c1["the panorama camera, spherical stereo, the custom camera<br/>kernel/camera/projection.h, kernel/osl/camera.h"]
-    c2["IntegratorInitFromCamera: the path's state, a sample's random numbers<br/>kernel/integrator/init_from_camera.h, kernel/sample/pattern.h"]
-    c3["IntegratorIntersectClosest: the tree walked, a triangle hit<br/>kernel/bvh/traversal.h, kernel/geom/triangle_intersect.h"]
+    c2["integrator_init_from_camera: the path's state, a sample's random numbers<br/>src/kernel/integrator/init/camera.rs, src/kernel/sample/pattern.rs"]
+    c3["integrator_intersect_closest: the tree walked, a triangle hit<br/>src/kernel/integrator/intersect/closest.rs, below"]
     r0 --> r1 --> r2
     r2 --> r3
     r2 --> r4
@@ -327,10 +327,10 @@ graph TB
     r5 --> r7
     r7 --> r8
     c1 -.-> r2
-    c2 -.-> r2
-    r8 -.-> c3
+    c2 --> r2
+    r8 --> c3
     classDef todo stroke-dasharray: 6 4;
-    class c1,c2,c3 todo;
+    class c1 todo;
 ```
 
 ### The ray walked to what it hits
@@ -344,7 +344,7 @@ are met.
 graph TB
     w0["Ray<br/>src/kernel/ray.rs"]
     w1["scene_intersect(kg, ray, visibility, isect)<br/>src/kernel/bvh/mod.rs<br/>intersection_ray_valid, util.rs"]
-    w2["bvh_intersect<br/>src/kernel/bvh/traversal.rs<br/>a stack of nodes, ENTRYPOINT_SENTINEL under each tree"]
+    w2["bvh_intersect<br/>src/kernel/bvh/traversal.rs<br/>a stack of 192 nodes, ENTRYPOINT_SENTINEL under each tree"]
     w3["bvh_aligned_node_intersect<br/>src/kernel/bvh/node.rs<br/>DeviceScene.bvh_node: two boxes, their visibility"]
     w4["a leaf of DeviceScene.bvh_leaf_node<br/>prim_index · prim_object · prim_visibility"]
     w5["bvh_instance_push · bvh_instance_pop<br/>src/kernel/geom/object.rs<br/>KernelObject.itfm, object_node"]
@@ -353,7 +353,7 @@ graph TB
     w8["Intersection { t, u, v, prim, object, kind }<br/>src/kernel/intersection.rs"]
     c1["motion triangles, curves, points; shadow linking<br/>kernel/geom/motion_triangle_intersect.h, curve_intersect.h, point_intersect.h"]
     c2["the other walks: all shadow hits, local, volume<br/>kernel/bvh/shadow_all.h, local.h, volume.h"]
-    c3["IntegratorIntersectClosest: what the path does with the hit<br/>kernel/integrator/intersect_closest.h"]
+    c3["integrator_intersect_closest: what the path does with the hit<br/>src/kernel/integrator/intersect/closest.rs"]
     w0 --> w1 --> w2
     w2 --> w3 --> w2
     w2 --> w4
@@ -361,13 +361,37 @@ graph TB
     w4 -->|"triangles"| w6 --> w7 --> w8
     c1 -.-> w4
     c2 -.-> w1
-    w8 -.-> c3
+    w8 --> c3
     classDef todo stroke-dasharray: 6 4;
-    class c1,c2,c3 todo;
+    class c1,c2 todo;
 ```
 
+### A path on the CPU, gate 1
+`PathTraceWorkCpu` enqueues one `IntegratorMegakernel` for the slice's
+pixels on the `CpuDevice`; the kernel table (`kernel/device/cpu.rs`) runs,
+for each pixel and sample, the kernels a path is queued for until it ends.
+```mermaid
+graph TB
+    p0["PathTraceWorkCpu<br/>src/integrator/trace/cpu.rs"]
+    p1["CpuDevice, DeviceQueue::enqueue(IntegratorMegakernel)<br/>src/device/cpu/"]
+    p2["the megakernel of cpu_kernels<br/>src/kernel/device/cpu.rs<br/>a row of pixels a thread, a KernelGlobal shared by them"]
+    p3["integrator_init_from_camera<br/>init/camera.rs: path_rng_pixel_init, camera_sample, path_state_init"]
+    p4["integrator_megakernel<br/>megakernel.rs: a switch on IntegratorState.path.queued_kernel"]
+    p5["integrator_intersect_closest<br/>intersect/closest.rs: scene_intersect, the next kernel"]
+    p6["integrator_shade_background<br/>shade/background.rs: the world's colour, film_write_background"]
+    p7["integrator_shade_surface<br/>shade/surface.rs: shader_setup_from_ray, svm_eval_nodes,<br/>emission, a cosine-weighted bounce from the diffuse closure"]
+    p8["film_write_sample, film_write_surface_emission<br/>src/kernel/film/: the combined pass, the sample count"]
+    p9["RenderBuffer â†’ truth::display (the view transform) â†’ Image<br/>src/truth/"]
+    p0 --> p1 --> p2 --> p3 --> p4
+    p4 --> p5
+    p5 -->|"a hit"| p7
+    p5 -->|"none"| p6
+    p7 -->|"the next bounce"| p5
+    p6 --> p8
+    p7 --> p8
+    p8 --> p9
+```
 ## The types, and what each is ported from
-
 | Rust type | File | Cycles | State |
 |---|---|---|---|
 | `SessionParam`, `ShadingSystem` | `src/session/param.rs` | `SessionParams`, `session/session.h:36-112` | ported, tested |
@@ -426,21 +450,38 @@ graph TB
 | `Integrator`, `IntegratorInput`, `HaltonSequence`, `GuidingParam` | `src/scene/integrator/` (4 files) | `scene/integrator.h`, `integrator.cpp` | settings, `device_update`, `get_adaptive_sampling`, `get_denoise_params`, `get_guiding_params`, `get_kernel_features` ported, tested; the tabulated Sobol samples are not generated |
 | `hash_uint`, `hash_uint2`, `hash_uint3` | `src/util/hash.rs` | `util/hash.h:80-166` | ported, tested against the same mix written apart in Python |
 | `Clock`, `SystemClock`, `ManualClock` | `src/util/time.rs` | `time_dt`, `util/time.h` | a clock handed in, not a global one |
-| `DeviceKernel` | `src/kernel/mod.rs` | `DeviceKernel`, `kernel/types.h:1744-1763` | names and numbers ported; of the kernels' bodies only the camera's ray, below |
-| `KernelGlobal` | `src/kernel/global.rs` | `KernelGlobalsCPU`, `kernel/device/cpu/globals.h:47` | the scene's arrays and the members of the constant data a ray reads, taken out of the words once; it grows with the kernels |
+| `DeviceKernel` | `src/kernel/mod.rs` | `DeviceKernel`, `kernel/types.h:1744-1763` | names and numbers ported; the bodies of gate 1's kernels, below |
+| `KernelGlobal`, `KernelFilm`, `KernelIntegrator`, `KernelBackground`, `KernelObject`, `KernelShader` | `src/kernel/global.rs` | `KernelGlobals`, `kernel/globals.h`; `KernelGlobalsCPU`, `kernel/device/cpu/globals.h:47` | the scene's arrays, shared by the threads, and the members of the constant data and of the objects and shaders a kernel reads, taken out of the words once; it grows with the kernels |
+| `bit` constants, `NONE`, `MAX_CLOSURE` | `src/kernel/bit.rs` | the path, label, shading point and shader bits of `kernel/types.h` | ported, each checked against `data/constant.tsv` |
+| `ShaderData`, `ShaderClosure` | `src/kernel/shader.rs` | `kernel/types.h:868-886, 1019-1099` | the members a diffuse or emissive surface and the background use |
 | `Ray`, `RaySelfPrimitive` | `src/kernel/ray.rs` | `kernel/types.h:588-610` | ported, tested |
 | `KernelCamera`, `CameraType`, `camera_sample`, `camera_sample_perspective`, `camera_sample_orthographic`, `camera_sample_aperture`, `camera_to_world`, `camera_position`, `camera_distance` | `src/kernel/camera/` (4 files) | `kernel/camera/camera.h:22-237, 449-547`; `KernelCamera`, `kernel/types.h:1162-1250` | the perspective and the orthographic camera, the lens, the pixel filter, the shutter and the rolling shutter, a camera that moves, a field of view that changes: ported, tested. Not ported: the panorama camera, spherical stereo, the custom camera; they send no ray |
 | `scene_intersect`, `scene_intersect_shadow`, `bvh_intersect`, `bvh_aligned_node_intersect`, `KernelBvh`, `intersection_ray_valid`, `intersection_skip_self`, `intersection_skip_self_shadow` | `src/kernel/bvh/` (5 files) | `kernel/bvh/bvh.h:224-275`, `traversal.h:24-261`, `nodes.h:24-71`, `util.h:13-27, 240-253`, `types.h` | the walk to the nearest hit over triangles that do not move, into instances: ported, tested. Not ported: motion triangles, curves, points, unaligned nodes, shadow linking; the walks for every shadow hit, local hits and volumes |
 | `Intersection` | `src/kernel/intersection.rs` | `kernel/types.h:614-619` | ported |
 | `triangle_intersect` | `src/kernel/geom/triangle/intersect.rs` | `kernel/geom/triangle_intersect.h:24-62` | ported, tested; the local intersection is not |
-| `ObjectField`, `ObjectTransform`, `object_fetch_transform`, `bvh_clamp_direction`, `bvh_inverse_direction`, `bvh_instance_push`, `bvh_instance_pop` | `src/kernel/geom/object.rs` | `kernel/geom/object.h:33-41, 449-510` | ported, tested; an object that moves over the shutter is not |
-| `ray_triangle_intersect` | `src/util/intersect.rs` | `util/math_intersect.h:116-222` | ported, tested |
-| `sample_uniform_disk`, `regular_polygon_sample` | `src/kernel/sample/mapping.rs` | `kernel/sample/mapping.h:19-42, 187-213` | ported, tested; the hemisphere, cone and sphere come with the closures and lights |
+| `ObjectTransform`, `object_fetch_transform`, `object_position_transform`, `object_inverse_dir_transform`, `object_normal_transform`, `bvh_clamp_direction`, `bvh_inverse_direction`, `bvh_instance_push`, `bvh_instance_pop` | `src/kernel/geom/object.rs` | `kernel/geom/object.h:33-41, 200-330, 449-510` | ported, tested; an object that moves over the shutter is not |
+| `triangle_vertices`, `triangle_normal`, `triangle_smooth_normal` | `src/kernel/geom/triangle/mod.rs` | `kernel/geom/triangle.h:29-160` | ported, tested through the kernels |
+| `shader_setup_from_ray`, `shader_setup_from_background` | `src/kernel/geom/shader.rs` | `kernel/geom/shader_data.h:36, 190` | a static triangle's point and normals; no differentials, `dPdu` or motion |
+| `ray_triangle_intersect`, `ray_triangle_intersect_self`, `TriangleHit` | `src/util/intersect.rs` | `util/math_intersect.h:163-290` | ported, tested |
+| `intersection_t_offset`, `ray_offset` | `src/kernel/bvh/util.rs` | `kernel/bvh/util.h:35, 66` | ported, tested |
+| `sample_uniform_disk`, `sample_cos_hemisphere`, `regular_polygon_sample`, `make_orthonormals` | `src/kernel/sample/mapping.rs` | `kernel/sample/mapping.h:19-42, 89-100, 187-213`; `util/math_float3.h:733` | ported, tested; the cone and sphere come with the lights |
+| `SamplerData`, `SamplingPattern`, `path_rng_*`, `sobol_burley_*`, `tabulated_sobol_*`, Owen scrambling | `src/kernel/sample/` (4 more files), `data/sobol.tsv`, `data/tabulated.tsv` | `kernel/sample/pattern.h`, `sobol_burley.h`, `tabulated_sobol.h`, `util.h` | ported, tested; the tables generated by `tool/sobol.py`, `tool/tabulated.py` |
+| `IntegratorState`, `PathState`, `RayState`, `IsectState`, `ShadowPathState`, `StateLayout` | `src/kernel/integrator/state.rs`, `layout.rs`, `data/state.tsv` | `kernel/integrator/state_template.h`, `shadow_state_template.h`, `state.h` | one definition, an array of structs on the CPU; the layout generated by `tool/state.py` |
+| `path_state_*`, `integrator_path_*` | `src/kernel/integrator/path.rs` | `kernel/integrator/path_state.h`, `state_flow.h` | ported, tested; volumes, portals, guiding, the shadow catcher are not |
+| `integrator_init_from_camera`, `integrator_intersect_closest`, `integrator_shade_background`, `integrator_shade_surface`, `integrator_megakernel` | `src/kernel/integrator/init/`, `intersect/`, `shade/`, `megakernel.rs` | `init_from_camera.h`, `intersect_closest.h`, `shade_background.h`, `shade_surface.h`, `surface_shader.h`, `megakernel.h` | gate 1: a diffuse and an emission closure, the world's colour; no lights, shadows, volumes, MNEE or AO |
+| `closure_alloc`, `bsdf_alloc`, `bsdf_sample`, `bsdf_diffuse_*`, `emission_setup`, `background_setup` | `src/kernel/closure/` | `kernel/closure/alloc.h`, `bsdf.h`, `bsdf_diffuse.h`, `emissive.h` | the diffuse BSDF and emission |
+| `svm_eval_nodes`, `ShaderNodeType` | `src/kernel/svm/`, `data/svm.tsv` | `kernel/svm/svm.h`, `closure.h`, `node_types_template.h` | the shader jump, the closure weight, diffuse, emission, background, the end |
+| `film_write_*` | `src/kernel/film/` | `kernel/film/write.h`, `light_passes.h` | the combined pass, an opaque or transparent film |
+| `cpu_kernels`, `register_cpu_kernels` | `src/kernel/device/cpu.rs` | `kernel/device/cpu/kernel_arch_impl.h` | the megakernel over a work tile's pixels and samples |
+| `Device`, `DeviceQueue`, `DeviceVector`, `KernelArgument`, `DeviceInfo`, `CpuDevice`, `CpuKernel` | `src/device/`, `src/device/cpu/` | `device/device.h`, `queue.h`, `memory.h`, `cpu/device_impl.cpp`, `cpu/kernel.h` | the contract and the CPU device; a kernel with no body is a typed `NotPorted` |
+| `PathTraceWorkCpu` | `src/integrator/trace/cpu.rs` | `integrator/path_trace_work_cpu.cpp:69-180` | ported, tested |
+| `judge`, `compare`, `Verdict`, `SceneRenderer`, `ViewSetting`, `Image` | `src/truth/` | `tests/python/modules/render_report.py:125-205`, `cycles_render_tests.py:337-357`; Blender's view transforms | gate 0, tested |
+| `read_blend`, `sync_scene`, `SceneSource`, `Scene` | `src/blender/`, `src/scene/scene.rs` | `blender/sync.cpp`, `camera.cpp`, `mesh.cpp`, `geometry.cpp:63-95`; phiphx reads the file | camera, meshes, objects, world colour, a diffuse or emission surface, tested |
 | `lookup_table_read`, `Differential3`, `differential_make_compact`, `differential_zero_compact` | `src/kernel/util/` (2 files) | `kernel/util/lookup_table.h:14-29`, `kernel/util/differential.h:113-126` | ported, tested; the 2D and 3D reads and the other differentials come with shading |
 | - | - | tile files on disk, `session/tile.cpp` | left in layer 1 |
-| - | - | the rest of `PathTrace`: reading and writing tiles and the full frame on disk, the output and display drivers, the denoiser, the reports (`path_trace.cpp`, about 700 lines); `PathTraceDisplay`, `PathTraceTile`, `PassAccessor`, `Denoiser`, path guiding; `PathTraceWorkCPU` and `PathTraceWorkGPU`, which come with the kernels | left in layer 2 |
+| - | - | the rest of `PathTrace`: reading and writing tiles and the full frame on disk, the output and display drivers, the denoiser, the reports (`path_trace.cpp`, about 700 lines); `PathTraceDisplay`, `PathTraceTile`, `PassAccessor`, `Denoiser`, path guiding; `PathTraceWorkGPU`, which comes with the wavefront | left in layer 2 |
 | - | - | the other managers of `Scene::device_update`, in its order: the shaders (`Shader`, `ShaderManager`, the SVM compiler, what each of the 97 node classes compiles to and folds), background, hair and point clouds, images, volumes, lights, baking (`scene/*.cpp`) | left in the scene |
-| - | - | `IntegratorState`, `kernel/integrator/state_template.h`; then the sample's random numbers (`kernel/sample/pattern.h`), a first shading and the film written | next in layer 3 |
+| - | - | the SVM's other nodes and the Principled lobes (gate 2), lights, shadows and MIS (gate 3), the other passes (gate 4) | next in layer 3 |
 
 Cycles' plural type names are singular here: `SessionParams` is
 `SessionParam`, `BufferParams` is `BufferParam`, and fields such as

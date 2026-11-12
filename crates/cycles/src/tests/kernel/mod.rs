@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `src/kernel`, one file or folder for each there; `rig.rs` is
 //! the joined scene the CPU kernels are run on.
+mod bit;
 mod bvh;
 mod camera;
 mod closure;
@@ -18,7 +19,6 @@ pub(crate) mod rig;
 mod sample;
 mod svm;
 mod tile;
-mod types;
 mod util;
 pub(crate) use rig::rig_scene;
 use crate::kernel::*;

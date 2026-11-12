@@ -8,11 +8,11 @@ use super::rig::{Rig, cube, translation};
 use crate::device::{CpuDevice, Device, DeviceError, DevicePtr, KernelArgument, MemoryType};
 use crate::kernel::device::cpu_kernels;
 use crate::kernel::integrator::IntegratorState;
-use crate::kernel::{DeviceKernel, KernelGlobals};
+use crate::kernel::{DeviceKernel, KernelGlobal};
 use crate::scene::Surface;
 use std::sync::Arc;
 
-fn device(kg: &Arc<KernelGlobals>) -> CpuDevice {
+fn device(kg: &Arc<KernelGlobal>) -> CpuDevice {
     CpuDevice::with_kernels(cpu_kernels(kg.clone()))
 }
 

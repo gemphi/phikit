@@ -3,12 +3,12 @@
 //! over a work size with its arguments, an unported one is a typed error.
 use std::sync::Arc;
 
-use crate::device::{CpuDevice, CpuKernels, Device, DeviceError, DeviceType, DeviceVector, KernelArgument, MemoryType};
+use crate::device::{CpuDevice, CpuKernel, Device, DeviceError, DeviceType, DeviceVector, KernelArgument, MemoryType};
 use crate::kernel::DeviceKernel;
 
 /// A stand-in kernel: `out[i] = in[i] * scale` for `i` in `0..work_size`.
 fn scale_kernel() -> CpuDevice {
-    let mut kernels = CpuKernels::new();
+    let mut kernels = CpuKernel::new();
     kernels.set(
         DeviceKernel::IntegratorInitFromCamera,
         Arc::new(|memory, work_size, args| {

@@ -1,30 +1,9 @@
 # cycles — plan
 
-The folders to build and the gates each must pass. Gate 0 (the judge) is built; gate 1 (the kernels) is next.
+The folders to build and the gates each must pass. Gate 0 (the judge) and the
+kernels of gate 1 are built; what gate 1 measures is in "Where it stands".
 Diagrams are in [ARCHITECTURE.md](ARCHITECTURE.md), requirements in
 [SPECS.md](SPECS.md). The folders and the order are suggested, not decided.
-
-## Where it stands
-
-The crate renders no image yet. As of 12 November 2026:
-
-| | Done, tested | Not done |
-|---|---|---|
-| session | the session loop, buffers, passes, tiles | tile files on disk, the session thread |
-| integrator | the scheduler, adaptive sampling, tile sizes, the work balancer, the path tracer's host loop | the pass accessor, the output and display drivers, the denoiser, path guiding; `PathTraceWorkCPU` |
-| graph | every node type and socket of Cycles | - |
-| scene | integrator, film, camera with motion, attributes, meshes, objects, the shader graph | `Shader` and its manager, the SVM compiler, what each node class compiles to; lights, images, background, hair, points, volumes, baking |
-| bvh | the BVH2 build, spatial splits, instances, refit | curves and points, unaligned nodes |
-| kernel | the camera's ray; the tree walked to the nearest triangle, into instances | the path state, the sample's random numbers, shading (the SVM, closures), lights and shadows, the film written, volumes, subsurface; motion triangles; panorama cameras |
-| to see a picture | - | a scene loaded from a `.blend` (through phiphx), an image file written, a program to run it |
-
-What is left before a first, plain image, in order: the path state and
-`init_from_camera`; `intersect_closest`; a first `shade_background` and
-`shade_surface` with one diffuse and one emission closure; the film
-written; the megakernel's switch and `PathTraceWorkCPU`; a scene from
-phiphx; an image file. An image that matches an artist's render needs the
-SVM with the Principled BSDF, image textures, lights and the world on top
-of that.
 
 ## Steps, top to bottom
 
@@ -52,11 +31,11 @@ these types run it is drawn in [FLOW.md](FLOW.md).
 | 4 | bvh: the tree a ray walks | `BVHParams`, `BVHReference`, `BVHNode`; `BVHBuild` with object binning and spatial splits; `BVH2` packed, refitted, and with each instanced geometry's tree after the scene's; `SceneParams`; `Geometry::compute_bvh` and `GeometryManager::device_update_bvh` | `bvh/`, `scene/geometry/bvh.rs`, `scene/param.rs`, `util/param.rs`, `data/param.tsv`, `tool/param.py` | done |
 | 4 | scene, the shader graph | `ShaderGraph`, `ShaderNode` and their sockets: links with convert nodes, proxies, default inputs, the clean-up, bump samples, bump from displacement, closure weights, the displacement hash; each node class's traits generated; MD5 | `scene/shader/graph/`, `graph/hash.rs`, `util/md5.rs`, `data/shader.tsv`, `tool/shader.py` | done |
 | 4 | scene, left over | curves and points in the tree, with their unaligned nodes; tessellation, displacement and tangents of a mesh; hair, point clouds and volumes; the other managers, in the order of `Scene::device_update`: background, the rest of the shaders (`Shader` and its manager, the SVM compiler, what each node class compiles to and folds), lights, images, baking; the camera's volume test; the tabulated Sobol table | `scene/`, `bvh/` | - |
-| 5a | device | `DeviceType`, `DeviceInfo`, the `Device` trait, `DeviceQueue`, `DeviceVector<T>`, `KernelArgument`, `CpuDevice` and its kernel table (every kernel named, none ported: a typed `NotPorted` error) | `device/`, `device/cpu/`, `device/README.md` | done |
+| 5a | device | `DeviceType`, `DeviceInfo`, the `Device` trait, `DeviceQueue`, `DeviceVector<T>`, `KernelArgument`, `CpuDevice` and its kernel table (every kernel named; one with no body is a typed `NotPorted` error) | `device/`, `device/cpu/`, `device/README.md` | done |
 | 5a | integrator | `PathTraceWorkCPU`: the CPU work over the CPU device, one megakernel enqueue for the slice's pixels | `integrator/trace/cpu.rs` | done |
 | 5a | truth, gate 0 | `oiiotool --diff` as Blender runs it, the category allowances, the verdict and diff images, the session renderer | `truth/` | done |
 | 5a | blender, the join | `blender/` as phiphx's `SceneModel` into a `Scene`: camera, meshes (triangles, normals, UVs), objects, world colour, a diffuse or emission surface for each material; `Scene` | `blender/`, `scene/scene.rs` | done |
-| 5 | kernel, the camera's ray | `KernelGlobals` as what a ray reads; `Ray`; `camera_sample` for the perspective and the orthographic camera with the lens, the pixel filter, the shutter, a moving camera; the disk and polygon samples, the lookup table read, compact differentials | `kernel/global.rs`, `ray.rs`, `kernel/camera/`, `kernel/sample/`, `kernel/util/` | done |
+| 5 | kernel, the camera's ray | `KernelGlobal` as what a ray reads; `Ray`; `camera_sample` for the perspective and the orthographic camera with the lens, the pixel filter, the shutter, a moving camera; the disk and polygon samples, the lookup table read, compact differentials | `kernel/global.rs`, `ray.rs`, `kernel/camera/`, `kernel/sample/`, `kernel/util/` | done |
 | 5 | kernel, the tree walked | `scene_intersect` by Cycles' own tree: the inner nodes, the leaves, instances pushed and popped, a triangle hit; what a ray starts from skipped, visibility | `kernel/bvh/`, `kernel/geom/`, `kernel/intersection.rs`, `util/intersect.rs` | done |
 | 5 | kernel, to a first image | the path state (`state_template.h` as a record layout); `init_from_camera` with Sobol-Burley and tabulated Sobol; `intersect_closest`; `shade_background` and `shade_surface` with a diffuse and an emission closure, the SVM nodes they need; the film written; the CPU megakernel; `PathTraceWorkCPU` running it; a scene from phiphx; an image file | `kernel/integrator/`, `kernel/sample/`, `kernel/closure/`, `kernel/svm/`, `kernel/film/`, `kernel/device/`, `examples/gate1.rs` | done |
 | 5 | kernel, the rest | the kernels one by one after that: the SVM and the closures, lights and shadows, volumes, subsurface; the panorama and stereo cameras | `kernel/` | - |
@@ -167,38 +146,19 @@ they have in common in the app: each engine registers itself the same way
 not two code paths to maintain.
 
 ## Where it stands
-
-Gate 0 is built: `truth::judge` renders a scene through the session, compares
-it with Blender's image by `oiiotool --diff --fail T --failpercent P` and
-returns a verdict, with the colour and alpha diff images. A scene that cannot
-render yet fails with the device's `NotPorted` error, not with a black image.
-The join (`blender/`) reads a `.blend` through phiphx into a `Scene`: tested
-on `bsdf/diffuse`, `shader/emission`, `camera/camera_ortho`, `light/point_light`
-and `mesh/normal_types`, with object, triangle and vertex counts, the camera
-and the sizes of Blender's own images checked.
-
-### Gate 1 starts with
-
-The kernels, in the order a path takes, each registered in `CpuKernels` and
-read against `path_trace_work_cpu.cpp:69-180`:
-
-1. The path state (`kernel/integrator/state_template.h`) as a record layout in
-   `kernel/`, and the device arrays of a `Scene`: run `GeometryManager` and
-   `ObjectManager::device_update` on the joined scene to fill `DeviceScene`
-   (the BVH is built already).
-2. `integrator_init_from_camera`: the camera ray of a pixel and a sample, with
-   the Sobol-Burley sampler and the pixel filter (gate 1 may use a box filter
-   first), and `kernel_data.cam` from `Camera::device_update`.
-3. `integrator_intersect_closest` over the BVH2 of `bvh/` and the triangle
-   intersection.
-4. `integrator_shade_background` (the world colour) and `integrator_shade_surface`
-   with a diffuse and an emission closure (the cosine-weighted bounce).
-5. The CPU megakernel (`megakernel.h:22-119`) as a switch on the queued kernel,
-   and the film write (`kernel/film/`), so `PathTraceWorkCpu` fills the buffer.
-6. `SessionRenderer` takes the `Scene` (it renders at the reference's size
-   now), and `truth::display` gets the film's colour management; then
-   `bsdf/diffuse` and `shader/emission` are the first scenes to judge.
-
+As of 12 November 2026, after the two copies of the crate were merged
+(`MERGE.md`):
+| | Done, tested | Not done |
+|---|---|---|
+| session | the session loop, buffers, passes, tiles | tile files on disk, the session thread |
+| integrator | the scheduler, adaptive sampling, tile sizes, the work balancer, the path tracer's host loop, `PathTraceWorkCPU` | the pass accessor, the output and display drivers, the denoiser, path guiding, `PathTraceWorkGPU` |
+| graph | every node type and socket of Cycles | - |
+| scene | integrator, film, camera with motion, attributes, meshes, objects, the shader graph; a shader's SVM for a diffuse or an emission surface and the world's colour | the SVM compiler for every node class; lights, images, hair, points, volumes, baking |
+| bvh | the BVH2 build, spatial splits, instances, refit | curves and points, unaligned nodes |
+| device | the contract, the CPU device and its kernel table | the wgpu device |
+| kernel | the camera's ray (perspective and orthographic, lens, pixel filter, shutter, a moving camera); the tree walked into instances; the path state; Sobol-Burley and tabulated Sobol; `init_from_camera`, `intersect_closest`, `shade_background`, `shade_surface` with a diffuse and an emission closure; the film's combined pass; the CPU megakernel | the SVM's other nodes and closures, lights and shadows, volumes, subsurface; motion triangles; panorama cameras |
+| truth, blender | gate 0: Blender's comparison rule and verdict; the join of a `.blend` through phiphx, with Blender's view transforms | node graphs in the join; see the gaps below |
+GATE1_RESULTS
 Known gaps in the join, for gate 2: the node graph (a material is its base
 colour or its emission), the object's `hide_render` flag, a mesh shared by two
 objects with different slot links, and the camera name phiphx reads wrongly in

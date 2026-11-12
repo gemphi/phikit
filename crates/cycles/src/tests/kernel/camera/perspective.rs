@@ -79,7 +79,7 @@ fn a_field_of_view_that_changes_is_mixed_over_the_shutter() {
         },
         MotionType::Blur,
     );
-    assert!(KernelGlobals::of(&dscene).cam.have_perspective_motion);
+    assert!(KernelGlobal::of(&dscene).cam.have_perspective_motion);
     let fov = camera.node.float("fov");
     let across = |random: f32| slope(&ray_of(&dscene, [0, 0], random, [0.0; 2]).0)[0];
     // Narrow when the shutter opens, the camera's own from the middle on.

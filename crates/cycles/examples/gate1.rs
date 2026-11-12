@@ -102,7 +102,7 @@ fn run(root: &Path, names: &[String], samples: Option<i32>) {
             if r.view.approximated() {
                 notes.push(format!("view {:?}", r.view.transform));
             }
-            (r.samples, r.scene_samples, r.seconds, notes.join(", "))
+            (r.sample_count, r.scene_sample_count, r.seconds, notes.join(", "))
         });
         let word = match &verdict.outcome {
             Outcome::Pass => "PASS".to_string(),

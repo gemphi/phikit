@@ -3,7 +3,8 @@
 //! Ported from `intern/cycles/kernel/closure/emissive.h` (lines 12-65):
 //! the emission and background closures add their weight to the one
 //! emission a shading point has; an emission is seen from either side.
-use crate::kernel::types::{SD_EMISSION, ShaderData};
+use crate::kernel::bit::SD_EMISSION;
+use crate::kernel::ShaderData;
 use crate::util::vector::dot;
 
 /// `emission_setup`.

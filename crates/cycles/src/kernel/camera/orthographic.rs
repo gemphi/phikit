@@ -5,12 +5,12 @@
 
 use super::{camera_sample_aperture, camera_to_world};
 use crate::kernel::util::{Differential3, differential_make_compact, differential_zero_compact};
-use crate::kernel::{KernelGlobals, Ray};
+use crate::kernel::{KernelGlobal, Ray};
 use crate::util::vector::{add, normalize, scale, sub};
 
 /// `camera_sample_orthographic`: the ray of an orthographic camera through
 /// `raster_xy`. Every ray goes the same way; they start side by side.
-pub fn camera_sample_orthographic(kg: &KernelGlobals, raster_xy: [f32; 2], rand_lens: [f32; 2], ray: &mut Ray) -> [f32; 3] {
+pub fn camera_sample_orthographic(kg: &KernelGlobal, raster_xy: [f32; 2], rand_lens: [f32; 2], ray: &mut Ray) -> [f32; 3] {
     let cam = &kg.cam;
     let pcamera = cam.rastertocamera.point([raster_xy[0], raster_xy[1], 0.0]);
     let forward = [0.0, 0.0, 1.0];

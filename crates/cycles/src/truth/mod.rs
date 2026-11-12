@@ -26,7 +26,7 @@ pub use allowance::Allowance;
 pub use compare::{Comparison, compare, diff_image};
 pub use error::TruthError;
 pub use image::Image;
-pub use display::{ViewSettings, ViewTransform};
+pub use display::{ViewSetting, ViewTransform};
 pub use engine::{RenderReport, SceneRenderer};
 pub use render::{SessionRenderer, display, display_view, srgb_encode};
 pub use scene::{TEST_ROOT, TestScene, find_root};

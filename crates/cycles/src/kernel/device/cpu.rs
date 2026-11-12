@@ -6,7 +6,7 @@
 //! `integrator/path_trace_work_cpu.cpp` (`render_samples`, 69-130, and
 //! `render_samples_full_pipeline`, 132-180).
 //!
-//! The functions registered in [`CpuKernels`] are:
+//! The functions registered in [`CpuKernel`] are:
 //!
 //! | Kernel | Arguments after the kernels' state |
 //! |---|---|
@@ -22,8 +22,8 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use crate::device::{CpuKernelFn, CpuKernels, CpuMemory, DeviceError, KernelArgument};
-use crate::kernel::KernelGlobals;
+use crate::device::{CpuKernelFn, CpuKernel, CpuMemory, DeviceError, KernelArgument};
+use crate::kernel::KernelGlobal;
 use crate::kernel::integrator::*;
 use crate::kernel::{DeviceKernel, KernelWorkTile};
 
@@ -45,7 +45,7 @@ fn state_and_buffer<R>(memory: &mut CpuMemory, state: crate::device::DevicePtr, 
 }
 
 /// The floats of the pixel a path writes to.
-fn pixel<'a>(kg: &KernelGlobals, state: &IntegratorState, buffer: &'a mut [f32]) -> &'a mut [f32] {
+fn pixel<'a>(kg: &KernelGlobal, state: &IntegratorState, buffer: &'a mut [f32]) -> &'a mut [f32] {
     let stride = kg.film.pass_stride as usize;
     let start = state.path.render_pixel_index as usize * stride;
     &mut buffer[start..start + stride]
@@ -72,7 +72,7 @@ fn tile_of(args: &[KernelArgument]) -> Result<KernelWorkTile, DeviceError> {
 /// `render_samples_full_pipeline` for the pixel at `index` of the tile:
 /// each sample is a path started from the camera and run until none is
 /// queued. `buffer` is the pixel's floats.
-fn render_pixel(kg: &KernelGlobals, tile: &KernelWorkTile, index: u32, buffer: &mut [f32]) {
+fn render_pixel(kg: &KernelGlobal, tile: &KernelWorkTile, index: u32, buffer: &mut [f32]) {
     let (x, y) = (tile.x + index % tile.w, tile.y + index / tile.w);
     let mut state = IntegratorState::new();
     for sample in 0..tile.sample_count {
@@ -86,7 +86,7 @@ fn render_pixel(kg: &KernelGlobals, tile: &KernelWorkTile, index: u32, buffer: &
 
 /// The megakernel over the whole tile, a row of pixels at a time on each
 /// thread.
-fn megakernel_tile(kg: &KernelGlobals, memory: &mut CpuMemory, work_size: i32, args: &[KernelArgument]) -> Result<(), DeviceError> {
+fn megakernel_tile(kg: &KernelGlobal, memory: &mut CpuMemory, work_size: i32, args: &[KernelArgument]) -> Result<(), DeviceError> {
     let kernel = DeviceKernel::IntegratorMegakernel;
     let buffer_ptr = ptr(args, 0, kernel)?;
     let tile = tile_of(args)?;
@@ -117,7 +117,7 @@ fn megakernel_tile(kg: &KernelGlobals, memory: &mut CpuMemory, work_size: i32, a
 }
 
 /// Fill `kernels` with the kernels of gate 1, over the scene `kg`.
-pub fn register_cpu_kernels(kernels: &mut CpuKernels, kg: Arc<KernelGlobals>) {
+pub fn register_cpu_kernels(kernels: &mut CpuKernel, kg: Arc<KernelGlobal>) {
     let globals = kg.clone();
     let init: CpuKernelFn = Arc::new(move |memory, _work_size, args| {
         let kernel = DeviceKernel::IntegratorInitFromCamera;
@@ -141,7 +141,7 @@ pub fn register_cpu_kernels(kernels: &mut CpuKernels, kg: Arc<KernelGlobals>) {
             Ok(())
         }),
     );
-    for (kernel, body) in [(DeviceKernel::IntegratorShadeBackground, integrator_shade_background as fn(&KernelGlobals, &mut IntegratorState, &mut [f32])), (DeviceKernel::IntegratorShadeSurface, integrator_shade_surface)] {
+    for (kernel, body) in [(DeviceKernel::IntegratorShadeBackground, integrator_shade_background as fn(&KernelGlobal, &mut IntegratorState, &mut [f32])), (DeviceKernel::IntegratorShadeSurface, integrator_shade_surface)] {
         let globals = kg.clone();
         kernels.set(
             kernel,
@@ -159,8 +159,8 @@ pub fn register_cpu_kernels(kernels: &mut CpuKernels, kg: Arc<KernelGlobals>) {
 }
 
 /// A table of the CPU kernels, those of gate 1 ported.
-pub fn cpu_kernels(kg: Arc<KernelGlobals>) -> CpuKernels {
-    let mut kernels = CpuKernels::new();
+pub fn cpu_kernels(kg: Arc<KernelGlobal>) -> CpuKernel {
+    let mut kernels = CpuKernel::new();
     register_cpu_kernels(&mut kernels, kg);
     kernels
 }

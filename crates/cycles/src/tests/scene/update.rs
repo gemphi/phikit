@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `scene/update.rs` and `scene/background.rs`: the managers run
 //! in Cycles' order and fill the device scene from a joined scene.
-use crate::kernel::types::{SHADER_EXCLUDE_ANY, SHADER_EXCLUDE_DIFFUSE, SHADER_MASK};
+use crate::kernel::bit::{SHADER_EXCLUDE_ANY, SHADER_EXCLUDE_DIFFUSE, SHADER_MASK};
 use crate::kernel::{ShaderNodeType, svm_node};
 use crate::scene::{Background, DeviceScene, Scene, Shader, Surface};
 use crate::tests::kernel::rig_scene;

@@ -21,7 +21,7 @@ pub use perspective::camera_sample_perspective;
 
 use super::sample::{regular_polygon_sample, sample_uniform_disk};
 use super::util::lookup_table_read;
-use super::{KernelGlobals, Ray};
+use super::{KernelGlobal, Ray};
 use crate::util::vector::{dot, len, sub};
 use crate::util::{Transform, motion_array_interpolate};
 
@@ -37,7 +37,7 @@ pub fn camera_sample_aperture(cam: &KernelCamera, rand: [f32; 2]) -> [f32; 2] {
 
 /// The camera in the world at `time`: where it is, or for a camera that
 /// moves, where it is at that moment of the shutter.
-pub fn camera_to_world(kg: &KernelGlobals, time: f32) -> Transform {
+pub fn camera_to_world(kg: &KernelGlobal, time: f32) -> Transform {
     let step = kg.cam.motion_step_count.min(kg.scene.camera_motion.len());
     match step {
         0 => kg.cam.cameratoworld,
@@ -47,7 +47,7 @@ pub fn camera_to_world(kg: &KernelGlobals, time: f32) -> Transform {
 
 /// The moment of the shutter a ray is sent at, from the random number
 /// `time`: the shutter's curve, and for a rolling shutter the row.
-fn shutter_time(kg: &KernelGlobals, y: i32, time: f32) -> f32 {
+fn shutter_time(kg: &KernelGlobal, y: i32, time: f32) -> f32 {
     let cam = &kg.cam;
     if cam.shuttertime == -1.0 {
         return 0.5;
@@ -71,7 +71,7 @@ fn shutter_time(kg: &KernelGlobals, y: i32, time: f32) -> f32 {
 /// one sample, written into `ray`. The answer is what the camera lets
 /// through, which a path starts its throughput with: black when no ray
 /// could be made.
-pub fn camera_sample(kg: &KernelGlobals, x: i32, y: i32, filter_uv: [f32; 2], time: f32, lens_uv: [f32; 2], ray: &mut Ray) -> [f32; 3] {
+pub fn camera_sample(kg: &KernelGlobal, x: i32, y: i32, filter_uv: [f32; 2], time: f32, lens_uv: [f32; 2], ray: &mut Ray) -> [f32; 3] {
     // The pixel filter: a place within the pixel's reach, or a fixed one.
     let filter = |u: f32| lookup_table_read(&kg.scene.lookup_table, u, kg.filter_table_offset, kg.filter_table_size);
     let offset = match kg.integrator.pixel_jitter[0] == f32::MAX {
@@ -89,13 +89,13 @@ pub fn camera_sample(kg: &KernelGlobals, x: i32, y: i32, filter_uv: [f32; 2], ti
 }
 
 /// `camera_position`: where the camera is in the world.
-pub fn camera_position(kg: &KernelGlobals) -> [f32; 3] {
+pub fn camera_position(kg: &KernelGlobal) -> [f32; 3] {
     kg.cam.cameratoworld.column(3)
 }
 
 /// `camera_distance`: how far `p` is from the camera; from its plane for
 /// an orthographic camera.
-pub fn camera_distance(kg: &KernelGlobals, p: [f32; 3]) -> f32 {
+pub fn camera_distance(kg: &KernelGlobal, p: [f32; 3]) -> f32 {
     let from = sub(p, camera_position(kg));
     match kg.cam.kind {
         Some(CameraType::Orthographic) => dot(from, kg.cam.cameratoworld.column(2)).abs(),

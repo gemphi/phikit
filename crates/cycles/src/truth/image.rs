@@ -7,25 +7,25 @@ use std::path::Path;
 
 use super::TruthError;
 
-/// A picture as floats: `channels` of them a pixel, rows top to bottom.
+/// A picture as floats: `channel_count` of them a pixel, rows top to bottom.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Image {
     pub width: usize,
     pub height: usize,
     /// 1 (grey), 2 (grey, alpha), 3 (RGB) or 4 (RGBA), as the file had.
-    pub channels: usize,
+    pub channel_count: usize,
     pub pixel: Vec<f32>,
 }
 
 impl Image {
     /// A black image (alpha 0 when it has one).
     pub fn new(width: usize, height: usize, channels: usize) -> Self {
-        Self { width, height, channels, pixel: vec![0.0; width * height * channels] }
+        Self { width, height, channel_count: channels, pixel: vec![0.0; width * height * channels] }
     }
     /// Channel `channel` of pixel `index`; 0 for a channel the image does
     /// not have, as OpenImageIO's `compare` reads a missing channel.
     pub fn channel(&self, index: usize, channel: usize) -> f32 {
-        if channel < self.channels { self.pixel[index * self.channels + channel] } else { 0.0 }
+        if channel < self.channel_count { self.pixel[index * self.channel_count + channel] } else { 0.0 }
     }
     /// Read a PNG, EXR or any format the `image` crate reads.
     pub fn read(path: &Path) -> Result<Self, TruthError> {
@@ -57,7 +57,7 @@ impl Image {
         let byte = |value: f32| (value.clamp(0.0, 1.0) * 255.0 + 0.5) as u8;
         let (width, height) = (self.width as u32, self.height as u32);
         let at = |index: usize, channel: usize| byte(self.channel(index, channel));
-        let saved = match self.channels {
+        let saved = match self.channel_count {
             1 | 2 => {
                 let grey = (0..self.width * self.height).map(|index| at(index, 0)).collect();
                 image::GrayImage::from_raw(width, height, grey).map(|image| image.save(path))

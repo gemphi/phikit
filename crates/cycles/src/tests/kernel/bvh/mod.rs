@@ -8,7 +8,7 @@ mod traversal;
 mod util;
 
 use crate::kernel::bvh::*;
-use crate::kernel::{Intersection, KernelGlobals, Ray, flag};
+use crate::kernel::{Intersection, KernelGlobal, Ray, flag};
 use crate::scene::{Mesh, Object};
 use crate::tests::bvh::strip;
 pub(crate) use crate::tests::scene::geometry::Rig;
@@ -47,7 +47,7 @@ pub(crate) fn all() -> u32 {
 
 /// What `ray` hits in `rig`, if anything.
 pub(crate) fn hit(rig: &Rig, ray: &Ray, visibility: u32) -> Option<Intersection> {
-    let kg = KernelGlobals::of(&rig.dscene);
+    let kg = KernelGlobal::of(&rig.dscene);
     let mut isect = Intersection::default();
     scene_intersect(&kg, ray, visibility, &mut isect).then_some(isect)
 }
@@ -66,7 +66,7 @@ fn a_ray_that_is_no_ray_hits_nothing() {
 #[test]
 fn a_shadow_ray_asks_only_whether_anything_is_in_the_way() {
     let rig = rig_of(vec![strip(8)]);
-    let kg = KernelGlobals::of(&rig.dscene);
+    let kg = KernelGlobal::of(&rig.dscene);
     let shadow = flag("PATH_RAY_VISIBILITY_SHADOW_OPAQUE");
     assert!(scene_intersect_shadow(&kg, &along_z([4.5, 0.5, -1.0], 10.0), shadow));
     // Between two squares of the strip, and short of it.

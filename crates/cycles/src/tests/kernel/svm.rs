@@ -2,18 +2,19 @@
 //! Tests of `kernel/svm/`: the node numbers and the interpreter, over the
 //! words `scene/shader/compile.rs` writes.
 use crate::kernel::svm::*;
-use crate::kernel::types::*;
-use crate::kernel::{KernelGlobals, constant};
+use crate::kernel::bit::*;
+use crate::kernel::ShaderData;
+use crate::kernel::{KernelGlobal, constant};
 use crate::scene::{DeviceScene, ShaderManager, Surface};
 use std::sync::Arc;
 
-fn globals(surface: &[Surface]) -> KernelGlobals {
+fn globals(surface: &[Surface]) -> KernelGlobal {
     let mut dscene = DeviceScene::new();
     ShaderManager::device_update(&mut dscene, surface);
-    KernelGlobals::new(Arc::new(dscene))
+    KernelGlobal::new(Arc::new(dscene))
 }
 
-fn run(kg: &KernelGlobals, shader: i32) -> ShaderData {
+fn run(kg: &KernelGlobal, shader: i32) -> ShaderData {
     let mut sd = ShaderData { shader, ..ShaderData::default() };
     svm_eval_nodes(kg, &mut sd);
     sd

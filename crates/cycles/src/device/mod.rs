@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: Apache-2.0
+// SPDX-License-Identifier: Apache-2.0
 //! What a device is asked for: `intern/cycles/device`. The contract
 //! (`device.rs`, `memory.rs`, `queue.rs`, `argument.rs`, `info.rs`), the
 //! CPU device that runs kernels in Rust (`cpu/`), and the denoiser's
@@ -12,7 +12,7 @@ mod info;
 mod memory;
 mod queue;
 pub use argument::KernelArgument;
-pub use cpu::{CpuDevice, CpuKernelFn, CpuKernels, CpuMemory};
+pub use cpu::{CpuDevice, CpuKernelFn, CpuKernel, CpuMemory};
 pub use denoise::{DenoiseParam, DenoiserPass, DenoiserPrefilter, DenoiserQuality, DenoiserType};
 pub use device::{Device, DeviceError};
 pub use info::{DeviceInfo, DeviceType, KernelOptimization};

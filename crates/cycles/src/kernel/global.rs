@@ -1,6 +1,6 @@
 // SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
-//! Ported from `intern/cycles/kernel/globals.h` (`KernelGlobals`) and
+//! Ported from `intern/cycles/kernel/globals.h` (`KernelGlobal`) and
 //! `kernel/device/cpu/globals.h` (`KernelGlobalsCPU`): what every kernel is
 //! handed to find the scene with, Cycles' `kg`. Cycles points each
 //! `kernel_data_fetch` array at the device's memory; here the arrays stay
@@ -65,9 +65,9 @@ pub struct KernelShader {
     pub flags: u32,
     pub constant_emission: [f32; 3],
 }
-/// `KernelGlobals`.
+/// `KernelGlobal`.
 #[derive(Debug, Clone)]
-pub struct KernelGlobals {
+pub struct KernelGlobal {
     /// The arrays, `kernel_data_fetch(name, index)`.
     pub scene: Arc<DeviceScene>,
     /// `kernel_data.cam`.
@@ -120,9 +120,9 @@ fn integrator(data: &KernelData) -> KernelIntegrator {
         },
     }
 }
-impl KernelGlobals {
+impl KernelGlobal {
     /// The globals of a scene the managers have written.
-    pub fn new(scene: Arc<DeviceScene>) -> KernelGlobals {
+    pub fn new(scene: Arc<DeviceScene>) -> KernelGlobal {
         let data = &scene.data;
         let object = &scene.object;
         let objects = (0..object.len())
@@ -136,7 +136,7 @@ impl KernelGlobals {
         let shaders = (0..scene.shader.len())
             .map(|index| KernelShader { flags: scene.shader.uint(index, "flags"), constant_emission: float3(scene.shader.float_list(index, "constant_emission")) })
             .collect();
-        KernelGlobals {
+        KernelGlobal {
             cam: KernelCamera::of(data),
             bvh: KernelBvh::of(data),
             film: KernelFilm {
@@ -161,8 +161,8 @@ impl KernelGlobals {
         }
     }
     /// The globals of a copy of `scene`, for a caller that keeps its own.
-    pub fn of(scene: &DeviceScene) -> KernelGlobals {
-        KernelGlobals::new(Arc::new(scene.clone()))
+    pub fn of(scene: &DeviceScene) -> KernelGlobal {
+        KernelGlobal::new(Arc::new(scene.clone()))
     }
     /// `kernel_data_fetch(object_flag, object)`: the `SD_OBJECT_*` bits.
     pub fn object_flag(&self, object: i32) -> u32 {

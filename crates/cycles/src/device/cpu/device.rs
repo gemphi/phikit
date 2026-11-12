@@ -1,11 +1,11 @@
-﻿// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `intern/cycles/device/cpu/device_impl.h` and
 //! `device_impl.cpp` (`CPUDevice`): memory is host memory, a kernel is a
 //! call. The queue runs a kernel when it is enqueued.
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use super::{CpuKernels, CpuMemory};
+use super::{CpuKernel, CpuMemory};
 use crate::device::{Device, DeviceError, DeviceInfo, DevicePtr, DeviceQueue, DeviceType, KernelArgument, MemoryType};
 use crate::kernel::DeviceKernel;
 
@@ -14,20 +14,20 @@ use crate::kernel::DeviceKernel;
 pub struct CpuDevice {
     info: DeviceInfo,
     memory: Arc<Mutex<CpuMemory>>,
-    kernels: Arc<CpuKernels>,
+    kernels: Arc<CpuKernel>,
 }
 
 impl CpuDevice {
     /// A CPU device whose kernels are all unported.
     pub fn new() -> Self {
-        Self::with_kernels(CpuKernels::new())
+        Self::with_kernels(CpuKernel::new())
     }
-    pub fn with_kernels(kernels: CpuKernels) -> Self {
+    pub fn with_kernels(kernels: CpuKernel) -> Self {
         let threads = std::thread::available_parallelism().map_or(1, |n| n.get() as i32);
         let info = DeviceInfo { kind: DeviceType::Cpu, description: "CPU".into(), cpu_threads: threads, ..DeviceInfo::default() };
         Self { info, memory: Arc::default(), kernels: Arc::new(kernels) }
     }
-    pub fn kernels(&self) -> &CpuKernels {
+    pub fn kernels(&self) -> &CpuKernel {
         &self.kernels
     }
     fn lock(&self) -> MutexGuard<'_, CpuMemory> {
@@ -81,7 +81,7 @@ impl Device for CpuDevice {
 /// skipped, as a GPU stream that failed would not run them.
 struct CpuQueue {
     memory: Arc<Mutex<CpuMemory>>,
-    kernels: Arc<CpuKernels>,
+    kernels: Arc<CpuKernel>,
     error: Option<DeviceError>,
 }
 

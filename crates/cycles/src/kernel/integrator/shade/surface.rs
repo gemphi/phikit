@@ -12,15 +12,16 @@
 //! emission of a surface is added with a MIS weight of one, and the bounce
 //! alone finds the light; ambient occlusion, holdout, subsurface and
 //! volumes are not ported.
-use super::path_state::*;
-use super::state::IntegratorState;
+use crate::kernel::integrator::path::*;
+use crate::kernel::integrator::state::IntegratorState;
 use crate::kernel::bvh::ray_offset;
 use crate::kernel::closure::{bsdf_sample, closure_is_bsdf, emissive_simple_eval};
 use crate::kernel::film::film_write_surface_emission;
 use crate::kernel::geom::shader_setup_from_ray;
-use crate::kernel::KernelGlobals;
+use crate::kernel::KernelGlobal;
 use crate::kernel::svm::svm_eval_nodes;
-use crate::kernel::types::*;
+use crate::kernel::bit::*;
+use crate::kernel::ShaderData;
 use crate::kernel::{DeviceKernel, constant, geom};
 use crate::util::vector::normalize;
 use crate::util::ray_triangle_intersect_self;
@@ -28,7 +29,7 @@ use crate::util::ray_triangle_intersect_self;
 /// `integrate_surface_ray_offset`: the start of a ray leaving the surface.
 /// The self-intersection test already skips the primitive; the ray is
 /// moved off it only if a neighbour might be hit instead.
-fn integrate_surface_ray_offset(kg: &KernelGlobals, sd: &ShaderData, ray_p: [f32; 3], ray_d: [f32; 3]) -> [f32; 3] {
+fn integrate_surface_ray_offset(kg: &KernelGlobal, sd: &ShaderData, ray_p: [f32; 3], ray_d: [f32; 3]) -> [f32; 3] {
     if sd.kind & PRIMITIVE_TRIANGLE as i32 == 0 {
         return ray_p;
     }
@@ -48,7 +49,7 @@ fn integrate_surface_ray_offset(kg: &KernelGlobals, sd: &ShaderData, ray_p: [f32
 /// `surface_shader_eval`: run the surface shader, which leaves its
 /// closures in `sd`. A path that is ending, or evaluating emission, keeps
 /// no closure.
-fn surface_shader_eval(kg: &KernelGlobals, sd: &mut ShaderData, path_flag: u32) {
+fn surface_shader_eval(kg: &KernelGlobal, sd: &mut ShaderData, path_flag: u32) {
     sd.num_closure = 0;
     sd.num_closure_left = if path_flag & (PATH_RAY_TERMINATE | PATH_RAY_EMISSION) != 0 { 0 } else { MAX_CLOSURE };
     svm_eval_nodes(kg, sd);
@@ -56,14 +57,14 @@ fn surface_shader_eval(kg: &KernelGlobals, sd: &mut ShaderData, path_flag: u32) 
 
 /// `surface_shader_prepare_closures`: closures the filter takes out
 /// (baking), here the emission only.
-fn surface_shader_prepare_closures(kg: &KernelGlobals, sd: &mut ShaderData) {
+fn surface_shader_prepare_closures(kg: &KernelGlobal, sd: &mut ShaderData) {
     if kg.integrator.filter_closures & constant("FILTER_CLOSURE_EMISSION").unwrap_or(1) as i32 != 0 {
         sd.closure_emission_background = [0.0; 3];
     }
 }
 
 /// `integrate_surface_emission`: what the surface emits towards the ray.
-fn integrate_surface_emission(kg: &KernelGlobals, state: &IntegratorState, sd: &ShaderData, buffer: &mut [f32]) {
+fn integrate_surface_emission(kg: &KernelGlobal, state: &IntegratorState, sd: &ShaderData, buffer: &mut [f32]) {
     let emission = emissive_simple_eval(sd.ng, sd.wi);
     let l = [0, 1, 2].map(|c| emission[c] * sd.closure_emission_background[c]);
     // `light_sample_mis_weight_forward_surface`: one, as no light is sampled.
@@ -88,7 +89,7 @@ fn integrate_surface_terminate(state: &mut IntegratorState, path_flag: u32) -> b
 
 /// `integrate_surface_bsdf_bssrdf_bounce`: sample the closure and send the
 /// path on in the direction it gave. The label of the bounce, or none.
-fn integrate_surface_bounce(kg: &KernelGlobals, state: &mut IntegratorState, sd: &ShaderData) -> u32 {
+fn integrate_surface_bounce(kg: &KernelGlobal, state: &mut IntegratorState, sd: &ShaderData) -> u32 {
     if sd.flag & SD_BSDF == 0 {
         return 0;
     }
@@ -136,7 +137,7 @@ fn integrate_surface_bounce(kg: &KernelGlobals, state: &mut IntegratorState, sd:
 
 /// `integrate_surface`: shade the hit and give the label of the bounce
 /// that continues the path, or none if it ends.
-fn integrate_surface(kg: &KernelGlobals, state: &mut IntegratorState, buffer: &mut [f32]) -> u32 {
+fn integrate_surface(kg: &KernelGlobal, state: &mut IntegratorState, buffer: &mut [f32]) -> u32 {
     let (isect, ray) = (state.read_isect(), state.read_ray());
     let mut sd = shader_setup_from_ray(kg, &isect, &ray);
     let path_flag = state.path.flag;
@@ -154,7 +155,7 @@ fn integrate_surface(kg: &KernelGlobals, state: &mut IntegratorState, buffer: &m
 }
 
 /// `integrator_shade_surface`: queue the next ray, or end the path.
-pub fn integrator_shade_surface(kg: &KernelGlobals, state: &mut IntegratorState, buffer: &mut [f32]) {
+pub fn integrator_shade_surface(kg: &KernelGlobal, state: &mut IntegratorState, buffer: &mut [f32]) {
     match integrate_surface(kg, state, buffer) {
         0 => integrator_path_terminate(state),
         _ => integrator_path_next(state, DeviceKernel::IntegratorIntersectClosest),

@@ -6,7 +6,8 @@
 use super::alloc::bsdf_alloc;
 use crate::kernel::constant;
 use crate::kernel::sample::sample_cos_hemisphere;
-use crate::kernel::types::{LABEL_DIFFUSE, LABEL_REFLECT, SD_BSDF, SD_BSDF_HAS_EVAL, ShaderClosure, ShaderData};
+use crate::kernel::bit::{LABEL_DIFFUSE, LABEL_REFLECT, SD_BSDF, SD_BSDF_HAS_EVAL};
+use crate::kernel::{ShaderClosure, ShaderData};
 use crate::util::vector::dot;
 
 /// `bsdf_diffuse_setup`: a diffuse closure about `n` with `weight`.

@@ -10,7 +10,7 @@ kernels.
 | `memory.rs` | `memory.h` | `MemoryType`, `DevicePtr`, `DeviceVector<T>` (`device_vector<T>`) |
 | `argument.rs` | `kernel.h` | `KernelArgument` (`DeviceKernelArguments`) |
 | `queue.rs` | `queue.h` | the `DeviceQueue` trait |
-| `cpu/` | `cpu/` | `CpuDevice`, `CpuKernels` (`CPUKernels`), `CpuMemory` |
+| `cpu/` | `cpu/` | `CpuDevice`, `CpuKernel` (`CPUKernels`), `CpuMemory` |
 | `denoise.rs` | `denoise.h` | `DenoiseParam` |
 
 ## The contract
@@ -31,7 +31,7 @@ will provide, because nothing in the contract names either:
   An argument is a `DevicePtr`, an `i32`, an `f32` or a `bool`: what
   Cycles' `DeviceKernelArguments` carries, and what a WGSL uniform and a bind
   group can carry.
-- The CPU body of a kernel is a Rust function registered in `CpuKernels`.
+- The CPU body of a kernel is a Rust function registered in `CpuKernel`.
   The wgpu body is a WGSL entry point of the same name in `wgsl/`, found by
   `DeviceKernel`.
 - Data layouts are the ones in `kernel/` (`KernelData`, `RecordLayout`,

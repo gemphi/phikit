@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-//! Tests of `kernel/integrator/path_state.rs`: the start of a path, what a
+//! Tests of `kernel/integrator/path.rs`: the start of a path, what a
 //! bounce does to its state, Russian roulette and the queue.
 use crate::kernel::DeviceKernel;
 use crate::kernel::integrator::*;
-use crate::kernel::types::*;
+use crate::kernel::bit::*;
 use crate::kernel::KernelWorkTile;
 
 use super::super::rig::Rig;

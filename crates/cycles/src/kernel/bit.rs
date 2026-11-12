@@ -1,12 +1,12 @@
 // SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
-//! Ported from `intern/cycles/kernel/types.h`: the flags of a path and of a
-//! shading point, and the shader data a kernel passes about (the ray and
-//! the intersection are `ray.rs` and `intersection.rs`). `data/constant.tsv` holds every enumerator of that
-//! header, written by `tool/constant.py`; the constants here are the ones
-//! the CPU kernels use, named as there, and `tests/kernel/types.rs` checks
-//! each against the table.
-
+//! Ported from `intern/cycles/kernel/types.h`: the bits of a path, a
+//! label, a shading point and a shader, the numbers a kernel draws by, and
+//! the limits. `data/constant.tsv` holds every enumerator of that header,
+//! written by `tool/constant.py`; the constants here are the ones the CPU
+//! kernels use, named as there, and `tests/kernel/bit.rs` checks each
+//! against the table. The ray and the hit of the same header are `ray.rs`
+//! and `intersection.rs`; the shading point is `shader.rs`.
 macro_rules! constants {
     ($($name:ident = $value:expr),* $(,)?) => {
         $(pub const $name: u32 = $value;)*
@@ -92,64 +92,3 @@ pub const SVM_STACK_SIZE: usize = 255;
 /// The most closures a shading point holds on the CPU here. Cycles sizes
 /// it by `kernel_data.max_closures`; gate 1's shaders have one.
 pub const MAX_CLOSURE: usize = 8;
-
-/// `ShaderClosure`: a weight, the chance it is sampled and a closure
-/// type; `n` is the normal a BSDF uses (`DiffuseBsdf` adds nothing else).
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
-pub struct ShaderClosure {
-    pub weight: [f32; 3],
-    pub sample_weight: f32,
-    pub kind: i32,
-    pub n: [f32; 3],
-}
-
-/// `ShaderData`, the members a diffuse or emissive surface and the
-/// background use.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct ShaderData {
-    pub p: [f32; 3],
-    pub n: [f32; 3],
-    pub ng: [f32; 3],
-    /// `wi`: towards where the ray came from.
-    pub wi: [f32; 3],
-    pub shader: i32,
-    pub flag: u32,
-    pub object_flag: u32,
-    pub object: i32,
-    pub prim: i32,
-    pub kind: i32,
-    pub u: f32,
-    pub v: f32,
-    pub ray_length: f32,
-    pub time: f32,
-    pub num_closure: usize,
-    /// `num_closure_left`: room for closures; none when the shader is run only for its emission.
-    pub num_closure_left: usize,
-    pub closure: [ShaderClosure; MAX_CLOSURE],
-    pub closure_emission_background: [f32; 3],
-}
-
-impl Default for ShaderData {
-    fn default() -> Self {
-        Self {
-            p: [0.0; 3],
-            n: [0.0; 3],
-            ng: [0.0; 3],
-            wi: [0.0; 3],
-            shader: NONE,
-            flag: 0,
-            object_flag: 0,
-            object: NONE,
-            prim: NONE,
-            kind: 0,
-            u: 0.0,
-            v: 0.0,
-            ray_length: 0.0,
-            time: 0.0,
-            num_closure: 0,
-            num_closure_left: MAX_CLOSURE,
-            closure: [ShaderClosure::default(); MAX_CLOSURE],
-            closure_emission_background: [0.0; 3],
-        }
-    }
-}

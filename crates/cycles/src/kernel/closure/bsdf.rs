@@ -5,7 +5,7 @@
 //! closure is ported: any other type has no sample (a zero pdf).
 use super::diffuse::bsdf_diffuse_sample;
 use crate::kernel::constant;
-use crate::kernel::types::{ShaderClosure, ShaderData};
+use crate::kernel::{ShaderClosure, ShaderData};
 
 /// `CLOSURE_IS_BSDF` (`kernel/types.h:535`): not none, and up to the transparent BSDF.
 pub fn closure_is_bsdf(kind: i32) -> bool {

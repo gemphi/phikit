@@ -3,7 +3,8 @@
 //! emission closures.
 use crate::kernel::closure::*;
 use crate::kernel::constant;
-use crate::kernel::types::*;
+use crate::kernel::bit::*;
+use crate::kernel::{ShaderClosure, ShaderData};
 use crate::util::vector::{dot, len};
 
 fn diffuse_id() -> i32 {

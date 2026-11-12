@@ -6,13 +6,13 @@
 
 use super::{camera_sample_aperture, camera_to_world};
 use crate::kernel::util::{Differential3, differential_make_compact, differential_zero_compact};
-use crate::kernel::{KernelGlobals, Ray};
+use crate::kernel::{KernelGlobal, Ray};
 use crate::util::vector::{add, interp, normalize, scale, sub};
 
 /// `camera_sample_perspective`: the ray of a perspective camera through
 /// `raster_xy`, a place in the image in pixels. `ray.time` is read; the
 /// rest of the ray is written. The answer is what the camera lets through.
-pub fn camera_sample_perspective(kg: &KernelGlobals, raster_xy: [f32; 2], rand_lens: [f32; 2], ray: &mut Ray) -> [f32; 3] {
+pub fn camera_sample_perspective(kg: &KernelGlobal, raster_xy: [f32; 2], rand_lens: [f32; 2], ray: &mut Ray) -> [f32; 3] {
     let cam = &kg.cam;
     let raster = [raster_xy[0], raster_xy[1], 0.0];
     let mut pcamera = cam.rastertocamera.point(raster);

@@ -6,6 +6,7 @@
 //! a kernel is handed, a ray and what it hits; the camera's ray, the walk
 //! of the scene's tree, the samplers, the closures, the SVM, the film and
 //! the integrator's kernels the CPU megakernel runs.
+pub mod bit;
 pub mod bvh;
 pub mod camera;
 pub mod closure;
@@ -20,16 +21,17 @@ mod intersection;
 mod ray;
 mod record;
 pub mod sample;
+mod shader;
 pub mod svm;
 mod tile;
-pub mod types;
 pub mod util;
 pub use constant::{constant, flag};
 pub use data::{DataStruct, Field, FieldKind, KernelData};
-pub use global::{KernelBackground, KernelFilm, KernelGlobals, KernelIntegrator, KernelObject, KernelShader};
+pub use global::{KernelBackground, KernelFilm, KernelGlobal, KernelIntegrator, KernelObject, KernelShader};
 pub use intersection::Intersection;
 pub use ray::{Ray, RaySelfPrimitive};
 pub use record::{RecordArray, RecordField, RecordLayout};
+pub use shader::{ShaderClosure, ShaderData};
 pub use svm::{ShaderNodeType, svm_node};
 pub use tile::KernelWorkTile;
 /// `DeviceKernel`, the integrator part: each kernel does one thing to a

@@ -93,7 +93,7 @@ fn a_nan_against_a_number_fails_and_equal_infinities_do_not() {
 fn the_diff_image_is_sixteen_times_the_difference() {
     let reference = raised(2, 2, 0.25);
     let diff = diff_image(&reference, &grey(2, 0.0), &[0, 1, 2]).unwrap();
-    assert_eq!(diff.channels, 3);
+    assert_eq!(diff.channel_count, 3);
     assert_eq!(&diff.pixel[0..3], &[4.0, 0.0, 0.0]);
     let alpha = diff_image(&grey(1, 0.5), &grey(1, 0.25), &[3]).unwrap();
     assert_eq!(alpha.pixel, [4.0]);

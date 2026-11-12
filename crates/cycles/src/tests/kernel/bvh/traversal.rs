@@ -111,7 +111,7 @@ fn placed() -> crate::tests::kernel::rig::Rig {
 fn down(p: [f32; 3], d: [f32; 3]) -> Ray {
     Ray { p, d, tmin: 0.0, tmax: 1000.0, ..Ray::default() }
 }
-fn trace(kg: &KernelGlobals, ray: &Ray) -> (bool, Intersection) {
+fn trace(kg: &KernelGlobal, ray: &Ray) -> (bool, Intersection) {
     let mut isect = Intersection::default();
     let hit = scene_intersect(kg, ray, flag("PATH_RAY_VISIBILITY_CAMERA"), &mut isect);
     (hit, isect)

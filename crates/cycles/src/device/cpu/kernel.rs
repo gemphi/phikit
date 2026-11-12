@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `intern/cycles/device/cpu/kernel.h` (`CPUKernels`): the
 //! table of kernel functions a CPU device calls. Cycles fills it with the
@@ -19,17 +19,17 @@ pub type CpuKernelFn = Arc<dyn Fn(&mut CpuMemory, i32, &[KernelArgument]) -> Res
 
 /// `CPUKernels`.
 #[derive(Clone)]
-pub struct CpuKernels {
+pub struct CpuKernel {
     table: Vec<Option<CpuKernelFn>>,
 }
 
-impl std::fmt::Debug for CpuKernels {
+impl std::fmt::Debug for CpuKernel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "CpuKernels({} ported)", self.table.iter().flatten().count())
+        write!(f, "CpuKernel({} ported)", self.table.iter().flatten().count())
     }
 }
 
-impl CpuKernels {
+impl CpuKernel {
     /// Every kernel is named and none has a body: each call is
     /// [`DeviceError::NotPorted`].
     pub fn new() -> Self {
@@ -52,7 +52,7 @@ impl CpuKernels {
     }
 }
 
-impl Default for CpuKernels {
+impl Default for CpuKernel {
     fn default() -> Self {
         Self::new()
     }

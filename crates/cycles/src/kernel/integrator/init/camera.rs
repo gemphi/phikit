@@ -6,17 +6,17 @@
 //! sample goes through the middle of the filter; the others draw from the
 //! sampler. A path is not restarted after a cache miss (there is no
 //! texture cache), nor is the pixel skipped for adaptive sampling.
-use super::path_state::{integrator_path_init, path_state_init, path_state_init_integrator};
-use super::state::IntegratorState;
+use crate::kernel::integrator::path::{integrator_path_init, path_state_init, path_state_init_integrator};
+use crate::kernel::integrator::state::IntegratorState;
 use crate::kernel::camera::{CameraType, camera_sample};
 use crate::kernel::film::film_write_sample;
 use crate::kernel::sample::{path_rng_2d, path_rng_3d, path_rng_pixel_init};
-use crate::kernel::types::{PRNG_FILTER, PRNG_LENS_TIME};
-use crate::kernel::{DeviceKernel, KernelGlobals, KernelWorkTile, Ray};
+use crate::kernel::bit::{PRNG_FILTER, PRNG_LENS_TIME};
+use crate::kernel::{DeviceKernel, KernelGlobal, KernelWorkTile, Ray};
 
 /// `integrate_camera_sample`: the camera ray of the pixel for the sample,
 /// and the throughput it starts with.
-fn integrate_camera_sample(kg: &KernelGlobals, sample: i32, x: i32, y: i32, rng_pixel: u32, ray: &mut Ray) -> [f32; 3] {
+fn integrate_camera_sample(kg: &KernelGlobal, sample: i32, x: i32, y: i32, rng_pixel: u32, ray: &mut Ray) -> [f32; 3] {
     let sampler = &kg.integrator.sampler;
     // Filter sampling.
     let rand_filter = match sample == 0 {
@@ -38,7 +38,7 @@ fn integrate_camera_sample(kg: &KernelGlobals, sample: i32, x: i32, y: i32, rng_
 
 /// `integrator_init_from_camera`: false when the pixel is finished and
 /// takes no more samples. `buffer` is the pixel's own floats.
-pub fn integrator_init_from_camera(kg: &KernelGlobals, state: &mut IntegratorState, tile: &KernelWorkTile, buffer: &mut [f32], x: i32, y: i32, scheduled_sample: i32) -> bool {
+pub fn integrator_init_from_camera(kg: &KernelGlobal, state: &mut IntegratorState, tile: &KernelWorkTile, buffer: &mut [f32], x: i32, y: i32, scheduled_sample: i32) -> bool {
     let _ = buffer;
     // Just enough state to give the path its pixel.
     path_state_init(state, tile, x, y);

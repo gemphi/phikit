@@ -5,7 +5,7 @@ use crate::kernel::constant;
 #[test]
 fn a_walk_starts_at_the_root_the_scene_wrote_with_cycles_numbers() {
     let rig = rig_of(vec![strip(8)]);
-    let bvh = KernelGlobals::of(&rig.dscene).bvh;
+    let bvh = KernelGlobal::of(&rig.dscene).bvh;
     assert_eq!(bvh.root, rig.dscene.data.int("bvh", "root"));
     let number = |name: &str| constant(name).expect("in data/constant.tsv");
     assert_eq!((i64::from(bvh.sentinel), i64::from(bvh.prim_none), i64::from(bvh.object_none)), (number("ENTRYPOINT_SENTINEL"), -1, -1));

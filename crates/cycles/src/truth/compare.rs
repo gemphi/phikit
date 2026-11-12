@@ -42,7 +42,7 @@ pub fn compare(reference: &Image, render: &Image, allowance: Allowance) -> Resul
         return Err(TruthError::Size { reference: (reference.width, reference.height), render: (render.width, render.height) });
     }
     let pixel = reference.width * reference.height;
-    let channel = reference.channels.max(render.channels);
+    let channel = reference.channel_count.max(render.channel_count);
     let (mut failed_pixel, mut max_error, mut total) = (0usize, 0.0f32, 0.0f64);
     for index in 0..pixel {
         let mut failed = false;

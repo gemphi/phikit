@@ -2,7 +2,7 @@
 //! Tests of `integrator/trace/cpu.rs`: the CPU work over the CPU device.
 use std::sync::Arc;
 
-use crate::device::{CpuDevice, CpuKernels, DeviceError, KernelArgument};
+use crate::device::{CpuDevice, CpuKernel, DeviceError, KernelArgument};
 use crate::integrator::*;
 use crate::kernel::DeviceKernel;
 use crate::session::{BufferParam, RenderBuffer};
@@ -41,7 +41,7 @@ fn the_unported_megakernel_stops_the_work_with_a_typed_error() {
 /// A megakernel stand-in that adds `sample_count` to the red of each pixel
 /// of the tile: it shows the tile reached the kernel intact.
 fn counting_device() -> CpuDevice {
-    let mut kernels = CpuKernels::new();
+    let mut kernels = CpuKernel::new();
     kernels.set(
         DeviceKernel::IntegratorMegakernel,
         Arc::new(|memory, work_size, args| {

@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::blender::{CameraSource, MaterialSource, MeshSource, NodeSurface, SensorFit, sync_camera, sync_mesh, transform_of};
 use crate::device::CpuDevice;
-use crate::kernel::KernelGlobals;
+use crate::kernel::KernelGlobal;
 use crate::kernel::device::cpu_kernels;
 use crate::scene::{Object, Scene, Surface, World};
 use crate::truth::SessionRenderer;
@@ -92,9 +92,9 @@ impl Rig {
     }
 
     /// The managers run; the kernels' view of the scene.
-    pub fn kernel(&mut self) -> Arc<KernelGlobals> {
+    pub fn kernel(&mut self) -> Arc<KernelGlobal> {
         let dscene = self.scene.device_update();
-        Arc::new(KernelGlobals::new(Arc::new(dscene)))
+        Arc::new(KernelGlobal::new(Arc::new(dscene)))
     }
 
     /// Render `samples` and give each pixel's linear colour, the bottom row

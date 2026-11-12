@@ -6,7 +6,7 @@ use crate::kernel::geom::{bvh_clamp_direction, bvh_inverse_direction};
 /// and how far along the ray each starts. The scene's tree above it holds
 /// the strip as one instance.
 fn root(rig: &Rig, x: f32, visibility: u32) -> (u32, [f32; 2]) {
-    let kg = KernelGlobals::of(&rig.dscene);
+    let kg = KernelGlobal::of(&rig.dscene);
     let idir = bvh_inverse_direction(bvh_clamp_direction([0.0, 0.0, 1.0]));
     bvh_aligned_node_intersect(&kg, [x, 0.5, -3.0], idir, 0.0, 100.0, rig.dscene.object_node[0], visibility)
 }
@@ -31,7 +31,7 @@ fn a_scene_of_one_object_has_a_root_with_an_empty_child() {
     // A tree is never a leaf alone: the one instance is the root's second
     // child, and the first is a box nothing can enter.
     let rig = rig_of(vec![strip(16)]);
-    let kg = KernelGlobals::of(&rig.dscene);
+    let kg = KernelGlobal::of(&rig.dscene);
     let idir = bvh_inverse_direction(bvh_clamp_direction([0.0, 0.0, 1.0]));
     let at = |x: f32| bvh_aligned_node_intersect(&kg, [x, 0.5, -3.0], idir, 0.0, 100.0, kg.bvh.root, all()).0;
     assert_eq!((at(0.5), at(30.5), at(-5.0)), (2, 2, 0));
@@ -40,7 +40,7 @@ fn a_scene_of_one_object_has_a_root_with_an_empty_child() {
 #[test]
 fn a_child_is_missed_when_the_ray_ends_before_it_or_starts_after_it() {
     let rig = rig_of(vec![strip(16)]);
-    let kg = KernelGlobals::of(&rig.dscene);
+    let kg = KernelGlobal::of(&rig.dscene);
     let idir = bvh_inverse_direction(bvh_clamp_direction([0.0, 0.0, 1.0]));
     let between = |tmin: f32, tmax: f32| bvh_aligned_node_intersect(&kg, [0.5, 0.5, -3.0], idir, tmin, tmax, rig.dscene.object_node[0], all()).0;
     assert!(between(0.0, 100.0) != 0);
@@ -54,7 +54,7 @@ fn a_child_no_ray_of_this_kind_may_see_counts_as_missed() {
     rig.object[0].node.set("visibility", crate::graph::Value::Uint(all() & !camera));
     rig.update();
     // The object's visibility is on the scene's tree, where the object is.
-    let kg = KernelGlobals::of(&rig.dscene);
+    let kg = KernelGlobal::of(&rig.dscene);
     let idir = bvh_inverse_direction(bvh_clamp_direction([0.0, 0.0, 1.0]));
     let seen = |visibility: u32| bvh_aligned_node_intersect(&kg, [0.5, 0.5, -3.0], idir, 0.0, 100.0, kg.bvh.root, visibility).0;
     assert_eq!((seen(camera), seen(all())), (0, 2));

@@ -7,11 +7,11 @@
 //! `intersect.rs` is `triangle_intersect.h`.
 mod intersect;
 pub use intersect::triangle_intersect;
-use crate::kernel::KernelGlobals;
-use crate::kernel::types::{SD_OBJECT_HAS_CORNER_NORMALS, SD_OBJECT_NEGATIVE_SCALE, SD_OBJECT_TRANSFORM_APPLIED};
+use crate::kernel::KernelGlobal;
+use crate::kernel::bit::{SD_OBJECT_HAS_CORNER_NORMALS, SD_OBJECT_NEGATIVE_SCALE, SD_OBJECT_TRANSFORM_APPLIED};
 use crate::util::vector::{cross, is_finite, normalize, sub};
 /// `triangle_vertices`: the three positions of triangle `prim` of `object`.
-pub fn triangle_vertices(kg: &KernelGlobals, object: i32, prim: i32) -> [[f32; 3]; 3] {
+pub fn triangle_vertices(kg: &KernelGlobal, object: i32, prim: i32) -> [[f32; 3]; 3] {
     let scene = &*kg.scene;
     let offset = kg.object[object as usize].position_offset as usize;
     let index = scene.tri_vindex[prim as usize];
@@ -19,7 +19,7 @@ pub fn triangle_vertices(kg: &KernelGlobals, object: i32, prim: i32) -> [[f32; 3
 }
 /// `triangle_normal`: the face normal in object space; the other way
 /// round for an object of negative scale whose transform is applied.
-pub fn triangle_normal(kg: &KernelGlobals, object: i32, prim: i32, object_flag: u32) -> [f32; 3] {
+pub fn triangle_normal(kg: &KernelGlobal, object: i32, prim: i32, object_flag: u32) -> [f32; 3] {
     let [v0, v1, v2] = triangle_vertices(kg, object, prim);
     let negative = object_flag & SD_OBJECT_NEGATIVE_SCALE != 0 && object_flag & SD_OBJECT_TRANSFORM_APPLIED != 0;
     match negative {
@@ -29,7 +29,7 @@ pub fn triangle_normal(kg: &KernelGlobals, object: i32, prim: i32, object_flag: 
 }
 /// `triangle_smooth_normal`: the vertex normals of the triangle,
 /// interpolated at `u` and `v`; the face normal `ng` when they cancel.
-pub fn triangle_smooth_normal(kg: &KernelGlobals, ng: [f32; 3], object: i32, object_flag: u32, prim: i32, u: f32, v: f32) -> [f32; 3] {
+pub fn triangle_smooth_normal(kg: &KernelGlobal, ng: [f32; 3], object: i32, object_flag: u32, prim: i32, u: f32, v: f32) -> [f32; 3] {
     let scene = &*kg.scene;
     let offset = kg.object[object as usize].normal_offset as usize;
     let index = scene.tri_vindex[prim as usize];

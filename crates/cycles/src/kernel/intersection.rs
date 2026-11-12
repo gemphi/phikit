@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `intern/cycles/kernel/types.h` (`Intersection`, lines
 //! 614-619): what a ray hit.
-use super::types::NONE;
+use super::bit::NONE;
 /// `Intersection`.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Intersection {

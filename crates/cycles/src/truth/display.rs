@@ -9,7 +9,7 @@
 //!
 //! `Raw` is no curve. `Filmic`, `AgX`, a look, and `Khronos PBR Neutral`
 //! are tables of OCIO configuration that are not ported: they draw with the
-//! Standard curve and say so in [`ViewSettings::approximated`].
+//! Standard curve and say so in [`ViewSetting::approximated`].
 use super::render::srgb_encode;
 
 /// `view_settings.view_transform`.
@@ -23,7 +23,7 @@ pub enum ViewTransform {
 
 /// What turns the film into the picture.
 #[derive(Debug, Clone, PartialEq)]
-pub struct ViewSettings {
+pub struct ViewSetting {
     pub transform: ViewTransform,
     /// A look other than `None`.
     pub look: Option<String>,
@@ -36,15 +36,15 @@ pub struct ViewSettings {
     pub cycles_buffer: bool,
 }
 
-impl Default for ViewSettings {
+impl Default for ViewSetting {
     fn default() -> Self {
         Self { transform: ViewTransform::Standard, look: None, exposure: 0.0, gamma: 1.0, film_exposure: 1.0, cycles_buffer: false }
     }
 }
 
-impl ViewSettings {
+impl ViewSetting {
     /// The view settings of a scene's names, as phiphx reads them.
-    pub fn of(view_transform: &str, look: &str, exposure: f32, gamma: f32, film_exposure: f32) -> ViewSettings {
+    pub fn of(view_transform: &str, look: &str, exposure: f32, gamma: f32, film_exposure: f32) -> ViewSetting {
         let transform = match view_transform {
             // `Default` is what a file that holds no view transform reads as:
             // the display's first view, which is Standard.
@@ -56,7 +56,7 @@ impl ViewSettings {
             "None" | "" => None,
             other => Some(other.to_string()),
         };
-        ViewSettings { transform, look, exposure, gamma: if gamma > 0.0 { gamma } else { 1.0 }, film_exposure, cycles_buffer: true }
+        ViewSetting { transform, look, exposure, gamma: if gamma > 0.0 { gamma } else { 1.0 }, film_exposure, cycles_buffer: true }
     }
 
     /// Whether the picture is not what Blender's: a transform or a look the

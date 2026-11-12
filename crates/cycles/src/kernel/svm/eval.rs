@@ -6,8 +6,9 @@
 //! allocates a closure from it.
 use super::closure::{closure_background, closure_bsdf, closure_emission, closure_set_weight};
 use super::{ShaderNodeType, node_of};
-use crate::kernel::KernelGlobals;
-use crate::kernel::types::{SHADER_MASK, SVM_STACK_SIZE, ShaderData};
+use crate::kernel::KernelGlobal;
+use crate::kernel::bit::{SHADER_MASK, SVM_STACK_SIZE};
+use crate::kernel::ShaderData;
 
 /// `SVMStackOffset`: a byte; 255 is `SVM_STACK_INVALID`, not on the stack.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,7 +27,7 @@ impl StackOffset {
 /// `svm_eval_nodes` for `SHADER_TYPE_SURFACE`: run the shader of
 /// `sd.shader` and leave its closures in `sd`. A node that is not ported
 /// ends the shader, with no closure from it.
-pub fn svm_eval_nodes(kg: &KernelGlobals, sd: &mut ShaderData) {
+pub fn svm_eval_nodes(kg: &KernelGlobal, sd: &mut ShaderData) {
     let node = &kg.scene.svm_node;
     let stack = [0.0f32; SVM_STACK_SIZE];
     let mut closure_weight = [0.0f32; 3];

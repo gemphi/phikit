@@ -7,13 +7,13 @@
 //! ray leaves the scene. Sun lights, the background light's MIS weight
 //! (there are no lights yet: the weight is one), the data and denoising
 //! passes and the shadow catcher are not ported.
-use super::path_state::integrator_path_terminate;
-use super::state::IntegratorState;
+use crate::kernel::integrator::path::integrator_path_terminate;
+use crate::kernel::integrator::state::IntegratorState;
 use crate::kernel::film::film_write_background;
 use crate::kernel::geom::shader_setup_from_background;
-use crate::kernel::KernelGlobals;
+use crate::kernel::KernelGlobal;
 use crate::kernel::svm::svm_eval_nodes;
-use crate::kernel::types::*;
+use crate::kernel::bit::*;
 
 /// `is_light_shader_visible_to_path`: whether the light's shader (the
 /// world's) is seen by a ray of this visibility and these flags.
@@ -32,7 +32,7 @@ pub fn is_light_shader_visible_to_path(shader: i32, path_visibility: u32, path_f
 
 /// `integrator_eval_background_shader`: the world's colour for the ray.
 /// A constant colour is read from the shader's table; else its nodes run.
-pub fn integrator_eval_background_shader(kg: &KernelGlobals, state: &IntegratorState) -> [f32; 3] {
+pub fn integrator_eval_background_shader(kg: &KernelGlobal, state: &IntegratorState) -> [f32; 3] {
     let shader = kg.background.surface_shader;
     if !is_light_shader_visible_to_path(shader, state.path.visibility, state.path.flag) {
         return [0.0; 3];
@@ -53,7 +53,7 @@ pub fn integrator_eval_background_shader(kg: &KernelGlobals, state: &IntegratorS
 }
 
 /// `integrate_background`.
-fn integrate_background(kg: &KernelGlobals, state: &IntegratorState, buffer: &mut [f32]) {
+fn integrate_background(kg: &KernelGlobal, state: &IntegratorState, buffer: &mut [f32]) {
     let throughput = state.path.throughput;
     let is_transparent_background_ray = kg.background.transparent && state.path.flag & PATH_RAY_TRANSPARENT_BACKGROUND != 0;
     // A transparent background adds transparency and no colour.
@@ -69,7 +69,7 @@ fn integrate_background(kg: &KernelGlobals, state: &IntegratorState, buffer: &mu
 
 /// `integrator_shade_background`: the world's colour into the pixel, and
 /// the path is over.
-pub fn integrator_shade_background(kg: &KernelGlobals, state: &mut IntegratorState, buffer: &mut [f32]) {
+pub fn integrator_shade_background(kg: &KernelGlobal, state: &mut IntegratorState, buffer: &mut [f32]) {
     integrate_background(kg, state, buffer);
     integrator_path_terminate(state);
 }

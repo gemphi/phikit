@@ -10,7 +10,7 @@
 //! (an emission over 0.5 is sampled as a light), `SD_HAS_EMISSION` and
 //! `SD_HAS_CONSTANT_EMISSION`. The rest wait for the node graph.
 use super::compile::{JUMP_NODE_SIZE, compile, emission_estimate};
-use crate::kernel::types::{SD_HAS_CONSTANT_EMISSION, SD_HAS_EMISSION, SD_MIS_BACK, SD_MIS_FRONT};
+use crate::kernel::bit::{SD_HAS_CONSTANT_EMISSION, SD_HAS_EMISSION, SD_MIS_BACK, SD_MIS_FRONT};
 use crate::kernel::{ShaderNodeType, svm_node};
 use crate::scene::{DeviceScene, Surface};
 

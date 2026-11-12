@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 use crate::kernel::geom::*;
-use crate::kernel::{KernelGlobals, Ray};
+use crate::kernel::{KernelGlobal, Ray};
 use crate::tests::kernel::bvh::instanced;
 use crate::tests::kernel::near;
 use crate::util::Transform;
@@ -9,7 +9,7 @@ use crate::util::Transform;
 fn a_point_and_a_normal_go_out_of_an_object_and_a_direction_into_it() {
     let place = Transform::translate(3.0, 0.0, -1.0) * Transform::scale(2.0, 2.0, 4.0);
     let rig = instanced(&[Transform::IDENTITY, place]);
-    let kg = KernelGlobals::of(&rig.dscene);
+    let kg = KernelGlobal::of(&rig.dscene);
     assert!(near(&object_position_transform(&kg, 1, [0.5, 0.25, 1.0]), &[4.0, 0.5, 3.0]));
     assert!(near(&object_inverse_dir_transform(&kg, 1, [2.0, 2.0, 4.0]), &[1.0, 1.0, 1.0]));
     // A normal goes by the inverse's transpose: a slope of the squashed
@@ -21,7 +21,7 @@ fn a_point_and_a_normal_go_out_of_an_object_and_a_direction_into_it() {
 fn an_object_s_two_transforms_undo_each_other() {
     let place = Transform::translate(3.0, 0.0, -1.0) * Transform::scale(2.0, 2.0, 2.0);
     let rig = instanced(&[Transform::IDENTITY, place]);
-    let kg = KernelGlobals::of(&rig.dscene);
+    let kg = KernelGlobal::of(&rig.dscene);
     assert_eq!(object_fetch_transform(&kg, 1, ObjectTransform::Object), place);
     let back = object_fetch_transform(&kg, 1, ObjectTransform::Inverse);
     assert!(near(&back.point(place.point([0.5, 0.25, 4.0])), &[0.5, 0.25, 4.0]));
@@ -40,7 +40,7 @@ fn a_direction_is_kept_off_zero_so_that_its_inverse_is_a_number() {
 fn inside_an_instance_the_ray_is_as_the_object_sees_it() {
     let place = Transform::translate(3.0, 0.0, -1.0) * Transform::scale(2.0, 2.0, 2.0);
     let rig = instanced(&[Transform::IDENTITY, place]);
-    let kg = KernelGlobals::of(&rig.dscene);
+    let kg = KernelGlobal::of(&rig.dscene);
     let ray = Ray { p: [5.0, 2.0, 1.0], d: [0.0, 0.0, 1.0], tmax: 10.0, ..Ray::default() };
     let (p, dir, idir) = bvh_instance_push(&kg, 1, &ray);
     // Half the size, so half the speed: the direction is not made of

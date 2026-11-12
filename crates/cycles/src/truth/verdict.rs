@@ -76,7 +76,7 @@ pub fn judge(scene: &TestScene, renderer: &mut impl Renderer, out: &Path) -> Ver
         diff_image(&reference, &render, channel).and_then(|image| image.write_png(&path)).ok().map(|()| path)
     };
     verdict.diff_color = write(&[0, 1, 2], "diff");
-    if reference.channels == 4 && render.channels == 4 {
+    if reference.channel_count == 4 && render.channel_count == 4 {
         verdict.diff_alpha = write(&[3], "diff_alpha");
     }
     verdict

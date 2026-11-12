@@ -12,7 +12,7 @@ fn the_globals_take_what_a_ray_needs_out_of_the_constant_data() {
     camera.device_update(&mut dscene, &mut lookup, MotionType::None);
     dscene.data.set_float2("integrator", "pixel_jitter", [0.25, 0.75]);
     dscene.data.set_int("tables", "filter_table_offset", 256);
-    let kg = KernelGlobals::of(&dscene);
+    let kg = KernelGlobal::of(&dscene);
     assert_eq!((kg.cam.kind, kg.integrator.pixel_jitter, kg.filter_table_offset), (Some(CameraType::Perspective), [0.25, 0.75], 256));
     let size = |name: &str| constant(name).expect("in data/constant.tsv") as usize;
     assert_eq!((kg.filter_table_size, kg.shutter_table_size), (size("FILTER_TABLE_SIZE"), size("SHUTTER_TABLE_SIZE")));
@@ -22,7 +22,7 @@ fn the_globals_take_what_a_ray_needs_out_of_the_constant_data() {
 fn a_table_that_was_never_added_is_read_from_the_start() {
     let mut dscene = DeviceScene::new();
     dscene.data.set_int("tables", "filter_table_offset", -1);
-    assert_eq!(KernelGlobals::of(&dscene).filter_table_offset, 0);
+    assert_eq!(KernelGlobal::of(&dscene).filter_table_offset, 0);
 }
 #[test]
 fn the_camera_the_film_and_the_integrator_are_read_from_the_constant_data() {
@@ -48,8 +48,8 @@ fn the_world_is_a_shader_after_the_scene_s_and_visible_to_every_ray() {
     let kg = rig.kernel();
     // One scene shader, then the world's, then the default surface.
     assert_eq!(kg.shader.len(), 3);
-    assert_eq!(kg.background.surface_shader as u32 & crate::kernel::types::SHADER_MASK, 1);
-    assert_eq!(kg.background.surface_shader as u32 & crate::kernel::types::SHADER_EXCLUDE_ANY, 0);
+    assert_eq!(kg.background.surface_shader as u32 & crate::kernel::bit::SHADER_MASK, 1);
+    assert_eq!(kg.background.surface_shader as u32 & crate::kernel::bit::SHADER_EXCLUDE_ANY, 0);
     assert!(!kg.background.transparent);
     assert_eq!(kg.shader[1].constant_emission, [0.25, 0.5, 1.0]);
     assert_eq!(kg.shader[0].constant_emission, [0.0; 3]);

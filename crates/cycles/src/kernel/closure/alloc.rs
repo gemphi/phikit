@@ -5,7 +5,8 @@
 //! closure is given its weight, and a BSDF its sample weight, the chance
 //! that it is the one a bounce samples.
 use crate::kernel::constant;
-use crate::kernel::types::{MAX_CLOSURE, ShaderClosure, ShaderData};
+use crate::kernel::bit::MAX_CLOSURE;
+use crate::kernel::{ShaderClosure, ShaderData};
 
 /// `CLOSURE_WEIGHT_CUTOFF` (`kernel/types.h`): a weight under it is no closure.
 const CLOSURE_WEIGHT_CUTOFF: f32 = 1e-5;

@@ -7,7 +7,7 @@
 use super::eval::StackOffset;
 use crate::kernel::closure::{background_setup, bsdf_diffuse_setup, emission_setup};
 use crate::kernel::constant;
-use crate::kernel::types::ShaderData;
+use crate::kernel::ShaderData;
 
 /// The number of `CLOSURE_BSDF_DIFFUSE_ID`.
 fn diffuse_id() -> u32 {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `scene/shader/compile.rs` and `manager.rs`: the words a shader
 //! compiles to, in the layout of `kernel/svm/node_types.h`.
-use crate::kernel::types::{SD_HAS_CONSTANT_EMISSION, SD_HAS_EMISSION, SD_MIS_BACK, SD_MIS_FRONT};
+use crate::kernel::bit::{SD_HAS_CONSTANT_EMISSION, SD_HAS_EMISSION, SD_MIS_BACK, SD_MIS_FRONT};
 use crate::kernel::{ShaderNodeType, constant, svm_node};
 use crate::scene::{DeviceScene, JUMP_NODE_SIZE, ShaderManager, Surface, compile, emission_estimate};
 
