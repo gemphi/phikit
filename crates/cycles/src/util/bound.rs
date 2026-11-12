@@ -123,3 +123,6 @@ impl BoundBox {
         (0..3).all(|axis| between[axis].abs() <= reach[axis])
     }
 }
+
+#[cfg(test)]
+mod test;

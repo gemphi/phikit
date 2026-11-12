@@ -41,3 +41,6 @@ impl PackedNormal {
         normalize([x + fold.copysign(-x), y + fold.copysign(-y), z])
     }
 }
+
+#[cfg(test)]
+mod test;

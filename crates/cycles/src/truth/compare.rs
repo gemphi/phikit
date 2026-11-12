@@ -79,3 +79,6 @@ pub fn diff_image(reference: &Image, render: &Image, channel: &[usize]) -> Resul
     }
     Ok(diff)
 }
+
+#[cfg(test)]
+mod test;

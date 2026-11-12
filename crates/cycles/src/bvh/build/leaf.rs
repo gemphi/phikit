@@ -124,3 +124,6 @@ impl BvhBuild<'_> {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

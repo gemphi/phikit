@@ -76,3 +76,6 @@ pub struct FirstRenderTime {
     pub denoise_time: f64,
     pub display_update_time: f64,
 }
+
+#[cfg(test)]
+mod test;

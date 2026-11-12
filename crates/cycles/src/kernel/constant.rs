@@ -28,3 +28,6 @@ pub fn flag(name: &str) -> u32 {
     debug_assert!(found.is_some(), "data/constant.tsv has no {name}");
     found.unwrap_or(0) as u32
 }
+
+#[cfg(test)]
+mod test;

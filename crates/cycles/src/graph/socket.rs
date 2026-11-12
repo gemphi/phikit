@@ -100,3 +100,6 @@ pub struct SocketType {
     /// `flags`: the `SocketType::Flags` bits, such as `LINKABLE`.
     pub flag: u32,
 }
+
+#[cfg(test)]
+mod test;

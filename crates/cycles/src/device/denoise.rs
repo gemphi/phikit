@@ -142,3 +142,6 @@ fn label(kind: &str, value: i32) -> &'static str {
     let mut found = row_list(TABLE).filter(|row| row.first() == Some(&kind) && row.get(2).and_then(|cell| cell.parse::<i32>().ok()) == Some(value));
     found.next().and_then(|row| row.get(3).copied()).unwrap_or("UNKNOWN")
 }
+
+#[cfg(test)]
+mod test;

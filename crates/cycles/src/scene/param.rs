@@ -73,3 +73,6 @@ impl SceneParam {
         (1 << self.hair_subdivision.clamp(0, 30)).clamp(1, 16)
     }
 }
+
+#[cfg(test)]
+mod test;

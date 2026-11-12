@@ -59,3 +59,6 @@ impl Triangle {
         [0, 1, 2].map(|corner| interp(current[corner], next[corner], t))
     }
 }
+
+#[cfg(test)]
+mod test;

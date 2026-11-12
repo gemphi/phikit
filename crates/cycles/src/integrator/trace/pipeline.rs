@@ -198,3 +198,6 @@ impl<W: PathTraceWork> PathTrace<W> {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

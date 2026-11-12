@@ -102,3 +102,6 @@ pub fn camera_distance(kg: &KernelGlobal, p: [f32; 3]) -> f32 {
         _ => len(from),
     }
 }
+
+#[cfg(test)]
+mod test;

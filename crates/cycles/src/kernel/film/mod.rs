@@ -13,3 +13,6 @@ mod light;
 mod write;
 pub use light::{film_clamp_light, film_write_background, film_write_combined_transparent_pass, film_write_sample, film_write_surface_emission};
 pub use write::{film_pass_pixel_render_buffer, film_write_pass_float4, film_write_pass_spectrum};
+
+#[cfg(test)]
+mod test;

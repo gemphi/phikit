@@ -84,3 +84,6 @@ impl GeometryManager {
         ObjectManager::device_update_geom_offset(dscene, object, mesh);
     }
 }
+
+#[cfg(test)]
+mod test;

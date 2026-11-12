@@ -165,3 +165,6 @@ impl Attribute {
         self.center.float2().iter().filter_map(tile).collect()
     }
 }
+
+#[cfg(test)]
+mod test;

@@ -200,3 +200,6 @@ impl AttributeSet {
         self.modified_flag = 0;
     }
 }
+
+#[cfg(test)]
+mod test;

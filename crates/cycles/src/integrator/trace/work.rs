@@ -86,3 +86,6 @@ pub trait TraceHost {
     /// `tile_manager_.finish_write_tiles()`, when tiles were written.
     fn finish_tile_file(&mut self);
 }
+
+#[cfg(test)]
+mod test;

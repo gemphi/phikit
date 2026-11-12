@@ -139,3 +139,6 @@ fn read_row(mut list: Vec<NodeType>, row: Vec<&'static str>) -> Vec<NodeType> {
     }
     list
 }
+
+#[cfg(test)]
+mod test;

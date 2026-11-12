@@ -97,3 +97,6 @@ impl Bvh2 {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

@@ -146,3 +146,6 @@ pub fn motion_array_interpolate(motion: &[DecomposedTransform], time: f32) -> Tr
     let (a, b) = (&motion[step], &motion[(step + 1).min(motion.len() - 1)]);
     compose(&DecomposedTransform { x: quat_interpolate(a.x, b.x, t), y: interp(a.y, b.y, t), z: interp(a.z, b.z, t), w: interp(a.w, b.w, t) })
 }
+
+#[cfg(test)]
+mod test;

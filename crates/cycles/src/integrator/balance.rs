@@ -52,3 +52,6 @@ impl WorkBalanceInfo {
         true
     }
 }
+
+#[cfg(test)]
+mod test;

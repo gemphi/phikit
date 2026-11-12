@@ -55,3 +55,6 @@ pub fn camera_sample_perspective(kg: &KernelGlobal, raster_xy: [f32; 2], rand_le
     ray.tmax = cam.cliplength * z_inverse;
     [1.0; 3]
 }
+
+#[cfg(test)]
+mod test;

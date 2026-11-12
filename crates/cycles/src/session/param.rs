@@ -75,3 +75,6 @@ impl SessionParam {
             && self.shading_system == other.shading_system)
     }
 }
+
+#[cfg(test)]
+mod test;

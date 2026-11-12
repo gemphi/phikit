@@ -155,3 +155,6 @@ impl Value {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

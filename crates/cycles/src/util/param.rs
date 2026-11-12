@@ -14,3 +14,6 @@ pub fn param_default(owner: &str, member: &str) -> f64 {
     debug_assert!(found.is_some(), "data/param.tsv has no {owner}::{member}");
     found.unwrap_or(0.0)
 }
+
+#[cfg(test)]
+mod test;

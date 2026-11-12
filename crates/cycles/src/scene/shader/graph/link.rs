@@ -137,3 +137,6 @@ impl ShaderGraph {
         self.simplified = false;
     }
 }
+
+#[cfg(test)]
+mod test;

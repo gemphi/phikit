@@ -215,3 +215,6 @@ impl Object {
 fn link_mask_all() -> u64 {
     constant("LIGHT_LINK_MASK_ALL").unwrap_or(-1) as u64
 }
+
+#[cfg(test)]
+mod test;

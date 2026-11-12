@@ -55,3 +55,6 @@ pub fn slice_buffer_param(balance: &[WorkBalanceInfo], param: &BufferParam, over
     };
     balance.iter().enumerate().map(cut).collect()
 }
+
+#[cfg(test)]
+mod test;

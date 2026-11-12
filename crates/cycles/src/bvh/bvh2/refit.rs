@@ -80,3 +80,6 @@ impl Bvh2 {
         (bound, visibility)
     }
 }
+
+#[cfg(test)]
+mod test;

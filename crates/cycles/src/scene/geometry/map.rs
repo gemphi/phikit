@@ -79,3 +79,6 @@ pub fn find_attribute(map: &RecordArray, offset: usize, prim_none: bool, id: u64
         false => AttributeDescriptor { element, offset: map.int(at, "offset") },
     }
 }
+
+#[cfg(test)]
+mod test;

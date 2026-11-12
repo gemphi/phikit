@@ -120,3 +120,6 @@ impl DeviceScene {
         row.filter_map(|row| Some((*row.first()?, *row.get(1)?, row.get(2) == Some(&"1")))).collect()
     }
 }
+
+#[cfg(test)]
+mod test;

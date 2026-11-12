@@ -137,3 +137,6 @@ pub fn bvh_intersect(kg: &KernelGlobal, ray: &Ray, isect: &mut Intersection, vis
     }
     isect.prim != bvh.prim_none
 }
+
+#[cfg(test)]
+mod test;

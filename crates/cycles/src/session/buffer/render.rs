@@ -68,3 +68,6 @@ impl RenderBuffer {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

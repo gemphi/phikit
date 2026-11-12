@@ -83,3 +83,6 @@ pub fn fill_sample_pattern(dscene: &mut DeviceScene) {
     }
     dscene.sample_pattern_lut = table;
 }
+
+#[cfg(test)]
+mod test;

@@ -178,3 +178,6 @@ impl Node {
         self.modified = 0;
     }
 }
+
+#[cfg(test)]
+mod test;

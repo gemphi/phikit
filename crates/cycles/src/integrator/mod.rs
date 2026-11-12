@@ -6,7 +6,7 @@ mod adaptive;
 mod balance;
 mod scheduler;
 mod tile;
-mod trace;
+pub(crate) mod trace;
 mod work;
 
 pub use adaptive::AdaptiveSampling;

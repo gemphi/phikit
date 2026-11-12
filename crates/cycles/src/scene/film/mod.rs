@@ -161,3 +161,6 @@ impl Film {
         pass.iter().filter(|pass| pass.is_written()).fold(0, |mask, pass| mask | feature(pass))
     }
 }
+
+#[cfg(test)]
+mod test;

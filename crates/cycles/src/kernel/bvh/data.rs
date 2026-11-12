@@ -40,3 +40,6 @@ impl KernelBvh {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

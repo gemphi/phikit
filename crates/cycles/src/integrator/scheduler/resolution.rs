@@ -24,3 +24,6 @@ pub fn resolution_for_divider(width: i32, height: i32, divider: i32) -> i32 {
     let side = f64::from(width * height).sqrt().round() as i32;
     side / divider
 }
+
+#[cfg(test)]
+mod test;

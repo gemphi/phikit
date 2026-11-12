@@ -69,3 +69,6 @@ pub struct PackedBvh {
 pub fn create(param: BvhParam) -> Option<Bvh2> {
     (param.bvh_layout == BvhLayout::of("BVH2")).then(|| Bvh2::new(param))
 }
+
+#[cfg(test)]
+pub(crate) mod test;

@@ -43,3 +43,6 @@ impl ObjectManager {
         update
     }
 }
+
+#[cfg(test)]
+mod test;

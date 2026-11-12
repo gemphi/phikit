@@ -43,3 +43,6 @@ pub fn expand_bits(mut x: u32) -> u32 {
 pub fn morton2d(x: u32, y: u32) -> u32 {
     (expand_bits(x) << 1) | expand_bits(y)
 }
+
+#[cfg(test)]
+mod test;

@@ -83,3 +83,6 @@ impl DeviceKernel {
         Self::IntegratorShadowPathMneePending,
     ];
 }
+
+#[cfg(test)]
+pub(crate) mod test;

@@ -79,3 +79,6 @@ impl ViewSetting {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

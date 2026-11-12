@@ -74,3 +74,6 @@ impl<W: PathTraceWork> PathTrace<W> {
         self.work.iter_mut().for_each(|device| device.copy_from_render_buffer(buffer));
     }
 }
+
+#[cfg(test)]
+mod test;

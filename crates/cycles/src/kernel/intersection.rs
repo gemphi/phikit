@@ -24,3 +24,6 @@ impl Default for Intersection {
         Self { t: 0.0, u: 0.0, v: 0.0, prim: NONE, object: NONE, kind: 0 }
     }
 }
+
+#[cfg(test)]
+mod test;

@@ -2,7 +2,7 @@
 
 How a render runs in Cycles, top to bottom, with the Rust types of this
 crate. A solid box is a type that exists in `src/` today and is tested
-(the tests are in `src/tests`, in the same folders). A
+(the tests are in the `test.rs` beside each module). A
 dashed box is still Cycles' C++: it shows the Cycles name and where it is,
 and is the next thing to port in that layer, or a trait whose body is not
 ported.

@@ -73,3 +73,6 @@ impl BvhMixedSplit {
         side
     }
 }
+
+#[cfg(test)]
+mod test;

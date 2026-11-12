@@ -156,3 +156,6 @@ impl Mul<ProjectionTransform> for Transform {
 pub fn polar_to_cartesian(r: f32, phi: f32) -> [f32; 2] {
     [r * phi.cos(), r * phi.sin()]
 }
+
+#[cfg(test)]
+mod test;

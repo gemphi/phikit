@@ -109,3 +109,6 @@ impl Session {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

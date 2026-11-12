@@ -217,3 +217,6 @@ impl<C: Clock> RenderScheduler<C> {
         self.reset(&buffer);
     }
 }
+
+#[cfg(test)]
+pub(crate) mod test;

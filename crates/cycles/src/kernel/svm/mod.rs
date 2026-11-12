@@ -62,3 +62,6 @@ pub fn svm_node(node: ShaderNodeType) -> u32 {
 pub fn node_of(number: u32) -> Option<ShaderNodeType> {
     ShaderNodeType::ALL.into_iter().find(|node| svm_node(*node) == number)
 }
+
+#[cfg(test)]
+mod test;

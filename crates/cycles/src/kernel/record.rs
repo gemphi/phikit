@@ -170,3 +170,6 @@ impl RecordArray {
         self.take(index, name).iter().map(|word| f32::from_bits(*word)).collect()
     }
 }
+
+#[cfg(test)]
+mod test;

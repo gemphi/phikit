@@ -214,3 +214,6 @@ impl Camera {
         dscene.camera_motion.clear();
     }
 }
+
+#[cfg(test)]
+mod test;

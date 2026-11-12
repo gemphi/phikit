@@ -67,3 +67,6 @@ pub struct TaskTime {
     pub rebalance: TimeAverage,
     pub volume_guiding_denoise: TimeAverage,
 }
+
+#[cfg(test)]
+mod test;

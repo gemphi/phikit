@@ -119,3 +119,6 @@ pub fn hash_shuffle_uint(i: u32, length: u32, seed: u32) -> u32 {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

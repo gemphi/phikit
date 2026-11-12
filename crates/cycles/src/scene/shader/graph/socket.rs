@@ -113,3 +113,6 @@ impl ShaderOutput {
         self.socket_type.kind
     }
 }
+
+#[cfg(test)]
+mod test;

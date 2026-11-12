@@ -89,3 +89,6 @@ impl Film {
         layout
     }
 }
+
+#[cfg(test)]
+mod test;

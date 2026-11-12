@@ -126,3 +126,6 @@ impl BufferParam {
         size || full || window || layout || name || look || self.pass != other.pass
     }
 }
+
+#[cfg(test)]
+mod test;

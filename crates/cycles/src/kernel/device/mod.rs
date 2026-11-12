@@ -5,3 +5,6 @@
 //! `device/cpu/kernel.cpp`: the functions of the CPU kernel table.
 mod cpu;
 pub use cpu::{cpu_kernels, register_cpu_kernels};
+
+#[cfg(test)]
+mod test;

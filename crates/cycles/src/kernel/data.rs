@@ -216,3 +216,6 @@ impl KernelData {
         std::array::from_fn(|row| std::array::from_fn(|column| word.get(row * 4 + column).copied().map(f32::from_bits).unwrap_or(0.0)))
     }
 }
+
+#[cfg(test)]
+mod test;

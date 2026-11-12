@@ -192,3 +192,6 @@ impl AttributePrimitive {
         constant("ATTR_PRIM_TYPES").unwrap_or(2) as usize
     }
 }
+
+#[cfg(test)]
+mod test;

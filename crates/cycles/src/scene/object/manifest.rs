@@ -34,3 +34,6 @@ impl ObjectManager {
         manifest(object.iter().map(|object| object.node.string("asset_name")))
     }
 }
+
+#[cfg(test)]
+mod test;

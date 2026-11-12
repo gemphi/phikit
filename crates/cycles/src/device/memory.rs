@@ -118,3 +118,6 @@ impl<T: Pod> DeviceVector<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

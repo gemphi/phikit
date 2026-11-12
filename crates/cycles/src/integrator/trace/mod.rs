@@ -132,3 +132,6 @@ impl<W: PathTraceWork> PathTrace<W> {
         self.cancel_requested() || host.cancelled()
     }
 }
+
+#[cfg(test)]
+pub(crate) mod test;

@@ -114,3 +114,6 @@ impl GeometryManager {
         dscene.data.set_int("bvh", "curve_subdivisions", input.param.curve_subdivision());
     }
 }
+
+#[cfg(test)]
+mod test;

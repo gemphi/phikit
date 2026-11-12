@@ -94,3 +94,6 @@ impl AttributeData {
     view!(normal, normal_mut, Normal, PackedNormal);
     view!(matrix, matrix_mut, Matrix, Transform);
 }
+
+#[cfg(test)]
+mod test;

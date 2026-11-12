@@ -110,3 +110,6 @@ impl AttributeRequestSet {
         self.request.len() != other.request.len() || !self.request.iter().all(asked)
     }
 }
+
+#[cfg(test)]
+mod test;

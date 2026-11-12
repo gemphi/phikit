@@ -130,3 +130,6 @@ impl BvhNode {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

@@ -211,3 +211,6 @@ impl BvhParam {
         self.motion_curve_step_count > 0 || self.motion_triangle_step_count > 0 || self.motion_point_step_count > 0
     }
 }
+
+#[cfg(test)]
+mod test;

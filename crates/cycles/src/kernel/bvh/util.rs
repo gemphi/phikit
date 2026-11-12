@@ -42,3 +42,6 @@ pub fn intersection_skip_self(own: &RaySelfPrimitive, object: i32, prim: i32) ->
 pub fn intersection_skip_self_shadow(own: &RaySelfPrimitive, object: i32, prim: i32) -> bool {
     intersection_skip_self(own, object, prim) || (own.light_prim == prim && own.light_object == object)
 }
+
+#[cfg(test)]
+mod test;

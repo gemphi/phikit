@@ -151,3 +151,6 @@ impl BvhObjectBinning {
         (made(around(0, half), start, half, prim), made(around(half, size), start + half, size - half, prim))
     }
 }
+
+#[cfg(test)]
+mod test;

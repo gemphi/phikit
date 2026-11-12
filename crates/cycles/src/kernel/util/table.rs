@@ -19,3 +19,6 @@ pub fn lookup_table_read(lookup_table: &[f32], x: f32, offset: usize, size: usiz
         false => (1.0 - t) * at(index) + t * at(next),
     }
 }
+
+#[cfg(test)]
+mod test;

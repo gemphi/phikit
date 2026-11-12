@@ -77,3 +77,6 @@ fn round_up_to_power_of_two(value: u32) -> u32 {
         _ => value.next_power_of_two(),
     }
 }
+
+#[cfg(test)]
+mod test;

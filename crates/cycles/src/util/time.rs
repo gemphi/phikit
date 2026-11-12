@@ -64,3 +64,6 @@ impl Clock for ManualClock {
         self.second.get()
     }
 }
+
+#[cfg(test)]
+mod test;

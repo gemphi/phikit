@@ -126,3 +126,6 @@ impl ShaderGraph {
         self.remove_node(unused);
     }
 }
+
+#[cfg(test)]
+mod test;

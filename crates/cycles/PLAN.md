@@ -42,8 +42,10 @@ these types run it is drawn in [FLOW.md](FLOW.md).
 | 5 | kernel, the rest | the kernels one by one after that: the SVM and the closures, lights and shadows, volumes, subsurface; the panorama and stereo cameras | `kernel/` | - |
 | 6 | kernel on the GPU | the WGSL twin of each kernel, the wavefront loop | `kernel/`, `wgsl/` | - |
 
-The tests are in `src/tests`, apart from the code and in the same folders,
-as Blender keeps its unit tests in a `tests` folder beside the code. A file
+The unit tests are in a `test.rs` beside the module they test (`foo.rs` has
+`foo/test.rs`, `foo/mod.rs` has `foo/test.rs`), declared in the module as
+`#[cfg(test)] mod test;`; a helper the tests of several modules share is
+in the `test.rs` of the folder that holds them. A file
 name is one word: related files share a folder (`session/buffer/`).
 
 Where the folder table below names a folder Cycles does not have (`truth`,

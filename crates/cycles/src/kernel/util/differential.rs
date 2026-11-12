@@ -25,3 +25,6 @@ pub fn differential_zero_compact() -> f32 {
 pub fn differential_make_compact(change: &Differential3) -> f32 {
     0.5 * (len(change.dx) + len(change.dy))
 }
+
+#[cfg(test)]
+mod test;

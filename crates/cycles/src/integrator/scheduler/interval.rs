@@ -74,3 +74,6 @@ impl<C: Clock> RenderScheduler<C> {
         self.denoise_param.enabled && self.denoise_param.start_sample <= 1
     }
 }
+
+#[cfg(test)]
+mod test;

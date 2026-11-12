@@ -81,3 +81,6 @@ impl ShaderGraph {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

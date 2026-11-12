@@ -32,3 +32,6 @@ pub fn reverse_integer_bits(value: u32) -> u32 {
 pub fn is_power_of_two(value: i32) -> bool {
     value >= 0 && value & value.wrapping_sub(1) == 0
 }
+
+#[cfg(test)]
+mod test;

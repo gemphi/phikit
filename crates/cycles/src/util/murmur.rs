@@ -43,3 +43,6 @@ pub fn hash_to_float(hash: u32) -> f32 {
     let exponent = ((hash >> 23) & 0xff).clamp(1, 254);
     f32::from_bits((hash & (1 << 31)) | (exponent << 23) | mantissa)
 }
+
+#[cfg(test)]
+mod test;

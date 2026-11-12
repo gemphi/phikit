@@ -180,3 +180,6 @@ pub fn graph_of(tree: &GraphSource) -> ShaderGraph {
     add_nodes(&mut graph, tree, true, &ProxyMap::new(), &ProxyMap::new());
     graph
 }
+
+#[cfg(test)]
+mod test;

@@ -71,3 +71,6 @@ pub fn ray_triangle_intersect_self(p: [f32; 3], d: [f32; 3], verts: [[f32; 3]; 3
     let max_uvw = u.max(v.max(w));
     min_uvw >= eps || max_uvw <= -eps
 }
+
+#[cfg(test)]
+mod test;

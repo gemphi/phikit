@@ -102,3 +102,6 @@ impl<C: Clock> RenderScheduler<C> {
         self.state.last_rebalance_changed || self.clock.now() - self.state.last_rebalance_time > REBALANCE_INTERVAL
     }
 }
+
+#[cfg(test)]
+mod test;

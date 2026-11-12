@@ -189,3 +189,6 @@ impl ShaderNode {
             })
     }
 }
+
+#[cfg(test)]
+mod test;

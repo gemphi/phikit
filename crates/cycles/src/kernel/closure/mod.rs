@@ -18,3 +18,6 @@ pub use alloc::{bsdf_alloc, closure_alloc, closure_sample_weight};
 pub use bsdf::{BsdfSample, bsdf_sample, closure_is_bsdf};
 pub use diffuse::{bsdf_diffuse_eval, bsdf_diffuse_sample, bsdf_diffuse_setup};
 pub use emissive::{background_setup, emission_setup, emissive_pdf, emissive_simple_eval};
+
+#[cfg(test)]
+mod test;

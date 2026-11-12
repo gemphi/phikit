@@ -79,3 +79,6 @@ pub fn max(a: [f32; 3], b: [f32; 3]) -> [f32; 3] {
 pub fn is_finite(a: [f32; 3]) -> bool {
     a.iter().all(|part| part.is_finite())
 }
+
+#[cfg(test)]
+mod test;

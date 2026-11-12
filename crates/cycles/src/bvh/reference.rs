@@ -102,3 +102,6 @@ impl BvhSpatialStorage {
         BvhSpatialStorage { right_bound: Vec::new(), bin: [bin(), bin(), bin()], new_reference: Vec::new() }
     }
 }
+
+#[cfg(test)]
+mod test;

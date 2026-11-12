@@ -37,5 +37,3 @@ pub mod session;
 pub mod truth;
 pub mod util;
 
-#[cfg(test)]
-mod tests;

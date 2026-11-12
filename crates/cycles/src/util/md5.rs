@@ -96,3 +96,6 @@ impl Md5Hash {
         self.finish().iter().map(|byte| format!("{byte:02X}")).collect()
     }
 }
+
+#[cfg(test)]
+mod test;

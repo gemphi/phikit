@@ -166,3 +166,6 @@ fn slice_start(slice: &BufferParam, big_tile: &BufferParam) -> usize {
     let rows = (slice.full_y - big_tile.full_y).max(0) as usize;
     rows * big_tile.width.max(0) as usize * big_tile.pass_stride.max(0) as usize
 }
+
+#[cfg(test)]
+mod test;

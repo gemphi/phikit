@@ -87,3 +87,6 @@ pub fn sobol_burley_sample_4d(index: u32, dimension_set: u32, mut seed: u32, mas
         sobol_burley(index, 3, seed ^ 0x1524_cc56),
     ]
 }
+
+#[cfg(test)]
+mod test;

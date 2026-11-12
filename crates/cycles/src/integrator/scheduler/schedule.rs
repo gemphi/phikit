@@ -153,3 +153,6 @@ impl<C: Clock> RenderScheduler<C> {
         work.full_write = true;
     }
 }
+
+#[cfg(test)]
+mod test;

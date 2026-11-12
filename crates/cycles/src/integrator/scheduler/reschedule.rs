@@ -66,3 +66,6 @@ impl<C: Clock> RenderScheduler<C> {
         work.display.update = has_rendered_sample && !self.state.full_frame_was_written;
     }
 }
+
+#[cfg(test)]
+mod test;

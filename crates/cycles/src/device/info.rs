@@ -86,3 +86,6 @@ impl Default for DeviceInfo {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

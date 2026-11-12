@@ -24,3 +24,6 @@ impl GeometryManager {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

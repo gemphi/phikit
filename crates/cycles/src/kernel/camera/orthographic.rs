@@ -35,3 +35,6 @@ pub fn camera_sample_orthographic(kg: &KernelGlobal, raster_xy: [f32; 2], rand_l
     ray.tmax = cam.cliplength;
     [1.0; 3]
 }
+
+#[cfg(test)]
+mod test;

@@ -161,3 +161,6 @@ impl ObjectManager {
         dscene.object_flag[index] = mask;
     }
 }
+
+#[cfg(test)]
+mod test;

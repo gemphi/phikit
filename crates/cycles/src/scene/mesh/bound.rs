@@ -74,3 +74,6 @@ impl Mesh {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

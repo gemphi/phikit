@@ -83,3 +83,6 @@ impl Renderer for SceneRenderer {
         Ok(image)
     }
 }
+
+#[cfg(test)]
+mod test;

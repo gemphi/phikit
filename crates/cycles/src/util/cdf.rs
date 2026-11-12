@@ -69,3 +69,6 @@ pub fn cdf_inverted(resolution: usize, from: f32, to: f32, functor: impl Fn(f32)
     let cdf = cdf_evaluate(resolution - 1, from, to, functor);
     cdf_invert(resolution, from, to, &cdf, make_symmetric)
 }
+
+#[cfg(test)]
+mod test;

@@ -219,3 +219,6 @@ impl GeometryManager {
         dscene.attribute_normal.clear();
     }
 }
+
+#[cfg(test)]
+mod test;

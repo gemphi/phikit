@@ -17,3 +17,6 @@ pub trait DeviceQueue: Send {
     /// `synchronize`: wait for every kernel enqueued; the first error.
     fn synchronize(&mut self) -> Result<(), DeviceError>;
 }
+
+#[cfg(test)]
+mod test;

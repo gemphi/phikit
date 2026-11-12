@@ -33,3 +33,6 @@ pub fn filter_table(filter: &str, width: f32) -> Vec<f32> {
     };
     cdf_inverted(size, 0.0, width * 0.5, |x| function(x, width), true)
 }
+
+#[cfg(test)]
+mod test;

@@ -25,3 +25,6 @@ pub fn bvh_reference_compare(dim: usize, a: &BvhReference, b: &BvhReference) -> 
 pub fn bvh_reference_sort(reference: &mut [BvhReference], dim: usize) {
     reference.sort_by(|a, b| bvh_reference_compare(dim, a, b));
 }
+
+#[cfg(test)]
+mod test;

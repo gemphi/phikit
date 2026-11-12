@@ -131,3 +131,6 @@ impl<C: Clock> RenderScheduler<C> {
         (resolution_divider / self.pixel_size).max(1).min(self.sample_count.min(4))
     }
 }
+
+#[cfg(test)]
+mod test;

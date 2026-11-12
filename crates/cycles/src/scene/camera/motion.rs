@@ -66,3 +66,6 @@ impl Camera {
         self.node.set("fov_pre", Value::Float(fov));
     }
 }
+
+#[cfg(test)]
+mod test;

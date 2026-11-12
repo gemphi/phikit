@@ -94,3 +94,6 @@ impl KernelCamera {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

@@ -71,3 +71,6 @@ impl Shader {
         self.id | smooth | flag("SHADER_CAST_SHADOW")
     }
 }
+
+#[cfg(test)]
+mod test;

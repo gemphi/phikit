@@ -243,3 +243,6 @@ impl Geometry {
         result
     }
 }
+
+#[cfg(test)]
+pub(crate) mod test;

@@ -153,3 +153,6 @@ impl BvhSpatialSplit {
         (BvhRange::new(left_bound, left_start, left_end - left_start), BvhRange::new(right_bound, right_start, right_end - right_start))
     }
 }
+
+#[cfg(test)]
+mod test;

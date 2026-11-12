@@ -166,3 +166,6 @@ impl<'a> BvhBuild<'a> {
         BvhNode::inner(range.bound, first, second)
     }
 }
+
+#[cfg(test)]
+mod test;

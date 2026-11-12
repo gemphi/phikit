@@ -40,7 +40,7 @@ will provide, because nothing in the contract names either:
 To compare a kernel: allocate the inputs with `DeviceVector`, copy them to
 each device, enqueue the kernel with the same arguments on each queue,
 `synchronize`, `copy_from_device`, and compare the host copies (equal for
-integer data, within a tolerance for floats). `tests/device/queue.rs` does
+integer data, within a tolerance for floats). `device/queue/test.rs` does
 this on the CPU with a stand-in kernel; the wgpu run joins it when
 `WgpuDevice` exists, as one more `Box<dyn Device>` in the same test.
 

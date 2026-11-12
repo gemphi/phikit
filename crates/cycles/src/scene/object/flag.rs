@@ -91,3 +91,6 @@ impl ObjectManager {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

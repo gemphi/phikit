@@ -236,3 +236,6 @@ pub fn read_model(path: &Path) -> Result<SceneModel, String> {
 }
 
 pub use phiphx::scene::SceneModel as Model;
+
+#[cfg(test)]
+mod test;

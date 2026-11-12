@@ -4,7 +4,7 @@
 //! label, a shading point and a shader, the numbers a kernel draws by, and
 //! the limits. `data/constant.tsv` holds every enumerator of that header,
 //! written by `tool/constant.py`; the constants here are the ones the CPU
-//! kernels use, named as there, and `tests/kernel/bit.rs` checks each
+//! kernels use, named as there, and `kernel/bit/test.rs` checks each
 //! against the table. The ray and the hit of the same header are `ray.rs`
 //! and `intersection.rs`; the shading point is `shader.rs`.
 macro_rules! constants {
@@ -92,3 +92,6 @@ pub const SVM_STACK_SIZE: usize = 255;
 /// The most closures a shading point holds on the CPU here. Cycles sizes
 /// it by `kernel_data.max_closures`; gate 1's shaders have one.
 pub const MAX_CLOSURE: usize = 8;
+
+#[cfg(test)]
+mod test;

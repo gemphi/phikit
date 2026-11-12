@@ -39,3 +39,6 @@ pub fn scene_intersect(kg: &KernelGlobal, ray: &Ray, visibility: u32, isect: &mu
 pub fn scene_intersect_shadow(kg: &KernelGlobal, ray: &Ray, visibility: u32) -> bool {
     scene_intersect(kg, ray, visibility, &mut Intersection::default())
 }
+
+#[cfg(test)]
+pub(crate) mod test;

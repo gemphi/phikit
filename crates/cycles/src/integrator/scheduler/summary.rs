@@ -110,3 +110,6 @@ impl<C: Clock> RenderScheduler<C> {
         line.concat()
     }
 }
+
+#[cfg(test)]
+mod test;

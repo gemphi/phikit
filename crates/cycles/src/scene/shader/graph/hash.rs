@@ -35,3 +35,6 @@ impl ShaderGraph {
         self.displacement_hash = md5.hex();
     }
 }
+
+#[cfg(test)]
+mod test;

@@ -59,3 +59,6 @@ impl Scene {
         dscene
     }
 }
+
+#[cfg(test)]
+mod test;

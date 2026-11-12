@@ -22,7 +22,7 @@ mod error;
 mod image;
 mod render;
 mod scene;
-mod verdict;
+pub(crate) mod verdict;
 pub use allowance::Allowance;
 pub use compare::{Comparison, compare, diff_image};
 pub use error::TruthError;

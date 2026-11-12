@@ -162,3 +162,6 @@ impl TileManager {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

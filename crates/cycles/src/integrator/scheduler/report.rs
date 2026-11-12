@@ -140,3 +140,6 @@ impl<C: Clock> RenderScheduler<C> {
         self.state.end_render_time = now;
     }
 }
+
+#[cfg(test)]
+mod test;

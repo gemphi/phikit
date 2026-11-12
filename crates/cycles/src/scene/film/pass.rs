@@ -186,3 +186,6 @@ impl Film {
         volume.into_iter().filter(|(wanted, _, _)| *wanted).for_each(|(_, name, mode)| pass.push(named_pass(name, mode)));
     }
 }
+
+#[cfg(test)]
+mod test;

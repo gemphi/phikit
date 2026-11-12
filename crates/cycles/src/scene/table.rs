@@ -75,3 +75,6 @@ impl LookupTableSet {
         self.table.retain(|table| table.offset != at);
     }
 }
+
+#[cfg(test)]
+mod test;

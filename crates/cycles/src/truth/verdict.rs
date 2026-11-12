@@ -82,3 +82,6 @@ pub fn judge(scene: &TestScene, renderer: &mut impl Renderer, out: &Path) -> Ver
     }
     verdict
 }
+
+#[cfg(test)]
+pub(crate) mod test;

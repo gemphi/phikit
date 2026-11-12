@@ -62,3 +62,6 @@ impl BvhObjectSplit {
         (left, right)
     }
 }
+
+#[cfg(test)]
+mod test;

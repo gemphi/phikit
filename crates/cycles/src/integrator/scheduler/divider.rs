@@ -55,3 +55,6 @@ impl<C: Clock> RenderScheduler<C> {
 fn ceil_to_int(value: f64) -> i32 {
     (value as f32).ceil() as i32
 }
+
+#[cfg(test)]
+mod test;

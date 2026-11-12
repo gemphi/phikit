@@ -54,3 +54,6 @@ pub struct Ray {
     /// `self`.
     pub own: RaySelfPrimitive,
 }
+
+#[cfg(test)]
+mod test;

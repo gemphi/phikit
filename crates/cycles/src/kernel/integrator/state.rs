@@ -10,8 +10,8 @@
 //! a `uint16_t` is a word, a `packed_float3` three. So the struct is `Pod`
 //! and a path state can live in a block of a device, and
 //! [`StateLayout`](super::layout::StateLayout), read from `data/state.tsv`
-//! (`tool/state.py`), says where each member is; `tests/kernel/integrator/
-//! state.rs` checks the struct against it. The members of a feature a gate
+//! (`tool/state.py`), says where each member is; `kernel/integrator/state/
+//! test.rs` checks the struct against it. The members of a feature a gate
 //! does not have (path guiding, light passes, MNEE, volumes, subsurface)
 //! are left out.
 use bytemuck::{Pod, Zeroable};
@@ -134,3 +134,6 @@ impl Default for IntegratorState {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod test;

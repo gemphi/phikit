@@ -238,3 +238,6 @@ impl Integrator {
         off.into_iter().filter(|(left_out, _)| *left_out).fold(0, |mask, (_, name)| mask | flag(name))
     }
 }
+
+#[cfg(test)]
+mod test;

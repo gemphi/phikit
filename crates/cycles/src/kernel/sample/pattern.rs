@@ -100,3 +100,6 @@ pub fn path_rng_pixel_init(s: &SamplerData, x: u32, y: u32) -> u32 {
         _ => nested_uniform_scramble_base4(morton2d(x, y), s.seed),
     }
 }
+
+#[cfg(test)]
+mod test;

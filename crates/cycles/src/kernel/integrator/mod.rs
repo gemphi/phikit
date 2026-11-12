@@ -28,3 +28,6 @@ pub use megakernel::integrator_megakernel;
 pub use path::{RngState, integrator_path_init, integrator_path_next, integrator_path_terminate, path_state_continuation_probability, path_state_init, path_state_init_integrator, path_state_next, path_state_ray_visibility, path_state_rng_1d, path_state_rng_2d, path_state_rng_3d, path_state_rng_load};
 pub use shade::{integrator_eval_background_shader, integrator_shade_background, integrator_shade_surface, is_light_shader_visible_to_path};
 pub use state::{IntegratorState, IsectState, PathState, RayState, ShadowPathState};
+
+#[cfg(test)]
+mod test;

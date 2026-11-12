@@ -169,3 +169,6 @@ impl KernelGlobal {
         self.scene.object_flag[object as usize]
     }
 }
+
+#[cfg(test)]
+mod test;

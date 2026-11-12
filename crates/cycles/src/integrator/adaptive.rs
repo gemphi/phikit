@@ -33,3 +33,6 @@ impl AdaptiveSampling {
         self.enabled && sample > self.min_sample && (sample & (self.adaptive_step - 1)) == (self.adaptive_step - 1)
     }
 }
+
+#[cfg(test)]
+mod test;

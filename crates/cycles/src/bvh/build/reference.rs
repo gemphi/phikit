@@ -115,3 +115,6 @@ impl BvhBuild<'_> {
         (range, gathered.reference)
     }
 }
+
+#[cfg(test)]
+mod test;

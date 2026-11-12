@@ -47,3 +47,6 @@ pub fn bvh_aligned_node_intersect(kg: &KernelGlobal, p: [f32; 3], idir: [f32; 3]
     let mask = u32::from(far0 >= near0 && seen(0)) | (u32::from(far1 >= near1 && seen(1)) << 1);
     (mask, [near0, near1])
 }
+
+#[cfg(test)]
+mod test;

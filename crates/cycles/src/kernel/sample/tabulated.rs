@@ -72,3 +72,6 @@ pub fn tabulated_sobol_sample_2d(s: &SamplerData, lut: &[f32], sample: u32, rng_
 pub fn tabulated_sobol_sample_3d(s: &SamplerData, lut: &[f32], sample: u32, rng_hash: u32, dimension: u32) -> [f32; 3] {
     tabulated_sample::<3>(s, lut, sample, rng_hash, dimension)
 }
+
+#[cfg(test)]
+mod test;

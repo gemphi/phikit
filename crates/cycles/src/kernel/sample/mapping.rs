@@ -63,3 +63,6 @@ pub fn regular_polygon_sample(corners: f32, rotation: f32, rand: [f32; 2]) -> [f
     let (sin, cos) = (rotation + corner * 2.0 * angle).sin_cos();
     [cos * point[0] - sin * point[1], sin * point[0] + cos * point[1]]
 }
+
+#[cfg(test)]
+mod test;

@@ -50,3 +50,6 @@ fn halton(a: &mut i32, b: &mut i32, base: i32) -> f32 {
     }
     *a as f32 / *b as f32
 }
+
+#[cfg(test)]
+mod test;

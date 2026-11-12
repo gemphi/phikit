@@ -126,3 +126,6 @@ impl ObjectManager {
         dscene.object_prim_offset.clear();
     }
 }
+
+#[cfg(test)]
+mod test;

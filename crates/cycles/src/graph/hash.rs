@@ -42,3 +42,6 @@ impl Node {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

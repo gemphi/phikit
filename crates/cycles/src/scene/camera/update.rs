@@ -230,3 +230,6 @@ impl Camera {
         data.set_float4("cam", "dy", [self.dy[0], self.dy[1], self.dy[2], 0.0]);
     }
 }
+
+#[cfg(test)]
+mod test;

@@ -80,3 +80,6 @@ pub fn compile(surface: &Surface) -> Vec<u32> {
     out.extend([end, end]);
     out
 }
+
+#[cfg(test)]
+mod test;

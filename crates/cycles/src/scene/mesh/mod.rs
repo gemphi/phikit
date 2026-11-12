@@ -241,3 +241,6 @@ impl Mesh {
         node.int("subdivision_type") != 0 && (self.geometry.position_is_modified() || diced)
     }
 }
+
+#[cfg(test)]
+pub(crate) mod test;

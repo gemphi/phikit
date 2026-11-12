@@ -50,3 +50,6 @@ impl ShaderGraph {
         self.remove_node(removed);
     }
 }
+
+#[cfg(test)]
+mod test;

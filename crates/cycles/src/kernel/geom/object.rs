@@ -70,3 +70,6 @@ pub fn bvh_instance_pop(ray: &Ray) -> ([f32; 3], [f32; 3], [f32; 3]) {
     let dir = bvh_clamp_direction(ray.d);
     (ray.p, dir, bvh_inverse_direction(dir))
 }
+
+#[cfg(test)]
+mod test;

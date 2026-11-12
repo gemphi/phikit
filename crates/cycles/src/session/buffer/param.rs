@@ -93,3 +93,6 @@ impl BufferParam {
         self.stride = self.width;
     }
 }
+
+#[cfg(test)]
+mod test;

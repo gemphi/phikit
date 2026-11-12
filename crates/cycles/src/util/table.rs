@@ -8,3 +8,6 @@
 pub fn row_list(text: &'static str) -> impl Iterator<Item = Vec<&'static str>> {
     text.lines().filter(|line| !line.trim().is_empty() && !line.starts_with('#')).map(|line| line.split('\t').collect())
 }
+
+#[cfg(test)]
+mod test;

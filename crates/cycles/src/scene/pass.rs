@@ -172,3 +172,6 @@ impl Pass {
         self.info().is_written
     }
 }
+
+#[cfg(test)]
+mod test;

@@ -198,3 +198,6 @@ impl ShaderGraph {
         self.finalized = true;
     }
 }
+
+#[cfg(test)]
+mod test;

@@ -66,3 +66,6 @@ impl BvhSpatialSplit {
         (part(left), part(right))
     }
 }
+
+#[cfg(test)]
+mod test;

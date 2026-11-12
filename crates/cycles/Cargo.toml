@@ -16,7 +16,8 @@ image = { workspace = true }
 # The join reads a .blend through phiphx's SceneModel; only blender/model.rs names it.
 phiphx = { path = "../phiphx", default-features = false }
 
-# The tests are in `src/tests`, apart from the code and in the same folders.
+# The unit tests are in `test.rs` beside the module they test (`foo.rs` has
+# `foo/test.rs`), declared `#[cfg(test)] mod test;`.
 
 [lints]
 workspace = true

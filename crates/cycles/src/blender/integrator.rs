@@ -78,3 +78,6 @@ pub fn sync_film(source: &SceneSource, scene: &mut Scene) {
     node.set("filter_width", Value::Float(width));
     scene.background.transparent = source.film_transparent;
 }
+
+#[cfg(test)]
+mod test;

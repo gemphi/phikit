@@ -58,3 +58,6 @@ impl Integrator {
         }
     }
 }
+
+#[cfg(test)]
+mod test;

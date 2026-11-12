@@ -23,3 +23,6 @@ pub struct KernelWorkTile {
     pub path_index_offset: i32,
     pub work_size: i32,
 }
+
+#[cfg(test)]
+mod test;

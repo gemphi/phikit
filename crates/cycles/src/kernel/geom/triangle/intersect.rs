@@ -24,3 +24,6 @@ pub fn triangle_intersect(kg: &KernelGlobal, isect: &mut Intersection, p: [f32; 
     *isect = Intersection { t: hit.t, u: hit.u, v: hit.v, prim, object, kind: kg.bvh.primitive_triangle as i32 };
     true
 }
+
+#[cfg(test)]
+mod test;

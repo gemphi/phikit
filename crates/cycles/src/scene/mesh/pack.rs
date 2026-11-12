@@ -58,3 +58,6 @@ impl Mesh {
         constant(name).unwrap_or(0) as i32
     }
 }
+
+#[cfg(test)]
+mod test;
