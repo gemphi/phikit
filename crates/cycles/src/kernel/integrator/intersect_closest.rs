@@ -11,9 +11,8 @@ use super::path_state::{integrator_path_next, integrator_path_terminate, path_st
 use super::state::IntegratorState;
 use crate::kernel::bvh::scene_intersect;
 use crate::kernel::constant;
-use crate::kernel::globals::KernelGlobals;
-use crate::kernel::types::{Intersection, NONE, PATH_RAY_TERMINATE_ON_NEXT_SURFACE, PRNG_TERMINATE, SD_HAS_EMISSION, SHADER_MASK};
-use crate::kernel::DeviceKernel;
+use crate::kernel::types::{NONE, PATH_RAY_TERMINATE_ON_NEXT_SURFACE, PRNG_TERMINATE, SD_HAS_EMISSION, SHADER_MASK};
+use crate::kernel::{DeviceKernel, Intersection, KernelGlobals};
 
 /// `integrator_intersect_skip_lights`: when direct light is filtered out
 /// for baking, the lights seen on the first bounce are skipped too.
@@ -67,10 +66,10 @@ pub fn integrator_intersect_closest(kg: &KernelGlobals, state: &mut IntegratorSt
     let visibility = path_state_ray_visibility(state);
     let (last_prim, last_object) = (state.isect.prim, state.isect.object);
     // The primitive the ray left is not hit again.
-    ray.kind.object = last_object;
-    ray.kind.prim = last_prim;
-    ray.kind.light_object = NONE;
-    ray.kind.light_prim = NONE;
+    ray.own.object = last_object;
+    ray.own.prim = last_prim;
+    ray.own.light_object = NONE;
+    ray.own.light_prim = NONE;
     let mut isect = Intersection::default();
     let hit = scene_intersect(kg, &ray, visibility, &mut isect);
     if !hit {

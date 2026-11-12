@@ -23,7 +23,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use crate::device::{CpuKernelFn, CpuKernels, CpuMemory, DeviceError, KernelArgument};
-use crate::kernel::globals::KernelGlobals;
+use crate::kernel::KernelGlobals;
 use crate::kernel::integrator::*;
 use crate::kernel::{DeviceKernel, KernelWorkTile};
 

@@ -11,7 +11,7 @@ use super::path_state::integrator_path_terminate;
 use super::state::IntegratorState;
 use crate::kernel::film::film_write_background;
 use crate::kernel::geom::shader_setup_from_background;
-use crate::kernel::globals::KernelGlobals;
+use crate::kernel::KernelGlobals;
 use crate::kernel::svm::svm_eval_nodes;
 use crate::kernel::types::*;
 

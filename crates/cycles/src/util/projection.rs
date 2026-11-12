@@ -3,7 +3,7 @@
 //! Ported from `intern/cycles/util/projection.h` (`ProjectionTransform`,
 //! `projection_identity`, `operator*`, `projection_perspective`,
 //! `projection_orthographic`, `projection_inverse`, `transform_perspective`,
-//! `transform_perspective_direction`) and `util/projection_inverse.h`
+//! `transform_perspective_direction`, `polar_to_cartesian`) and `util/projection_inverse.h`
 //! (`projection_inverse_impl`, adapted there from Industrial Light & Magic's
 //! Imath under the BSD 3-clause licence).
 
@@ -150,4 +150,9 @@ impl Mul<ProjectionTransform> for Transform {
     fn mul(self, b: ProjectionTransform) -> ProjectionTransform {
         ProjectionTransform::from(self) * b
     }
+}
+
+/// `polar_to_cartesian`: the point at `r` from the middle, turned by `phi`.
+pub fn polar_to_cartesian(r: f32, phi: f32) -> [f32; 2] {
+    [r * phi.cos(), r * phi.sin()]
 }

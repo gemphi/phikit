@@ -16,7 +16,8 @@
 //! are left out.
 use bytemuck::{Pod, Zeroable};
 
-use crate::kernel::types::{Intersection, NONE, Ray, RaySelf};
+use crate::kernel::types::NONE;
+use crate::kernel::{Intersection, Ray, RaySelfPrimitive};
 
 /// `IntegratorStateCPU::path`.
 #[repr(C)]
@@ -103,7 +104,7 @@ impl IntegratorState {
     /// `integrator_state_read_ray`.
     pub fn read_ray(&self) -> Ray {
         let r = &self.ray;
-        Ray { p: r.p, d: r.d, tmin: r.tmin, tmax: r.tmax, time: r.time, dp: r.dp, dd: r.dd, kind: RaySelf::default() }
+        Ray { p: r.p, d: r.d, tmin: r.tmin, tmax: r.tmax, time: r.time, dp: r.dp, dd: r.dd, own: RaySelfPrimitive::default() }
     }
 
     /// `integrator_state_write_ray`.

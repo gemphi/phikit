@@ -6,8 +6,8 @@
 //! Ray differentials, the `dPdu`/`dPdv` and motion are not set.
 use super::object::{object_normal_transform, object_position_transform};
 use super::triangle::{triangle_normal, triangle_smooth_normal};
-use crate::kernel::globals::KernelGlobals;
-use crate::kernel::types::{Intersection, Ray, SD_BACKFACING, SD_OBJECT_TRANSFORM_APPLIED, SHADER_MASK, SHADER_SMOOTH_NORMAL, ShaderData};
+use crate::kernel::types::{SD_BACKFACING, SD_OBJECT_TRANSFORM_APPLIED, SHADER_MASK, SHADER_SMOOTH_NORMAL, ShaderData};
+use crate::kernel::{Intersection, KernelGlobals, Ray};
 use crate::util::vector::dot;
 
 /// `shader_setup_from_ray`: the shading point of a triangle hit. The hit

@@ -4,6 +4,28 @@ The folders to build and the gates each must pass. Gate 0 (the judge) is built; 
 Diagrams are in [ARCHITECTURE.md](ARCHITECTURE.md), requirements in
 [SPECS.md](SPECS.md). The folders and the order are suggested, not decided.
 
+## Where it stands
+
+The crate renders no image yet. As of 12 November 2026:
+
+| | Done, tested | Not done |
+|---|---|---|
+| session | the session loop, buffers, passes, tiles | tile files on disk, the session thread |
+| integrator | the scheduler, adaptive sampling, tile sizes, the work balancer, the path tracer's host loop | the pass accessor, the output and display drivers, the denoiser, path guiding; `PathTraceWorkCPU` |
+| graph | every node type and socket of Cycles | - |
+| scene | integrator, film, camera with motion, attributes, meshes, objects, the shader graph | `Shader` and its manager, the SVM compiler, what each node class compiles to; lights, images, background, hair, points, volumes, baking |
+| bvh | the BVH2 build, spatial splits, instances, refit | curves and points, unaligned nodes |
+| kernel | the camera's ray; the tree walked to the nearest triangle, into instances | the path state, the sample's random numbers, shading (the SVM, closures), lights and shadows, the film written, volumes, subsurface; motion triangles; panorama cameras |
+| to see a picture | - | a scene loaded from a `.blend` (through phiphx), an image file written, a program to run it |
+
+What is left before a first, plain image, in order: the path state and
+`init_from_camera`; `intersect_closest`; a first `shade_background` and
+`shade_surface` with one diffuse and one emission closure; the film
+written; the megakernel's switch and `PathTraceWorkCPU`; a scene from
+phiphx; an image file. An image that matches an artist's render needs the
+SVM with the Principled BSDF, image textures, lights and the world on top
+of that.
+
 ## Steps, top to bottom
 
 The port follows Cycles' own hierarchy, from the session down to the
@@ -34,7 +56,10 @@ these types run it is drawn in [FLOW.md](FLOW.md).
 | 5a | integrator | `PathTraceWorkCPU`: the CPU work over the CPU device, one megakernel enqueue for the slice's pixels | `integrator/trace/cpu.rs` | done |
 | 5a | truth, gate 0 | `oiiotool --diff` as Blender runs it, the category allowances, the verdict and diff images, the session renderer | `truth/` | done |
 | 5a | blender, the join | `blender/` as phiphx's `SceneModel` into a `Scene`: camera, meshes (triangles, normals, UVs), objects, world colour, a diffuse or emission surface for each material; `Scene` | `blender/`, `scene/scene.rs` | done |
-| 5 | kernel | the path state, then the kernels one by one, the CPU megakernel first | `kernel/` | next: see "Gate 1 starts with" |
+| 5 | kernel, the camera's ray | `KernelGlobals` as what a ray reads; `Ray`; `camera_sample` for the perspective and the orthographic camera with the lens, the pixel filter, the shutter, a moving camera; the disk and polygon samples, the lookup table read, compact differentials | `kernel/global.rs`, `ray.rs`, `kernel/camera/`, `kernel/sample/`, `kernel/util/` | done |
+| 5 | kernel, the tree walked | `scene_intersect` by Cycles' own tree: the inner nodes, the leaves, instances pushed and popped, a triangle hit; what a ray starts from skipped, visibility | `kernel/bvh/`, `kernel/geom/`, `kernel/intersection.rs`, `util/intersect.rs` | done |
+| 5 | kernel, to a first image | the path state (`state_template.h` as a record layout); `init_from_camera` with Sobol-Burley and tabulated Sobol; `intersect_closest`; `shade_background` and `shade_surface` with a diffuse and an emission closure, the SVM nodes they need; the film written; the CPU megakernel; `PathTraceWorkCPU` running it; a scene from phiphx; an image file | `kernel/integrator/`, `kernel/sample/`, `kernel/closure/`, `kernel/svm/`, `kernel/film/`, `kernel/device/`, `examples/gate1.rs` | done |
+| 5 | kernel, the rest | the kernels one by one after that: the SVM and the closures, lights and shadows, volumes, subsurface; the panorama and stereo cameras | `kernel/` | - |
 | 6 | kernel on the GPU | the WGSL twin of each kernel, the wavefront loop | `kernel/`, `wgsl/` | - |
 
 The tests are in `src/tests`, apart from the code and in the same folders,

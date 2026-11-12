@@ -29,7 +29,7 @@ pub use motion::{DecomposedTransform, compose, motion_array_interpolate, motion_
 pub use murmur::{hash_to_float, murmur_hash3};
 pub use normal::PackedNormal;
 pub use param::param_default;
-pub use projection::ProjectionTransform;
+pub use projection::{ProjectionTransform, polar_to_cartesian};
 pub use table::row_list;
 pub use transform::{BoundBox2D, Transform};
 #[cfg(not(target_family = "wasm"))]

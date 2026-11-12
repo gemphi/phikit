@@ -8,12 +8,11 @@
 //! texture cache), nor is the pixel skipped for adaptive sampling.
 use super::path_state::{integrator_path_init, path_state_init, path_state_init_integrator};
 use super::state::IntegratorState;
-use crate::kernel::camera::camera_sample;
+use crate::kernel::camera::{CameraType, camera_sample};
 use crate::kernel::film::film_write_sample;
-use crate::kernel::globals::KernelGlobals;
 use crate::kernel::sample::{path_rng_2d, path_rng_3d, path_rng_pixel_init};
-use crate::kernel::types::{PRNG_FILTER, PRNG_LENS_TIME, Ray};
-use crate::kernel::{DeviceKernel, KernelWorkTile, constant};
+use crate::kernel::types::{PRNG_FILTER, PRNG_LENS_TIME};
+use crate::kernel::{DeviceKernel, KernelGlobals, KernelWorkTile, Ray};
 
 /// `integrate_camera_sample`: the camera ray of the pixel for the sample,
 /// and the throughput it starts with.
@@ -29,7 +28,7 @@ fn integrate_camera_sample(kg: &KernelGlobals, sample: i32, x: i32, y: i32, rng_
     // moving and out of focus.
     let use_motionblur = kg.cam.shuttertime != -1.0;
     let use_dof = kg.cam.aperturesize > 0.0;
-    let use_custom_cam = kg.cam.kind as i64 == constant("CAMERA_CUSTOM").unwrap_or(3);
+    let use_custom_cam = kg.cam.kind == Some(CameraType::Custom);
     let rand_time_lens = match use_motionblur || use_dof || use_custom_cam {
         true => path_rng_3d(sampler, &kg.scene.sample_pattern_lut, rng_pixel, sample as u32, PRNG_LENS_TIME),
         false => [0.0; 3],

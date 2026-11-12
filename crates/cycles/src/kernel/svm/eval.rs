@@ -6,7 +6,7 @@
 //! allocates a closure from it.
 use super::closure::{closure_background, closure_bsdf, closure_emission, closure_set_weight};
 use super::{ShaderNodeType, node_of};
-use crate::kernel::globals::KernelGlobals;
+use crate::kernel::KernelGlobals;
 use crate::kernel::types::{SHADER_MASK, SVM_STACK_SIZE, ShaderData};
 
 /// `SVMStackOffset`: a byte; 255 is `SVM_STACK_INVALID`, not on the stack.

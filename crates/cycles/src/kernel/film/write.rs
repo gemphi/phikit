@@ -4,7 +4,7 @@
 //! pixel of a path in the render buffer and the writes into a pass. A path
 //! owns its pixel while it runs, so a write is a plain add (Cycles' CPU
 //! build does not define `__ATOMIC_PASS_WRITE__` either).
-use crate::kernel::globals::KernelGlobals;
+use crate::kernel::KernelGlobals;
 use crate::kernel::integrator::IntegratorState;
 
 /// `film_pass_pixel_render_buffer`: the floats of the path's pixel

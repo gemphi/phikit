@@ -10,7 +10,7 @@ use super::shade_background::integrator_shade_background;
 use super::shade_surface::integrator_shade_surface;
 use super::state::IntegratorState;
 use crate::kernel::DeviceKernel;
-use crate::kernel::globals::KernelGlobals;
+use crate::kernel::KernelGlobals;
 
 /// `integrator_megakernel`. `buffer` is the floats of the path's pixel.
 /// A queued kernel that is not ported ends the path.

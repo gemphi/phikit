@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `intern/cycles/kernel/types.h`: the flags of a path and of a
-//! shading point, and the ray, the intersection and the shader data a
-//! kernel passes about. `data/constant.tsv` holds every enumerator of that
+//! shading point, and the shader data a kernel passes about (the ray and
+//! the intersection are `ray.rs` and `intersection.rs`). `data/constant.tsv` holds every enumerator of that
 //! header, written by `tool/constant.py`; the constants here are the ones
 //! the CPU kernels use, named as there, and `tests/kernel/types.rs` checks
 //! each against the table.
@@ -92,52 +92,6 @@ pub const SVM_STACK_SIZE: usize = 255;
 /// The most closures a shading point holds on the CPU here. Cycles sizes
 /// it by `kernel_data.max_closures`; gate 1's shaders have one.
 pub const MAX_CLOSURE: usize = 8;
-
-/// `RaySelfPrimitives`: the primitives a ray must not hit again.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct RaySelf {
-    pub object: i32,
-    pub prim: i32,
-    pub light_object: i32,
-    pub light_prim: i32,
-}
-
-impl Default for RaySelf {
-    fn default() -> Self {
-        Self { object: NONE, prim: NONE, light_object: NONE, light_prim: NONE }
-    }
-}
-
-/// `Ray`.
-#[derive(Debug, Clone, Copy, PartialEq, Default)]
-pub struct Ray {
-    pub p: [f32; 3],
-    pub d: [f32; 3],
-    pub tmin: f32,
-    pub tmax: f32,
-    pub time: f32,
-    pub dp: f32,
-    pub dd: f32,
-    pub kind: RaySelf,
-}
-
-/// `Intersection`: what a ray hit, with `u` and `v` the barycentric
-/// coordinates of the hit in the triangle.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Intersection {
-    pub t: f32,
-    pub u: f32,
-    pub v: f32,
-    pub prim: i32,
-    pub object: i32,
-    pub kind: i32,
-}
-
-impl Default for Intersection {
-    fn default() -> Self {
-        Self { t: 0.0, u: 0.0, v: 0.0, prim: NONE, object: NONE, kind: 0 }
-    }
-}
 
 /// `ShaderClosure`: a weight, the chance it is sampled and a closure
 /// type; `n` is the normal a BSDF uses (`DiffuseBsdf` adds nothing else).

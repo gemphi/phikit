@@ -18,7 +18,7 @@ use crate::kernel::bvh::ray_offset;
 use crate::kernel::closure::{bsdf_sample, closure_is_bsdf, emissive_simple_eval};
 use crate::kernel::film::film_write_surface_emission;
 use crate::kernel::geom::shader_setup_from_ray;
-use crate::kernel::globals::KernelGlobals;
+use crate::kernel::KernelGlobals;
 use crate::kernel::svm::svm_eval_nodes;
 use crate::kernel::types::*;
 use crate::kernel::{DeviceKernel, constant, geom};

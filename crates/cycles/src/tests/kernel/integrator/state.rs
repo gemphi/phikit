@@ -4,7 +4,8 @@
 use std::mem::{offset_of, size_of};
 
 use crate::kernel::integrator::*;
-use crate::kernel::types::{Intersection, NONE, Ray};
+use crate::kernel::types::NONE;
+use crate::kernel::{Intersection, Ray};
 
 /// Each member of a struct, at the word the generated layout puts it.
 macro_rules! members {

@@ -7,7 +7,7 @@
 //! (`path_state_rng_*`, 330-400). Volumes, ray portals, path guiding and
 //! the shadow catcher are not ported.
 use super::state::IntegratorState;
-use crate::kernel::globals::KernelGlobals;
+use crate::kernel::KernelGlobals;
 use crate::kernel::sample::{path_rng_1d, path_rng_2d, path_rng_3d};
 use crate::kernel::types::*;
 use crate::kernel::DeviceKernel;

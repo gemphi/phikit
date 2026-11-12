@@ -10,7 +10,7 @@
 //! `film_pass_pixel_render_buffer` of `write.rs` finds it).
 
 use super::write::{film_write_pass_float4, film_write_pass_spectrum};
-use crate::kernel::globals::KernelGlobals;
+use crate::kernel::KernelGlobals;
 use crate::kernel::integrator::IntegratorState;
 
 /// `ensure_finite`: a part that is not finite is zero.

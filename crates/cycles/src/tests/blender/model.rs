@@ -83,9 +83,12 @@ fn an_emission_scene_has_an_emission_shader_and_a_diffuse_one() {
     assert!(scene.surface.contains(&Surface::Diffuse { color: [0.5; 3] }));
     assert!(scene.shader.iter().enumerate().all(|(place, shader)| shader.id as usize == place));
     assert_eq!(scene.shader.iter().filter(|shader| shader.emission).count(), 1);
-    // The emitter's triangles name the emission shader.
-    let emitter = scene.surface.iter().position(|surface| matches!(surface, Surface::Emission { .. })).unwrap() as i32;
-    assert!(scene.mesh.iter().any(|mesh| mesh.geometry.node.int_array("shader").iter().all(|&shader| shader == emitter)));
+    // The emitter's triangles name the emission shader: each triangle keeps
+    // its slot, which `used_shaders` turns into the scene's shader
+    // (`mesh.cpp` 713, `Mesh::pack_shaders`).
+    let emitter = scene.surface.iter().position(|surface| matches!(surface, Surface::Emission { .. })).unwrap();
+    let on = |mesh: &crate::scene::Mesh| mesh.geometry.node.int_array("shader").iter().map(|&slot| mesh.geometry.used_shader[slot as usize]).collect::<Vec<_>>();
+    assert!(scene.mesh.iter().any(|mesh| on(mesh).iter().all(|&shader| shader == emitter)), "{:?}", scene.mesh.iter().map(on).collect::<Vec<_>>());
 }
 
 #[test]
