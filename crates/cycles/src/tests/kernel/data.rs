@@ -59,3 +59,16 @@ fn the_shader_node_counts_are_one_word_a_node_type() {
     assert!(usage.clone().all(|field| field.kind == FieldKind::Int));
     assert!(KernelData::field("svm_usage", "NODE_CLOSURE_BSDF").is_some());
 }
+
+#[test]
+fn a_matrix_and_a_vector_come_back_as_they_were_set() {
+    use crate::util::{ProjectionTransform, Transform};
+    let mut data = KernelData::new();
+    let place = Transform::translate(1.0, 2.0, 3.0);
+    let view = ProjectionTransform::perspective(0.8, 0.1, 100.0);
+    data.set_transform("cam", "cameratoworld", &place);
+    data.set_projection("cam", "rastertocamera", &view);
+    data.set_float4("cam", "dx", [1.0, 2.0, 3.0, 4.0]);
+    assert_eq!((data.transform("cam", "cameratoworld"), data.projection("cam", "rastertocamera")), (place, view));
+    assert_eq!(data.float4("cam", "dx"), [1.0, 2.0, 3.0, 4.0]);
+}

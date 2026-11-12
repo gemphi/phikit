@@ -1,9 +1,30 @@
 # cycles — plan
 
-The folders to build and the gates each must pass. Steps 1 to 4 below are
-ported as their rows say; no kernel is, so the crate renders no image yet.
+The folders to build and the gates each must pass.
 Diagrams are in [ARCHITECTURE.md](ARCHITECTURE.md), requirements in
 [SPECS.md](SPECS.md). The folders and the order are suggested, not decided.
+
+## Where it stands
+
+The crate renders no image yet. As of 12 November 2026:
+
+| | Done, tested | Not done |
+|---|---|---|
+| session | the session loop, buffers, passes, tiles | tile files on disk, the session thread |
+| integrator | the scheduler, adaptive sampling, tile sizes, the work balancer, the path tracer's host loop | the pass accessor, the output and display drivers, the denoiser, path guiding; `PathTraceWorkCPU` |
+| graph | every node type and socket of Cycles | - |
+| scene | integrator, film, camera with motion, attributes, meshes, objects, the shader graph | `Shader` and its manager, the SVM compiler, what each node class compiles to; lights, images, background, hair, points, volumes, baking |
+| bvh | the BVH2 build, spatial splits, instances, refit | curves and points, unaligned nodes |
+| kernel | the camera's ray; the tree walked to the nearest triangle, into instances | the path state, the sample's random numbers, shading (the SVM, closures), lights and shadows, the film written, volumes, subsurface; motion triangles; panorama cameras |
+| to see a picture | - | a scene loaded from a `.blend` (through phiphx), an image file written, a program to run it |
+
+What is left before a first, plain image, in order: the path state and
+`init_from_camera`; `intersect_closest`; a first `shade_background` and
+`shade_surface` with one diffuse and one emission closure; the film
+written; the megakernel's switch and `PathTraceWorkCPU`; a scene from
+phiphx; an image file. An image that matches an artist's render needs the
+SVM with the Principled BSDF, image textures, lights and the world on top
+of that.
 
 ## Steps, top to bottom
 
@@ -31,7 +52,10 @@ these types run it is drawn in [FLOW.md](FLOW.md).
 | 4 | bvh: the tree a ray walks | `BVHParams`, `BVHReference`, `BVHNode`; `BVHBuild` with object binning and spatial splits; `BVH2` packed, refitted, and with each instanced geometry's tree after the scene's; `SceneParams`; `Geometry::compute_bvh` and `GeometryManager::device_update_bvh` | `bvh/`, `scene/geometry/bvh.rs`, `scene/param.rs`, `util/param.rs`, `data/param.tsv`, `tool/param.py` | done |
 | 4 | scene, the shader graph | `ShaderGraph`, `ShaderNode` and their sockets: links with convert nodes, proxies, default inputs, the clean-up, bump samples, bump from displacement, closure weights, the displacement hash; each node class's traits generated; MD5 | `scene/shader/graph/`, `graph/hash.rs`, `util/md5.rs`, `data/shader.tsv`, `tool/shader.py` | done |
 | 4 | scene, left over | curves and points in the tree, with their unaligned nodes; tessellation, displacement and tangents of a mesh; hair, point clouds and volumes; the other managers, in the order of `Scene::device_update`: background, the rest of the shaders (`Shader` and its manager, the SVM compiler, what each node class compiles to and folds), lights, images, baking; the camera's volume test; the tabulated Sobol table | `scene/`, `bvh/` | - |
-| 5 | kernel | the path state, then the kernels one by one, the CPU megakernel first | `kernel/` | - |
+| 5 | kernel, the camera's ray | `KernelGlobals` as what a ray reads; `Ray`; `camera_sample` for the perspective and the orthographic camera with the lens, the pixel filter, the shutter, a moving camera; the disk and polygon samples, the lookup table read, compact differentials | `kernel/global.rs`, `ray.rs`, `kernel/camera/`, `kernel/sample/`, `kernel/util/` | done |
+| 5 | kernel, the tree walked | `scene_intersect` by Cycles' own tree: the inner nodes, the leaves, instances pushed and popped, a triangle hit; what a ray starts from skipped, visibility | `kernel/bvh/`, `kernel/geom/`, `kernel/intersection.rs`, `util/intersect.rs` | done |
+| 5 | kernel, to a first image | in this order: the path state and `init_from_camera` with the sample's random numbers; `intersect_closest`; a first `shade_background` and `shade_surface` (a diffuse and an emission closure); the film written; the megakernel's switch and `PathTraceWorkCPU`; a scene from phiphx; an image file | `kernel/`, `integrator/` | - |
+| 5 | kernel, the rest | the kernels one by one after that: the SVM and the closures, lights and shadows, volumes, subsurface; the panorama and stereo cameras | `kernel/` | - |
 | 6 | kernel on the GPU | the WGSL twin of each kernel, the wavefront loop | `kernel/`, `wgsl/` | - |
 
 The tests are in `src/tests`, apart from the code and in the same folders,

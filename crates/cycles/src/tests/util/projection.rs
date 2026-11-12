@@ -64,3 +64,10 @@ fn the_floats_go_to_a_device_row_by_row() {
     let word = ProjectionTransform::default().word();
     assert_eq!(word, [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]);
 }
+
+#[test]
+fn a_radius_and_an_angle_are_a_point_of_the_plane() {
+    let point = polar_to_cartesian(2.0, std::f32::consts::FRAC_PI_2);
+    assert!(point[0].abs() < 1e-6 && (point[1] - 2.0).abs() < 1e-6);
+    assert_eq!(polar_to_cartesian(3.0, 0.0), [3.0, 0.0]);
+}
