@@ -24,9 +24,10 @@ pub use entity::{relation, word, world};
 
 pub mod prelude {
     pub use crate::aspect::Aspect;
+    pub use crate::comp::time::Clock;
     pub use crate::relation::{Edge, Relation, Register};
     pub use crate::resources::Resources;
-    pub use crate::system::{FnSystem, Stage, System};
+    pub use crate::system::{DidAdd, EventQueue, FnSystem, Stage, System, WillRemove};
     pub use crate::word::{Lexicon, Word};
     pub use crate::world::{World, WordBuilder};
 }

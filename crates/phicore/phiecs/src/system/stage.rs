@@ -3,6 +3,19 @@ use crate::world::World;
 
 /// When in a step a system runs. [`World::step`] runs every system of one
 /// stage, in the order they were added, before any of the next.
+///
+/// The five stages are SceneKit's documented frame (SCN
+/// `SCNSceneRenderer.h:343-397`: update, animations, physics, constraints,
+/// render). Apple's RealityKit orders systems by dependency instead
+/// (RF:14757-14761), so the stages are ours.
+///
+/// | stage | SceneKit phase | what runs |
+/// |---|---|---|
+/// | `Ingest` | update | input, commands, asset loads |
+/// | `PreCouple` | animations | clips sample and write their bound fields |
+/// | `Couple` | physics | bodies in, a step, poses out |
+/// | `PostCouple` | constraints | constraints, IK, then propagate the tree |
+/// | `Readout` | render | hand the changed state to the renderer and the journal |
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Stage {
     Ingest,
