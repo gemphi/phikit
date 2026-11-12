@@ -5,6 +5,7 @@ mod tests;
 use crate::aspect::{Aspect, AspectStore, Dense};
 use crate::comp::time::Clock;
 use crate::relation::{Graph, Register};
+use crate::tree::Tree;
 use crate::resources::Resources;
 use crate::system::System;
 use crate::system::event::{DidAdd, EventQueue, WillRemove};
@@ -16,6 +17,7 @@ pub struct World {
     pub relations: Register,
     pub edges: Graph,
     pub resources: Resources,
+    pub tree: Tree,
     stores: HashMap<TypeId, Box<dyn AspectStore>>,
     words: Vec<Word>,
     pub(crate) systems: Vec<Box<dyn System>>,
@@ -36,6 +38,7 @@ impl World {
             relations: Register::new(),
             edges: Graph::new(),
             resources,
+            tree: Tree::new(),
             stores: HashMap::new(),
             words: Vec::new(),
             systems: Vec::new(),
@@ -69,6 +72,7 @@ impl World {
             store.forget(word);
         }
         self.edges.forget(word);
+        self.tree.forget(word);
         match known {
             Some(i) => {
                 self.words.remove(i);

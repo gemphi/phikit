@@ -2,5 +2,6 @@
 //! world that holds them.
 mod plan;
 pub mod relation;
+pub mod tree;
 pub mod word;
 pub mod world;
