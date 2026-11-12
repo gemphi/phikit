@@ -151,6 +151,9 @@ fn main() {
                         println!("  material {:?}: {:?} nodes {:?} base {:?} diffuse color {:?}", material.name, material.node, material.node_kind, material.base_color, material.diffuse_color);
                     }
                 }
+                for object in &source.object {
+                    println!("  object {:?}: mesh {} ({} triangles) at {:?}", object.name, object.mesh, source.mesh[object.mesh].triangle.len(), object.matrix);
+                }
                 for (index, surface) in synced.surface.iter().enumerate() {
                     println!("  shader {index}: {surface:?}");
                 }

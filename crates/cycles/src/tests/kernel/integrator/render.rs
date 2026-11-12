@@ -99,3 +99,14 @@ fn a_render_is_the_same_each_time() {
     };
     assert_eq!(draw(), draw());
 }
+#[test]
+fn a_diffuse_floor_under_an_emitting_ceiling_is_its_albedo_times_the_ceiling() {
+    // A ceiling above the camera, its front turned away from the floor: an
+    // emission is seen from either side, so a bounce off the floor finds it.
+    let mut rig = Rig::new(8, 8, [0.0; 3]);
+    rig.add(&plane(1000.0, 6.0), Surface::Emission { color: [1.0; 3], strength: 2.0 }, translation(0.0, 0.0, 0.0));
+    rig.add(&plane(1000.0, 0.0), Surface::Diffuse { color: [0.5; 3] }, translation(0.0, 0.0, 0.0));
+    let image = rig.render(64);
+    let mean = image.iter().map(|pixel| pixel[0]).sum::<f32>() / image.len() as f32;
+    assert!((mean - 1.0).abs() < 0.05, "{mean} {:?}", &image[..4]);
+}
