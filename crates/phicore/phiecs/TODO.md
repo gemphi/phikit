@@ -13,18 +13,18 @@ Every file stays under 250 lines and the crate keeps no dependencies.
 
 ## entity
 
-- [ ] `entity/kind.rs`: `Kind`, declared from a list passed in; `World::kind_of`
-- [ ] `entity/spawn.rs`: `World::spawn(kind)`, `forget` with its event, `Enabled`
+- [x] `entity/kind.rs`: `Kind`, declared from a list passed in; `World::kind_of`
+- [x] `entity/spawn.rs`: `World::spawn(kind)`, `forget` with its event, `Enabled`
 - [x] `entity/tree.rs` from phinet's `node/tree.rs`; `set_parent(child, parent, keep_world)`
 - [ ] `entity/query.rs`: `has`, `and`, `not`, `related(kind, to)`, a mutable walk
 
 ## comp
 
-- [ ] `comp/aspect.rs`: `Aspect::name()`, `World::aspect_list(word)`, a changed tick per store, `Transient`
-- [ ] `comp/stored.rs`: `Stored`, `Value`, the stable id, `Owner`
+- [x] `comp/aspect.rs`: `Aspect::name()`, `World::aspect_list(word)`, a changed tick per store, `Transient`
+- [x] `comp/stored.rs`: `Stored`, `Value`, the stable id (md5 by hand), `Owner`
 - [x] `comp/space/pose.rs`: `Pose { t, r, s }`, `WorldMatrix`
 - [x] `comp/time/clock.rs`: `Clock { tick, time, dt, fps }`
-- [ ] `comp/time/track.rs`, `journal.rs`: `Track<A>`, the `Journal` trait, the in-memory journal
+- [x] `comp/time/track.rs`, `journal.rs`: `Track<A>`, the `Journal` trait, the in-memory journal
 - [ ] `comp/anim/bind.rs`: `Bind { word, aspect, field }`, `Animated<T> { base, live }`
 - [ ] `comp/anim/sample.rs`: the `Sample` trait
 - [ ] `comp/anim/playing.rs`: `Playing`, `Handoff::{Snapshot, Replace, Compose, Stop}`, the blend rule a field kind
@@ -38,18 +38,18 @@ Every file stays under 250 lines and the crate keeps no dependencies.
 - [ ] `system/layer.rs`: `PerKind`; the roles `Intake`, `Animate`, `Simulate`, `Constrain`, `Readout`; `Plugin`
 - [x] `system/event.rs`: typed double buffer, readable for one step
 - [x] `system/space/propagate.rs`: PostCouple, roots first
-- [ ] `system/time/record.rs`: Readout rows to every sink; `World::at`, `seek`, `dump`, `load`
+- [x] `system/time/record.rs`: Readout rows to every sink; `World::at`, `seek`, `dump`, `load`
 - [ ] `system/anim/advance.rs`, `handoff.rs`: PreCouple
 
 ## connect
 
-- [ ] a `Sink` for rows and events: the in-memory journal here, the session file and the database outside
+- [x] a `Sink` for rows and events: the in-memory journal here, the session file and the database outside
 - [ ] the kinds and aspect names the database knows are the ones declared here: one list, in a data file
 - [ ] see [docs/connect.md](docs/connect.md)
 
 ## outside the crate
 
-- [ ] phiplay `play/handoff.rs`: snapshot handoff, removes the pop at `play/world.rs:216`
+- [x] phiplay `play/handoff.rs`: snapshot handoff, removed the pop that was at `play/world.rs:216`; `BSnap` holds the last pose written, `BBlend` the snapshot a move began from
 - [ ] phiphx feature `ecs`: scene to words, actions as `Sample`, the rig solve as `Constrain`
 - [ ] the scene glue: `Simulate` over `phiray::sim`, `Readout` to `Tracer::reinstance` and `repose`
 - [ ] a feature gate in the phiecs repo so phikit takes the core with no phinet path, ending the hand copy
