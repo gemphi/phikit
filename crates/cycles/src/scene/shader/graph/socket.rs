@@ -6,7 +6,7 @@
 //!
 //! Cycles links sockets by pointer; here a socket is named by its node's
 //! id in the graph and its place among that node's inputs or outputs.
-//! Not ported: `stack_offset`, which the SVM compiler keeps in a socket.
+
 
 use crate::graph::{SocketKind, SocketType};
 
@@ -54,12 +54,14 @@ pub struct ShaderInput {
     /// A constant was folded into it, so that an empty link is not taken
     /// for an unused input.
     pub constant_folded_in: bool,
+    /// `stack_offset`: where the SVM compiler put the value, SVM_STACK_INVALID if nowhere.
+    pub stack_offset: u8,
 }
 
 impl ShaderInput {
     /// An input for this socket, not linked.
     pub fn new(socket_type: &'static SocketType) -> ShaderInput {
-        ShaderInput { socket_type, link: None, constant_folded_in: false }
+        ShaderInput { socket_type, link: None, constant_folded_in: false, stack_offset: 255 }
     }
 
     /// `name`: the name it is looked up by, such as `Surface`.
@@ -90,12 +92,14 @@ pub struct ShaderOutput {
     pub socket_type: &'static SocketType,
     /// `links`: the inputs that take their value from it.
     pub link: Vec<InputId>,
+    /// `stack_offset`.
+    pub stack_offset: u8,
 }
 
 impl ShaderOutput {
     /// An output for this socket, linked to nothing.
     pub fn new(socket_type: &'static SocketType) -> ShaderOutput {
-        ShaderOutput { socket_type, link: Vec::new() }
+        ShaderOutput { socket_type, link: Vec::new(), stack_offset: 255 }
     }
 
     /// `name`.
