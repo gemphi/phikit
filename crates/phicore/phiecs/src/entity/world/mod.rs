@@ -1,6 +1,5 @@
 //! The world: its words, their aspects and edges, its resources and systems.
 
-mod plan;
 mod relate;
 #[cfg(test)]
 mod tests;

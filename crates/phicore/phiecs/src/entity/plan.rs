@@ -1,6 +1,6 @@
 //! Chains of one kind of link from one word to another.
 
-use super::World;
+use crate::world::World;
 use crate::relation::Relation;
 use crate::word::Word;
 

@@ -14,12 +14,13 @@
 //! assert_eq!(world.calls_for(cat, on).first().map(|(w, _)| *w), Some(mat));
 //! ```
 
-pub mod aspect;
-pub mod relation;
-pub mod resources;
+pub mod comp;
+pub mod entity;
 pub mod system;
-pub mod word;
-pub mod world;
+
+// Today's paths stay: `crate::word`, `crate::aspect` and the rest.
+pub use comp::{aspect, resources};
+pub use entity::{relation, word, world};
 
 pub mod prelude {
     pub use crate::aspect::Aspect;

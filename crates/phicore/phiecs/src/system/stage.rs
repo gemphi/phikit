@@ -1,5 +1,4 @@
-//! Logic that runs on the world each step, in stage order.
-
+//! Stages and the system trait.
 use crate::world::World;
 
 /// When in a step a system runs. [`World::step`] runs every system of one
