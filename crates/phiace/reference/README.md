@@ -16,10 +16,7 @@ robotics and embodied-AI repositories, as shallow git submodules:
 - `neuralfeels/`: visuo-tactile perception for in-hand manipulation
 - `GeoRT/`: geometric hand retargeting
 - `BenchMARL/`: multi-agent reinforcement learning benchmarks
-- `fairo/`: a modular embodied agent architecture (holds Polymetis). **Still
-  at `../ext/fairo`**: a process held its folder open when the others moved
-  on 2026-11-10. It follows with
-  `git mv crates/phiace/ext/fairo crates/phiace/reference/fairo`.
+- `fairo/`: a modular embodied agent architecture (holds Polymetis); checked out without `droidlet/`, whose file names hold a colon Windows cannot create
 
 Renderers sit with `phiray` in `crates/phiray/reference`; characters, rigs
 and geometry with `phiphx` in `crates/phiphx/reference`.

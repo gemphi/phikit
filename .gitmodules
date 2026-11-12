@@ -13,8 +13,8 @@
 [submodule "crates/phiace/ext/home-robot"]
 	path = crates/phiace/reference/home-robot
 	url = https://github.com/facebookresearch/home-robot.git
-[submodule "crates/phiace/ext/fairo"]
-	path = crates/phiace/ext/fairo
+[submodule "crates/phiace/reference/fairo"]
+	path = crates/phiace/reference/fairo
 	url = https://github.com/facebookresearch/fairo.git
 [submodule "crates/phiace/ext/vjepa2"]
 	path = crates/phiace/reference/vjepa2

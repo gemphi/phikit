@@ -1,4 +1,4 @@
-# phiace — plan
+# phiace ΓÇö plan
 
 The folder tree to build and the order to build it in. Only the first slice of order 1 is built (see below). What each part must do
 is in [SPECS.md](SPECS.md); the diagrams are in
@@ -37,7 +37,7 @@ Built so far, in a smaller shape than the tree below: `entity/bot/desc.rs` (`Bot
 | `system/link/` | Intake and Readout: state up, command down, a policy swapped while it runs | fairo polymetis | ~300 in 3 files | 8 |
 | `data/bot/`, `data/kind.txt` | bot descriptions and the kinds phiace declares: data, not code | - | - | 1 |
 | `docs/` | one diagram page a subject | exists | - | - |
-| `reference/` | 13 Meta repositories and the index; `fairo` still under `ext/` | exists | - | - |
+| `reference/` | 14 Meta repositories and the index | exists | - | - |
 
 `system/sense/camera.rs` is the only file that needs phiray. Suggested: put
 it behind a feature so a headless phiace builds on phiecs alone.
@@ -57,16 +57,16 @@ it behind a feature so a headless phiace builds on phiecs alone.
 
 ```mermaid
 graph LR
-    u1["phiecs: clock · events · roles"]
-    u2["phiecs: kind · tree · pose"]
+    u1["phiecs: clock ┬╖ events ┬╖ roles"]
+    u2["phiecs: kind ┬╖ tree ┬╖ pose"]
     u3["phiecs: journal"]
     u4["phiray sim: joints"]
     w1["1 bot: describe, read, spawn"]
     w2["2 actuate: PD, guard"]
     w3["3 sense: joint state, contact"]
-    w4["4 env · camera sensor"]
-    w5["5 task · joined bots"]
-    w6["6 solve · URDF"]
+    w4["4 env ┬╖ camera sensor"]
+    w5["5 task ┬╖ joined bots"]
+    w6["6 solve ┬╖ URDF"]
     w7["7 retarget"]
     w8["8 link"]
     u1 --> w1
