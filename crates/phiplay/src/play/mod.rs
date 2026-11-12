@@ -13,6 +13,7 @@
 //! (`rally`: volleyball, beach volleyball).
 
 pub mod ball;
+pub mod handoff;
 pub mod invasion;
 pub mod rally;
 pub mod state;
@@ -27,15 +28,14 @@ use glam::{Vec2, Vec3};
 pub const FPS: f32 = 24.0;
 
 /// A player at one frame.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BStep {
     pub at: Vec2,
     pub heading: f32,
     pub mv: BMove,
     pub moment: BMoment,
-    /// The move before, still giving way: (move, its moment, how much of
-    /// it remains, 1 → 0).
-    pub from: Option<(BMove, BMoment, f32)>,
+    /// The pose written before this move began, still giving way (see `handoff`).
+    pub from: Option<handoff::BFrom>,
 }
 
 /// One player's track through the match.

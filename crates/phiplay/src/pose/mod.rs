@@ -110,11 +110,8 @@ pub fn mix(a: f32, b: f32, w: f32) -> f32 {
 /// frames.
 pub fn step_deltas(step: &crate::play::BStep) -> (BDeltas, f32) {
     let (now, air) = sport::pose(step.mv, &step.moment);
-    match step.from {
-        Some((mv, moment, left)) if left > 0.0 => {
-            let (before, was) = sport::pose(mv, &moment);
-            (now.blend(&before, left), mix(air, was, left))
-        }
+    match &step.from {
+        Some(from) if from.left > 0.0 => (now.blend(&from.snap.deltas, from.left), mix(air, from.snap.air, from.left)),
         _ => (now, air),
     }
 }
