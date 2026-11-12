@@ -147,6 +147,13 @@ they have in common in the app: each engine registers itself the same way
 not two code paths to maintain.
 
 ## Where it stands
+Every source file carries the copyright lines of the Blender file it ports
+(copied from that file: Blender Foundation, and Sony Imageworks, NVIDIA or
+Intel where Cycles credits them); a test carries its code file's. The five
+files that port nothing keep the licence line alone: `truth/error.rs`,
+`truth/display.rs` (written after OCIO's documented behaviour, not after
+Blender's GPL `colormanagement.cc`), its test, and the two examples.
+
 As of 12 November 2026, after the two copies of the crate were merged
 (`MERGE.md`):
 | | Done, tested | Not done |
@@ -190,9 +197,13 @@ scenes, before a scene in those views can pass.
 ### Gate 2 starts with
 The census the gates section names, and the node graphs and Principled
 lobes the first scenes need:
-1. The census: for each of the 763 scenes, the node kinds and closures its
-   materials use (`examples/gate1.rs` already lists them for `scan`); the
-   order of porting follows the count.
+1. The census: done (`examples/census.rs`, `CENSUS.md`, generated). Of 763
+   scenes, 633 have a lamp, so gate 3 holds back more scenes than any node
+   does; of the 130 without one, 28 need nothing beyond gate 1. The kinds
+   that complete the most lamp-free scenes, in order: node groups, image
+   textures, the anisotropic (glossy) BSDF, attributes, sky and environment
+   textures, the Principled BSDF with its emission and metal lobes. The
+   order of porting follows that table.
 2. `blender/`: the node graph handed to `ShaderGraph` whole instead of a lone
    diffuse or emission, and the SVM compiler (`scene/svm.cpp:845-1174`) for
    what the graphs hold: the texture coordinate, mapping and checker nodes
