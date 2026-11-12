@@ -1,7 +1,8 @@
 # cycles — plan
 
 The folders to build and the gates each must pass. Gate 0 (the judge) and the
-kernels of gate 1 are built; what gate 1 measures is in "Where it stands".
+kernels of gate 1 are built; gate 1 passes 2 of the 6 scenes its scan counts as
+its own, and the others fail for what later gates bring ("Where it stands").
 Diagrams are in [ARCHITECTURE.md](ARCHITECTURE.md), requirements in
 [SPECS.md](SPECS.md). The folders and the order are suggested, not decided.
 
@@ -158,8 +159,47 @@ As of 12 November 2026, after the two copies of the crate were merged
 | device | the contract, the CPU device and its kernel table | the wgpu device |
 | kernel | the camera's ray (perspective and orthographic, lens, pixel filter, shutter, a moving camera); the tree walked into instances; the path state; Sobol-Burley and tabulated Sobol; `init_from_camera`, `intersect_closest`, `shade_background`, `shade_surface` with a diffuse and an emission closure; the film's combined pass; the CPU megakernel | the SVM's other nodes and closures, lights and shadows, volumes, subsurface; motion triangles; panorama cameras |
 | truth, blender | gate 0: Blender's comparison rule and verdict; the join of a `.blend` through phiphx, with Blender's view transforms | node graphs in the join; see the gaps below |
-GATE1_RESULTS
-Known gaps in the join, for gate 2: the node graph (a material is its base
-colour or its emission), the object's `hide_render` flag, a mesh shared by two
-objects with different slot links, and the camera name phiphx reads wrongly in
-`bsdf/diffuse` (the camera is then the first one).
+### Gate 1, measured
+`cargo run -p cycles --release --example gate1 -- scan` reads 763 of Blender's
+test scenes; 6 hold nothing but gate 1 (a diffuse or an emission surface,
+the world's colour, no lamp, no texture). Those six and the three first
+scenes, `-- run` on the CPU at each scene's own sample count, judged by
+Blender's rule (`render_report.py`, the category's allowance):
+| Scene | Verdict | Failed pixels | Max error | Samples | Seconds | Why it does not match |
+|---|---|---|---|---|---|---|
+| `bsdf/diffuse` | fail | 99.976% | 0.3511 | 25 | 0.48 | its lamp (gate 3); its material is not a lone diffuse node (gate 2) |
+| `shader/emission` | fail | 52.014% | 0.3196 | 25 | 0.32 | its lamp (gate 3), a checker texture (gate 2); the emitters themselves match |
+| `camera/camera_ortho` | fail | 93.890% | 0.5753 | 16 | 0.18 | its lamp (gate 3), a checker texture (gate 2), the Filmic view |
+| `light/multiple_mesh_lights` | **pass** | 0.037% | 0.0338 | 128 | 1.74 | - |
+| `shader/material_output_selection` | **pass** | 0.000% | 0.0019 | 25 | 0.13 | - |
+| `light/instanced_mesh_lights` | fail | 91.882% | 1.0000 | 64 | 0.58 | the emitters are instanced; phiphx gives the join the instancer's own 4 m plane (strength 100), not the instances |
+| `light/mesh_light_small` | fail | 100.000% | 1.0000 | 64 | 0.53 | the AgX view with a look; a small emitter found by the BSDF alone (no next-event estimation, gate 3) is noise at 64 samples. At 4096 its lit middle reaches Blender's mean, the unlit floor does not (the view) |
+| `light_linking/light_link_mesh_tree` | fail | 100.000% | 1.0000 | 25 | 0.79 | light linking (gate 3), the AgX view |
+| `render_layer/background_scene` | fail | 100.000% | 0.3828 | 25 | 0.21 | the lamp is in the background scene, which the join does not read; Blender's image is `bsdf/diffuse`'s within 5/255 |
+The camera rays of four failing scenes, traced at three pixels each, hit
+what Blender shows; no mistake of the camera, the samplers, the filter, the closures
+or the join of what phiphx reads was found. Two things the scan counts as gate
+1 are not: a mesh whose emission Cycles samples as a light (it needs the
+light tree's next-event estimation to be quiet at Blender's sample count)
+and a lamp or an instance that phiphx does not hand over. Blender's `AgX`
+and `Filmic` views are OCIO chains (`release/datafiles/colormanagement/
+config.ocio`: E-Gamut, a log2 allocation, a tetrahedral 3D LUT, the looks'
+grading) that `truth::display` draws with the Standard curve and marks as
+approximated; they are to be read from that file, as `truth` reads the test
+scenes, before a scene in those views can pass.
+### Gate 2 starts with
+The census the gates section names, and the node graphs and Principled
+lobes the first scenes need:
+1. The census: for each of the 763 scenes, the node kinds and closures its
+   materials use (`examples/gate1.rs` already lists them for `scan`); the
+   order of porting follows the count.
+2. `blender/`: the node graph handed to `ShaderGraph` whole instead of a lone
+   diffuse or emission, and the SVM compiler (`scene/svm.cpp:845-1174`) for
+   what the graphs hold: the texture coordinate, mapping and checker nodes
+   that `shader/emission` and `camera/camera_ortho` use first.
+3. The Principled BSDF's lobes in `kernel/closure/` (`bsdf_principled`
+   setup in `kernel/svm/closure.h`; the microfacet GGX, the sheen, the
+   coat), so `bsdf/` scenes can be judged once their lamps arrive (gate 3).
+4. The join's gaps: `hide_render`, instancers, the background scene, a mesh
+   shared by two objects with different slot links, the camera phiphx names
+   wrongly in `bsdf/diffuse`; most need phiphx to read more of the file.
