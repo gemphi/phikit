@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2018-2023 Blender Authors
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `tests/python/cycles_render_tests.py` and
 //! `modules/render_report.py` (`test_get_name`, `test_get_images`): where a

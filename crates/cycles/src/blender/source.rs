@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! What `intern/cycles/blender/` reads from Blender through RNA, as plain
 //! data (`BlenderCamera` of `blender/camera.cpp`, the arguments of

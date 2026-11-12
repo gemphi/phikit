@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! The host side of a render: `intern/cycles/integrator`.
 

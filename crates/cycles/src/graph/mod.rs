@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Nodes and their sockets: `intern/cycles/graph`. Everything a scene holds,
 //! its integrator, film, camera, objects, lights and every shader node, is

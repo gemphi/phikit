@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2018-2023 Blender Authors
 // SPDX-License-Identifier: Apache-2.0
 //! The images the judge compares. Blender's runner hands them to `oiiotool`
 //! (`tests/python/modules/render_report.py:138-144`), which reads a PNG as

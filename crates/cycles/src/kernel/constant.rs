@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! The kernel's flags and limits, by the names Cycles gives them in
 //! `intern/cycles/kernel/types.h` and `kernel/features.h`. The numbers are

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `scene/update.rs` and `scene/background.rs`: the managers run
 //! in Cycles' order and fill the device scene from a joined scene.

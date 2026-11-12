@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2018-2023 Blender Authors
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `tests/python/modules/render_report.py:125-205`
 //! (`diff_output`). Blender does not compare in Python: it runs

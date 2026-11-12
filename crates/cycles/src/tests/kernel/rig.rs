@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! A small scene the kernels are run on: a camera looking down at the
 //! origin from `z = 5`, planes and boxes of one surface each, and a world.

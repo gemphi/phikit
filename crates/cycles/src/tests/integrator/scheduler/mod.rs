@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `src/integrator/scheduler`, one file for each file there. This
 //! file tests `mod.rs` and holds what the others, and the tests of `trace`, set a scheduler up with.

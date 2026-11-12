@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `src/scene/object`, one file for each file there. This file
 //! tests `mod.rs`. The small scene they update a device with is the one of

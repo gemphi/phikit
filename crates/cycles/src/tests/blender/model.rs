@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `blender/model.rs`, `sync.rs`, `mesh.rs` and `camera.rs`: scenes
 //! of Blender's own render tests read by phiphx and joined into a Cycles

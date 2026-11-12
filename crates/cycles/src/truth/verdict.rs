@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2018-2023 Blender Authors
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `tests/python/modules/render_report.py` (`diff_output`,
 //! lines 125-210; `test.error = "VERIFY"` for a failure or a missing

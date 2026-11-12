@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! The shaders of a scene: `intern/cycles/scene/shader*.cpp` and
 //! `svm.cpp`. The graph of nodes a shader is made of (`graph`), and for

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `blender/integrator.rs`: the scene's Cycles settings into the
 //! integrator and the film, with the defaults of `properties.py` for what

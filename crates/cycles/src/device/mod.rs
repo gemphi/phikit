@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! What a device is asked for: `intern/cycles/device`. The contract
 //! (`device.rs`, `memory.rs`, `queue.rs`, `argument.rs`, `info.rs`), the

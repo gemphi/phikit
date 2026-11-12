@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `src/scene/camera`, one file for each file there. This file
 //! tests `mod.rs` and holds what the others write a camera with.

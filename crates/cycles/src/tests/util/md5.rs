@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 1999, 2002 Aladdin Enterprises. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 use crate::util::*;
 

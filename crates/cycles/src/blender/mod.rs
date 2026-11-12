@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! The bridge from a scene file to a Cycles scene: `intern/cycles/blender/`.
 //! Cycles' `blender/` reads Blender's RNA; here the file is read by phiphx

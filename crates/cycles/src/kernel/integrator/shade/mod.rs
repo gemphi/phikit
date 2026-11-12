@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! What a path's ray met, shaded: `kernel/integrator/shade_*.h`.
 //! `background.rs` is `shade_background.h`, `surface.rs` is

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `device/memory.rs` and the blocks of `device/cpu/memory.rs`.
 use crate::device::{CpuDevice, Device, DeviceError, DevicePtr, DeviceVector, MemoryType};

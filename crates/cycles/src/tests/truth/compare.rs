@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2018-2023 Blender Authors
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `truth/compare.rs` and `truth/allowance.rs`: Blender's rule of
 //! `oiiotool --fail T --failpercent P --diff` (`render_report.py:138-144`).

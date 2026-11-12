@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2009-2011 Intel Corporation
+// SPDX-FileCopyrightText: 2012-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 use super::*;
 

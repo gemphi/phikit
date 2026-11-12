@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `kernel/integrator/path.rs`: the start of a path, what a
 //! bounce does to its state, Russian roulette and the queue.

@@ -1,5 +1,5 @@
-// SPDX-FileCopyrightText: 2009-2010 NVIDIA Corporation
-// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
+// SPDX-FileCopyrightText: 2009-2011 Intel Corporation
+// SPDX-FileCopyrightText: 2012-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `intern/cycles/bvh/binning.h` and `binning.cpp`
 //! (`BVHObjectBinning`), adapted by Cycles from code of NVIDIA

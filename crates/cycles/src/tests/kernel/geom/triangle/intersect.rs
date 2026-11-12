@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2014-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 use crate::kernel::geom::triangle::*;
 use crate::kernel::{Intersection, KernelGlobal, flag};

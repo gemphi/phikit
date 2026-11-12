@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2018-2023 Blender Authors
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `truth/scene.rs`, `truth/image.rs`, `truth/verdict.rs` and
 //! `truth/render.rs`, over Blender's own test scenes when they are there.

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2019-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `scene/integrator/tabulated.rs`: the points of the tabulated
 //! Sobol sampler and the table the scene's update makes of them.

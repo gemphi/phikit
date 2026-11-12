@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2011-2013 Intel Corporation
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 use crate::util::vector::*;
 

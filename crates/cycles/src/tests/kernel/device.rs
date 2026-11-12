@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `kernel/device/cpu.rs`: the kernels in the CPU table, run one
 //! after another on the queue of a device as a wavefront would run them,

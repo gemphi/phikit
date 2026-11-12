@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! The layout of the path state as `data/state.tsv` gives it (written by
 //! `tool/state.py` from `state_template.h` and `shadow_state_template.h`):

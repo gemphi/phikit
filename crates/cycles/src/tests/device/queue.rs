@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `device/queue.rs` and `device/cpu/kernel.rs`: a kernel runs
 //! over a work size with its arguments, an unported one is a typed error.

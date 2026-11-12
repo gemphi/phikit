@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `kernel/bit.rs`: each constant is the number Cycles' header
 //! gives it, which `data/constant.tsv` holds. A new ray and a new hit are

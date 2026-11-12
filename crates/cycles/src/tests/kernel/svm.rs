@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `kernel/svm/`: the node numbers and the interpreter, over the
 //! words `scene/shader/compile.rs` writes.

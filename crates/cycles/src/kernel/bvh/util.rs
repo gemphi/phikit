@@ -1,4 +1,3 @@
-// SPDX-FileCopyrightText: 2009-2010 NVIDIA Corporation
 // SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `intern/cycles/kernel/bvh/util.h`: `intersection_ray_valid`

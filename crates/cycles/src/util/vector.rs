@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2013 Intel Corporation
 // SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `intern/cycles/util/math_float3.h` and `math_float4.h`: what

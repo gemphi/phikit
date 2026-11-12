@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 use super::*;
 use crate::kernel::geom::{bvh_clamp_direction, bvh_inverse_direction};

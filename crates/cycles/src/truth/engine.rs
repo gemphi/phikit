@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015-2023 Blender Authors
 // SPDX-License-Identifier: Apache-2.0
 //! The renderer the judge calls for a test scene: read the `.blend`, join it
 //! into a [`Scene`](crate::scene::Scene) (`blender/`), run the managers

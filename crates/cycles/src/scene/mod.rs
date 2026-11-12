@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! The scene as the renderer holds it: `intern/cycles/scene`. So far the
 //! passes, the integrator, the film, the camera, the objects and the meshes

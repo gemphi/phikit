@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2018-2023 Blender Authors
 // SPDX-License-Identifier: Apache-2.0
 //! Gate 0, the judge: find a test scene and the image Blender made of it,
 //! render it through the session, compare by Blender's own rule, and say

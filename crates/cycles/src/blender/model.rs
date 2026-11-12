@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! The one file of this crate that names phiphx: its `SceneModel` into a
 //! [`SceneSource`]. phiphx is being reorganised (`variant-layout` moves the

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! What every layer leans on: `intern/cycles/util`. So far the clock the
 //! scheduler reads, integer helpers, hashes, vectors, transforms, boxes and

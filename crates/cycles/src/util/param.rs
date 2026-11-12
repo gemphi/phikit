@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! What the members of Cycles' parameter classes start as: `data/param.tsv`,
 //! which `tool/param.py` writes from the constructors of `BVHParams` and

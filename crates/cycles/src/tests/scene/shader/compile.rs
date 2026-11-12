@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `scene/shader/compile.rs` and `manager.rs`: the words a shader
 //! compiles to, in the layout of `kernel/svm/node_types.h`.

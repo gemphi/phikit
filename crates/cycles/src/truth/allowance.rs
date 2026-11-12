@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2018-2023 Blender Authors
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `tests/python/modules/render_report.py:287-288` (the
 //! default: a channel fails past 0.016, a render when more than 1 per cent

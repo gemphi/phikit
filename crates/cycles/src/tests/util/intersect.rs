@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 use crate::util::{ray_triangle_intersect, ray_triangle_intersect_self, vector};
 const A: [f32; 3] = [0.0, 0.0, 0.0];

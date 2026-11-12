@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `intern/cycles/session/session.cpp` (`Session::
 //! run_main_render_loop`, the part a background render takes): the harness's

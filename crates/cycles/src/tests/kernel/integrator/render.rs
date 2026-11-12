@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! The kernels together, against closed forms: a plane that emits, a white
 //! object in a uniform world, a diffuse plane under the sky, the film.

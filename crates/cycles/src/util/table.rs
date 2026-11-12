@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! The reader of the tab-separated files in `data/`. Names, labels and
 //! report text live there, not in the code.

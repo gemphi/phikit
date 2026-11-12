@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `integrator/trace/cpu.rs`: the CPU work over the CPU device.
 use std::sync::Arc;

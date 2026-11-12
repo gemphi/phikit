@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2009-2010 NVIDIA Corporation
+// SPDX-FileCopyrightText: 2009-2012 Intel Corporation
 // SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! A ray against the scene's tree: `intern/cycles/kernel/bvh`, walking the

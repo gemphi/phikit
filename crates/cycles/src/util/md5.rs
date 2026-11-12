@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 1999, 2002 Aladdin Enterprises. All rights reserved.
 // SPDX-License-Identifier: Apache-2.0
 //! `MD5Hash` of `intern/cycles/util/md5.h`: the MD5 digest of what is
 //! appended, which Cycles uses to tell whether something changed. Written

@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `src/kernel`, one file or folder for each there; `rig.rs` is
 //! the joined scene the CPU kernels are run on.

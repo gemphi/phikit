@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2015-2023 Blender Authors
 // SPDX-License-Identifier: Apache-2.0
 //! Tests of `truth/engine.rs`: a test scene of Blender's rendered by the
 //! kernels and judged against the image Blender made of it.
