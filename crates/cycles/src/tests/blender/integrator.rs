@@ -57,7 +57,7 @@ fn a_pattern_other_than_classic_is_the_blue_noise_one() {
 
 #[test]
 fn the_film_has_a_blackman_harris_filter_of_one_and_a_half_pixels() {
-    let mut scene = synced(&[]);
+    let scene = synced(&[]);
     assert_eq!(scene.film.node.float("filter_width"), 1.5);
     assert_eq!(scene.film.node.int("filter_type"), 2);
     assert_eq!(scene.film.node.float("exposure"), 1.0);
