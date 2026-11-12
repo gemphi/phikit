@@ -2,15 +2,28 @@
 // SPDX-License-Identifier: Apache-2.0
 //! What runs for every path: `intern/cycles/kernel`. So far the names of
 //! the kernels a path moves between, ported from the `DeviceKernel` enum in
-//! `kernel/types.h:1744-1763`, and the work tile paths start from.
+//! `kernel/types.h:1744-1763`, the work tile paths start from, the globals
+//! a kernel is handed, a ray, the ray a camera sends, and the walk of the
+//! scene's tree to the triangle a ray hits.
 
+pub mod bvh;
+pub mod camera;
 mod constant;
 mod data;
+pub mod geom;
+mod global;
+mod intersection;
+mod ray;
 mod record;
+pub mod sample;
 mod tile;
+pub mod util;
 
 pub use constant::{constant, flag};
 pub use data::{DataStruct, Field, FieldKind, KernelData};
+pub use global::KernelGlobal;
+pub use intersection::Intersection;
+pub use ray::{Ray, RaySelfPrimitive};
 pub use record::{RecordArray, RecordField, RecordLayout};
 pub use tile::KernelWorkTile;
 

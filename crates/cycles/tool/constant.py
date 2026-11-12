@@ -13,6 +13,8 @@ different bits, so those are written with the class: `ObjectManager::UPDATE_ALL`
 The BVH's own (bvh/params.h, bvh/binning.h, bvh/bvh.h, bvh/bvh2.h): the
 enumerators of `BVHType`, the limits a class keeps in an enum with no name,
 written with the class (`BVHParams::MAX_DEPTH`), and the sizes of a node.
+And what the kernel walks a tree with (kernel/bvh/types.h): the depth of its
+stack and the mark at the stack's bottom.
 """
 import os
 import re
@@ -62,7 +64,7 @@ def bvh_constant(names):
                 value = names.scoped.get((owner, name))
                 if re.fullmatch(r'\w+', name) and value is not None:
                     rows.append((owner, name if found.group(1) else owner + '::' + name, show(value)))
-    for path in ('bvh/bvh.h', 'bvh/bvh2.h'):
+    for path in ('bvh/bvh.h', 'bvh/bvh2.h', 'kernel/bvh/types.h'):
         text = strip_comment(read(CYCLES, path))
         for name, given in re.findall(r'^#\s*define (\w+) ([^\n\\]+)$', text, flags=re.M):
             value = names.number(given)
@@ -102,8 +104,9 @@ def main():
         '# kernel/svm/types.h, kernel/features.h, scene/tables.h and scene/film.h,',
         '# SocketType::Flags of graph/node_type.h, the managers\' update flags of scene/object.h',
         '# and scene/geometry.h, and the BVH\'s types, limits and node sizes of',
-        '# bvh/params.h, bvh/binning.h, bvh/bvh.h and bvh/bvh2.h. Do not edit by',
-        '# hand. Every enumerator and every #define that stands for a number.',
+        '# bvh/params.h, bvh/binning.h, bvh/bvh.h, bvh/bvh2.h and kernel/bvh/types.h.',
+        '# Do not edit by hand. Every enumerator and every #define that stands for',
+        '# a number.',
         '#',
         '# enum, or "define", or "-" for an enum with no name	name	number',
     ]
