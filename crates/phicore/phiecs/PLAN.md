@@ -18,23 +18,23 @@ Two rules shape the tree:
 
 | Path | Holds | State | Lines | Order |
 |---|---|---|---|---|
-| `src/lib.rs` | the three modules; a prelude that keeps today's paths | exists | 31 | - |
+| `src/lib.rs` | the three modules; a prelude that keeps today's paths | done: re-exports every old path; the prelude grew | 36 | - |
 | **`src/entity/`** | **what a thing is and how things are linked** | | | |
-| `entity/word.rs` | `Word`, `Lexicon` | moves from `src/word.rs` | 83 | - |
+| `entity/word.rs` | `Word`, `Lexicon` | done: moved from `src/word.rs` | 83 | - |
 | `entity/kind.rs` | `Kind`: the type of an entity, declared from a list passed in | new | ~60 | 4 |
 | `entity/spawn.rs` | `coin`, `spawn(kind)`, `forget`, `Enabled` | new, part from `world/mod.rs` | ~90 | 4 |
-| `entity/tree.rs` | `Tree`: parent, children, loop refused; `set_parent` | new, from phinet `node/tree.rs` | ~130 | 2 |
-| `entity/relation.rs` | `Relation`, `Register`, `Edge`, `Graph` | moves from `src/relation.rs` | 173 | - |
-| `entity/plan.rs` | `plan`, `reach` over relations | moves from `world/plan.rs` | 69 | - |
+| `entity/tree.rs` | `Tree`: parent, children, loop refused; `set_parent` | done: from phinet `node/tree.rs`, plus `set_parent`, `clear_parent`, `pin`, `world_of`, `DidReparent` | 178 | 2 |
+| `entity/relation.rs` | `Relation`, `Register`, `Edge`, `Graph` | done: moved from `src/relation.rs` | 173 | - |
+| `entity/plan.rs` | `plan`, `reach` over relations | done: moved from `world/plan.rs` | 69 | - |
 | `entity/query.rs` | `Query`: `has`, `and`, `not`, `related` | new | ~150 | 7 |
-| `entity/world/mod.rs` | `World`: the container; bind, read | moves from `world/mod.rs` | 156 | - |
-| `entity/world/relate.rs` | `declare`, `relate`, `calls_for` | moves from `world/relate.rs` | 44 | - |
+| `entity/world/mod.rs` | `World`: the container; bind, read | done: moved from `world/mod.rs`; holds `tree`, the `Clock` and `EventQueue` resources | 156 | - |
+| `entity/world/relate.rs` | `declare`, `relate`, `calls_for` | done: moved from `world/relate.rs` | 44 | - |
 | **`src/comp/`** | **data bound to a thing** | | | |
-| `comp/aspect.rs` | `Aspect`, `Dense<A>`; then names, change ticks, `Transient` | moves from `src/aspect.rs`, grows | 73 to ~140 | 4 |
-| `comp/resources.rs` | one value per type | moves from `src/resources.rs` | 32 | - |
+| `comp/aspect.rs` | `Aspect`, `Dense<A>`; then names, change ticks, `Transient` | done: moved from `src/aspect.rs`; grows at 4 | 73 to ~140 | 4 |
+| `comp/resources.rs` | one value per type | done: moved from `src/resources.rs` | 32 | - |
 | `comp/stored.rs` | `Stored`, `Value`, stable id, `Owner` | new | ~70 | 3 |
-| `comp/space/pose.rs` | `Pose`, `WorldMatrix`, the 4x4 arithmetic | new | ~90 | 2 |
-| `comp/time/clock.rs` | `Clock { tick, time, dt, fps }` | new | ~50 | 1 |
+| `comp/space/pose.rs` | `Pose`, `WorldMatrix`, the 4x4 arithmetic | done | 187 | 2 |
+| `comp/time/clock.rs` | `Clock { tick, time, dt, fps }` | done | 65 | 1 |
 | `comp/time/track.rs` | `Track<A>`: sparse ticks and values | new | ~90 | 3 |
 | `comp/time/journal.rs` | the `Journal` trait, the in-memory journal | new | ~150 | 3 |
 | `comp/anim/bind.rs` | `Bind { word, aspect, field }`, `Animated<T> { base, live }` | new | ~70 | 9 |
@@ -43,12 +43,12 @@ Two rules shape the tree:
 | `comp/anim/channel.rs` | `ChannelSet`: a flat run of numbers with a layout, for what is not a transform | new | ~60 | 9 |
 | `comp/asset.rs` | `Asset { kind, key }`, `Loaded` | new | ~80 | 10 |
 | **`src/system/`** | **logic, run in stage order** | | | |
-| `system/stage.rs` | `Stage`, `System`, `FnSystem`; then `after`, `before`, `when` | moves from `src/system.rs`, grows | 99 to ~150 | 6 |
-| `system/schedule.rs` | `add_system`, `step`, the sort inside a stage | new, part from `world/mod.rs` | ~110 | 1, 6 |
+| `system/stage.rs` | `Stage`, `System`, `FnSystem`; then `after`, `before`, `when` | done: moved from `src/system.rs`; grows at 6 | 99 to ~150 | 6 |
+| `system/schedule.rs` | `add_system`, `step`, the sort inside a stage | done for 1: `add_system`, `step` from `world/mod.rs`; the sort and `when` wait for 6 | 87 | 1, 6 |
 | `system/layer.rs` | the layered traits: `PerKind`, the roles `Intake`, `Animate`, `Simulate`, `Constrain`, `Readout`, and `Plugin` | new | ~140 | 6 |
-| `system/event.rs` | `EventQueue`: typed double buffer | new | ~120 | 1 |
+| `system/event.rs` | `EventQueue`: typed double buffer | done: `EventQueue`, `DidAdd`, `WillRemove` | 135 | 1 |
 | `system/sink.rs` | `Sink`: where rows and events go: memory here, the session file and the database outside | new | ~50 | 3 |
-| `system/space/propagate.rs` | PostCouple: world matrix from the tree, parents first | new | ~90 | 2 |
+| `system/space/propagate.rs` | PostCouple: world matrix from the tree, parents first | done: `propagate` | 82 | 2 |
 | `system/time/record.rs` | Readout: one journal row for each timed aspect that changed; `at`, `seek`, `dump`, `load` | new | ~120 | 3 |
 | `system/anim/advance.rs` | PreCouple: advance time, sample, blend, write the bound fields | new | ~110 | 9 |
 | `system/anim/handoff.rs` | the snapshot of bound fields a new source blends from | new | ~80 | 9 |

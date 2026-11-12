@@ -6,24 +6,24 @@ Every file stays under 250 lines and the crate keeps no dependencies.
 
 ## the three folders
 
-- [ ] move `word.rs`, `relation.rs`, `world/` under `src/entity/`
-- [ ] move `aspect.rs`, `resources.rs` under `src/comp/`
-- [ ] move `system.rs` to `src/system/stage.rs`
-- [ ] `lib.rs` re-exports every path that exists today, so phiber, phiplay, phiace and simkit change nothing
+- [x] move `word.rs`, `relation.rs`, `world/` under `src/entity/`
+- [x] move `aspect.rs`, `resources.rs` under `src/comp/`
+- [x] move `system.rs` to `src/system/stage.rs`
+- [x] `lib.rs` re-exports every path that exists today, so phiber, phiplay, phiace and simkit change nothing
 
 ## entity
 
 - [ ] `entity/kind.rs`: `Kind`, declared from a list passed in; `World::kind_of`
 - [ ] `entity/spawn.rs`: `World::spawn(kind)`, `forget` with its event, `Enabled`
-- [ ] `entity/tree.rs` from phinet's `node/tree.rs`; `set_parent(child, parent, keep_world)`
+- [x] `entity/tree.rs` from phinet's `node/tree.rs`; `set_parent(child, parent, keep_world)`
 - [ ] `entity/query.rs`: `has`, `and`, `not`, `related(kind, to)`, a mutable walk
 
 ## comp
 
 - [ ] `comp/aspect.rs`: `Aspect::name()`, `World::aspect_list(word)`, a changed tick per store, `Transient`
 - [ ] `comp/stored.rs`: `Stored`, `Value`, the stable id, `Owner`
-- [ ] `comp/space/pose.rs`: `Pose { t, r, s }`, `WorldMatrix`
-- [ ] `comp/time/clock.rs`: `Clock { tick, time, dt, fps }`
+- [x] `comp/space/pose.rs`: `Pose { t, r, s }`, `WorldMatrix`
+- [x] `comp/time/clock.rs`: `Clock { tick, time, dt, fps }`
 - [ ] `comp/time/track.rs`, `journal.rs`: `Track<A>`, the `Journal` trait, the in-memory journal
 - [ ] `comp/anim/bind.rs`: `Bind { word, aspect, field }`, `Animated<T> { base, live }`
 - [ ] `comp/anim/sample.rs`: the `Sample` trait
@@ -33,11 +33,11 @@ Every file stays under 250 lines and the crate keeps no dependencies.
 
 ## system
 
-- [ ] `system/schedule.rs`: `add_system` and `step` move here; the clock first, the event swap last
+- [x] `system/schedule.rs`: `add_system` and `step` move here; the clock first, the event swap last
 - [ ] `system/stage.rs`: `after` / `before` by name, sorted once a stage, a cycle refused; `when`
 - [ ] `system/layer.rs`: `PerKind`; the roles `Intake`, `Animate`, `Simulate`, `Constrain`, `Readout`; `Plugin`
-- [ ] `system/event.rs`: typed double buffer, readable for one step
-- [ ] `system/space/propagate.rs`: PostCouple, roots first
+- [x] `system/event.rs`: typed double buffer, readable for one step
+- [x] `system/space/propagate.rs`: PostCouple, roots first
 - [ ] `system/time/record.rs`: Readout rows to every sink; `World::at`, `seek`, `dump`, `load`
 - [ ] `system/anim/advance.rs`, `handoff.rs`: PreCouple
 
