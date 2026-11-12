@@ -194,4 +194,25 @@ impl KernelData {
         let word = self.take(parent, name);
         [0, 1].map(|index| word.get(index).copied().map(f32::from_bits).unwrap_or(0.0))
     }
+
+    pub fn float4(&self, parent: &str, name: &str) -> [f32; 4] {
+        self.row_list(parent, name)[0]
+    }
+
+    pub fn transform(&self, parent: &str, name: &str) -> Transform {
+        let [x, y, z, _] = self.row_list(parent, name);
+        Transform { x, y, z }
+    }
+
+    pub fn projection(&self, parent: &str, name: &str) -> ProjectionTransform {
+        let [x, y, z, w] = self.row_list(parent, name);
+        ProjectionTransform { x, y, z, w }
+    }
+
+    /// A member's floats in rows of four, as a matrix has them; a row the
+    /// member does not reach is zero.
+    fn row_list(&self, parent: &str, name: &str) -> [[f32; 4]; 4] {
+        let word = self.take(parent, name);
+        std::array::from_fn(|row| std::array::from_fn(|column| word.get(row * 4 + column).copied().map(f32::from_bits).unwrap_or(0.0)))
+    }
 }

@@ -2,8 +2,9 @@
 # kernel/svm/types.h, kernel/features.h, scene/tables.h and scene/film.h,
 # SocketType::Flags of graph/node_type.h, the managers' update flags of scene/object.h
 # and scene/geometry.h, and the BVH's types, limits and node sizes of
-# bvh/params.h, bvh/binning.h, bvh/bvh.h and bvh/bvh2.h. Do not edit by
-# hand. Every enumerator and every #define that stands for a number.
+# bvh/params.h, bvh/binning.h, bvh/bvh.h, bvh/bvh2.h and kernel/bvh/types.h.
+# Do not edit by hand. Every enumerator and every #define that stands for
+# a number.
 #
 # enum, or "define", or "-" for an enum with no name	name	number
 PathTraceDimension	PRNG_FILTER	0
@@ -911,3 +912,8 @@ define	TRI_NODE_SIZE	3
 define	BVH_NODE_SIZE	4
 define	BVH_NODE_LEAF_SIZE	1
 define	BVH_UNALIGNED_NODE_SIZE	7
+define	ENTRYPOINT_SENTINEL	1985229328
+define	BVH_STACK_SIZE	192
+define	BVH_MOTION	1
+define	BVH_HAIR	2
+define	BVH_POINTCLOUD	4
