@@ -1,7 +1,6 @@
 # phiace — plan
 
-The folder tree to build and the order to build it in. Nothing is
-implemented today: `src/lib.rs` is a doc comment. What each part must do
+The folder tree to build and the order to build it in. Only the first slice of order 1 is built (see below). What each part must do
 is in [SPECS.md](SPECS.md); the diagrams are in
 [ARCHITECTURE.md](ARCHITECTURE.md). Line counts are estimates.
 
@@ -12,6 +11,7 @@ is a word with a `Pose` in the `Tree`, a mount point is a pin (a named
 child word), and a joint's motion goes through the general animation path.
 
 ## The folder tree (suggested)
+Built so far, in a smaller shape than the tree below: `entity/bot/desc.rs` (`Bot`, `Link`, `Joint`, built in code, not read from a file), `entity/bot/spawn.rs` (`spawn`), `comp/joint.rs` (`Hinge { axis }`, `Limit`, `Angle`, `Target`) and `system/actuate/hinge.rs` (`drive`, a stand-in Simulate that moves an angle toward its target; `hinge`, the angle into the link's `Pose`). `tests/arm.rs` runs a two-joint arm on phiecs's `Tree`, `Pose` and `propagate`.
 
 | Path | Holds | Read from | Lines | Order |
 |---|---|---|---|---|

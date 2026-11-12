@@ -1,6 +1,6 @@
 # tick
 
-All of phiace is to build. The three loops on the left are read from the
+Built so far: `drive` (Couple) and `hinge` (PostCouple), then phiecs `propagate`; the rest is to build. The three loops on the left are read from the
 references; that they share one order is our reading, not a claim any of
 them makes.
 

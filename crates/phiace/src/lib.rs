@@ -1,4 +1,4 @@
-﻿//! # phiace
+//! # phiace
 //!
 //! The robotic system of phikit. A robot is a word in the phiecs world: its
 //! body, sensors and goals are relations under conditions, as a player is in
@@ -33,5 +33,15 @@
 //! checked out without `droidlet/`: that folder holds file names with a
 //! colon, which Windows cannot create. Clone it elsewhere to read droidlet.
 //!
-//! Nothing here is implemented yet. The nearest existing code is `simkit`
-//! (AirSim's AirLib in Rust), which is not a workspace member.
+//! What is built (PLAN order 1, the first thing that moves): a bot as data
+//! ([`entity::bot`]), spawned as words in the [`Tree`](phiecs::tree::Tree), each
+//! link with a `Pose`; a joint as aspects on the link it turns
+//! ([`comp::joint`]); and [`system::actuate`], which moves an angle toward its
+//! target, turns it into the link's `Pose`, and leaves `propagate` to give
+//! every link its `WorldMatrix`. The rest of PLAN is not built. The nearest
+//! existing code is `simkit` (AirSim's AirLib in Rust), which is not a
+//! workspace member.
+
+pub mod comp;
+pub mod entity;
+pub mod system;

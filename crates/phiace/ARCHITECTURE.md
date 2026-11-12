@@ -1,6 +1,6 @@
 # phiace — architecture
 
-Nothing in phiace is implemented: `src/lib.rs` is a doc comment. Every
+Only the first slice of `bot` and `actuate` is built (see PLAN.md). Every other
 phiace box below is to build, named with the reference it is read from
 (`reference/<repo>`; `fairo` is still under `ext/`). Solid boxes are the
 crates it will stand on.

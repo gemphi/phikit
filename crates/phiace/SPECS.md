@@ -2,7 +2,7 @@
 
 What each part must do. One row is one requirement, with the Apple source
 it answers, where there is one, and the reference it was read from.
-Nothing is met today: the crate is a doc comment.
+Met so far: link and tree (a link is a word in the `Tree` with a `Pose`), a revolute joint with limits, and a stand-in drive. Nothing else is met.
 
 ## Sources
 

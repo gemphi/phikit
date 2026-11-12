@@ -1,6 +1,6 @@
 # phiace — to do
 
-Nothing is implemented. The diagrams are in
+The first slice of `bot` and `actuate` is built (a two-joint arm, `tests/arm.rs`). The diagrams are in
 [ARCHITECTURE.md](ARCHITECTURE.md); each module names the reference it is
 read from. phiace stands on phiecs, so the first three items of
 [phiecs's list](../phicore/phiecs/TODO.md) come first: clock and events,
@@ -8,9 +8,9 @@ tree and space, the journal.
 
 ## bot
 
-- [ ] a bot description as a data file: links with a parent, joints, limits
-- [ ] spawn it into a `World`: a word a link in the `Tree`, a `Pose` each, joint angles in `ChannelSet`
-- [ ] a bot made of bots, joined at pins (named child words)
+- [ ] a bot description as a data file: links with a parent, joints, limits (the `Bot` type exists; built in code, not read from a file)
+- [x] spawn it into a `World`: a word a link in the `Tree`, a `Pose` each (joint angles are `Angle` aspects until `ChannelSet` exists, phiecs order 9)
+- [ ] a bot made of bots, joined at pins (named child words; `World::pin` exists in phiecs)
 - [ ] URDF in
 
 ## actuate
