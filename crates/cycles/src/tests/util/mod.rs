@@ -4,6 +4,7 @@
 mod bound;
 mod cdf;
 mod hash;
+mod intersect;
 mod math;
 mod md5;
 mod motion;

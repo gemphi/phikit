@@ -5,6 +5,7 @@
 mod halton;
 mod param;
 mod sampling;
+mod tabulated;
 
 use crate::graph::Value;
 use crate::kernel::flag;

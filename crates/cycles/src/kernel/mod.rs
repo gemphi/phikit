@@ -4,14 +4,27 @@
 //! the kernels a path moves between, ported from the `DeviceKernel` enum in
 //! `kernel/types.h:1744-1763`, and the work tile paths start from.
 
+pub mod bvh;
+pub mod camera;
+pub mod closure;
 mod constant;
 mod data;
+pub mod device;
+pub mod film;
+pub mod geom;
+pub mod globals;
+pub mod integrator;
 mod record;
+pub mod sample;
+pub mod svm;
 mod tile;
+pub mod types;
 
 pub use constant::{constant, flag};
 pub use data::{DataStruct, Field, FieldKind, KernelData};
 pub use record::{RecordArray, RecordField, RecordLayout};
+pub use globals::KernelGlobals;
+pub use svm::{ShaderNodeType, svm_node};
 pub use tile::KernelWorkTile;
 
 /// `DeviceKernel`, the integrator part: each kernel does one thing to a

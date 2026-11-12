@@ -12,13 +12,82 @@ use std::sync::Arc;
 use phiphx::Phx;
 use phiphx::scene::{SceneCamera, SceneMaterial, SceneMesh, SceneModel, SceneObject};
 
-use super::source::{CameraSource, MaterialSource, MeshSource, ObjectSource, SceneSource, SensorFit};
+use super::source::{CameraSource, MaterialSource, MeshSource, NodeSurface, ObjectSource, SceneSource, SensorFit};
+
+/// The default of a socket the graph leaves unlinked, as three floats.
+fn color_of(socket: &phiphx::blend::shade::socket::BlendSocket) -> Option<[f32; 3]> {
+    match socket.default.as_ref()? {
+        phiphx::blend::shade::socket::BSocketDefault::Color([r, g, b, _]) => Some([*r, *g, *b]),
+        _ => None,
+    }
+}
+
+fn float_of(socket: &phiphx::blend::shade::socket::BlendSocket) -> Option<f32> {
+    match socket.default.as_ref()? {
+        phiphx::blend::shade::socket::BSocketDefault::Float(value) => Some(*value),
+        _ => None,
+    }
+}
+
+/// `ntreeShaderOutputNode(ntree, SHD_OUTPUT_CYCLES)` (`node.cc`): of the
+/// Material Output nodes, the one a Cycles render uses. An output for all
+/// engines is the first found, and one that is active beats one that is
+/// not; an output whose target is Cycles beats one for all, and among
+/// those the active one wins.
+fn output_node(material: &SceneMaterial) -> Option<&phiphx::blend::shade::graph::BlendNode> {
+    // `SHD_OUTPUT_ALL`, `SHD_OUTPUT_CYCLES` (`DNA_node_types.h`).
+    const ALL: i32 = 0;
+    const CYCLES: i32 = 2;
+    let mut chosen: Option<&phiphx::blend::shade::graph::BlendNode> = None;
+    for node in material.graph.nodes.iter().filter(|node| node.idname == "ShaderNodeOutputMaterial") {
+        let better = |current: &phiphx::blend::shade::graph::BlendNode| !current.active_output() && node.active_output();
+        chosen = match (chosen, node.custom1) {
+            (None, ALL | CYCLES) => Some(node),
+            (Some(current), ALL) if current.custom1 == ALL && better(current) => Some(node),
+            (Some(current), CYCLES) if current.custom1 == ALL || better(current) => Some(node),
+            (kept, _) => kept,
+        };
+    }
+    chosen
+}
+/// `blender/shader.cpp` (`BlenderSync::sync_materials`): what the graph's
+/// Material Output takes its surface from. A lone Diffuse BSDF or Emission
+/// node, with its inputs left as they are set, is a surface of gate 1; any
+/// other graph is [`NodeSurface::Unknown`].
+fn node_surface(material: &SceneMaterial) -> NodeSurface {
+    let graph = &material.graph;
+    let Some(output) = output_node(material) else { return NodeSurface::Unknown };
+    let Some(link) = graph.links.iter().find(|link| link.to == output.name && link.to_socket == "Surface") else { return NodeSurface::Unknown };
+    let Some(node) = graph.nodes.iter().find(|node| node.name == link.from) else { return NodeSurface::Unknown };
+    let linked = |name: &str| graph.links.iter().any(|link| link.to == node.name && link.to_socket == name);
+    let input = |name: &str| node.inputs.iter().find(|socket| socket.name == name);
+    match node.idname.as_str() {
+        "ShaderNodeBsdfDiffuse" if !linked("Color") && !linked("Roughness") && !linked("Normal") => {
+            let color = input("Color").and_then(color_of);
+            let roughness = input("Roughness").and_then(float_of).unwrap_or(0.0);
+            color.map_or(NodeSurface::Unknown, |color| NodeSurface::Diffuse { color, roughness })
+        }
+        "ShaderNodeEmission" if !linked("Color") && !linked("Strength") => {
+            let color = input("Color").and_then(color_of);
+            let strength = input("Strength").and_then(float_of).unwrap_or(1.0);
+            color.map_or(NodeSurface::Unknown, |color| NodeSurface::Emission { color, strength })
+        }
+        _ => NodeSurface::Unknown,
+    }
+}
 
 /// A material of phiphx as the source has it: the base colour, and the
-/// emission of the Principled BSDF.
+/// emission of the Principled BSDF, and what its graph makes.
 fn material_of(material: &SceneMaterial) -> MaterialSource {
     let [r, g, b, _] = material.base_color;
-    MaterialSource { name: material.name.clone(), base_color: [r, g, b], emission_color: material.bsdf.emission, emission_strength: material.bsdf.emission_strength }
+    MaterialSource {
+        name: material.name.clone(),
+        base_color: [r, g, b],
+        emission_color: material.bsdf.emission,
+        emission_strength: material.bsdf.emission_strength,
+        node: node_surface(material),
+        node_kind: material.graph.nodes.iter().map(|node| node.idname.clone()).collect(),
+    }
 }
 
 /// `blender_camera_from_object`: the camera's lens and sensor.
@@ -68,12 +137,21 @@ pub fn source_of_model(model: &SceneModel) -> SceneSource {
     let render = &model.render;
     let percent = if render.resolution_percent > 0 { render.resolution_percent } else { 100 };
     let camera = model.cameras.iter().find(|camera| camera.name == render.camera).or(model.cameras.first());
+    let cycles = render.cycles.names().iter().filter_map(|name| Some((name.clone(), render.cycles.get(name)?.as_float()?))).collect();
     let mut source = SceneSource {
         width: render.resolution_x * percent / 100,
         height: render.resolution_y * percent / 100,
         camera: camera.map(camera_of),
         world_color: model.world.background.color,
         world_strength: model.world.background.strength,
+        world_texture: model.world.background.texture.clone(),
+        light_count: model.lights.len(),
+        cycles,
+        view_transform: render.view_transform.clone(),
+        look: render.look.clone(),
+        exposure: render.exposure,
+        gamma: render.gamma,
+        film_transparent: render.film_transparent,
         ..SceneSource::default()
     };
     type Key = (*const SceneMesh, *const Vec<[f32; 2]>, Vec<String>);

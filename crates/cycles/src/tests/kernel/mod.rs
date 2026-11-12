@@ -1,9 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
+mod bvh;
+mod camera;
+mod closure;
 mod constant;
 mod data;
+mod device;
+mod film;
+mod globals;
+mod integrator;
 mod record;
+pub(crate) mod rig;
+mod sample;
+mod svm;
 mod tile;
+mod types;
 
+pub(crate) use rig::rig_scene;
 use crate::kernel::*;
 
 #[test]

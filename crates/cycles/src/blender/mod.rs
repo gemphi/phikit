@@ -12,12 +12,14 @@
 //! | `sync.rs` | `blender/sync.cpp`, `object.cpp`, `shader.cpp` |
 //! | `model.rs` | (none) phiphx's `SceneModel` into a `SceneSource`: the only file that names phiphx |
 mod camera;
+mod integrator;
 mod mesh;
 mod model;
 mod source;
 mod sync;
 pub use camera::{camera_matrix, sync_camera, transform_of, viewplane};
+pub use integrator::{sample_count, setting, sync_film, sync_integrator};
 pub use mesh::sync_mesh;
 pub use model::{Model, read_blend, read_model, source_of_model};
-pub use source::{CameraSource, MaterialSource, MeshSource, ObjectSource, SceneSource, SensorFit};
+pub use source::{CameraSource, MaterialSource, MeshSource, NodeSurface, ObjectSource, SceneSource, SensorFit};
 pub use sync::{surface_of, sync_scene};

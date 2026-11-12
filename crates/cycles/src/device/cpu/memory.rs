@@ -1,4 +1,4 @@
-﻿// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
+// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! Ported from `intern/cycles/device/cpu/device_impl.cpp` (`CPUDevice::
 //! mem_alloc`, `mem_copy_to`, `mem_zero`, `mem_free`): the blocks of a
@@ -58,7 +58,20 @@ impl CpuMemory {
         let block = self.block.get_mut(&ptr.0).ok_or(DeviceError::BadPointer(ptr))?;
         Ok(&mut bytemuck::cast_slice_mut::<u64, u8>(&mut block.word)[..block.size])
     }
-    /// A block as elements of `T` (what the host's `device_vector<T>` is);
+    /// Two blocks at once, both writable: a kernel that reads one and
+    /// writes the other, such as a path state and a render buffer.
+    pub fn bytes_pair_mut(&mut self, a: DevicePtr, b: DevicePtr) -> Result<(&mut [u8], &mut [u8]), DeviceError> {
+        if a == b {
+            return Err(DeviceError::BadPointer(a));
+        }
+        let [first, second] = self.block.get_disjoint_mut([&a.0, &b.0]);
+        let first = first.ok_or(DeviceError::BadPointer(a))?;
+        let second = second.ok_or(DeviceError::BadPointer(b))?;
+        let (size_a, size_b) = (first.size, second.size);
+        let first = &mut bytemuck::cast_slice_mut::<u64, u8>(&mut first.word)[..size_a];
+        let second = &mut bytemuck::cast_slice_mut::<u64, u8>(&mut second.word)[..size_b];
+        Ok((first, second))
+    }    /// A block as elements of `T` (what the host's `device_vector<T>` is);
     /// a trailing part smaller than a `T` is left out.
     pub fn slice<T: Pod>(&self, ptr: DevicePtr) -> Result<&[T], DeviceError> {
         let bytes = self.bytes(ptr)?;

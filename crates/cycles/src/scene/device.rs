@@ -7,7 +7,7 @@
 //! The arrays Cycles has are `data/array.tsv`, written by `tool/kernel.py`
 //! from `kernel/data_arrays.h`. An array becomes a field here when the
 //! manager that fills it is ported; so far the integrator's, the lookup
-//! tables', the camera's, the objects', the meshes' and the tree's. A field has Cycles'
+//! tables', the camera's, the objects', the meshes', the tree's and the shaders'. A field has Cycles'
 //! name made singular: `objects` is `object`.
 
 use crate::kernel::{KernelData, RecordArray};
@@ -59,6 +59,10 @@ pub struct DeviceScene {
     pub attribute_float4: Vec<[f32; 4]>,
     pub attribute_uchar4: Vec<[u8; 4]>,
     pub attribute_normal: Vec<PackedNormal>,
+    /// `svm_nodes`: the jump table of the shaders and then their nodes.
+    pub svm_node: Vec<u32>,
+    /// `shaders`: a `KernelShader` for each shader.
+    pub shader: RecordArray,
     /// `lookup_table`: every lookup table, one after another.
     pub lookup_table: Vec<f32>,
     /// `sample_pattern_lut`: the tabulated Sobol samples.
@@ -101,6 +105,8 @@ impl DeviceScene {
             attribute_float4: Vec::new(),
             attribute_uchar4: Vec::new(),
             attribute_normal: Vec::new(),
+            svm_node: Vec::new(),
+            shader: RecordArray::of("KernelShader").expect("data/record.tsv has KernelShader"),
             lookup_table: Vec::new(),
             sample_pattern_lut: Vec::new(),
             data: KernelData::new(),

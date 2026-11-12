@@ -3,4 +3,5 @@
 //! allowances, `verdict.rs` those of the scenes, the images, the verdict
 //! and the renderer.
 mod compare;
+mod display;
 pub(crate) mod verdict;

@@ -7,19 +7,25 @@
 //! is a diffuse colour or an emission; the node graph waits for gate 2.
 use super::camera::{sync_camera, transform_of};
 use super::mesh::sync_mesh;
-use super::source::{MaterialSource, SceneSource};
+use super::integrator::{sync_film, sync_integrator};
+use super::source::{MaterialSource, NodeSurface, SceneSource};
 use crate::scene::{Object, Scene, Surface, World};
 
-/// A material as the surface it stands for: an emission when it emits,
-/// else a diffuse of its base colour (`sync_materials`, until the graph).
+/// A material as the surface it stands for: the surface of its graph when
+/// that is a lone Diffuse BSDF or Emission node (`sync_materials`), else an
+/// emission when the Principled BSDF emits, else a diffuse of its base colour.
 pub fn surface_of(material: &MaterialSource) -> Surface {
+    match &material.node {
+        NodeSurface::Diffuse { color, .. } => return Surface::Diffuse { color: *color },
+        NodeSurface::Emission { color, strength } => return Surface::Emission { color: *color, strength: *strength },
+        NodeSurface::Unknown => {}
+    }
     let emits = material.emission_strength > 0.0 && material.emission_color.iter().any(|&channel| channel > 0.0);
     match emits {
         true => Surface::Emission { color: material.emission_color, strength: material.emission_strength },
         false => Surface::Diffuse { color: material.base_color },
     }
 }
-
 /// `sync_data`: the scene of `source`. A source with no camera keeps the
 /// scene's default one at the source's size.
 pub fn sync_scene(source: &SceneSource) -> Scene {
@@ -29,6 +35,8 @@ pub fn sync_scene(source: &SceneSource) -> Scene {
         scene.camera = sync_camera(camera, width, height);
     }
     scene.world = World { color: source.world_color, strength: source.world_strength };
+    sync_integrator(source, &mut scene);
+    sync_film(source, &mut scene);
     // `sync_materials`: a shader for each distinct material.
     let mut known: Vec<MaterialSource> = Vec::new();
     let mut shader_of = |scene: &mut Scene, material: &MaterialSource| match known.iter().position(|seen| seen == material) {

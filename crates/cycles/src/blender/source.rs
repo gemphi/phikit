@@ -1,4 +1,3 @@
-// SPDX-FileCopyrightText: 2011-2022 Blender Foundation
 // SPDX-License-Identifier: Apache-2.0
 //! What `intern/cycles/blender/` reads from Blender through RNA, as plain
 //! data (`BlenderCamera` of `blender/camera.cpp`, the arguments of
@@ -35,6 +34,20 @@ pub struct CameraSource {
     pub clip_end: f32,
 }
 
+/// The surface a material's node graph makes, as far as gate 1 shades it
+/// (`blender/shader.cpp` builds a `ShaderGraph` from the nodes).
+#[derive(Debug, Clone, PartialEq, Default)]
+pub enum NodeSurface {
+    /// No graph, or one that is not a lone closure: `base_color` and
+    /// `emission_*` stand in (the Principled BSDF's).
+    #[default]
+    Unknown,
+    /// `ShaderNodeBsdfDiffuse` with its `Color` and `Roughness` unlinked.
+    Diffuse { color: [f32; 3], roughness: f32 },
+    /// `ShaderNodeEmission` with its `Color` and `Strength` unlinked.
+    Emission { color: [f32; 3], strength: f32 },
+}
+
 /// A material, as far as gate 1 shades it.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MaterialSource {
@@ -42,6 +55,10 @@ pub struct MaterialSource {
     pub base_color: [f32; 3],
     pub emission_color: [f32; 3],
     pub emission_strength: f32,
+    /// What the graph's Material Output takes its surface from.
+    pub node: NodeSurface,
+    /// The idname of every node of the graph, for knowing what a scene uses.
+    pub node_kind: Vec<String>,
 }
 
 /// What `BlenderSync::sync_mesh` reads of a mesh: triangulated, as
@@ -83,4 +100,18 @@ pub struct SceneSource {
     /// The world's background colour and strength.
     pub world_color: [f32; 3],
     pub world_strength: f32,
+    /// The environment image that feeds the world's colour, if one does.
+    pub world_texture: Option<String>,
+    /// How many lights the scene has.
+    pub light_count: usize,
+    /// `scene["cycles"]`: the numbers the file holds (a flag is 0 or 1) by
+    /// name. A name that is not there has its default (`properties.py`).
+    pub cycles: std::collections::BTreeMap<String, f64>,
+    /// Colour management, `Scene.view_settings`.
+    pub view_transform: String,
+    pub look: String,
+    pub exposure: f32,
+    pub gamma: f32,
+    /// Film > Transparent.
+    pub film_transparent: bool,
 }

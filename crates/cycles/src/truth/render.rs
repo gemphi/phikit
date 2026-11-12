@@ -8,6 +8,7 @@
 //! [`TruthError::Device`] and not as a black picture.
 use std::sync::Arc;
 
+use super::display::ViewSettings;
 use super::{Image, Renderer, TestScene, TruthError};
 use crate::device::CpuDevice;
 use crate::integrator::{PathTrace, PathTraceWorkCpu, RenderScheduler, RenderWork, TraceHost};
@@ -44,21 +45,21 @@ pub struct SessionRenderer {
     /// Film > Transparent: the picture has an alpha. Blender's opaque
     /// renders are written as RGB, and so are the references.
     pub transparent: bool,
+    /// The floats a pixel has in the buffer: the film's pass stride. The
+    /// combined pass, RGBA, is four.
+    pub pass_stride: i32,
 }
 
-/// The floats a pixel has in the buffer so far: the combined pass, RGBA.
-/// The pass layout comes from the film when the scene is joined.
-const PASS_STRIDE: i32 = 4;
 
 impl SessionRenderer {
     pub fn new(device: Arc<CpuDevice>, size: (usize, usize), sample_count: i32) -> Self {
-        Self { device, sample_count, size, transparent: false }
+        Self { device, sample_count, size, transparent: false, pass_stride: 4 }
     }
     /// Run the rounds; the buffer of the whole frame.
     pub fn render_buffer(&mut self) -> Result<RenderBuffer, TruthError> {
         let (width, height) = (self.size.0 as i32, self.size.1 as i32);
         let mut frame = BufferParam::full(width, height);
-        frame.pass_stride = PASS_STRIDE;
+        frame.pass_stride = self.pass_stride;
         let param = SessionParam { background: true, sample_count: self.sample_count, tile_size: width.max(height).max(2048), ..SessionParam::default() };
         let mut session = Session::new(param);
         session.reset(&frame);
@@ -97,21 +98,35 @@ impl Renderer for SessionRenderer {
 /// Filmic and AgX views, and the look, come with the colour management of
 /// gate 2.) Alpha is the sum over `sample_count`, clamped.
 pub fn display(buffer: &RenderBuffer, sample_count: i32, transparent: bool) -> Image {
+    display_view(buffer, sample_count, transparent, &ViewSettings::default())
+}
+
+/// The combined pass as the picture the scene's view settings give. With
+/// `view.cycles_buffer` the buffer is read as Cycles keeps it: the bottom
+/// row of the image first, and the fourth float the transparency the path
+/// added (`film_write_transparent`), alpha being one less its average.
+pub fn display_view(buffer: &RenderBuffer, sample_count: i32, transparent: bool, view: &ViewSettings) -> Image {
     let (width, height) = (buffer.param.width as usize, buffer.param.height as usize);
     let scale = 1.0 / sample_count.max(1) as f32;
     let channels = if transparent { 4 } else { 3 };
     let mut image = Image::new(width, height, channels);
-    for (out, source) in image.pixel.chunks_exact_mut(channels).zip(buffer.buffer.chunks_exact(buffer.param.pass_stride.max(1) as usize)) {
+    let stride = buffer.param.pass_stride.max(1) as usize;
+    for (index, source) in buffer.buffer.chunks_exact(stride).enumerate().take(width * height) {
+        let row = match view.cycles_buffer {
+            true => height - 1 - index / width,
+            false => index / width,
+        };
+        let out = &mut image.pixel[(row * width + index % width) * channels..][..channels];
         for c in 0..3 {
-            out[c] = srgb_encode(source[c] * scale);
+            out[c] = view.apply(source[c] * scale);
         }
         if transparent {
-            out[3] = (source[3] * scale).clamp(0.0, 1.0);
+            let alpha = source[3] * scale;
+            out[3] = if view.cycles_buffer { 1.0 - alpha } else { alpha }.clamp(0.0, 1.0);
         }
     }
     image
 }
-
 /// The sRGB transfer function of a linear value, clamped to 0..1.
 pub fn srgb_encode(linear: f32) -> f32 {
     let value = linear.clamp(0.0, 1.0);

@@ -36,9 +36,9 @@ MEMBER = r'^\s*(uint|int|float|float4|Transform|ProjectionTransform) ([\w, ]+);'
 
 
 # The structs an array holds one of for each element.
-RECORD = ['KernelObject', 'AttributeMap']
+RECORD = ['KernelObject', 'AttributeMap', 'KernelShader']
 RECORD_SIZE = {'int': (1, 1), 'uint': (1, 1), 'float': (1, 1), 'uint16_t': (1, 1), 'uint8_t': (1, 1), 'uint64_t': (2, 2), 'Transform': (12, 4)}
-RECORD_MEMBER = r'^\s*(uint64_t|uint16_t|uint8_t|uint|int|float|Transform) (\w+)(?:\[(\d+)\])?;'
+RECORD_MEMBER = r'^\s*(uint64_t|uint16_t|uint8_t|uint|int|float|Transform) ((?:\w+(?:\[\d+\])?(?:, )?)+);'
 
 
 def record_rows():
@@ -47,15 +47,17 @@ def record_rows():
     for struct in RECORD:
         body = re.search(r'struct ' + struct + r' \{(.*?)\n\};', text, flags=re.S).group(1)
         offset, widest, member = 0, 1, []
-        for kind, name, count in re.findall(RECORD_MEMBER, body, flags=re.M):
-            size, align = RECORD_SIZE[kind]
-            size *= int(count or 1)
-            offset = (offset + align - 1) // align * align
-            member.append((name, kind, offset, size))
-            offset += size
-            widest = max(widest, align)
+        for kind, names in re.findall(RECORD_MEMBER, body, flags=re.M):
+            for item in names.split(', '):
+                name, _, count = item.partition('[')
+                size, align = RECORD_SIZE[kind]
+                size *= int(count.rstrip(']') or 1)
+                offset = (offset + align - 1) // align * align
+                member.append((name, kind, offset, size))
+                offset += size
+                widest = max(widest, align)
         # Every member of the struct is one this reads.
-        assert len(member) == body.count(';'), struct
+        assert len(member) == sum(1 + names.count(',') for names in re.findall(r'^\s*[\w:]+ ([\w, \[\]]+);', body, flags=re.M)), struct
         rows.append(('struct', struct, (offset + widest - 1) // widest * widest))
         rows.extend(('member', struct, name, kind, word, words) for name, kind, word, words in member)
     return rows

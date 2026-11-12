@@ -5,16 +5,18 @@
 //! settings of the path tracer, and how they reach the kernel's constant
 //! data. The sockets are the `integrator` type of `data/node.tsv`.
 //!
-//! One thing is left out: the tabulated Sobol samples themselves
-//! (`tabulated_sobol_generate_4D`), which come with the samplers. The size
-//! of the table is set; the table is not filled.
+//! The tabulated Sobol samples themselves (`tabulated_sobol_generate_4D`)
+//! are made by `tabulated::fill_sample_pattern`, which the scene's update
+//! calls; the integrator sets the size of the table.
 
 mod halton;
 mod param;
 mod sampling;
+mod tabulated;
 
 pub use halton::HaltonSequence;
 pub use param::GuidingParam;
+pub use tabulated::{fill_sample_pattern, tabulated_sobol_generate_4d};
 
 use super::DeviceScene;
 use crate::graph::Node;

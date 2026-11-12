@@ -15,6 +15,8 @@
 //! | `render.rs` | `session.cpp` (`run_main_render_loop`) |
 mod allowance;
 mod compare;
+mod display;
+mod engine;
 mod error;
 mod image;
 mod render;
@@ -24,6 +26,8 @@ pub use allowance::Allowance;
 pub use compare::{Comparison, compare, diff_image};
 pub use error::TruthError;
 pub use image::Image;
-pub use render::{SessionRenderer, display, srgb_encode};
+pub use display::{ViewSettings, ViewTransform};
+pub use engine::{RenderReport, SceneRenderer};
+pub use render::{SessionRenderer, display, display_view, srgb_encode};
 pub use scene::{TEST_ROOT, TestScene, find_root};
 pub use verdict::{Outcome, Renderer, Verdict, judge};

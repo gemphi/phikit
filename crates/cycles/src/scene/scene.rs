@@ -4,7 +4,7 @@
 //! asked to draw, the lists the managers keep. So far the camera, the
 //! shaders, the meshes and the objects; the lights, the film, the
 //! integrator and the managers' state join as they are needed.
-use super::{Camera, Mesh, Object, Shader};
+use super::{Background, Camera, Film, Integrator, LookupTableSet, Mesh, Object, SceneParam, Shader};
 
 /// A surface in the one shape the kernels will have before the node graph
 /// is compiled (gate 2): `scene/shader.cpp` keeps a `ShaderGraph`, and
@@ -17,6 +17,8 @@ pub enum Surface {
     Diffuse { color: [f32; 3] },
     /// An `EmissionNode` of this colour and strength.
     Emission { color: [f32; 3], strength: f32 },
+    /// A `BackgroundNode`, the world's: colour and strength.
+    Background { color: [f32; 3], strength: f32 },
 }
 
 impl Default for Surface {
@@ -61,11 +63,18 @@ pub struct Scene {
     pub mesh: Vec<Mesh>,
     pub object: Vec<Object>,
     pub world: World,
+    /// The film, the integrator and the scene's parameters, which the managers read.
+    pub background: Background,
+    pub film: Film,
+    pub integrator: Integrator,
+    pub param: SceneParam,
+    /// The lookup tables the managers add to.
+    pub lookup: LookupTableSet,
 }
 
 impl Scene {
     pub fn new() -> Scene {
-        Scene { camera: Camera::new(), shader: Vec::new(), surface: Vec::new(), mesh: Vec::new(), object: Vec::new(), world: World::default() }
+        Scene { camera: Camera::new(), shader: Vec::new(), surface: Vec::new(), mesh: Vec::new(), object: Vec::new(), world: World::default(), background: Background::default(), film: Film::new(), integrator: Integrator::new(), param: SceneParam::default(), lookup: LookupTableSet::new() }
     }
     /// The triangles of every object, an instanced mesh once for each
     /// object that uses it: what the renderer draws.

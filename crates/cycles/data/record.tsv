@@ -42,3 +42,10 @@ member	AttributeMap	offset	int	2	1
 member	AttributeMap	element	uint16_t	3	1
 member	AttributeMap	type	uint8_t	4	1
 member	AttributeMap	pad	uint8_t	5	1
+struct	KernelShader	8
+member	KernelShader	constant_emission	float	0	3
+member	KernelShader	cryptomatte_id	float	3	1
+member	KernelShader	flags	int	4	1
+member	KernelShader	pass_id	int	5	1
+member	KernelShader	pad2	int	6	1
+member	KernelShader	pad3	int	7	1
