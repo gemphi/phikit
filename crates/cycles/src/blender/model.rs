@@ -13,6 +13,7 @@ use std::sync::Arc;
 use phiphx::Phx;
 use phiphx::scene::{SceneCamera, SceneMaterial, SceneMesh, SceneModel, SceneObject};
 
+use super::graph::{GraphSource, LinkSource, NodeSource, NodeStorage, SocketClass, SocketSource, SocketValue};
 use super::source::{CameraSource, MaterialSource, MeshSource, NodeSurface, ObjectSource, SceneSource, SensorFit};
 
 /// The default of a socket the graph leaves unlinked, as three floats.
@@ -77,6 +78,58 @@ fn node_surface(material: &SceneMaterial) -> NodeSurface {
     }
 }
 
+/// `bNodeSocket::type` (`eNodeSocketDatatype`) as Cycles sees it.
+fn class_of(kind: i32) -> SocketClass {
+    match kind {
+        0 => SocketClass::Float,
+        1 => SocketClass::Vector,
+        2 => SocketClass::Color,
+        3 => SocketClass::Closure,
+        4 => SocketClass::Boolean,
+        6 => SocketClass::Int,
+        7 => SocketClass::String,
+        _ => SocketClass::Undefined,
+    }
+}
+fn socket_of(socket: &phiphx::blend::shade::socket::BlendSocket) -> SocketSource {
+    use phiphx::blend::shade::socket::BSocketDefault;
+    let value = socket.default.as_ref().map(|value| match value {
+        BSocketDefault::Float(value) => SocketValue::Float(*value),
+        BSocketDefault::Color([r, g, b, _]) => SocketValue::Color([*r, *g, *b]),
+        BSocketDefault::Vector(value) => SocketValue::Vector(*value),
+        BSocketDefault::Bool(value) => SocketValue::Boolean(*value),
+        BSocketDefault::Int(value) => SocketValue::Int(*value),
+    });
+    SocketSource { identifier: socket.identifier.clone(), class: class_of(socket.kind), available: socket.available(), value }
+}
+/// A node of the material's tree. phiphx gives `custom1`, `custom2` and the
+/// address of `storage` but not its contents, and not the tree a group
+/// node instances.
+fn node_of(node: &phiphx::blend::shade::graph::BlendNode) -> NodeSource {
+    NodeSource {
+        idname: node.idname.clone(),
+        name: node.name.clone(),
+        custom1: node.custom1,
+        custom2: node.custom2,
+        muted: node.muted(),
+        reroute: node.reroute(),
+        active_output: node.active_output(),
+        group: None,
+        storage: NodeStorage::None,
+        input: node.inputs.iter().map(socket_of).collect(),
+        output: node.outputs.iter().map(socket_of).collect(),
+    }
+}
+/// The material's node tree, the frames left out, with the output a
+/// Cycles render uses.
+fn graph_source(material: &SceneMaterial) -> GraphSource {
+    let graph = &material.graph;
+    GraphSource {
+        node: graph.nodes.iter().filter(|node| !node.frame()).map(node_of).collect(),
+        link: graph.links.iter().map(|link| LinkSource { from: link.from.clone(), from_socket: link.from_socket.clone(), to: link.to.clone(), to_socket: link.to_socket.clone() }).collect(),
+        output: output_node(material).map(|node| node.name.clone()),
+    }
+}
 /// A material of phiphx as the source has it: the base colour, and the
 /// emission of the Principled BSDF, and what its graph makes.
 fn material_of(material: &SceneMaterial) -> MaterialSource {
@@ -89,6 +142,7 @@ fn material_of(material: &SceneMaterial) -> MaterialSource {
         diffuse_color: [material.viewport_color[0], material.viewport_color[1], material.viewport_color[2]],
         node: node_surface(material),
         node_kind: material.graph.nodes.iter().map(|node| node.idname.clone()).collect(),
+        graph: graph_source(material),
     }
 }
 

@@ -3,3 +3,4 @@
 //! Tests of `src/blender`, one file for each file there.
 mod integrator;
 mod model;
+mod shader;

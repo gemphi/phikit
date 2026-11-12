@@ -11,13 +11,21 @@
 //! | `camera.rs` | `blender/camera.cpp` |
 //! | `mesh.rs` | `blender/mesh.cpp` |
 //! | `sync.rs` | `blender/sync.cpp`, `object.cpp`, `shader.cpp` |
+//! | `graph.rs` | the node tree `blender/shader.cpp` reads through RNA |
+//! | `node.rs` | `blender/shader.cpp` `add_node` |
+//! | `shader.rs` | `blender/shader.cpp` `add_nodes` |
 //! | `model.rs` | (none) phiphx's `SceneModel` into a `SceneSource`: the only file that names phiphx |
 mod camera;
+mod graph;
 mod integrator;
 mod mesh;
 mod model;
+mod node;
+mod shader;
 mod source;
 mod sync;
+pub use graph::{GraphSource, LinkSource, NodeSource, NodeStorage, SocketClass, SocketSource, SocketValue};
+pub use shader::graph_of;
 pub use camera::{camera_matrix, sync_camera, transform_of, viewplane};
 pub use integrator::{sample_count, setting, sync_film, sync_integrator};
 pub use mesh::sync_mesh;

@@ -5,6 +5,7 @@
 //! `BlenderSync::sync_mesh`, `sync_object` and `sync_background`): the
 //! one shape the sync takes, whoever read the file. `phiphx.rs` fills it
 //! from phiphx's `SceneModel`; nothing else here knows where it came from.
+use super::graph::GraphSource;
 
 /// `BlenderCamera::sensor_fit`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -64,6 +65,8 @@ pub struct MaterialSource {
     pub node: NodeSurface,
     /// The idname of every node of the graph, for knowing what a scene uses.
     pub node_kind: Vec<String>,
+    /// The whole node tree, as lender/shader.cpp reads it.
+    pub graph: GraphSource,
 }
 
 /// What `BlenderSync::sync_mesh` reads of a mesh: triangulated, as
