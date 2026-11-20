@@ -160,6 +160,11 @@ impl BlendFile {
                 _ => default,
             }
         };
+        // A volume with no surface draws none (`volume.rs`).
+        if self.volume_alone(ma, dna) {
+            let b = super::volume::no_surface();
+            return (b.base, b.roughness, b.metallic, b);
+        }
         // The surface the Material Output is linked to (`surface.rs`) —
         // its Principled BSDF, or the other closures folded to one — wins;
         // the legacy `Material.r/g/b/roughness/metallic` fields are the
