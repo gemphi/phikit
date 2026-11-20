@@ -349,6 +349,12 @@ pub(super) fn attach(objects: &mut [super::SceneObject], p: &crate::blend::Blend
         m.texture = cache.get(&key);
         missing.note(&key, m.texture.is_some());
     }
+    // The Roughness chain, baked once the base is laid: it shares the
+    // base's UVs (`texture_rough.rs`).
+    let mut rough = super::texture_rough::RoughBakeSet::default();
+    for m in objects.iter_mut().flat_map(|o| o.materials.iter_mut()) {
+        rough.attach(m, &mut cache);
+    }
     missing.lines()
 }
 

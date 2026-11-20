@@ -23,6 +23,7 @@ fn material() -> BlendMaterial {
         maps: Default::default(),
         procedural: Default::default(),
         bake: None,
+        rough_bake: None,
     }
 }
 
