@@ -5,8 +5,10 @@
 
 pub mod mesh;
 mod point_cloud;
+pub mod stage;
 mod writer;
 
+pub use stage::UsdStage;
 pub use writer::UsdaWriter;
 
 /// Exporter for USDA and USDC formats.
