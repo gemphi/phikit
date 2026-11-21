@@ -65,3 +65,51 @@ fn resources_are_one_per_type() {
     assert_eq!(w.resources.remove::<u32>(), Some(5));
     assert!(w.resources.get::<u32>().is_none());
 }
+struct Mass(f32);
+impl Aspect for Mass {
+    fn name() -> &'static str {
+        "mass"
+    }
+}
+struct Scratch;
+impl Aspect for Scratch {
+    const TRANSIENT: bool = true;
+}
+#[test]
+fn aspects_have_names_and_a_word_lists_them() {
+    let mut w = World::new();
+    let a = w.coin_bare("a");
+    w.bind(a, Mass(1.0));
+    w.bind(a, Colour("red"));
+    w.bind(a, Scratch);
+    assert_eq!(Mass::name(), "mass");
+    assert!(Colour::name().ends_with("Colour"), "default is the type path");
+    let list = w.aspect_list(a);
+    assert_eq!(list.len(), 3);
+    assert!(list.contains(&"mass"));
+    assert!(Scratch::TRANSIENT && !Mass::TRANSIENT);
+    w.unbind::<Mass>(a);
+    assert!(!w.aspect_list(a).contains(&"mass"));
+}
+#[test]
+fn a_write_stamps_the_tick_and_says_so_once() {
+    use crate::system::event::DidChange;
+    let mut w = World::new();
+    let (a, b) = (w.coin_bare("a"), w.coin_bare("b"));
+    w.bind(a, Mass(1.0));
+    w.bind(b, Mass(2.0));
+    assert_eq!(w.changed::<Mass>(a), Some(0), "bound before any step");
+    w.step(1.0);
+    w.step(1.0);
+    assert_eq!(w.changed::<Mass>(a), Some(0));
+    w.read_mut::<Mass>(a).unwrap().0 = 5.0;
+    w.read_mut::<Mass>(a).unwrap().0 = 6.0;
+    assert_eq!(w.changed::<Mass>(a), Some(2));
+    assert_eq!(w.changed_since::<Mass>(1), [(a, 2)], "b did not change since tick 1");
+    let seen: Vec<_> = w.events::<DidChange>().filter(|e| e.word == a && e.aspect == "mass").collect();
+    assert_eq!(seen.len(), 1, "two writes in one tick, one event");
+    let c = w.coin_bare("c");
+    assert_eq!(w.changed::<Mass>(c), None);
+    w.unbind::<Mass>(a);
+    assert_eq!(w.changed::<Mass>(a), None);
+}

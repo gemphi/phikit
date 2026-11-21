@@ -193,7 +193,9 @@ fn restart(w: &mut World, out: Option<Vec2>) {
         b.vel = Vec2::ZERO;
         w.bind(p, b);
         let a = *w.read::<BAct>(p).expect("acting");
-        w.bind(p, BAct { mv: BMove::Idle, start: game(w).frame, was: Some((a.mv, Default::default())), ..a });
+        let frame = game(w).frame;
+        super::handoff::begin(w, p, frame);
+        w.bind(p, BAct { mv: BMove::Idle, start: frame, ..a });
     }
     // The restarter: the point guard, the centre, the striker.
     let code = match sport.goal {

@@ -8,6 +8,7 @@
 //! their targets (Post-couple) and writing the frame down (Readout).
 
 use super::ball::BBallState;
+use super::handoff;
 use super::state::BPhase;
 use super::{BEvent, BStep, BTape, BTrack, FPS, heading_to, unwrap};
 use crate::choice::BChoice;
@@ -50,8 +51,6 @@ pub struct BAct {
     /// Its stride's phase and the dribble's, running on.
     pub phase: f32,
     pub dphase: f32,
-    /// The move before and its moment, for the blend into this one.
-    pub was: Option<(BMove, BMoment)>,
 }
 impl Aspect for BAct {}
 
@@ -82,7 +81,7 @@ pub struct BGame {
     pub wait: usize,
 }
 
-/// Blends between moves over this many frames (make_demo's `BLEND`).
+/// Blends between moves over this many frames (make_demo's `BLEND`; see `handoff`).
 pub const BLEND: usize = 5;
 
 /// A world lined up for `choice`: `side` players a team, in their positions.
@@ -103,7 +102,7 @@ pub fn build(choice: &BChoice) -> World {
             let word = w.coin(&format!("{} {}", team_kind.spec().name, people[slot].number)).word();
             w.bind(word, BBody { at, vel: Vec2::ZERO, heading: heading_to(Vec2::new(-attack_dir(team), 0.0)) + std::f32::consts::PI, target: at, pace: 3.0, face: None });
             w.bind(word, BRole { team, slot, roster: slot });
-            w.bind(word, BAct { mv: BMove::Idle, start: 0, phase: 0.0, dphase: 0.0, was: None });
+            w.bind(word, BAct { mv: BMove::Idle, start: 0, phase: 0.0, dphase: 0.0 });
             players.push(word);
             tracks.push(BTrack { team, roster: slot, slot, steps: Vec::new() });
         }
@@ -143,8 +142,8 @@ pub fn act(w: &mut World, player: Word, mv: BMove) -> bool {
     if a.mv == mv || !a.mv.may_follow(mv) {
         return a.mv == mv;
     }
-    let was = Some((a.mv, moment_of(w, player, frame)));
-    w.bind(player, BAct { mv, start: frame, was, ..a });
+    handoff::begin(w, player, frame);
+    w.bind(player, BAct { mv, start: frame, ..a });
     true
 }
 
@@ -211,12 +210,13 @@ pub fn record(w: &mut World, _dt: f32) {
         .map(|&p| {
             let a = *w.read::<BAct>(p).expect("acting");
             let b = *w.read::<BBody>(p).expect("a body");
-            let moment = moment_of(w, p, frame);
-            let since = frame - a.start;
-            let from = a.was.filter(|_| since < BLEND).map(|(mv, m)| (mv, BMoment { t: 1.0, ..m }, 1.0 - (since + 1) as f32 / (BLEND + 1) as f32));
-            BStep { at: b.at, heading: b.heading, mv: a.mv, moment, from }
+            BStep { at: b.at, heading: b.heading, mv: a.mv, moment: moment_of(w, p, frame), from: handoff::from_at(w, p, frame) }
         })
         .collect();
+    // What was written is the next blend's source.
+    for (&p, step) in players.iter().zip(&steps) {
+        w.bind(p, handoff::emitted(step));
+    }
     let g = game_mut(w);
     for (track, step) in g.tape.players.iter_mut().zip(steps) {
         track.steps.push(step);
