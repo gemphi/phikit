@@ -39,11 +39,9 @@ members = [
     # looks, themes and venues as declarative sets, and the play itself on
     # phiecs (`crates/phicore/phiecs`).
     "crates/phiplay",
-    # The robotic system (`crates/phiace`): a robot as words in the phiecs world.
-    # Meta's robotics frameworks sit under `crates/phiace/reference` as
-    # submodules, references to port from, not built. Every crate keeps its
-    # guiding repositories in its own `reference/` folder.
     "crates/phiace",
+    # Cycles in Rust, ported top to bottom (`crates/cycles`).
+    "crates/cycles",
     # The core of phinet's phiecs that phiber and phiplay run on, kept here
     # so phikit builds with no phinet folder beside it.
     "crates/phicore/phiecs",
@@ -652,6 +650,19 @@ phiber = { opt-level = 0 }
 # Build single-source-file crates with cg=1 as it helps make `cargo build` of a whole workspace a bit faster
 collections = { codegen-units = 1, opt-level = 3 }
 refineable = { codegen-units = 1, opt-level = 3 }
+
+# Tests of the two crates being edited. `[profile.dev.package]` builds
+# phiray and phiphx at opt-level 3 so phiber's viewport is fast in a dev
+# build, and `cargo test` inherits that: a one-file change in phiphx (about
+# 400 files) meant optimising the whole crate again before any test ran.
+# opt-level 1 keeps the truth tests over real .blend files quick to run
+# while compiling far faster. Dependencies stay at 3 and are shared with
+# the dev build, so only these two crates and what depends on them diverge.
+[profile.test.package.phiphx]
+opt-level = 1
+
+[profile.test.package.phiray]
+opt-level = 1
 
 [profile.release]
 debug = "limited"

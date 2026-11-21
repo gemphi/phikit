@@ -1,0 +1,35 @@
+# The text of the scheduler's report, RenderScheduler::full_report
+# (intern/cycles/integrator/render_scheduler.cpp:630-745).
+# key	text
+title	Render Scheduler Summary
+mode	Mode
+mode.headless	Headless
+mode.background	Background
+mode.interactive	Interactive
+resolution	Resolution
+use	Use
+true	True
+false	False
+adaptive	Adaptive sampling
+adaptive.step	Step
+adaptive.min	Min Samples
+adaptive.threshold	Threshold
+denoiser	Denoiser
+denoiser.type	Type
+denoiser.start	Start Sample
+denoiser.pass	Passes
+denoiser.color	Color
+rebalance	Rebalancer
+rebalance.request	Number of requested rebalances
+rebalance.change	Number of performed rebalances
+time	Time (in seconds)
+time.wall	Wall
+time.average	Average
+time.path_trace	Path Tracing
+time.adaptive	Adaptive Filter
+time.denoise	Denoiser
+time.display	Display Update
+time.rebalance	Rebalance
+total	Total
+rendered	Rendered {sample} samples in {second} seconds
+per_sample	Average time per sample: {second} seconds

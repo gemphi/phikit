@@ -111,6 +111,24 @@ phiray's own audit is `crates/phiray/docs/ROADMAP.md`.
 - Drivers for the new modifiers (`driver.rs` `SETTINGS` has no CORRECTIVE_SMOOTH / SHRINKWRAP / MASK rows).
 - Geometry Nodes beyond Smooth by Angle, particles, Bevel modifier: none of the 230 files use them.
 
+## USD (`src/export/usd`)
+One writer from `SceneModel`: `UsdStage` (`SceneModel::to_usda`). Z-up,
+`metersPerUnit = 1`, evaluated triangles (`subdivisionScheme = "none"`),
+face-varying normals, per-vertex UVs, `GeomSubset` per material slot, shared
+meshes as `instanceable` prototypes, cameras, UsdLux lights (watts law in
+`stage/light.rs`), the world as a `DomeLight`, `UsdPreviewSurface` materials.
+`BlenderScene::to_usda` goes through it. Checked by `UsdCheck` and
+`tests/usd_stage_truth.rs` (counts against the scene); never yet loaded in
+`pxr`, which is not installed here.
+Open, in order of use:
+- **USDC writer**: `export_usdc` is still a stub.
+- **USDZ**: zip layer + images; a packed image has no file to point at yet.
+- **A real reader**: nothing reads USD back, so no round trip is tested.
+- **UsdSkel**: armatures and weights (`SceneModel::rig`).
+- **`timeSamples`**: animation (`SceneModel::motion`, actions, timeline).
+- **Convert on load**: USD / OBJ / Alembic into a `SceneModel` without Blender.
+- Per-corner UVs, more than one UV set, Sky Texture worlds, node graphs beyond
+  UsdPreviewSurface's inputs (transmission, subsurface, sheen, procedurals).
 ## Committed so far (2026-10-28, nothing pushed)
 
 - phiber `1cbde46` — the em dash written as a hyphen through the reader and
