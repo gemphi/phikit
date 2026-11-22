@@ -34,13 +34,22 @@ impl RoughBakeSet {
     /// UVs, and the bake is over the mesh's own.
     pub(super) fn attach(&mut self, m: &mut SceneMaterial, cache: &mut TextureCache) {
         let Some(program) = m.rough_bake.clone() else { return };
-        if m.maps.rough.is_some() || m.uv_affine.is_some() {
+        // Tiled sources are baked over their whole grid, and that is the
+        // one affine the base may carry: the UVs scaled onto the grid
+        // (`texture::tile_scale`), which this map then shares.
+        let grid = program.images.iter().fold([1u32, 1], |most, i| {
+            let _ = cache.get(&i.key);
+            let g = cache.grid(&i.key);
+            [most[0].max(g[0]), most[1].max(g[1])]
+        });
+        let on_the_grid = grid != [1, 1] && m.uv_affine == Some(super::texture::tile_scale(grid));
+        if m.maps.rough.is_some() || (m.uv_affine.is_some() && !on_the_grid) {
             return;
         }
         let image = match self.done.iter().find(|(seen, _)| *seen == program) {
             Some((_, image)) => image.clone(),
             None => {
-                let image = run(&program, cache);
+                let image = run(&program, cache, grid);
                 self.done.push((program, image.clone()));
                 image
             }
@@ -53,16 +62,19 @@ impl RoughBakeSet {
 
 /// The program over the UV unit square, each image sampled through its own
 /// affine. `None` when no source image resolved: the folded value stands.
-fn run(program: &BlendBake, cache: &mut TextureCache) -> Option<SceneTexture> {
+fn run(program: &BlendBake, cache: &mut TextureCache, grid: [u32; 2]) -> Option<SceneTexture> {
     let source_list: Vec<Option<SceneTexture>> = program.images.iter().map(|i| cache.get(&i.key).map(|t| if i.straight { t } else { t.associated() })).collect();
     source_list.iter().any(Option::is_some).then_some(())?;
-    let side = source_list.iter().flatten().map(|t| t.width.max(t.height)).max().unwrap_or(GRID).clamp(64, GRID);
-    let mut out = Vec::with_capacity((side * side * 4) as usize);
-    for y in 0..side {
-        for x in 0..side {
-            let uv = [(x as f32 + 0.5) / side as f32, 1.0 - (y as f32 + 0.5) / side as f32];
+    let tile_list: Vec<[u32; 2]> = program.images.iter().map(|i| cache.grid(&i.key)).collect();
+    // One UV square is `side` texels; `grid` of them are baked.
+    let side = source_list.iter().zip(&tile_list).filter_map(|(t, g)| t.as_ref().map(|t| (t.width / g[0].max(1)).max(t.height / g[1].max(1)))).max().unwrap_or(GRID).clamp(64, GRID);
+    let (w, h) = (side * grid[0].max(1), side * grid[1].max(1));
+    let mut out = Vec::with_capacity((w * h * 4) as usize);
+    for y in 0..h {
+        for x in 0..w {
+            let uv = [(x as f32 + 0.5) / side as f32, grid[1].max(1) as f32 - (y as f32 + 0.5) / side as f32];
             let [r, g, b, _] = bake::run(&program.ops, &|i| match source_list.get(i as usize).and_then(Option::as_ref) {
-                Some(t) => t.sample_smooth(bake::apply(program.images[i as usize].affine, uv)),
+                Some(t) => t.sample_smooth(bake::apply(super::texture::tile_scale(tile_list[i as usize]), bake::apply(program.images[i as usize].affine, uv))),
                 // A missing source reads as Blender's missing-image magenta.
                 None => [1.0, 0.0, 1.0, 1.0],
             });
@@ -70,7 +82,7 @@ fn run(program: &BlendBake, cache: &mut TextureCache) -> Option<SceneTexture> {
             out.push(255);
         }
     }
-    Some(SceneTexture { width: side, height: side, rgba: Arc::new(out) })
+    Some(SceneTexture { width: w, height: h, rgba: Arc::new(out) })
 }
 
 /// A value in 0..1 as the byte the kernel reads back.
@@ -89,7 +101,7 @@ mod tests {
     fn a_chain_whose_image_is_absent_bakes_nothing() {
         let program = BlendBake { images: vec![BBakeImage { key: "absent.png".into(), affine: IDENTITY, straight: true }], ops: vec![BBakeOp::Image(0)], alpha: None };
         let mut cache = TextureCache::new(&[], None);
-        assert!(run(&program, &mut cache).is_none());
+        assert!(run(&program, &mut cache, [1, 1]).is_none());
     }
 
     #[test]

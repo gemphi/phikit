@@ -159,11 +159,11 @@ pub fn candidates(key: &str, blend: Option<&Path>) -> Vec<PathBuf> {
 /// Find Missing Files — the file name anywhere under the folder's tree or
 /// its `textures/` (`texture_find.rs`).
 ///
-/// A tiled image's path carries a `<UDIM>` token (`BKE_image_get_tile_*`);
-/// the first tile, 1001, is the one UV square the kernel samples, so the
-/// token resolves to it here.
+/// A tiled image's path carries a `<UDIM>` token (`BKE_image_get_tile_*`).
+/// Asked for as it stands the token resolves to the first tile, 1001; the
+/// cache asks for each tile by its own number (`TextureCache::tiled`).
 pub fn candidates_in(key: &str, dir: Option<&Path>) -> Vec<PathBuf> {
-    let key = key.replace("<UDIM>", "1001");
+    let key = key.replace(UDIM, "1001");
     let mut out = Vec::new();
     match (key.strip_prefix("//"), dir) {
         (Some(rel), Some(d)) => out.push(d.join(rel.replace('\\', "/"))),
@@ -181,32 +181,113 @@ pub fn candidates_in(key: &str, dir: Option<&Path>) -> Vec<PathBuf> {
 }
 }
 
+/// The token a tiled image's path carries where the tile's number goes.
+pub const UDIM: &str = "<UDIM>";
+
+/// Blender numbers a tile `1001 + u + 10 v`: ten across, then the next row.
+const TILE_ACROSS: u32 = 10;
+
+/// The UV scale that lays a mesh's UVs, which run over `grid` tiles, onto
+/// the one image the tiles were put together into.
+pub fn tile_scale(grid: [u32; 2]) -> [[f32; 3]; 2] {
+    [[1.0 / grid[0].max(1) as f32, 0.0, 0.0], [0.0, 1.0 / grid[1].max(1) as f32, 0.0]]
+}
+
+/// `outer` after `inner`, both UV affines.
+pub fn affine_after(outer: [[f32; 3]; 2], inner: [[f32; 3]; 2]) -> [[f32; 3]; 2] {
+    let row = |o: [f32; 3]| [o[0] * inner[0][0] + o[1] * inner[1][0], o[0] * inner[0][1] + o[1] * inner[1][1], o[0] * inner[0][2] + o[1] * inner[1][2] + o[2]];
+    [row(outer[0]), row(outer[1])]
+}
+
 /// Decodes each image key once per load.
 #[derive(Default)]
 pub struct TextureCache {
     packed: HashMap<String, Arc<Vec<u8>>>,
     blend: Option<PathBuf>,
     done: HashMap<String, Option<SceneTexture>>,
+    /// The tiles a tiled image was put together from, across and up.
+    grid: HashMap<String, [u32; 2]>,
 }
 
 impl TextureCache {
     pub fn new(packed: &[(String, Arc<Vec<u8>>)], blend: Option<&Path>) -> Self {
-        Self { packed: packed.iter().cloned().collect(), blend: blend.map(Path::to_path_buf), done: HashMap::new() }
+        Self { packed: packed.iter().cloned().collect(), blend: blend.map(Path::to_path_buf), done: HashMap::new(), grid: HashMap::new() }
     }
 
     pub fn get(&mut self, key: &str) -> Option<SceneTexture> {
         if let Some(t) = self.done.get(key) {
             return t.clone();
         }
-        let tex = match self.packed.get(key) {
-            Some(bytes) => SceneTexture::decode(bytes),
-            None => SceneTexture::candidates(key, self.blend.as_deref())
+        let tex = match (self.packed.get(key), key.contains(UDIM)) {
+            (Some(bytes), _) => SceneTexture::decode(bytes),
+            (None, true) => self.tiled(key),
+            (None, false) => SceneTexture::candidates(key, self.blend.as_deref())
                 .iter()
                 .find_map(|p| std::fs::read(p).ok())
                 .and_then(|b| SceneTexture::decode(&b)),
         };
         self.done.insert(key.to_string(), tex.clone());
         tex
+    }
+
+    /// How many tiles `key`'s image runs over, across and up: one by one
+    /// for an image that is not tiled, or not asked for yet.
+    pub fn grid(&self, key: &str) -> [u32; 2] {
+        self.grid.get(key).copied().unwrap_or([1, 1])
+    }
+
+    /// A tiled image: every tile found, put together into one image with
+    /// tile 1001 at the bottom left, as the UVs run.
+    ///
+    /// Only tile 1001 used to be read, and the kernel wraps a UV into the
+    /// unit square, so every other tile drew the first one's pixels. The
+    /// CW characters keep the body on one tile and the head, arms and legs
+    /// on others: their faces and arms came out with the body tile's
+    /// seams across them, as black bands. A tile missing from the middle
+    /// of the grid is the missing-image magenta.
+    fn tiled(&mut self, key: &str) -> Option<SceneTexture> {
+        let dir = self.blend.as_deref().and_then(Path::parent);
+        let mut found: Vec<(u32, u32, SceneTexture)> = Vec::new();
+        for up in 0..TILE_ACROSS {
+            let before = found.len();
+            for across in 0..TILE_ACROSS {
+                let number = 1001 + up * TILE_ACROSS + across;
+                let tile = key.replace(UDIM, &number.to_string());
+                let read = SceneTexture::candidates_in(&tile, dir).iter().find_map(|p| std::fs::read(p).ok()).and_then(|b| SceneTexture::decode(&b));
+                if let Some(read) = read {
+                    found.push((across, up, read));
+                }
+            }
+            if found.len() == before {
+                break;
+            }
+        }
+        let cols = found.iter().map(|(across, _, _)| across + 1).max()?;
+        let rows = found.iter().map(|(_, up, _)| up + 1).max()?;
+        if (cols, rows) == (1, 1) {
+            return found.pop().map(|(_, _, only)| only);
+        }
+        let (tw, th) = (found.iter().map(|(_, _, t)| t.width).max()?.max(1), found.iter().map(|(_, _, t)| t.height).max()?.max(1));
+        let (w, h) = (cols * tw, rows * th);
+        let mut out: Vec<u8> = [255u8, 0, 255, 255].iter().copied().cycle().take((w * h * 4) as usize).collect();
+        for (across, up, tile) in found {
+            let fitted = match (tile.width, tile.height) == (tw, th) {
+                true => tile.rgba.as_ref().clone(),
+                false => {
+                    let from = image::RgbaImage::from_raw(tile.width, tile.height, tile.rgba.as_ref().clone())?;
+                    image::imageops::resize(&from, tw, th, image::imageops::FilterType::Triangle).into_raw()
+                }
+            };
+            // Rows run top-down, tiles bottom-up.
+            let (left, top) = (across * tw, (rows - 1 - up) * th);
+            for y in 0..th {
+                let to = (((top + y) * w + left) * 4) as usize;
+                let from = (y * tw * 4) as usize;
+                out[to..to + (tw * 4) as usize].copy_from_slice(&fitted[from..from + (tw * 4) as usize]);
+            }
+        }
+        self.grid.insert(key.to_string(), [cols, rows]);
+        Some(SceneTexture { width: w, height: h, rgba: Arc::new(out) })
     }
 }
 
@@ -348,6 +429,11 @@ pub(super) fn attach(objects: &mut [super::SceneObject], p: &crate::blend::Blend
         let Some(key) = m.base_color_texture.clone() else { continue };
         m.texture = cache.get(&key);
         missing.note(&key, m.texture.is_some());
+        // A tiled image is one image now: the UVs are laid over its grid.
+        let grid = cache.grid(&key);
+        if grid != [1, 1] {
+            m.uv_affine = Some(affine_after(tile_scale(grid), m.uv_affine.unwrap_or(crate::blend::shade::bake::IDENTITY)));
+        }
     }
     // The Roughness chain, baked once the base is laid: it shares the
     // base's UVs (`texture_rough.rs`).
@@ -379,6 +465,11 @@ fn run_bake(bake: &crate::blend::shade::bake::BlendBake, cache: &mut TextureCach
     use crate::blend::shade::bake as b;
     let srcs: Vec<Option<SceneTexture>> = bake.images.iter().map(|i| cache.get(&i.key).map(|t| if i.straight { t } else { t.associated() })).collect();
     srcs.iter().any(Option::is_some).then_some(())?;
+    // The tiles each source runs over, and the most any of them does: the
+    // bake covers that many UV squares, and the UVs are scaled onto it.
+    let grids: Vec<[u32; 2]> = bake.images.iter().map(|i| cache.grid(&i.key)).collect();
+    let grid = grids.iter().fold([1u32, 1], |most, g| [most[0].max(g[0]), most[1].max(g[1])]);
+    let tiled = grid != [1, 1];
     if let (Some(one), Some(Some(src))) = (bake.single(), srcs.first()) {
         let (w, h) = (src.width.max(1), src.height.max(1));
         let mut out = Vec::with_capacity((w * h * 4) as usize);
@@ -388,20 +479,23 @@ fn run_bake(bake: &crate::blend::shade::bake::BlendBake, cache: &mut TextureCach
             let c = b::texel(bake, &|_| texel);
             out.extend([linear_to_srgb(c[0]), linear_to_srgb(c[1]), linear_to_srgb(c[2]), (c[3].clamp(0.0, 1.0) * 255.0 + 0.5) as u8]);
         }
-        return Some((SceneTexture { width: w, height: h, rgba: Arc::new(out) }, Some(one.affine)));
+        return Some((SceneTexture { width: w, height: h, rgba: Arc::new(out) }, Some(affine_after(tile_scale(grid), one.affine))));
     }
-    let side = srcs.iter().flatten().map(|t| t.width.max(t.height)).max().unwrap_or(BAKE_GRID).clamp(64, BAKE_GRID);
-    let mut out = Vec::with_capacity((side * side * 4) as usize);
-    for y in 0..side {
-        for x in 0..side {
-            let uv = [(x as f32 + 0.5) / side as f32, 1.0 - (y as f32 + 0.5) / side as f32];
+    // One UV square is `side` texels; a tiled bake is that many squares.
+    let side = srcs.iter().zip(&grids).filter_map(|(t, g)| t.as_ref().map(|t| (t.width / g[0].max(1)).max(t.height / g[1].max(1)))).max().unwrap_or(BAKE_GRID).clamp(64, BAKE_GRID);
+    let (w, h) = (side * grid[0], side * grid[1]);
+    let mut out = Vec::with_capacity((w * h * 4) as usize);
+    for y in 0..h {
+        for x in 0..w {
+            // In UV squares: 0 to the grid's width across, and up.
+            let uv = [(x as f32 + 0.5) / side as f32, grid[1] as f32 - (y as f32 + 0.5) / side as f32];
             let c = b::texel(bake, &|i| match srcs.get(i as usize).and_then(Option::as_ref) {
-                Some(t) => t.sample_smooth(b::apply(bake.images[i as usize].affine, uv)),
+                Some(t) => t.sample_smooth(b::apply(tile_scale(grids[i as usize]), b::apply(bake.images[i as usize].affine, uv))),
                 // A missing source draws Blender's missing-image magenta.
                 None => [1.0, 0.0, 1.0, 1.0],
             });
             out.extend([linear_to_srgb(c[0]), linear_to_srgb(c[1]), linear_to_srgb(c[2]), (c[3].clamp(0.0, 1.0) * 255.0 + 0.5) as u8]);
         }
     }
-    Some((SceneTexture { width: side, height: side, rgba: Arc::new(out) }, None))
+    Some((SceneTexture { width: w, height: h, rgba: Arc::new(out) }, tiled.then(|| tile_scale(grid))))
 }
