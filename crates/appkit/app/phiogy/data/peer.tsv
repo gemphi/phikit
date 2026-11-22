@@ -1,0 +1,82 @@
+# This window as a caller: a name, a value.
+# `name`: how the name it gives itself on a line begins; letters and
+# digits chosen by chance follow. A browser's page names itself with
+# digits and the letters a to f, and of two callers the one with the
+# lesser name gives way when both offer at once: a name that begins
+# after f never gives way to a browser.
+name	phiogy-
+# `pace`: how often it looks at what the line and its connections
+# brought, in milliseconds.
+pace	10
+# `wait`: how long it waits for the line to answer, in milliseconds.
+wait	5000
+# What it sends: sound at this many samples a second, on this many
+# channels, a piece every this many milliseconds; and a picture this
+# wide and high, this many a second.
+rate	48000
+channel	1
+piece	10
+width	640
+height	360
+frame	15
+# The sound it sends when it has no microphone: a tone of this many
+# cycles a second, this share of full.
+tone	440
+loud	0.2
+# How long a level it shows is taken over, in milliseconds.
+level	200
+# What carries a call when the real library is built in, as a person
+# reads it; what the sound and the picture it sends are called, and
+# the stream that holds both.
+engine	libwebrtc
+sound	sound
+picture	picture
+stream	main
+# The names in a server the line gives, as a browser reads them.
+ice.urls	urls
+ice.username	username
+ice.credential	credential
+# Where the sound and the pictures of a call come from. `system`: the
+# system's own microphone, camera and screen, and what arrives is
+# played on its sound out. `stand`: the tone above and a grey ramp,
+# and nothing is played. One run is given the other with
+# `--set device=stand`: the tests and every picture in doc/ are made
+# so, and nothing of a person's room or screen is ever kept.
+device	system
+device.system	system
+device.stand	stand
+# A screen that is shared: the stream it is sent under, so the other
+# end can tell it from a camera, and what its picture is called; which
+# of the system's screens, counted from 0; how many pictures of it a
+# second; how wide the copy this window shows of it is at most; how
+# wide and high the stand-in's is; and how many pictures it asks the
+# system for before it gives up on a first.
+scene	screen
+scene.picture	screen
+scene.pick	0
+scene.frame	8
+scene.show	640
+scene.width	1280
+scene.height	720
+scene.try	24
+# What is heard: the share of full it is played at, and the most that
+# is kept waiting to be played, in milliseconds.
+play.loud	1
+play.most	200
+# How long no picture comes under a stream before it counts as over,
+# in milliseconds: a camera turned off says nothing.
+fresh	1500
+# What the pictures of a call are named in the window's film: how the
+# names begin, and whose this window's own are.
+film	call/
+film.own	own
+# The names of what the system may not give: the text table says each
+# in words (`call.fault.NAME`).
+fault.mic	mic
+fault.camera	camera
+fault.speaker	speaker
+fault.scene	scene
+# Why, where the system said nothing itself: it has no such device;
+# and the library could make nothing that takes pictures of a screen.
+none	it has none
+scene.none	nothing here can take a picture of a screen

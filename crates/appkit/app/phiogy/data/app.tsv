@@ -1,0 +1,23 @@
+# What Phiogy is to appkit: its name, what Phiora knows it by, the
+# host in front on a mobile
+# window, the host shown in the bar's menu, the space a room is shown
+# in, whether the spaces are shown as tabs over the body, the person's
+# own folder for Phiogy and the file there what they chose is kept in.
+name	Phiogy
+key	phiogy
+front	room
+side	guide
+space	room
+tab	no
+folder	phiogy
+setting	setting.tsv
+# The web Phiogy's own file, which names its hosts and its rooms and
+# the files that say more of them: from this crate's folder. Phiogy
+# asks Phiora for this document first (`data/phiora.tsv`) and reads
+# the file where Phiora does not answer; the files it names are read
+# from beside it either way, and nothing of them is copied.
+# `phiogy --site` and a path reads another file, and asks nobody.
+site	../../../../../puikit/app/phiogy/public/data/phiogy.json
+# The setting of the system that holds a password for `phiogy
+# --signin`, so none is ever a word of a command line.
+secret	PHIOGY_SECRET

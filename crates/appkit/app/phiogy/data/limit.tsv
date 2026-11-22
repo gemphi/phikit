@@ -1,0 +1,21 @@
+# What a call holds and how long the line waits: a name, a number.
+# `caller`: how many are in one room's call. A call is a mesh, every
+# caller connected to every other, so it stays small.
+caller	8
+# `watch`: how many pages may hold one room's line.
+watch	256
+# `beat`: a line that says nothing is told a beat this often, in
+# milliseconds, so nothing between closes a quiet stream. `gone`: a page
+# that took no beat for this long went away, and is dropped.
+beat	20000
+gone	60000
+# `send`: how many signals one post may pass on.
+send	64
+# `body`: how many bytes a request may be. `wire`: how many pages the
+# line serves at once, every room together. `session`: how many guests
+# it remembers.
+body	262144
+wire	1024
+session	4096
+# `tick`: how often the line looks whether it was closed, in milliseconds.
+tick	200

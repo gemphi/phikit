@@ -1,0 +1,6 @@
+# Where the hosts go: space, zone, host, and the zone's share of the width.
+room	main	room	1
+venue	main	venue	1
+friend	main	friend	1
+people	main	people	1
+shop	main	shop	1

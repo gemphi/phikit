@@ -1,0 +1,12 @@
+# Phiogy's modals: slug, label, icon, and the shape each lies in: a
+# square in the middle (said or not), a `drawer` at the right edge, or a
+# `sheet` at the foot, or the `whole` window. `bare` after the shape
+# leaves its panel without a head: no title, no buttons of appkit's.
+# The profile's content is appkit's.
+profile	Profile	user
+# The account: the person, their wallet, the look, and being somebody
+# to Phiora; at the window's right edge, as the web's is.
+account	You	user	drawer	bare
+# A picture posted in a room, looked at alone: over the whole window,
+# with its own controls and no head.
+view	Picture	image	whole	bare

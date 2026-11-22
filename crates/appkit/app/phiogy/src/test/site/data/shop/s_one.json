@@ -1,0 +1,143 @@
+{
+  "id": "s_one",
+  "label": "Shop One",
+  "sub": "Looks and pups.",
+  "icon": "bag",
+  "count": 4,
+  "menu": [
+    {
+      "id": "s_one.women",
+      "label": "Women",
+      "icon": "layers",
+      "head": true,
+      "items": [
+        {
+          "id": "s_one.women.coats",
+          "label": "Coats",
+          "icon": "layers",
+          "count": 2,
+          "at": [
+            0,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "s_one.pft",
+      "label": "PFTs",
+      "icon": "user",
+      "count": 1,
+      "at": [
+        2
+      ]
+    },
+    {
+      "id": "s_one.theme",
+      "label": "Themes",
+      "icon": "spark",
+      "count": 1,
+      "at": [
+        3
+      ]
+    }
+  ],
+  "product": [
+    {
+      "id": "lk1",
+      "title": "Teal Signal",
+      "sub": "$7,000",
+      "cost": 7000,
+      "tag": "Common",
+      "look": true,
+      "image": "phiegg:worlds/w_brocade.png",
+      "kind": "Outerwear",
+      "meta": "Teal",
+      "page": {
+        "viewList": [
+          {
+            "label": "Front",
+            "image": "phiegg:worlds/w_brocade.png"
+          },
+          {
+            "label": "Back",
+            "image": "phiegg:worlds/w_carousel.png"
+          }
+        ],
+        "fieldList": [
+          [
+            "Colour",
+            "Teal"
+          ],
+          [
+            "Fabric",
+            "silk"
+          ]
+        ],
+        "body": "Cut for after the show."
+      }
+    },
+    {
+      "id": "lk2",
+      "title": "Plum Line",
+      "sub": "$900",
+      "cost": 900,
+      "look": true,
+      "image": "phiegg:worlds/w_carousel.png",
+      "kind": "Coat",
+      "page": {}
+    },
+    {
+      "id": "pft1",
+      "title": "Bold Pup #1",
+      "sub": "$1,600",
+      "cost": 1600,
+      "kind": "PFT",
+      "meta": "Bold Pups",
+      "sprite": {
+        "sheet": "phiegg:portraits/sheet-00.webp",
+        "cols": 8,
+        "index": 0
+      },
+      "page": {
+        "fieldList": [
+          [
+            "Token",
+            "bpsc-1"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "theme1",
+      "title": "Sphere",
+      "sub": "$12",
+      "cost": 12,
+      "kind": "Theme",
+      "swatch": [
+        "#3B4657",
+        "hsl(212 58% 55%)",
+        "hsl(142 70% 45%)"
+      ],
+      "wear": {
+        "palette": "sphere"
+      },
+      "page": {}
+    }
+  ],
+  "landing": [
+    {
+      "kind": "hero",
+      "heading": "Shop One",
+      "image": "phiegg:worlds/w_brocade.png"
+    },
+    {
+      "kind": "grid",
+      "title": "New in",
+      "at": [
+        0,
+        2
+      ]
+    }
+  ]
+}

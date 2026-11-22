@@ -1,0 +1,23 @@
+# What a row of the bar shows beside it: the row, the seat of the group
+# (top, center, bottom), the group, then slug, label, icon, and what a
+# press does. A `head` row is its group's heading. A `side` row has the
+# group hold the host app.tsv calls `side`: the hosts the person joined
+# with their rooms, which takes the room the other groups leave.
+room	top	go	start	Start	home	tell	start
+room	top	go	venue	Hosts	globe	space	venue
+room	center	joined	guide	Rooms	chat	side
+venue	top	go	start	Start	home	tell	start
+venue	top	go	room	Room	chat	space	room
+venue	center	joined	guide	Rooms	chat	side
+menu	top	go	start	Start	home	tell	start
+menu	top	go	venue	Hosts	globe	space	venue
+menu	center	look	look	Appearance		head
+menu	center	look	light	Light	sun	tell	look light
+menu	center	look	dark	Dark	moon	tell	look dark
+menu	center	look	glass	Glass	layers	tell	look glass
+menu	center	look	frost	Glass Light	blend	tell	look frost
+menu	bottom	you	account	Account	wallet	modal	account
+menu	bottom	you	profile	Profile	user	modal	profile
+shop	top	go	start	Start	home	tell	start
+shop	top	go	venue	Hosts	globe	space	venue
+shop	center	joined	guide	Rooms	chat	side

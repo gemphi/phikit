@@ -1,0 +1,65 @@
+//! Phiogy's tables, as the files in `data/` hold them. They are built
+//! into the program, so the same app runs where there is no disk to read:
+//! in a browser. Nothing a person reads, no limit and no name on the
+//! wire is anywhere else.
+
+/// What Phiogy is to appkit, and its window.
+pub const APP: &str = include_str!("../data/app.tsv");
+pub const SPACE: &str = include_str!("../data/space.tsv");
+pub const LAYOUT: &str = include_str!("../data/layout.tsv");
+pub const HOST: &str = include_str!("../data/host.tsv");
+pub const REGION: &str = include_str!("../data/region.tsv");
+pub const PART: &str = include_str!("../data/part.tsv");
+pub const MODAL: &str = include_str!("../data/modal.tsv");
+/// The words: what a person reads in the window, then what the command
+/// line says. Two files, one table.
+pub const TEXT: &str = concat!(include_str!("../data/text.tsv"), include_str!("../data/say.tsv"));
+pub const THEME: &str = include_str!("../data/theme.tsv");
+pub const LOOK: &str = include_str!("../data/look.tsv");
+pub const ACTIVITY: &str = include_str!("../data/activity.tsv");
+pub const MENU: &str = include_str!("../data/menu.tsv");
+pub const USER: &str = include_str!("../data/user.tsv");
+/// How the web Phiogy's files are read, and its icons drawn.
+pub const SITE: &str = include_str!("../data/site.tsv");
+pub const ICON: &str = include_str!("../data/icon.tsv");
+/// Phiora, which is asked for the app's document before its file is.
+pub const PHIORA: &str = include_str!("../data/phiora.tsv");
+/// The wallet a person starts with, and the names in its documents.
+pub const WALLET: &str = include_str!("../data/wallet.tsv");
+/// What a theme that is worn changes of the window.
+pub const WEAR: &str = include_str!("../data/wear.tsv");
+/// The pages that are no room, and the space each is shown in.
+pub const PAGE: &str = include_str!("../data/page.tsv");
+/// What a person keeps: their own documents, and where.
+pub const KEEP: &str = include_str!("../data/keep.tsv");
+/// A room's controls, and the viewer's: what each does, its icon, its
+/// word.
+pub const ACT: &str = include_str!("../data/act.tsv");
+pub const TOOL: &str = include_str!("../data/tool.tsv");
+/// Where the pictures the site names are on disk.
+pub const ASSET: &str = include_str!("../data/asset.tsv");
+/// The rules of a call.
+pub const LIMIT: &str = include_str!("../data/limit.tsv");
+pub const NAME: &str = include_str!("../data/name.tsv");
+pub const FAULT: &str = include_str!("../data/fault.tsv");
+pub const WIRE: &str = include_str!("../data/wire.tsv");
+pub const ICE: &str = include_str!("../data/ice.tsv");
+/// The line.
+pub const LINE: &str = include_str!("../data/line.tsv");
+pub const HEAD: &str = include_str!("../data/head.tsv");
+pub const STATUS: &str = include_str!("../data/status.tsv");
+pub const SERVE: &str = include_str!("../data/serve.tsv");
+
+/// This window as a caller: what it asks of the line, the words two
+/// callers say to each other, and its own numbers.
+pub const DIAL: &str = include_str!("../data/dial.tsv");
+pub const SIGNAL: &str = include_str!("../data/signal.tsv");
+pub const PEER: &str = include_str!("../data/peer.tsv");
+
+/// The rows of a table with more than two cells a line: the cells of
+/// every line that is not empty and does not start with `#`, between
+/// tabs.
+pub fn row(text: &str) -> Vec<Vec<&str>> {
+    let line = text.lines().filter(|line| !line.trim().is_empty() && !line.starts_with('#'));
+    line.map(|line| line.split('\t').map(str::trim).collect()).collect()
+}

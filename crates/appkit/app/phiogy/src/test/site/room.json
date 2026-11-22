@@ -1,0 +1,147 @@
+{
+  "me": "you",
+  "member": [
+    {
+      "id": "you",
+      "name": "You",
+      "face": 5
+    },
+    {
+      "id": "lora",
+      "name": "Lora Vale",
+      "face": 1,
+      "handle": "lora",
+      "role": "Host of Lora Land",
+      "bio": "I run Lora Land and the Spark show.",
+      "state": "Here now",
+      "presence": "here",
+      "since": "Mar 2026",
+      "tag": [
+        "Host",
+        "Shows"
+      ],
+      "link": 2,
+      "banner": "phiegg:worlds/w_atelier_nine.png"
+    },
+    {
+      "id": "tavi",
+      "name": "Tavi Reyes",
+      "face": 9,
+      "sheet": "phiegg:portraits/sheet-06.webp",
+      "handle": "tavi",
+      "role": "Member",
+      "state": "Away",
+      "presence": "away",
+      "since": "Jun 2026",
+      "link": 1
+    },
+    {
+      "id": "u_nina",
+      "name": "Nina Valcourt",
+      "handle": "nina.v",
+      "face": 3,
+      "state": "Here now",
+      "presence": "here"
+    },
+    {
+      "id": "u_milo",
+      "name": "Milo Brandt",
+      "handle": "milo",
+      "face": 4,
+      "presence": "off"
+    }
+  ],
+  "room": {
+    "lora": {
+      "label": "Lora Vale",
+      "with": "lora",
+      "member": []
+    },
+    "lobby": {
+      "label": "lobby",
+      "topic": "Say hello, tell us what you are building.",
+      "member": [
+        "you",
+        "lora",
+        "tavi"
+      ],
+      "unread": 2,
+      "message": [
+        {
+          "id": "d1",
+          "by": "tavi",
+          "day": "Yesterday",
+          "at": "21:15",
+          "text": "The mark is drawn on the font now.",
+          "image": [
+            "phiegg:worlds/w_brocade.png"
+          ],
+          "pin": true
+        },
+        {
+          "id": "d2",
+          "by": "lora",
+          "day": "Today",
+          "at": "09:02",
+          "text": "Good. Show it at the stand up.",
+          "mark": [
+            {
+              "icon": "thumb",
+              "n": 3
+            },
+            {
+              "icon": "heart",
+              "n": 1
+            }
+          ],
+          "reply": "d1"
+        },
+        {
+          "id": "d3",
+          "by": "you",
+          "day": "Today",
+          "at": "09:05",
+          "text": "I will bring both versions.",
+          "image": [
+            "phiegg:worlds/w_carousel.png"
+          ]
+        }
+      ],
+      "space": "Phiace"
+    },
+    "lounge": {
+      "label": "Lounge",
+      "kind": "voice",
+      "topic": "Drop in and talk.",
+      "member": [
+        "tavi"
+      ]
+    },
+    "n_front": {
+      "label": "front-row",
+      "topic": "The lobby.",
+      "member": [
+        "u_ines"
+      ]
+    }
+  },
+  "sheet": {
+    "src": "phiegg:portraits/sheet-00.webp",
+    "cols": 8
+  },
+  "link": "data/link.json",
+  "space": {
+    "Makers": [
+      1
+    ]
+  },
+  "friend": {
+    "with": [
+      "lora",
+      "u_milo"
+    ],
+    "asked": [
+      "tavi"
+    ]
+  }
+}

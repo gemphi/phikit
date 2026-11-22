@@ -1,0 +1,33 @@
+# What the command line says, and what a caller with no window says
+# and is told. These rows are read as part of the text table.
+# What the command line says when it is asked what it read: where
+# from ({at}), each host with its rooms ({label}, {count}), and each
+# room ({id}, {label}).
+read.from	Phiogy read its hosts and rooms from {at}
+read.venue	{label}: rooms {count}
+read.room	- {id}: {label}
+# And what was said in the room it is opened on ({room}): who, when
+# and what.
+read.said	{room}: {by} at {at}: {text}
+# What the command line says when it serves the line alone.
+line.open	Phiogy's line is open at http://{at}
+line.fail	Phiogy's line could not open: {why}
+# What a caller with no window says: {peer} is its name on the line,
+# {key} the room, {at} the line, {count} a number, {why} what failed.
+caller.begin	{peer} is joining {key} on {at}
+caller.seen	in the call: {joined}; others: {count}; carried by {engine}
+caller.own	  this caller: camera {camera}, screen {screen}, loud {level}, not given: {fault}
+caller.far	  {peer}: {stage}, muted {quiet}, loud {level}, pictures {count} ({width} x {height})
+caller.fail	The call could not go on: {why}
+# What a caller with no window is told on its standard input.
+caller.mute	mute
+caller.unmute	unmute
+caller.camera	camera
+caller.still	still
+caller.share	share
+caller.unshare	unshare
+caller.leave	leave
+# What the command line says of who the person is.
+read.me	You are {name}
+read.refused	Phiora said: {why}
+read.session	Sessions signed in as you: {count}

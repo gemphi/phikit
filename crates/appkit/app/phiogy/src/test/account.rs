@@ -1,0 +1,83 @@
+//! The account: who the person is, their wallet, the look, and what
+//! it says where Phiora does not answer or lets nobody in.
+
+use std::rc::Rc;
+
+use appkit::pui::PApp;
+use appkit::pui::core::{PEvent, PMark, PMode, PPoint};
+use appkit::pui::window::{PDeed, PStage};
+use appkit::theme::PLook;
+
+use super::exchange::line;
+use super::{AT, DESK, drawn, shown, site, staged};
+use crate::Phiogy;
+use crate::kept::Kept;
+use crate::phiora::Phiora;
+
+/// Open the account, and say what the window shows.
+fn opened(stage: &mut PStage, look: &PLook) -> Vec<String> {
+    assert!(stage.window.apply(&PDeed::Open("account".to_string())));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    shown(stage, look)
+}
+
+/// A press on the last line of words that reads so: the account's,
+/// which is drawn over everything.
+fn press(stage: &mut PStage, look: &PLook, wanted: &str) -> bool {
+    let at = drawn(stage, look).iter().rev().find_map(|mark| match mark {
+        PMark::Text { at, text, .. } if text == wanted => Some(at.plus(PPoint::new(2.0, 2.0))),
+        _ => None,
+    });
+    stage.send(&PEvent::PointerDown(at.unwrap_or_else(|| panic!("{wanted} in the account"))))
+}
+
+#[test]
+fn step_32_the_account_is_who_i_am_my_wallet_and_the_look() {
+    let (app, mut stage, look) = staged(DESK);
+    let desk = app.desk();
+    let text = opened(&mut stage, &look);
+    let word = |name: &str| desk.text.get(name).to_string();
+    // It stands at the window's right edge, as the web's does.
+    let panel = stage.panel().expect("the account is open");
+    assert!(panel.rect.origin.x > DESK.width / 2.0 && panel.rect.size.width < DESK.width / 2.0);
+    // Nobody to Phiora: a guest; and signing in says what it needs.
+    assert!([word("account.title"), word("account.guest"), word("account.nobody"), word("account.offline"), word("account.phione")].iter().all(|line| text.contains(line)), "{text:?}");
+    // The wallet a person starts with: each coin, and all of it in
+    // dollars at what each coin is worth.
+    assert!(["Total · $7,684", "USD · 2,500", "$EGG · 12,000", "$UM · 140", "ETH · 0.42"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
+    // What was paid in a shop is gone from it.
+    let shop = desk.shop("s_one").expect("the shop");
+    desk.pick("s_one", &shop.product[1]);
+    assert!(desk.pay() && shown(&stage, &look).contains(&"USD · 1,600".to_string()));
+    // The look is chosen here too.
+    assert!(press(&mut stage, &look, desk.text.get("look.dark")));
+    assert_eq!(desk.shade.name(), "dark");
+    // The profile is a press away.
+    assert!(press(&mut stage, &look, &word("account.profile")));
+    assert_eq!(stage.window.modal(), Some("profile"));
+}
+
+#[test]
+fn where_phiora_answers_the_account_says_who_it_says_i_am() {
+    // The line answers who a page is as Phiora does: a guest, whom it
+    // lets be nobody else.
+    let line = line();
+    let kept = Kept::open(None, Some(Phiora::at(&line.at())));
+    assert_eq!(kept.at, Some(line.at()));
+    assert!(kept.me()["id"].as_str().is_some_and(|id| id.starts_with("guest_")), "{}", kept.me());
+    let look = Rc::new(Phiogy::look(""));
+    let app = Phiogy::holding(Rc::clone(&look), site(), Phiogy::board(), Ok(AT.to_string()), None).keeping(kept);
+    let mut stage = app.stage();
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    let text = opened(&mut stage, &look);
+    let word = |name: &str| app.desk().text.get(name).to_string();
+    // A note is broken to fit: its words are there, over two lines.
+    let all = text.join(" ");
+    assert!(text.contains(&word("account.guest")) && all.contains(&word("account.nodemo")) && !all.contains(&word("account.offline")), "{text:?}");
+    // Being somebody it does not offer changes nothing.
+    assert!(!app.desk().kept.sign(Some("u_nobody")));
+    assert!(app.desk().kept.me()["id"].as_str().is_some_and(|id| id.starts_with("guest_")));
+    // Being nobody again is a new guest, with a session of their own.
+    let was = app.desk().kept.me()["id"].clone();
+    assert!(!app.desk().kept.sign(None) || app.desk().kept.me()["id"] != was);
+}

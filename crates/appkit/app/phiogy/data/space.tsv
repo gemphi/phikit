@@ -1,0 +1,7 @@
+# Phiogy's spaces: slug, label, icon. They are reached from the bar; no
+# tabs are shown over the body (app.tsv, `tab`).
+room	Room	chat
+venue	Hosts	globe
+friend	Friends	users
+people	People	users
+shop	Shops	shopping-bag

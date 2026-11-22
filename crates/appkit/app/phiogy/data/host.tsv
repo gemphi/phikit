@@ -1,0 +1,9 @@
+# Phiogy's hosts, as appkit means the word: what an area of the window
+# holds. Slug, label, icon. (What the web Phiogy calls a host, a place
+# with rooms, is a venue in the code: src/site.rs.)
+room	Room	chat
+venue	Hosts	globe
+guide	Rooms	chat
+friend	Friends	users
+people	People	users
+shop	Shops	shopping-bag

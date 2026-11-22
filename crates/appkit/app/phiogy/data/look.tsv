@@ -1,0 +1,63 @@
+# Phiogy's looks: a look's name, and after it a row that changes the
+# theme for that look, written as data/theme.tsv writes one. The first
+# is the one Phiogy opens in. A look with nothing to change is the theme
+# as it is. What each is called is data/text.tsv's: look.<name>.
+#
+# A look changes the ground, the inks and how much light there is; the
+# light itself stays one colour. The two glass looks are Apple's Liquid
+# Glass as Phiber wears it (phiber: theme/style/glass.rs): the window's
+# ground lets the desktop show, blurred by the system (window.glass), and
+# the window's panes, its bar and a panel that floats, blur what is
+# behind them inside it (glass.*). Buttons, rows and icons are not glass.
+light
+dark	color	window.fill	#191918
+dark	color	line.ink	#3a3a37
+dark	color	text.ink	#f0f0ec
+dark	color	text.dim	#9a9a94
+dark	color	control.ink	#f0f0ec
+dark	color	control.accent	#f0f0ec
+dark	color	icon.ink	#f0f0ec
+dark	color	shade.light	#ffffff
+dark	color	activity.ink	#f0f0ec
+dark	color	tab.ink	#9a9a94
+dark	color	modal.veil	#000000aa
+dark	size	shade.share	0.12
+glass	color	window.fill	#1e1e1cb8
+glass	color	line.ink	#ffffff24
+glass	color	text.ink	#f4f4f0
+glass	color	text.dim	#b4b4ae
+glass	color	control.ink	#f4f4f0
+glass	color	control.accent	#f4f4f0
+glass	color	icon.ink	#f4f4f0
+glass	color	shade.light	#ffffff
+glass	color	activity.ink	#f4f4f0
+glass	color	tab.ink	#b4b4ae
+glass	color	modal.veil	#00000055
+glass	size	shade.share	0.16
+glass	size	window.glass	1
+glass	size	glass.blur	24
+glass	size	glass.saturation	1.2
+glass	color	glass.tint	#1e1e1c
+glass	size	glass.share	0.35
+glass	size	glass.lens	26
+glass	color	glass.edge	#ffffff
+glass	size	glass.rim	0.35
+frost	color	window.fill	#dededab8
+frost	color	line.ink	#1d1d1b24
+frost	color	text.ink	#1d1d1b
+frost	color	text.dim	#4f4f4a
+frost	color	control.ink	#1d1d1b
+frost	color	control.accent	#1d1d1b
+frost	color	icon.ink	#1d1d1b
+frost	color	shade.light	#ffffff
+frost	color	activity.ink	#1d1d1b
+frost	color	tab.ink	#4f4f4a
+frost	color	modal.veil	#1d1d1b40
+frost	size	window.glass	1
+frost	size	glass.blur	24
+frost	size	glass.saturation	1.2
+frost	color	glass.tint	#dededa
+frost	size	glass.share	0.35
+frost	size	glass.lens	26
+frost	color	glass.edge	#ffffff
+frost	size	glass.rim	0.35

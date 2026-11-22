@@ -1,0 +1,11 @@
+# What each host shows: host, region, side of the pane, part. A region
+# the theme gives a height (header, footer) has it; the others share
+# what is left.
+room	header	center	title
+room	center	center	room
+room	footer	center	status
+venue	center	center	venue
+guide	center	center	guide
+friend	center	center	friend
+people	center	center	people
+shop	center	center	shop

@@ -1,0 +1,11 @@
+# The user, as the user's button and the profile show them. `name` and
+# `mail` head the profile, `modal` says which modal the profile is,
+# `about` and `appearance` are the headings over what is known of them
+# and over the looks, and every other row is shown as it is written.
+# What is true of them now (the line, the rooms open, the look) is
+# Phiogy's to say: `src/fact.rs`.
+name	Guest
+mail	not signed in
+modal	profile
+about	About
+appearance	Appearance

@@ -1,0 +1,59 @@
+[package]
+name = "phiogy"
+version = "0.1.0"
+edition = "2024"
+description = "Phiogy: the app that carries the calls, on appkit. The rules of a call, the line pages find each other on, and its window; its limits, its look and its words are the files in data/"
+publish = false
+
+# `cdylib` is what wasm-bindgen makes a browser's module from; `rlib` keeps
+# the desktop binary and the tests on the same crate.
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "phiogy"
+path = "src/main.rs"
+
+# `rtc` builds the real WebRTC into this window, so it sends and hears
+# in a call. Without it the window joins a call and carries nothing.
+# It is not on by default: it needs the prebuilt WebRTC on disk, and
+# `LK_CUSTOM_WEBRTC` set to its folder, or the build fetches it
+# (`TODO.md`, "The native peer"). `target/phiogy_run.ps1 -Rtc` sets it.
+[features]
+rtc = ["dep:libwebrtc", "dep:tokio", "dep:futures", "dep:cpal", "dep:windows"]
+
+[dependencies]
+appkit = { path = "../.." }
+# The world the rules of a call are kept in: a room, a caller and a line
+# are words, and what links them relations.
+phiecs = { path = "../../../phicore/phiecs" }
+# What a page posts to the line and what the line tells it; and the web
+# Phiogy's own files, which name its hosts and its rooms.
+serde_json.workspace = true
+
+# A page's session: its name on the line's cookie. The line is not there
+# in a browser, where there is no socket to listen on.
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
+# The hour on the person's own clock, for what they write: the crate
+# gpui already builds.
+chrono.workspace = true
+rand.workspace = true
+# WebRTC, for the `rtc` feature: LiveKit's bindings as Zed keeps them,
+# at the commit cargo's git cache already holds, so nothing is fetched.
+libwebrtc = { git = "https://github.com/zed-industries/livekit-rust-sdks", rev = "d0e27be0cdad89eadab3e36207cda0a2b6e359ee", optional = true }
+# What it runs on, and how what arrives is read a piece at a time.
+tokio = { workspace = true, optional = true, features = ["rt-multi-thread", "time", "sync"] }
+futures = { workspace = true, optional = true }
+# The system's microphone and its sound out, for the `rtc` feature: the
+# crate cargo's cache already holds, so nothing is fetched.
+cpal = { version = "0.15.3", optional = true }
+
+# The system's camera, on Windows: Media Foundation, through the
+# version of `windows` that cpal builds on, so one build serves both.
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.54", optional = true, features = ["Win32_Foundation", "Win32_Media_MediaFoundation", "Win32_System_Com"] }
+
+# The browser's entry (`src/web.rs`).
+[target.'cfg(target_family = "wasm")'.dependencies]
+wasm-bindgen = { workspace = true }

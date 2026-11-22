@@ -1,0 +1,9 @@
+# What a theme that is worn changes of the window: a colour of the
+# window's theme, and which colour of the theme's swatch, counted from
+# one, takes its place. A swatch is, in order, a ground, the theme's
+# own colour, and its second.
+#
+# The light everything lit is lit with takes the theme's own colour;
+# the line and the caret of the field that has the keys its second.
+shade.light	2
+control.accent	3

@@ -1,0 +1,7 @@
+# The servers a browser is told to use to find a way to another caller.
+# The first row names the columns, as a browser reads them; each row
+# after it is a server: its urls, then a username and a credential
+# where it wants them. None by default, which reaches the same machine
+# and the same network. The JSON list the system gives under the name
+# `ice` of data/line.tsv, when there is one, is used instead.
+urls	username	credential

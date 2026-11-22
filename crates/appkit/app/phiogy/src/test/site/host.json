@@ -1,0 +1,78 @@
+{
+  "host": [
+    {
+      "id": "h_opal",
+      "label": "Opal Atelier",
+      "icon": "users",
+      "members": 4102,
+      "online": 612,
+      "items": [
+        {
+          "id": "h_opal-text",
+          "label": "Text",
+          "icon": "hash",
+          "head": true,
+          "items": [
+            {
+              "id": "n_front",
+              "label": "front-row",
+              "icon": "hash"
+            }
+          ]
+        }
+      ],
+      "mark": {
+        "sheet": "phiegg:portraits/sheet-06.webp",
+        "cols": 8,
+        "index": 2
+      }
+    },
+    {
+      "id": "h_swan",
+      "label": "The Swan Salon",
+      "icon": "users",
+      "members": 90,
+      "online": 0,
+      "items": [
+        {
+          "id": "n_swan",
+          "label": "foyer",
+          "icon": "hash"
+        }
+      ]
+    }
+  ],
+  "template": [
+    {
+      "id": "own",
+      "label": "Create my own",
+      "icon": "spark",
+      "room": [
+        {
+          "label": "lobby",
+          "head": "Text"
+        }
+      ]
+    },
+    {
+      "id": "club",
+      "label": "A club",
+      "icon": "users",
+      "room": [
+        {
+          "label": "welcome",
+          "head": "Text"
+        },
+        {
+          "label": "news",
+          "head": "Text"
+        },
+        {
+          "label": "Lounge",
+          "head": "Voice",
+          "kind": "voice"
+        }
+      ]
+    }
+  ]
+}

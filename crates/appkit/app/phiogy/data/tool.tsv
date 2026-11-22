@@ -1,0 +1,22 @@
+# The viewer's controls: what each does, its icon, and the row of
+# `data/text.tsv` that names it, which is shown under the pointer.
+#
+# `zoom`, `share`, `save` and `open` are the tools at its top right,
+# from the left in the order of their rows here; a row taken out is a
+# tool not drawn. A row whose name ends in `.on` is the same tool once
+# it is on: the picture larger, the path copied.
+#
+# `zoom` shows the picture larger and whole again. `share` copies where
+# the picture's file is to the system's clipboard. `save` asks, in the
+# system's own dialog, where a copy is to be kept. `open` opens the
+# file in the system's own program for pictures.
+zoom	zoom-in	view.zoom
+zoom.on	zoom-out	view.fit
+share	share-2	view.share
+share.on	share-2	view.shared
+save	download	view.save
+open	external-link	view.open
+# The way out, beside the tools; the picture before and the one after.
+close	x	view.close
+before	arrow-left	view.prev
+after	arrow-right	view.next

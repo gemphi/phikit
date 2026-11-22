@@ -1,0 +1,18 @@
+# Phiogy's mark, drawn on the measures of the face Phiogy is set in:
+# name, how many, and of which measure of the font. The measures are
+# read from the font file by script/logo.py: `stem` (an upright stroke),
+# `thin` (a lying one, the hyphen's height), `round` (how wide the o
+# is), `drop` (how far the p goes under the line), `one` (1). Nothing
+# here is a size by eye. The mark is the web Phiogy's (puikit:
+# app/phiogy/mark.py): the letter o, a voice, with a tail that makes a
+# speech mark of it.
+font	../../../asset/font/PhiPillOpen-Light.otf
+# How much of the picture is left clear round the mark.
+room	0.08	one
+# The tail: as thick as a stem, it leaves the o's foot half a stem in
+# from its left side, drops half as far as the p goes under the line,
+# and leans out by half a stem as it drops. Its ends are round.
+tail.thick	1	stem
+tail.inset	0.5	stem
+tail.lean	0.5	stem
+tail.drop	0.5	drop

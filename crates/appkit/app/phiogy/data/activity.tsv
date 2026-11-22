@@ -1,0 +1,13 @@
+# The activity bar: slug, label, icon, seat (head, top, center, bottom),
+# and what a press does (space, host, modal or tell, and which). The bar
+# itself is appkit's. The row seated `head` is Phiogy's own mark: its
+# icon is the logo script/logo.py draws on the font; it is drawn in the
+# window's caption, and a press on it does what its row names: it goes
+# to the rooms. A row that names
+# nothing to do only shows its menu (data/menu.tsv); one that names
+# something does that as well.
+phiogy	Phiogy	phiogy	head	space	room
+room	Rooms	chat	top	space	room
+venue	Hosts	globe	top	space	venue
+menu	Menu	layout-grid	center
+shop	Shops	shopping-bag	top	space	shop

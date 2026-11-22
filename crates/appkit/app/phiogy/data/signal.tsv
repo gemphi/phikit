@@ -1,0 +1,22 @@
+# What two callers say to each other through the line, which does not
+# read it: what the code calls each word, and how it is spelled. They
+# are WebRTC's own and the browser's side's (puikit:
+# app/phi-kit/src/peer.ts), so a word changes there and here, never in
+# the code.
+#
+# How a caller is: whether it is muted, and which of its streams is a
+# shared screen.
+state	state
+quiet	quiet
+screen	screen
+# What it offers or answers: the kind, and the session's text.
+description	description
+type	type
+sdp	sdp
+offer	offer
+answer	answer
+# A way to reach it: the candidate's own text, which part of the
+# session it is for by name and by number.
+candidate	candidate
+mid	sdpMid
+index	sdpMLineIndex

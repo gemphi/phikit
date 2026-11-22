@@ -1,0 +1,21 @@
+{
+  "folder": "data/shop",
+  "open": [
+    "s_one"
+  ],
+  "shop": [
+    {
+      "id": "s_one",
+      "label": "Shop One",
+      "sub": "Looks and pups.",
+      "icon": "bag",
+      "count": 3
+    },
+    {
+      "id": "s_two",
+      "label": "Second Shop",
+      "icon": "bag",
+      "count": 0
+    }
+  ]
+}

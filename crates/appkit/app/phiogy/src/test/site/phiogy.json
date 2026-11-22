@@ -1,0 +1,107 @@
+{
+  "app": "phiogy",
+  "start": "lora",
+  "people": "data/room.json",
+  "host": "data/host.json",
+  "joined": [
+    "h_opal"
+  ],
+  "nav": [
+    {
+      "id": "direct",
+      "label": "Direct",
+      "icon": "chat",
+      "items": [
+        {
+          "id": "lora",
+          "label": "Lora Vale",
+          "icon": "user",
+          "who": "lora"
+        },
+        {
+          "id": "notes",
+          "label": "notes",
+          "icon": "hash"
+        }
+      ]
+    },
+    {
+      "id": "phiace",
+      "label": "Phiace",
+      "icon": "network",
+      "items": [
+        {
+          "id": "phiace-text",
+          "label": "Text",
+          "icon": "hash",
+          "head": true,
+          "items": [
+            {
+              "id": "lobby",
+              "label": "lobby",
+              "icon": "hash"
+            }
+          ]
+        },
+        {
+          "id": "phiace-voice",
+          "label": "Voice",
+          "icon": "volume",
+          "head": true,
+          "items": [
+            {
+              "id": "lounge",
+              "label": "Lounge",
+              "icon": "volume",
+              "crowd": "lounge"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "views": {
+    "lora": {
+      "title": "",
+      "blocks": [
+        {
+          "kind": "chat",
+          "variant": "room",
+          "app": "phiogy",
+          "source": "data/room.json",
+          "room": "lora"
+        }
+      ]
+    },
+    "lobby": {
+      "title": "",
+      "blocks": [
+        {
+          "kind": "chat",
+          "variant": "room",
+          "app": "phiogy",
+          "source": "data/room.json",
+          "room": "lobby"
+        }
+      ]
+    },
+    "notes": {
+      "title": "",
+      "blocks": [
+        {
+          "kind": "chat",
+          "variant": "room",
+          "app": "phiogy",
+          "source": "data/room.json",
+          "room": "lobby"
+        },
+        {
+          "kind": "poll",
+          "variant": "vote"
+        }
+      ]
+    }
+  },
+  "direct": "direct",
+  "shop": "data/shop.json"
+}

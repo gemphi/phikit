@@ -1,0 +1,39 @@
+# A room's controls: what each does, its icon, and the row of
+# `data/text.tsv` that names it, which is shown by it while the pointer
+# is over it. A row whose name ends in `.on` is the same control once
+# it is so; a row taken out is a control not drawn.
+#
+# On a message, at the end of its first line: answer it, like it, pin
+# it.
+reply	reply	room.reply
+like	heart	room.like
+pin	pin	room.pin
+pin.on	pin-off	room.unpin
+# At the stream's foot: say what was written; answer nobody after all.
+send	send	room.send
+unanswer	x	room.unanswer
+# In the room's title: search it, and list what is pinned in it.
+find	search	room.find
+pins	pin	room.pins
+# Beside the room, on a person: back to who is here; write to them;
+# follow them.
+back	arrow-left	person.back
+message	message-circle	person.message
+follow	star	person.follow
+follow.on	star	person.following
+# Among friends, at the end of a person's line: part from them, or
+# take back or turn down a request; accept one; ask.
+part	x	friend.remove
+accept	check	friend.accept
+ask	user-plus	friend.ask
+# In the bag, at the end of a line: take the thing out.
+out	x	shop.remove
+# At the head of the account: put it away.
+shut	x	account.close
+# At the stream's foot, before sending: post a picture from this disk.
+post	image-plus	room.post
+# On a person: mute them, and unmute.
+quiet	bell-off	person.mute
+quiet.on	bell-off	person.unmute
+# In the account: sign in with what was typed.
+enter	log-in	account.signIn
