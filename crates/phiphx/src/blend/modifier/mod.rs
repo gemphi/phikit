@@ -24,6 +24,7 @@ mod mirror;
 mod solidify;
 pub mod skin;
 mod subsurf;
+pub use subsurf::eval_for_render;
 mod topology;
 mod triangulate;
 mod weld;
