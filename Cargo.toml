@@ -12,6 +12,16 @@ members = [
     # The common layer every app stands on (`crates/appkit`): the GPU crates
     # below, puikit and the glass. Phiber is one app on it; a phiecs robotics
     # app is another. Only the crates something builds are members.
+    # Glass is one crate with no dependencies: the material, the stages on the
+    # CPU, the plan a GPU renderer follows, and the shaders (HLSL and WGSL).
+    "crates/appkit/gpu/gpui_glass",
+    # appkit itself (`crates/appkit/PLAN.md`): pui, the UI kit every app stands
+    # on, with its theme, services and assets.
+    "crates/appkit",
+    "crates/appkit/app/phigen",
+    # Phiogy, the app that carries the calls: the rules of a call, the line
+    # pages find each other on, and its window, made as Phigen is.
+    "crates/appkit/app/phiogy",
     "crates/appkit/gpu",
     "crates/appkit/gpu/gpui_macros",
     "crates/appkit/gpu/gpui_platform",
@@ -108,6 +118,7 @@ gpui_platform = { path = "crates/appkit/gpu/gpui_platform", default-features = f
 # toolchain, when the page is served with the headers that make it work.
 gpui_web = { path = "crates/appkit/gpu/gpui_web", default-features = false }
 gpui_wgpu = { path = "crates/appkit/gpu/gpui_wgpu" }
+gpui_glass = { path = "crates/appkit/gpu/gpui_glass" }
 gpui_windows = { path = "crates/appkit/gpu/gpui_windows", default-features = false }
 gpui_util = { path = "crates/appkit/gpu/gpui_util" }
 http_client = { path = "crates/phicore/http_client" }

@@ -1,82 +1,30 @@
-//! # Theme System
+//! What everything looks like: tokens resolved to an appearance. `PTheme`.
 //!
-//! Composable, layered appearance engine inspired by Apple's NSAppearance.
-//!
-//! ## Architecture
-//!
-//! ```text
-//! theme/
-//! ├── mod.rs          ← this file (orchestrator + re-exports)
-//! ├── appearance.rs   ← Apple's NSAppearance types (mode, vibrancy, control size…)
-//! ├── styles.rs       ← Our composable layers (Variant, Material, Typography…)
-//! ├── types.rs        ← Resolved data (ThemeData, ThemeFont, ThemeLayout, ThemeId)
-//! ├── accessors.rs    ← Public API (color(), set_variant(), set_mode()…)
-//! ├── keys.rs         ← Token key constants (CLR_BG_PANEL, RADIUS_BUTTON…)
-//! ├── registry.rs     ← Global singleton, composition engine
-//! └── variants/       ← Per-variant color/font overrides (apple, tesla, barbie…)
-//! ```
-//!
-//! ## Usage
-//!
-//! ```rust,ignore
-//! use rust_appkit::theme;
-//!
-//! // Read tokens
-//! let bg = theme::color(theme::CLR_BG_PANEL);
-//! let radius = theme::f32_or(theme::RADIUS_PANEL, 12.0);
-//!
-//! // Switch layers at runtime
-//! theme::set_variant("tesla");
-//! theme::set_mode("dark");
-//! theme::set_material("glass");
-//! ```
+//! A view never names a colour or a size outright. It names a token, such
+//! as `control.fill`, and the theme says what that is today. `PLook` is a
+//! theme read from a table an app keeps in its `data/`, and `PShade` is
+//! several looks of which one is shown: light, or dark.
 
-// ─── Submodules ──────────────────────────────────────────────────────────────
+mod look;
+mod shade;
 
-pub mod appearance;
-pub mod styles;
-pub mod types;
-pub mod accessors;
-pub mod keys;
-pub mod registry;
-pub mod variants;
+pub use look::PLook;
+pub use shade::PShade;
 
-// ─── Re-exports: appearance ──────────────────────────────────────────────────
+use crate::pui::core::PColor;
 
-pub use appearance::{
-    AppearanceMode, AppearanceName, AppearanceState, BackgroundStyle, BlendingMode, ControlSize,
-    NSAppearance, NSVisualEffectMaterial, ThemeMode, Vibrancy,
-};
+/// What everything looks like: a token goes in, an appearance comes out.
+pub trait PTheme {
+    /// The colour a token stands for, or `None` for a token the theme does
+    /// not have.
+    fn color(&self, token: &str) -> Option<PColor>;
 
-// ─── Re-exports: styles ──────────────────────────────────────────────────────
+    /// The size a token stands for: a spacing, a radius, a type size.
+    fn size(&self, token: &str) -> Option<f32>;
 
-pub use styles::{
-    ColorGradient, LayoutDensity, Material, RadiusStyle, ThemeMaterial, ThemeVariant,
-    Typography, Variant, VisualEffects,
-};
-
-// ─── Re-exports: types ───────────────────────────────────────────────────────
-
-pub use types::{Appearance, ThemeData, ThemeFont, ThemeId, ThemeLayout, ThemeProvider};
-
-// ─── Re-exports: accessors (the primary public API) ──────────────────────────
-
-pub use accessors::{
-    bool_or, color, color_or, f32, f32_or, resolve_system_color, set_accent, set_current_theme,
-    set_density, set_effect, set_gradient, set_layout, set_material, set_mode, set_radius,
-    set_shadow, set_tint, set_typography, set_variant,
-};
-
-// ─── Re-exports: keys (flattened so consumers write `theme::CLR_BG_PANEL`) ──
-
-pub use keys::*;
-
-pub mod token;
-
-// ─── Re-exports: token (clean f32 accessor) ──────────────────────────────────
-
-pub use token::ThemeToken;
-
-// ─── Re-exports: variant trait ───────────────────────────────────────────────
-
-pub use variants::NSThemeVariant;
+    /// The word a token stands for: the name of a typeface, the path of
+    /// its file. A theme of colours and sizes alone has none.
+    fn word(&self, _token: &str) -> Option<&str> {
+        None
+    }
+}

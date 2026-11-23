@@ -9,6 +9,7 @@
 
 use serde_json::{Map, Value, json};
 
+use appkit::pui::window::{PDeed, PEntry, PItem};
 use appkit::service::PTable;
 
 use super::Desk;
@@ -19,6 +20,8 @@ use crate::site::{Plate, Template, Venue};
 /// The person's own documents hosts are kept in.
 pub const IN: &str = "host";
 pub const MADE: &str = "made";
+/// The word a row of the bar tells to go to a host: its id follows.
+pub const GO: &str = "host ";
 
 /// A number written with the ten digits and the twenty-six letters,
 /// as the web writes the moment a host was made.
@@ -37,6 +40,35 @@ impl Desk {
     /// app's document says.
     pub fn joined(&self, venue: &Venue) -> bool {
         self.kept.flag(IN, &self.key(&venue.id)).unwrap_or(venue.joined)
+    }
+
+    /// The hosts the person is in, as rows of the bar: each with its
+    /// mark, the one whose room is open marked, and a press going to
+    /// its first room. They follow the bar's own rows, as the web's
+    /// rail has them: the site's own places, then the hosts joined,
+    /// then the ones the person made. The direct list is the bar's own
+    /// first row, and has none here.
+    pub fn place(&self) -> Vec<PItem> {
+        let (site, open) = (&self.site, self.room());
+        let stands = |(index, venue): &(usize, &Venue)| (*index < site.extra.nav || self.joined(venue)) && venue.id != site.extra.direct;
+        let own = site.venue.iter().enumerate().filter(stands).map(|(_, venue)| venue.clone());
+        // A host the person made has no mark of its own: its row
+        // shows the first letters of its name.
+        let made = self.made().into_iter().map(|venue| Venue { icon: String::new(), ..venue });
+        own.chain(made).filter(|venue| !venue.plate.is_empty()).map(|venue| {
+            let icon = Some(venue.icon.as_str()).filter(|icon| !icon.is_empty()).map(|icon| self.icon(icon)).unwrap_or_default();
+            let entry = PEntry::new(&format!("{GO}{}", venue.id), &venue.label, icon);
+            let face = venue.mark.as_ref().map(|face| (face.sheet.clone(), face.column, face.index));
+            let on = venue.plate.iter().any(|plate| plate.id == open);
+            PItem { entry, deed: Some(PDeed::Tell(format!("{GO}{}", venue.id))), face, on, ..PItem::default() }
+        }).collect()
+    }
+
+    /// Go to a host: its first room. `false` when there is no such host.
+    pub fn visit(&self, id: &str) -> bool {
+        let made = self.made();
+        let venue = self.site.venue.iter().chain(&made).find(|venue| venue.id == id);
+        venue.and_then(|venue| venue.plate.first()).is_some_and(|plate| self.show(&plate.id))
     }
 
     /// Join a host, or leave it.

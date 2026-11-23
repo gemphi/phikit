@@ -170,6 +170,11 @@ impl Viewer {
 }
 
 impl PView for Viewer {
+    /// Where a press on it does something.
+    fn hand(&self) -> Vec<PRect> {
+        self.spot.borrow().iter().map(|spot| spot.rect).collect()
+    }
+
     fn frame(&self) -> PRect {
         self.frame
     }

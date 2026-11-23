@@ -43,12 +43,16 @@ fn step_32_the_account_is_who_i_am_my_wallet_and_the_look() {
     // Nobody to Phiora: a guest; and signing in says what it needs.
     assert!([word("account.title"), word("account.guest"), word("account.nobody"), word("account.offline"), word("account.phione")].iter().all(|line| text.contains(line)), "{text:?}");
     // The wallet a person starts with: each coin, and all of it in
-    // dollars at what each coin is worth.
-    assert!(["Total · $7,684", "USD · 2,500", "$EGG · 12,000", "$UM · 140", "ETH · 0.42"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
+    // dollars at what each coin is worth; what each is, and its sum.
+    assert!(["Total", "USD", "$EGG", "$UM", "ETH"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
+    // Every sum stands on a ground of its own, at the line's end.
+    let sum = ["$7,684", "2,500", "12,000", "140", "0.42"];
+    assert!(sum.iter().all(|sum| super::grounded(&stage, &look, sum)), "{text:?}");
+    assert!(!super::grounded(&stage, &look, "Total"));
     // What was paid in a shop is gone from it.
     let shop = desk.shop("s_one").expect("the shop");
     desk.pick("s_one", &shop.product[1]);
-    assert!(desk.pay() && shown(&stage, &look).contains(&"USD · 1,600".to_string()));
+    assert!(desk.pay() && super::grounded(&stage, &look, "1,600"));
     // The look is chosen here too.
     assert!(press(&mut stage, &look, desk.text.get("look.dark")));
     assert_eq!(desk.shade.name(), "dark");

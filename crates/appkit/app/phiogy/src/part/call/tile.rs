@@ -9,9 +9,10 @@
 //! A tile says what it shows by name: a moving picture's name in the
 //! window's film (`peer::film`), or a person's face.
 
+use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect, light};
 use appkit::service::PTable;
 
-use crate::part::Desk;
+use crate::part::{Desk, INK, LINE};
 use crate::peer::{self, Seen};
 
 /// What a tile shows.
@@ -54,9 +55,12 @@ impl Desk {
         let (roster, _) = self.on(&room);
         let mut joined = Vec::new();
         for far in &seen.far {
-            let caller = roster.list.iter().find(|(peer, _)| *peer == far.peer).map(|(_, caller)| caller);
-            let member = caller.and_then(|caller| self.site.member.iter().find(|member| caller.handle.as_deref().is_some_and(|handle| handle == member.handle) || member.name == caller.name));
-            let name = member.map(|member| member.name.clone()).or_else(|| caller.map(|caller| caller.name.clone())).unwrap_or_else(|| far.peer.clone());
+            // What they call themself: the board says, where this window
+            // serves the line; the line told the call, where it does not.
+            let caller = roster.list.iter().find(|(peer, _)| *peer == far.peer).map(|(_, caller)| (caller.name.clone(), caller.handle.clone()));
+            let caller = caller.or_else(|| seen.named.iter().find(|(peer, _)| *peer == far.peer).map(|(_, name)| (name.clone(), None)));
+            let member = caller.as_ref().and_then(|(name, handle)| self.site.member.iter().find(|member| handle.as_deref().is_some_and(|handle| handle == member.handle) || member.name == *name));
+            let name = member.map(|member| member.name.clone()).or_else(|| caller.as_ref().map(|(name, _)| name.clone())).unwrap_or_else(|| far.peer.clone());
             let id = member.map(|member| member.id.clone()).unwrap_or_default();
             joined.push(id.clone());
             let shown = match far.camera() {
@@ -92,5 +96,20 @@ impl Desk {
         };
         let mine = Tile { shown, scene: false, name: String::new(), said, loud: false };
         std::iter::once(mine).chain(seen.own.screen.then(|| Tile::film(name("scene"), true))).collect()
+    }
+}
+
+/// A person's face, round: their picture where the app has one; else,
+/// for one who is not of the app's people, the first letter of what
+/// they call themself.
+pub fn face(desk: &Desk, paint: &mut dyn PPaint, rect: PRect, id: &str, name: &str) {
+    match desk.site.face(id) {
+        Some(cell) => paint.picture(&cell.sheet, rect, rect.size.width / 2.0, PFit::Cell { column: cell.column, index: cell.index }),
+        None => {
+            light::label(paint, rect, rect.size.width / 2.0, PLight::Rest, false, "");
+            let letter: String = name.chars().take(1).collect();
+            let at = PPoint::new(rect.center().x - paint.measure(&letter) / 2.0, rect.center().y - paint.size(LINE) / 2.0);
+            paint.text(at, &letter, paint.color(INK));
+        }
     }
 }

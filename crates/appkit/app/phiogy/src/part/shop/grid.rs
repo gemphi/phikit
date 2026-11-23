@@ -50,7 +50,12 @@ impl Shopping {
     pub(super) fn card(&self, paint: &mut dyn PPaint, rect: PRect, shop: &str, icon: &str, product: &Product, spot: &mut Vec<(PRect, Act)>) {
         let (gap, line, ink, dim, radius) = (paint.size(GAP), paint.size(LINE), paint.color(INK), paint.color(DIM), paint.size(RADIUS));
         let place = format!("{shop}/{}", product.id);
-        light::surface(paint, rect, radius, PLight::Soft, "");
+        // A card is lit more while the pointer is over it.
+        let lit = match self.over(rect) {
+            true => PLight::Rest,
+            false => PLight::Soft,
+        };
+        light::surface(paint, rect, radius, lit, "");
         spot.push((rect, Act::Thing(place.clone())));
         let side = rect.size.width - gap;
         self.portrait(paint, PRect::new(rect.origin.x + gap / 2.0, rect.origin.y + gap / 2.0, side, side), product, icon);

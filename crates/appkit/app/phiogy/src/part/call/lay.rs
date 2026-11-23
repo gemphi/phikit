@@ -60,7 +60,7 @@ impl Calling {
     fn whole(&self, tile: &[Tile], width: f32, share: f32) -> f32 {
         let (gap, line) = (self.desk.size(GAP), self.desk.size(LINE));
         let (_, tiles) = self.lay(tile, width - gap, share);
-        gap + line + gap / 2.0 + tiles + gap + self.desk.size(BAR) + gap / 2.0 + line + gap + gap / 2.0 + line * self.line.get().max(1.0) + gap
+        gap + line + gap / 2.0 + tiles + gap + self.desk.size(BAR) + gap / 2.0 + (line + gap + gap / 2.0) * self.row.get().max(1.0) + line * self.line.get().max(1.0) + gap
     }
 
     /// How high the call stands in a room that wide, with that much
@@ -68,7 +68,8 @@ impl Calling {
     /// share of their size the tiles are drawn at is kept for the draw.
     pub fn high(&self, width: f32, room: f32) -> f32 {
         let tile = self.tile();
-        if tile.is_empty() {
+        // A voice room has no tiles: who is in it is the room itself.
+        if tile.is_empty() || self.desk.voice() {
             return 0.0;
         }
         let most = room * self.desk.size(SHARE);

@@ -7,12 +7,12 @@
 //! The line runs on other threads, so the board is read each time this
 //! is drawn, and another frame is asked for while the line is open.
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 
 use appkit::pui::core::{PDraw, PEvent, PLight, PPaint, PPoint, PRect, PView, light};
-use appkit::pui::layout::{PScroll, fold};
+use appkit::pui::layout::{PScroll, fold, section};
 
-use super::{DIM, Desk, GAP, ICON, INK, LINE, fit};
+use super::{DIM, Desk, GAP, ICON, INK, LINE, crowd, fit};
 use crate::comp::Roster;
 use crate::peer::Stage;
 
@@ -35,11 +35,15 @@ pub struct Present {
     frame: PRect,
     desk: Desk,
     scroll: Cell<PScroll>,
+    /// Where each member's card was drawn last, in the window, and
+    /// where the column was.
+    spot: RefCell<Vec<(PRect, String)>>,
+    origin: Cell<PPoint>,
 }
 
 impl Present {
     pub fn new(desk: Desk) -> Present {
-        Present { frame: PRect::default(), desk, scroll: Cell::default() }
+        Present { frame: PRect::default(), desk, scroll: Cell::default(), spot: RefCell::default(), origin: Cell::default() }
     }
 
     /// A heading over some rows; how far down what follows begins.
@@ -126,6 +130,7 @@ impl PDraw for Present {
         let open = self.desk.room();
         let text = &self.desk.text;
         let scroll = self.scroll.get();
+        self.origin.set(origin);
         paint.clip(PRect { origin, size: self.frame.size });
         let left = origin.x + start;
         let top = origin.y + gap - scroll.at();
@@ -137,30 +142,40 @@ impl PDraw for Present {
         paint.head(PPoint::new(left, top), text.get("present.head"), ink);
         let mut next = top + line + gap;
         let (call, watch) = self.desk.on(&plate.id);
-        // Nobody: say so, and where a page reaches the line.
-        if call.is_empty() && watch.is_empty() {
-            next = self.lines(paint, PPoint::new(left, next), wide, text.get("present.none"), INK);
-            let how = match self.desk.line.as_ref() {
-                Ok(at) => text.fill("present.how", "at", &format!("http://{at}")).replace("{key}", &self.desk.key(&plate.id)),
-                Err(_) => text.get("present.shut").to_string(),
-            };
-            next = self.lines(paint, PPoint::new(left, next), wide, &how, DIM) + gap;
-        }
-        // Why this window is not in the call though it asked to be, and
+        // Every section of the column stands on a ground of its own;
+        // its heading is over it.
+        // Nobody: say so, and where a page reaches the line. And why
+        // this window is not in the call though it asked to be, and
         // what carries the call it is in.
+        let nobody = call.is_empty() && watch.is_empty();
+        let how = match self.desk.line.as_ref() {
+            Ok(at) => text.fill("present.how", "at", &format!("http://{at}")).replace("{key}", &self.desk.key(&plate.id)),
+            Err(_) => text.get("present.shut").to_string(),
+        };
         let carried = self.desk.calling().map(|seen| text.fill("call.carry", "engine", &seen.engine));
-        for said in [Some(self.desk.why()).filter(|why| !why.is_empty()), carried].into_iter().flatten() {
-            next = self.lines(paint, PPoint::new(left, next), wide, &said, DIM) + gap / 2.0;
-        }
+        let said: Vec<String> = [Some(self.desk.why()).filter(|why| !why.is_empty()), carried].into_iter().flatten().collect();
+        let from = next;
+        next = section(paint, PPoint::new(left, from), wide, &mut |paint| {
+            let mut next = from;
+            if nobody {
+                next = self.lines(paint, PPoint::new(left, next), wide, text.get("present.none"), INK);
+                next = self.lines(paint, PPoint::new(left, next), wide, &how, DIM);
+            }
+            said.iter().fold(next, |next, said| self.lines(paint, PPoint::new(left, next), wide, said, DIM))
+        }) + gap;
         let group = [(&call, "present.call", CALL, PLight::Strong), (&watch, "present.watch", WATCH, PLight::Soft)];
         for (roster, name, icon, strength) in group.into_iter().filter(|(roster, ..)| !roster.is_empty()) {
-            next = self.head(paint, PPoint::new(left, next), name);
-            next = self.rows(paint, PPoint::new(left, next), wide, roster, icon, strength) + gap / 2.0;
+            let from = self.head(paint, PPoint::new(left, next), name);
+            next = section(paint, PPoint::new(left, from), wide, &mut |paint| self.rows(paint, PPoint::new(left, from), wide, roster, icon, strength)) + gap;
         }
         // The room's own people, as the site names them.
+        // Each a card with their face, as people in a voice room are.
+        self.spot.borrow_mut().clear();
         if !plate.member.is_empty() {
-            next = self.head(paint, PPoint::new(left, next), "present.member");
-            next = self.lines(paint, PPoint::new(left, next), wide, &plate.member.join(&format!(" {} ", text.get("between"))), INK);
+            let from = self.head(paint, PPoint::new(left, next), "present.member");
+            let seat = crowd::named(&self.desk, &plate.member);
+            let (spot, end) = crowd::cards(&self.desk, paint, PPoint::new(left, from), wide, &seat);
+            (*self.spot.borrow_mut(), next) = (spot, end);
         }
         paint.unclip();
         self.fitted(next - top + gap);
@@ -177,6 +192,11 @@ impl Present {
 }
 
 impl PView for Present {
+    /// Its members' cards.
+    fn hand(&self) -> Vec<PRect> {
+        self.spot.borrow().iter().map(|(rect, _)| *rect).collect()
+    }
+
     fn frame(&self) -> PRect {
         self.frame
     }
@@ -198,6 +218,13 @@ impl PView for Present {
                 let any = scroll.turn(-by.y);
                 self.scroll.set(scroll);
                 any
+            }
+            // A press on a member's card opens them beside the room.
+            PEvent::PointerDown(at) => {
+                let who = self.spot.borrow().iter().find(|(rect, _)| rect.contains(at.plus(self.origin.get()))).map(|(_, id)| id.clone());
+                let known = who.is_some();
+                who.into_iter().for_each(|id| *self.desk.now.who.borrow_mut() = Some(id));
+                known
             }
             _ => false,
         }

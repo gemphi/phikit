@@ -3,15 +3,23 @@
     python script/logo.py            (from crates/appkit/app/phiogy)
 
 Reads `data/logo.tsv` and the font it names, and writes the mark into
-`asset/icon/phiogy.svg`, a picture in one ink, as every icon is: the
-font's letter o as it is drawn, a voice, with a tail leaving its foot at
-the left, which makes a speech mark of it. It is the web Phiogy's mark
-(`puikit/app/phiogy/mark.py`), on the face this window is set in.
+`asset/icon/phiogy.svg`, a picture in one ink, as every icon is. Two
+marks can be drawn, and the table's `mark` row says which is written
+there: `voice`, the font's letter o with a tail leaving its foot at the
+left, which makes a speech mark of it (the web Phiogy's mark,
+`puikit/app/phiogy/mark.py`); or `p`, a filled p with two bars cut out
+of its bowl (`shape.py`), in the option of `data/logo-corner.tsv` the
+row names.
 
-Also writes `doc/logo.html`, a sheet of the mark, large and at the size
-of the bar. Every length is a measure of the font times a number from
-the table."""
+Every drawing is also written into `doc/logo/`, so none is lost when
+another is chosen. `doc/logo.html` shows the chosen mark large and at
+the size of the bar, and `doc/logo-option.png` every option in every
+ink it is tried in (`sheet.py`). `doc/logo/registry-icon.json` is the
+chosen p as the web's kit keeps a mark: the `icon` of Phiogy's entry in
+`puikit/app/phi-kit/src/registry.json`. Every length is a measure of
+the font times a number from the table."""
 import io
+import json
 import os
 
 from fontTools.pens.boundsPen import BoundsPen
@@ -19,6 +27,9 @@ from fontTools.pens.recordingPen import RecordingPen
 from fontTools.pens.svgPathPen import SVGPathPen
 from fontTools.pens.transformPen import TransformPen
 from fontTools.ttLib import TTFont
+
+import shape
+import sheet as option
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 NAME = 'phiogy'
@@ -74,7 +85,7 @@ class Face:
         dash, side = self.bound('-'), self.ring('o')
         # The o's side is an upright stroke: from its outline's left to
         # its inside's left.
-        return {'one': 1.0, 'round': right - left, 'stem': side[-1] - side[0], 'thin': dash[3] - dash[1], 'drop': -self.bound('p')[1]}
+        return {'one': 1.0, 'round': right - left, 'tall': high - low, 'stem': side[-1] - side[0], 'thin': dash[3] - dash[1], 'drop': -self.bound('p')[1]}
 
 
 def picture(part, box, room, label):
@@ -110,14 +121,38 @@ def sheet(name):
 
 def main():
     row = table(os.path.join(HERE, 'data', 'logo.tsv'))
-    face = Face(os.path.normpath(os.path.join(HERE, 'data', row.pop('font')[0])))
+    font = os.path.normpath(os.path.join(HERE, 'data', row.pop('font')[0]))
+    face = Face(font)
     measure = face.measure()
-    size = {name: float(cell[0]) * measure[cell[1]] for name, cell in row.items()}
-    made = {NAME: voice(face, size, size['room'])}
+    # A row is a length when it names a measure; else it is words.
+    word = {name: cell for name, cell in row.items() if len(cell) < 2 or cell[1] not in measure}
+    size = {name: float(cell[0]) * measure[cell[1]] for name, cell in row.items() if name not in word}
+    corner = table(os.path.join(HERE, 'data', 'logo-corner.tsv'))
+    ring = {name: shape.mark(size, cell) for name, cell in corner.items()}
+    cut = lambda name: picture(['<path fill-rule="evenodd" d="%s"/>' % shape.path(ring[name][0], number)], ring[name][1], size['room'], NAME)
+    made = {'voice': voice(face, size, size['room']), **{'p-' + name: cut(name) for name in ring}}
+    os.makedirs(os.path.join(HERE, 'doc', 'logo'), exist_ok=True)
+    write = lambda text, *place: io.open(os.path.join(HERE, *place), 'w', encoding='utf-8', newline='\n').write(text)
     for name, text in made.items():
-        io.open(os.path.join(HERE, 'asset', 'icon', name + '.svg'), 'w', encoding='utf-8', newline='\n').write(text)
-    io.open(os.path.join(HERE, 'doc', 'logo.html'), 'w', encoding='utf-8', newline='\n').write(sheet(list(made)))
-    print(' '.join('%s=%s' % (name, number(value)) for name, value in measure.items()))
+        write(text, 'doc', 'logo', name + '.svg')
+    chosen = '-'.join(word['mark'])
+    write(made[chosen], 'asset', 'icon', NAME + '.svg')
+    write(sheet([NAME]), 'doc', 'logo.html')
+    # The mark's two bars alone, as an icon: what a message is marked
+    # with, in the place of a star with a plus.
+    bars, _ = ring[word['mark'][-1]]
+    reach = lambda at: [value for one in bars[1:] for piece in one for value in ([piece[1][at]] if piece[0] == 'point' else [piece[1][at] - piece[2], piece[1][at] + piece[2]])]
+    span = (min(reach(0)), min(reach(1)), max(reach(0)), max(reach(1)))
+    write(picture(['<path d="%s"/>' % shape.path(bars[1:], number)], span, size['room'], NAME + '-bar'), 'asset', 'icon', NAME + '-bar.svg')
+    # The same mark as the web's kit keeps one: a list of paths in a
+    # square box, the mark as high as the table says and in its middle.
+    rings, box = ring[word['mark'][-1]]
+    side, scale = size['web.box'], size['web.high'] / (box[3] - box[1])
+    place = (scale, (side - (box[2] - box[0]) * scale) / 2, (side - size['web.high']) / 2)
+    write(json.dumps([{'d': shape.path(rings, number, place, True), 'fill': 'currentColor', 'stroke': 'none', 'sw': 0}], indent=2), 'doc', 'logo', 'registry-icon.json')
+    dots = {name: ([shape.flat(one, size['p.fine']) for one in rings], box) for name, (rings, box) in ring.items()}
+    option.sheet(dots, word, HERE, font, os.path.join(HERE, 'doc', 'logo-option.png'))
+    print(chosen, ' '.join('%s=%s' % (name, number(value)) for name, value in measure.items()))
 
 
 main()

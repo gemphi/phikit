@@ -158,6 +158,11 @@ impl PDraw for Friend {
 }
 
 impl PView for Friend {
+    /// Where a press on it does something.
+    fn hand(&self) -> Vec<PRect> {
+        self.list.hands()
+    }
+
     fn frame(&self) -> PRect {
         self.frame
     }

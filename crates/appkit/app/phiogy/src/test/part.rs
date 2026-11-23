@@ -56,7 +56,11 @@ fn a_room_s_own_people_are_named_under_who_is_on_its_line() {
     assert!(app.desk().show("lobby"));
     let text = shown(&stage, &look);
     assert!(text.contains(&app.desk().text.get("present.member").to_string()));
-    assert!(text.contains(&"You · Lora Vale · Tavi Reyes".to_string()), "{text:?}");
+    // Each is a card with their face and their name, not a line of names.
+    assert!(["You", "Lora Vale", "Tavi Reyes"].iter().all(|name| text.contains(&name.to_string())), "{text:?}");
+    assert!(!text.iter().any(|line| line.contains("Lora Vale") && line.contains("Tavi Reyes")), "{text:?}");
+    let faces = super::drawn(&stage, &look).iter().filter(|mark| matches!(mark, appkit::pui::core::PMark::Picture { rect, .. } if rect.size.width == app.desk().size(crate::part::crowd::FACE))).count();
+    assert!(faces >= 2, "{faces}");
 }
 
 #[test]

@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex};
 
 use appkit::pui::PApp;
 use appkit::pui::core::PView;
-use appkit::pui::window::{PActivity, PFact, PHost, PLevel, PModal, PPart, PSet, PSpace, PWish};
+use appkit::pui::window::{PActivity, PFact, PHost, PLevel, PModal, PPart, PRail, PSet, PSpace, PWish};
 use appkit::service::{PStore, PTable};
 use appkit::theme::{PLook, PShade, PTheme};
 
@@ -99,7 +99,7 @@ impl Phiogy {
         let first = site.venue.iter().flat_map(|venue| &venue.plate).map(|plate| plate.id.clone()).next();
         let wanted = [choice.get(ROOM), site.start.clone()].into_iter().find(|id| site.plate(id).is_some() || id.starts_with(Page::own().id(crate::part::page::DIRECT)));
         let open = Rc::new(RefCell::new(wanted.or(first).unwrap_or_default()));
-        let desk = Desk { site: Rc::new(site), board, text: Rc::new(PTable::read(data::TEXT)), icon: Rc::new(PTable::read(data::ICON)), look, shade, choice: Rc::new(choice), wish: PWish::default(), open, line: Rc::new(line), home: own.get("space").to_string(), view: Rc::default(), kept: Rc::new(Kept::none()), now: Rc::default(), page: Rc::new(Page::own()), stock: Rc::default(), call: Rc::default(), engine: Rc::new(|| -> Maker { Box::new(|| Box::new(Stand::default())) }), refused: Rc::default() };
+        let desk = Desk { site: Rc::new(site), board, text: Rc::new(PTable::read(data::TEXT)), icon: Rc::new(PTable::read(data::ICON)), look, shade, choice: Rc::new(choice), wish: PWish::default(), open, line: Rc::new(line), home: own.get("space").to_string(), view: Rc::default(), kept: Rc::new(Kept::none()), now: Rc::default(), page: Rc::new(Page::own()), stock: Rc::default(), call: Rc::default(), engine: Rc::new(|| -> Maker { Box::new(|| Box::new(Stand::default())) }), refused: Rc::default(), away: false, ring: Rc::default() };
         Phiogy { own, space, host, part: PSet::read(data::PART), modal: PSet::read(data::MODAL), desk }
     }
 
@@ -108,6 +108,12 @@ impl Phiogy {
     /// is carried by a stand-in, which sends and hears nothing.
     pub fn carried(self, engine: Rc<dyn Fn() -> Maker>) -> Phiogy {
         Phiogy { desk: Desk { engine, ..self.desk }, ..self }
+    }
+
+    /// The same app on a line it does not serve: somebody else's, which
+    /// it reaches as a page does.
+    pub fn away(self) -> Phiogy {
+        Phiogy { desk: Desk { away: true, ..self.desk }, ..self }
     }
 
     /// The same app, the person's own documents kept where those are:
@@ -154,6 +160,12 @@ impl PApp for Phiogy {
 
     fn activity(&self) -> PActivity {
         PActivity::read(data::ACTIVITY).hold(data::MENU)
+    }
+
+    /// The hosts the person is in, each a row of the bar with its mark.
+    fn rail(&self) -> Option<PRail> {
+        let desk = self.desk.clone();
+        Some(Rc::new(move || desk.place()))
     }
 
     /// The rows of `data/user.tsv`, and what each look is called.

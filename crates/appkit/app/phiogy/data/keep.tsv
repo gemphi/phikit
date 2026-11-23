@@ -24,11 +24,16 @@ doc.follow	room-follow
 doc.host	host-in
 doc.made	host-made
 doc.direct	room-direct
+# When the person opened each room last, and the rooms they starred.
+doc.seen	room-seen
+doc.star	room-star
 doc.friend	room-friend
 # The shops the person opened or closed; their bag; what they bought.
 doc.shop	shop-in
 doc.bag	shop-bag
 doc.owned	shop-owned
+# The things of the shops the person likes.
+doc.like	shop-like
 # The wallet and its history. These two are Phiora's to write, so with
 # Phiora answering a change to them is never sent as a document: the
 # money is moved by asking (`ask.` rows: what the code calls an ask,

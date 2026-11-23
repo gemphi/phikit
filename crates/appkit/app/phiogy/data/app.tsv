@@ -21,3 +21,7 @@ site	../../../../../puikit/app/phiogy/public/data/phiogy.json
 # The setting of the system that holds a password for `phiogy
 # --signin`, so none is ever a word of a command line.
 secret	PHIOGY_SECRET
+# The tabs over the guide's rooms, in order; and how many hours ago a
+# room was opened at most for it to be a recent one.
+guide	recent favorite older
+recent	72

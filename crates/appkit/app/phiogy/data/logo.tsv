@@ -16,3 +16,86 @@ tail.thick	1	stem
 tail.inset	0.5	stem
 tail.lean	0.5	stem
 tail.drop	0.5	drop
+# Which mark is written into asset/icon: `voice` (the o with a tail),
+# or `p` and an option of data/logo-corner.tsv. Every drawing is kept
+# in doc/logo/ whichever is chosen. `drawn` is the user's choice (22
+# November 2026, "use this and we're done"): the picture as it was
+# given.
+mark	p	drawn
+# `tall` is how high the o is.
+#
+# The p with two bars cut out of it, as the picture the user gave on 22
+# November 2026 has it; each number is that picture's own proportion,
+# said in the font's measures and checked by laying the drawing over
+# the picture: 74 of its 5,695 dots differ. Its bowl is as high as the
+# o and a little wider, filled; its top right corner is rounder than
+# its bottom right one.
+p.wide	1.054	round
+p.high	1	tall
+p.corner	0.52	round
+p.corner.low	0.33	round
+# Its two left corners are round too: the top left, and the stem's
+# foot at the left (the heel). The picture's own file cuts them square;
+# the user saw it in the conversation with its corners round, chose
+# that look (22 November 2026: "you rounded the bottom left corner",
+# "that's what we want") and gave a screenshot of it to lay the drawing
+# over. Both numbers are fitted to that screenshot: 63 of its dots
+# differ, all single dots at the edges. The heel is rounder than the
+# stem is long, so its curve begins a little over the bowl's foot.
+p.left	0.21	round
+p.heel	0.86	stem
+# The stem under the bowl at the left: half as wide again as a stem.
+# Where it meets the bowl's foot is a round hollow, and the mark ends
+# where that curve ends, as the picture does: the stem's foot is sharp
+# at the right, where the hollow's curve comes down to it, which makes
+# a point of it as a bird's tail is. A longer stem or a foot round at
+# the right is not the picture's.
+p.tail.wide	1.58	stem
+p.tail.drop	0.61	stem
+p.hollow	0.55	stem
+p.foot	0	stem
+# The long bar: a wall in from the left, under the top, how wide and
+# how high, and how round a round corner of it is.
+p.wall	0.8	stem
+p.top	0.93	stem
+p.bar.wide	0.88	stem
+p.bar.high	0.65	tall
+p.bar.corner	0.4	stem
+# The short bar beside it: how far apart, how wide, where it starts
+# under the bowl's top, how high; its round corners are half its width.
+p.gap	0.85	thin
+p.dot.wide	0.58	stem
+p.dot.top	0.283	tall
+# Half as high as the long bar (1 to 2), as the user asked on 23
+# November 2026; the picture's own was 0.418 of the o's height, about
+# two thirds of the long bar. It keeps its top and is shorter at its foot.
+p.dot.high	0.325	tall
+p.dot.corner	0.29	stem
+# In the mark's file a round corner is a true curve. Where the mark is
+# drawn as dots (the sheet of options), it is a point every so many
+# degrees.
+p.fine	2	one
+# The sheet of options (doc/logo-option.png): the sides each option is
+# shown at, the first large and the others the bar's sizes; the room
+# between things; how much of a square is clear round the mark; how
+# many times as large it is drawn before it is brought down; the
+# sheet's own ground, ink and size of text.
+sheet.side	128	48	36	20
+sheet.gap	16
+sheet.room	0.1
+sheet.fine	4
+sheet.paper	#c9c9c4
+sheet.ink	text.ink
+sheet.text	15
+# The inks the mark is tried in, each as ink and ground. A token is the
+# theme's colour; after `dark/` the dark look's. The blue is a stand-in:
+# no blue is named anywhere in the kit, so any other replaces it here.
+try.black	text.ink	window.fill
+try.white	dark/text.ink	dark/window.fill
+try.blue	#2f5cf0	window.fill
+try.blue on dark	#6f93ff	dark/window.fill
+try.white on blue	#ffffff	#2f5cf0
+# The mark as the web's kit keeps one (doc/logo/registry-icon.json): a
+# square box that wide, the mark that high in its middle.
+web.box	100	one
+web.high	80	one

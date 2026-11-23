@@ -144,6 +144,11 @@ impl PDraw for Account {
 }
 
 impl PView for Account {
+    /// Where a press on it does something.
+    fn hand(&self) -> Vec<PRect> {
+        self.list.hands()
+    }
+
     fn frame(&self) -> PRect {
         self.frame
     }

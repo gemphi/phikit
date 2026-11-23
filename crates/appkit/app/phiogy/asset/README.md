@@ -28,11 +28,24 @@ are the shared ones. `data/tool.tsv` says which tool has which.
 
 ## The logo
 
-`icon/phiogy.svg` is Phiogy's mark: the letter o of its own face, a
-voice, with a tail leaving its foot at the left, which makes a speech
-mark of it. It is the web Phiogy's mark (`puikit/app/phiogy/mark.py`)
-on the face this window is set in. `script/logo.py` draws it on the
-font's measures, from `data/logo.tsv`; `doc/logo.html` shows it large
-and at the bar's size. The row seated `head` in `data/activity.tsv`
+`icon/phiogy.svg` is Phiogy's mark: a p in one ink, its bowl the box
+of the letter o of its own face, filled, with two bars cut out of it,
+a long one, round at its top left and its bottom right and sharp at
+the other two corners, and a shorter one round all over. It is the
+picture the user gave on 22 November 2026, traced, its pink parts
+holes: it ends where the picture ends, the hollow under the bowl
+coming down to a point at the stem's foot, and its top left and
+bottom left corners are round, fitted to the screenshot the user gave
+of the look they chose. `script/logo.py` draws it on the font's measures, from
+`data/logo.tsv`, and `data/logo-corner.tsv` holds the options of which
+corners of the bars are sharp; `doc/logo-option.png` shows every
+option in every ink tried, `doc/logo.html` the chosen one large and
+at the bar's size, and `doc/logo/` keeps every drawing. The mark
+before it, the letter o with a tail (the web Phiogy's,
+`puikit/app/phiogy/mark.py`), is `doc/logo/voice.svg`, and the row
+`mark voice` of `data/logo.tsv` puts it back. The web's kit keeps the
+same p as the `icon` of Phiogy's entry in
+`puikit/app/phi-kit/src/registry.json`: the script writes it as
+`doc/logo/registry-icon.json`, and it is put there from that file. The row seated `head` in `data/activity.tsv`
 names it, and it is drawn in the window's caption, over the bar, in the theme's own
 ink, as every icon is.

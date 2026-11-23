@@ -1,0 +1,9 @@
+# Phigen's modals: slug, label, icon, and the shape each lies in: a
+# square in the middle (said or not), a `drawer` at the right edge, or a
+# `sheet` at the foot. The profile's content is appkit's.
+profile	Profile	user
+welcome	Welcome	sparkles
+# What the pick over a chat opens, and the settings, which the bar's
+# menu opens: both are Phigen's own.
+model	Model	brain	sheet
+setting	Settings	settings	drawer

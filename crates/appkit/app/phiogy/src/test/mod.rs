@@ -14,6 +14,7 @@ mod flow;
 mod hosts;
 mod left;
 mod pill;
+mod ring;
 mod room;
 mod shop;
 mod part;
@@ -27,12 +28,14 @@ mod picture;
 mod signin;
 mod site;
 mod system;
+mod tab;
 #[cfg(not(target_family = "wasm"))]
 mod talk;
 #[cfg(not(target_family = "wasm"))]
 mod told;
 mod tools;
 mod viewer;
+mod voice;
 
 use std::rc::Rc;
 
@@ -174,6 +177,16 @@ pub(crate) fn written(stage: &PStage, look: &PLook, wanted: &str) -> Option<PPoi
         _ => None,
     };
     drawn(stage, look).into_iter().filter_map(at).next_back()
+}
+
+/// Whether a line of text stands on a ground of its own as a figure
+/// does (appkit's `figure`): somewhere it is drawn, a light as high as
+/// the theme makes a figure was laid just before it, around it.
+pub(crate) fn grounded(stage: &PStage, look: &PLook, wanted: &str) -> bool {
+    use appkit::theme::PTheme;
+    let mark = drawn(stage, look);
+    let high = look.size(appkit::pui::core::figure::HIGH).unwrap_or_default();
+    mark.windows(2).any(|pair| matches!((&pair[0], &pair[1]), (PMark::Blend { rect, .. }, PMark::Text { at, text, .. }) if text == wanted && rect.size.height == high && at.y >= rect.origin.y && at.y <= rect.origin.y + rect.size.height))
 }
 
 /// The middle of the bar's icon of that name: the first one drawn, since

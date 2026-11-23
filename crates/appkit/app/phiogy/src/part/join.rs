@@ -1,32 +1,27 @@
-//! The join: the pills at the right of a room's title, with which this
-//! window is a caller itself. Out of the room's call there is one,
-//! Join. In it there are two: Mute, which reads Unmute while muted, and
-//! Leave. Each is a label lit from the left, the one that says what is
-//! so the strongest. What is drawn is what can be pressed.
+//! The join: the pill at the right of a room's title while somebody
+//! else is in a call there and this window is not, as the web's room
+//! has it beside its name: Join. With nobody calling, the title's
+//! tools begin a call (`title`); in a call, its buttons are the call's
+//! own (`call`). A voice room has its way in on its own page (`voice`).
+//!
+//! And what the desk does for a call: begin, join, leave, mute, the
+//! camera, a screen, the sound of the others, and who else is calling.
 
 use std::cell::RefCell;
 
 use appkit::pui::core::{PLight, PPaint, PPoint, PRect, light};
 
 use super::{Desk, GAP, INK, LINE};
-use crate::peer::{self, Call, Seen};
+use crate::peer::{self, Call, Ring, Seen};
 
 /// The theme's token for how round a pill is.
 pub const ROUND: &str = "tab.radius";
 
-/// What a press on a pill does.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Press {
-    Join,
-    Leave,
-    Hush(bool),
-}
-
-/// The pills of a room's call.
+/// The pill of a room's call.
 pub struct Join {
     desk: Desk,
-    /// Where each pill was drawn last, in the window.
-    spot: RefCell<Vec<(PRect, Press)>>,
+    /// Where it was drawn last, in the window.
+    spot: RefCell<Option<PRect>>,
 }
 
 impl Join {
@@ -34,54 +29,33 @@ impl Join {
         Join { desk, spot: RefCell::default() }
     }
 
-    /// The pills there are now, from the left: what each reads, what a
-    /// press does, and whether it says what is so.
-    fn pill(&self) -> Vec<(String, Press, bool)> {
-        let text = |name: &str| self.desk.text.get(name).to_string();
-        match self.desk.calling() {
-            Some(seen) => {
-                let hush = match seen.quiet {
-                    true => (text("call.unmute"), Press::Hush(false), true),
-                    false => (text("call.mute"), Press::Hush(true), false),
-                };
-                vec![hush, (text("call.leave"), Press::Leave, false)]
-            }
-            None => vec![(text("call.join"), Press::Join, false)],
-        }
-    }
-
-    /// Draw the pills so that the last ends at `end`, their middle at
-    /// its height. How wide they are together; nothing where the line
-    /// is not open, since there is no call to join.
+    /// Draw the pill so that it ends at `end`, its middle at that
+    /// height. How wide it is; nothing where nobody is calling.
     pub fn draw(&self, paint: &mut dyn PPaint, end: PPoint) -> f32 {
         let (gap, line, round, ink) = (paint.size(GAP), paint.size(LINE), paint.size(ROUND), paint.color(INK));
-        let mut spot = Vec::new();
-        let mut right = end.x;
-        for (label, press, so) in self.pill().into_iter().rev().filter(|_| self.desk.line.is_ok()) {
-            let rect = PRect::new(right - paint.measure(&label) - gap * 2.0, end.y - (line + gap) / 2.0, paint.measure(&label) + gap * 2.0, line + gap);
-            let strength = match so {
-                true => PLight::Strong,
-                false => PLight::Rest,
-            };
-            light::label(paint, rect, round, strength, false, "");
+        let label = self.desk.text.get("call.join").to_string();
+        let rect = PRect::new(end.x - paint.measure(&label) - gap * 2.0, end.y - (line + gap) / 2.0, paint.measure(&label) + gap * 2.0, line + gap);
+        let shown = self.desk.ringing().map(|_| rect);
+        if shown.is_some() {
+            light::label(paint, rect, round, PLight::Strong, false, "");
             paint.text(PPoint::new(rect.origin.x + gap, rect.center().y - line / 2.0), &label, ink);
-            spot.push((rect, press));
-            right = rect.origin.x - gap / 2.0;
         }
-        *self.spot.borrow_mut() = spot;
-        end.x - right
+        *self.spot.borrow_mut() = shown;
+        shown.map_or(0.0, |rect| rect.size.width + gap / 2.0)
     }
 
-    /// A press at a place in the window. `true` when it was on a pill.
+    /// Where the pill is, while it is drawn.
+    pub fn hands(&self) -> Vec<PRect> {
+        self.spot.borrow().iter().copied().collect()
+    }
+
+    /// A press at a place in the window. `true` when it was on the pill.
     pub fn press(&self, at: PPoint) -> bool {
-        let press = self.spot.borrow().iter().find(|(rect, _)| rect.contains(at)).map(|(_, press)| *press);
-        match press {
-            Some(Press::Join) => self.desk.join(),
-            Some(Press::Leave) => self.desk.leave(),
-            Some(Press::Hush(quiet)) => self.desk.hush(quiet),
-            None => return false,
+        let on = self.spot.borrow().is_some_and(|rect| rect.contains(at));
+        if on {
+            self.desk.join();
         }
-        true
+        on
     }
 }
 
@@ -97,6 +71,66 @@ impl Desk {
     /// What this window calls itself in the call it is in.
     pub fn me(&self) -> Option<String> {
         self.call.borrow().as_ref().map(|call| call.peer.clone())
+    }
+
+    /// Whether the open room is one people are in, not one they write in.
+    pub fn voice(&self) -> bool {
+        self.plate(&self.room()).is_some_and(|plate| plate.voice)
+    }
+
+    /// The voice room this window is in, whichever page is open: its
+    /// id, what it is called, and what its call has seen.
+    pub fn within(&self) -> Option<(String, String, Seen)> {
+        let call = self.call.borrow();
+        let call = call.as_ref()?;
+        let id = call.key.strip_prefix(&self.key(""))?.to_string();
+        let plate = self.plate(&id).filter(|plate| plate.voice)?;
+        Some((id, plate.label, call.seen())).filter(|(.., seen)| seen.over.is_none())
+    }
+
+    /// Who else is in the open room's call: what each is called on the
+    /// line, and what they call themself. The board says, where this
+    /// window serves the line; the ring, where it is on another's.
+    pub fn other(&self) -> Vec<(String, String)> {
+        let (room, me) = (self.room(), self.me());
+        let (roster, _) = self.on(&room);
+        let near = roster.list.into_iter().map(|(peer, caller)| (peer, caller.name));
+        let far = self.ring.borrow().as_ref().filter(|ring| ring.key == self.key(&room)).map(Ring::caller).unwrap_or_default();
+        near.chain(far).filter(|(peer, _)| Some(peer) != me.as_ref()).collect()
+    }
+
+    /// Who is calling in the open room, when somebody is and this
+    /// window is not in that call: the first of them. Never in a voice
+    /// room, which nobody is rung into.
+    pub fn ringing(&self) -> Option<String> {
+        let free = self.line.is_ok() && self.calling().is_none() && !self.voice();
+        self.other().into_iter().next().map(|(_, name)| name).filter(|_| free)
+    }
+
+    /// Whether a call can be begun in the open room: it is a room, the
+    /// line is open, and nobody is in a call there.
+    pub fn callable(&self) -> bool {
+        self.line.is_ok() && self.plate(&self.room()).is_some() && !self.voice() && self.calling().is_none() && self.other().is_empty()
+    }
+
+    /// On another's line, listen to the open room's while this window
+    /// is not in its call, so a call there is seen; to none otherwise.
+    pub fn listen(&self) {
+        let room = self.room();
+        let key = self.key(&room);
+        let wanted = self.away && self.calling().is_none() && self.plate(&room).is_some();
+        let held = self.ring.borrow().as_ref().is_some_and(|ring| ring.key == key);
+        match (wanted, held) {
+            (true, false) => *self.ring.borrow_mut() = self.line.as_ref().as_ref().ok().zip(peer::name()).map(|(at, name)| Ring::open(at, &key, &name)),
+            (false, _) => _ = self.ring.borrow_mut().take(),
+            (true, true) => {}
+        }
+    }
+
+    /// Begin a call in the open room, with the camera or without.
+    pub fn dial(&self, video: bool) {
+        self.join();
+        self.camera(video);
     }
 
     /// Join the open room's call, leaving any other. Where the line is
@@ -125,6 +159,11 @@ impl Desk {
     /// Turn the camera on, or off.
     pub fn camera(&self, on: bool) {
         self.call.borrow().iter().for_each(|call| call.camera(on));
+    }
+
+    /// Hear nobody, or hear them again.
+    pub fn deaf(&self, on: bool) {
+        self.call.borrow().iter().for_each(|call| call.deaf(on));
     }
 
     /// Share a screen, or stop.

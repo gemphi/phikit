@@ -135,3 +135,6 @@ sheet.column	cols
 face	face
 mark.index	index
 with	with
+# The fact of a thing that is its colour, as the site calls it: the
+# same thing in its other colours is found by it.
+shop.colour	Colour

@@ -4,32 +4,12 @@
 //! between them the messages, scrolled with the wheel.
 
 use appkit::pui::control::{PControl, inside};
-use appkit::pui::core::{PColor, PDraw, PLight, PPaint, PPoint, PRect, PView, light, show};
-use appkit::theme::PTheme;
+use appkit::pui::core::{PDraw, PLight, PPaint, PPoint, PRect, PView, light, show};
 
 use super::{Act, POST, SEND, Spot, Stream, UNANSWER};
+use appkit::pui::layout::PDry;
 use crate::part::{DIM, GAP, ICON, INK, LINE, RADIUS, ROW, fit, tool};
 use crate::site::Message;
-
-/// A painter that draws nothing and measures as another does: with it
-/// a room is laid out to learn how long it is.
-struct Dry<'a>(&'a dyn PPaint);
-
-impl PPaint for Dry<'_> {
-    fn theme(&self) -> &dyn PTheme {
-        self.0.theme()
-    }
-
-    fn measure(&self, text: &str) -> f32 {
-        self.0.measure(text)
-    }
-
-    fn fill(&mut self, _: PRect, _: PColor) {}
-
-    fn text(&mut self, _: PPoint, _: &str, _: PColor) {}
-
-    fn icon(&mut self, _: &str, _: PRect, _: PColor) {}
-}
 
 impl PDraw for Stream {
     /// Another room, and a room with one more message, are shown from
@@ -41,7 +21,7 @@ impl PDraw for Stream {
         let sought = self.desk.now.seek.borrow_mut().take();
         let fresh = *self.seen.borrow() != now;
         if fresh || sought.is_some() {
-            self.lay(&mut Dry(&*paint), origin);
+            self.lay(&mut PDry(&*paint), origin);
             let top = sought.and_then(|id| self.place.borrow().iter().find(|(known, ..)| *known == id).map(|(_, top, _)| *top));
             let by = match top {
                 Some(top) => top - self.body.get().origin.y - self.body.get().size.height / 3.0,
@@ -109,6 +89,10 @@ impl Stream {
         let (dim, ink, text) = (paint.color(DIM), paint.color(INK), &self.desk.text);
         let frame = self.write.frame();
         let label = self.desk.plate(&self.desk.room()).map(|plate| plate.label).unwrap_or_default();
+        // The field and its two buttons belong together: one ground
+        // under all three.
+        let radius = paint.size(RADIUS);
+        light::label(paint, PRect::new(origin.x + frame.origin.x - gap / 4.0, origin.y + frame.origin.y - gap / 4.0, frame.size.width + (row + gap / 2.0) * 2.0 + gap / 2.0, row + gap / 2.0), radius, PLight::Rest, true, "");
         show(&self.write, paint, origin);
         if self.write.value().is_empty() {
             paint.text(origin.plus(frame.origin).plus(inside(paint, frame.size.height)), &fit(&text.fill("stream.write", "room", &label), frame.size.width - gap, paint), dim);
@@ -202,6 +186,11 @@ impl Stream {
             if !follows && index > 0 {
                 next += gap / 2.0;
             }
+            // Every message stands on a ground of its own, against the
+            // room's: how high is learned with nothing drawn.
+            let high = self.message(&mut PDry(&*paint), PRect::new(left, next, wide, 0.0), one, follows, &all, &mut Vec::new()) - next;
+            let radius = paint.size(RADIUS);
+            light::label(paint, PRect::new(left - gap / 2.0, next - gap / 4.0, wide + gap, high + gap / 4.0), radius, PLight::Soft, true, "");
             let foot = self.message(paint, PRect::new(left, next, wide, 0.0), one, follows, &all, &mut spot);
             place.push((one.id.clone(), next, foot));
             next = foot;
@@ -225,7 +214,7 @@ impl Stream {
     /// How high the head and the foot are, learned by laying them out
     /// with nothing drawn.
     fn band(&self, paint: &dyn PPaint, all: &[Message]) -> (f32, f32) {
-        let (mut dry, mut none) = (Dry(paint), Vec::new());
+        let (mut dry, mut none) = (PDry(paint), Vec::new());
         (self.head(&mut dry, PPoint::default(), all, &mut none), self.foot(&mut dry, PPoint::default(), all, &mut none))
     }
 }

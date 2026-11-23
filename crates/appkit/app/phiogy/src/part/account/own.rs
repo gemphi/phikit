@@ -11,7 +11,8 @@ use crate::part::list::{Deed, Item, Seat, grouped};
 use crate::part::store::{COIN, WALLET};
 
 impl Account {
-    /// The wallet: each coin, and what all of them are worth.
+    /// The wallet: what all of it is worth, and each coin, every sum
+    /// on a ground of its own.
     pub(super) fn wallet(&self) -> Vec<Item<Act>> {
         let (text, start) = (&self.desk.text, PTable::read(data::WALLET));
         let held = self.desk.kept.get(WALLET);
@@ -20,15 +21,15 @@ impl Account {
             Some((coin.to_string(), held[coin].as_f64().unwrap_or_else(|| value.parse().unwrap_or_default())))
         }).collect();
         let worth: f64 = coin.iter().map(|(coin, amount)| amount * start.get(&format!("{RATE}{coin}")).parse::<f64>().unwrap_or_default()).sum();
-        let whole = format!("{} {} ${}", text.get("account.total"), text.get("between"), grouped(worth.round().max(0.0) as u64));
+        let whole = Item::Sum(text.get("account.total").to_string(), format!("${}", grouped(worth.round().max(0.0) as u64)));
         let line = |(coin, amount): &(String, f64)| {
             let said = match amount.fract() == 0.0 {
                 true => grouped(*amount as u64),
                 false => format!("{amount}"),
             };
-            Item::Note(format!("{} {} {said}", start.get(&format!("{LABEL}{coin}")), text.get("between")))
+            Item::Sum(start.get(&format!("{LABEL}{coin}")).to_string(), said)
         };
-        std::iter::once(Item::Note(whole)).chain(coin.iter().map(line)).collect()
+        std::iter::once(whole).chain(coin.iter().map(line)).collect()
     }
 
     /// For somebody signed in: the sessions signed in as them, with

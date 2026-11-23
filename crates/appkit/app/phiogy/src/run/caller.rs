@@ -24,14 +24,19 @@ pub(super) fn engine(over: &[(String, String)], film: &appkit::pui::core::PFilm)
 }
 
 /// What the window is asked to do in a call from the start: `--join`
-/// joins the open room's, `--camera` turns the camera on in it and
-/// `--share` shares a screen.
+/// joins the open room's, `--camera` turns the camera on in it,
+/// `--share` shares a screen, `--mute` mutes and `--deaf` turns the
+/// sound of the others off.
 pub(super) fn begin(desk: &crate::part::Desk, word: &[String]) {
     let has = |flag: &str| word.iter().any(|word| word == flag);
     if has("--join") {
         desk.join();
         desk.camera(has("--camera"));
         desk.share(has("--share"));
+        desk.hush(has("--mute"));
+        desk.deaf(has("--deaf"));
+        // `--then lobby` opens that page once it is in, the call going on.
+        given(word, "--then").iter().for_each(|page| _ = desk.show(page));
     }
 }
 
@@ -65,6 +70,7 @@ pub(super) fn caller(word: &[String], key: &str, own: &Result<String, String>, t
     println!("{}", text.fill("caller.begin", "peer", &call.peer).replace("{key}", key).replace("{at}", &place));
     call.camera(word.iter().any(|word| word == "--camera"));
     call.share(word.iter().any(|word| word == "--share"));
+    call.hush(word.iter().any(|word| word == "--mute"));
     let (tell, told) = std::sync::mpsc::channel::<String>();
     _ = std::thread::Builder::new().spawn(move || std::io::stdin().lines().map_while(Result::ok).for_each(|line| _ = tell.send(line.trim().to_string())));
     for _ in 0..time.unwrap_or(u64::MAX) {

@@ -104,24 +104,46 @@ fn step_8_in_a_hand_the_room_is_alone_and_the_rooms_row_draws_my_rooms_out() {
 }
 
 #[test]
-fn step_9_phiogy_s_mark_is_in_the_caption_over_the_bar_with_the_pin() {
+fn step_9_phiogy_s_mark_is_in_the_caption_over_the_bar_and_is_the_pin() {
+    use appkit::pui::core::PMark;
     let (app, mut stage, look) = staged(DESK);
     let (mark, room) = (pictured(&stage, &look, "phiogy").expect("the mark"), pictured(&stage, &look, "chat").expect("the Rooms row"));
     assert!(stage.frame().caption.contains(mark) && mark.y < room.y && mark.x == room.x, "{mark:?} {room:?}");
-    // The pin ends the cell over the bar and its menu, and puts the
-    // menu away; it then follows the mark, and brings the menu back.
-    let (frame, pin) = (stage.frame(), pictured(&stage, &look, "pin-open").expect("the pin"));
-    assert!(frame.caption.contains(pin) && pin.x > frame.menu.origin.x && pin.x < frame.menu.origin.x + frame.menu.size.width, "{pin:?}");
-    assert!(stage.send(&PEvent::PointerDown(pin)));
+    // The mark and every icon of the bar under it stand on grounds of
+    // one size, and are drawn as large as each other.
+    let ground = |stage: &appkit::pui::window::PStage, name: &str| {
+        let mark = super::drawn(stage, &look);
+        mark.windows(2).find_map(|pair| match (&pair[0], &pair[1]) {
+            (PMark::Blend { rect, .. }, PMark::Icon { name: known, rect: icon, .. }) if known == name => Some((rect.size.height, icon.size)),
+            _ => None,
+        })
+    };
+    let (own, row) = (ground(&stage, "phiogy").expect("the mark's ground"), ground(&stage, "chat").expect("a row's ground"));
+    assert_eq!(own, row);
+    assert!(own.0 > own.1.height);
+    // Its name is beside it, in one case, while the menu is shown.
+    let named = |stage: &appkit::pui::window::PStage| shown(stage, &look).contains(&"phiogy".to_string());
+    assert!(named(&stage) && !shown(&stage, &look).contains(&"Phiogy".to_string()));
+    // The mark is the pin: no other pin stands in the caption, and
+    // with the pointer over it, it shows the pin.
+    assert!(pictured(&stage, &look, "pin-open").is_none() && pictured(&stage, &look, "pin-shut").is_none());
+    assert!(stage.send(&PEvent::PointerMove(mark)));
+    assert_eq!(pictured(&stage, &look, "pin-open"), Some(mark));
+    assert!(pictured(&stage, &look, "phiogy").is_none());
+    // A press on it puts the menu away, and the name with it; another
+    // brings both back.
+    assert!(stage.send(&PEvent::PointerDown(mark)));
     assert_eq!(stage.frame().menu.size.width, 0.0);
-    let pin = pictured(&stage, &look, "pin-shut").expect("the pin");
-    assert!(stage.send(&PEvent::PointerDown(pin)));
+    assert!(!named(&stage) && pictured(&stage, &look, "pin-shut") == Some(mark));
+    assert!(stage.send(&PEvent::PointerDown(mark)));
     assert_eq!(stage.frame().menu.size.width, 200.0);
-    // A press on the mark goes to the rooms.
+    assert!(named(&stage));
+    // The pointer gone from it, it is the mark again.
+    assert!(stage.send(&PEvent::PointerMove(room)));
+    assert_eq!(pictured(&stage, &look, "phiogy"), Some(mark));
+    // A row of the bar still goes where it says.
     assert!(icon(&mut stage, &look, "globe"));
     assert!(part(&stage).contains(&"venue") && !part(&stage).contains(&"room"));
-    assert!(stage.send(&PEvent::PointerDown(mark)));
-    assert!(part(&stage).contains(&"room"));
     // The mark is a file of Phiogy's own, drawn on the font.
     let file = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("asset/icon/phiogy.svg");
     assert!(std::fs::read_to_string(file).is_ok_and(|text| text.contains("<path")));
@@ -153,4 +175,36 @@ fn step_2_a_page_that_opens_a_room_over_the_line_is_in_the_window_at_once() {
     };
     assert!((0..250).any(gone), "the page was not dropped");
     assert!(shown(&stage, &look).contains(&"Nobody has this room open.".to_string()));
+}
+
+#[test]
+fn step_44_the_hosts_i_am_in_stand_in_the_bar_each_with_its_mark() {
+    use appkit::pui::core::PMark;
+    let (app, mut stage, look) = staged(DESK);
+    // After the bar's own rows, one for each host I am in, in the
+    // site's order; the direct list is no host.
+    let place = app.desk().place();
+    assert_eq!(place.iter().map(|row| row.entry.label.as_str()).collect::<Vec<_>>(), ["Phiace", "Opal Atelier"]);
+    assert!(place.iter().all(|row| !row.on), "{place:?}");
+    // Each stands in the bar on a ground as the icons do, under them.
+    let bar = stage.frame().activity;
+    let rows = |stage: &appkit::pui::window::PStage| {
+        let mark = super::drawn(stage, &look);
+        mark.iter().filter(|mark| matches!(mark, PMark::Blend { rect, .. } if bar.contains(rect.center()) && rect.size.height < bar.size.width)).count()
+    };
+    let chat = pictured(&stage, &look, "chat").expect("the Rooms row");
+    let all = rows(&stage);
+    assert!(all >= 3 + 1 + 2, "the three rows that go somewhere, Menu, and two hosts: {all}");
+    // A press on a host's row goes to its first room, and marks it.
+    let row = stage.theme().size("activity.row").unwrap_or_default();
+    let first = appkit::pui::core::PPoint::new(chat.x, chat.y + row * 3.0);
+    assert!(stage.send(&PEvent::PointerDown(first)));
+    assert_eq!(app.desk().open.borrow().as_str(), "lobby");
+    assert_eq!(app.desk().place().iter().map(|row| row.on).collect::<Vec<_>>(), [true, false]);
+    // Left, a host has no row any more: the bar is asked again.
+    let opal = app.desk().site.venue.iter().find(|venue| venue.label == "Opal Atelier").map(|venue| venue.id.clone()).expect("the host");
+    app.desk().enter(&opal, false);
+    assert!(stage.tick());
+    assert_eq!(rows(&stage), all - 1);
+    assert_eq!(app.desk().place().len(), 1);
 }

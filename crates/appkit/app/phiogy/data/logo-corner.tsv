@@ -1,0 +1,25 @@
+# The options of the two bars cut out of the p (script/shape.py): a
+# name, then for the long bar and for the short one which corners are
+# round (r) and which sharp (s), from the top left round with the
+# clock: top left, top right, bottom right, bottom left.
+#
+# As the picture has it: the long bar sharp at its top right and its
+# bottom left, the short one round all over.
+drawn	rsrs	rrrr
+# The long bar's sharp corners the other way.
+turned	srsr	rrrr
+# Both bars cut the same way, two leaves.
+leaf	rsrs	rsrs
+# The short bar's leaf turned against the long one's.
+facing	rsrs	srsr
+# Sharp where the two face each other: one round shape, parted.
+inner	rssr	srrs
+# Sharp at their outer sides, round where they face.
+outer	srrs	rssr
+# Flat feet: both stand on a sharp foot, round at the top.
+foot	rrss	rrss
+# Flat tops, round at the foot.
+top	ssrr	ssrr
+# No sharp corner at all, and none round.
+round	rrrr	rrrr
+square	ssss	ssss

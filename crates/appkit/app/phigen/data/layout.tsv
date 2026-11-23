@@ -1,0 +1,4 @@
+# Where the hosts go: space, zone, host, and the zone's share of the width.
+# The chat's area holds `start` until something is said, then `chat`.
+chat	main	start	1
+search	main	search	1

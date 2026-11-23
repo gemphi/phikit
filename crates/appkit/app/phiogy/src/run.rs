@@ -4,8 +4,9 @@
 //! At a desk the window serves the line as well, where `data/line.tsv`
 //! says, so pages that open a room are seen in it at once. `--port 4300`
 //! serves it on another port, and 0 has the system choose; `--quiet`
-//! opens the window with no line. `--line` serves the line alone, with
-//! no window, and says where it is.
+//! opens the window with no line, and `--at localhost:4311` on the line
+//! another serves there. `--line` serves the line alone, with no
+//! window, and says where it is.
 //!
 //! `--demo u_noor` has it be that member of Phiora's, where Phiora
 //! lets anyone be one to try things, and `--signout` nobody again.
@@ -14,8 +15,8 @@
 //! writes everything Phiora keeps about the person there.
 //! `--bag s_phiogy/ID` puts that thing of that shop in the bag, and
 //! `--pay` pays for the bag.
-//! `--post` and a picture's path posts it there; `--mute tavi` mutes
-//! that person; `--wear s_phiogy/theme_sphere` puts that theme on.
+//! `--post` and a path posts that picture; `--mute tavi` mutes that person;
+//! `--wear s_phiogy/theme_sphere` puts that theme on; `--host NAME` makes a host.
 //! `--write` and some words writes them in the room it opens on;
 //! `--find` opens that room searched and `--type` types into the field
 //! that has the keys; `--pins` lists what is pinned in it; `--who lora`
@@ -26,11 +27,12 @@
 //!
 //! `--view 0` opens it on the first picture posted in its room, in the
 //! viewer, and `--tool zoom` has a tool of the viewer pressed, by its
-//! name in `data/tool.tsv`. `--join` has the window join the call of the room it opens on, and
-//! `--say` has it say each second what that call sees. `--camera` turns
-//! the camera on in it and `--share` shares a screen; `--set
-//! device=stand` gives a row of `data/peer.tsv` another value for this
-//! run: there, a tone and a grey ramp in the devices' place.
+//! name in `data/tool.tsv`. `--join` has the window join the call of the
+//! room it opens on, and `--say` has it say each second what that call
+//! sees. `--camera` turns the camera on in it, `--share` shares a screen,
+//! `--mute` mutes, `--deaf` turns the others' sound off, and `--then lobby`
+//! opens that page once it is in; `--set device=stand` gives a row of
+//! `data/peer.tsv` another value: a tone and a grey ramp for the devices.
 //! `--caller phiogy/lora` is a caller with no window: it joins that
 //! room's call on this program's own line, or on the line `--at` names,
 //! and says each second what it hears and sees of the others, for as
@@ -52,6 +54,7 @@
 //! was said in the room it is on, and opens no window.
 
 mod caller;
+mod own;
 mod read;
 
 use std::rc::Rc;
@@ -81,6 +84,10 @@ fn serve(word: &[String], board: &Arc<Mutex<Board>>, text: &PTable) -> (Option<c
     use crate::exchange::{Exchange, Set};
     if word.iter().any(|word| word == "--quiet") {
         return (None, Err(text.get("status.off").to_string()));
+    }
+    // On a line another serves, none is served here.
+    if let Some(place) = given(word, "--at").pop() {
+        return (None, Ok(place));
     }
     let port = given(word, "--port").last().map(|port| format!("port\t{port}")).unwrap_or_default();
     match Exchange::open(Set::own(&port), Arc::clone(board)) {
@@ -127,6 +134,10 @@ pub fn run(word: &[String]) {
     let row = |flag: &str, token: &str| given(word, flag).last().map(|value| format!("size\t{token}\t{value}\n")).unwrap_or_default();
     let look = Rc::new(Phiogy::look(&(row("--width", screen::WIDTH) + &row("--height", screen::HEIGHT))));
     let app = Phiogy::open(look, site, board, at, keep).keeping(kept);
+    let app = match given(word, "--at").is_empty() {
+        true => app,
+        false => app.away(),
+    };
     // Where the real library is built in, it carries this window's calls.
     let film = appkit::pui::core::PFilm::default();
     let (over, shown) = (caller::over(word), film.clone());
@@ -152,7 +163,7 @@ pub fn run(word: &[String]) {
     given(word, "--write").iter().for_each(|said| _ = app.desk().write(said));
     given(word, "--post").iter().for_each(|path| _ = app.desk().post(path));
     given(word, "--mute").iter().filter(|id| !app.desk().muted(id)).for_each(|id| app.desk().mute(id));
-    given(word, "--wear").iter().for_each(|place| app.desk().wear(place));
+    own::own(app.desk(), word);
     // Things put in the bag, each as its shop and its id; and the bag
     // paid for.
     for (shop, id) in given(word, "--bag").iter().filter_map(|place| place.split_once('/')) {
@@ -169,9 +180,9 @@ pub fn run(word: &[String]) {
     caller::begin(app.desk(), word);
     // Asked to, the window says each second what its call sees, as the
     // caller with no window does.
-    let watch = app.desk().call.borrow().as_ref().map(|call| (call.peer.clone(), call.watch())).filter(|_| has("--say"));
-    if let Some((peer, watch)) = watch {
-        println!("{}", text.fill("caller.begin", "peer", &peer).replace("{key}", &app.desk().key(&app.desk().room())).replace("{at}", app.desk().line.as_ref().as_ref().map_or("", String::as_str)));
+    let watch = app.desk().call.borrow().as_ref().map(|call| (call.peer.clone(), call.key.clone(), call.watch())).filter(|_| has("--say"));
+    if let Some((peer, key, watch)) = watch {
+        println!("{}", text.fill("caller.begin", "peer", &peer).replace("{key}", &key).replace("{at}", app.desk().line.as_ref().as_ref().map_or("", String::as_str)));
         let words = text.clone();
         _ = std::thread::Builder::new().spawn(move || {
             loop {

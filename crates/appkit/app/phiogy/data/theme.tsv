@@ -13,6 +13,8 @@ color	shade.light	#ffffff
 size	shade.share	0.58
 size	shade.rest	0.72
 size	shade.soft	0.48
+# A ground's light is gone seven tenths of the way across it.
+size	shade.reach	0.7
 size	surface.turn	0
 size	label.turn	90
 # No glass: the window is opaque and its panes stand on its ground. A
@@ -49,6 +51,10 @@ size	activity.margin	8
 size	activity.corner	16
 size	activity.row	40
 size	activity.radius	12
+# Every part of the body stands on a ground of its own: how far inside
+# the part it stands, and how round it is.
+size	part.inset	4
+size	part.radius	12
 # The caption: the row at the window's very top, where a system puts
 # its title bar. It has the app's mark over the bar, its name, and the
 # pin that puts the bar's menu away and brings it back. On Windows it
@@ -75,6 +81,8 @@ size	drawer.width	400
 size	sheet.share	0.5
 size	sheet.width	776
 size	modal.head	56
+# How much of its way a modal slides in a frame, coming in and going out.
+size	modal.step	0.1
 size	profile.avatar	72
 size	profile.radius	14
 size	profile.split	0.34
@@ -116,12 +124,23 @@ size	call.scene	384
 size	call.tile.high	0.75
 size	call.scene.high	0.5625
 size	call.face	96
-size	call.share	0.7
+size	call.share	0.85
 size	call.speak	0.04
 size	call.less	0.85
 size	call.least	0.3
 # How wide the room for a name under a tile is at least.
 size	call.name	96
+# A figure, which is a number on a ground of its own (appkit's
+# `figure`): a coin's amount, a sum, how many wait in a room. How high
+# its ground is, the room at each side of its text, and how round its
+# corners.
+size	figure.height	26
+size	figure.inset	10
+size	figure.radius	9
+# A voice room: how wide the card of one who is in it is, and how large
+# the face on it.
+size	voice.card	136
+size	voice.face	64
 # A room: how wide its part must be for its people to stand beside what
 # was said, how wide they stand there, and the share of its height they
 # have where they stand over it.
@@ -159,6 +178,8 @@ size	shop.card	168
 size	shop.hero	4
 size	shop.picture	360
 size	shop.more	8
+# How many of a thing's other colours stand in a row on its page.
+size	shop.kin	8
 # A person beside the room: how large their face is, how many times
 # as wide as high the picture over their profile is (the web's 3/1),
 # and how many of their pictures stand in a row.

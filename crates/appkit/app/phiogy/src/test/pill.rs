@@ -1,5 +1,6 @@
-//! The pills of a room's call, pressed on the window's own stage: this
-//! window joins over a real line, mutes and leaves.
+//! A room's call begun from its title and worked from the call's own
+//! buttons, pressed on the window's own stage: this window joins over
+//! a real line, mutes and ends the call.
 
 use std::sync::Arc;
 
@@ -8,12 +9,13 @@ use crate::board::lock;
 
 #[cfg(not(target_family = "wasm"))]
 #[test]
-fn step_11_i_join_a_room_s_call_from_its_title_mute_and_leave() {
+fn step_11_i_begin_a_call_from_a_room_s_title_mute_and_end_it() {
     use std::rc::Rc;
 
     use appkit::pui::PApp;
     use appkit::pui::core::PMode;
 
+    use super::tools::{icon, tool};
     use super::{DESK, press, shown, site};
     use crate::Phiogy;
     let board = Phiogy::board();
@@ -23,30 +25,36 @@ fn step_11_i_join_a_room_s_call_from_its_title_mute_and_leave() {
     let mut stage = app.stage();
     stage.lay(DESK, PMode::of_width(DESK.width));
     let has = |stage: &appkit::pui::window::PStage, text: &str| shown(stage, &look).contains(&text.to_string());
-    // Out of the call the room's title has one pill.
-    assert!(has(&stage, "Join") && !has(&stage, "Leave"));
-    assert!(press(&mut stage, &look, "Join"));
+    // Out of a call the room's title has the two tools that begin one,
+    // and no Join: nobody is calling.
+    assert!(icon(&stage, &look, "phone").is_some() && icon(&stage, &look, "video").is_some() && !has(&stage, "Join"));
+    assert!(tool(&mut stage, &look, "phone"));
     // The line has this window as a caller of the room, as it has a page.
     until("this window is in the call", || app.desk().calling().is_some_and(|seen| seen.joined));
     let me = app.desk().me().expect("it has a name on the line");
     assert_eq!(calling(&board, "phiogy/lora"), std::slice::from_ref(&me));
+    // The window lays itself out for every frame: the call has a place.
+    stage.lay(DESK, PMode::of_width(DESK.width));
     // The room says so: this window among the callers, what carries the
-    // call, and the pills to mute and to leave.
+    // call, and the call's buttons, mute and end among them. The tools
+    // that begin a call are gone from the title.
     let text = shown(&stage, &look);
-    assert!(["In the call", "this window", "Mute", "Leave", "Carried by stand-in."].iter().all(|line| text.contains(&line.to_string())) && text.contains(&me), "{text:?}");
-    assert!(!has(&stage, "Join"));
+    assert!(["In the call", "this window", "Mute", "End the call", "Carried by stand-in."].iter().all(|line| text.contains(&line.to_string())) && text.contains(&me), "{text:?}");
+    assert!(icon(&stage, &look, "phone").is_none() && !has(&stage, "Join"));
     // Mute, and the pill offers the way back.
     assert!(press(&mut stage, &look, "Mute"));
     until("it is muted", || app.desk().calling().is_some_and(|seen| seen.quiet));
     assert!(has(&stage, "Unmute") && !has(&stage, "Mute"));
-    // In another room it is not in that room's call: Join is offered.
+    // In another room it is not in that room's call: one can be begun.
     assert!(app.desk().show("lobby"));
-    assert!(has(&stage, "Join") && !has(&stage, "Leave"));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(icon(&stage, &look, "phone").is_some() && !has(&stage, "End the call"));
     assert!(app.desk().show("lora"));
-    // Leave: the line lets it go.
-    assert!(press(&mut stage, &look, "Leave"));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    // End the call: the line lets it go.
+    assert!(press(&mut stage, &look, "End the call"));
     until("the line let it go", || lock(&board).open().is_empty());
-    assert!(has(&stage, "Join") && !has(&stage, "this window"));
+    assert!(icon(&stage, &look, "phone").is_some() && !has(&stage, "this window"));
 }
 
 #[test]

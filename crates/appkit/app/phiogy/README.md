@@ -34,7 +34,7 @@ with another caller, [`doc/call-rtc.png`](doc/call-rtc.png).
 |---|---|
 | `data/` | everything that is not code: the limits of a call, what a name may be, the words on the wire, what the line refuses and says, where it listens, the heads of its answers; and the window: its name, spaces, hosts, regions and parts, the rows of its activity bar and their menus, its user, its look, its words |
 | `asset/` | files only Phiogy has: its mark. Its other icons and its face are the ones every app shares |
-| `script/logo.py` | draws the mark on the measures of Phiogy's face, from `data/logo.tsv`, into `asset/icon/` and `doc/logo.html` |
+| `script/logo.py` (`shape.py`, `sheet.py`) | draws the mark on the measures of Phiogy's face, from `data/logo.tsv` and the corner options of `data/logo-corner.tsv`, into `asset/icon/`, `doc/logo/`, `doc/logo.html` and `doc/logo-option.png` |
 | `script/line.mjs` | runs the Node line's own tests, unchanged, against this line |
 | `script/icon.mjs` | writes lucide's drawings as Phiogy's own icons, from the copy of lucide the web kit is built on |
 | `script/phiora.mjs` | starts the real Node Phiora and has the program say what it read: of Phiora, after an edit made in Phiora, of nobody, and of a Phiora that is closed; and write a message, which is then looked for on Phiora |
@@ -50,7 +50,7 @@ with another caller, [`doc/call-rtc.png`](doc/call-rtc.png).
 | `src/kept.rs`, `src/hour.rs` | a person's own documents, in their folder and on Phiora; the hour on their clock, for what they write |
 | `src/hosted.rs` | where a picture's key is on disk: the public folder of the app it names |
 | `src/app.rs` | `Phiogy`, which is `PApp`: the four sets read from `data/`, and the view of each part |
-| `src/part/` | the parts: the room's `title` with the pills of its call (`join`); the `room`, which is what was said (`stream`) and who is `present`; the `viewer` of a posted picture; the line's `status`; the `venue` list; the `guide` in the bar's menu |
+| `src/part/` | the parts: the room's `title` with the tools that begin a call and the pill that joins one (`join`); a call over the stream (`call`) and a voice room (`voice`); the `room`, which is what was said (`stream`) and who is `present`; the `viewer` of a posted picture; the line's `status`; the `venue` list; the `guide` in the bar's menu |
 | `src/choice.rs`, `fact.rs` | what a person chose, kept; what is true now, as the profile shows it |
 | `src/run.rs`, `main.rs`, `web.rs` | opening it: the one way, and its two starts |
 | `src/test/` | the tests, in the same folders |
@@ -160,20 +160,31 @@ and what is left in [`TODO.md`](TODO.md).
   their folder for Phiogy and, with Phiora answering, on Phiora under
   a session Phiora gives the window, so a page signed in as the same
   guest sees the same (`src/kept.rs`, `data/keep.tsv`).
-- **A caller.** Join, a pill at the right of a room's title, puts the
-  window in the room's call: it opens the room's line over HTTP as a
+- **A caller.** Call and Call with the camera, two tools at the right
+  of a room's title, put the window in the room's call: it opens the room's line over HTTP as a
   page does, joins, and keeps a connection to each other caller. When
   both ends offer at once the one with the lesser name gives way, as
   the browser's side does (`puikit/app/phi-kit/src/peer.ts`), so a page
-  and this window meet. Mute and Leave take Join's place. The room
+  and this window meet. While somebody else is calling in the room the
+  title says who and has Join where the two tools were; a window
+  started with `--at` is a client on a line another serves, and hears
+  of such a call by listening to the room's line (`src/peer/ring.rs`).
+  The room
   lists this window among the callers and says of each other caller how
   far the connection has come, whether they are muted, how many
   pictures they sent and how loud they are.
 - **A call seen and heard.** In a call the room shows it over the
   stream, as the web's call stands there: this window's own tile, the
   screen it shares, each other caller's camera or face, a screen they
-  share, and the room's person ringing; Camera on and Share a screen
-  under them (`src/part/call.rs`). The pictures move through appkit's
+  share, and the room's person ringing; under them its buttons, as the
+  web's call has them: Mute, Camera on, Share a screen, End the call
+  (`src/part/call.rs`). A voice room has, in the stream's place, who
+  is in it, Join and Leave, Mute, and Sound off for the others
+  (`src/part/voice.rs`); while a person is in one it stands at the
+  foot of the menu on every page, with the microphone, the others'
+  sound and the way out (`src/part/guide/foot.rs`). `node script/scene.mjs` takes a picture of
+  every screen of a call into `doc/scene/`, each named by who sees it
+  and what they do (`host-receive-all.png`). The pictures move through appkit's
   film. Sound and pictures are the system's own (`data/peer.tsv`:
   `device system`): its default microphone, closed while muted, its
   first camera, one of its screens, and its sound out. What the system

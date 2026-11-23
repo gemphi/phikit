@@ -30,7 +30,7 @@ use std::sync::{Arc, Mutex};
 
 use appkit::pui::core::PFilm;
 use appkit::service::PTable;
-use libwebrtc::peer_connection_factory::{ContinualGatheringPolicy, IceServer, IceTransportsType, PeerConnectionFactory, RtcConfiguration};
+use libwebrtc::peer_connection_factory::{ContinualGatheringPolicy, IceTransportsType, PeerConnectionFactory, RtcConfiguration};
 use serde_json::Value;
 use tokio::runtime::Runtime;
 
@@ -163,21 +163,9 @@ impl Rtc {
     }
 }
 
-/// The servers of the line as the library takes them: each one's urls,
-/// one or several, and what it wants to be told.
-fn server(ice: &[Value], set: &Set) -> Vec<IceServer> {
-    let text = |value: &Value, name: &str| value.get(set.word(name)).and_then(Value::as_str).unwrap_or_default().to_string();
-    let urls = |value: &Value| match value.get(set.word("ice.urls")) {
-        Some(Value::String(one)) => vec![one.clone()],
-        Some(Value::Array(list)) => list.iter().filter_map(Value::as_str).map(str::to_string).collect(),
-        _ => Vec::new(),
-    };
-    ice.iter().map(|one| IceServer { urls: urls(one), username: text(one, "ice.username"), password: text(one, "ice.credential") }).collect()
-}
-
 impl Engine for Rtc {
     fn link(&mut self, far: &str, ice: &[Value]) -> Box<dyn Link> {
-        let config = RtcConfiguration { ice_servers: server(ice, &self.kit.set), continual_gathering_policy: ContinualGatheringPolicy::GatherContinually, ice_transport_type: IceTransportsType::All };
+        let config = RtcConfiguration { ice_servers: wire::server(ice, &self.kit.set), continual_gathering_policy: ContinualGatheringPolicy::GatherContinually, ice_transport_type: IceTransportsType::All };
         let _inside = self.runtime.enter();
         Box::new(link::RtcLink::begin(Arc::clone(&self.kit), config, far))
     }

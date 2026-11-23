@@ -29,13 +29,13 @@ fn step_38_in_a_call_i_see_its_tiles_and_turn_my_camera_and_a_screen_on_and_off(
     let has = |stage: &appkit::pui::window::PStage, text: &str| shown(stage, &look).contains(&text.to_string());
     // Out of a call the room shows none.
     assert!(!has(&stage, "Camera on") && app.desk().tile(&appkit::service::PTable::read(crate::data::PEER), 0.0).is_empty());
-    assert!(press(&mut stage, &look, "Join"));
+    assert!(super::tools::tool(&mut stage, &look, "phone"));
     until("this window is in the call", || app.desk().calling().is_some_and(|seen| seen.joined));
     stage.lay(DESK, PMode::of_width(DESK.width));
     // The call stands over the stream: the room called, this window's
     // own tile, the person of the room ringing, and what the call does.
     let text = shown(&stage, &look);
-    let wanted = ["Calling Lora Vale", "You", "Ringing", "Camera on", "Share a screen"];
+    let wanted = ["Calling Lora Vale", "You", "Ringing", "Mute", "Camera on", "Share a screen", "End the call"];
     assert!(wanted.iter().all(|line| text.contains(&line.to_string())), "{text:?}");
     // What the call does is said whole, broken over as many lines as it needs.
     assert!(text.join(" ").contains("Your microphone, camera and screen go to everyone who joins this call."), "{text:?}");
@@ -67,8 +67,8 @@ fn step_38_in_a_call_i_see_its_tiles_and_turn_my_camera_and_a_screen_on_and_off(
     assert!(press(&mut stage, &look, "Mute"));
     until("it is muted", || app.desk().calling().is_some_and(|seen| seen.quiet));
     assert_eq!(app.desk().tile(&table, 0.0)[0].said, "Muted");
-    // Leave: the call is gone from the room.
-    assert!(press(&mut stage, &look, "Leave"));
+    // End the call: it is gone from the room.
+    assert!(press(&mut stage, &look, "End the call"));
     stage.lay(DESK, PMode::of_width(DESK.width));
     assert!(!has(&stage, "Camera on") && !has(&stage, "Calling Lora Vale"));
 }

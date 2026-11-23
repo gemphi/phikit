@@ -15,6 +15,7 @@
 //!   it what was bought.
 
 mod grid;
+mod hover;
 mod item;
 mod swatch;
 
@@ -47,6 +48,8 @@ pub enum Act {
     /// Open a thing's own page; and show the view of that number there.
     Thing(String),
     View(usize),
+    /// Like a thing, or no more.
+    Like(String),
     /// Put a thing in the bag, or take it out.
     Pick(String),
     Remove(String),
@@ -70,13 +73,15 @@ pub struct Shopping {
     /// too short for the bag the last time paying was tried.
     view: Cell<usize>,
     short: Cell<bool>,
+    /// Where the pointer is, in the window.
+    point: Cell<Option<PPoint>>,
 }
 
 impl Shopping {
     pub fn new(desk: Desk) -> Shopping {
         let mut find = PField::new(PRect::default());
         find.focused = true;
-        Shopping { frame: PRect::default(), desk, list: Lister::default(), tool: Tool::read(data::ACT), find, scroll: Cell::default(), origin: Cell::default(), spot: RefCell::default(), seen: RefCell::default(), view: Cell::default(), short: Cell::default() }
+        Shopping { frame: PRect::default(), desk, list: Lister::default(), tool: Tool::read(data::ACT), find, scroll: Cell::default(), origin: Cell::default(), spot: RefCell::default(), seen: RefCell::default(), view: Cell::default(), short: Cell::default(), point: Cell::default() }
     }
 
     /// The page every shop is picked from.
@@ -124,10 +129,10 @@ impl Shopping {
             item.extend([Item::Note(word("shop.empty")), Item::Note(word("shop.emptylead"))]);
         } else {
             let total = dollar(bag.iter().map(|line| line.cost).sum());
-            item.push(Item::Line(Seat::None, format!("{} {} {total}", word("shop.subtotal"), text.get("between")), format!("{} {} {}", word("shop.delivery"), text.get("between"), word("shop.free")), None, Vec::new()));
-            item.push(Item::Line(Seat::None, format!("{} {} {total}", word("shop.total"), text.get("between")), String::new(), None, vec![Deed::word(text.get("shop.pay"), true, Act::Pay)]));
+            item.extend([Item::Sum(word("shop.subtotal"), total.clone()), Item::Sum(word("shop.delivery"), word("shop.free")), Item::Sum(word("shop.total"), total)]);
+            item.push(Item::Line(Seat::None, String::new(), String::new(), None, vec![Deed::word(text.get("shop.pay"), true, Act::Pay)]));
         }
-        item.push(Item::Note(text.fill("shop.wallet", "n", &grouped(self.desk.wallet().round().max(0.0) as u64))));
+        item.push(Item::Sum(word("shop.wallet"), dollar(self.desk.wallet())));
         if self.short.get() {
             item.push(Item::Note(word("shop.short")));
         }
@@ -165,6 +170,7 @@ impl Shopping {
                 *desk.now.product.borrow_mut() = Some(place);
             }
             Act::View(index) => self.view.set(index),
+            Act::Like(place) => desk.fond(&place, !desk.liked(&place)),
             Act::Pick(place) => {
                 let (shop, id) = place.split_once('/').unwrap_or_default();
                 let found = desk.shop(shop).and_then(|shop| shop.product.iter().find(|product| product.id == id).cloned());
@@ -205,6 +211,13 @@ impl PView for Shopping {
         self.find.set_frame(field(&self.desk, frame.size.width));
     }
 
+    fn hand(&self) -> Vec<PRect> {
+        match self.listed().is_some() {
+            true => self.list.hands(),
+            false => self.hands(),
+        }
+    }
+
     fn respond(&mut self, event: &PEvent) -> bool {
         let listed = self.listed().is_some();
         match (*event, listed) {
@@ -216,6 +229,7 @@ impl PView for Shopping {
                 self.scroll.set(scroll);
                 any
             }
+            (PEvent::PointerMove(at), false) => self.moved(at),
             (PEvent::PointerDown(at), _) => {
                 let place = at.plus(self.origin.get());
                 let found = match listed {

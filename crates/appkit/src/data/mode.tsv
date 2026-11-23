@@ -1,0 +1,10 @@
+# What decides how a window is laid out for each way an app is used.
+# name	value
+#
+# A flat window narrower than this is a mobile one.
+mobile.below	720
+# In space every area is a panel of its own, this size, and each is turned
+# this many degrees from the one beside it, around the person.
+spatial.width	480
+spatial.height	640
+spatial.turn	30

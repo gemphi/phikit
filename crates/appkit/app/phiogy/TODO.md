@@ -13,7 +13,8 @@ scripts under `target/` (`phiogy_run.ps1`, `phiogy_shot.ps1`,
 `phiogy_doc.ps1`), nor the three added with the call's pictures
 (`phiogy_snap.ps1`: a picture of a window already running;
 `phiogy_press.ps1`: a press at a place in it; `phiogy_peak.ps1`: the
-system's meter of its sound out). For the microphone, the sound out
+system's meter of its sound out). `script/scene.mjs`, in this folder, stages every screen of a
+call and keeps its picture in `doc/scene/`. For the microphone, the sound out
 and the camera cargo added `cpal` 0.15.3 and `windows` 0.54 to the
 lock, with the crates they need, all from its cache. One entry was added to the workspace folder's
 `.claude/launch.json`: `phiogy-line`, the web Phiogy pointed at this
@@ -211,9 +212,31 @@ kept in `src/peer/rtc/link.rs`:
   appkit's film (`PFilm`); a shared screen in a tile of its own
 - [x] sharing a screen: the library's own capturer, the first screen
   (`scene.pick`), at its own size (a page saw 1920 x 1080)
-- [ ] several screens at once, or a window in a screen's place: a page
-  takes one shared stream from a caller, so more needs a change on
-  both sides
+- [ ] more of sharing a screen is a second phase, by the user's word
+  (22 November 2026). Several screens at once, or a window in a
+  screen's place: a page takes one shared stream from a caller, so
+  more needs a change on both sides
+- [x] a call begun from a room's title, with the camera or without;
+  Mute and End the call among the call's own buttons, as the web's
+- [x] a call somebody else began said in the title, with Join
+- [x] a client's window: `--at` and where a line is has the window
+  reach a line another serves, and listen to the open room's line
+  for a call begun there (`src/peer/ring.rs`)
+- [x] voice rooms: who is in one, Join and Leave, Mute, and the
+  others' sound off and on (`src/part/voice.rs`)
+- [x] a voice room one is in shown at the foot of the menu on every
+  page the guide is on, as the web's `VoiceBar`: its name, the
+  microphone, the others' sound, the way out (`src/part/guide/foot.rs`)
+- [ ] who is in a voice room listed live under its row of the rail
+- [ ] the bar's Menu row has no rooms in its menu, so no foot either:
+  a voice room one is in is not shown while that menu is open
+- [ ] in a client's window who has the room open is not listed (that
+  is the board of whoever serves the line), and its foot still says
+  where a page reaches the line
+- [x] a picture of every screen of a call in `doc/scene/`, named by
+  who sees it and what they do; `node script/scene.mjs` takes them,
+  with the stand-ins, each caller's ramp in a tint of its own
+  (`ramp.blue`, `ramp.red` in `data/peer.tsv`)
 - [ ] choosing a device that is not the system's default; a device
   plugged in or taken out during a call (the microphone is asked for
   again at each unmute, the others only when turned on)
@@ -223,8 +246,8 @@ kept in `src/peer/rtc/link.rs`:
 - [ ] finding a way again when a connection fails (the browser's side
   restarts ICE)
 - [ ] it posts each signal on a wire of its own
-- [ ] one call at a time; the window joins its own line, and `--at`
-  has the windowless caller join another
+- [ ] one call at a time: beginning or joining one leaves any other,
+  a voice room too
 
 
 ## The line
@@ -287,3 +310,29 @@ kept in `src/peer/rtc/link.rs`:
   callers through this line (the Node line's own notes say the same)
 - a long run: the board's size is tested over a thousand pages, the
   line's threads and memory over hours are not
+
+## Tasks: Phiogy as a creators' space (asked 23 November 2026, not built)
+
+The user asked for a tasks module as Microsoft To Do has one (their
+picture: My Day, Important, Planned, Assigned to me, Flagged, Tasks,
+New list; Grid and List; Sort and Group; Add a task), because Phiogy
+is a space creators work in. Its shape is drawn in `ARCHITECTURE.md`
+("Tasks, planned") and its folders in `PLAN.md`.
+
+- [ ] `data/task.tsv`: the lists every person has (my day, important,
+  planned, assigned, flagged, all), each with its icon, its words and
+  the rule that puts a task in it; `doc.task` in `data/keep.tsv`
+- [ ] `src/comp/task.rs`: a task (what, done, important, the day it is
+  due, how it repeats, its steps, a note, who it is given to, the
+  message it came from, the host it belongs to), with no window in it
+- [ ] `src/system/task.rs`: add, finish, star, plan, give, and which
+  list each task stands in, tested without a window
+- [ ] `src/part/task.rs` (`task/`): the page: the lists in the bar's
+  menu with how many each holds; the tasks as a grid of cards or as a
+  list; a field to add one; sort and group; one task opened beside
+  them, in the drawer that people open in
+- [ ] a message becomes a task from its controls (a flag), and the task
+  leads back to the message
+- [ ] a host's own list, which everyone in the host sees: over Phiora,
+  as the rooms are
+- [ ] FLOW steps and SPECS rows as each lands

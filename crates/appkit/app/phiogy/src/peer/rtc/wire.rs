@@ -8,12 +8,13 @@ use std::sync::{Arc, Mutex};
 
 use libwebrtc::media_stream_track::MediaStreamTrack;
 use libwebrtc::peer_connection::{PeerConnection, PeerConnectionState};
-use libwebrtc::peer_connection_factory::RtcConfiguration;
+use libwebrtc::peer_connection_factory::{IceServer, RtcConfiguration};
 use libwebrtc::rtp_sender::RtpSender;
 use serde_json::{Map, Value, json};
 use tokio::task::JoinHandle;
 
 use super::ear::{hear, push, see};
+use super::Set;
 use super::link::Kit;
 use super::sent::{Slot, film};
 use crate::board::lock;
@@ -91,4 +92,16 @@ pub fn connect(kit: &Arc<Kit>, config: &RtcConfiguration, far: &str, made: &Arc<
     let mut wired = Wired { pc, sender: Vec::new(), meter };
     wired.wire(kit);
     Some(wired)
+}
+
+/// The servers of the line as the library takes them: each one's urls,
+/// one or several, and what it wants to be told.
+pub(super) fn server(ice: &[Value], set: &Set) -> Vec<IceServer> {
+    let text = |value: &Value, name: &str| value.get(set.word(name)).and_then(Value::as_str).unwrap_or_default().to_string();
+    let urls = |value: &Value| match value.get(set.word("ice.urls")) {
+        Some(Value::String(one)) => vec![one.clone()],
+        Some(Value::Array(list)) => list.iter().filter_map(Value::as_str).map(str::to_string).collect(),
+        _ => Vec::new(),
+    };
+    ice.iter().map(|one| IceServer { urls: urls(one), username: text(one, "ice.username"), password: text(one, "ice.credential") }).collect()
 }

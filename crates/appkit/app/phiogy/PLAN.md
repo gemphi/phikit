@@ -41,16 +41,17 @@ What is suggested is marked so; the rest is built and tested.
 | `src/system/` | `join.rs`, `pass.rs`, `leave.rs`, `beat.rs`, and `post` in `mod.rs` | 168 |
 | `src/board.rs` | the world, and how it is read | 214 |
 | `src/exchange/` | `set.rs`, `ask.rs`, `answer.rs`, `guest.rs`, `told.rs`, `hub.rs`, `route.rs`, `person.rs`, and `Exchange` in `mod.rs` | 894 |
-| `src/peer/` | `line.rs`, `mesh.rs`, `engine.rs`, `stand.rs`, `call.rs`; `rtc/`: `mod.rs`, `link.rs`, `wire.rs`, `sent.rs`, `ear.rs`, `tone.rs`, `mic.rs`, `speaker.rs`, `camera.rs`, `scene.rs` | 2,178 |
+| `src/peer/` | `line.rs`, `mesh.rs`, `engine.rs`, `stand.rs`, `call.rs`, `ring.rs`; `rtc/`: `mod.rs`, `link.rs`, `wire.rs`, `sent.rs`, `ear.rs`, `tone.rs`, `mic.rs`, `speaker.rs`, `camera.rs`, `scene.rs` | 2,304 |
 | `src/site.rs`, `src/site/` (`read.rs`, `member.rs`, `extra.rs`, `shop.rs`) | the web Phiogy's hosts, rooms, people and pages; its templates, friends and shops; a shop's own file | 571 |
 | `src/phiora.rs` | Phiora asked: an app's document, who is asking, their own documents | 150 |
 | `src/kept.rs` (`kept/who.rs`), `src/hour.rs` | a person's own documents; who they are to Phiora, signing in, sessions, export; the hour on their clock | 291 |
 | `src/hosted.rs` | a picture's key to its file; the film of a call's pictures | 68 |
-| `src/app.rs`, `fact.rs`, `choice.rs`, `data.rs`, `run.rs` (`run/caller.rs`, `run/read.rs`), `main.rs`, `web.rs`, `lib.rs` | the app, and opening it | 857 |
-| `src/part/` | a room: `title.rs`, `join.rs`, `call.rs` (`call/`), `room.rs`, `stream.rs` (`stream/`), `talk.rs`, `present.rs`, `person.rs` (`person/`), `status.rs`, `viewer.rs` (`viewer/`); around the rooms: `page.rs`, `guide.rs`, `venue.rs`, `host.rs`, `friend.rs`, `bond.rs`, `shop.rs` (`shop/`), `store.rs`, `account.rs` (`account/`); shared: `list.rs`, `tool.rs`, `now.rs`, and `Desk` in `mod.rs` | 4,961 |
-| `src/test/` | the tests, in the same folders; `site/` is a small site written as the web writes its own, with a shop | 3,267 |
+| `src/app.rs`, `fact.rs`, `choice.rs`, `data.rs`, `run.rs` (`run/caller.rs`, `run/read.rs`), `main.rs`, `web.rs`, `lib.rs` | the app, and opening it | 814 |
+| `src/part/` | a room: `title.rs`, `join.rs`, `call.rs` (`call/`), `voice.rs`, `room.rs`, `stream.rs` (`stream/`), `talk.rs`, `present.rs`, `person.rs` (`person/`), `status.rs`, `viewer.rs` (`viewer/`); around the rooms: `page.rs`, `guide.rs` (`guide/foot.rs`), `venue.rs`, `host.rs`, `friend.rs`, `bond.rs`, `shop.rs` (`shop/`), `store.rs`, `account.rs` (`account/`); shared: `list.rs` (`list/item.rs`), `tool.rs`, `now.rs`, and `Desk` in `mod.rs` | 5,448 |
+| `src/test/` | the tests, in the same folders; `site/` is a small site written as the web writes its own, with a shop | 3,562 |
 | `asset/icon/phiogy.svg` | the mark | |
-| `script/logo.py`, `script/icon.mjs`, `script/line.mjs`, `script/peer.mjs`, `script/phiora.mjs` | draws the mark; writes lucide's icons; runs the Node line's tests against this line; a call between this program and a Chrome page; what the program reads of and keeps on the real Phiora | |
+| `data/task.tsv`, `src/comp/task.rs`, `src/system/task.rs`, `src/part/task.rs` (`task/`) | planned, not built: the tasks module (the lists, a task, its rules, its page), drawn in `ARCHITECTURE.md` under Tasks, planned | |
+| `script/logo.py` (`shape.py`, `sheet.py`), `script/icon.mjs`, `script/line.mjs`, `script/peer.mjs`, `script/phiora.mjs`, `script/scene.mjs` (stages every screen of a call and keeps its picture in `doc/scene/`) | draws the mark; writes lucide's icons; runs the Node line's tests against this line; a call between this program and a Chrome page; what the program reads of and keeps on the real Phiora | |
 | `doc/` | pictures of the window, and the mark's sheet | |
 | `web/index.html` | the page a browser loads it into | |
 
@@ -74,7 +75,7 @@ No file is over 250 lines.
 | `theme.tsv`, `look.tsv` | `app.rs`, for appkit | every colour and size; the four looks |
 | `text.tsv` | every part | every word a person reads |
 | `say.tsv` | `run.rs`, `run/read.rs`, `run/caller.rs` | what the command line says and what a caller with no window says and is told; read as part of the text table |
-| `logo.tsv` | `script/logo.py` | the mark's measures, in the font's own |
+| `logo.tsv`, `logo-corner.tsv` | `script/logo.py` | the mark's measures, in the font's own; which mark is chosen; which corners of its bars are sharp in each option |
 | `dial.tsv` | `peer/line.rs` | the head of what a caller asks of the line |
 | `signal.tsv` | `peer/mesh.rs`, `peer/rtc/` | the words two callers say to each other |
 | `peer.tsv` | `peer/call.rs`, `peer/mesh.rs`, `peer/rtc/`, `part/call.rs` | the caller's name, its pace, what it sends and how it measures; where sound and pictures come from (`device`: the system's, or the stand-ins), a shared screen, what is played, what a call's pictures are named in the film, and why a device was not given |

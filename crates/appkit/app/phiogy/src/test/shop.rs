@@ -82,7 +82,15 @@ fn step_30_a_page_of_a_shop_is_its_things_and_a_thing_has_a_page_of_its_own() {
     assert!(press(&mut stage, &look, "Teal Signal"));
     assert_eq!(desk.now.product.borrow().as_deref(), Some("s_one/lk1"));
     let text = shown(&stage, &look);
-    assert!(["Teal Signal", "$7,000", "Outerwear · Teal · Common", "Cut for after the show.", "Colour", "Fabric", "silk"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
+    assert!(["Outerwear", "Teal Signal", "$7,000", "Teal · Common", "Cut for after the show.", "Colour", "Fabric", "silk"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
+    // Its picture and its words are two equal columns, and each fact
+    // is a row: what it is at the left, its value ending at the right.
+    let column = |wanted: &str| super::written(&stage, &look, wanted).map(|at| at.x).expect("drawn");
+    let room = super::rect(&stage, "shop");
+    assert!(column("Fabric") > room.center().x && column("silk") > column("Fabric"), "{} {}", column("Fabric"), column("silk"));
+    // I like it, and that is kept; and no more.
+    assert!(press(&mut stage, &look, &word("shop.like")) && desk.liked("s_one/lk1"));
+    assert!(press(&mut stage, &look, &word("shop.liked")) && !desk.liked("s_one/lk1"));
     // More like it: the others of its page of the menu.
     assert!(text.contains(&word("shop.more")) && text.contains(&"Plum Line".to_string()));
     // Its views stand under its picture: a press on one shows it.
@@ -92,7 +100,7 @@ fn step_30_a_page_of_a_shop_is_its_things_and_a_thing_has_a_page_of_its_own() {
     });
     assert_eq!(whole(&stage).as_deref(), Some("phiegg:worlds/w_brocade.png"));
     let thumb = drawn(&stage, &look).iter().find_map(|mark| match mark {
-        PMark::Picture { name, fit: PFit::Cover, rect, .. } if name == "phiegg:worlds/w_carousel.png" && rect.size.width < 60.0 => Some(rect.center()),
+        PMark::Picture { name, fit: PFit::Whole, rect, .. } if name == "phiegg:worlds/w_carousel.png" => Some(rect.center()),
         _ => None,
     });
     assert!(stage.send(&PEvent::PointerDown(thumb.expect("its second view"))));
@@ -115,12 +123,16 @@ fn step_31_the_bag_is_paid_from_the_wallet_and_what_was_bought_stays_mine() {
     stage.send(&PEvent::KeyUp(' '));
     stage.lay(DESK, PMode::of_width(DESK.width));
     let text = shown(&stage, &look);
-    assert!(["Plum Line", "Bold Pup #1", "Subtotal · $2,500", "Total · $2,500", "In your wallet: $2,500"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
+    assert!(["Plum Line", "Bold Pup #1", "Subtotal", "Total", "In your wallet"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
+    // Its sums stand on grounds of their own: the subtotal, the total
+    // and what the wallet holds are each that much.
+    assert_eq!(text.iter().filter(|line| *line == "$2,500").count(), 3, "{text:?}");
+    assert!(super::grounded(&stage, &look, "$2,500"));
     // Paid: the bag is empty, the things are mine, the wallet has less,
     // and its history says for what.
     assert!(press(&mut stage, &look, &word("shop.pay")));
     let text = shown(&stage, &look);
-    assert!([word("shop.empty"), word("shop.yours"), "Plum Line".to_string(), "In your wallet: $0".to_string()].iter().all(|line| text.contains(line)), "{text:?}");
+    assert!([word("shop.empty"), word("shop.yours"), "Plum Line".to_string(), "In your wallet".to_string(), "$0".to_string()].iter().all(|line| text.contains(line)), "{text:?}");
     assert_eq!((desk.bag().len(), desk.bought().len(), desk.wallet()), (0, 2, 0.0));
     let history = desk.kept.get("history");
     assert_eq!((&history[0]["amt"], &history[0]["what"], &history[0]["coin"]), (&json!(-2500.0), &json!("Shop - 2 bought"), &json!("usd")));

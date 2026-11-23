@@ -4,7 +4,10 @@
 # as it is. What each is called is data/text.tsv's: look.<name>.
 #
 # A look changes the ground, the inks and how much light there is; the
-# light itself stays one colour. The two glass looks are Apple's Liquid
+# light itself stays one colour, and there is enough of it in every look
+# for a ground at rest to be seen (`shade.share`), and no more: the
+# grounds group things and are to be very subtle (the user, 23 November
+# 2026). Every icon, row, message and part stands on one in every look. The two glass looks are Apple's Liquid
 # Glass as Phiber wears it (phiber: theme/style/glass.rs): the window's
 # ground lets the desktop show, blurred by the system (window.glass), and
 # the window's panes, its bar and a panel that floats, blur what is
@@ -21,7 +24,7 @@ dark	color	shade.light	#ffffff
 dark	color	activity.ink	#f0f0ec
 dark	color	tab.ink	#9a9a94
 dark	color	modal.veil	#000000aa
-dark	size	shade.share	0.12
+dark	size	shade.share	0.1
 glass	color	window.fill	#1e1e1cb8
 glass	color	line.ink	#ffffff24
 glass	color	text.ink	#f4f4f0
@@ -33,7 +36,7 @@ glass	color	shade.light	#ffffff
 glass	color	activity.ink	#f4f4f0
 glass	color	tab.ink	#b4b4ae
 glass	color	modal.veil	#00000055
-glass	size	shade.share	0.16
+glass	size	shade.share	0.12
 glass	size	window.glass	1
 glass	size	glass.blur	24
 glass	size	glass.saturation	1.2

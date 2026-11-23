@@ -12,9 +12,14 @@ pin.on	pin-off	room.unpin
 # At the stream's foot: say what was written; answer nobody after all.
 send	send	room.send
 unanswer	x	room.unanswer
-# In the room's title: search it, and list what is pinned in it.
+# In the room's title: search it, and list what is pinned in it; and
+# begin a call there, without the camera and with it.
+fave	star	room.fave
+fave.on	star	room.unfave
 find	search	room.find
 pins	pin	room.pins
+call	phone	call.start
+video	video	call.video
 # Beside the room, on a person: back to who is here; write to them;
 # follow them.
 back	arrow-left	person.back
@@ -37,3 +42,11 @@ quiet	bell-off	person.mute
 quiet.on	bell-off	person.unmute
 # In the account: sign in with what was typed.
 enter	log-in	account.signIn
+# At the foot of the guide while the person is in a voice room: the
+# room itself; the microphone; the sound of the others; the way out.
+within	volume	voice.connected
+hush	mic	call.mute
+hush.on	mic-off	call.unmute
+deaf	volume	voice.deaf
+deaf.on	volume-x	voice.undeaf
+leave	phone-off	call.leave

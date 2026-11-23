@@ -61,11 +61,21 @@ pub fn ramp(kit: &Arc<Kit>, slot: Slot) -> (Hold, RtcVideoTrack) {
     (Hold::task(task).shown(&kit.film, name), track)
 }
 
-/// Feed the picture: a grey ramp from dark to light that moves a step
-/// each time, sent and shown in the window under its name.
+/// Feed the picture: a ramp from dark to light that moves a step each
+/// time, sent and shown in the window under its name. It is grey, or
+/// in the tint `data/peer.tsv` gives it, so that one caller's stand-in
+/// is told from another's.
 async fn feed(source: NativeVideoSource, kit: Arc<Kit>, (width, height): (u32, u32), name: String) {
     let wait = Duration::from_millis((1000.0 / kit.set.count("frame").max(1.0)) as u64);
     let mut shift = 0u32;
+    // Its blue and its red part, as a picture is sent: the middle is none.
+    let (blue_part, red_part) = (kit.set.count("ramp.blue").clamp(0.0, 255.0), kit.set.count("ramp.red").clamp(0.0, 255.0));
+    let middle = i8::MAX as f32 + 1.0;
+    // The same tint as a screen shows it: blue, green, red, solid.
+    let tint = move |light: u8| {
+        let (light, blue, red) = (light as f32, blue_part - middle, red_part - middle);
+        [light + 1.772 * blue, light - 0.344 * blue - 0.714 * red, light + 1.402 * red, u8::MAX as f32].map(|part| part.clamp(0.0, 255.0) as u8)
+    };
     loop {
         let shade = |across: u32| ((across + shift) % width.max(1) * 255 / width.max(1)) as u8;
         let mut buffer = I420Buffer::new(width, height);
@@ -74,11 +84,10 @@ async fn feed(source: NativeVideoSource, kit: Arc<Kit>, (width, height): (u32, u
         for (index, sample) in light.iter_mut().enumerate() {
             *sample = shade(index as u32 % stride.max(1));
         }
-        // Neither blue nor red: grey.
-        blue.fill(i8::MAX as u8 + 1);
-        red.fill(i8::MAX as u8 + 1);
+        blue.fill(blue_part as u8);
+        red.fill(red_part as u8);
         source.capture_frame(&VideoFrame { rotation: VideoRotation::VideoRotation0, timestamp_us: 0, buffer });
-        let row: Vec<u8> = (0..width).flat_map(|across| [shade(across), shade(across), shade(across), u8::MAX]).collect();
+        let row: Vec<u8> = (0..width).flat_map(|across| tint(shade(across))).collect();
         kit.film.show(&name, width, height, row.repeat(height as usize));
         shift = (shift + width / 32) % width.max(1);
         tokio::time::sleep(wait).await;

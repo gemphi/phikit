@@ -140,6 +140,7 @@ impl Desk {
         *self.open.borrow_mut() = id.to_string();
         if space == self.home {
             self.choice.put(ROOM, id);
+            self.saw(id);
         }
         self.wish.borrow_mut().push(PDeed::Show(space));
         true

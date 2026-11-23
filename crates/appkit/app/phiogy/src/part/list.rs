@@ -1,5 +1,5 @@
-//! A page that is a list: headings, a line of words, a field to type
-//! in, a row of tabs, and lines, each a face, a mark or an icon with
+//! A page that is a list: headings, a line of words, a sum on a ground
+//! of its own, a field to type in, a row of tabs, and lines, each a face, a mark or an icon with
 //! two lines of words beside it and what can be done at its end. The
 //! hosts, friends, finding people, the shops and the bag are each such
 //! a page, as on the web each is made of the kit's own rows
@@ -11,12 +11,14 @@
 use std::cell::{Cell, RefCell};
 
 use appkit::pui::control::{PControl, PField, inside};
-use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect, PView, light, show};
-use appkit::pui::layout::{PScroll, wrap};
+use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect, PView, figure, light, show};
+use appkit::pui::layout::{PDry, PScroll, ground, wrap};
+
+mod item;
 
 pub use super::tool::grouped;
+pub use item::{Deed, Item, Seat};
 use super::{DIM, Desk, GAP, ICON, INK, LINE, RADIUS, ROW, fit, tool};
-use crate::site::Face;
 
 /// The theme's tokens: how high a line of a list is, how large what
 /// stands at its head, and how far down a page begins.
@@ -28,57 +30,6 @@ pub const TOP: &str = "list.top";
 /// column, as high as a row. The page puts it where its item is.
 pub fn field(desk: &Desk, width: f32) -> PRect {
     PRect::new(0.0, 0.0, desk.column(width).1, desk.size(ROW))
-}
-
-/// What stands at the head of a line.
-#[derive(Debug, Clone, PartialEq, Default)]
-pub enum Seat {
-    #[default]
-    None,
-    /// A cell of a sheet: a face, a place's mark.
-    Face(Face),
-    Icon(String),
-    /// A picture by its key, whole.
-    Picture(String),
-}
-
-/// What can be done at the end of a line, or in a row of tabs: its
-/// words, or its icon where it has one; whether it is so; and what a
-/// press means.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Deed<A> {
-    pub label: String,
-    pub icon: String,
-    pub on: bool,
-    pub act: A,
-}
-
-impl<A> Deed<A> {
-    pub fn word(label: &str, on: bool, act: A) -> Deed<A> {
-        Deed { label: label.to_string(), icon: String::new(), on, act }
-    }
-
-    pub fn icon(icon: &str, label: &str, act: A) -> Deed<A> {
-        Deed { label: label.to_string(), icon: icon.to_string(), on: false, act }
-    }
-}
-
-/// One thing of a page, from its top down.
-#[derive(Debug, Clone, PartialEq)]
-pub enum Item<A> {
-    Head(String),
-    /// A heading with what can be done at its end: a page that has no
-    /// head of a panel's over it, and its own way out.
-    Top(String, Vec<Deed<A>>),
-    /// Words that are not pressed, broken to fit.
-    Note(String),
-    /// The field of that number among the page's, what it says while
-    /// empty, and what a press on it means.
-    Field(usize, String, A),
-    Tabs(Vec<Deed<A>>),
-    /// A line: its head, two lines of words, what a press on it means
-    /// if it means something, and what can be done at its end.
-    Line(Seat, String, String, Option<A>, Vec<Deed<A>>),
 }
 
 /// What lays a page's items out and says what was pressed.
@@ -132,16 +83,41 @@ impl<A: Clone> Lister<A> {
     }
 
     /// Draw a page: its items down the column of `frame`, which is the
-    /// part's own, at `origin` in the window.
+    /// part's own, at `origin` in the window. Every run of items
+    /// between two headings is a section, and stands on a ground of
+    /// its own: where each item stands is learned first with nothing
+    /// drawn.
     pub fn draw(&self, paint: &mut dyn PPaint, origin: PPoint, frame: PRect, desk: &Desk, item: &[Item<A>], field: &[&PField]) {
+        let stand = self.pass(&mut PDry(&*paint), origin, frame, desk, item, field);
+        let ((start, wide), gap) = (desk.column(frame.size.width), paint.size(GAP));
+        paint.clip(PRect { origin, size: frame.size });
+        let mut from = None;
+        for index in 0..=item.len() {
+            let head = item.get(index).is_none_or(|one| matches!(one, Item::Head(_) | Item::Top(..)));
+            match (head, from) {
+                (true, Some(first)) => {
+                    ground(paint, PPoint::new(origin.x + start, stand[first]), wide, stand[index] - gap / 2.0);
+                    from = None;
+                }
+                (false, None) => from = Some(index),
+                _ => {}
+            }
+        }
+        paint.unclip();
+        self.pass(paint, origin, frame, desk, item, field);
+    }
+
+    /// Draw the items; where each begins, and where the last ends.
+    fn pass(&self, paint: &mut dyn PPaint, origin: PPoint, frame: PRect, desk: &Desk, item: &[Item<A>], field: &[&PField]) -> Vec<f32> {
         let (gap, line, row, high, mark) = (paint.size(GAP), paint.size(LINE), paint.size(ROW), paint.size(HIGH), paint.size(MARK));
         let (ink, dim, icon) = (paint.color(INK), paint.color(DIM), paint.size(ICON));
         let (start, wide) = desk.column(frame.size.width);
         let left = origin.x + start;
         let begin = origin.y + paint.size(TOP) - self.scroll.get().at();
-        let (mut top, mut spot) = (begin, Vec::new());
+        let (mut top, mut spot, mut stand) = (begin, Vec::new(), Vec::new());
         paint.clip(PRect { origin, size: frame.size });
         for one in item {
+            stand.push(top);
             match one {
                 Item::Head(said) => {
                     paint.head(PPoint::new(left, top + gap / 2.0), said, ink);
@@ -159,6 +135,15 @@ impl<A: Clone> Lister<A> {
                         top += line;
                     }
                     top += gap / 2.0;
+                }
+                Item::Sum(name, sum) => {
+                    // What it is a sum of at the left; the sum at the
+                    // right, on its ground.
+                    let size = figure::size(paint, sum);
+                    let middle = top + size.height / 2.0;
+                    paint.text(PPoint::new(left, middle - line / 2.0), &fit(name, wide - size.width - gap, paint), dim);
+                    figure::end(paint, PPoint::new(left + wide, middle), sum, false);
+                    top += size.height + gap / 4.0;
                 }
                 Item::Field(index, hint, act) => {
                     let rect = PRect::new(left, top, wide, row);
@@ -222,6 +207,8 @@ impl<A: Clone> Lister<A> {
         // What is out of sight is no place to press.
         spot.retain(|(rect, _)| PRect { origin, size: frame.size }.contains(rect.center()));
         *self.spot.borrow_mut() = spot;
+        stand.push(top);
+        stand
     }
 
     /// What a press at a place of the part means, if anything: of the
@@ -231,6 +218,11 @@ impl<A: Clone> Lister<A> {
         let place = at.plus(self.origin.get());
         let (spot, area) = (self.spot.borrow(), |rect: &PRect| rect.size.width * rect.size.height);
         spot.iter().filter(|(rect, _)| rect.contains(place)).min_by(|one, other| area(&one.0).total_cmp(&area(&other.0))).map(|(_, act)| act.clone())
+    }
+
+    /// Where a press on the page does something, as it was drawn last.
+    pub fn hands(&self) -> Vec<PRect> {
+        self.spot.borrow().iter().map(|(rect, _)| *rect).collect()
     }
 
     /// Turn the wheel: `true` when the page moved.

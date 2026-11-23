@@ -2,9 +2,10 @@
 //! At its head the room called and how long. Then the tiles (`tile`),
 //! a row that folds where the part is narrow: a camera at four to
 //! three, a screen wider, a face round. Under them how loud this
-//! window's microphone hears its person, the camera and the screen to
-//! turn on and off, and what the call does with them, or what the
-//! system did not give.
+//! window's microphone hears its person, its buttons as the web's call
+//! has them (mute, the camera, a screen, end the call), in rows that
+//! fold, and what the call does with them, or what the system did not
+//! give.
 //!
 //! Every size is the theme's (`call.NAME`), every word the text
 //! table's (`call.NAME`), and the pictures are the film's.
@@ -22,7 +23,7 @@ use super::join::ROUND;
 use super::present::BAR;
 use super::{DIM, Desk, GAP, INK, LINE, RADIUS, fit};
 use crate::data;
-pub use tile::{Shown, Tile};
+pub use tile::{Shown, Tile, face};
 
 /// The theme's tokens: how wide a camera's tile and a screen's are at
 /// most, how high each is for its width, how large a face is, the most
@@ -38,8 +39,10 @@ pub const SPEAK: &str = "call.speak";
 /// What a press on one of its pills does.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Press {
+    Hush(bool),
     Camera(bool),
     Share(bool),
+    End,
 }
 
 /// The call this window is in, as the open room shows it.
@@ -52,6 +55,8 @@ pub struct Calling {
     origin: Cell<PPoint>,
     /// How many lines what it says took when it was drawn last.
     line: Cell<f32>,
+    /// How many rows its pills took then.
+    row: Cell<f32>,
     /// The share of their full size its tiles are drawn at.
     share: Cell<f32>,
     spot: RefCell<Vec<(PRect, Press)>>,
@@ -59,7 +64,7 @@ pub struct Calling {
 
 impl Calling {
     pub fn new(desk: Desk) -> Calling {
-        Calling { frame: PRect::default(), desk, table: PTable::read(data::PEER), origin: Cell::default(), line: Cell::new(1.0), share: Cell::new(1.0), spot: RefCell::default() }
+        Calling { frame: PRect::default(), desk, table: PTable::read(data::PEER), origin: Cell::default(), line: Cell::new(1.0), row: Cell::new(1.0), share: Cell::new(1.0), spot: RefCell::default() }
     }
 
     /// The tiles there are now.
@@ -72,6 +77,10 @@ impl Calling {
     fn pill(&self) -> Vec<(String, Press, bool)> {
         let text = |name: &str| self.desk.text.get(name).to_string();
         let Some(seen) = self.desk.calling() else { return Vec::new() };
+        let hush = match seen.quiet {
+            true => (text("call.unmute"), Press::Hush(false), true),
+            false => (text("call.mute"), Press::Hush(true), false),
+        };
         let camera = match seen.own.camera {
             true => (text("call.cam.off"), Press::Camera(false), true),
             false => (text("call.cam.on"), Press::Camera(true), false),
@@ -80,7 +89,7 @@ impl Calling {
             true => (text("call.unshare"), Press::Share(false), true),
             false => (text("call.share"), Press::Share(true), false),
         };
-        vec![camera, share]
+        vec![hush, camera, share, (text("call.end"), Press::End, false)]
     }
 
     /// What the call does with what this window sends; or, first, what
@@ -89,20 +98,6 @@ impl Calling {
         let fault = self.desk.calling().and_then(|seen| seen.own.fault.first().cloned().zip(seen.own.why.first().cloned()));
         let named = fault.map(|(name, why)| self.desk.text.fill(&format!("call.fault.{name}"), "why", &why)).filter(|said| !said.is_empty());
         named.unwrap_or_else(|| self.desk.text.get("call.live").to_string())
-    }
-
-    fn face(&self, paint: &mut dyn PPaint, rect: PRect, id: &str, name: &str) {
-        match self.desk.site.face(id) {
-            Some(cell) => paint.picture(&cell.sheet, rect, rect.size.width / 2.0, PFit::Cell { column: cell.column, index: cell.index }),
-            // One who is not of the app's people: the first letter of
-            // what they call themself.
-            None => {
-                light::label(paint, rect, rect.size.width / 2.0, PLight::Rest, false, "");
-                let letter: String = name.chars().take(1).collect();
-                let at = PPoint::new(rect.center().x - paint.measure(&letter) / 2.0, rect.center().y - paint.size(LINE) / 2.0);
-                paint.text(at, &letter, paint.color(INK));
-            }
-        }
     }
 }
 
@@ -136,7 +131,7 @@ impl PDraw for Calling {
                     light::label(paint, rect, radius, PLight::Rest, false, "");
                     paint.picture(name, rect, radius, PFit::Cover);
                 }
-                Shown::Face(id, name) => self.face(paint, rect, id, name),
+                Shown::Face(id, name) => face(&self.desk, paint, rect, id, name),
             }
             let under = [(&one.name, ink), (&one.said, dim)];
             for (index, (said, color)) in under.into_iter().filter(|(said, _)| !said.is_empty()).enumerate() {
@@ -153,10 +148,15 @@ impl PDraw for Calling {
             light::label(paint, PRect::new(left, next, loud, bar), bar / 2.0, PLight::Strong, false, "");
         }
         next += bar + gap / 2.0;
-        // The camera and the screen, from the left.
-        let (mut spot, mut at) = (Vec::new(), left);
+        // Its buttons, from the left, a row folding where the next
+        // does not fit.
+        let (mut spot, mut at, mut rows) = (Vec::new(), left, 1.0);
         for (label, press, so) in self.pill() {
-            let rect = PRect::new(at, next, paint.measure(&label) + gap * 2.0, line + gap);
+            let width = paint.measure(&label) + gap * 2.0;
+            if at > left && at + width > left + inside {
+                (at, next, rows) = (left, next + line + gap + gap / 2.0, rows + 1.0);
+            }
+            let rect = PRect::new(at, next, width, line + gap);
             let strength = match so {
                 true => PLight::Strong,
                 false => PLight::Rest,
@@ -167,6 +167,7 @@ impl PDraw for Calling {
             at += rect.size.width + gap / 2.0;
         }
         *self.spot.borrow_mut() = spot;
+        self.row.set(rows);
         next += line + gap + gap / 2.0;
         // What it says is broken to fit; the next frame makes room for
         // as many lines as it took.
@@ -180,6 +181,11 @@ impl PDraw for Calling {
 }
 
 impl PView for Calling {
+    /// Where a press on it does something.
+    fn hand(&self) -> Vec<PRect> {
+        self.spot.borrow().iter().map(|(rect, _)| *rect).collect()
+    }
+
     fn frame(&self) -> PRect {
         self.frame
     }
@@ -195,6 +201,8 @@ impl PView for Calling {
         let place = at.plus(self.origin.get());
         let press = self.spot.borrow().iter().find(|(rect, _)| rect.contains(place)).map(|(_, press)| *press);
         match press {
+            Some(Press::Hush(quiet)) => self.desk.hush(quiet),
+            Some(Press::End) => self.desk.leave(),
             Some(Press::Camera(on)) => self.desk.camera(on),
             Some(Press::Share(on)) => self.desk.share(on),
             None => return false,

@@ -92,3 +92,11 @@ fn step_13_the_rail_is_the_web_s_own_with_its_headings_and_a_page_is_its_blocks(
     // Its line is the room's it shows.
     assert_eq!(app.desk().key(&app.desk().room()), "phiogy/lobby");
 }
+
+#[test]
+fn how_many_wait_in_a_room_stands_on_a_ground_of_its_own_in_the_rail() {
+    // The lobby has two that wait: its row of the rail says so at its
+    // end, on a figure's ground, and what the row is called does not.
+    let (_, stage, look) = staged(DESK);
+    assert!(super::grounded(&stage, &look, "2") && !super::grounded(&stage, &look, "lobby"));
+}

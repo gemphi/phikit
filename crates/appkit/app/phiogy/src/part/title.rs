@@ -1,13 +1,16 @@
 //! The title: which room is open. Its icon, what it is called and,
-//! after that, its topic, over a line.
+//! after that, its topic, over a line. At its right its tools: a call
+//! begun, with the camera or without, the room searched, what is pinned
+//! in it. While somebody else is calling there, the two that begin a
+//! call give way to Join, and who is calling is said after the name.
 
 use appkit::pui::core::{PDraw, PEvent, PFit, PPaint, PPoint, PRect, PSize, PView};
 
 use std::cell::{Cell, RefCell};
 
-use appkit::pui::core::PLight;
+use appkit::pui::core::{PLight, light};
 
-use super::{DIM, Desk, GAP, ICON, INK, Join, LINE, Tool, fit, tool};
+use super::{DIM, Desk, GAP, ICON, INK, Join, LINE, RADIUS, Tool, fit, tool};
 use crate::data;
 
 /// The theme's tokens for the line under the title.
@@ -19,6 +22,11 @@ pub const FACE: &str = "title.face";
 /// list what is pinned in it.
 pub const FIND: &str = "find";
 pub const PINS: &str = "pins";
+/// Star the room, so that it is among the favorites.
+pub const FAVE: &str = "fave";
+/// And the two that begin a call: without the camera, and with it.
+pub const CALL: &str = "call";
+pub const VIDEO: &str = "video";
 
 /// What is over a room.
 pub struct Title {
@@ -40,11 +48,26 @@ impl Title {
         Title { frame: PRect::default(), join: Join::new(desk.clone()), tool: Tool::read(data::ACT), spot: RefCell::default(), over: Cell::default(), face: Cell::default(), desk }
     }
 
-    /// Whether a tool is on, and what turns it.
-    fn on(&self, name: &str) -> &Cell<bool> {
+    /// Whether a tool is on: one that begins a call never is.
+    fn on(&self, name: &str) -> bool {
         match name {
-            FIND => &self.desk.now.finding,
-            _ => &self.desk.now.pins,
+            FIND => self.desk.now.finding.get(),
+            PINS => self.desk.now.pins.get(),
+            FAVE => self.desk.starred(&self.desk.room()),
+            _ => false,
+        }
+    }
+
+    /// A press on a tool: the room searched or not, its pins listed or
+    /// not, a call begun.
+    fn turn(&self, name: &str) {
+        let now = &self.desk.now;
+        match name {
+            FIND => now.finding.set(!now.finding.get()),
+            PINS => now.pins.set(!now.pins.get()),
+            FAVE => self.desk.star(&self.desk.room(), !self.desk.starred(&self.desk.room())),
+            CALL => self.desk.dial(false),
+            _ => self.desk.dial(true),
         }
     }
 
@@ -54,14 +77,22 @@ impl Title {
     fn tools(&self, paint: &mut dyn PPaint, end: PPoint) -> (f32, String) {
         let (gap, line) = (paint.size(GAP), paint.size(LINE));
         let (mut spot, mut right, mut said) = (Vec::new(), end.x, String::new());
-        for name in [PINS, FIND] {
-            let on = self.on(name).get();
+        // From the right; a call is begun only where one can be.
+        let call = [VIDEO, CALL].into_iter().filter(|_| self.desk.callable());
+        let list: Vec<&'static str> = [FAVE, PINS, FIND].into_iter().chain(call).filter(|name| self.tool.of(name, false, &self.desk.text).is_some()).collect();
+        // The tools belong together: one ground under them all.
+        let (count, radius) = (list.len() as f32, paint.size(RADIUS));
+        let wide = count * (line + gap) + (count - 1.0).max(0.0) * gap / 4.0;
+        light::label(paint, PRect::new(end.x - wide - gap / 4.0, end.y - (line + gap) / 2.0 - gap / 8.0, wide + gap / 2.0, line + gap * 1.25), radius, PLight::Rest, true, "");
+        for name in list {
+            let on = self.on(name);
             let Some((icon, word)) = self.tool.of(name, on, &self.desk.text) else { continue };
             let rect = PRect::new(right - line - gap, end.y - (line + gap) / 2.0, line + gap, line + gap);
             let over = self.over.get() == Some(name);
             let light = match (on, over) {
                 (true, _) => Some(PLight::Strong),
                 (false, true) => Some(PLight::Rest),
+                // At rest a tool stands on the ground of them all.
                 (false, false) => None,
             };
             tool::button(paint, rect, icon, light);
@@ -109,10 +140,11 @@ impl PDraw for Title {
         paint.text(PPoint::new(origin.x + left, middle - line / 2.0), &label, ink);
         let used = left + paint.measure(&label) + gap;
         let room = start + wide - used;
-        // After its name its topic; or, while the pointer is over a
-        // tool, what the tool is called.
+        // After its name its topic; or who is calling there; or, while
+        // the pointer is over a tool, what the tool is called.
+        let ring = self.desk.ringing().map(|name| self.desk.text.fill("call.incoming", "name", &name));
         let after = match said.is_empty() {
-            true => plate.topic.clone(),
+            true => ring.unwrap_or_else(|| plate.topic.clone()),
             false => said,
         };
         if room > gap * 2.0 && !after.is_empty() {
@@ -123,6 +155,11 @@ impl PDraw for Title {
 }
 
 impl PView for Title {
+    /// Where a press on it does something.
+    fn hand(&self) -> Vec<PRect> {
+        self.spot.borrow().iter().map(|(rect, _)| *rect).chain(self.join.hands()).collect()
+    }
+
     fn frame(&self) -> PRect {
         self.frame
     }
@@ -138,7 +175,7 @@ impl PView for Title {
             PEvent::PointerDown(at) => {
                 let place = at.plus(self.frame.origin);
                 let tool = self.spot.borrow().iter().find(|(rect, _)| rect.contains(place)).map(|(_, name)| *name);
-                tool.into_iter().for_each(|name| self.on(name).set(!self.on(name).get()));
+                tool.into_iter().for_each(|name| self.turn(name));
                 // A press on the face of a direct room's person opens
                 // them beside the room.
                 let with = self.desk.plate(&self.desk.room()).map(|plate| plate.with).filter(|_| self.face.get().contains(place));

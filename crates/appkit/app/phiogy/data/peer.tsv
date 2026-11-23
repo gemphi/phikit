@@ -45,6 +45,12 @@ ice.credential	credential
 device	system
 device.system	system
 device.stand	stand
+# The stand-in's ramp: its blue and its red part, from 0 to 255, as a
+# picture is sent. 128 and 128 is grey; `--set ramp.blue=90` gives one
+# run another tint, so that in a picture of several callers each
+# stand-in is told from the next.
+ramp.blue	128
+ramp.red	128
 # A screen that is shared: the stream it is sent under, so the other
 # end can tell it from a camera, and what its picture is called; which
 # of the system's screens, counted from 0; how many pictures of it a

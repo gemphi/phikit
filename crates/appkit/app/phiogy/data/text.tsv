@@ -54,6 +54,10 @@ fact.unanswered	its own files - Phiora did not answer at {at}
 # or the system said).
 call.join	Join
 call.leave	Leave
+call.start	Call
+call.video	Call with the camera
+call.end	End the call
+call.incoming	{name} is calling
 call.mute	Mute
 call.unmute	Unmute
 call.here	this window
@@ -81,6 +85,16 @@ call.fault.mic	The system gave no microphone, so nobody hears you ({why}).
 call.fault.camera	The system gave no camera ({why}).
 call.fault.speaker	The system gave no sound out, so you hear nobody ({why}).
 call.fault.scene	The system gave no screen to share ({why}).
+# A voice room, as the web's says it: how one who is in it is, the
+# sound of the others off and on, and what the room does.
+voice.inroom	In the room
+voice.empty	Nobody is in here yet
+voice.deaf	Sound off
+voice.undeaf	Sound on
+voice.connected	In a voice room
+voice.wait	Join to talk. Your microphone is opened then.
+voice.live	Your microphone goes to everyone in this room, and you hear them. It goes on while you look at other pages.
+voice.soundless	Sound needs the line, which is not open here. This room shows who is in it.
 # What was said in a room: when nothing was, whom a message answers
 # ({name}, and {text}, how that began), and a block of a page this
 # window does not draw yet ({kind}).
@@ -183,7 +197,7 @@ shop.delivery	Delivery
 shop.free	At once
 shop.total	Total
 shop.pay	Pay from wallet
-shop.wallet	In your wallet: ${n}
+shop.wallet	In your wallet
 shop.short	Not enough in your wallet for this bag.
 shop.paid	Shop - {n} bought
 shop.yours	Yours
@@ -240,3 +254,17 @@ room.find	Search this room
 room.pins	Pinned messages
 stream.reply	{name}: {text}
 room.undrawn	This page has a block this window does not draw yet: {kind}
+# A thing's page: its other colours, and liking it.
+shop.colours	In other colours
+shop.like	Like
+shop.liked	Liked
+# The guide's tabs, what each says with nothing to show, and the star
+# of a room's title.
+guide.tab.recent	Recent
+guide.tab.favorite	Favorites
+guide.tab.older	Older
+guide.none.recent	Nothing recent
+guide.none.favorite	No favorites yet
+guide.none.older	Nothing older
+room.fave	Add to favorites
+room.unfave	Remove from favorites

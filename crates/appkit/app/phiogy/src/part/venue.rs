@@ -92,6 +92,11 @@ impl PDraw for Venue {
 }
 
 impl PView for Venue {
+    /// Where a press on it does something.
+    fn hand(&self) -> Vec<PRect> {
+        self.list.hands()
+    }
+
     fn frame(&self) -> PRect {
         self.frame
     }

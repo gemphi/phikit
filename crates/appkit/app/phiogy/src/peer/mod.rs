@@ -11,6 +11,8 @@
 //!   WebRTC's part; `stand` is one that carries nothing, for the tests
 //!   and for a window built without WebRTC; `rtc` is the real library.
 //! * `call`: a call this window is in, on a thread of its own.
+//! * `ring`: a room's line listened to from outside its call, so a
+//!   call somebody else began there is seen.
 //!
 //! Its words are `data/signal.tsv`, what it asks of the line
 //! `data/dial.tsv`, and its numbers `data/peer.tsv`.
@@ -19,6 +21,7 @@ mod call;
 mod engine;
 mod line;
 mod mesh;
+mod ring;
 #[cfg(all(feature = "rtc", not(target_family = "wasm")))]
 pub mod rtc;
 mod stand;
@@ -28,6 +31,7 @@ pub use engine::{Engine, Kind, Link, Made, Maker, Own, Stage};
 pub use line::{Heard, Line};
 pub(crate) use line::{head, reach};
 pub use mesh::{Far, Mesh, Out, Picture};
+pub use ring::Ring;
 pub use stand::Stand;
 
 /// The name a picture of a call has in the window's film: how such

@@ -28,6 +28,7 @@ use crate::site::{Product, Shop};
 pub const OPEN: &str = "shop";
 pub const BAG: &str = "bag";
 pub const OWNED: &str = "owned";
+pub const LIKE: &str = "like";
 pub const WALLET: &str = "wallet";
 pub const HISTORY: &str = "history";
 pub const WORN: &str = "wear";
@@ -143,6 +144,16 @@ impl Desk {
     /// How a thing stands, as the row of the words that says so: to
     /// add, in the bag, owned; and one that is owned and can be worn:
     /// to put on, worn.
+    /// Whether the person likes a thing of a shop, by its place; and
+    /// like it, or no more.
+    pub fn liked(&self, place: &str) -> bool {
+        self.kept.flag(LIKE, &self.key(place)).unwrap_or(false)
+    }
+
+    pub fn fond(&self, place: &str, on: bool) {
+        self.kept.put(LIKE, &self.key(place), serde_json::json!(on));
+    }
+
     pub fn stands(&self, shop: &str, product: &Product) -> &'static str {
         let (id, worn) = (&product.id, self.worn() == format!("{shop}/{}", product.id));
         match (self.bought().iter().any(|line| line.id == *id), self.bag().iter().any(|line| line.id == *id), product.wear, worn) {

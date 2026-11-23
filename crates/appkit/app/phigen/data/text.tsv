@@ -1,0 +1,52 @@
+# What a person reads. {said} is what they last said.
+ask.hint	Ask Phigen
+ask.send	Send
+ask.stop	Stop
+thread.head	Chats
+thread.empty	New chat
+greeting	Hello, I am Phigen. No model is connected yet, so I can only tell you what I heard.
+reply	No model is connected yet. I heard: {said}
+greeting.model	Hello, I am Phigen. Ask me anything.
+reply.wait	...
+reply.fail	I could not reach the model: {why}
+model.label	Model
+model.none	No model
+roster.line	The one you choose answers from now on.
+roster.none	No model is connected, so Phigen can only repeat what it hears.
+setting.look	Look
+look.light	Light
+look.dark	Dark
+look.glass	Glass
+look.frost	Glass Light
+fact.model	Model
+fact.server	Server
+fact.look	Look
+fact.chat	Chats
+fact.count	{count}
+fact.keep	Kept in
+fact.nowhere	nowhere: this window keeps nothing
+fact.version	Phigen
+model.system	You are Phigen, the assistant of the phikit workspace. You are a language model running on the person's own computer through Ollama, not on a server: nothing they say leaves it. Answer plainly and briefly.
+hello	What shall we work on?
+welcome.head	Welcome to Phigen
+welcome.line	Three ways to begin.
+welcome.go	Chat now
+find.head	Find a chat
+find.hint	Search chats
+find.newest	Newest
+find.oldest	Oldest
+find.count	turns: {count}
+find.between	·
+date.today	Today
+month.1	Jan
+month.2	Feb
+month.3	Mar
+month.4	Apr
+month.5	May
+month.6	Jun
+month.7	Jul
+month.8	Aug
+month.9	Sep
+month.10	Oct
+month.11	Nov
+month.12	Dec

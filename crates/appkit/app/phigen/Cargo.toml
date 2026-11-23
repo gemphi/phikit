@@ -1,0 +1,25 @@
+[package]
+name = "phigen"
+version = "0.1.0"
+edition = "2024"
+description = "Phigen: a chat, the first app on appkit. Its window, its look and its words are the files in data/"
+publish = false
+
+# `cdylib` is what wasm-bindgen makes a browser's module from; `rlib` keeps
+# the desktop binary and the tests on the same crate.
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "phigen"
+path = "src/main.rs"
+
+[dependencies]
+appkit = { path = "../.." }
+# What a chat is written in for the model, and what its answer comes in.
+serde_json.workspace = true
+
+# The browser's entry (`src/web.rs`).
+[target.'cfg(target_family = "wasm")'.dependencies]
+wasm-bindgen = { workspace = true }

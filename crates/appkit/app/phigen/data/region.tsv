@@ -1,0 +1,13 @@
+# What each host shows: host, region, side of the pane, part. A region
+# the theme gives a height (header, footer) has it; the others share what
+# is left, which is how the field of a new chat comes to the middle of
+# what its header leaves.
+start	header	center	title
+start	center	center	hello
+start	footer	center	ask
+start	after	center	card
+chat	header	center	title
+chat	center	center	talk
+chat	footer	center	ask
+search	center	center	find
+history	center	center	thread

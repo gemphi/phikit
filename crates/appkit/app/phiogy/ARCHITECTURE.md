@@ -258,13 +258,16 @@ graph TB
 ```mermaid
 graph TB
     subgraph win["the window"]
-        j_pill["Join: part/join.rs<br/>Join, or Mute and Leave"]
-        j_call["Calling: part/call.rs<br/>the tiles, Camera, Share"]
-        j_desk["Desk<br/>join · leave · hush · camera · share"]
+        j_pill["Title, Join: part/title.rs, join.rs<br/>Call, Call with the camera;<br/>or who is calling, and Join"]
+        j_call["Calling: part/call.rs<br/>the tiles; Mute, Camera, Share, End"]
+        j_voice["Voice: part/voice.rs<br/>who is in a voice room;<br/>Join, Leave, Mute, Sound off"]
+        j_foot["Foot: part/guide/foot.rs<br/>the voice room I am in,<br/>at the foot of the menu on every page"]
+        j_desk["Desk<br/>dial · join · leave · hush · deaf<br/>camera · share · listen"]
         j_present["Present<br/>this window, and of each other caller:<br/>how far, muted, pictures, how loud"]
     end
     subgraph peer["peer/: on a thread of its own"]
-        p_call["Call<br/>asked: hush, camera, share, end<br/>read: Seen"]
+        p_call["Call<br/>asked: hush, deaf, camera, share, end<br/>read: Seen"]
+        p_ring["Ring<br/>a room's line listened to<br/>from outside its call"]
         p_line["Line<br/>the room's line as a page holds it"]
         p_mesh["Mesh<br/>one bond a caller: polite, open, ignore"]
         p_engine["Engine, Link<br/>offer · accept · candidate · take"]
@@ -277,6 +280,9 @@ graph TB
     page["a browser's page<br/>call.ts, peer.ts"]
     j_pill --> j_desk --> p_call
     j_call --> j_desk
+    j_voice --> j_desk
+    j_foot --> j_desk
+    j_desk --> p_ring --> p_line
     p_call --> j_present
     p_call --> p_line
     p_call --> p_mesh --> p_engine
@@ -360,4 +366,39 @@ graph LR
     style sfu stroke-dasharray: 5 5
     style cloud stroke-dasharray: 5 5
     style who stroke-dasharray: 5 5
+```
+
+## Tasks, planned
+
+Not built: asked for on 23 November 2026, as Microsoft To Do stands in
+the user's picture. A task is a person's own, or a host's; it can come
+from a message and be given to somebody in the host.
+
+```mermaid
+graph TB
+    subgraph data["data/"]
+        t_list["task.tsv<br/>the lists: my day, important, planned,<br/>assigned, flagged, all; icon, words, rule"]
+        t_keep["keep.tsv<br/>doc.task: the person's own tasks"]
+    end
+    subgraph rule["no window in these"]
+        t_comp["comp/task.rs<br/>Task: what, done, important, due,<br/>repeat, steps, note, given to, from, host"]
+        t_system["system/task.rs<br/>add, finish, star, plan, give;<br/>which list a task stands in"]
+    end
+    subgraph win["the window"]
+        t_menu["the bar's menu<br/>the lists, each with how many"]
+        t_page["part/task.rs<br/>grid or list, add a task,<br/>sort and group"]
+        t_one["one task, beside them<br/>steps, the day, a note, who has it"]
+        t_stream["a message's controls<br/>flag: make a task of it"]
+    end
+    subgraph far["shared"]
+        t_phiora["Phiora<br/>a host's list, for everyone in it"]
+    end
+    t_list --> t_system
+    t_comp --> t_system
+    t_system --> t_page
+    t_menu --> t_page
+    t_page --> t_one
+    t_stream --> t_system
+    t_system --> t_keep
+    t_system --> t_phiora
 ```

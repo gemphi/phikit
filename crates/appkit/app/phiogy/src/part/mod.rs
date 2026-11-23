@@ -9,6 +9,7 @@
 mod account;
 pub mod bond;
 pub mod call;
+pub mod crowd;
 mod friend;
 mod guide;
 mod host;
@@ -28,6 +29,7 @@ mod title;
 pub mod tool;
 mod venue;
 mod viewer;
+pub mod voice;
 
 pub use account::{Account, who};
 pub use call::Calling;
@@ -46,6 +48,7 @@ pub use title::Title;
 pub use tool::Tool;
 pub use venue::Venue;
 pub use viewer::Viewer;
+pub use voice::Voice;
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -60,7 +63,7 @@ use crate::board::{Board, lock};
 use crate::choice::Choice;
 use crate::comp::Roster;
 use crate::kept::Kept;
-use crate::peer::{Call, Maker};
+use crate::peer::{Call, Maker, Ring};
 use crate::site::{Message, Site};
 
 /// The theme's tokens more than one part is drawn with.
@@ -122,6 +125,10 @@ pub struct Desk {
     pub engine: Rc<dyn Fn() -> Maker>,
     /// Why the last call could not be joined, when it could not.
     pub refused: Rc<RefCell<String>>,
+    /// Whether the line is somebody else's, not one this window serves;
+    /// and, then, the open room's line listened to (`Desk::listen`).
+    pub away: bool,
+    pub ring: Rc<RefCell<Option<Ring>>>,
 }
 
 impl Desk {
