@@ -12,6 +12,7 @@ mod asset;
 mod draw;
 mod event;
 pub mod figure;
+pub mod letter;
 mod film;
 mod glass;
 mod icon;

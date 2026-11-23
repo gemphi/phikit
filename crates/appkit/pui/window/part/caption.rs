@@ -12,9 +12,10 @@
 //! three buttons. A theme that gives the caption no height has none, and
 //! the mark and the pin are the activity bar's own.
 
-use super::activity::square;
+use super::activity::{share, square};
 use super::menu::{INK, LIT, ROUND, ROW};
 use super::{GAP, ICON, INK as TEXT, PActivity, ROW as LINE};
+use crate::pui::core::letter::letter;
 use crate::pui::core::light::label;
 use crate::pui::core::{PLight, PPaint, PPoint, PRect};
 use crate::pui::window::{PDeed, PFrame, PWindow};
@@ -22,6 +23,10 @@ use crate::theme::PTheme;
 
 /// The theme's token for how high the caption is.
 pub const HIGH: &str = "caption.height";
+/// The theme's token for how much of its ground the app's mark fills,
+/// a share of the ground's side; a theme without it has the mark as
+/// large as an icon.
+pub const MARK: &str = "caption.mark";
 /// The pin's two icons, puikit's: a pill in a rounded square, wide while
 /// the menu is shown.
 pub const OPEN: &str = "pin-open";
@@ -169,13 +174,15 @@ impl PCaption {
                 paint.icon(pin, square(plan.mark, icon), ink);
             }
             (false, false, false) => {
+                // The app's mark fills the share of its ground the
+                // theme says; it is an icon's size without a word.
+                let mark = share(paint, MARK, chip, icon);
                 label(paint, ground, round, PLight::Soft, false, "");
-                paint.icon(&activity.logo.icon, square(plan.mark, icon), ink);
+                paint.icon(&activity.logo.icon, square(plan.mark, mark), ink);
             }
             (false, false, true) => {
-                let letter: String = name.chars().take(1).collect();
                 label(paint, ground, round, PLight::Strong, false, LIT);
-                paint.text(PPoint::new(middle.x - paint.measure(&letter) / 2.0, middle.y - line / 2.0), &letter, text);
+                paint.icon(&letter(name), square(plan.mark, share(paint, MARK, chip, icon)), text);
             }
         }
         for at in plan.name.into_iter().filter(|_| !activity.is_empty()) {

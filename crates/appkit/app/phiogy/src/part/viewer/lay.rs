@@ -6,9 +6,9 @@
 //! the foot. Narrow, the top row is the tools' alone, who and when
 //! stand over the strip, and the arrows lie over the picture's edges.
 
+use appkit::pui::block::{PPill, PTip};
 use appkit::pui::core::{PDraw, PFit, PLight, PPaint, PPoint, PRect, light};
 
-use crate::part::tool;
 
 use super::{AFTER, Act, BEFORE, CLOSE, CONTROL, FACE, LARGE, MARK, SPLIT, Spot, THUMB, TOOL, Viewer};
 use crate::part::{DIM, GAP, INK, LINE, RADIUS};
@@ -20,12 +20,11 @@ impl Viewer {
     /// table leaves out, which is not drawn.
     fn control(&self, paint: &mut dyn PPaint, rect: PRect, name: &str, act: Act, on: bool, round: bool) -> Option<Spot> {
         let (icon, word) = self.tool.of(name, on, &self.desk.text)?;
-        let light = match (self.over.get() == Some(act), on || round) {
-            (true, _) => Some(PLight::Strong),
-            (false, true) => Some(PLight::Rest),
-            (false, false) => None,
-        };
-        tool::button(paint, rect, icon, light);
+        // The kit's pill, in the middle of its place: on a ground of
+        // its own when it is on, and always when it stands alone.
+        let pill = (icon, "", on);
+        let size = pill.size(paint);
+        pill.draw(paint, PPoint::new(rect.center().x - size.width / 2.0, rect.center().y - size.height / 2.0), !(on || round));
         Some(Spot { rect, act, word: word.to_string() })
     }
 
@@ -64,7 +63,7 @@ impl Viewer {
     fn word(&self, paint: &mut dyn PPaint, spot: &[Spot], frame: PRect) {
         let told = || spot.iter().find(|spot| spot.act == Act::Share).filter(|_| self.told.get());
         let Some(spot) = self.over.get().and_then(|act| spot.iter().find(|spot| spot.act == act)).or_else(told) else { return };
-        tool::say(paint, spot.rect, &spot.word, frame);
+        _ = spot.word.tip(paint, spot.rect, frame);
     }
 }
 

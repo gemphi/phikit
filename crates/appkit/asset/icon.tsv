@@ -1,0 +1,254 @@
+# The icons of the house, as measures. `script/icon.py` draws every
+# svg in `asset/icon` that has rows here from these rows alone: the svg
+# files are what comes out, this file is what is true.
+#
+# One construction for all of them, the one the Phi fonts are made on:
+# a stroke of one width with round ends, led from point to point, and
+# at each point a corner as round as its radius says. What makes one
+# icon another is the radius: a speech mark is the frame with one tight
+# corner, a house the frame with a round head, a globe the frame fully
+# round. A letter is drawn the same way and still reads as its letter.
+#
+# name	part	what
+#
+# The parts:
+#   run   an open stroke: points `x y r`, apart by commas; r is how
+#         round the corner at that point is (the ends have none)
+#   ring  a closed stroke: the same, every point a corner
+#   fill  a closed shape, filled: the same
+#   pill  a filled pill: `x y wide high`, its ends fully round
+#   cut   a closed shape taken out of the fill before it: the same
+#   hole  a pill taken out of the fill before it: `x y wide high`
+#
+# The table is in three files, read as one: this one, `icon-tool.tsv`
+# (what the older apps and Phigen name) and `icon-letter.tsv` (letters,
+# as marks).
+#
+# Everything is on a square of 24. The frame most icons share is the
+# pin's: from 2.5 to 21.5.
+box	side	24
+stroke	wide	1.75
+#
+# --- the rail and the menu beside it
+#
+# Rooms: the frame with one tight corner, a speech mark; two lines said.
+chat	ring	2.5 3.5 5.5, 21.5 3.5 5.5, 21.5 18.5 5.5, 2.5 18.5 1
+chat	pill	7 8 10 2.5
+chat	pill	7 12.5 6 2.5
+# Hosts, the network: the frame fully round, a meridian and the line
+# round its middle.
+globe	ring	2.5 2.5 9.5, 21.5 2.5 9.5, 21.5 21.5 9.5, 2.5 21.5 9.5
+globe	ring	8 2.5 4, 16 2.5 4, 16 21.5 4, 8 21.5 4
+globe	run	2.5 12 0, 21.5 12 0
+# Shops: a bag, rounder at its foot than at its mouth, and its handle.
+bag	ring	3.5 8 2, 20.5 8 2, 20.5 21 6, 3.5 21 6
+bag	run	8.5 11.5 0, 8.5 3 3.5, 15.5 3 3.5, 15.5 11.5 0
+# Things: a box, its lid and its label.
+box	ring	3 4.5 3.5, 21 4.5 3.5, 21 20.5 3.5, 3 20.5 3.5
+box	run	3 9.5 0, 21 9.5 0
+box	pill	9.5 12.5 5 2.5
+# The menu: four cells, one of them fully round.
+layout-grid	ring	3 3 2.5, 10.5 3 2.5, 10.5 10.5 2.5, 3 10.5 2.5
+layout-grid	ring	13.5 3 3.75, 21 3 3.75, 21 10.5 3.75, 13.5 10.5 3.75
+layout-grid	ring	3 13.5 2.5, 10.5 13.5 2.5, 10.5 21 2.5, 3 21 2.5
+layout-grid	ring	13.5 13.5 2.5, 21 13.5 2.5, 21 21 2.5, 13.5 21 2.5
+grid	ring	3 3 2.5, 10.5 3 2.5, 10.5 10.5 2.5, 3 10.5 2.5
+grid	ring	13.5 3 2.5, 21 3 2.5, 21 10.5 2.5, 13.5 10.5 2.5
+grid	ring	3 13.5 2.5, 10.5 13.5 2.5, 10.5 21 2.5, 3 21 2.5
+grid	ring	13.5 13.5 2.5, 21 13.5 2.5, 21 21 2.5, 13.5 21 2.5
+# Start: a house, the frame with a round head, and its door.
+home	ring	3 3.5 7.5, 21 3.5 7.5, 21 20.5 3, 3 20.5 3
+home	pill	10.25 12 3.5 6
+# More: two strokes that cross.
+plus	run	12 5 0, 12 19 0
+plus	run	5 12 0, 19 12 0
+# One person: a head and shoulders.
+user	ring	8 3 4, 16 3 4, 16 11 4, 8 11 4
+user	run	4 21 0, 4 15 4.5, 20 15 4.5, 20 21 0
+# People: two heads, two pairs of shoulders.
+users	ring	4 4.5 3, 10 4.5 3, 10 10.5 3, 4 10.5 3
+users	ring	14 4.5 3, 20 4.5 3, 20 10.5 3, 14 10.5 3
+users	run	2.5 20.5 0, 2.5 14.5 3.5, 11 14.5 3.5, 11 20.5 0
+users	run	13 20.5 0, 13 14.5 3.5, 21.5 14.5 3.5, 21.5 20.5 0
+# A text room: two strokes down, two across.
+hash	run	9 4 0, 9 20 0
+hash	run	15 4 0, 15 20 0
+hash	run	4 9 0, 20 9 0
+hash	run	4 15 0, 20 15 0
+# A voice room: a speaker and what comes out of it.
+volume	ring	3 9 2, 8 9 0.5, 13.5 4 2.5, 13.5 20 2.5, 8 15 0.5, 3 15 2
+volume	run	17.5 8.5 0, 20.5 12 3, 17.5 15.5 0
+#
+# --- a room's tools, a message's controls, the field, the window
+#
+# Find: a round glass and its handle.
+# Shut, put down, make large: the window's three.
+x	run	6 6 0, 18 18 0
+x	run	18 6 0, 6 18 0
+minus	run	5 12 0, 19 12 0
+square	ring	4.5 4.5 3.5, 19.5 4.5 3.5, 19.5 19.5 3.5, 4.5 19.5 3.5
+maximize	ring	4.5 4.5 3.5, 19.5 4.5 3.5, 19.5 19.5 3.5, 4.5 19.5 3.5
+circle	ring	3.5 3.5 8.5, 20.5 3.5 8.5, 20.5 20.5 8.5, 3.5 20.5 8.5
+check	run	4.5 12.5 0, 10 18 0.5, 19.5 6.5 0
+# The one before, the one after.
+# Keep at the top: a head, its bar, its needle. Off: struck through.
+pin	ring	7.5 3 3, 16.5 3 3, 16.5 13 1, 7.5 13 1
+pin	run	5 13.5 0, 19 13.5 0
+pin	run	12 13.5 0, 12 21 0
+pin-off	ring	7.5 3 3, 16.5 3 3, 16.5 13 1, 7.5 13 1
+pin-off	run	5 13.5 0, 19 13.5 0
+pin-off	run	12 13.5 0, 12 21 0
+pin-off	run	3.5 3.5 0, 20.5 20.5 0
+# A favourite: five points, each a little round.
+# Answer: back, and round the corner.
+# Liked: two round heads and a point.
+heart	ring	12 7.5 0.8, 15 4 3.5, 21.5 4 4.5, 21.5 11.5 4.5, 12 21 1, 2.5 11.5 4.5, 2.5 4 4.5, 9 4 3.5
+# A hand, its thumb up, and its cuff.
+thumbs-up	ring	9.5 10.5 1, 12 3.5 1.5, 15 3.5 2, 15 9 1, 21 9 2.5, 19.5 20.5 3, 9.5 20.5 1
+thumbs-up	ring	2.5 10.5 1.5, 6.5 10.5 1.5, 6.5 20.5 1.5, 2.5 20.5 1.5
+# Fire: a drop with its pill.
+flame	ring	12 2.5 1, 19.5 12 5, 19.5 21.5 7, 4.5 21.5 7, 4.5 12 5
+flame	pill	10.5 13.5 3 5
+# A picture: its frame, a sun, a hill. To post one: a smaller frame
+# and the stroke that adds.
+image	ring	2.5 4 4, 21.5 4 4, 21.5 20 4, 2.5 20 4
+image	pill	6.5 7.5 3.5 3.5
+image	run	2.5 17 0, 9 12 1, 13 15.5 1, 16 13 1, 21.5 17 0
+image-plus	ring	2.5 8 3.5, 16 8 3.5, 16 21 3.5, 2.5 21 3.5
+image-plus	pill	5.5 11 3 3
+image-plus	run	2.5 18.5 0, 7.5 14.5 1, 11 17.5 1, 16 14 0
+image-plus	run	19.5 2.5 0, 19.5 8.5 0
+image-plus	run	16.5 5.5 0, 22.5 5.5 0
+# Say it: a dart and its fold.
+send	ring	3 4 1.5, 21.5 12 1.5, 3 20 1.5, 7 12 0.5
+send	run	7 12 0, 13.5 12 0
+# Hand on: three ends and what joins them.
+# Take: down into a tray. Open elsewhere: out of a frame.
+download	run	12 3.5 0, 12 15 0
+download	run	6.5 10 0, 12 15.5 0.5, 17.5 10 0
+download	run	3.5 16 0, 3.5 20.5 3, 20.5 20.5 3, 20.5 16 0
+external-link	run	10 6 0, 3.5 6 3, 3.5 20.5 3, 18 20.5 3, 18 14 0
+external-link	run	13.5 3.5 0, 20.5 3.5 0.5, 20.5 10.5 0
+external-link	run	20.5 3.5 0, 11 13 0
+copy	ring	8 8 3, 21 8 3, 21 21 3, 8 21 3
+copy	run	16 4 0, 16 3 0.5, 3 3 3, 3 16 3, 4 16 0
+layers	ring	12 3 1, 21.5 8 1, 12 13 1, 2.5 8 1
+layers	run	2.5 12.5 0, 12 17.5 1, 21.5 12.5 0
+layers	run	2.5 16.5 0, 12 21.5 1, 21.5 16.5 0
+#
+# --- a call
+#
+# Speak: a pill, its cradle, its stand. Off: struck through.
+mic	ring	8.5 2.5 3.5, 15.5 2.5 3.5, 15.5 13.5 3.5, 8.5 13.5 3.5
+mic	run	5 10.5 0, 5 17.5 6, 19 17.5 6, 19 10.5 0
+mic	run	12 17.5 0, 12 21.5 0
+mic-off	ring	8.5 2.5 3.5, 15.5 2.5 3.5, 15.5 13.5 3.5, 8.5 13.5 3.5
+mic-off	run	5 10.5 0, 5 17.5 6, 19 17.5 6, 19 10.5 0
+mic-off	run	12 17.5 0, 12 21.5 0
+mic-off	run	3.5 3.5 0, 20.5 20.5 0
+# Be seen: a camera's box and its eye.
+video	ring	2.5 6 3.5, 15 6 3.5, 15 18 3.5, 2.5 18 3.5
+video	ring	15 10 0.5, 21.5 6.5 1.5, 21.5 17.5 1.5, 15 14 0.5
+camera	ring	2.5 6.5 3.5, 21.5 6.5 3.5, 21.5 20 3.5, 2.5 20 3.5
+camera	ring	8 9.5 4, 16 9.5 4, 16 17.5 4, 8 17.5 4
+camera	run	8.5 6.5 0, 9.5 3.5 1, 14.5 3.5 1, 15.5 6.5 0
+# Call: a hand's phone and its pill. End it: struck through.
+phone	ring	6.5 2.5 3.5, 17.5 2.5 3.5, 17.5 21.5 3.5, 6.5 21.5 3.5
+phone	pill	10 16.5 4 2.5
+phone-off	ring	6.5 2.5 3.5, 17.5 2.5 3.5, 17.5 21.5 3.5, 6.5 21.5 3.5
+phone-off	pill	10 16.5 4 2.5
+phone-off	run	3.5 3.5 0, 20.5 20.5 0
+# Hear nothing: the speaker, crossed. Tell me nothing: a bell, struck.
+volume-x	ring	3 9 2, 8 9 0.5, 13.5 4 2.5, 13.5 20 2.5, 8 15 0.5, 3 15 2
+volume-x	run	17 9.5 0, 21.5 14.5 0
+volume-x	run	21.5 9.5 0, 17 14.5 0
+bell-off	ring	5.5 3 6.5, 18.5 3 6.5, 18.5 17 1, 5.5 17 1
+bell-off	pill	10 19 4 2.5
+bell-off	run	3.5 3.5 0, 20.5 20.5 0
+#
+# --- people, coming and going, what is owned
+#
+user-plus	ring	5 3 4, 13 3 4, 13 11 4, 5 11 4
+user-plus	run	2.5 21 0, 2.5 15 4.5, 15.5 15 4.5, 15.5 21 0
+user-plus	run	19.5 6 0, 19.5 12 0
+user-plus	run	16.5 9 0, 22.5 9 0
+log-in	run	14.5 3.5 0, 20.5 3.5 3, 20.5 20.5 3, 14.5 20.5 0
+log-in	run	3.5 12 0, 14.5 12 0
+log-in	run	10 7.5 0, 14.5 12 0.5, 10 16.5 0
+log-out	run	9.5 3.5 0, 3.5 3.5 3, 3.5 20.5 3, 9.5 20.5 0
+log-out	run	9.5 12 0, 20.5 12 0
+log-out	run	16 7.5 0, 20.5 12 0.5, 16 16.5 0
+message-circle	ring	2.5 2.5 9.5, 21.5 2.5 9.5, 21.5 21.5 9.5, 2.5 21.5 1.5
+wallet	ring	2.5 5.5 3.5, 21.5 5.5 3.5, 21.5 19.5 3.5, 2.5 19.5 3.5
+wallet	pill	14.5 10.5 5 4
+trash-2	run	4 6.5 0, 20 6.5 0
+trash-2	run	9 6.5 0, 9 3.5 1.5, 15 3.5 1.5, 15 6.5 0
+trash-2	run	5.5 6.5 0, 6.5 21 3, 17.5 21 3, 18.5 6.5 0
+trash	run	4 6.5 0, 20 6.5 0
+trash	run	9 6.5 0, 9 3.5 1.5, 15 3.5 1.5, 15 6.5 0
+trash	run	5.5 6.5 0, 6.5 21 3, 17.5 21 3, 18.5 6.5 0
+#
+# --- the looks: light, dark, glass
+#
+# Light: a round sun and its eight rays. Dark: a disc with the round
+# bite the night takes out of it. Glass: two panes, one over the other.
+sun	ring	8 8 4, 16 8 4, 16 16 4, 8 16 4
+sun	run	12 2.5 0, 12 4.5 0
+sun	run	12 19.5 0, 12 21.5 0
+sun	run	2.5 12 0, 4.5 12 0
+sun	run	19.5 12 0, 21.5 12 0
+sun	run	5.3 5.3 0, 6.7 6.7 0
+sun	run	17.3 17.3 0, 18.7 18.7 0
+sun	run	18.7 5.3 0, 17.3 6.7 0
+sun	run	6.7 17.3 0, 5.3 18.7 0
+moon	fill	3 3 9, 21 3 9, 21 21 9, 3 21 9
+moon	hole	9 4.5 10.5 10.5
+blend	ring	3 3 6, 15 3 6, 15 15 6, 3 15 6
+blend	ring	9 9 6, 21 9 6, 21 21 6, 9 21 6
+#
+# --- made marks: a filled body and what is cut out of it
+#
+# The ones that pointed, found, handed on and starred as line work of
+# another house are made as the letters are: a body with round and
+# tight corners, a pill taken out where there is something to see.
+#
+# Find: a round body, the pill it looks through, and its handle.
+search	fill	2.5 2.5 8, 18.5 2.5 8, 18.5 18.5 8, 2.5 18.5 8
+search	hole	6 6 9 9
+search	fill	16.6 13.8 1.9, 22.3 19.5 1.9, 19.5 22.3 1.9, 13.8 16.6 1.9
+zoom-in	fill	2.5 2.5 8, 18.5 2.5 8, 18.5 18.5 8, 2.5 18.5 8
+zoom-in	hole	5.5 5.5 10 10
+zoom-in	fill	16.6 13.8 1.9, 22.3 19.5 1.9, 19.5 22.3 1.9, 13.8 16.6 1.9
+zoom-in	pill	7.9 9.6 5.2 1.8
+zoom-in	pill	9.6 7.9 1.8 5.2
+zoom-out	fill	2.5 2.5 8, 18.5 2.5 8, 18.5 18.5 8, 2.5 18.5 8
+zoom-out	hole	5.5 5.5 10 10
+zoom-out	fill	16.6 13.8 1.9, 22.3 19.5 1.9, 19.5 22.3 1.9, 13.8 16.6 1.9
+zoom-out	pill	7.9 9.6 5.2 1.8
+# The one before, the one after, up, down: a pill that ends in a head.
+arrow-right	fill	3 10 2, 12 10 0, 12 5.5 1.5, 21.5 12 2, 12 18.5 1.5, 12 14 0, 3 14 2
+arrow-left	fill	21 10 2, 12 10 0, 12 5.5 1.5, 2.5 12 2, 12 18.5 1.5, 12 14 0, 21 14 2
+arrow-down	fill	10 3 2, 10 12 0, 5.5 12 1.5, 12 21.5 2, 18.5 12 1.5, 14 12 0, 14 3 2
+arrow-up	fill	10 21 2, 10 12 0, 5.5 12 1.5, 12 2.5 2, 18.5 12 1.5, 14 12 0, 14 21 2
+chevron-down	fill	5 8 1.3, 12 12.5 0.6, 19 8 1.3, 19 12.5 1.3, 12 17.5 1, 5 12.5 1.3
+chevron-right	fill	8 5 1.3, 12.5 12 0.6, 8 19 1.3, 12.5 19 1.3, 17.5 12 1, 12.5 5 1.3
+# Answer: a head, and a pill that comes round the corner to it.
+reply	fill	2.5 12 2, 10 5.5 1.5, 10 10 0, 21.5 10 7, 21.5 19.5 2, 17.5 19.5 2, 17.5 14 3, 10 14 0, 10 18.5 1.5
+# Hand on: three round ends and the pills that join them.
+share-2	pill	15.5 2 6 6
+share-2	pill	2.5 9 6 6
+share-2	pill	15.5 16 6 6
+share-2	fill	4.88 10.85 0.5, 17.88 3.85 0.5, 19.12 6.15 0.5, 6.12 13.15 0.5
+share-2	fill	6.12 10.85 0.5, 19.12 17.85 0.5, 17.88 20.15 0.5, 4.88 13.15 0.5
+# A favourite: five round points and the pill in its middle.
+star	fill	12 2 1.4, 14.9 8.4 0.8, 22 9.2 1.4, 16.8 14 0.8, 18.2 21 1.4, 12 17.5 0.8, 5.8 21 1.4, 7.2 14 0.8, 2 9.2 1.4, 9.1 8.4 0.8
+star	hole	10.4 9.6 3.2 4.6
+#
+# --- the pin of the bar's menu
+#
+# The frame and a pill in it: wide while the menu is shown, narrow
+# while it is put away. Open and shut differ in the pill alone.
+pin-open	ring	2.5 3.5 5.5, 21.5 3.5 5.5, 21.5 20.5 5.5, 2.5 20.5 5.5
+pin-open	pill	6 7 6.5 10
+pin-shut	ring	2.5 3.5 5.5, 21.5 3.5 5.5, 21.5 20.5 5.5, 2.5 20.5 5.5
+pin-shut	pill	6 7 3 10

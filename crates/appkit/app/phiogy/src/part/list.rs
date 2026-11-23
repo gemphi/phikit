@@ -10,15 +10,16 @@
 
 use std::cell::{Cell, RefCell};
 
+use appkit::pui::block::PBand;
 use appkit::pui::control::{PControl, PField, inside};
-use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect, PView, figure, light, show};
+use appkit::pui::core::{PFit, PPaint, PPoint, PRect, PView, figure, show};
 use appkit::pui::layout::{PDry, PScroll, ground, wrap};
 
 mod item;
 
 pub use super::tool::grouped;
 pub use item::{Deed, Item, Seat};
-use super::{DIM, Desk, GAP, ICON, INK, LINE, RADIUS, ROW, fit, tool};
+use super::{DIM, Desk, GAP, ICON, INK, LINE, RADIUS, ROW, fit};
 
 /// The theme's tokens: how high a line of a list is, how large what
 /// stands at its head, and how far down a page begins.
@@ -46,40 +47,15 @@ impl<A> Default for Lister<A> {
 }
 
 impl<A: Clone> Lister<A> {
-    /// A pill with words in it, lit as `light` says.
-    fn pill(paint: &mut dyn PPaint, at: PPoint, said: &str, light: PLight) -> PRect {
-        let (gap, line, ink, radius) = (paint.size(GAP), paint.size(LINE), paint.color(INK), paint.size(RADIUS));
-        let rect = PRect::new(at.x, at.y, paint.measure(said) + gap, line + gap / 2.0);
-        light::label(paint, rect, radius, light, false, "");
-        paint.text(PPoint::new(at.x + gap / 2.0, at.y + gap / 4.0), said, ink);
-        rect
-    }
-
-    /// What can be done, drawn so that the last ends at `end`, their
-    /// middle at its height; where the first begins.
+    /// What can be done, the kit's group of pills, drawn so that it
+    /// ends at `end`, its middle at that height; where it begins.
     fn deeds(&self, paint: &mut dyn PPaint, end: PPoint, deed: &[Deed<A>], spot: &mut Vec<(PRect, A)>) -> f32 {
-        let (gap, line) = (paint.size(GAP), paint.size(LINE));
-        let mut right = end.x;
-        for one in deed.iter().rev() {
-            let light = match one.on {
-                true => PLight::Strong,
-                false => PLight::Rest,
-            };
-            let rect = match one.icon.is_empty() {
-                true => {
-                    let wide = paint.measure(&one.label) + gap;
-                    Self::pill(paint, PPoint::new(right - wide, end.y - (line + gap / 2.0) / 2.0), &one.label, light)
-                }
-                false => {
-                    let rect = PRect::new(right - line - gap / 2.0, end.y - (line + gap / 2.0) / 2.0, line + gap / 2.0, line + gap / 2.0);
-                    tool::button(paint, rect, &one.icon, Some(light));
-                    rect
-                }
-            };
-            spot.push((rect, one.act.clone()));
-            right = rect.origin.x - gap / 4.0;
-        }
-        right
+        let pill: Vec<(&str, &str, bool)> = deed.iter().map(Deed::pill).collect();
+        let high = pill.high(paint);
+        let rect = pill.draw_end(paint, PPoint::new(end.x, end.y - high / 2.0));
+        let begin = rect.first().map_or(end.x, |rect| rect.origin.x);
+        spot.extend(rect.into_iter().zip(deed.iter().map(|one| one.act.clone())));
+        begin - paint.size(GAP) / 4.0
     }
 
     /// Draw a page: its items down the column of `frame`, which is the
@@ -157,17 +133,9 @@ impl<A: Clone> Lister<A> {
                     top += row + gap / 2.0;
                 }
                 Item::Tabs(tab) => {
-                    let mut across = left;
-                    for one in tab {
-                        let light = match one.on {
-                            true => PLight::Strong,
-                            false => PLight::Soft,
-                        };
-                        let rect = Self::pill(paint, PPoint::new(across, top), &one.label, light);
-                        spot.push((rect, one.act.clone()));
-                        across += rect.size.width + gap / 4.0;
-                    }
-                    top += line + gap;
+                    let pill: Vec<(&str, &str, bool)> = tab.iter().map(Deed::pill).collect();
+                    spot.extend(pill.draw(paint, PPoint::new(left, top)).into_iter().zip(tab.iter().map(|one| one.act.clone())));
+                    top += pill.high(paint) + gap / 2.0;
                 }
                 Item::Line(seat, title, sub, open, deed) => {
                     let rect = PRect::new(left, top, wide, high);

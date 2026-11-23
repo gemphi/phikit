@@ -110,7 +110,9 @@ fn step_9_phiogy_s_mark_is_in_the_caption_over_the_bar_and_is_the_pin() {
     let (mark, room) = (pictured(&stage, &look, "phiogy").expect("the mark"), pictured(&stage, &look, "chat").expect("the Rooms row"));
     assert!(stage.frame().caption.contains(mark) && mark.y < room.y && mark.x == room.x, "{mark:?} {room:?}");
     // The mark and every icon of the bar under it stand on grounds of
-    // one size, and are drawn as large as each other.
+    // one size; each fills the share of its ground the theme says
+    // (`caption.mark`, `activity.icon`), the mark more than an icon, so
+    // that its two bars are seen.
     let ground = |stage: &appkit::pui::window::PStage, name: &str| {
         let mark = super::drawn(stage, &look);
         mark.windows(2).find_map(|pair| match (&pair[0], &pair[1]) {
@@ -119,8 +121,10 @@ fn step_9_phiogy_s_mark_is_in_the_caption_over_the_bar_and_is_the_pin() {
         })
     };
     let (own, row) = (ground(&stage, "phiogy").expect("the mark's ground"), ground(&stage, "chat").expect("a row's ground"));
-    assert_eq!(own, row);
-    assert!(own.0 > own.1.height);
+    let side = |token: &str| (own.0 * app.desk().size(token)).round();
+    let (large, small) = (side("caption.mark"), side("activity.icon"));
+    assert_eq!((own.0, own.1.width, own.1.height, row.1.width), (row.0, large, large, small));
+    assert!(own.0 > large && large > small && small > app.desk().size("icon.size"));
     // Its name is beside it, in one case, while the menu is shown.
     let named = |stage: &appkit::pui::window::PStage| shown(stage, &look).contains(&"phiogy".to_string());
     assert!(named(&stage) && !shown(&stage, &look).contains(&"Phiogy".to_string()));

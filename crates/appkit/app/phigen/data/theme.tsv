@@ -62,6 +62,10 @@ size	activity.low	56
 size	activity.margin	8
 size	activity.corner	16
 size	activity.row	40
+# How much of its ground a row's icon fills, and a row's picture, as
+# shares of the ground's side: 20 and 28 of 36, as they were.
+size	activity.icon	0.556
+size	activity.face	0.778
 size	activity.radius	12
 # The caption: the row at the window's very top, where a system puts
 # its title bar. It has the app's mark over the bar, its name, and the
@@ -69,6 +73,9 @@ size	activity.radius	12
 # stands in the system's bar's place and has the window's three
 # buttons at its right end.
 size	caption.height	44
+# How much of its ground the app's own mark fills there, a share of the
+# ground's side: 0.556 of 36 is 20, as an icon is.
+size	caption.mark	0.556
 color	tab.ink	#5f5f5a
 size	tab.height	52
 size	tab.width	112

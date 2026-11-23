@@ -7,29 +7,26 @@
 //! message that follows one of the same person has no face or name of
 //! its own.
 
-use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect, light};
+use appkit::pui::block::{PBand, PPill};
+use appkit::pui::core::{PFit, PPaint, PPoint, PRect};
 use appkit::pui::layout::wrap;
 
 use super::{Act, FACE, HIGH, LIKE, PIN, REPLY, Spot, Stream, WIDE};
-use crate::part::{DIM, GAP, ICON, INK, LINE, RADIUS, fit, tool};
+use crate::part::{DIM, GAP, ICON, INK, LINE, RADIUS, fit};
 use crate::site::Message;
 
 impl Stream {
-    /// The controls of a message, from the right: pin it, like it,
-    /// answer it. Each is lit more when it is so.
+    /// The controls of a message, the kit's band, ending at a place:
+    /// answer it, like it, pin it. Each is lit when it is so.
     fn control(&self, paint: &mut dyn PPaint, end: PPoint, one: &Message, spot: &mut Vec<Spot>) {
-        let (gap, line, text) = (paint.size(GAP), paint.size(LINE), &self.desk.text);
+        let text = &self.desk.text;
         let like = self.desk.like();
         let answered = *self.desk.now.answer.borrow() == one.id;
-        let list = [(PIN, Act::Pin(one.id.clone()), self.desk.pinned(one)), (LIKE, Act::Mark(one.id.clone(), like.clone()), self.desk.gave(&one.id, &like)), (REPLY, Act::Reply(one.id.clone()), answered)];
-        let mut right = end.x;
-        for (name, act, on) in list {
-            let Some((icon, word)) = self.tool.of(name, on, text) else { continue };
-            let rect = PRect::new(right - line - gap / 4.0, end.y, line + gap / 4.0, line);
-            tool::button(paint, rect, icon, Some(self.lit(&act, on)));
-            spot.push(Spot { rect, act, word: word.to_string() });
-            right = rect.origin.x - gap / 4.0;
-        }
+        let list = [(REPLY, Act::Reply(one.id.clone()), answered), (LIKE, Act::Mark(one.id.clone(), like.clone()), self.desk.gave(&one.id, &like)), (PIN, Act::Pin(one.id.clone()), self.desk.pinned(one))];
+        let list: Vec<(&str, &str, bool, Act)> = list.into_iter().filter_map(|(name, act, on)| self.tool.of(name, on, text).map(|(icon, word)| (icon, word, on, act))).collect();
+        let pill: Vec<(&str, &str, bool)> = list.iter().map(|(icon, _, on, _)| (*icon, "", *on)).collect();
+        let rect = pill.draw_end(paint, end);
+        spot.extend(rect.into_iter().zip(list).map(|(rect, (_, word, _, act))| Spot { rect, act, word: word.to_string() }));
     }
 
     /// One message in `at`, which gives its left, its top and its
@@ -83,24 +80,15 @@ impl Stream {
         let marks = self.desk.mark(one);
         let mut across = left;
         for (mark, count, on) in &marks {
+            // A mark and how many gave it: the kit's pill.
             let said = count.to_string();
-            let pill = PRect::new(across, top + gap / 4.0, icon + paint.measure(&said) + gap * 1.5, line);
-            let act = Act::Mark(one.id.clone(), mark.clone());
-            let lit = match (*on, self.hand.borrow().as_ref() == Some(&act)) {
-                (true, _) => PLight::Strong,
-                (false, true) => PLight::Rest,
-                (false, false) => PLight::Soft,
-            };
-            light::label(paint, pill, corner, lit, false, "");
-            paint.icon(self.desk.icon(mark), PRect::new(pill.origin.x + gap / 2.0, pill.center().y - icon / 2.0, icon, icon), ink);
-            paint.text(PPoint::new(pill.origin.x + gap + icon, pill.origin.y), &said, ink);
-            spot.push(Spot { rect: pill, act, word: String::new() });
+            let pill = (self.desk.icon(mark), said.as_str(), *on).draw(paint, PPoint::new(across, top + gap / 4.0), false);
+            spot.push(Spot { rect: pill, act: Act::Mark(one.id.clone(), mark.clone()), word: String::new() });
             across += pill.size.width + gap / 2.0;
         }
         // Its controls, where the pointer is or the last press was.
-        if *self.over.borrow() == one.id {
-            self.control(paint, PPoint::new(at.origin.x + at.size.width, first), one, spot);
-        }
+        let over = *self.over.borrow() == one.id;
+        over.then(|| self.control(paint, PPoint::new(at.origin.x + at.size.width, first - gap / 4.0), one, spot));
         top + match marks.is_empty() {
             true => gap / 2.0,
             false => line + gap,

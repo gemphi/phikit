@@ -1,6 +1,9 @@
-# The web Phiogy's icons, and the icon each is drawn with here: one of
-# appkit's shared icons, or one of Phiogy's own (`asset/icon`, lucide's
-# drawings as the web draws them, written by `script/icon.mjs`). The row `any` is for a name with no row of its own.
+# The web Phiogy's names for icons, and the house's icon each is drawn
+# with here. Every one is the house's own, drawn from measures
+# (`crates/appkit/asset/icon*.tsv`, by `crates/appkit/script/icon.py`);
+# none is lucide's any more. This is only a map of names: the web's
+# files say `network`, the house's icon is called `globe`. The row
+# `any` is for a name with no row of its own.
 chat	chat
 user	user
 users	users
@@ -10,7 +13,7 @@ hash	hash
 volume	volume
 spark	phiogy-bar
 plus	plus
-bag	shopping-bag
+bag	bag
 home	home
 layers	layers
 any	circle

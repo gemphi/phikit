@@ -31,6 +31,16 @@ pub trait PView: PDraw {
         false
     }
 
+    /// What it watches that may change though nothing of it moves, such
+    /// as who is on a line: a number that is another one once that
+    /// changed. A view that says one is asked again on the theme's beat
+    /// (`screen.beat`), and the window is drawn again only when the
+    /// number is another, so that waiting costs next to nothing. A view
+    /// that watches nothing says nothing, and need not write this.
+    fn beat(&self) -> Option<u64> {
+        None
+    }
+
     /// Take a word from the window's own furniture, such as `begin` from
     /// a row of the activity bar: something only the app can do. `true`
     /// when this view did it. A view that does nothing of the kind need

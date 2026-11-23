@@ -32,6 +32,8 @@ pub struct PSlide {
     out: f32,
     /// The modal that is going, where it stood, and how far out it is.
     gone: Option<(String, PPanel, f32)>,
+    /// What each view that watches something saw when last asked.
+    seen: Vec<Option<u64>>,
 }
 
 /// Of the places a point is in, the smallest: a button on a row, not
@@ -58,6 +60,21 @@ impl PStage {
         self.slide.out = (self.slide.out - step).max(0.0);
         self.slide.gone = self.slide.gone.take().map(|(name, panel, out)| (name, panel, out + step)).filter(|(.., out)| *out < 1.0);
         busy || turned || moving
+    }
+
+    /// Whether any view watches something outside it (`PView::beat`).
+    pub fn beat(&self) -> bool {
+        self.content.iter().any(|(_, view)| view.beat().is_some())
+    }
+
+    /// Ask every view what it watches, and the app for the rows of its
+    /// bar. `true` when anything is other than the last time this was
+    /// asked: the window is then to be drawn again.
+    pub fn turned(&mut self) -> bool {
+        let seen: Vec<Option<u64>> = self.content.iter().map(|(_, view)| view.beat()).collect();
+        let rail = self.fresh();
+        rail.then(|| self.lay(self.size, self.mode));
+        std::mem::replace(&mut self.slide.seen, seen.clone()) != seen || rail
     }
 
     /// Ask the app for the rows it adds to the bar. `true` when they

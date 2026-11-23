@@ -1,8 +1,9 @@
 //! Drawing the activity bar, and the menu it shows.
 
 use super::super::menu::{self, INK, LIT, ROUND, ROW};
-use super::super::{GAP, ICON, INK as TEXT, ROW as LINE, mark};
-use super::{CORNER, FILL, PActivity, PIN, square};
+use super::super::{GAP, ICON, INK as TEXT, ROW as LINE, person};
+use super::{CORNER, FACE, FILL, PActivity, PIN, SHARE, share, square};
+use crate::pui::core::letter::letter;
 use crate::pui::core::light::{edge, label, pane};
 use crate::pui::core::{PFit, PLight, PPaint, PPoint, PRect};
 use crate::pui::window::PWindow;
@@ -35,35 +36,36 @@ impl PActivity {
             (true, _) => {}
             (false, false) => paint.icon(&self.logo.icon, square(plan.head, chip), ink),
             (false, true) => {
-                let letter: String = name.chars().take(1).collect();
-                let middle = plan.head.center();
+                // An app with no mark of its own has its name's letter,
+                // drawn as every icon is.
                 label(paint, square(plan.head, chip), round, PLight::Strong, false, LIT);
-                paint.text(PPoint::new(middle.x - paint.measure(&letter) / 2.0, middle.y - line / 2.0), &letter, text);
+                paint.icon(&letter(name), square(plan.head, share(paint, SHARE, chip, icon)), text);
             }
         }
         for (rect, item) in &plan.item {
             let on = item.on || shown.is_some_and(|shown| shown.entry.slug == item.entry.slug) || item.deed.as_ref().is_some_and(|deed| window.shows(deed));
             match (on, over.is_some_and(|at| rect.contains(at))) {
                 (true, _) => label(paint, square(*rect, chip), round, PLight::Strong, false, LIT),
-                (false, true) => label(paint, square(*rect, chip), round, PLight::Rest, false, ""),
-                (false, false) => label(paint, square(*rect, chip), round, PLight::Soft, false, ""),
+                // At rest too a row stands on a ground that is seen:
+                // an icon without one looks as if it were missing.
+                (false, true) => label(paint, square(*rect, chip), round, PLight::Strong, false, ""),
+                (false, false) => label(paint, square(*rect, chip), round, PLight::Rest, false, ""),
             }
             // A row with a picture has it round, on its ground; one
-            // with neither picture nor icon the first letters of its
-            // name, as they are written; any other its icon.
-            let face = square(*rect, icon * 7.0 / 5.0);
+            // with neither picture nor icon the letter its name begins
+            // with, drawn as every icon is; any other its icon.
+            let face = square(*rect, share(paint, FACE, chip, icon * 7.0 / 5.0));
             match (&item.face, item.entry.icon.is_empty()) {
                 (Some((sheet, column, index)), _) => paint.picture(sheet, face, face.size.width / 2.0, PFit::Cell { column: *column, index: *index }),
-                (None, true) => {
-                    let letter = super::initial(&item.entry.label);
-                    paint.text(PPoint::new(rect.center().x - paint.measure(&letter) / 2.0, rect.center().y - line / 2.0), &letter, text);
-                }
-                (None, false) => paint.icon(&item.entry.icon, square(*rect, icon), ink),
+                (None, true) => paint.icon(&letter(&item.entry.label), square(*rect, share(paint, SHARE, chip, icon)), ink),
+                (None, false) => paint.icon(&item.entry.icon, square(*rect, share(paint, SHARE, chip, icon)), ink),
             }
         }
         if let Some(user) = &self.user {
-            // The user's mark is as large as the ground of an icon.
-            mark(&user.entry.label, square(plan.user, chip), paint);
+            // The user is their own picture, as large as a row's; with
+            // none, their mark, as large as the ground of an icon.
+            let side = user.face.as_ref().map_or(chip, |_| share(paint, FACE, chip, icon * 7.0 / 5.0));
+            person(user.face.as_ref(), &user.entry.label, square(plan.user, side), paint);
         }
         if let Some(shown) = shown {
             let (pin, room) = PActivity::part(side, paint.theme());

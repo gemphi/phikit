@@ -148,6 +148,10 @@ impl PView for Room {
         self.stream.tick() | self.present.tick()
     }
 
+    fn beat(&self) -> Option<u64> {
+        self.present.beat()
+    }
+
     /// A word for the room is the stream's: a picture to post.
     fn tell(&mut self, word: &str) -> bool {
         self.stream.tell(word)

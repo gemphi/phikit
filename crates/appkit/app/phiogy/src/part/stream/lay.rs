@@ -3,12 +3,13 @@
 //! foot what is being answered and the field a message is written in;
 //! between them the messages, scrolled with the wheel.
 
+use appkit::pui::block::{PBand, PTip};
 use appkit::pui::control::{PControl, inside};
 use appkit::pui::core::{PDraw, PLight, PPaint, PPoint, PRect, PView, light, show};
 
 use super::{Act, POST, SEND, Spot, Stream, UNANSWER};
 use appkit::pui::layout::PDry;
-use crate::part::{DIM, GAP, ICON, INK, LINE, RADIUS, ROW, fit, tool};
+use crate::part::{DIM, GAP, ICON, INK, LINE, RADIUS, ROW, fit};
 use crate::site::Message;
 
 impl PDraw for Stream {
@@ -97,16 +98,13 @@ impl Stream {
         if self.write.value().is_empty() {
             paint.text(origin.plus(frame.origin).plus(inside(paint, frame.size.height)), &fit(&text.fill("stream.write", "room", &label), frame.size.width - gap, paint), dim);
         }
-        // After the field: post a picture, then say what was written.
-        let mut left = origin.x + frame.origin.x + frame.size.width + gap / 2.0;
-        for (name, act) in [(POST, Act::Post), (SEND, Act::Send)] {
-            let rect = PRect::new(left, origin.y + frame.origin.y, row, row);
-            if let Some((icon, word)) = self.tool.of(name, false, text) {
-                tool::button(paint, rect, icon, Some(self.lit(&act, false)));
-                spot.push(Spot { rect, act, word: word.to_string() });
-            }
-            left += row + gap / 2.0;
-        }
+        // After the field: post a picture, then say what was written,
+        // the kit's band.
+        let list: Vec<(&str, &str, Act)> = [(POST, Act::Post), (SEND, Act::Send)].into_iter().filter_map(|(name, act)| self.tool.of(name, false, text).map(|(icon, word)| (icon, word, act))).collect();
+        let pill: Vec<(&str, &str, bool)> = list.iter().map(|(icon, ..)| (*icon, "", false)).collect();
+        let under = origin.y + frame.origin.y + (row - pill.high(paint)) / 2.0;
+        let rect = pill.draw(paint, PPoint::new(origin.x + frame.origin.x + frame.size.width + gap / 4.0, under));
+        spot.extend(rect.into_iter().zip(list).map(|(rect, (_, word, act))| Spot { rect, act, word: word.to_string() }));
         let mut high = row + gap;
         let answer = self.desk.now.answer.borrow().clone();
         if let Some(one) = all.iter().find(|one| !answer.is_empty() && one.id == answer) {
@@ -124,15 +122,6 @@ impl Stream {
             high += line + gap / 2.0;
         }
         high
-    }
-
-    /// How strong the ground of a control is: more under the pointer,
-    /// and when it is on.
-    pub(super) fn lit(&self, act: &Act, on: bool) -> PLight {
-        match (self.hand.borrow().as_ref() == Some(act), on) {
-            (true, _) | (_, true) => PLight::Strong,
-            (false, false) => PLight::Rest,
-        }
     }
 
     /// Draw the stream with that painter, and keep where things are.
@@ -203,7 +192,7 @@ impl Stream {
         // What the control under the pointer is called, by it.
         let hand = self.hand.borrow().clone();
         let said = hand.and_then(|act| spot.iter().find(|spot| spot.act == act).cloned());
-        said.into_iter().for_each(|spot| tool::say(paint, spot.rect, &spot.word, PRect { origin, size: self.frame.size }));
+        said.into_iter().for_each(|spot| _ = spot.word.tip(paint, spot.rect, PRect { origin, size: self.frame.size }));
         // Keep how long it is, for the wheel.
         let mut scroll = self.scroll.get();
         scroll.fit(next - begin + gap, body.size.height);

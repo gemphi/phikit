@@ -36,7 +36,6 @@ with another caller, [`doc/call-rtc.png`](doc/call-rtc.png).
 | `asset/` | files only Phiogy has: its mark. Its other icons and its face are the ones every app shares |
 | `script/logo.py` (`shape.py`, `sheet.py`) | draws the mark on the measures of Phiogy's face, from `data/logo.tsv` and the corner options of `data/logo-corner.tsv`, into `asset/icon/`, `doc/logo/`, `doc/logo.html` and `doc/logo-option.png` |
 | `script/line.mjs` | runs the Node line's own tests, unchanged, against this line |
-| `script/icon.mjs` | writes lucide's drawings as Phiogy's own icons, from the copy of lucide the web kit is built on |
 | `script/phiora.mjs` | starts the real Node Phiora and has the program say what it read: of Phiora, after an edit made in Phiora, of nobody, and of a Phiora that is closed; and write a message, which is then looked for on Phiora |
 | `script/peer.mjs` | the web's own two-Chrome call check with one Chrome replaced by this program, as a caller with no window or (`WINDOW=1`) as the window itself; each side measured |
 | `src/entity/` | what there is in a call: `room`, `caller`, `line` |

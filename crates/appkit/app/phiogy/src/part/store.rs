@@ -147,11 +147,11 @@ impl Desk {
     /// Whether the person likes a thing of a shop, by its place; and
     /// like it, or no more.
     pub fn liked(&self, place: &str) -> bool {
-        self.kept.flag(LIKE, &self.key(place)).unwrap_or(false)
+        appkit::pui::state::PState::has(self, &format!("{LIKE}/{}", self.key(place)))
     }
 
     pub fn fond(&self, place: &str, on: bool) {
-        self.kept.put(LIKE, &self.key(place), serde_json::json!(on));
+        appkit::pui::state::PState::set(self, &format!("{LIKE}/{}", self.key(place)), appkit::pui::state::flag(on));
     }
 
     pub fn stands(&self, shop: &str, product: &Product) -> &'static str {

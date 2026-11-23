@@ -1,14 +1,12 @@
 //! Controls: the small things a part is worked with, each an icon that
-//! says what it is called while the pointer is over it. Which controls
-//! a part has, the icon of each and the row of `data/text.tsv` that
-//! names it are a table: `data/tool.tsv` for the viewer,
-//! `data/act.tsv` for a room. A row whose name ends in `.on` is the
-//! same control once it is on.
+//! says what it is called while the pointer is over it (the kit's
+//! tip). Which controls a part has, the icon of each and the row of
+//! `data/text.tsv` that names it are a table: `data/tool.tsv` for the
+//! viewer, `data/act.tsv` for a room. A row whose name ends in `.on`
+//! is the same control once it is on.
 
-use appkit::pui::core::{PLight, PPaint, PPoint, PRect, light};
 use appkit::service::PTable;
 
-use super::{GAP, ICON, INK, LINE, RADIUS};
 use crate::data;
 
 /// How the name of a control that is on ends.
@@ -42,31 +40,6 @@ impl Tool {
     pub fn of<'a>(&'a self, name: &str, on: bool, text: &'a PTable) -> Option<(&'a str, &'a str)> {
         Some(format!("{name}{ON}")).filter(|_| on).and_then(|name| self.row(&name, text)).or_else(|| self.row(name, text))
     }
-}
-
-/// Draw a control: its icon in the middle of its place, on a ground of
-/// that strength when it has one.
-pub fn button(paint: &mut dyn PPaint, rect: PRect, icon: &str, light: Option<PLight>) {
-    let (size, ink, radius) = (paint.size(ICON), paint.color(INK), paint.size(RADIUS));
-    light.into_iter().for_each(|light| light::label(paint, rect, radius, light, false, ""));
-    paint.icon(icon, PRect::new(rect.center().x - size / 2.0, rect.center().y - size / 2.0, size, size), ink);
-}
-
-/// Say what a control is called, by it: under one in the upper half of
-/// `frame`, over one in the lower, and never outside the frame.
-pub fn say(paint: &mut dyn PPaint, at: PRect, word: &str, frame: PRect) {
-    if word.is_empty() {
-        return;
-    }
-    let (gap, line, ink, radius) = (paint.size(GAP), paint.size(LINE), paint.color(INK), paint.size(RADIUS));
-    let (wide, high) = (paint.measure(word) + gap, line + gap / 2.0);
-    let left = (at.center().x - wide / 2.0).clamp(frame.origin.x + gap / 2.0, (frame.origin.x + frame.size.width - gap / 2.0 - wide).max(frame.origin.x));
-    let top = match at.center().y < frame.center().y {
-        true => at.origin.y + at.size.height + gap / 4.0,
-        false => at.origin.y - gap / 4.0 - high,
-    };
-    light::surface(paint, PRect::new(left, top, wide, high), radius, PLight::Strong, "");
-    paint.text(PPoint::new(left + gap / 2.0, top + gap / 4.0), word, ink);
 }
 
 /// A number as a person reads it: its thousands apart, as the web

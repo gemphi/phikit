@@ -20,6 +20,7 @@ pub mod page;
 mod person;
 mod present;
 mod room;
+pub mod state;
 pub mod shop;
 mod status;
 mod store;

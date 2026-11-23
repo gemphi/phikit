@@ -13,17 +13,22 @@
 //! When a room was opened, and which are starred, are documents of the
 //! person's own (`data/keep.tsv`).
 
+use appkit::pui::block::PBand;
 use appkit::pui::core::{PPaint, PPoint, PRect};
 use appkit::service::PTable;
-use serde_json::{Value, json};
+use appkit::pui::state::{PState, flag};
 
-use super::super::{Desk, GAP, ROW, Rung};
+use super::super::state::CHOICE;
+use super::super::{Desk, GAP, LINE, Rung};
 use crate::{data, hour};
 
 /// What the chosen tab is kept under, and the tabs by their names.
 pub const TAB: &str = "guide";
 pub const RECENT: &str = "recent";
 pub const FAVORITE: &str = "favorite";
+/// The theme's token for how many hours ago a room was opened at most
+/// for it to be a recent one.
+pub const SPAN: &str = "guide.recent";
 /// The person's own documents: when each room was opened last, and
 /// the rooms they starred.
 pub const SEEN: &str = "seen";
@@ -36,38 +41,38 @@ impl Desk {
     /// none is.
     pub fn tabs(&self) -> (Vec<String>, String) {
         let all: Vec<String> = PTable::read(data::APP).get(TAB).split_whitespace().map(str::to_string).collect();
-        let chosen = Some(self.choice.get(TAB)).filter(|name| all.contains(name)).unwrap_or_default();
+        let chosen = Some(self.get(&format!("{CHOICE}/{TAB}"))).filter(|name| all.contains(name)).unwrap_or_default();
         (all, chosen)
     }
 
     /// Choose a tab; the chosen one again lets every room back.
     pub fn sift(&self, name: &str) {
         match self.tabs().1 == name {
-            true => self.choice.put(TAB, ""),
-            false => self.choice.put(TAB, name),
+            true => self.set(&format!("{CHOICE}/{TAB}"), ""),
+            false => self.set(&format!("{CHOICE}/{TAB}"), name),
         }
     }
 
     /// Keep that a room was opened now.
     pub fn saw(&self, room: &str) {
-        self.kept.put(SEEN, &self.key(room), json!(hour::moment() as f64));
+        self.set(&format!("{SEEN}/{}", self.key(room)), &(hour::moment() as f64).to_string());
     }
 
     /// Whether a room is a recent one: opened within the hours the
     /// app's data gives, or with something waiting in it.
     pub fn lately(&self, rung: &Rung) -> bool {
-        let span = PTable::read(data::APP).get(RECENT).parse::<f64>().unwrap_or_default() * HOUR;
-        let opened = self.kept.get(SEEN).get(self.key(&rung.id)).and_then(Value::as_f64);
+        let span = f64::from(self.size(SPAN)) * HOUR;
+        let opened = self.get(&format!("{SEEN}/{}", self.key(&rung.id))).parse::<f64>().ok();
         opened.is_some_and(|at| hour::moment() as f64 - at <= span) || rung.count.max(self.waiting(&rung.id)) > 0
     }
 
     /// Whether the person starred a room; and star it, or no more.
     pub fn starred(&self, room: &str) -> bool {
-        self.kept.flag(STAR, &self.key(room)).unwrap_or(false)
+        self.has(&format!("{STAR}/{}", self.key(room)))
     }
 
     pub fn star(&self, room: &str, on: bool) {
-        self.kept.put(STAR, &self.key(room), json!(on));
+        self.set(&format!("{STAR}/{}", self.key(room)), flag(on));
     }
 
     /// The rail as the chosen tab keeps it: every place with the rooms
@@ -88,24 +93,17 @@ impl Desk {
 impl super::Guide {
     /// How high the tabs over the rows are: a row and a little under it.
     pub(super) fn head(&self) -> f32 {
-        self.desk.size(ROW) + self.desk.size(GAP) / 4.0
+        self.desk.size(LINE) + self.desk.size(GAP) * 1.25
     }
 
-    /// Where each tab is, in a guide at that place: side by side over
-    /// its whole width, each as wide as its own word and its share of
-    /// the room that is left. Each with its name and what it reads.
-    pub(super) fn tabs(&self, paint: &dyn PPaint, origin: PPoint) -> Vec<(PRect, String, String)> {
-        let (gap, row) = (paint.size(GAP), paint.size(ROW));
-        let all: Vec<(String, String)> = self.desk.tabs().0.into_iter().map(|name| (self.desk.text.get(&format!("guide.tab.{name}")).to_string(), name)).collect();
-        let (count, apart) = (all.len().max(1) as f32, gap / 4.0);
-        let words: f32 = all.iter().map(|(said, _)| paint.measure(said)).sum();
-        let pad = ((self.frame.size.width - apart * (count + 1.0) - words) / count).max(0.0);
-        let mut left = origin.x + apart;
-        let place = |(said, name): (String, String)| {
-            let rect = PRect::new(left, origin.y, paint.measure(&said) + pad, row - gap / 4.0);
-            left += rect.size.width + apart;
-            (rect, name, said)
-        };
-        all.into_iter().map(place).collect()
+    /// Draw the tabs, the kit's group of pills, from a place: where
+    /// each stands, with its name.
+    pub(super) fn tabs(&self, paint: &mut dyn PPaint, origin: PPoint) -> Vec<(PRect, String)> {
+        let (all, chosen) = self.desk.tabs();
+        let said: Vec<&str> = all.iter().map(|name| self.desk.text.get(&format!("guide.tab.{name}"))).collect();
+        let pill: Vec<(&str, &str, bool)> = said.iter().zip(&all).map(|(said, name)| ("", *said, *name == chosen)).collect();
+        // In the list's own width, a quarter of a gap in from each side.
+        let apart = paint.size(GAP) / 4.0;
+        pill.draw_in(paint, PPoint::new(origin.x + apart, origin.y), self.frame.size.width - apart * 2.0).into_iter().zip(all).collect()
     }
 }

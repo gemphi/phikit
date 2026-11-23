@@ -35,6 +35,11 @@ pub const HEIGHT: &str = "window.height";
 /// app's assets.
 pub const FACE: &str = "text.face";
 pub const FILE: &str = "text.file";
+/// How many thousandths of a second pass before a window that only
+/// waits is looked at again.
+pub const BEAT: &str = "screen.beat";
+/// The shortest a beat is, in thousandths of a second: a frame.
+const FRAME: u64 = 16;
 
 /// A stage in a window.
 pub struct PScreen {
@@ -44,6 +49,9 @@ pub struct PScreen {
     glass: Option<bool>,
     /// The pictures it has shown.
     album: album::Album,
+    /// Whether a look after the theme's beat was asked for and has not
+    /// come yet.
+    resting: bool,
 }
 
 impl PScreen {
@@ -103,9 +111,36 @@ impl Render for PScreen {
         // What the parts asked for that only the system can do is done
         // now: every event that could ask is followed by a frame.
         self.stage.errand().into_iter().for_each(|deed| errand::run(deed, cx));
-        // While a view has more to come by itself, another frame follows.
-        if self.stage.tick() {
-            window.request_animation_frame();
+        // While a view has more to come by itself, another frame follows
+        // at once. One that only watches something outside is asked on
+        // the theme's beat whether that changed, and only then is the
+        // window drawn again: one such watch runs at a time.
+        match (self.stage.tick(), self.stage.beat() && !self.resting) {
+            (true, _) => window.request_animation_frame(),
+            (false, true) => {
+                self.resting = true;
+                self.stage.turned();
+                let pause = std::time::Duration::from_millis((look.size(BEAT).unwrap_or_default() as u64).max(FRAME));
+                cx.spawn(async move |screen, cx| {
+                    loop {
+                        cx.background_executor().timer(pause).await;
+                        let turned = screen.update(cx, |screen, cx| {
+                            let turned = screen.stage.turned();
+                            turned.then(|| {
+                                screen.resting = false;
+                                cx.notify();
+                            });
+                            turned
+                        });
+                        match turned {
+                            Ok(false) => {}
+                            _ => break,
+                        }
+                    }
+                })
+                .detach();
+            }
+            (false, false) => {}
         }
         self.stage.lay(size, PMode::of_width(size.width));
         let face = Type::of(look.as_ref());
@@ -181,7 +216,7 @@ pub fn run(stage: PStage, asset: impl PAsset + Send + Sync + 'static) {
             cx.new(|cx| {
                 let focus = cx.focus_handle();
                 window.focus(&focus, cx);
-                PScreen { stage, focus, glass: None, album: album::Album::of(film) }
+                PScreen { stage, focus, glass: None, album: album::Album::of(film), resting: false }
             })
         });
         // With no window there is nothing to run: say why, the whole of it,

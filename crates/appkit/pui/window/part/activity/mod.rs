@@ -24,7 +24,7 @@ pub use plan::PRail;
 
 use super::PCaption;
 use super::menu::{self, PItem, PSeat};
-use crate::pui::core::PRect;
+use crate::pui::core::{PPaint, PRect};
 use crate::pui::window::{PDeed, PEntry, PWindow};
 use crate::service::PTable;
 use crate::theme::PTheme;
@@ -66,6 +66,20 @@ fn line(text: &str) -> impl Iterator<Item = Vec<&str>> {
     said.map(|line| line.split('\t').map(str::trim).collect())
 }
 
+/// The theme's tokens for how much of its ground a thing in the bar
+/// fills: a row's icon, and a row's picture. Each is a share of the
+/// ground's side (0.667 leaves a sixth of it clear each side). A theme
+/// without one has an icon at its own size and a picture seven fifths
+/// of that, as before there was a word for it.
+pub const SHARE: &str = "activity.icon";
+pub const FACE: &str = "activity.face";
+
+/// How large something is on a ground of that side: the share of it the
+/// theme says under that token, in whole dots; or `plain` with no word.
+pub(super) fn share(paint: &dyn PPaint, token: &str, ground: f32, plain: f32) -> f32 {
+    paint.theme().size(token).map_or(plain, |share| (ground * share).round())
+}
+
 /// The square of that side in the middle of a rectangle.
 pub(super) fn square(rect: PRect, side: f32) -> PRect {
     PRect::new(rect.center().x - side / 2.0, rect.center().y - side / 2.0, side, side)
@@ -103,12 +117,12 @@ impl PActivity {
     }
 
     /// The same bar with the user at its foot. The user is a table: their
-    /// `name`, and the `modal` a press opens. A table without both gives
-    /// no user.
+    /// `name`, the `modal` a press opens, and their picture where they
+    /// have one (`face`). A table without the first two gives no user.
     pub fn with(self, user: &PTable) -> PActivity {
         let (name, modal) = (user.get("name"), user.get("modal"));
         let known = !name.is_empty() && !modal.is_empty();
-        let button = known.then(|| PItem { entry: PEntry::new("user", name, ""), deed: Some(PDeed::Open(modal.to_string())), seat: PSeat::Bottom, ..PItem::default() });
+        let button = known.then(|| PItem { entry: PEntry::new("user", name, ""), deed: Some(PDeed::Open(modal.to_string())), seat: PSeat::Bottom, face: super::picture(user), ..PItem::default() });
         PActivity { user: button, ..self }
     }
 
@@ -203,10 +217,4 @@ impl PActivity {
         let shown = self.shown(window, lying);
         shown.map(|shown| menu::room(&shown.group, PActivity::part(side, theme).1, theme)).unwrap_or_default()
     }
-}
-
-/// The initials of a name: the first letter of its first two words, as
-/// they are written.
-pub fn initial(name: &str) -> String {
-    name.split_whitespace().take(2).filter_map(|word| word.chars().next()).collect()
 }

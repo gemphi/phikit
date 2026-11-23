@@ -12,13 +12,13 @@
 
 use std::cell::{Cell, RefCell};
 
+use appkit::pui::block::{PBand, PDeck};
 use appkit::pui::core::{PDraw, PEvent, PLight, PPaint, PPoint, PRect, PView, light};
 use appkit::pui::layout::fold;
 
 use super::crowd;
-use super::join::ROUND;
 use super::present::BAR;
-use super::{DIM, Desk, GAP, INK, LINE, fit};
+use super::{DIM, Desk, GAP, LINE, fit};
 
 pub use super::crowd::Seat;
 
@@ -59,7 +59,7 @@ impl Voice {
                 true => text("call.tile.muted"),
                 false => text("voice.inroom"),
             };
-            Seat { id: member.map(|member| member.id.clone()).unwrap_or_default(), name: member.map_or(name, |member| member.name.clone()), said }
+            desk.seat(member.map_or("", |member| member.id.as_str()), member.map_or(name.as_str(), |member| member.name.as_str()), &said)
         });
         let live: Vec<Seat> = live.collect();
         // The room's people are kept by their names.
@@ -72,7 +72,7 @@ impl Voice {
                 true => text("call.tile.muted"),
                 false => member.state.clone(),
             };
-            Seat { id: member.id.clone(), name: member.name.clone(), said }
+            desk.seat(&member.id, &member.name, &said)
         });
         crowd.chain(live.clone()).collect()
     }
@@ -114,8 +114,7 @@ impl Voice {
 impl PDraw for Voice {
     fn draw(&self, paint: &mut dyn PPaint, origin: PPoint) {
         let Some(plate) = self.desk.plate(&self.desk.room()).filter(|plate| plate.voice && self.frame.size.height > 0.0) else { return self.spot.borrow_mut().clear() };
-        let (gap, line, round) = (paint.size(GAP), paint.size(LINE), paint.size(ROUND));
-        let (ink, dim) = (paint.color(INK), paint.color(DIM));
+        let (gap, line, dim) = (paint.size(GAP), paint.size(LINE), paint.color(DIM));
         let (start, full) = self.desk.column(self.frame.size.width);
         let (left, mut top, mut spot) = (origin.x + start, origin.y + gap, Vec::new());
         self.origin.set(origin);
@@ -126,8 +125,8 @@ impl PDraw for Voice {
         }
         // Who is in it: people as cards, the part every crowd is shown by.
         let seat = self.seat();
-        let (cards, end) = crowd::cards(&self.desk, paint, PPoint::new(left, top), full, &seat);
-        spot.extend(cards.into_iter().map(|(rect, id)| (rect, Press::Who(id))));
+        let (cards, end) = seat.draw(paint, PPoint::new(left, top), full);
+        spot.extend(crowd::whose(cards, &seat).into_iter().map(|(rect, id)| (rect, Press::Who(id))));
         top = match seat.is_empty() {
             true => {
                 paint.text(PPoint::new(left, top), self.desk.text.get("voice.empty"), dim);
@@ -145,18 +144,9 @@ impl PDraw for Voice {
             }
             top += bar + gap / 2.0;
         }
-        let mut next = left;
-        for (label, press, so) in self.pill() {
-            let rect = PRect::new(next, top, paint.measure(&label) + gap * 2.0, line + gap);
-            let strength = match so {
-                true => PLight::Strong,
-                false => PLight::Rest,
-            };
-            light::label(paint, rect, round, strength, false, "");
-            paint.text(PPoint::new(rect.origin.x + gap, rect.center().y - line / 2.0), &label, ink);
-            spot.push((rect, press));
-            next += rect.size.width + gap / 2.0;
-        }
+        let list = self.pill();
+        let pill: Vec<(&str, &str, bool)> = list.iter().map(|(label, _, so)| ("", label.as_str(), *so)).collect();
+        spot.extend(pill.draw(paint, PPoint::new(left, top)).into_iter().zip(list.iter().map(|(_, press, _)| press.clone())));
         top += line + gap + gap / 2.0;
         for (index, text) in fold(&self.said(), full, &|text| paint.measure(text)).iter().enumerate() {
             paint.text(PPoint::new(left, top + index as f32 * line), text, dim);

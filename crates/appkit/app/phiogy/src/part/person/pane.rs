@@ -3,6 +3,7 @@
 //! pictures they posted, in rows, a press on one opening it in the
 //! viewer.
 
+use appkit::pui::block::PFace;
 use appkit::pui::core::{PFit, PPaint, PPoint, PRect};
 
 use super::{ACROSS, Act, PANE, Person};
@@ -20,12 +21,12 @@ impl Person {
                 let list = self.linked(&one.id);
                 for id in &list {
                     let Some(other) = self.desk.site.member(id) else { continue };
-                    if let Some(cell) = self.desk.site.face(id) {
-                        paint.picture(&cell.sheet, PRect::new(at.x, top, line, line), line / 2.0, PFit::Cell { column: cell.column, index: cell.index });
-                    }
-                    paint.text(PPoint::new(at.x + line + gap / 2.0, top), &fit(&other.name, wide - line - gap / 2.0, paint), ink);
-                    spot.push((PRect::new(at.x, top, wide, line), Act::Open(id.clone())));
-                    top += line + gap / 4.0;
+                    // Each a row: their face on its ground, and their name.
+                    let cell = self.desk.site.face(id).map(|cell| (cell.sheet.as_str(), cell.column, cell.index));
+                    (cell, other.name.as_str()).face(paint, PRect::new(at.x + gap / 8.0, top + gap / 8.0, line, line));
+                    paint.text(PPoint::new(at.x + line + gap * 0.75, top + gap / 8.0), &fit(&other.name, wide - line - gap, paint), ink);
+                    spot.push((PRect::new(at.x, top, wide, line + gap / 4.0), Act::Open(id.clone())));
+                    top += line + gap / 2.0;
                 }
                 list.is_empty().then(|| none(paint, top));
             }

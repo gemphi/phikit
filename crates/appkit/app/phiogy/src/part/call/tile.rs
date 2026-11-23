@@ -9,10 +9,9 @@
 //! A tile says what it shows by name: a moving picture's name in the
 //! window's film (`peer::film`), or a person's face.
 
-use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect, light};
 use appkit::service::PTable;
 
-use crate::part::{Desk, INK, LINE};
+use crate::part::Desk;
 use crate::peer::{self, Seen};
 
 /// What a tile shows.
@@ -96,20 +95,5 @@ impl Desk {
         };
         let mine = Tile { shown, scene: false, name: String::new(), said, loud: false };
         std::iter::once(mine).chain(seen.own.screen.then(|| Tile::film(name("scene"), true))).collect()
-    }
-}
-
-/// A person's face, round: their picture where the app has one; else,
-/// for one who is not of the app's people, the first letter of what
-/// they call themself.
-pub fn face(desk: &Desk, paint: &mut dyn PPaint, rect: PRect, id: &str, name: &str) {
-    match desk.site.face(id) {
-        Some(cell) => paint.picture(&cell.sheet, rect, rect.size.width / 2.0, PFit::Cell { column: cell.column, index: cell.index }),
-        None => {
-            light::label(paint, rect, rect.size.width / 2.0, PLight::Rest, false, "");
-            let letter: String = name.chars().take(1).collect();
-            let at = PPoint::new(rect.center().x - paint.measure(&letter) / 2.0, rect.center().y - paint.size(LINE) / 2.0);
-            paint.text(at, &letter, paint.color(INK));
-        }
     }
 }

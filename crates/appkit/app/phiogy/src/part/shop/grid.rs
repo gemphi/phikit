@@ -4,6 +4,7 @@
 //! called; its price; and how it stands, which a press changes. Only
 //! the rows in sight are drawn: a page can hold hundreds of things.
 
+use appkit::pui::block::PPill;
 use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect, light};
 
 use super::{Act, Shopping, swatch};
@@ -32,16 +33,10 @@ impl Shopping {
     /// How a thing stands, as a pill at a place: lit when it is in the
     /// bag or owned. A press on it does the next thing.
     pub(super) fn stand(&self, paint: &mut dyn PPaint, at: PPoint, shop: &str, product: &Product, spot: &mut Vec<(PRect, Act)>) -> PRect {
-        let (gap, line, ink, radius) = (paint.size(GAP), paint.size(LINE), paint.color(INK), paint.size(RADIUS));
         let (place, stands) = (format!("{shop}/{}", product.id), self.desk.stands(shop, product));
-        let said = self.desk.text.get(stands);
-        let rect = PRect::new(at.x, at.y, paint.measure(said) + gap, line + gap / 2.0);
-        let lit = match stands {
-            "shop.put" | "shop.wear" => PLight::Rest,
-            _ => PLight::Strong,
-        };
-        light::label(paint, rect, radius, lit, false, "");
-        paint.text(PPoint::new(at.x + gap / 2.0, at.y + gap / 4.0), said, ink);
+        // The kit's pill, lit once the thing is in the bag or owned.
+        let on = !matches!(stands, "shop.put" | "shop.wear");
+        let rect = ("", self.desk.text.get(stands), on).draw(paint, at, false);
         spot.push((rect, Act::Pick(place)));
         rect
     }

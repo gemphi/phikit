@@ -1,0 +1,60 @@
+# More of the house's icons: the same table as `asset/icon.tsv`, which
+# says how a row is read. `script/icon.py` reads every `asset/icon*.tsv`.
+#
+# --- letters, as marks: for a host or a person with no picture
+#
+# Made as the p of Phiogy is: one filled body between 4 and 20, as high
+# as a small letter (7 to 19), its corners round (6) where the letter
+# turns and tight (1.5) where its stem stands; a tail where the letter
+# rises (to 3) or drops (to 22.5); and what is open in the letter cut
+# out of it, a pill for a closed bowl, a slot for an open one. `cut` is
+# a shape taken out of the fill before it, `hole` a pill taken out.
+letter-a	fill	4 7 6, 20 7 1.5, 20 19 1.5, 4 19 6
+letter-a	hole	8.5 10.5 6 5
+letter-b	fill	4 3 1.5, 9.5 3 1.5, 9.5 7 1, 20 7 6, 20 19 6, 4 19 1.5
+letter-b	hole	9.5 10.5 6 5
+letter-c	fill	4 7 6, 20 7 2, 20 19 2, 4 19 6
+letter-c	cut	20 10.5 0, 20 15.5 0, 10 15.5 2.5, 10 10.5 2.5
+letter-d	fill	4 7 6, 14.5 7 1, 14.5 3 1.5, 20 3 1.5, 20 19 1.5, 4 19 6
+letter-d	hole	8.5 10.5 6 5
+letter-e	fill	4 7 6, 20 7 6, 20 19 2, 4 19 6
+letter-e	hole	8.5 9.25 7 2.75
+letter-e	cut	20 14 0, 20 16 0, 11 16 1, 11 14 1
+letter-f	fill	7 3 5, 18 3 1.5, 18 7.5 1.5, 12.5 7.5 1, 12.5 9.5 0, 16 9.5 1, 16 13 1, 12.5 13 0, 12.5 19 1.5, 7 19 1.5, 7 13 0, 4 13 1, 4 9.5 1, 7 9.5 0
+letter-g	fill	4 7 6, 20 7 1.5, 20 23 4.5, 7 23 1, 7 20.75 1, 14.5 20.75 0.75, 14.5 19 0.75, 4 19 6
+letter-g	hole	8.5 10.5 6 5
+letter-h	fill	4 3 1.5, 9.5 3 1.5, 9.5 7 1, 20 7 6, 20 19 1.5, 4 19 1.5
+letter-h	cut	9.5 19 0, 9.5 12.5 2.5, 14.5 12.5 2.5, 14.5 19 0
+letter-i	fill	9.25 9 1.5, 14.75 9 1.5, 14.75 19 1.5, 9.25 19 1.5
+letter-i	pill	9.25 3 5.5 4
+letter-j	fill	10.5 9 1.5, 16 9 1.5, 16 23 5, 6 23 1.5, 6 19.5 1.5, 10.5 19.5 1
+letter-j	pill	10.5 3 5.5 4
+letter-k	fill	4 3 1.5, 9.5 3 1.5, 9.5 10.5 0.5, 14 7 1, 20 7 1, 13 13 0.5, 20 19 1, 14 19 1, 9.5 15.5 0.5, 9.5 19 1.5, 4 19 1.5
+letter-l	fill	8 3 1.5, 13.5 3 1.5, 13.5 14.5 1, 17.5 14.5 1.5, 17.5 19 1.5, 8 19 5
+letter-m	fill	2.5 7 1.5, 21.5 7 5, 21.5 19 1.5, 2.5 19 1.5
+letter-m	cut	7 19 0, 7 12 1.5, 10 12 1.5, 10 19 0
+letter-m	cut	14 19 0, 14 12 1.5, 17 12 1.5, 17 19 0
+letter-n	fill	4 7 1.5, 20 7 6, 20 19 1.5, 4 19 1.5
+letter-n	cut	9.5 19 0, 9.5 12.5 2.5, 14.5 12.5 2.5, 14.5 19 0
+letter-o	fill	4 7 6, 20 7 6, 20 19 6, 4 19 6
+letter-o	hole	9 10.5 6 5
+letter-p	fill	4 7 1.5, 20 7 6, 20 19 6, 9.5 19 1, 9.5 22.5 1.5, 4 22.5 1.5
+letter-p	hole	9.5 10.5 6 5
+letter-q	fill	4 7 6, 20 7 1.5, 20 22.5 1.5, 14.5 22.5 1.5, 14.5 19 1, 4 19 6
+letter-q	hole	8.5 10.5 6 5
+letter-r	fill	5 7 1.5, 18.5 7 5, 18.5 12 1.5, 10.5 12 2, 10.5 19 1.5, 5 19 1.5
+letter-s	fill	4 7 6, 20 7 1.5, 20 19 6, 4 19 1.5
+letter-s	cut	20 10 0, 20 12 0, 9.5 12 1, 9.5 10 1
+letter-s	cut	4 14 0, 14.5 14 1, 14.5 16 1, 4 16 0
+letter-t	fill	7 3.5 1.5, 12.5 3.5 1.5, 12.5 7.5 0, 17 7.5 1, 17 11 1, 12.5 11 0, 12.5 14.5 1, 18 14.5 1.5, 18 19 1.5, 7 19 5, 7 11 0, 4 11 1, 4 7.5 1, 7 7.5 0
+letter-u	fill	4 7 1.5, 20 7 1.5, 20 19 1.5, 4 19 6
+letter-u	cut	9.5 7 0, 14.5 7 0, 14.5 13.5 2.5, 9.5 13.5 2.5
+letter-v	fill	3.5 7 1, 9.5 7 1, 12 14 0.5, 14.5 7 1, 20.5 7 1, 14.5 19 1.5, 9.5 19 1.5
+letter-w	fill	1.5 7 0.8, 6 7 0.8, 8 14 0.4, 10 9 0.6, 14 9 0.6, 16 14 0.4, 18 7 0.8, 22.5 7 0.8, 18.5 19 1.2, 14 19 1.2, 12 13.5 0.4, 10 19 1.2, 5.5 19 1.2
+letter-x	fill	4 7 1, 9.5 7 1, 12 10.5 0.4, 14.5 7 1, 20 7 1, 15 13 0.4, 20 19 1, 14.5 19 1, 12 15.5 0.4, 9.5 19 1, 4 19 1, 9 13 0.4
+letter-y	fill	4 7 1.5, 9.5 7 1.5, 9.5 13.5 2.5, 14.5 13.5 2.5, 14.5 7 1.5, 20 7 1.5, 20 23 4.5, 7 23 1, 7 20.75 1, 14.5 20.75 0.75, 14.5 19 0.75, 4 19 6
+letter-z	fill	4 7 1.5, 20 7 1.5, 20 11 1, 11.5 15 0.5, 20 15 1.5, 20 19 1.5, 4 19 1.5, 4 15 1, 12.5 11 0.5, 4 11 1.5
+# One whose name begins with no letter drawn here: a round body and
+# its pill.
+letter-any	fill	5 5 7, 19 5 7, 19 19 7, 5 19 7
+letter-any	hole	10 8.5 4 7

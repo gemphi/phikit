@@ -9,13 +9,12 @@
 
 use std::cell::RefCell;
 
-use appkit::pui::core::{PLight, PPaint, PPoint, PRect, light};
+use appkit::pui::block::PPill;
+use appkit::pui::core::{PPaint, PPoint, PRect};
 
-use super::{Desk, GAP, INK, LINE};
+use super::{Desk, GAP};
 use crate::peer::{self, Call, Ring, Seen};
 
-/// The theme's token for how round a pill is.
-pub const ROUND: &str = "tab.radius";
 
 /// The pill of a room's call.
 pub struct Join {
@@ -32,13 +31,15 @@ impl Join {
     /// Draw the pill so that it ends at `end`, its middle at that
     /// height. How wide it is; nothing where nobody is calling.
     pub fn draw(&self, paint: &mut dyn PPaint, end: PPoint) -> f32 {
-        let (gap, line, round, ink) = (paint.size(GAP), paint.size(LINE), paint.size(ROUND), paint.color(INK));
+        let gap = paint.size(GAP);
         let label = self.desk.text.get("call.join").to_string();
-        let rect = PRect::new(end.x - paint.measure(&label) - gap * 2.0, end.y - (line + gap) / 2.0, paint.measure(&label) + gap * 2.0, line + gap);
+        // The kit's pill, lit: it is what to press now.
+        let pill = ("", label.as_str(), true);
+        let size = pill.size(paint);
+        let rect = PRect::new(end.x - size.width, end.y - size.height / 2.0, size.width, size.height);
         let shown = self.desk.ringing().map(|_| rect);
         if shown.is_some() {
-            light::label(paint, rect, round, PLight::Strong, false, "");
-            paint.text(PPoint::new(rect.origin.x + gap, rect.center().y - line / 2.0), &label, ink);
+            pill.draw(paint, rect.origin, false);
         }
         *self.spot.borrow_mut() = shown;
         shown.map_or(0.0, |rect| rect.size.width + gap / 2.0)

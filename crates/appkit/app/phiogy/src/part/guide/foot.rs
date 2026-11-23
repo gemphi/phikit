@@ -13,9 +13,10 @@
 
 use std::cell::{Cell, RefCell};
 
+use appkit::pui::block::PBand;
 use appkit::pui::core::{PLight, PPaint, PPoint, PRect, light};
 
-use super::super::{DIM, Desk, GAP, ICON, INK, LINE, RADIUS, ROW, Tool, fit, tool};
+use super::super::{DIM, Desk, GAP, ICON, INK, LINE, RADIUS, ROW, Tool, fit};
 use crate::data;
 
 /// The rows of `data/act.tsv` the foot draws: the room it is of, the
@@ -43,7 +44,7 @@ impl Foot {
     /// How high its ground is: the room's row, and its controls with a
     /// little under them.
     fn ground(&self) -> f32 {
-        self.desk.size(ROW) + self.desk.size(LINE) + self.desk.size(GAP) * 0.75
+        self.desk.size(ROW) + self.desk.size(LINE) + self.desk.size(GAP) * 1.25
     }
 
     /// How high it is: its ground and the room over it; nothing with
@@ -64,8 +65,13 @@ impl Foot {
         let high = self.ground();
         let ground = PRect::new(rect.origin.x + gap / 2.0, rect.origin.y + rect.size.height - high, rect.size.width - gap, high);
         light::label(paint, ground, radius, PLight::Rest, true, "");
-        // Over: the room, its mark and its name.
+        // Its tools: the microphone, the others' sound and the way out,
+        // the kit's band; and what the one under the pointer is called.
         let room = PRect::new(ground.origin.x, ground.origin.y, ground.size.width, row);
+        let list: Vec<(&'static str, &str, &str, bool)> = [(HUSH, seen.quiet), (DEAF, seen.own.deaf), (LEAVE, false)].into_iter().filter_map(|(name, on)| self.tool.of(name, on, &self.desk.text).map(|(icon, word)| (name, icon, word, on))).collect();
+        let pill: Vec<(&str, &str, bool)> = list.iter().map(|(_, icon, _, on)| (*icon, "", *on)).collect();
+        let said = list.iter().find(|(name, ..)| self.over.get() == Some(*name)).map(|(_, _, word, _)| word.to_string());
+        // Over them: the room, its mark and its name, or that word.
         let left = match self.tool.of(WITHIN, false, &self.desk.text) {
             Some((name, _)) => {
                 paint.icon(name, PRect::new(room.origin.x + gap / 2.0, room.center().y - icon / 2.0, icon, icon), ink);
@@ -73,31 +79,12 @@ impl Foot {
             }
             None => room.origin.x + gap / 2.0,
         };
-        paint.text(PPoint::new(left, room.center().y - line / 2.0), &fit(&label, room.origin.x + room.size.width - left - gap / 2.0, paint), ink);
-        // Under, from the right: the way out, the others' sound, the
-        // microphone; and what the one under the pointer is called.
-        let size = line + gap / 2.0;
-        let (mut right, mut spot, mut said) = (ground.origin.x + ground.size.width - gap / 4.0, Vec::new(), String::new());
-        for (name, on) in [(LEAVE, false), (DEAF, seen.own.deaf), (HUSH, seen.quiet)] {
-            let Some((icon, word)) = self.tool.of(name, on, &self.desk.text) else { continue };
-            let place = PRect::new(right - size, room.origin.y + row, size, size);
-            let over = self.over.get() == Some(name);
-            let light = match (on, over) {
-                (true, _) => Some(PLight::Strong),
-                (false, true) => Some(PLight::Rest),
-                (false, false) => Some(PLight::Soft),
-            };
-            tool::button(paint, place, icon, light);
-            if over {
-                said = word.to_string();
-            }
-            spot.push((place, name));
-            right = place.origin.x - gap / 8.0;
-        }
-        let wide = right - ground.origin.x - gap / 2.0;
-        if !said.is_empty() && wide > 0.0 {
-            paint.text(PPoint::new(ground.origin.x + gap / 2.0, room.origin.y + row + (size - line) / 2.0), &fit(&said, wide, paint), dim);
-        }
+        let (words, color) = match said {
+            Some(said) => (said, dim),
+            None => (label, ink),
+        };
+        paint.text(PPoint::new(left, room.center().y - line / 2.0), &fit(&words, room.origin.x + room.size.width - left - gap / 2.0, paint), color);
+        let mut spot: Vec<(PRect, &'static str)> = pill.draw_end(paint, PPoint::new(ground.origin.x + ground.size.width - gap / 4.0, room.origin.y + row)).into_iter().zip(list.iter().map(|(name, ..)| *name)).collect();
         spot.push((room, WITHIN));
         *self.spot.borrow_mut() = spot;
     }

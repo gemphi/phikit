@@ -34,6 +34,15 @@ impl<A> Deed<A> {
     pub fn icon(icon: &str, label: &str, act: A) -> Deed<A> {
         Deed { label: label.to_string(), icon: icon.to_string(), on: false, act }
     }
+
+    /// The pill it is drawn as: its icon alone where it has one, and
+    /// else its words.
+    pub fn pill(&self) -> (&str, &str, bool) {
+        match self.icon.is_empty() {
+            true => ("", self.label.as_str(), self.on),
+            false => (self.icon.as_str(), "", self.on),
+        }
+    }
 }
 
 /// One thing of a page, from its top down.

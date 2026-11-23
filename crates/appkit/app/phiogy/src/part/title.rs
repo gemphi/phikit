@@ -8,9 +8,9 @@ use appkit::pui::core::{PDraw, PEvent, PFit, PPaint, PPoint, PRect, PSize, PView
 
 use std::cell::{Cell, RefCell};
 
-use appkit::pui::core::{PLight, light};
+use appkit::pui::block::PBand;
 
-use super::{DIM, Desk, GAP, ICON, INK, Join, LINE, RADIUS, Tool, fit, tool};
+use super::{DIM, Desk, GAP, ICON, INK, Join, LINE, Tool, fit};
 use crate::data;
 
 /// The theme's tokens for the line under the title.
@@ -75,35 +75,17 @@ impl Title {
     /// its height. How wide they are together, and what the one under
     /// the pointer is called.
     fn tools(&self, paint: &mut dyn PPaint, end: PPoint) -> (f32, String) {
-        let (gap, line) = (paint.size(GAP), paint.size(LINE));
-        let (mut spot, mut right, mut said) = (Vec::new(), end.x, String::new());
-        // From the right; a call is begun only where one can be.
-        let call = [VIDEO, CALL].into_iter().filter(|_| self.desk.callable());
-        let list: Vec<&'static str> = [FAVE, PINS, FIND].into_iter().chain(call).filter(|name| self.tool.of(name, false, &self.desk.text).is_some()).collect();
-        // The tools belong together: one ground under them all.
-        let (count, radius) = (list.len() as f32, paint.size(RADIUS));
-        let wide = count * (line + gap) + (count - 1.0).max(0.0) * gap / 4.0;
-        light::label(paint, PRect::new(end.x - wide - gap / 4.0, end.y - (line + gap) / 2.0 - gap / 8.0, wide + gap / 2.0, line + gap * 1.25), radius, PLight::Rest, true, "");
-        for name in list {
-            let on = self.on(name);
-            let Some((icon, word)) = self.tool.of(name, on, &self.desk.text) else { continue };
-            let rect = PRect::new(right - line - gap, end.y - (line + gap) / 2.0, line + gap, line + gap);
-            let over = self.over.get() == Some(name);
-            let light = match (on, over) {
-                (true, _) => Some(PLight::Strong),
-                (false, true) => Some(PLight::Rest),
-                // At rest a tool stands on the ground of them all.
-                (false, false) => None,
-            };
-            tool::button(paint, rect, icon, light);
-            if over {
-                said = word.to_string();
-            }
-            spot.push((rect, name));
-            right = rect.origin.x - gap / 4.0;
-        }
-        *self.spot.borrow_mut() = spot;
-        (end.x - right, said)
+        let text = &self.desk.text;
+        // In reading order; a call is begun only where one can be.
+        let call = [CALL, VIDEO].into_iter().filter(|_| self.desk.callable());
+        let list: Vec<(&'static str, &str, &str, bool)> = call.chain([FIND, PINS, FAVE]).filter_map(|name| self.tool.of(name, self.on(name), text).map(|(icon, word)| (name, icon, word, self.on(name)))).collect();
+        // The tools belong together: the kit's group, on one ground.
+        let pill: Vec<(&str, &str, bool)> = list.iter().map(|(_, icon, _, on)| (*icon, "", *on)).collect();
+        let high = pill.high(paint);
+        let rect = pill.draw_end(paint, PPoint::new(end.x, end.y - high / 2.0));
+        let said = list.iter().find(|(name, ..)| self.over.get() == Some(*name)).map(|(_, _, word, _)| word.to_string()).unwrap_or_default();
+        *self.spot.borrow_mut() = rect.into_iter().zip(list.iter().map(|(name, ..)| *name)).collect();
+        (pill.span(paint), said)
     }
 }
 

@@ -8,13 +8,13 @@
 //! other colours, every one, and more like it from the same page of
 //! the menu. Whatever is under the pointer is lit.
 
+use appkit::pui::block::{PBand, PFacts, PPill};
 use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect, light};
 use appkit::pui::layout::wrap;
 use appkit::service::PTable;
 
 use super::{Act, Shopping};
 use crate::data;
-use crate::part::title::{RULE, WIDTH};
 use crate::part::{DIM, GAP, INK, LINE, RADIUS, fit};
 use crate::site::{Product, Shop};
 
@@ -56,14 +56,9 @@ impl Shopping {
         let (left, wide, text) = (at.origin.x, at.size.width, &self.desk.text);
         let on = shop.shelf.iter().find(|shelf| shelf.at.contains(&place));
         // The way back: the shop, then the page of its menu it is on.
-        let mut across = left;
-        for (label, page) in [Some((shop.label.as_str(), shop.id.clone())), on.map(|shelf| (shelf.label.as_str(), shelf.id.clone()))].into_iter().flatten() {
-            let rect = PRect::new(across, at.origin.y, paint.measure(label) + gap, line + gap / 2.0);
-            light::label(paint, rect, radius, PLight::Rest, false, "");
-            paint.text(PPoint::new(across + gap / 2.0, at.origin.y + gap / 4.0), label, ink);
-            spot.push((rect, Act::Go(page)));
-            across += rect.size.width + gap / 4.0;
-        }
+        let crumb: Vec<(&str, String)> = [Some((shop.label.as_str(), shop.id.clone())), on.map(|shelf| (shelf.label.as_str(), shelf.id.clone()))].into_iter().flatten().collect();
+        let pill: Vec<(&str, &str, bool)> = crumb.iter().map(|(label, _)| ("", *label, false)).collect();
+        spot.extend(pill.draw(paint, PPoint::new(left, at.origin.y)).into_iter().zip(crumb.into_iter().map(|(_, page)| Act::Go(page))));
         let mut top = at.origin.y + line + gap * 1.5;
         // Wide, the page is two equal columns, as the web's is: the
         // picture and its views, and beside them the words. Narrow,
@@ -117,14 +112,7 @@ impl Shopping {
             true => text.get("shop.liked"),
             false => text.get("shop.like"),
         };
-        let like = PRect::new(stand.origin.x + stand.size.width + gap / 4.0, stand.origin.y, paint.measure(said) + gap, stand.size.height);
-        let lit = match (liked, self.over(like)) {
-            (true, _) => PLight::Strong,
-            (false, true) => PLight::Rest,
-            (false, false) => PLight::Soft,
-        };
-        light::label(paint, like, radius, lit, false, "");
-        paint.text(PPoint::new(like.origin.x + gap / 2.0, like.origin.y + gap / 4.0), said, ink);
+        let like = ("", said, liked).draw(paint, PPoint::new(stand.origin.x + stand.size.width + gap / 4.0, stand.origin.y), false);
         spot.push((like, Act::Like(own)));
         down = stand.origin.y + line + gap;
         for said in wrap(&one.body, room, &|text| paint.measure(text)).into_iter().filter(|said| !said.is_empty()) {
@@ -132,16 +120,8 @@ impl Shopping {
             down += line;
         }
         down += gap / 2.0;
-        // Its facts, a row each: what it is at the left, its value at
-        // the right, a line under it.
-        let (rule, ruled) = (paint.size(WIDTH), paint.color(RULE));
-        for (name, value) in &one.field {
-            paint.text(PPoint::new(words.x, down + gap / 4.0), name, dim);
-            let value = fit(value, (room - paint.measure(name) - gap).max(0.0), paint);
-            paint.text(PPoint::new(words.x + room - paint.measure(&value), down + gap / 4.0), &value, ink);
-            down += line + gap / 2.0;
-            paint.fill(PRect::new(words.x, down - rule, room, rule), ruled);
-        }
+        // Its facts: the kit's table, a row each.
+        down = one.field.table(paint, PPoint::new(words.x, down), room);
         top = down.max(under) + gap;
         // The same thing in its other colours: every one of them, in
         // rows, a press on one going to it.

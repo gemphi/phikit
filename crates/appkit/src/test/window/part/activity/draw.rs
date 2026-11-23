@@ -1,6 +1,6 @@
 use super::{BAR, LOOK, SIDE, USER, bar, picked};
 use crate::pui::core::*;
-use crate::pui::window::part::initial;
+use crate::pui::core::letter::letter;
 use crate::pui::window::*;
 use crate::service::PTable;
 use crate::test::window::window;
@@ -21,22 +21,25 @@ fn it_draws_the_mark_its_icons_the_user_and_the_menu_shown_under_the_app_s_name(
     bar().draw(BAR, SIDE, &picked("layout"), None, &mut sheet);
     // The bar's icons, the shape the user's mark stands on, the button
     // that puts the menu away, the menu's.
-    assert_eq!(icon(&sheet), ["grid", "palette", "box", "book", "soft-fill", "panel-left", "plus", "folder", "settings"]);
-    // With no logo yet the mark is the first letter of the app's name.
-    assert_eq!(sheet.text_list(), ["B", "AL", "Book", "New", "Open", "Preferences"]);
+    assert_eq!(icon(&sheet), ["letter-b", "grid", "palette", "box", "book", "soft-fill", "letter-a", "panel-left", "plus", "folder", "settings"]);
+    // With no logo yet the mark is the letter the app's name begins
+    // with, and the user's is theirs: both drawn, neither set in type.
+    assert_eq!(sheet.text_list(), ["Book", "New", "Open", "Preferences"]);
     // With no menu shown there is the bar alone.
     let mut alone = PSheet::new(&look);
     bar().draw(BAR, PRect::default(), &picked(""), None, &mut alone);
-    assert_eq!((icon(&alone), alone.text_list()), (["grid", "palette", "box", "book", "soft-fill"].map(str::to_string).to_vec(), vec!["B", "AL"]));
+    assert_eq!((icon(&alone), alone.text_list()), (["letter-b", "grid", "palette", "box", "book", "soft-fill", "letter-a"].map(str::to_string).to_vec(), Vec::<&str>::new()));
     // A mark with an icon draws it in place of the letter; lying there
     // is no mark at all.
     let mut logo = PSheet::new(&look);
     PActivity::read("book\tBook\tfeather\thead\n").with(&PTable::read(USER)).draw(BAR, PRect::default(), &window(), None, &mut logo);
-    assert_eq!((icon(&logo), logo.text_list()), (vec!["feather".to_string(), "soft-fill".to_string()], vec!["AL"]));
+    assert_eq!((icon(&logo), logo.text_list()), (vec!["feather".to_string(), "soft-fill".to_string(), "letter-a".to_string()], Vec::<&str>::new()));
     let mut lying = PSheet::new(&look);
     bar().draw(PRect::new(0.0, 550.0, 400.0, 50.0), PRect::default(), &window(), None, &mut lying);
-    assert_eq!(lying.text_list(), ["AL"]);
-    assert_eq!((initial("ada"), initial("Ada Byron King")), ("a".to_string(), "AB".to_string()));
+    assert!(lying.text_list().is_empty() && icon(&lying).contains(&"letter-a".to_string()));
+    // A name has the letter it begins with, small or capital alike; one
+    // that begins with no letter has the mark for any.
+    assert_eq!((letter("ada"), letter("Ada Byron King"), letter("3d")), ("letter-a".to_string(), "letter-a".to_string(), "letter-any".to_string()));
 }
 
 #[test]
@@ -55,9 +58,9 @@ fn in_a_theme_with_light_the_bar_and_its_menu_are_one_pane_lit_toward_the_page_a
     // Its light is nothing at the window's edge and a shade at rest
     // toward the page. What stands on it runs the other way: the mark and
     // the row whose menu is shown at full strength, the other rows at the
-    // faintest, each a chip 37.5 square in the middle of its cell.
+    // light of rest, each a chip 37.5 square in the middle of its cell.
     let chip = |top: f32, from: f32| (PRect::new(6.25, top, 37.5, 37.5), from, 0.0, 90.0);
-    assert_eq!(lit[..6], [(whole, 0.0, 0.25, 90.0), chip(6.25, 0.5), chip(51.25, 0.5), chip(91.25, 0.125), chip(281.25, 0.125), chip(511.25, 0.125)]);
+    assert_eq!(lit[..6], [(whole, 0.0, 0.25, 90.0), chip(6.25, 0.5), chip(51.25, 0.5), chip(91.25, 0.25), chip(281.25, 0.25), chip(511.25, 0.25)]);
     // The user's mark is no light of its own but Phi-Soft's shape, as
     // large as a chip, in the light's colour at full strength; then
     // the menu's three groups.

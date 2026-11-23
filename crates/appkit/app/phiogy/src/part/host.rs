@@ -22,6 +22,9 @@ pub const IN: &str = "host";
 pub const MADE: &str = "made";
 /// The word a row of the bar tells to go to a host: its id follows.
 pub const GO: &str = "host ";
+/// The row of `data/site.tsv` that lists the web's icons for a kind of
+/// host, which are not a host's own mark.
+pub const KIND: &str = "host.kind";
 
 /// A number written with the ten digits and the twenty-six letters,
 /// as the web writes the moment a host was made.
@@ -53,10 +56,13 @@ impl Desk {
         let stands = |(index, venue): &(usize, &Venue)| (*index < site.extra.nav || self.joined(venue)) && venue.id != site.extra.direct;
         let own = site.venue.iter().enumerate().filter(stands).map(|(_, venue)| venue.clone());
         // A host the person made has no mark of its own: its row
-        // shows the first letters of its name.
+        // shows the letter of its name, drawn.
         let made = self.made().into_iter().map(|venue| Venue { icon: String::new(), ..venue });
+        // An icon that says only what kind a host is, is not its own:
+        // such a host shows the letter of its name, as one made does.
+        let kind: Vec<String> = PTable::read(data::SITE).get(KIND).split_whitespace().map(str::to_string).collect();
         own.chain(made).filter(|venue| !venue.plate.is_empty()).map(|venue| {
-            let icon = Some(venue.icon.as_str()).filter(|icon| !icon.is_empty()).map(|icon| self.icon(icon)).unwrap_or_default();
+            let icon = Some(venue.icon.as_str()).filter(|icon| !icon.is_empty() && !kind.iter().any(|kind| kind == icon)).map(|icon| self.icon(icon)).unwrap_or_default();
             let entry = PEntry::new(&format!("{GO}{}", venue.id), &venue.label, icon);
             let face = venue.mark.as_ref().map(|face| (face.sheet.clone(), face.column, face.index));
             let on = venue.plate.iter().any(|plate| plate.id == open);

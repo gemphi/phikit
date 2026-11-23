@@ -1,7 +1,7 @@
 use super::activity::{LOOK, bar, picked};
 use crate::pui::core::*;
 use crate::pui::window::*;
-use crate::theme::PLook;
+use crate::theme::{PLook, PTheme};
 
 const SIZE: PSize = PSize { width: 800.0, height: 600.0 };
 
@@ -77,7 +77,7 @@ fn it_draws_the_mark_the_name_and_the_buttons_the_pin_under_the_pointer_and_the_
     // With no logo yet the mark is the first letter of the app's name;
     // the name starts a gap inside the menu's cell, on the caption's
     // middle line.
-    assert_eq!((sheet.text_list(), icon(&sheet)), (vec!["B", "Book"], ["x", "square", "minus"].map(str::to_string).to_vec()));
+    assert_eq!((sheet.text_list(), icon(&sheet)), (vec!["Book"], ["letter-b", "x", "square", "minus"].map(str::to_string).to_vec()));
     assert!(sheet.mark.contains(&PMark::Text { at: PPoint::new(60.0, 10.0), text: "Book".to_string(), color: PColor::default() }));
     // With the pointer over the mark, the pin stands in its place, in
     // the middle of the mark's cell.
@@ -89,14 +89,14 @@ fn it_draws_the_mark_the_name_and_the_buttons_the_pin_under_the_pointer_and_the_
     // button of their own, and their first row is 5 under the caption.
     let mut under = PSheet::new(&look);
     bar().draw(laid.activity, laid.menu, &window, None, &mut under);
-    assert_eq!((icon(&under), under.text_list()), (["grid", "palette", "box", "book", "soft-fill", "plus", "folder", "settings"].map(str::to_string).to_vec(), vec!["AL", "New", "Open", "Preferences"]));
+    assert_eq!((icon(&under), under.text_list()), (["grid", "palette", "box", "book", "soft-fill", "letter-a", "plus", "folder", "settings"].map(str::to_string).to_vec(), vec!["New", "Open", "Preferences"]));
     assert_eq!(bar().spot(laid.activity, laid.menu, &window, &look)[0], (PRect::new(0.0, 45.0, 50.0, 40.0), PDeed::Fold));
     // Put away, the name goes, and under the pointer the pin is the
     // narrow one; under the system's bar there are no buttons.
     assert!(window.apply(&PDeed::Fold));
     let mut shut = PSheet::new(&look);
     PCaption::default().draw(&frame(&window, PMode::Desktop, &look), &bar(), &window, &mut shut);
-    assert_eq!((shut.text_list(), icon(&shut)), (vec!["B"], Vec::<String>::new()));
+    assert_eq!((shut.text_list(), icon(&shut)), (Vec::<&str>::new(), vec!["letter-b".to_string()]));
     let mut shut = PSheet::new(&look);
     PCaption { bare: false, over: true }.draw(&frame(&window, PMode::Desktop, &look), &bar(), &window, &mut shut);
     assert_eq!((shut.text_list(), icon(&shut)), (Vec::<&str>::new(), vec!["pin-shut".to_string()]));
@@ -104,4 +104,28 @@ fn it_draws_the_mark_the_name_and_the_buttons_the_pin_under_the_pointer_and_the_
     let (plain, mut none) = (PLook::read(LOOK), PSheet::new(&look));
     PCaption::default().draw(&frame(&window, PMode::Desktop, &plain), &bar(), &window, &mut none);
     assert!(none.mark.is_empty());
+}
+
+#[test]
+fn the_app_s_mark_is_as_large_as_the_theme_says_and_as_an_icon_without() {
+    let window = picked("layout");
+    let mut bar = bar();
+    bar.logo.icon = "book".to_string();
+    let mark = |look: &PLook| {
+        let mut sheet = PSheet::new(look);
+        PCaption { bare: true, over: false }.draw(&frame(&window, PMode::Desktop, look), &bar, &window, &mut sheet);
+        sheet.mark.iter().find_map(|mark| match mark {
+            PMark::Icon { name, rect, .. } if name == "book" => Some(*rect),
+            _ => None,
+        })
+    };
+    // Without a word from the theme, an icon's size, in the middle of its cell.
+    assert_eq!(mark(&look()), Some(PRect::new(15.0, 10.0, 20.0, 20.0)));
+    // With one, that share of its ground's side, in whole dots, about
+    // the same middle.
+    let large = PLook::read(&format!("{LOOK}size\tcaption.height\t40\nsize\tcaption.mark\t0.8\n"));
+    let ground = large.size("activity.row").unwrap_or_default() - large.size("gap").unwrap_or_default() / 4.0;
+    let side = (ground.min(40.0) * 0.8).round();
+    assert!(side > 20.0, "{side}");
+    assert_eq!(mark(&large), Some(PRect::new(25.0 - side / 2.0, 20.0 - side / 2.0, side, side)));
 }

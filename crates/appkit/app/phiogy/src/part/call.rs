@@ -15,15 +15,15 @@ mod tile;
 
 use std::cell::{Cell, RefCell};
 
+use appkit::pui::block::{PBand, PFace};
 use appkit::pui::core::{PDraw, PEvent, PFit, PLight, PPaint, PPoint, PRect, PView, light};
 use appkit::pui::layout::fold;
 use appkit::service::PTable;
 
-use super::join::ROUND;
 use super::present::BAR;
 use super::{DIM, Desk, GAP, INK, LINE, RADIUS, fit};
 use crate::data;
-pub use tile::{Shown, Tile, face};
+pub use tile::{Shown, Tile};
 
 /// The theme's tokens: how wide a camera's tile and a screen's are at
 /// most, how high each is for its width, how large a face is, the most
@@ -105,7 +105,7 @@ impl PDraw for Calling {
     fn draw(&self, paint: &mut dyn PPaint, origin: PPoint) {
         let tile = self.tile();
         let Some(seen) = self.desk.calling().filter(|_| self.frame.size.height > 0.0) else { return self.spot.borrow_mut().clear() };
-        let (gap, line, radius, round) = (paint.size(GAP), paint.size(LINE), paint.size(RADIUS), paint.size(ROUND));
+        let (gap, line, radius) = (paint.size(GAP), paint.size(LINE), paint.size(RADIUS));
         let (ink, dim) = (paint.color(INK), paint.color(DIM));
         let wide = self.frame.size.width;
         self.origin.set(origin);
@@ -131,7 +131,7 @@ impl PDraw for Calling {
                     light::label(paint, rect, radius, PLight::Rest, false, "");
                     paint.picture(name, rect, radius, PFit::Cover);
                 }
-                Shown::Face(id, name) => face(&self.desk, paint, rect, id, name),
+                Shown::Face(id, name) => (self.desk.cell(id), name.as_str()).face(paint, rect),
             }
             let under = [(&one.name, ink), (&one.said, dim)];
             for (index, (said, color)) in under.into_iter().filter(|(said, _)| !said.is_empty()).enumerate() {
@@ -148,26 +148,11 @@ impl PDraw for Calling {
             light::label(paint, PRect::new(left, next, loud, bar), bar / 2.0, PLight::Strong, false, "");
         }
         next += bar + gap / 2.0;
-        // Its buttons, from the left, a row folding where the next
-        // does not fit.
-        let (mut spot, mut at, mut rows) = (Vec::new(), left, 1.0);
-        for (label, press, so) in self.pill() {
-            let width = paint.measure(&label) + gap * 2.0;
-            if at > left && at + width > left + inside {
-                (at, next, rows) = (left, next + line + gap + gap / 2.0, rows + 1.0);
-            }
-            let rect = PRect::new(at, next, width, line + gap);
-            let strength = match so {
-                true => PLight::Strong,
-                false => PLight::Rest,
-            };
-            light::label(paint, rect, round, strength, false, "");
-            paint.text(PPoint::new(rect.origin.x + gap, rect.center().y - line / 2.0), &label, ink);
-            spot.push((rect, press));
-            at += rect.size.width + gap / 2.0;
-        }
-        *self.spot.borrow_mut() = spot;
-        self.row.set(rows);
+        // Its buttons: the kit's band, tightened to the room it has.
+        let list = self.pill();
+        let pill: Vec<(&str, &str, bool)> = list.iter().map(|(label, _, so)| ("", label.as_str(), *so)).collect();
+        *self.spot.borrow_mut() = pill.draw_in(paint, PPoint::new(left, next), inside).into_iter().zip(list.iter().map(|(_, press, _)| *press)).collect();
+        self.row.set(1.0);
         next += line + gap + gap / 2.0;
         // What it says is broken to fit; the next frame makes room for
         // as many lines as it took.

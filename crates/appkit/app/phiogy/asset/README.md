@@ -3,28 +3,17 @@
 Files only Phiogy has. A file here is found before one of the same path
 in `crates/appkit/asset`, which every app shares.
 
-Its icons (`chat`, `globe`, `layout-grid`, `home`, `user`, `mic`, `eye`,
-`grid`, `volume`, `box`, `check-circle`) and its typeface are the shared
-ones. `data/icon.tsv` says which shared icon each of the web Phiogy's
-icons is drawn with. Its own are its mark, three of the viewer's
-tools, and the icons of a room's controls and marks (`reply`,
-`heart`, `pin`, `pin-off`, `send`, `star`, `message-circle`, `users`,
-`hash`, `thumbs-up`, `flame`, `search`, `check`, `user-plus`, `plus`,
-`shopping-bag`, `home`, `layers`, `wallet`, `log-in`, `log-out`,
-`trash-2`, `bell-off`, `image-plus`): lucide's drawings, as the web
-draws them, written by `node script/icon.mjs NAME...` from the copy of
-lucide in `puikit/node_modules/lucide-react`.
+Its icons and its typeface are the shared ones. Every shared icon is
+the house's own, drawn from measures: `crates/appkit/asset/icon*.tsv`
+holds each icon's points and how round each corner is, and
+`crates/appkit/script/icon.py` draws the svg files from it. Nothing
+here is lucide's any more; the copies that were are in
+`gemphi/_temp/phiogy-lucide-icons-2026-11-23`, with the script that
+made them. `data/icon.tsv` is a map of names: which of the house's
+icons each of the web Phiogy's names is drawn with. `data/tool.tsv`
+says which of the viewer's tools has which icon.
 
-## The viewer's tools
-
-`icon/share-2.svg`, `icon/download.svg` and `icon/external-link.svg`
-are lucide's drawings of those names, which the web's viewer uses
-(`puikit/src/components/overlays/Lightbox`), written here from the
-copy of lucide in `puikit/node_modules/lucide-react`, in the form of
-the shared icons and under the same licence
-(`crates/appkit/asset/icon/LICENSE`). The shared icons have no share,
-download or open-outside; `zoom-in`, `zoom-out`, `x` and the arrows
-are the shared ones. `data/tool.tsv` says which tool has which.
+Its own files here are its mark and the two bars cut out of it.
 
 ## The logo
 

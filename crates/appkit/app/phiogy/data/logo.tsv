@@ -64,11 +64,14 @@ p.bar.corner	0.4	stem
 # The short bar beside it: how far apart, how wide, where it starts
 # under the bowl's top, how high; its round corners are half its width.
 p.gap	0.85	thin
-p.dot.wide	0.58	stem
+# Two thirds as wide as the long bar (0.88 of a stem): the user's word
+# on 23 November 2026. The picture's own was 0.58.
+p.dot.wide	0.5867	stem
 p.dot.top	0.283	tall
-# Half as high as the long bar (1 to 2), as the user asked on 23
-# November 2026; the picture's own was 0.418 of the o's height, about
-# two thirds of the long bar. It keeps its top and is shorter at its foot.
+# Half as high as the long bar (2 to 1), so that the two are seen to
+# differ: the user's word on 23 November 2026, after two thirds (3 to
+# 2) had been tried that day. The picture's own was 0.418 of the o's
+# height. It keeps its top.
 p.dot.high	0.325	tall
 p.dot.corner	0.29	stem
 # In the mark's file a round corner is a true curve. Where the mark is

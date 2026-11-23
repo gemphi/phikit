@@ -86,17 +86,7 @@ impl PDraw for Guide {
         self.origin.set(origin);
         self.foot.draw(paint, PRect { origin, size: self.frame.size });
         let chosen = self.desk.tabs().1;
-        let tab = self.tabs(&*paint, origin);
-        for (rect, name, said) in &tab {
-            let lit = match (*name == chosen, self.point.get().is_some_and(|at| rect.contains(at))) {
-                (true, _) => PLight::Strong,
-                (false, true) => PLight::Rest,
-                (false, false) => PLight::Soft,
-            };
-            light::label(paint, *rect, radius, lit, true, "");
-            paint.text(PPoint::new(rect.center().x - paint.measure(said) / 2.0, rect.center().y - line / 2.0), said, ink);
-        }
-        *self.tab.borrow_mut() = tab.into_iter().map(|(rect, name, _)| (rect, name)).collect();
+        *self.tab.borrow_mut() = self.tabs(paint, origin);
         let head = self.head();
         let origin = origin.plus(PPoint::new(0.0, head));
         let high = self.frame.size.height - self.foot.high() - head;

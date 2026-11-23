@@ -28,8 +28,9 @@ fn who_is_on_the_line_is_shown_as_the_board_has_them_now() {
     let word = |name: &str| app.desk().text.get(name).to_string();
     // A page opens the room: it has the room open, and is not in a call.
     let a = opened(&mut lock(&app.desk().board), "phiogy/lora", "peer-aaaaaaaa", 1);
-    // The line is open, so another frame is always asked for.
-    assert!(stage.tick());
+    // The line is open: nothing moves by itself, so no frame is asked
+    // for at once, but the window is looked at again on the theme's beat.
+    assert!(!stage.tick() && stage.beat());
     let text = shown(&stage, &look);
     assert!(text.contains(&word("present.watch")) && !text.contains(&word("present.call")), "{text:?}");
     assert!(text.contains(&"Guest".to_string()) && text.contains(&"peer-aaaaaaaa".to_string()));
@@ -59,7 +60,7 @@ fn a_room_s_own_people_are_named_under_who_is_on_its_line() {
     // Each is a card with their face and their name, not a line of names.
     assert!(["You", "Lora Vale", "Tavi Reyes"].iter().all(|name| text.contains(&name.to_string())), "{text:?}");
     assert!(!text.iter().any(|line| line.contains("Lora Vale") && line.contains("Tavi Reyes")), "{text:?}");
-    let faces = super::drawn(&stage, &look).iter().filter(|mark| matches!(mark, appkit::pui::core::PMark::Picture { rect, .. } if rect.size.width == app.desk().size(crate::part::crowd::FACE))).count();
+    let faces = super::drawn(&stage, &look).iter().filter(|mark| matches!(mark, appkit::pui::core::PMark::Picture { rect, .. } if rect.size.width == app.desk().size(appkit::pui::block::FACE))).count();
     assert!(faces >= 2, "{faces}");
 }
 

@@ -2,6 +2,7 @@
 //! tests `pui/control/`, `test/theme/` tests `src/theme/`.
 
 mod app;
+mod block;
 mod control;
 mod core;
 mod layout;

@@ -9,6 +9,7 @@ use std::sync::{Arc, Mutex};
 
 use appkit::pui::PApp;
 use appkit::pui::core::PView;
+use appkit::pui::window::part::PICTURE;
 use appkit::pui::window::{PActivity, PFact, PHost, PLevel, PModal, PPart, PRail, PSet, PSpace, PWish};
 use appkit::service::{PStore, PTable};
 use appkit::theme::{PLook, PShade, PTheme};
@@ -171,7 +172,9 @@ impl PApp for Phiogy {
     /// The rows of `data/user.tsv`, and what each look is called.
     fn user(&self) -> PTable {
         let look: String = self.desk.shade.list().iter().map(|name| format!("look.{name}\t{}\n", self.desk.text.get(&format!("look.{name}")))).collect();
-        PTable::read(&format!("{}\n{look}", data::USER))
+        // Their picture, where the site has one of them.
+        let face: String = self.desk.cell(&self.desk.site.me).map(|(sheet, column, index)| format!("{PICTURE}\t{sheet} {column} {index}\n")).unwrap_or_default();
+        PTable::read(&format!("{}\n{look}{face}", data::USER))
     }
 
     fn fact(&self) -> Option<PFact> {

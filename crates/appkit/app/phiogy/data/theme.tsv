@@ -50,6 +50,11 @@ size	activity.low	56
 size	activity.margin	8
 size	activity.corner	16
 size	activity.row	40
+# How much of its ground a row's icon fills, and a row's picture: a
+# share of the ground's side. Two thirds of 36 is 24, six clear each
+# side (an icon's own size, 20, left eight); a picture is 28.
+size	activity.icon	0.667
+size	activity.face	0.78
 size	activity.radius	12
 # Every part of the body stands on a ground of its own: how far inside
 # the part it stands, and how round it is.
@@ -61,6 +66,11 @@ size	part.radius	12
 # stands in the system's bar's place and has the window's three
 # buttons at its right end.
 size	caption.height	44
+# How much of its ground the app's own mark fills there, a share of
+# the ground's side. The ground is as the bar's icons' grounds are; the
+# mark fills more of it than an icon does, so that its two bars are
+# seen: 0.78 of 36 is 28, four clear each side.
+size	caption.mark	0.78
 color	tab.ink	#5f5f5a
 size	tab.height	52
 size	tab.width	112
@@ -83,6 +93,12 @@ size	sheet.width	776
 size	modal.head	56
 # How much of its way a modal slides in a frame, coming in and going out.
 size	modal.step	0.1
+# How many thousandths of a second pass before a window that only
+# waits, for somebody to come on a line, is looked at again.
+size	screen.beat	250
+# How many hours ago a room was opened at most for it to be a recent
+# one, under the rooms' Recent tab.
+size	guide.recent	72
 size	profile.avatar	72
 size	profile.radius	14
 size	profile.split	0.34
@@ -137,10 +153,10 @@ size	call.name	96
 size	figure.height	26
 size	figure.inset	10
 size	figure.radius	9
-# A voice room: how wide the card of one who is in it is, and how large
-# the face on it.
-size	voice.card	136
-size	voice.face	64
+# People as cards, wherever they are shown together (the kit's card):
+# how wide a card is at least, and how large the face on it.
+size	card.width	136
+size	card.face	64
 # A room: how wide its part must be for its people to stand beside what
 # was said, how wide they stand there, and the share of its height they
 # have where they stand over it.

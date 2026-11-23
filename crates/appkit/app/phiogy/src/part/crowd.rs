@@ -1,25 +1,52 @@
-//! People as cards: each a ground with their face large on it, their
-//! name, and a line about them. One part for every place people are
-//! shown together: who is in a voice room, a room's members. A row that
-//! folds; a press on a card opens the person.
+//! People shown together: each one a seat, which the kit draws as a
+//! card (`appkit::pui::block::PCard`), all of them as a deck. This file
+//! has no drawing: it says who they are, as the app's own file has
+//! them, and which card is whose. Used wherever people are shown
+//! together: who is in a voice room, a room's members.
 
-use appkit::pui::core::{PLight, PPaint, PPoint, PRect, light};
+use appkit::pui::block::{PCard, PFace};
+use appkit::pui::core::PRect;
 
-use super::call::face;
-use super::{DIM, Desk, GAP, INK, LINE, RADIUS, fit};
-
-/// The theme's tokens: how wide a person's card is, and how large the
-/// face on it.
-pub const CARD: &str = "voice.card";
-pub const FACE: &str = "voice.face";
+use super::Desk;
 
 /// One of a crowd: their id among the app's people, nothing for one
-/// who is not of them; their name; and a line about them.
+/// who is not of them; their name; a line about them; and their
+/// picture, as a cell of a sheet, where the app has one.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Seat {
     pub id: String,
     pub name: String,
     pub said: String,
+    pub cell: Option<(String, u32, u32)>,
+}
+
+impl PFace for Seat {
+    fn cell(&self) -> Option<(&str, u32, u32)> {
+        self.cell.as_ref().map(|(sheet, column, index)| (sheet.as_str(), *column, *index))
+    }
+
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+impl PCard for Seat {
+    fn note(&self) -> &str {
+        &self.said
+    }
+}
+
+impl Desk {
+    /// The picture of the person of that id, as a cell of a sheet.
+    pub fn cell(&self, id: &str) -> Option<(&str, u32, u32)> {
+        self.site.face(id).map(|cell| (cell.sheet.as_str(), cell.column, cell.index))
+    }
+
+    /// A seat for one of that id and name, with a line about them.
+    pub fn seat(&self, id: &str, name: &str, said: &str) -> Seat {
+        let cell = self.cell(id).map(|(sheet, column, index)| (sheet.to_string(), column, index));
+        Seat { id: id.to_string(), name: name.to_string(), said: said.to_string(), cell }
+    }
 }
 
 /// The people a list of names stands for, as the app's own file has
@@ -27,32 +54,13 @@ pub struct Seat {
 pub fn named(desk: &Desk, name: &[String]) -> Vec<Seat> {
     let one = |name: &String| {
         let member = desk.site.member.iter().find(|member| member.name == *name);
-        Seat { id: member.map(|member| member.id.clone()).unwrap_or_default(), name: name.clone(), said: member.map(|member| member.state.clone()).unwrap_or_default() }
+        desk.seat(member.map_or("", |member| member.id.as_str()), name, member.map_or("", |member| member.state.as_str()))
     };
     name.iter().map(one).collect()
 }
 
-/// Draw people as cards from `at`, in rows as wide as `wide`. Where the
-/// card of each one of the app's people is, and how far down they end.
-pub fn cards(desk: &Desk, paint: &mut dyn PPaint, at: PPoint, wide: f32, seat: &[Seat]) -> (Vec<(PRect, String)>, f32) {
-    let (gap, line, radius, ink, dim) = (paint.size(GAP), paint.size(LINE), paint.size(RADIUS), paint.color(INK), paint.color(DIM));
-    let (card, size) = (paint.size(CARD).min(wide), paint.size(FACE));
-    // As many across as fit, sharing the width evenly.
-    let across = ((wide + gap / 2.0) / (card + gap / 2.0)).floor().max(1.0);
-    let card = (wide - (across - 1.0) * gap / 2.0) / across;
-    let high = size + line * 2.0 + gap * 1.5;
-    let mut spot = Vec::new();
-    for (index, one) in seat.iter().enumerate() {
-        let (column, row) = ((index % across as usize) as f32, (index / across as usize) as f32);
-        let rect = PRect::new(at.x + column * (card + gap / 2.0), at.y + row * (high + gap / 2.0), card, high);
-        light::surface(paint, rect, radius, PLight::Soft, "");
-        face(desk, paint, PRect::new(rect.center().x - size / 2.0, rect.origin.y + gap / 2.0, size, size), &one.id, &one.name);
-        for (index, (said, color)) in [(&one.name, ink), (&one.said, dim)].into_iter().enumerate() {
-            let said = fit(said, card - gap, paint);
-            paint.text(PPoint::new(rect.center().x - paint.measure(&said) / 2.0, rect.origin.y + gap + size + index as f32 * line), &said, color);
-        }
-        spot.extend(Some((rect, one.id.clone())).filter(|_| !one.id.is_empty()));
-    }
-    let rows = seat.len().div_ceil(across as usize) as f32;
-    (spot, at.y + rows * high + (rows - 1.0).max(0.0) * gap / 2.0)
+/// Whose card each place is: the places a deck was drawn at, with the
+/// id of each one who is of the app's people.
+pub fn whose(rect: Vec<PRect>, seat: &[Seat]) -> Vec<(PRect, String)> {
+    rect.into_iter().zip(seat).filter(|(_, one)| !one.id.is_empty()).map(|(rect, one)| (rect, one.id.clone())).collect()
 }

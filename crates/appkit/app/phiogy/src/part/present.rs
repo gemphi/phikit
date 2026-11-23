@@ -9,6 +9,7 @@
 
 use std::cell::{Cell, RefCell};
 
+use appkit::pui::block::PDeck;
 use appkit::pui::core::{PDraw, PEvent, PLight, PPaint, PPoint, PRect, PView, light};
 use appkit::pui::layout::{PScroll, fold, section};
 
@@ -174,8 +175,8 @@ impl PDraw for Present {
         if !plate.member.is_empty() {
             let from = self.head(paint, PPoint::new(left, next), "present.member");
             let seat = crowd::named(&self.desk, &plate.member);
-            let (spot, end) = crowd::cards(&self.desk, paint, PPoint::new(left, from), wide, &seat);
-            (*self.spot.borrow_mut(), next) = (spot, end);
+            let (card, end) = seat.draw(paint, PPoint::new(left, from), wide);
+            (*self.spot.borrow_mut(), next) = (crowd::whose(card, &seat), end);
         }
         paint.unclip();
         self.fitted(next - top + gap);
@@ -205,9 +206,19 @@ impl PView for Present {
         self.frame = frame;
     }
 
-    /// While the line is open, somebody may come or go at any time.
+    /// In a call what is heard and seen changes by itself, and every
+    /// frame is drawn.
     fn tick(&mut self) -> bool {
-        self.desk.line.is_ok()
+        self.desk.call.borrow().is_some()
+    }
+
+    /// While the line is open, somebody may come or go at any time:
+    /// what it watches is who is on the open room's line.
+    fn beat(&self) -> Option<u64> {
+        use std::hash::{Hash, Hasher};
+        let mut seen = std::collections::hash_map::DefaultHasher::new();
+        format!("{:?}", self.desk.on(&self.desk.room())).hash(&mut seen);
+        self.desk.line.is_ok().then(|| seen.finish())
     }
 
     fn respond(&mut self, event: &PEvent) -> bool {

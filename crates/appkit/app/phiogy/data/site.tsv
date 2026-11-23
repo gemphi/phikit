@@ -138,3 +138,8 @@ with	with
 # The fact of a thing that is its colour, as the site calls it: the
 # same thing in its other colours is found by it.
 shop.colour	Colour
+# The web's icons that say only what kind a host is (a club is `users`),
+# apart by spaces. A host with one of these and no picture of its own
+# shows the letter its name begins with in the rail, so that no two
+# hosts wear the same mark.
+host.kind	users

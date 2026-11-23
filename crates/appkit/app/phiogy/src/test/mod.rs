@@ -13,6 +13,7 @@ mod exchange;
 mod flow;
 mod hosts;
 mod left;
+mod pace;
 mod pill;
 mod ring;
 mod room;

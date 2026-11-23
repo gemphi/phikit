@@ -11,7 +11,7 @@
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-use super::{DIM, GAP, INK, ROW, mark};
+use super::{DIM, GAP, INK, ROW, person};
 use crate::pui::core::light::{label, surface};
 use crate::pui::core::{PDraw, PEvent, PLight, PPaint, PPoint, PRect, PView};
 use crate::pui::layout::{PScroll, fold};
@@ -103,7 +103,7 @@ impl PDraw for PProfile {
         let origin = origin.minus(PPoint::new(0.0, scroll.at()));
         paint.clip(room);
         let (left, name) = (origin.x + gap, self.user.get("name"));
-        mark(name, PRect::new(left, origin.y + gap, face, face), paint);
+        person(super::picture(&self.user).as_ref(), name, PRect::new(left, origin.y + gap, face, face), paint);
         let beside = PPoint::new(left + face + gap, origin.y + gap + face / 2.0 - line);
         paint.text(beside, name, ink);
         paint.text(beside.plus(PPoint::new(0.0, line)), self.user.get("mail"), dim);

@@ -51,7 +51,7 @@ What is suggested is marked so; the rest is built and tested.
 | `src/test/` | the tests, in the same folders; `site/` is a small site written as the web writes its own, with a shop | 3,562 |
 | `asset/icon/phiogy.svg` | the mark | |
 | `data/task.tsv`, `src/comp/task.rs`, `src/system/task.rs`, `src/part/task.rs` (`task/`) | planned, not built: the tasks module (the lists, a task, its rules, its page), drawn in `ARCHITECTURE.md` under Tasks, planned | |
-| `script/logo.py` (`shape.py`, `sheet.py`), `script/icon.mjs`, `script/line.mjs`, `script/peer.mjs`, `script/phiora.mjs`, `script/scene.mjs` (stages every screen of a call and keeps its picture in `doc/scene/`) | draws the mark; writes lucide's icons; runs the Node line's tests against this line; a call between this program and a Chrome page; what the program reads of and keeps on the real Phiora | |
+| `script/logo.py` (`shape.py`, `sheet.py`), `script/line.mjs`, `script/peer.mjs`, `script/phiora.mjs`, `script/scene.mjs` (stages every screen of a call and keeps its picture in `doc/scene/`) | draws the mark; writes lucide's icons; runs the Node line's tests against this line; a call between this program and a Chrome page; what the program reads of and keeps on the real Phiora | |
 | `doc/` | pictures of the window, and the mark's sheet | |
 | `web/index.html` | the page a browser loads it into | |
 

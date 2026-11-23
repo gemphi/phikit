@@ -138,6 +138,7 @@ What a thing is:
 | asset | an app's files, by path | `PAsset` | an icon, a font, a picture |
 | film | an app's pictures that move, by name: the latest frame of each | `PFilm` | a caller's camera in Phiogy |
 | figure | a number on a ground of its own: an amount, a count, a price | `figure::end`, `figure::start` | the wallet and the rail's counts in Phiogy |
+| block | the shared parts a page is made of: pill, group, table, face, fit (`pui/block.rs`); a section on a ground (`pui/layout/section.rs`) | `block::group`, `block::table`, `layout::section` | Phiogy's profile pane, title tools, rooms' tabs, a thing's facts |
 | icon | a drawing by name, tinted by the theme | `PIcon` | `asset/icon/send.svg` |
 | theme | what everything looks like: tokens resolved to an appearance | `PTheme` | a palette, a font, an icon set |
 
