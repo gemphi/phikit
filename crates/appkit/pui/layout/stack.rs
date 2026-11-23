@@ -68,8 +68,9 @@ pub fn stack(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32, group: &mu
 /// where they need more): the tabs at the top, and under them, a little
 /// apart, one ground holding the groups they choose. The ground is lit
 /// from the left, the groups' from the right, so each stands against
-/// what holds it. What can be pressed: the tabs, and in each group.
-pub fn tabbed<B: PBand + ?Sized>(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32, tab: &B, motion: &PTabMove, group: &mut [PGrouped]) -> (Vec<PRect>, Vec<Vec<PRect>>) {
+/// what holds it. What can be pressed: the tabs, and in each group; and
+/// where the ground ends.
+pub fn tabbed<B: PBand + ?Sized>(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32, tab: &B, motion: &PTabMove, group: &mut [PGrouped]) -> (Vec<PRect>, Vec<Vec<PRect>>, f32) {
     let (side, top) = room(paint);
     let radius = paint.theme().size(ROUND).unwrap_or_default() + side;
     let least = paint.theme().size(SPACE).unwrap_or(paint.size(GAP) / 2.0);
@@ -81,5 +82,5 @@ pub fn tabbed<B: PBand + ?Sized>(paint: &mut dyn PPaint, at: PPoint, wide: f32, 
     let bottom = end.max(need + top);
     label(paint, PRect::new(at.x, held, wide, bottom - held), radius, PLight::Rest, false, "");
     let (_, pressed) = stack(paint, PPoint::new(at.x + side, held + top), inner, bottom - top, group);
-    (tabs, pressed)
+    (tabs, pressed, bottom)
 }

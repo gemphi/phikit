@@ -1,0 +1,11 @@
+# The shapes each part comes in: the part, and a shape's name, as the
+# part's scenes are named (`scenes/{shape}.usda`).
+head	head1
+head	head2
+head	head3
+body	body1
+body	body2
+body	body3
+backpack	backpack1
+backpack	backpack2
+backpack	backpack3

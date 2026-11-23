@@ -3,18 +3,16 @@
 //! window for a deed, and the greenhouse while it loads.
 
 mod ground;
-mod choose;
 mod robot;
 mod scene;
 mod score;
 mod view;
 
 pub use ground::Ground;
-pub use choose::Choose;
 pub use robot::Robot;
 pub use score::Score;
 
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, channel};
 
@@ -55,8 +53,6 @@ pub struct Desk {
     pub text: Rc<PTable>,
     pub shade: Rc<PShade>,
     pub wish: PWish,
-    /// Which part the customiser shows, by its place in phiace's table.
-    pub chosen: Rc<Cell<usize>>,
     pub load: Rc<RefCell<Load>>,
     /// The pictures that move: the robot and the greenhouse, drawn here.
     pub film: PFilm,
@@ -67,7 +63,7 @@ pub struct Desk {
 impl Desk {
     pub fn new(shade: Rc<PShade>, text: Rc<PTable>) -> Desk {
         let bot = Rc::new(RefCell::new(Botanist::new(Data::read())));
-        Desk { bot, text, shade, wish: PWish::default(), chosen: Rc::default(), load: Rc::default(), film: PFilm::default(), library: Rc::default() }
+        Desk { bot, text, shade, wish: PWish::default(), load: Rc::default(), film: PFilm::default(), library: Rc::default() }
     }
 
     /// The botanist's tables.

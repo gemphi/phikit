@@ -65,3 +65,45 @@ fn a_form_is_its_table_s_blocks_and_a_press_keeps_the_value_at_its_path() {
     assert!(form.respond(&PEvent::PointerDown(large.expect("drawn"))));
     assert_eq!(source.get("size"), "large");
 }
+
+/// A source of people: rows with a note and a level, cards, tiles, text.
+struct People;
+
+impl PState for People {
+    fn get(&self, _: &str) -> String {
+        String::new()
+    }
+
+    fn set(&self, _: &str, _: &str) {}
+}
+
+impl PSource for People {
+    fn list(&self, name: &str) -> Vec<PChoice> {
+        let one = |label: &str, note: &str| PChoice { value: label.to_lowercase(), label: label.to_string(), note: note.to_string(), ..PChoice::default() };
+        match name {
+            "say" => vec![one("Nobody is here.", "Open the room to join.")],
+            "call" => vec![PChoice { end: "connected".to_string(), level: Some(0.5), icon: "mic".to_string(), ..one("Ada", "ada.one") }],
+            "people" => vec![one("Bea", "away"), one("Cy", "here")],
+            _ => Vec::new(),
+        }
+    }
+}
+
+#[test]
+fn a_form_flows_its_heading_text_rows_cards_and_tiles_and_scrolls_when_long() {
+    let look: Rc<dyn PTheme> = Rc::new(PLook::read(&format!("{LOOK}size\thead.line\t30\nsize\tform.meter\t40\nsize\tform.bar\t4\nsize\tcard.width\t100\nsize\tcard.face\t40\n")));
+    let text = Rc::new(PTable::read("title\tOn the line\ncall\tIn the call\npeople\tMembers\n"));
+    let table = "on\thead\t-\ttitle\t-\t-\t-\t-\non\ttext\tsay\t-\tsay\t-\t-\t-\non\trows\tcall\tcall\tcall\t-\t-\tstrong\non\tcards\tpeople\tpeople\tpeople\twho\t-\t-\non\tgrid\ttiles\tpeople\tpeople\twho\t-\t-\n";
+    let mut form = PForm::new("on", table, Rc::new(People), text, look.clone());
+    form.set_frame(PRect::new(0.0, 0.0, 300.0, 200.0));
+    let mut sheet = PSheet::new(look.as_ref());
+    form.draw(&mut sheet, PPoint::new(0.0, 0.0));
+    let said = sheet.text_list();
+    for word in ["On the line", "Nobody is here.", "Open the room to join.", "In the call", "Ada", "ada.one", "connected", "Members", "Bea", "Cy"] {
+        assert!(said.contains(&word), "{word}: {said:?}");
+    }
+    // The level's bar: half of 40 long, 4 high.
+    assert!(sheet.mark.iter().any(|mark| matches!(mark, PMark::Blend { rect, .. } if rect.size.width == 20.0 && rect.size.height == 4.0)));
+    // More than the pane holds: the wheel moves it.
+    assert!(form.respond(&PEvent::Scroll(PPoint::new(10.0, 10.0), PPoint::new(0.0, -40.0))));
+}

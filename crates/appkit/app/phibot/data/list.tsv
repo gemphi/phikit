@@ -1,0 +1,14 @@
+# The lists the forms show (appkit pui/form/list.rs): the list, the
+# table its rows come from, the value's column, the words' column
+# (text: for the app's words for that column's value), the icon's
+# column, the colour's columns (red,green,blue, /255 where they run to
+# 255), the rows it keeps (column=path), whether each value is kept once
+# (once), and when it is shown (path=value). `-` for none. The tables are
+# phiace's botanist tables, and tool.tsv here.
+tool	tool	0	text:0	1	-	-	-	-
+part	part	0	3	-	-	-	-	-
+shape	shape	1	1	-	-	0=ui/part	-	-
+face	face	0	-	1	-	-	-	ui/part=head
+material	material	0	0	-	-	-	once	-
+colour	material	1	-	-	3,4,5/255	0=look/{ui/part}/material	-	-
+light	light	0	-	-	2,3,4	-	-	-

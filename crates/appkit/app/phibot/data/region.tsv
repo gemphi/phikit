@@ -5,4 +5,4 @@
 make	center	center	robot
 garden	center	center	ground
 garden	center	right	score
-choose	center	center	pick
+choose	center	center	settings

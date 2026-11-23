@@ -15,3 +15,5 @@ pub const MENU: &str = include_str!("../data/menu.tsv");
 pub const USER: &str = include_str!("../data/user.tsv");
 pub const FORM: &str = include_str!("../data/form.tsv");
 pub const TOOL: &str = include_str!("../data/tool.tsv");
+pub const LIST: &str = include_str!("../data/list.tsv");
+pub const STATE: &str = include_str!("../data/state.tsv");

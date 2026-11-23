@@ -38,3 +38,43 @@ pub fn flag(on: bool) -> &'static str {
         false => "",
     }
 }
+
+/// State kept in memory for as long as the window is open: what only a
+/// window needs (which tab is open), its first values from a table of
+/// `path value` rows.
+#[derive(Debug, Default)]
+pub struct PMemory(std::cell::RefCell<std::collections::HashMap<String, String>>);
+
+impl PMemory {
+    pub fn read(table: &str) -> PMemory {
+        let row = table.lines().filter(|l| !l.starts_with('#')).filter_map(|l| l.split_once('\t'));
+        PMemory(std::cell::RefCell::new(row.map(|(p, v)| (p.to_string(), v.to_string())).collect()))
+    }
+}
+
+impl PState for PMemory {
+    fn get(&self, path: &str) -> String {
+        self.0.borrow().get(path).cloned().unwrap_or_default()
+    }
+
+    fn set(&self, path: &str, value: &str) {
+        self.0.borrow_mut().insert(path.to_string(), value.to_string());
+    }
+}
+
+/// State kept by something else, reached through two functions: what an
+/// app's world answers by path, handed over without a type of its own.
+pub struct PFn {
+    pub get: Box<dyn Fn(&str) -> String>,
+    pub set: Box<dyn Fn(&str, &str)>,
+}
+
+impl PState for PFn {
+    fn get(&self, path: &str) -> String {
+        (self.get)(path)
+    }
+
+    fn set(&self, path: &str, value: &str) {
+        (self.set)(path, value)
+    }
+}

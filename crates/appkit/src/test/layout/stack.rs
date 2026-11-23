@@ -35,7 +35,7 @@ fn tabs_stand_over_the_ground_of_what_they_choose_and_their_light_moves() {
     let mut sheet = PSheet::new(&look);
     let tab = [("", "Head", true), ("", "Body", false)];
     let motion = PTabMove::default();
-    let (tabs, pressed) = tabbed(&mut sheet, PPoint::new(0.0, 0.0), 300.0, 0.0, tab.as_slice(), &motion, &mut two());
+    let (tabs, pressed, _) = tabbed(&mut sheet, PPoint::new(0.0, 0.0), 300.0, 0.0, tab.as_slice(), &motion, &mut two());
     assert_eq!(tabs.len(), 2);
     // The tabs stand above the ground that holds the groups, not on it:
     // it is as wide as given and begins under them, and the groups stand

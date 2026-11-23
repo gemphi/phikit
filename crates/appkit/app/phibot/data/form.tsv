@@ -1,15 +1,15 @@
 # The forms: parts made only of the kit's blocks (appkit pui/form.rs).
-# A row is a block: the form, its kind (tools, tabs, band, swatch), its
-# key, its heading (a word of text.tsv, - for none), the list its content
-# comes from, the path its value is kept at, and the tabs it stands
-# under (- for none). The lists and paths are the botanist's
-# (src/part/choose.rs). The customiser: Reset and Randomize; the parts
-# as tabs over the chosen part's shape, eyes, material and colour; and
-# the robot's own lights, under no tabs.
-choose	tools	tool	-	tool	do	-
-choose	tabs	part	-	part	part	-
-choose	band	shape	shape	shape	shape	part
-choose	band	face	face	face	face	part
-choose	band	material	material	material	material	part
-choose	swatch	colour	colour	colour	colour	part
-choose	swatch	light	light	light	light	-
+# A row is a block: the form, its kind (head, tools, tabs, band, swatch,
+# text, rows, cards, grid, fill), its key, its heading (a word of
+# text.tsv), the list its content comes from (list.tsv), the path a
+# press keeps its value at, the tabs it stands under, and its variation.
+# `-` for none. A path's `{path}` is what that path keeps.
+# The settings: Reset and Randomize; the parts as tabs over the chosen
+# part's shape, eyes, material and colour; the robot's own lights.
+settings	tools	tool	-	tool	do	-	-
+settings	tabs	part	-	part	ui/part	-	-
+settings	band	shape	shape	shape	look/{ui/part}/shape	part	-
+settings	band	face	face	face	look/face	part	-
+settings	band	material	material	material	look/{ui/part}/material	part	-
+settings	swatch	colour	colour	colour	look/{ui/part}/colour	part	-
+settings	swatch	light	light	light	look/light	-	-

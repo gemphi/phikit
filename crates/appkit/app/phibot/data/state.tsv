@@ -1,0 +1,3 @@
+# What the window keeps by itself while it is open, and its first values:
+# the part whose settings are shown.
+ui/part	head
