@@ -88,6 +88,15 @@ fn type_name(dna_type: u32) -> String {
         .unwrap_or_else(|| format!("modifier type {dna_type}"))
 }
 
+/// Modifiers that are in the stack to be read by something else and leave
+/// the mesh as it came: Collision (`MOD_collision.cc`'s `deform_verts`
+/// records the positions for the cloth and particle solvers and moves
+/// none) and Surface (`MOD_surface.cc`, the same for force fields).
+/// Dropping one loses no geometry, so it is not reported: the throne file
+/// opened with "unsupported modifier Collision" on its body, a warning
+/// about nothing.
+const LEAVES_THE_MESH: [u32; 2] = [23, 30];
+
 /// Modifier-data flag: enabled in the viewport (`eModifierMode_Realtime`).
 const MODE_REALTIME: u32 = 1;
 
@@ -116,6 +125,9 @@ impl BlendFile {
                 let ty = self.int_field(md, "ModifierData", "type", dna);
                 // A Geometry Nodes modifier is supported per tree: one
                 // the reader turns down is dropped, so it is reported.
+                if LEAVES_THE_MESH.contains(&ty) {
+                    return None;
+                }
                 let read = KINDS.iter().find(|k| k.dna_type == ty).map(|k| k.read);
                 if read.is_some_and(|read| ty != super::nodes::DNA_TYPE || self.scoped(ob, || read(self, md, ob, dna)).is_some()) {
                     return None; // supported
