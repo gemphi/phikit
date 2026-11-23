@@ -38,6 +38,12 @@ impl Type {
         Type { font, size: size(SIZE), line: size(LINE), head: (size(HEAD), size(HEAD_LINE)) }
     }
 
+    /// What sets this type apart from another: its face, its weight and
+    /// its size, as a key for what is kept of it.
+    pub fn key(&self) -> String {
+        format!("{}/{}/{}", self.font.family, self.font.weight.0, self.size.as_f32())
+    }
+
     fn run(&self, text: &str, color: Hsla) -> TextRun {
         TextRun { len: text.len(), font: self.font.clone(), color, background_color: None, underline: None, strikethrough: None }
     }

@@ -40,9 +40,6 @@ use crate::data;
 
 /// The theme's tokens: how large a face is, and how wide and how high
 /// a picture posted in the room is drawn.
-pub const FACE: &str = "stream.face";
-pub const WIDE: &str = "stream.picture";
-pub const HIGH: &str = "stream.shot";
 /// The modal a press on a picture opens.
 pub const VIEW: &str = "view";
 /// The rows of `data/act.tsv` the stream draws, by what each does.

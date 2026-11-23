@@ -58,6 +58,8 @@ pub struct PStage {
     home: Option<String>,
     /// The part that has the keys now: the last one pressed.
     focus: Option<String>,
+    /// Where the parts said a press does something when last drawn.
+    drawn: std::cell::RefCell<Vec<PRect>>,
 }
 
 impl PStage {
@@ -78,7 +80,7 @@ impl PStage {
         let content = part.chain(modal).filter_map(built).collect();
         let home = Some(app.focus().to_string()).filter(|part| !part.is_empty());
         let (frame, size, focus) = (PFrame::default(), PSize::default(), home.clone());
-        let mut stage = PStage { window: app.open(), theme: app.theme(), host: app.host().clone(), modal: app.modal().clone(), content, activity: app.activity().with(&user), rail: app.rail(), caption: PCaption::default(), tab: PTab, tabbed: app.tab(), front: app.front().to_string(), side: app.side().to_string(), wish: app.wish(), errand: Vec::new(), frame, slot: Vec::new(), spot: Vec::new(), over: None, down: None, slide: laid::PSlide::default(), panel: None, size, mode: PMode::Desktop, home, focus };
+        let mut stage = PStage { window: app.open(), theme: app.theme(), host: app.host().clone(), modal: app.modal().clone(), content, activity: app.activity().with(&user), rail: app.rail(), caption: PCaption::default(), tab: PTab, tabbed: app.tab(), front: app.front().to_string(), side: app.side().to_string(), wish: app.wish(), errand: Vec::new(), frame, slot: Vec::new(), spot: Vec::new(), over: None, down: None, slide: laid::PSlide::default(), panel: None, size, mode: PMode::Desktop, home, focus, drawn: std::cell::RefCell::default() };
         let pick = stage.activity.first(&stage.window).to_string();
         stage.window.choose(&pick);
         stage.face();
@@ -98,6 +100,8 @@ impl PStage {
         let theme = Rc::clone(&self.theme);
         let tabbed = self.tabbed && self.window.space.len() > 1;
         (self.size, self.mode) = (size, mode);
+        // What was drawn is let go: laid out anew, the parts are asked.
+        self.drawn.borrow_mut().clear();
         self.fresh();
         let lying = mode == PMode::Mobile;
         let (thick, menu) = (self.activity.thick(theme.as_ref()), self.activity.wide(&self.window, lying, theme.as_ref()));
@@ -153,6 +157,9 @@ impl PStage {
             paint.unclip();
         }
         self.sheet(paint);
+        // What can be pressed is what was just drawn: kept, so that a
+        // move of the pointer need not ask every part again.
+        *self.drawn.borrow_mut() = self.pressed();
         self.glow(paint);
     }
 

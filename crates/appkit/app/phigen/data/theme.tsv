@@ -108,3 +108,6 @@ size	head.line	34
 size	find.top	72
 size	find.field	56
 size	find.row	72
+# How many widths of text the window keeps from frame to frame, so
+# that it sets a line once and not on every frame.
+size	screen.memo	4096

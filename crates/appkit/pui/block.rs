@@ -17,6 +17,8 @@
 //! * `PRow`: one thing of a list: what leads it, its title, a line
 //!   about it; lying as a row or standing as a tile with its picture
 //!   large. `(lead, title, note)` is one.
+//! * `PSay`: what somebody said: their face, who and when, the words,
+//!   the pictures posted with it, what it was marked with.
 //! * `PText`: a text cut to fit a width.
 //! * `PCrumb`: the way to something, each step before it with the mark
 //!   of what comes next. Any list of texts is one.
@@ -31,12 +33,14 @@ mod card;
 mod crumb;
 mod face;
 mod row;
+mod say;
 mod tip;
 
 pub use card::{CARD, FACE, PCard, PDeck};
 pub use crumb::PCrumb;
 pub use face::PFace;
 pub use row::{LEAD, PLead, PRow};
+pub use say::{PSaid, PSay};
 pub use tip::PTip;
 
 use super::core::light::label;
@@ -65,7 +69,11 @@ pub trait PText {
         let mark = paint.theme().word(CUT).unwrap_or_default().to_string();
         let whole = self.text();
         let fits = |end: usize| paint.measure(&format!("{}{mark}", &whole[..end])) <= width;
-        let cut = || whole.char_indices().map(|(at, letter)| at + letter.len_utf8()).take_while(|end| fits(*end)).last().unwrap_or(0);
+        // Where a letter ends, in order; the longest start that fits is
+        // found by halving, so a long text is measured a few times, not
+        // once a letter.
+        let end: Vec<usize> = whole.char_indices().map(|(at, letter)| at + letter.len_utf8()).collect();
+        let cut = || end[..end.partition_point(|end| fits(*end))].last().copied().unwrap_or(0);
         match paint.measure(whole) <= width {
             true => whole.to_string(),
             false => format!("{}{mark}", whole[..cut()].trim_end()),

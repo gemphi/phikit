@@ -106,7 +106,7 @@ impl PStage {
         let over = self.caption.mark(&self.frame, &self.activity, self.theme.as_ref()).contains(at);
         // Over the window's own furniture, and over what a part says
         // can be pressed.
-        let hand = self.pressed();
+        let hand = self.drawn();
         let spot = |point: Option<PPoint>| point.map(|point| (self.spot.iter().position(|(rect, _)| rect.contains(point)), least(&hand, point)));
         let turned = spot(self.over).unwrap_or_default() != spot(Some(at)).unwrap_or_default();
         self.over = Some(at);
@@ -128,9 +128,19 @@ impl PStage {
         turned
     }
 
+    /// What can be pressed as it was last drawn; asked of the parts
+    /// again where the window was laid out since.
+    fn drawn(&self) -> Vec<PRect> {
+        let kept = self.drawn.borrow().clone();
+        match kept.is_empty() {
+            true => self.pressed(),
+            false => kept,
+        }
+    }
+
     /// What the parts shown say can be pressed. With a modal open, only
     /// what the modal's content says.
-    fn pressed(&self) -> Vec<PRect> {
+    pub(super) fn pressed(&self) -> Vec<PRect> {
         let part = |name: &str| self.content.iter().find(|(known, _)| known == name).map(|(_, view)| view.hand()).unwrap_or_default();
         match self.window.modal() {
             Some(modal) => part(modal),
@@ -143,7 +153,7 @@ impl PStage {
     /// itself.
     pub fn hand(&self) -> Vec<PRect> {
         let own = self.spot.iter().map(|(rect, _)| *rect).filter(|_| self.window.modal().is_none());
-        own.chain(self.pressed()).collect()
+        own.chain(self.drawn()).collect()
     }
 
     /// Keep where the button is held down, and let go of it when it is
@@ -156,7 +166,7 @@ impl PStage {
             PEvent::PointerUp(_) => None,
             _ => return false,
         };
-        let hand = self.pressed();
+        let hand = self.drawn();
         let lit = self.down.is_some_and(|point| least(&hand, point).is_some());
         self.down = next;
         next.is_none() && lit
@@ -168,7 +178,7 @@ impl PStage {
     /// a part only says where its places to press are. Of the places
     /// the pointer is in, the smallest: a button on a row, not the row.
     pub(super) fn glow(&self, paint: &mut dyn PPaint) {
-        let hand = self.pressed();
+        let hand = self.drawn();
         let Some(rect) = self.over.and_then(|at| least(&hand, at)).and_then(|index| hand.get(index)) else { return };
         let light = match self.down.is_some_and(|down| rect.contains(down)) {
             true => PLight::Strong,

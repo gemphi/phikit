@@ -1,4 +1,4 @@
-use crate::pui::block::{PBand, PCrumb, PDeck, PFacts, PLead, PPill, PRow, PText, PTip};
+use crate::pui::block::{PBand, PCrumb, PDeck, PFacts, PLead, PPill, PRow, PSay, PText, PTip};
 use crate::pui::core::*;
 use crate::theme::{PLook, PTheme};
 
@@ -181,4 +181,57 @@ fn a_row_lies_with_what_leads_it_and_stands_as_a_tile_with_its_picture_large() {
     assert!(tile.mark.contains(&PMark::Picture { name: "coat".to_string(), rect: frame, radius: look.size("row.radius").unwrap_or_default(), fit: PFit::Whole }));
     assert_eq!((blend(&tile).len(), tile.text_list()), (1, vec!["Coat", "Wool"]));
     assert_eq!(under, PPoint::new(gap / 2.0, 160.0 - gap + gap * 0.75 + line * 2.0 + gap / 4.0));
+}
+
+/// A message for the tests: who, when, what, and what it answers.
+struct Said(&'static str, &'static str, bool);
+
+impl PSay for Said {
+    fn by(&self) -> &str {
+        "Lora Vale"
+    }
+
+    fn when(&self) -> &str {
+        "Today - 09:02"
+    }
+
+    fn text(&self) -> &str {
+        self.0
+    }
+
+    fn quote(&self) -> &str {
+        self.1
+    }
+
+    fn image(&self) -> Vec<&str> {
+        vec!["shot"]
+    }
+
+    fn mark(&self) -> Vec<(&str, &str, bool)> {
+        vec![("heart", "2", true)]
+    }
+
+    fn follows(&self) -> bool {
+        self.2
+    }
+}
+
+#[test]
+fn a_message_says_whom_it_answers_who_said_it_what_and_what_it_was_marked_with() {
+    let look = PLook::read(&format!("{LOOK}size\tsay.face\t36\nsize\tsay.wide\t200\nsize\tsay.high\t100\n"));
+    let mut sheet = PSheet::new(&look);
+    let (gap, line) = (look.size("gap").unwrap_or_default(), look.size("text.line").unwrap_or_default());
+    let laid = Said("Good. Show it.", "Tavi: the mark", false).say(&mut sheet, PRect::new(0.0, 0.0, 400.0, 0.0));
+    // What it answers is a line over it; its own head begins under that.
+    assert_eq!((laid.quote.map(|rect| rect.origin.y), laid.head), (Some(0.0), line));
+    assert_eq!(sheet.text_list(), ["Tavi: the mark", "Lora Vale", "Today - 09:02", "Good. Show it.", "2"]);
+    // Its face at the left of its head, its picture under its words, its mark under that.
+    assert_eq!(laid.face, Some(PRect::new(0.0, line, 36.0, 36.0)));
+    assert_eq!(laid.image, [PRect::new(36.0 + gap / 2.0, line * 3.0 + gap / 4.0, 200.0, 100.0)]);
+    assert_eq!(laid.mark.len(), 1);
+    assert_eq!(laid.end, line * 3.0 + 100.0 + gap / 2.0 + line + gap);
+    // One that goes on from the one before has no head: no face, no name.
+    let mut on = PSheet::new(&look);
+    let follows = Said("And more.", "", true).say(&mut on, PRect::new(0.0, 0.0, 400.0, 0.0));
+    assert_eq!((follows.face, follows.quote, on.text_list()[0]), (None, None, "And more."));
 }

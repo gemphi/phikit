@@ -96,6 +96,9 @@ size	modal.step	0.1
 # How many thousandths of a second pass before a window that only
 # waits, for somebody to come on a line, is looked at again.
 size	screen.beat	250
+# How many widths of text the window keeps from frame to frame, so
+# that it sets a line once and not on every frame.
+size	screen.memo	4096
 # How many hours ago a room was opened at most for it to be a recent
 # one, under the rooms' Recent tab.
 size	guide.recent	72
@@ -170,9 +173,9 @@ size	room.share	0.34
 # tool, how thick the mark around the picture shown is in the strip,
 # and how many times the width of its room a picture shown larger is.
 # They are the web's: 2.75rem, 2.75rem less 0.5rem, 2px, twice.
-size	stream.face	36
-size	stream.picture	256
-size	stream.shot	160
+size	say.face	36
+size	say.wide	256
+size	say.high	160
 size	title.face	28
 # How wide the title's search field is, where there is room for it.
 size	title.search	200

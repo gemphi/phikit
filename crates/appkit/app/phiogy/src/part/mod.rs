@@ -220,17 +220,5 @@ impl Desk {
 /// `text` when it is no wider than `width`; else as much of its start
 /// as fits with the theme's mark for a text cut short after it.
 pub fn fit(text: &str, width: f32, paint: &dyn PPaint) -> String {
-    if paint.measure(text) <= width {
-        return text.to_string();
-    }
-    let mark = paint.theme().word(CUT).unwrap_or_default().to_string();
-    let mut out = String::new();
-    for letter in text.chars() {
-        out.push(letter);
-        if paint.measure(&format!("{out}{mark}")) > width {
-            out.pop();
-            break;
-        }
-    }
-    format!("{}{mark}", out.trim_end())
+    appkit::pui::block::PText::fit(text, width, paint)
 }

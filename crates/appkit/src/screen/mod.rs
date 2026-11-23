@@ -15,6 +15,7 @@
 
 pub mod album;
 pub mod errand;
+mod gauge;
 pub mod key;
 pub(crate) mod play;
 mod source;
@@ -52,6 +53,8 @@ pub struct PScreen {
     /// Whether a look after the theme's beat was asked for and has not
     /// come yet.
     resting: bool,
+    /// How wide each line of text was set, kept from frame to frame.
+    gauge: gauge::Gauge,
 }
 
 impl PScreen {
@@ -144,7 +147,7 @@ impl Render for PScreen {
         }
         self.stage.lay(size, PMode::of_width(size.width));
         let face = Type::of(look.as_ref());
-        let gauge = |text: &str| face.width(text, window);
+        let gauge = |text: &str| self.gauge.width(text, &face, look.as_ref(), window);
         let album = self.album.clone();
         let known = |name: &str| album.size(name).map(|(width, height)| PSize { width, height });
         let mut sheet = PSheet::gauged(look.as_ref(), &gauge).sized(&known);
@@ -216,7 +219,7 @@ pub fn run(stage: PStage, asset: impl PAsset + Send + Sync + 'static) {
             cx.new(|cx| {
                 let focus = cx.focus_handle();
                 window.focus(&focus, cx);
-                PScreen { stage, focus, glass: None, album: album::Album::of(film), resting: false }
+                PScreen { stage, focus, glass: None, album: album::Album::of(film), resting: false, gauge: gauge::Gauge::default() }
             })
         });
         // With no window there is nothing to run: say why, the whole of it,

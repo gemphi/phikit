@@ -7,12 +7,11 @@
 //! message that follows one of the same person has no face or name of
 //! its own.
 
-use appkit::pui::block::{PBand, PPill};
-use appkit::pui::core::{PFit, PPaint, PPoint, PRect};
-use appkit::pui::layout::wrap;
+use appkit::pui::block::{PBand, PSay};
+use appkit::pui::core::{PPaint, PPoint, PRect};
 
-use super::{Act, FACE, HIGH, LIKE, PIN, REPLY, Spot, Stream, WIDE};
-use crate::part::{DIM, GAP, ICON, INK, LINE, RADIUS, fit};
+use super::{Act, LIKE, PIN, REPLY, Spot, Stream};
+use crate::part::GAP;
 use crate::site::Message;
 
 impl Stream {
@@ -32,66 +31,85 @@ impl Stream {
     /// One message in `at`, which gives its left, its top and its
     /// width. How far down the next begins.
     pub(super) fn message(&self, paint: &mut dyn PPaint, at: PRect, one: &Message, follows: bool, all: &[Message], spot: &mut Vec<Spot>) -> f32 {
-        let (gap, line, icon, face) = (paint.size(GAP), paint.size(LINE), paint.size(ICON), paint.size(FACE));
-        let (ink, dim, text) = (paint.color(INK), paint.color(DIM), &self.desk.text);
-        let (left, wide) = (at.origin.x + face + gap / 2.0, (at.size.width - face - gap / 2.0).max(0.0));
-        let mut top = at.origin.y;
-        let pinned = self.desk.pinned(one);
-        // Whom it answers, and how that began: a press leads there.
-        if let Some(to) = all.iter().find(|other| !one.reply.is_empty() && other.id == one.reply) {
-            let said = fit(&self.desk.text.fill("stream.reply", "name", &to.by).replace("{text}", &to.text), wide - gap, paint);
-            paint.text(PPoint::new(left + gap, top), &said, dim);
-            spot.push(Spot { rect: PRect::new(left + gap, top, paint.measure(&said), line), act: Act::Seek(to.id.clone()), word: text.fill("stream.seek", "name", &to.by) });
-            top += line;
-        }
-        let first = top;
-        if !follows {
-            // The face of who said it, then who and when.
-            let rect = PRect::new(at.origin.x, top, face, face);
-            if let Some(cell) = self.desk.site.face(&one.who) {
-                paint.picture(&cell.sheet, rect, face / 2.0, PFit::Cell { column: cell.column, index: cell.index });
-            }
-            spot.push(Spot { rect, act: Act::Face(one.who.clone()), word: text.fill("stream.open", "name", &one.by) });
-            paint.text(PPoint::new(left, top), &one.by, ink);
-            let when = format!("{} {} {}", one.day, text.get("between"), one.at);
-            let after = left + paint.measure(&one.by) + gap / 2.0;
-            paint.text(PPoint::new(after, top), &when, dim);
-            if let Some((name, _)) = self.tool.of(PIN, false, text).filter(|_| pinned) {
-                paint.icon(name, PRect::new(after + paint.measure(&when) + gap / 2.0, top + (line - icon) / 2.0, icon, icon), dim);
-            }
-            top += line;
-        }
-        for words in wrap(&one.text, wide, &|text| paint.measure(text)) {
-            paint.text(PPoint::new(left, top), &words, ink);
-            top += line;
-        }
-        // The pictures posted with it, each covering its frame: its
-        // number is its place among all the room's.
-        let (across, high, corner) = (paint.size(WIDE).min(wide), paint.size(HIGH), paint.size(RADIUS));
-        let before: usize = all.iter().take_while(|other| other.id != one.id).map(|other| other.image.len()).sum();
-        for (index, key) in one.image.iter().enumerate() {
-            let rect = PRect::new(left, top + gap / 4.0, across, high);
-            paint.picture(key, rect, corner, PFit::Cover);
-            spot.push(Spot { rect, act: Act::Shot(before + index), word: text.fill("stream.see", "name", &one.by) });
-            top += high + gap / 2.0;
-        }
-        // What it was marked with: a pill a mark, lit when the person
-        // gave it; a press gives it or takes it back.
+        let text = &self.desk.text;
+        // What the kit's message is drawn from: whom it answers and how
+        // that began, who said it and when, a pin where it is pinned,
+        // and what it was marked with.
+        let to = all.iter().find(|other| !one.reply.is_empty() && other.id == one.reply);
+        let flag = self.tool.of(PIN, false, text).filter(|_| self.desk.pinned(one)).map_or("", |(name, _)| name);
         let marks = self.desk.mark(one);
-        let mut across = left;
-        for (mark, count, on) in &marks {
-            // A mark and how many gave it: the kit's pill.
-            let said = count.to_string();
-            let pill = (self.desk.icon(mark), said.as_str(), *on).draw(paint, PPoint::new(across, top + gap / 4.0), false);
-            spot.push(Spot { rect: pill, act: Act::Mark(one.id.clone(), mark.clone()), word: String::new() });
-            across += pill.size.width + gap / 2.0;
-        }
+        let said = Said {
+            one,
+            follows,
+            cell: self.desk.cell(&one.who),
+            quote: to.map(|to| text.fill("stream.reply", "name", &to.by).replace("{text}", &to.text)).unwrap_or_default(),
+            when: format!("{} {} {}", one.day, text.get("between"), one.at),
+            flag,
+            mark: marks.iter().map(|(mark, count, on)| (self.desk.icon(mark), count.to_string(), *on)).collect(),
+        };
+        let laid = said.say(paint, at);
+        // Where a press does something: what it answers leads there, a
+        // face opens the person, a picture is seen whole (its number is
+        // its place among all the room's), a mark is given or taken back.
+        let word = |name: &str, by: &str| text.fill(name, "name", by);
+        spot.extend(laid.quote.zip(to).map(|(rect, to)| Spot { rect, act: Act::Seek(to.id.clone()), word: word("stream.seek", &to.by) }));
+        spot.extend(laid.face.map(|rect| Spot { rect, act: Act::Face(one.who.clone()), word: word("stream.open", &one.by) }));
+        let before: usize = all.iter().take_while(|other| other.id != one.id).map(|other| other.image.len()).sum();
+        spot.extend(laid.image.iter().enumerate().map(|(index, rect)| Spot { rect: *rect, act: Act::Shot(before + index), word: word("stream.see", &one.by) }));
+        spot.extend(laid.mark.iter().zip(&marks).map(|(rect, (mark, ..))| Spot { rect: *rect, act: Act::Mark(one.id.clone(), mark.clone()), word: String::new() }));
         // Its controls, where the pointer is or the last press was.
-        let over = *self.over.borrow() == one.id;
-        over.then(|| self.control(paint, PPoint::new(at.origin.x + at.size.width, first - gap / 4.0), one, spot));
-        top + match marks.is_empty() {
-            true => gap / 2.0,
-            false => line + gap,
-        }
+        let (gap, over) = (paint.size(GAP), *self.over.borrow() == one.id);
+        over.then(|| self.control(paint, PPoint::new(at.origin.x + at.size.width, laid.head - gap / 4.0), one, spot));
+        laid.end
+    }
+}
+
+/// A message as the kit draws one: the site's own, with what the app
+/// knows of it.
+struct Said<'a> {
+    one: &'a Message,
+    follows: bool,
+    cell: Option<(&'a str, u32, u32)>,
+    quote: String,
+    when: String,
+    flag: &'a str,
+    mark: Vec<(&'a str, String, bool)>,
+}
+
+impl PSay for Said<'_> {
+    fn cell(&self) -> Option<(&str, u32, u32)> {
+        self.cell
+    }
+
+    fn by(&self) -> &str {
+        &self.one.by
+    }
+
+    fn when(&self) -> &str {
+        &self.when
+    }
+
+    fn text(&self) -> &str {
+        &self.one.text
+    }
+
+    fn quote(&self) -> &str {
+        &self.quote
+    }
+
+    fn flag(&self) -> &str {
+        self.flag
+    }
+
+    fn image(&self) -> Vec<&str> {
+        self.one.image.iter().map(String::as_str).collect()
+    }
+
+    fn mark(&self) -> Vec<(&str, &str, bool)> {
+        self.mark.iter().map(|(icon, count, on)| (*icon, count.as_str(), *on)).collect()
+    }
+
+    fn follows(&self) -> bool {
+        self.follows
     }
 }
