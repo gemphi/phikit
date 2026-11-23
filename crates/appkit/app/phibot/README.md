@@ -53,11 +53,12 @@ path keeps, from phiace's tables. The kit lays it out the same as for
 any app: the tabs off any ground over one ground of their children
 (`tabbed`), each group on its own (`stack`), and a sliding tab light.
 
-The botanist opens in the Liquid Glass look (`data/look.tsv`, first
-row). Every part stands on a glass pane (`part.glass`), the corners are
-rounder, and the glass's edge is a thin shine in nearly its own colour.
-Text stands a point off the glass (`text.lift`, `text.shade`). The
-light, dark, glass and frost looks are still in the profile's Appearance.
+The botanist opens in the dark look (`data/look.tsv`, first row). In
+the Liquid Glass looks every part stands on a glass pane
+(`part.glass`), the corners are rounder, and the glass's edge is a thin
+shine in nearly its own colour. Text stands a point off the glass
+(`text.lift`, `text.shade`). The other looks are in the profile's
+Appearance.
 
 Files: `data/` (the window's tables, words and theme), `src/app.rs` (the
 app as appkit sees it), `src/part.rs` (the desk the parts share),

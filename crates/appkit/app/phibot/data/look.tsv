@@ -20,7 +20,19 @@
 # most of all. Its edge is a shine, thin and nearly the glass's own
 # colour, not a border. Its text stands a point off the glass, a light
 # under it (`text.shade`, `text.lift`), as on Vision Pro's panes.
-# The botanist opens in Liquid Glass.
+# The botanist opens in the dark look, the first.
+dark	color	window.fill	#191918
+dark	color	line.ink	#3a3a37
+dark	color	text.ink	#f0f0ec
+dark	color	text.dim	#9a9a94
+dark	color	control.ink	#f0f0ec
+dark	color	control.accent	#f0f0ec
+dark	color	icon.ink	#f0f0ec
+dark	color	shade.light	#ffffff
+dark	color	activity.ink	#f0f0ec
+dark	color	tab.ink	#9a9a94
+dark	color	modal.veil	#000000aa
+dark	size	shade.share	0.1
 liquid	color	window.fill	#f2f2f0a0
 liquid	color	line.ink	#1d1d1b1f
 liquid	color	text.ink	#1d1d1b
@@ -93,18 +105,6 @@ liquid-dark	size	control.radius	22
 liquid-dark	size	present.radius	22
 liquid-dark	size	figure.radius	14
 light
-dark	color	window.fill	#191918
-dark	color	line.ink	#3a3a37
-dark	color	text.ink	#f0f0ec
-dark	color	text.dim	#9a9a94
-dark	color	control.ink	#f0f0ec
-dark	color	control.accent	#f0f0ec
-dark	color	icon.ink	#f0f0ec
-dark	color	shade.light	#ffffff
-dark	color	activity.ink	#f0f0ec
-dark	color	tab.ink	#9a9a94
-dark	color	modal.veil	#000000aa
-dark	size	shade.share	0.1
 glass	color	window.fill	#1e1e1cb8
 glass	color	line.ink	#ffffff24
 glass	color	text.ink	#f4f4f0
