@@ -34,6 +34,8 @@ impl BlendFile {
         )> {
             self.scoped(me_block, || {
             let (verts, faces) = self.extract_mesh_from_block(me_block, dna);
+            // The shape keys come first, before any modifier (`mesh/shape.rs`).
+            let verts = self.shaped(me_block, verts, dna);
             if verts.is_empty() {
                 return None;
             }

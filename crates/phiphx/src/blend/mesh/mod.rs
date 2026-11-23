@@ -14,4 +14,5 @@ pub(crate) mod offsets;
 pub(crate) mod positions;
 pub(crate) mod read;
 pub(crate) mod shading;
+pub(crate) mod shape;
 pub(crate) mod uv;
