@@ -14,6 +14,9 @@
 //! * `PCard`: a face large on a ground with a name and a line about
 //!   them: `(cell of a sheet, name, line)`. `PDeck`: cards that belong
 //!   together, in rows that fold; any list of cards is one.
+//! * `PRow`: one thing of a list: what leads it, its title, a line
+//!   about it; lying as a row or standing as a tile with its picture
+//!   large. `(lead, title, note)` is one.
 //! * `PText`: a text cut to fit a width.
 //! * `PCrumb`: the way to something, each step before it with the mark
 //!   of what comes next. Any list of texts is one.
@@ -27,11 +30,13 @@
 mod card;
 mod crumb;
 mod face;
+mod row;
 mod tip;
 
 pub use card::{CARD, FACE, PCard, PDeck};
 pub use crumb::PCrumb;
 pub use face::PFace;
+pub use row::{LEAD, PLead, PRow};
 pub use tip::PTip;
 
 use super::core::light::label;

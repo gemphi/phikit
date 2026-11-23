@@ -1,6 +1,8 @@
 //! What a page that is a list holds: what stands at the head of a
 //! line, what can be done at its end, and the items themselves.
 
+use appkit::pui::block::PLead;
+
 use crate::site::Face;
 
 /// What stands at the head of a line.
@@ -64,4 +66,16 @@ pub enum Item<A> {
     /// A line: its head, two lines of words, what a press on it means
     /// if it means something, and what can be done at its end.
     Line(Seat, String, String, Option<A>, Vec<Deed<A>>),
+}
+
+impl Seat {
+    /// What leads the kit's row for it.
+    pub fn lead(&self) -> PLead<'_> {
+        match self {
+            Seat::None => PLead::None,
+            Seat::Face(face) => PLead::Face(&face.sheet, face.column, face.index),
+            Seat::Icon(name) => PLead::Icon(name),
+            Seat::Picture(key) => PLead::Picture(key),
+        }
+    }
 }

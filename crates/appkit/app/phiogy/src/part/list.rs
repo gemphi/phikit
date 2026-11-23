@@ -10,21 +10,21 @@
 
 use std::cell::{Cell, RefCell};
 
-use appkit::pui::block::PBand;
+use appkit::pui::block::{PBand, PRow};
 use appkit::pui::control::{PControl, PField, inside};
-use appkit::pui::core::{PFit, PPaint, PPoint, PRect, PView, figure, show};
+use appkit::pui::core::{PPaint, PPoint, PRect, PView, figure, show};
 use appkit::pui::layout::{PDry, PScroll, ground, wrap};
 
 mod item;
 
 pub use super::tool::grouped;
 pub use item::{Deed, Item, Seat};
-use super::{DIM, Desk, GAP, ICON, INK, LINE, RADIUS, ROW, fit};
+use super::{DIM, Desk, GAP, INK, LINE, ROW, fit};
 
-/// The theme's tokens: how high a line of a list is, how large what
-/// stands at its head, and how far down a page begins.
+/// The theme's tokens: how high a line of a list is, and how far
+/// down a page begins. How large what leads a line is, is the kit's
+/// (`row.lead`).
 pub const HIGH: &str = "list.row";
-pub const MARK: &str = "list.mark";
 pub const TOP: &str = "list.top";
 
 /// Where a field of a page stands in itself: as wide as the page's
@@ -85,8 +85,8 @@ impl<A: Clone> Lister<A> {
 
     /// Draw the items; where each begins, and where the last ends.
     fn pass(&self, paint: &mut dyn PPaint, origin: PPoint, frame: PRect, desk: &Desk, item: &[Item<A>], field: &[&PField]) -> Vec<f32> {
-        let (gap, line, row, high, mark) = (paint.size(GAP), paint.size(LINE), paint.size(ROW), paint.size(HIGH), paint.size(MARK));
-        let (ink, dim, icon) = (paint.color(INK), paint.color(DIM), paint.size(ICON));
+        let (gap, line, row, high) = (paint.size(GAP), paint.size(LINE), paint.size(ROW), paint.size(HIGH));
+        let (ink, dim) = (paint.color(INK), paint.color(DIM));
         let (start, wide) = desk.column(frame.size.width);
         let left = origin.x + start;
         let begin = origin.y + paint.size(TOP) - self.scroll.get().at();
@@ -138,31 +138,11 @@ impl<A: Clone> Lister<A> {
                     top += pill.high(paint) + gap / 2.0;
                 }
                 Item::Line(seat, title, sub, open, deed) => {
+                    // The kit's row, with what can be done at its end.
                     let rect = PRect::new(left, top, wide, high);
                     open.iter().for_each(|act| spot.push((rect, act.clone())));
-                    let place = PRect::new(left, rect.center().y - mark / 2.0, mark, mark);
-                    let radius = paint.size(RADIUS);
-                    match seat {
-                        Seat::None => {}
-                        Seat::Face(face) => paint.picture(&face.sheet, place, mark / 2.0, PFit::Cell { column: face.column, index: face.index }),
-                        Seat::Icon(name) => paint.icon(name, PRect::new(place.center().x - icon / 2.0, place.center().y - icon / 2.0, icon, icon), ink),
-                        Seat::Picture(key) => paint.picture(key, place, radius, PFit::Whole),
-                    }
-                    let beside = match seat {
-                        Seat::None => left,
-                        _ => left + mark + gap / 2.0,
-                    };
                     let end = self.deeds(paint, PPoint::new(left + wide, rect.center().y), deed, &mut spot);
-                    let room = (end - beside - gap / 2.0).max(0.0);
-                    let both = !sub.is_empty();
-                    let up = match both {
-                        true => line,
-                        false => line / 2.0,
-                    };
-                    paint.text(PPoint::new(beside, rect.center().y - up), &fit(title, room, paint), ink);
-                    if both {
-                        paint.text(PPoint::new(beside, rect.center().y), &fit(sub, room, paint), dim);
-                    }
+                    (seat.lead(), title.as_str(), sub.as_str()).row(paint, rect, left + wide - end);
                     top += high;
                 }
             }

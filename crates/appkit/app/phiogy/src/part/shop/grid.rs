@@ -4,8 +4,8 @@
 //! called; its price; and how it stands, which a press changes. Only
 //! the rows in sight are drawn: a page can hold hundreds of things.
 
-use appkit::pui::block::PPill;
-use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect, light};
+use appkit::pui::block::{PLead, PPill, PRow};
+use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect};
 
 use super::{Act, Shopping, swatch};
 use crate::part::{DIM, GAP, ICON, INK, LINE, RADIUS, fit};
@@ -43,21 +43,25 @@ impl Shopping {
 
     /// One card of a grid.
     pub(super) fn card(&self, paint: &mut dyn PPaint, rect: PRect, shop: &str, icon: &str, product: &Product, spot: &mut Vec<(PRect, Act)>) {
-        let (gap, line, ink, dim, radius) = (paint.size(GAP), paint.size(LINE), paint.color(INK), paint.color(DIM), paint.size(RADIUS));
         let place = format!("{shop}/{}", product.id);
         // A card is lit more while the pointer is over it.
         let lit = match self.over(rect) {
             true => PLight::Rest,
             false => PLight::Soft,
         };
-        light::surface(paint, rect, radius, lit, "");
         spot.push((rect, Act::Thing(place.clone())));
-        let side = rect.size.width - gap;
-        self.portrait(paint, PRect::new(rect.origin.x + gap / 2.0, rect.origin.y + gap / 2.0, side, side), product, icon);
-        let (left, top) = (rect.origin.x + gap / 2.0, rect.origin.y + side + gap * 0.75);
-        paint.text(PPoint::new(left, top), &fit(&product.title, side, paint), ink);
-        paint.text(PPoint::new(left, top + line), &fit(&product.sub, side, paint), dim);
-        self.stand(paint, PPoint::new(left, top + line * 2.0 + gap / 4.0), shop, product, spot);
+        // The kit's tile: its picture, what it is called, a line about
+        // it. A theme has no picture: it is shown by its own colours.
+        let lead = match (&product.sprite, product.image.is_empty(), product.swatch.is_empty()) {
+            (Some(cell), ..) => PLead::Cell(&cell.sheet, cell.column, cell.index),
+            (None, false, _) => PLead::Picture(&product.image),
+            (None, true, false) => PLead::None,
+            (None, true, true) => PLead::Icon(self.desk.icon(icon)),
+        };
+        let (frame, under) = (lead, product.title.as_str(), product.sub.as_str()).tile(paint, rect, lit);
+        let radius = paint.size(RADIUS);
+        (lead == PLead::None && !product.swatch.is_empty()).then(|| swatch::draw(paint, frame, &product.swatch, radius));
+        self.stand(paint, under, shop, product, spot);
     }
 
     /// How high a card that wide is.

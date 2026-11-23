@@ -184,7 +184,8 @@ size	view.face	40
 # how many people a search lists at most, as on the web.
 size	list.top	16
 size	list.row	56
-size	list.mark	40
+# How large what leads a row is (the kit's row): a face, a picture.
+size	row.lead	40
 size	host.most	24
 size	people.most	30
 # The shops: how many a search lists at most; how wide a card of a
