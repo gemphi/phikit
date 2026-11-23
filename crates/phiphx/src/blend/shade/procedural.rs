@@ -61,6 +61,8 @@ pub struct BlendProcedural {
     pub mix: Option<BlendProc>,
     /// Principled ▸ Normal ← Bump, or the output's Displacement as one.
     pub bump: Option<BlendBump>,
+    /// The Volume's Density, when a texture drives it: fog in wisps.
+    pub density: Option<BlendProc>,
 }
 
 /// Steps of a ramp bake: the ramp image is `RAMP_STOPS × 1`.
@@ -81,6 +83,7 @@ impl BlendFile {
             base_mix,
             mix: self.surface_mix_node(&nodes, &links, dna).and_then(|m| find.at(m, "Fac")),
             bump: principled.and_then(|p| find.bump(p)).or_else(|| output.and_then(|o| find.displacement(o))),
+            density: output.and_then(|o| self.linked_named(&nodes, &links, o, "Volume", dna)).and_then(|v| find.at(v, "Density")),
         }
     }
 }

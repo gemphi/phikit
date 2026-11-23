@@ -86,7 +86,15 @@ impl BlendFile {
         // black Absorption Color.
         let plain = kind.strip_prefix("ShaderNode").unwrap_or(&kind) != "VolumePrincipled";
         let grey = if plain { 0.8 } else { 0.5 };
-        BlendVolume::of(kind.strip_prefix("ShaderNode").unwrap_or(&kind), rgb("Color", [grey; 3]), float("Density", 1.0), float("Anisotropy", 0.0), rgb("Absorption Color", [0.0; 3]))
+        // A Density a texture drives is that texture times these sums at
+        // a density of one (`BlendProcedural::density`, which the tracer
+        // reads at each point): its fold to one number would be the
+        // texture's middle, which a ramp may well send to nothing.
+        let density = match self.surface_procedural(ma, dna).density {
+            Some(_) => 1.0,
+            None => float("Density", 1.0),
+        };
+        BlendVolume::of(kind.strip_prefix("ShaderNode").unwrap_or(&kind), rgb("Color", [grey; 3]), density, float("Anisotropy", 0.0), rgb("Absorption Color", [0.0; 3]))
     }
 }
 
