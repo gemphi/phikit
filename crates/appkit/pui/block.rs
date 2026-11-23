@@ -53,6 +53,9 @@ pub const INK: &str = "text.ink";
 pub const DIM: &str = "text.dim";
 pub const ICON: &str = "icon.size";
 pub const RADIUS: &str = "row.radius";
+/// How high a pill is at least: a theme without it has pills a line and
+/// half a gap high.
+pub const HIGH: &str = "pill.high";
 /// The line under a table's row, and how thick it is.
 pub const RULE: &str = "line.ink";
 pub const WIDTH: &str = "line.width";
@@ -105,7 +108,7 @@ pub trait PPill {
     }
 
     /// How large it is with that much room beside what it holds: as
-    /// high as a line and half a gap.
+    /// high as a line and half a gap, or the theme's pill, if higher.
     fn sized(&self, paint: &dyn PPaint, room: f32) -> PSize {
         let (gap, line, icon) = (paint.size(GAP), paint.size(LINE), paint.size(ICON));
         let (mark, between) = match (self.icon().is_empty(), self.label().is_empty()) {
@@ -113,7 +116,7 @@ pub trait PPill {
             (false, true) => (icon, 0.0),
             (false, false) => (icon, gap / 4.0),
         };
-        PSize { width: mark + between + paint.measure(self.label()) + room, height: line + gap / 2.0 }
+        PSize { width: mark + between + paint.measure(self.label()) + room, height: (line + gap / 2.0).max(paint.theme().size(HIGH).unwrap_or_default()) }
     }
 
     /// How large it is: what it holds, and a gap.
@@ -175,9 +178,9 @@ pub trait PBand {
     /// Its pills, in order.
     fn pill(&self) -> Vec<&dyn PPill>;
 
-    /// How high it is.
+    /// How high it is: a pill and half a gap.
     fn high(&self, paint: &dyn PPaint) -> f32 {
-        paint.size(LINE) + paint.size(GAP)
+        (paint.size(LINE) + paint.size(GAP) / 2.0).max(paint.theme().size(HIGH).unwrap_or_default()) + paint.size(GAP) / 2.0
     }
 
     /// How wide it is, with the room between and round its pills.
@@ -208,6 +211,31 @@ pub trait PBand {
             rect
         };
         list.iter().map(place).collect()
+    }
+
+    /// Draw it across the whole of a width: each pill is given the same
+    /// share of what is left beside what it holds, so the band fills it.
+    /// Too narrow for that, it is drawn as `draw_in` draws it.
+    fn draw_full(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32) -> Vec<PRect> {
+        let (gap, radius, list) = (paint.size(GAP), paint.size(RADIUS), self.pill());
+        let count = list.len().max(1) as f32;
+        let held: f32 = list.iter().map(|pill| pill.sized(paint, 0.0).width).sum();
+        let room = (wide - gap / 2.0 - (count - 1.0) * gap / 4.0 - held) / count;
+        match (room >= gap, list.is_empty()) {
+            (_, true) => Vec::new(),
+            (false, false) => self.draw_in(paint, at, wide),
+            (true, false) => {
+                let high = self.high(paint);
+                label(paint, PRect::new(at.x, at.y, wide, high), radius, PLight::Rest, true, "");
+                let mut left = at.x + gap / 4.0;
+                let place = |pill: &&dyn PPill| {
+                    let rect = pill.lay(paint, PPoint::new(left, at.y + gap / 4.0), true, room);
+                    left += rect.size.width + gap / 4.0;
+                    rect
+                };
+                list.iter().map(place).collect()
+            }
+        }
     }
 
     /// Draw it from a place; where each pill stands.

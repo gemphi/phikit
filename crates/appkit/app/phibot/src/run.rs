@@ -28,5 +28,6 @@ pub fn run(word: &[String]) {
         stage.window.apply(&PDeed::Show(space));
     }
     let own = PFolder::new(&[concat!(env!("CARGO_MANIFEST_DIR"), "/asset")]);
-    screen::run(stage, (own, PBundle));
+    let film = app.desk().film.clone();
+    screen::run(stage, (crate::part::Moving(film), (own, PBundle)));
 }

@@ -12,6 +12,8 @@
 //! greenhouse again and Exit goes back to making.
 
 pub mod drive;
+pub mod figure;
+pub mod shape;
 pub mod garden;
 pub mod look;
 pub mod machine;
@@ -38,6 +40,8 @@ pub struct Data {
     pub transition: Table,
     pub key: Table,
     pub game: Table,
+    pub paint: Table,
+    pub scenery: Table,
     /// The folder the tables are in.
     pub dir: PathBuf,
 }
@@ -47,7 +51,7 @@ impl Data {
     pub fn read() -> Data {
         let dir: PathBuf = [env!("CARGO_MANIFEST_DIR"), "data", "botanist"].iter().collect();
         let table = |name: &str| Table::read(&dir.join(format!("{name}.tsv")));
-        Data { part: table("part"), material: table("material"), light: table("light"), face: table("face"), default: table("default"), state: table("state"), transition: table("transition"), key: table("key"), game: table("game"), dir }
+        Data { part: table("part"), material: table("material"), light: table("light"), face: table("face"), default: table("default"), state: table("state"), transition: table("transition"), key: table("key"), game: table("game"), paint: table("paint"), scenery: table("scenery"), dir }
     }
 
     /// Where Apple's assets are.

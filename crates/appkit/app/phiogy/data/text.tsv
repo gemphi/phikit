@@ -31,6 +31,8 @@ look.light	Light
 look.dark	Dark
 look.glass	Glass
 look.frost	Glass Light
+look.liquid	Liquid Glass
+look.liquid-dark	Liquid Glass Dark
 # What is true now, in the profile.
 fact.line	Line
 fact.closed	not open

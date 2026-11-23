@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 name = "phiace"
 version = "0.1.0"
 edition = "2024"
@@ -8,3 +8,5 @@ description = "The robotic system: the robot as words in the phiecs world. The M
 # The world a robot lives in: its body, sensors and goals are words and
 # relations, the same ECS phiplay and phiber run on.
 phiecs = { path = "../phicore/phiecs" }
+# The robot's and the greenhouse's meshes, from their binary USD.
+phiusd = { path = "../phicore/phiusd" }

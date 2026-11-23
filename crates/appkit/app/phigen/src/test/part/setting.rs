@@ -65,7 +65,7 @@ fn a_look_changes_every_colour_of_the_theme_or_none() {
         name
     };
     let shade = Phigen::shade(&PLook::read(data::THEME));
-    assert_eq!(shade.list(), ["light", "dark", "glass", "frost"]);
+    assert_eq!(shade.list(), ["light", "dark", "glass", "frost", "liquid", "liquid-dark"]);
     let all = token(data::THEME, 0);
     for look in shade.list() {
         let own: String = data::LOOK.lines().filter(|line| line.split('\t').next() == Some(look)).map(|line| format!("{line}\n")).collect();

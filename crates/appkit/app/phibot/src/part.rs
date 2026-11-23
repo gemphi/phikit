@@ -5,7 +5,9 @@
 mod ground;
 mod pick;
 mod robot;
+mod scene;
 mod score;
+mod view;
 
 pub use ground::Ground;
 pub use pick::Pick;
@@ -16,7 +18,9 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, channel};
 
-use appkit::pui::core::PColor;
+use appkit::pui::core::{PColor, PFilm};
+use phiecs::usd::Prim;
+use phiusd::draw::Library;
 use appkit::pui::window::{PDeed, PWish};
 use appkit::service::PTable;
 use appkit::theme::PShade;
@@ -39,7 +43,7 @@ pub const GARDEN: &str = "garden";
 pub enum Load {
     #[default]
     Idle,
-    Reading(Receiver<Option<Stage>>),
+    Reading(Receiver<Option<(Stage, Library)>>),
     Ready,
     Missing(String),
 }
@@ -54,12 +58,16 @@ pub struct Desk {
     /// Which part the customiser shows, by its place in phiace's table.
     pub chosen: Rc<Cell<usize>>,
     pub load: Rc<RefCell<Load>>,
+    /// The pictures that move: the robot and the greenhouse, drawn here.
+    pub film: PFilm,
+    /// The meshes read so far, each once.
+    pub library: Rc<RefCell<Library>>,
 }
 
 impl Desk {
     pub fn new(shade: Rc<PShade>, text: Rc<PTable>) -> Desk {
         let bot = Rc::new(RefCell::new(Botanist::new(Data::read())));
-        Desk { bot, text, shade, wish: PWish::default(), chosen: Rc::default(), load: Rc::default() }
+        Desk { bot, text, shade, wish: PWish::default(), chosen: Rc::default(), load: Rc::default(), film: PFilm::default(), library: Rc::default() }
     }
 
     /// The botanist's tables.
@@ -83,7 +91,12 @@ impl Desk {
             Load::Idle | Load::Missing(_) => {
                 let (send, take) = channel();
                 let data = self.data();
-                std::thread::spawn(move || _ = send.send(garden::read(&data)));
+                // The scene, and every mesh it names, read away from the window.
+                std::thread::spawn(move || _ = send.send(garden::read(&data).map(|stage| {
+                    let mut library = Library::default();
+                    assets(&stage.prim).iter().for_each(|file| _ = library.scene(file));
+                    (stage, library)
+                })));
                 *load = Load::Reading(take);
             }
             Load::Reading(_) => {}
@@ -101,8 +114,9 @@ impl Desk {
         };
         match read {
             None => true,
-            Some(Some(stage)) => {
+            Some(Some((stage, library))) => {
                 self.bot.borrow_mut().plant_in(&stage);
+                self.library.borrow_mut().take(library);
                 *load = Load::Ready;
                 false
             }
@@ -134,4 +148,30 @@ pub fn light(data: &Data, index: usize) -> PColor {
     let row = data.light.row.get(index);
     let cell = |i: usize| row.and_then(|row| row.get(i)).and_then(|v| v.parse::<f32>().ok()).unwrap_or_default();
     PColor::new(cell(2), cell(3), cell(4), 1.0)
+}
+
+/// Every binary asset a stage's prims name.
+fn assets(prim: &[Prim]) -> Vec<std::path::PathBuf> {
+    let mut out = Vec::new();
+    let mut stack: Vec<&Prim> = prim.iter().collect();
+    while let Some(p) = stack.pop() {
+        out.extend(p.get(phiecs::usd::stage::ASSET).map(|v| std::path::PathBuf::from(v.text())));
+        stack.extend(p.child.iter());
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
+/// The window's film, as an asset source: the pictures that move.
+pub struct Moving(pub PFilm);
+
+impl appkit::pui::core::PAsset for Moving {
+    fn load(&self, _path: &str) -> Option<Vec<u8>> {
+        None
+    }
+
+    fn film(&self) -> Option<PFilm> {
+        Some(self.0.clone())
+    }
 }

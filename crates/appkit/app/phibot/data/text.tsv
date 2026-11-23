@@ -26,3 +26,5 @@ look.light	Light
 look.dark	Dark
 look.glass	Glass
 look.frost	Frost
+look.liquid	Liquid Glass
+look.liquid-dark	Liquid Glass Dark

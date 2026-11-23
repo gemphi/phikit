@@ -111,3 +111,32 @@ fn the_robot_walks_the_greenhouse_propagates_every_plant_and_celebrates() {
     bot.exit();
     assert_eq!(bot.phase, Phase::Playing);
 }
+
+#[test]
+fn the_robot_is_its_meshes_in_3d_with_its_head_on_its_body() {
+    let bot = Botanist::new(Data::read());
+    let mut library = phiusd::draw::Library::default();
+    let started = std::time::Instant::now();
+    let piece = phiace::bot::botanist::figure::figure(&bot.world, &bot.look(), bot.data(), &mut library);
+    let count: usize = piece.iter().map(|p| p.triangle.len()).sum();
+    if count == 0 {
+        eprintln!("Apple's meshes are not on this disk");
+        return;
+    }
+    // About 125 thousand triangles, read in well under a second.
+    println!("{count} triangles in {} ms", started.elapsed().as_millis());
+    assert!(count > 50_000, "{count}");
+    // The head stands over the body: its lowest point is higher than the body's middle.
+    let low = |p: &phiace::bot::botanist::figure::Piece| p.triangle.iter().flatten().map(|v| v[1]).fold(f32::MAX, f32::min);
+    let high = |p: &phiace::bot::botanist::figure::Piece| p.triangle.iter().flatten().map(|v| v[1]).fold(f32::MIN, f32::max);
+    let (all_low, all_high) = (piece.iter().map(low).fold(f32::MAX, f32::min), piece.iter().map(high).fold(f32::MIN, f32::max));
+    println!("robot from {all_low} to {all_high}");
+    assert!(all_high > all_low);
+    // The parts are of one rig: the head on the body with no gap, so
+    // the robot is no taller than a body and a head (about 9.4 cm).
+    assert!(all_high - all_low < 0.1, "{all_low} to {all_high}");
+    // Seen small, far fewer triangles do: 96 cells across it.
+    let few: usize = phiace::bot::botanist::figure::coarse(&piece, 96.0).iter().map(|p| p.triangle.len()).sum();
+    println!("{few} triangles in 96 cells");
+    assert!(few * 3 < count, "{few} of {count}");
+}

@@ -3,9 +3,10 @@
 //! text layer (`.usda`) takes that layer's prim (the one named after the
 //! `@path@`, or its default prim) as what it is, and its own opinions
 //! stand over it: its properties win, and a child of the same name is
-//! composed into the referenced one. Binary layers (`.usdc`, `.usdz`,
-//! a `.usd` that is not text) are kept as the prim's asset, unopened,
-//! for whoever draws meshes to read.
+//! composed into the referenced one. Any other layer (`.usdc`, `.usdz`,
+//! a `.usd`, text or not) is the prim's asset, kept unopened for
+//! whoever draws meshes to read (phiusd): those hold meshes, which the
+//! world needs only to draw, and they are the largest by far.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -53,9 +54,10 @@ fn load(file: &Path, cache: &mut HashMap<PathBuf, Option<Layer>>) -> Option<Laye
     cache.entry(file.to_path_buf()).or_insert_with(|| text(file).map(|text| Layer::read(&text))).clone()
 }
 
-/// The text of a layer, where the file is a text layer.
+/// The text of a layer, where the file is a text layer named `.usda`.
 fn text(file: &Path) -> Option<String> {
-    let bytes = std::fs::read(file).ok()?;
+    let named = file.extension().is_some_and(|e| e.eq_ignore_ascii_case("usda"));
+    let bytes = std::fs::read(file).ok().filter(|_| named)?;
     bytes.starts_with(b"#usda").then(|| String::from_utf8_lossy(&bytes).into_owned())
 }
 

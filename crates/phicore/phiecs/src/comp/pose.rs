@@ -54,6 +54,46 @@ impl Matrix {
         [row(0), row(1), row(2)]
     }
 
+    /// The matrix that undoes this one; none where it cannot be undone.
+    pub fn inverse(&self) -> Option<Matrix> {
+        let m = &self.0;
+        let mut a = [[0.0f64; 8]; 4];
+        for (r, row) in a.iter_mut().enumerate() {
+            for c in 0..4 {
+                row[c] = m[r][c] as f64;
+            }
+            row[4 + r] = 1.0;
+        }
+        for c in 0..4 {
+            let pivot = (c..4).max_by(|&x, &y| a[x][c].abs().total_cmp(&a[y][c].abs()))?;
+            if a[pivot][c].abs() < 1e-12 {
+                return None;
+            }
+            a.swap(c, pivot);
+            let lead = a[c][c];
+            a[c].iter_mut().for_each(|v| *v /= lead);
+            for r in (0..4).filter(|&r| r != c) {
+                let f = a[r][c];
+                let row = a[c];
+                a[r].iter_mut().zip(row).for_each(|(v, w)| *v -= f * w);
+            }
+        }
+        let mut out = [[0.0f32; 4]; 4];
+        for (r, row) in out.iter_mut().enumerate() {
+            for (c, cell) in row.iter_mut().enumerate() {
+                *cell = a[r][4 + c] as f32;
+            }
+        }
+        Some(Matrix(out))
+    }
+
+    /// The same matrix with no move: only its turn and size.
+    pub fn still(&self) -> Matrix {
+        let mut m = self.0;
+        (0..3).for_each(|r| m[r][3] = 0.0);
+        Matrix(m)
+    }
+
     /// The point the matrix puts its origin at.
     pub fn origin(&self) -> [f32; 3] {
         [self.0[0][3], self.0[1][3], self.0[2][3]]
@@ -116,6 +156,18 @@ mod tests {
         let child = Pose::at([0.0, 0.0, 3.0]).matrix();
         let o = pose.matrix().then(&child).origin();
         assert!((o[0] - 1.0).abs() < 1e-5 && (o[2] - -6.0).abs() < 1e-5, "{o:?}");
+    }
+
+    #[test]
+    fn a_matrix_and_its_inverse_undo_each_other() {
+        let pose = Pose { translate: [1.0, 2.0, 3.0], orient: [0.9, 0.1, 0.3, 0.2], scale: [2.0, 0.5, 3.0] };
+        let m = pose.matrix();
+        let back = m.inverse().expect("it can be undone").then(&m);
+        for (r, row) in back.0.iter().enumerate() {
+            for (c, v) in row.iter().enumerate() {
+                assert!((v - (r == c) as u8 as f32).abs() < 1e-4, "{back:?}");
+            }
+        }
     }
 
     #[test]

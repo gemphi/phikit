@@ -1,0 +1,10 @@
+[package]
+name = "phiusd"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "OpenUSD's binary layers for phiecs: meshes read from .usdc and .usdz with the openusd crate, to draw a scene live."
+
+[dependencies]
+openusd = "0.3"
+phiecs = { path = "../phiecs" }

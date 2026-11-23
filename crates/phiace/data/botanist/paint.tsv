@@ -1,0 +1,12 @@
+# Which colour each of a part's meshes is drawn in, by a piece of its
+# prim's path: a light in the lights' colour, the head's screen dark,
+# anything else in its part's material colour. A role's colour is the
+# game table's `<role>.colour`. The first row a path holds wins. The
+# greenhouse's meshes have a table of their own (`scenery.tsv`).
+# piece	role
+light	light
+rim	light
+eye	light
+face	screen
+screen	screen
+glass	glass

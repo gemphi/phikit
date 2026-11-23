@@ -12,6 +12,11 @@ are on this disk.
    while Apple's scene is read.
 4. Once read, the greenhouse shows its three planters (coffeeBerry,
    poppy, yucca), the score at 0, Replay and Exit Game.
-5. A press on each planter walks the robot there and propagates it; with
-   all three, the score says "Awesome job!" and "You propagated 3 plants".
+5. A press on each planter (down and up, without dragging) walks the
+   robot there and propagates it; with all three, the score says
+   "Awesome job!" and "You propagated 3 plants".
 6. Exit Game goes back to the creator.
+
+Not yet tested, by a test or by hand in the window: dragging the robot
+or the greenhouse turns and tips the view, and the wheel brings it
+nearer and farther.

@@ -1,0 +1,17 @@
+# Which colour each of the greenhouse's meshes is drawn in, by a piece
+# of its prim's path: its planters, dirt, leaves, flowers, metal and
+# stone, its lights in the robot's lights' colour; anything else in the
+# scenery's colour. A role's colour is the game table's `<role>.colour`.
+# The first row a path holds wins.
+# piece	role
+bottom_light	light
+planter	planter
+dirt	dirt
+foliage	leaf
+yucca	leaf
+coffeeberry	leaf
+setdressing	leaf
+poppy	flower
+pipe	metal
+edge	metal
+base	stone

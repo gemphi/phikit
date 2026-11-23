@@ -1,30 +1,23 @@
-//! The greenhouse (ExplorationView), seen from above until the window
-//! draws its meshes: its ground, its planters where Apple's scene puts
-//! them (green once propagated), and the robot facing where it goes.
-//! While the scene is read it says it is loading. The robot walks with
-//! the keys, held as the system repeats them, or to where a press is.
+//! The greenhouse (ExplorationView) in 3D (`scene.rs`), its planters
+//! marked (green once propagated). While the scene is read it says it is
+//! loading. The robot walks with the keys, held as the system repeats
+//! them, or to where a press on the floor is; a drag turns and tips the
+//! view and the wheel brings it nearer.
 
 use std::cell::{Cell, RefCell};
 use std::time::Instant;
 
-use appkit::pui::core::{PDraw, PEvent, PPaint, PPoint, PRect, PView};
+use appkit::pui::core::{PDraw, PEvent, PFit, PPaint, PPoint, PRect, PView};
 use appkit::theme::PTheme;
-use phiecs::comp::Pose;
 use phiecs::comp::tree::matrix;
 
+use super::scene::{FILM, Scene};
 use super::{DIM, Desk, GAP, INK, LINE, Load};
 
-/// The theme's tokens: how much room is shown round the floor, as a
-/// share of its reach, and how large a planter, the robot and its facing mark are drawn.
-pub const REACH: &str = "garden.reach";
+/// The theme's tokens: how large a planter's mark is, and its colours.
 pub const PLANTER: &str = "garden.planter";
-pub const ROBOT: &str = "garden.robot";
-pub const DOT: &str = "garden.dot";
-/// Its colours.
-pub const GROUND: &str = "garden.ground";
 pub const PLANT: &str = "garden.planter";
 pub const GROWN: &str = "garden.grown";
-pub const BOT: &str = "garden.robot";
 /// How long a key is held after the system last said it, in seconds.
 pub const HOLD: &str = "garden.hold";
 /// How long the robot may come no nearer to where a press sent it
@@ -43,20 +36,19 @@ pub struct Ground {
     far: Cell<f32>,
     stall: Cell<f32>,
     last: Cell<Option<Instant>>,
+    scene: Scene,
+    /// Where the last press went down, to walk there if it did not drag.
+    down: Cell<Option<PPoint>>,
 }
 
 impl Ground {
     pub fn new(desk: Desk) -> Ground {
-        Ground { frame: PRect::default(), desk, held: RefCell::default(), goal: Cell::default(), far: Cell::new(f32::MAX), stall: Cell::default(), last: Cell::default() }
+        let (goal, far, stall, last) = (Cell::default(), Cell::new(f32::MAX), Cell::default(), Cell::default());
+        Ground { frame: PRect::default(), desk, held: RefCell::default(), goal, far, stall, last, scene: Scene::default(), down: Cell::default() }
     }
 
-    /// The scale and middle the greenhouse is drawn at: pixels a metre.
-    /// The floor fills the part, with the theme's room round it.
-    fn view(&self) -> (f32, PPoint) {
-        let size = self.frame.size;
-        let floor = self.desk.bot.borrow().garden().map_or(1.0, |g| g.reach);
-        let reach = floor * self.desk.shade.size(REACH).unwrap_or(1.0);
-        (size.width.min(size.height) / 2.0 / reach.max(f32::EPSILON), PPoint::new(size.width / 2.0, size.height / 2.0))
+    fn seen(&self, p: [f32; 3]) -> Option<PPoint> {
+        self.scene.seen(p, self.frame.size)
     }
 
     /// The name phiace's key table gives a key the window sends.
@@ -110,14 +102,12 @@ impl PDraw for Ground {
             Load::Missing(path) => return middle(&self.desk.text.get("missing").replace("{path}", path), paint, origin.y + size.height / 2.0),
             Load::Ready => {}
         }
-        let (scale, mid) = self.view();
-        let to = |p: [f32; 3]| PPoint::new(origin.x + mid.x + p[0] * scale, origin.y + mid.y + p[2] * scale);
-        let ground = self.desk.bot.borrow().garden().map_or(0.0, |g| g.reach) * scale * 2.0;
-        paint.round(PRect::new(origin.x + mid.x - ground / 2.0, origin.y + mid.y - ground / 2.0, ground, ground), ground / 2.0, paint.color(GROUND));
+        self.scene.shoot(&self.desk, (size.width.max(0.0) as u32, size.height.max(0.0) as u32));
+        paint.picture(FILM, PRect { origin, size }, 0.0, PFit::Whole);
         let bot = self.desk.bot.borrow();
-        let (side, robot, dot) = (paint.size(PLANTER), paint.size(ROBOT), paint.size(DOT));
+        let side = paint.size(PLANTER);
         for planter in bot.garden().map(|g| g.planter.clone()).unwrap_or_default() {
-            let at = to(matrix(&bot.world, planter.word).origin());
+            let Some(at) = self.seen(matrix(&bot.world, planter.word).origin()).map(|p| p.plus(origin)) else { continue };
             let colour = match planter.grown {
                 true => paint.color(GROWN),
                 false => paint.color(PLANT),
@@ -125,15 +115,13 @@ impl PDraw for Ground {
             paint.round(PRect::new(at.x - side / 2.0, at.y - side / 2.0, side, side), side / 2.0, colour);
             paint.text(PPoint::new(at.x - paint.measure(&planter.plant) / 2.0, at.y + side / 2.0 + gap / 4.0), &planter.plant, ink);
         }
-        // The robot, and a mark where it faces: forward is -Z turned by its pose.
-        let at = to(matrix(&bot.world, bot.robot).origin());
-        let turn = bot.world.read::<Pose>(bot.robot).map(|p| p.orient).unwrap_or(Pose::default().orient);
-        let ahead = Pose { orient: turn, ..Pose::default() }.matrix().apply([0.0, 0.0, -1.0]);
-        paint.round(PRect::new(at.x - robot / 2.0, at.y - robot / 2.0, robot, robot), robot / 2.0, paint.color(BOT));
-        let tip = PPoint::new(at.x + ahead[0] * robot * 0.6, at.y + ahead[2] * robot * 0.6);
-        paint.round(PRect::new(tip.x - dot / 2.0, tip.y - dot / 2.0, dot, dot), dot / 2.0, ink);
+        // What the robot is doing, at its feet.
         let said = self.desk.text.get("state").replace("{state}", &bot.state());
-        paint.text(PPoint::new(at.x - paint.measure(&said) / 2.0, at.y + robot / 2.0 + gap / 4.0), &said, dim);
+        // On the floor under it, not over its middle.
+        let floor = bot.world.lexicon.get(phiace::bot::botanist::garden::GREENHOUSE).map_or(0.0, |root| matrix(&bot.world, root).origin()[1]);
+        let [x, _, z] = matrix(&bot.world, bot.robot).origin();
+        let feet = self.seen([x, floor, z]).map(|p| p.plus(origin));
+        feet.into_iter().for_each(|at| paint.text(PPoint::new(at.x - paint.measure(&said) / 2.0, at.y + gap / 2.0), &said, dim));
         middle(self.desk.text.get("walk"), paint, origin.y + size.height - gap - line);
     }
 }
@@ -191,11 +179,21 @@ impl PView for Ground {
                 known
             }
             PEvent::PointerDown(at) => {
-                let (scale, mid) = self.view();
-                self.goal.set(Some([(at.x - mid.x) / scale, (at.y - mid.y) / scale]));
+                self.scene.orbit.down(at);
+                self.down.set(Some(at));
+                true
+            }
+            PEvent::PointerMove(at) => self.scene.orbit.moved(at, self.desk.shade.as_ref()),
+            // Let go without dragging: a press on the floor, and there
+            // the robot goes. After a drag, the greenhouse drawn whole.
+            PEvent::PointerUp(_) => {
+                let pressed = self.scene.orbit.up();
+                let floor = self.down.take().filter(|_| pressed).and_then(|at| self.scene.floor(&self.desk, at, self.frame.size));
+                floor.into_iter().for_each(|p| self.goal.set(Some([p[0], p[2]])));
                 self.far.set(f32::MAX);
                 true
             }
+            PEvent::Scroll(_, by) => self.scene.orbit.wheel(by.y, self.desk.shade.as_ref()),
             _ => false,
         }
     }

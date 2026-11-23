@@ -38,3 +38,35 @@ clip.length	1
 # How far past the farthest planter the floor goes, in metres: the robot
 # walks no farther from the middle. The sample's walls stand there; a mock.
 floor.margin	0.06
+# The colours of the roles that are not a material's or the lights'.
+screen.colour	0.05 0.06 0.07
+glass.colour	0.75 0.85 0.9
+# The greenhouse's roles (paint.tsv), and anything else in it.
+leaf.colour	0.3 0.52 0.28
+flower.colour	0.86 0.36 0.3
+planter.colour	0.78 0.62 0.48
+dirt.colour	0.36 0.26 0.18
+metal.colour	0.62 0.64 0.66
+stone.colour	0.84 0.82 0.78
+scenery.colour	0.7 0.71 0.68
+# How wide the camera sees, in degrees, and where it stands over the
+# greenhouse (the sample's camera beside a volume: at (0, 0.2, 0.4),
+# looking down by half a radian).
+camera.fov	45
+camera.eye	0 0.2 0.4
+camera.at	0 -0.279 -0.478
+# The light, as a studio lights a thing: the key light's way and how
+# strong it is, the sky over it and the ground under it that light it a
+# little from all round (more from above), and the shine the key light
+# leaves on what is smooth, how bright and how tight.
+sun.way	0.45 1 0.7
+sun.key	0.62
+light.sky	0.62 0.64 0.68
+light.ground	0.28 0.27 0.26
+sun.shine	0.35
+sun.gloss	36
+# How dark the robot's shadow on the greenhouse floor is, a share.
+shadow.share	0.32
+# How sharp an edge stays sharp: faces meeting at more than this many
+# degrees keep their own shading; less, they are shaded round as one.
+smooth.crease	50

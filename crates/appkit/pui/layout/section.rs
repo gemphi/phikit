@@ -14,10 +14,15 @@ use crate::pui::core::light::label;
 use crate::pui::core::{PColor, PLight, PPaint, PPoint, PRect};
 use crate::theme::PTheme;
 
-/// The theme's tokens for a section's ground: the room it has round
-/// what stands on it, and how round it is.
+/// The theme's tokens for a section's ground, the same for every section
+/// of every part: the room it has beside and over what stands on it, and
+/// how round it is. A theme without them has half a gap beside, a
+/// quarter over, and a row's roundness.
 pub const GAP: &str = "gap";
 pub const RADIUS: &str = "row.radius";
+pub const SIDE: &str = "section.side";
+pub const TOP: &str = "section.top";
+pub const ROUND: &str = "section.radius";
 
 /// A painter that draws nothing and measures as another does: with it
 /// something is laid out to learn how long it is.
@@ -44,9 +49,11 @@ impl PPaint for PDry<'_> {
 /// the right, against the pane it stands in. Nothing for a section
 /// with nothing in it.
 pub fn ground(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32) {
-    let (gap, radius) = (paint.size(GAP), paint.size(RADIUS));
+    let (gap, theme) = (paint.size(GAP), paint.theme());
+    let (side, top) = (theme.size(SIDE).unwrap_or(gap / 2.0), theme.size(TOP).unwrap_or(gap / 4.0));
+    let radius = theme.size(ROUND).unwrap_or(paint.size(RADIUS));
     if end > at.y {
-        label(paint, PRect::new(at.x - gap / 2.0, at.y - gap / 4.0, wide + gap, end - at.y + gap / 2.0), radius, PLight::Soft, true, "");
+        label(paint, PRect::new(at.x - side, at.y - top, wide + side * 2.0, end - at.y + top * 2.0), radius, PLight::Soft, true, "");
     }
 }
 

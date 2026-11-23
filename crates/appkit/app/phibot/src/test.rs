@@ -5,7 +5,7 @@
 use std::rc::Rc;
 
 use appkit::pui::PApp;
-use appkit::pui::core::{PEvent, PMark, PMode, PPoint, PSheet, PSize};
+use appkit::pui::core::{PEvent, PMark, PMode, PPaint, PPoint, PSheet, PSize};
 use appkit::pui::window::PStage;
 use appkit::theme::{PLook, PTheme};
 
@@ -92,8 +92,11 @@ fn start_planting_reads_the_greenhouse_then_shows_its_score() {
     for plant in ["coffeeBerry", "poppy", "yucca"] {
         let named = place(&stage, &look, plant).expect("the planter's name");
         let side = look.size("garden.planter").unwrap_or_default();
-        let at = PPoint::new(named.x - 2.0 + (look.size("gap").unwrap_or_default() / 2.0), named.y - 2.0 - side / 2.0);
+        // Over the middle of its name: the planter's mark.
+        let wide = PSheet::new(look.as_ref()).measure(plant);
+        let at = PPoint::new(named.x + wide / 2.0, named.y - side / 2.0);
         stage.send(&PEvent::PointerDown(at));
+        stage.send(&PEvent::PointerUp(at));
         let start = std::time::Instant::now();
         while start.elapsed().as_secs() < 10 && app.desk().bot.borrow().garden().is_some_and(|g| g.planter.iter().any(|p| p.plant == plant && !p.grown)) {
             stage.tick();

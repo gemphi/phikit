@@ -32,6 +32,16 @@ size	gap	16
 size	line.width	1
 size	row.height	40
 size	row.radius	10
+# Every section's ground, the same in every part: half a gap beside
+# what stands on it, a quarter over it, as round as a row.
+size	section.side	8
+size	section.top	4
+size	section.radius	10
+# How high a pill is at least: no higher than a line and half a gap.
+size	pill.high	0
+# Text stands off its ground only in a look that says so (`text.lift`,
+# with its light's colour, `text.shade`, the look's own).
+size	text.lift	0
 size	icon.size	20
 # The column down the middle of the body, which every part there keeps
 # to; and the mark that ends a text cut short.

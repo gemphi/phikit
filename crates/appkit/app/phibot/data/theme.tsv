@@ -216,19 +216,36 @@ size	view.large	2
 # The botanist. The customiser's width beside the robot.
 size	pane.side	360
 # A swatch of the customiser, and the ring round the one chosen.
-size	bot.swatch	28
+size	bot.swatch	32
 size	bot.ring	3
-# The robot drawn: its height at most, and how wide a part is of it.
-size	bot.height	360
-size	bot.head	0.42
-size	bot.body	0.36
-size	bot.pack	0.3
-# The greenhouse seen from above: how much is shown round its floor, as
-# a share of the floor's reach, and how large a planter and the robot are.
-size	garden.reach	1.12
-size	garden.planter	44
-size	garden.robot	22
-size	garden.dot	9
+# Every section's ground, the same in every part: the room beside and
+# over what stands on it, how round it is, and the least room between
+# two sections (a pane shares out what it has left between them).
+size	section.side	10
+size	section.top	10
+size	section.radius	22
+size	section.space	8
+# How high a pill is at least: options large enough to press easily.
+size	pill.high	36
+# Text stands off its ground only in a look that says so (`text.lift`,
+# with its light's colour, `text.shade`, the look's own).
+size	text.lift	0
+# The greenhouse in 3D: how much room the camera leaves round it, as a
+# share of its reach, and how large a planter's mark is.
+size	garden.reach	1.05
+size	garden.planter	12
+# How many cells across the robot its corners are kept in there: as
+# many as points it stands high on the picture (made larger), at least
+# this many, and from `garden.whole` on all of its triangles. Fewer
+# triangles where it is small, nothing a point shows lost.
+size	garden.detail	64
+size	garden.whole	1024
+# How many cells across the greenhouse its corners are kept in while
+# the view is dragged: coarser, so the drag keeps up with the hand.
+size	garden.moving	220
+# And across the robot for its shadow, at least: a quarter of the
+# robot's own.
+size	garden.shade	32
 # How long a key is held after the system last sent it, in seconds:
 # longer than the wait before the system repeats a key held down.
 size	garden.hold	0.6
@@ -238,10 +255,20 @@ size	garden.stall	0.25
 # How many dots the score's ring has, and how wide the ring is.
 size	score.dot	24
 size	score.ring	120
-color	bot.screen	#0d0f12
-color	garden.ground	#d9dccf
 color	garden.planter	#8a9a7b
 color	garden.grown	#3da057
-color	garden.robot	#3b98a7
 color	score.on	#9fffff
 color	score.off	#c8cdc4
+# The 3D pictures: their ground (none: the part's own shows); how far
+# round the robot the camera stands, as a share of the robot's size; how
+# many times larger a picture is made than shown, so no edge is jagged;
+# how many points a drag goes to turn a view a radian; how much nearer a
+# notch of the wheel brings it (a share, as a power of e), and how near
+# and how far it may come (times as near as it began).
+color	scene.ground	#00000000
+size	scene.room	1.25
+size	scene.smooth	2
+size	scene.drag	180
+size	scene.zoom	0.12
+size	scene.nearest	3
+size	scene.farthest	0.6

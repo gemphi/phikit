@@ -59,6 +59,8 @@ members = [
     # The core of phinet's phiecs that phiber and phiplay run on, kept here
     # so phikit builds with no phinet folder beside it.
     "crates/phicore/phiecs",
+    # OpenUSD's binary layers for phiecs: meshes from .usdc and .usdz.
+    "crates/phicore/phiusd",
     "crates/phiray",
     # Microsoft AirSim's AirLib, in Rust: the sensors, vehicles, controllers
     # and msgpack-rpc a client drives a drone or a car through. A member so

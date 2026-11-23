@@ -4,19 +4,21 @@
 use std::rc::Rc;
 
 use super::PStage;
-use crate::pui::core::light::{label, surface};
+use crate::pui::core::light::{label, pane, surface};
 use crate::pui::core::{PEvent, PLight, PPaint, PPoint, PRect, show};
 use crate::pui::window::PModal;
 use crate::pui::window::{PDeed, PFrame, PGrip, PLevel, PPanel, PSlot};
 use crate::theme::PTheme;
 
-/// The theme's tokens for the ground of a part of the body: how far
-/// inside the part it stands, and how round it is.
 /// The region of a host that is over its page, as an app's data names
 /// it.
 pub const HEADER: &str = "header";
+/// The theme's tokens for the ground of a part of the body: how far
+/// inside the part it stands, how round it is, and whether it is a pane
+/// (glass, where the look has glass): more than nothing says it is.
 pub const INSET: &str = "part.inset";
 pub const RADIUS: &str = "part.radius";
+pub const GLASS: &str = "part.glass";
 
 /// The theme's token for how much of its way a modal slides in a frame.
 /// A theme without it has modals stand where they are at once.
@@ -192,6 +194,8 @@ impl PStage {
     /// inset and rounded as the theme says (`part.inset`,
     /// `part.radius`). A part inside the bar's menu stands on its
     /// group's ground already, and a theme with no `part.inset` has none.
+    /// A look with `part.glass` has every part stand on a pane, as
+    /// Apple's Liquid Glass has its sidebar and its panels.
     ///
     /// The light is at its foot and gone at its head. A part in the
     /// header (`region`) stands in the light of rest, so that what is
@@ -203,8 +207,11 @@ impl PStage {
             true => PLight::Rest,
             false => PLight::Soft,
         };
-        if let (Some(inset), true) = (inset, body.contains(rect.center())) {
-            surface(paint, rect.inset(inset), self.theme.size(RADIUS).unwrap_or_default(), light, "");
+        let (radius, glass) = (self.theme.size(RADIUS).unwrap_or_default(), self.theme.size(GLASS).unwrap_or_default() > 0.0);
+        match (inset, body.contains(rect.center()), glass) {
+            (Some(inset), true, true) => pane(paint, rect.inset(inset), radius, ""),
+            (Some(inset), true, false) => surface(paint, rect.inset(inset), radius, light, ""),
+            _ => {}
         }
     }
 

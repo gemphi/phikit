@@ -18,6 +18,8 @@ look.light	Light
 look.dark	Dark
 look.glass	Glass
 look.frost	Glass Light
+look.liquid	Liquid Glass
+look.liquid-dark	Liquid Glass Dark
 fact.model	Model
 fact.server	Server
 fact.look	Look

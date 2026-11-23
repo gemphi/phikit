@@ -63,15 +63,40 @@ impl<'a> PSheet<'a> {
         self
     }
 
-    /// Every line of text and every heading drawn, in order.
+    /// Every line of text and every heading drawn, in order: a text's
+    /// lift (`lift`) is not another line.
     pub fn text_list(&self) -> Vec<&str> {
-        let text = self.mark.iter().filter_map(|mark| match mark {
-            PMark::Text { text, .. } | PMark::Head { text, .. } => Some(text.as_str()),
-            _ => None,
+        fn said(mark: &PMark) -> Option<&str> {
+            match mark {
+                PMark::Text { text, .. } | PMark::Head { text, .. } => Some(text.as_str()),
+                _ => None,
+            }
+        }
+        let next = self.mark.iter().skip(1).map(Some).chain([None]);
+        let text = self.mark.iter().zip(next).filter_map(|(mark, after)| {
+            let (now, then) = (said(mark), after.and_then(said));
+            match (now, then == now) {
+                (Some(text), false) => Some(text),
+                _ => None,
+            }
         });
         text.collect()
     }
+
+    /// Where a text's light goes under it, and its colour, in a theme
+    /// whose text stands off its ground (`text.lift`, `text.shade`): so
+    /// far down, in that colour. Nothing in a theme without, or where it
+    /// is no way down.
+    fn lift(&self, at: PPoint) -> Option<(PPoint, PColor)> {
+        let lift = self.theme.size(LIFT).filter(|lift| *lift > 0.0)?;
+        Some((PPoint::new(at.x, at.y + lift), self.theme.color(SHADE)?))
+    }
 }
+
+/// The theme's tokens for text that stands off its ground: how far
+/// under it its light falls, and that light's colour.
+pub const LIFT: &str = "text.lift";
+pub const SHADE: &str = "text.shade";
 
 impl PPaint for PSheet<'_> {
     fn theme(&self) -> &dyn PTheme {
@@ -96,10 +121,12 @@ impl PPaint for PSheet<'_> {
     }
 
     fn text(&mut self, at: PPoint, text: &str, color: PColor) {
+        self.lift(at).into_iter().for_each(|(at, color)| self.mark.push(PMark::Text { at, text: text.to_string(), color }));
         self.mark.push(PMark::Text { at, text: text.to_string(), color });
     }
 
     fn head(&mut self, at: PPoint, text: &str, color: PColor) {
+        self.lift(at).into_iter().for_each(|(at, color)| self.mark.push(PMark::Head { at, text: text.to_string(), color }));
         self.mark.push(PMark::Head { at, text: text.to_string(), color });
     }
 

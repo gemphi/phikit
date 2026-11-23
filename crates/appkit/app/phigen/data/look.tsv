@@ -61,3 +61,73 @@ frost	size	glass.share	0.35
 frost	size	glass.lens	26
 frost	color	glass.edge	#ffffff
 frost	size	glass.rim	0.35
+# The Liquid Glass looks are Apple's as its own apps wear it (the
+# Landmarks sample, BOT-anist's panels): clearer glass than the others,
+# bending more at its rim and catching more light there, every part on
+# a pane of it, and every corner rounder, the parts' and the modals'
+# most of all. Its edge is a shine, thin and nearly the glass's own
+# colour, not a border. Its text stands a point off the glass, a light
+# under it (`text.shade`, `text.lift`), as on Vision Pro's panes.
+liquid	color	window.fill	#f2f2f0a0
+liquid	color	line.ink	#1d1d1b1f
+liquid	color	text.ink	#1d1d1b
+liquid	color	text.dim	#55554f
+liquid	color	control.ink	#1d1d1b
+liquid	color	control.accent	#1d1d1b
+liquid	color	icon.ink	#1d1d1b
+liquid	color	shade.light	#ffffff
+liquid	color	activity.ink	#1d1d1b
+liquid	color	tab.ink	#55554f
+liquid	color	modal.veil	#1d1d1b33
+liquid	color	glass.tint	#f7f7f5
+liquid	size	window.glass	1
+liquid	size	glass.blur	14
+liquid	size	glass.saturation	1.5
+liquid	size	glass.share	0.22
+liquid	size	glass.lens	14
+liquid	color	glass.edge	#fbfbf9
+liquid	size	glass.rim	0.22
+liquid	color	text.shade	#ffffff99
+liquid	size	text.lift	1
+liquid	size	part.glass	1
+liquid	size	activity.margin	12
+liquid	size	activity.corner	26
+liquid	size	activity.radius	16
+liquid	size	row.radius	14
+liquid	size	tab.radius	22
+liquid	size	modal.radius	34
+liquid	size	modal.margin	12
+liquid	size	profile.radius	22
+liquid	size	control.radius	22
+liquid-dark	color	window.fill	#1c1c1aa0
+liquid-dark	color	line.ink	#ffffff1f
+liquid-dark	color	text.ink	#f6f6f2
+liquid-dark	color	text.dim	#b8b8b2
+liquid-dark	color	control.ink	#f6f6f2
+liquid-dark	color	control.accent	#f6f6f2
+liquid-dark	color	icon.ink	#f6f6f2
+liquid-dark	color	shade.light	#ffffff
+liquid-dark	color	activity.ink	#f6f6f2
+liquid-dark	color	tab.ink	#b8b8b2
+liquid-dark	color	modal.veil	#00000055
+liquid-dark	size	shade.share	0.12
+liquid-dark	color	glass.tint	#1c1c1a
+liquid-dark	size	window.glass	1
+liquid-dark	size	glass.blur	14
+liquid-dark	size	glass.saturation	1.5
+liquid-dark	size	glass.share	0.22
+liquid-dark	size	glass.lens	14
+liquid-dark	color	glass.edge	#d8d8d4
+liquid-dark	size	glass.rim	0.22
+liquid-dark	color	text.shade	#00000066
+liquid-dark	size	text.lift	1
+liquid-dark	size	part.glass	1
+liquid-dark	size	activity.margin	12
+liquid-dark	size	activity.corner	26
+liquid-dark	size	activity.radius	16
+liquid-dark	size	row.radius	14
+liquid-dark	size	tab.radius	22
+liquid-dark	size	modal.radius	34
+liquid-dark	size	modal.margin	12
+liquid-dark	size	profile.radius	22
+liquid-dark	size	control.radius	22
