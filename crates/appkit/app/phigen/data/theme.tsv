@@ -17,7 +17,7 @@ size	shade.rest	0.72
 size	shade.soft	0.48
 # How much of a ground's width its light reaches: all of it here. Phiogy
 # has 0.7 (the user's rule of 23 November 2026); say if Phigen is to.
-size	shade.reach	1
+size	shade.reach	0.5
 size	surface.turn	0
 size	label.turn	90
 # No glass: the window is opaque and its panes stand on its ground. A

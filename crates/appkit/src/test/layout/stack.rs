@@ -10,7 +10,7 @@ const LOOK: &str = "color\tshade.light\t#ffffff\nsize\tshade.share\t0.5\nsize\ts
 
 /// Two groups, each a block so high, with a heading.
 fn two<'a>() -> Vec<PGrouped<'a>> {
-    let block = |high: f32| -> crate::pui::layout::PDrawn<'a> { Box::new(move |_: &mut dyn PPaint, at: PPoint, wide: f32| (at.y + high, vec![PRect::new(at.x, at.y, wide, high)])) };
+    let block = |high: f32| -> crate::pui::layout::PDrawn<'a> { Box::new(move |_: &mut dyn PPaint, at: PPoint, wide: f32, _: bool| (at.y + high, vec![PRect::new(at.x, at.y, wide, high)])) };
     vec![PGrouped { head: "One".to_string(), draw: block(40.0) }, PGrouped { head: "Two".to_string(), draw: block(40.0) }]
 }
 
@@ -19,12 +19,12 @@ fn groups_share_out_the_room_a_pane_has_left_between_them() {
     let look = PLook::read(LOOK);
     let mut sheet = PSheet::new(&look);
     // Each is a heading (20 and half a gap) and 40, with 10 over and under.
-    let (end, pressed) = stack(&mut sheet, PPoint::new(0.0, 0.0), 200.0, 0.0, &mut two());
+    let (end, pressed) = stack(&mut sheet, PPoint::new(0.0, 0.0), 200.0, 0.0, true, &mut two());
     assert_eq!(end, (10.0 + 28.0 + 40.0 + 10.0) * 2.0 + 8.0);
     // Inside its ground: 10 in from its edge, under its heading.
     assert_eq!(pressed[0], [PRect::new(10.0, 38.0, 180.0, 40.0)]);
     // Given more room, the second group moves down to fill it.
-    let (end, pressed) = stack(&mut PSheet::new(&look), PPoint::new(0.0, 0.0), 200.0, 400.0, &mut two());
+    let (end, pressed) = stack(&mut PSheet::new(&look), PPoint::new(0.0, 0.0), 200.0, 400.0, true, &mut two());
     assert_eq!(end, 400.0);
     assert_eq!(pressed[1][0].origin.y, 400.0 - 10.0 - 40.0);
 }

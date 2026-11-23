@@ -127,19 +127,18 @@ pub fn edge(paint: &mut dyn PPaint, rect: PRect, radius: f32, end: bool, token: 
     }
 }
 
-/// Two panes side by side at an edge of the window, as a bar and the
-/// column it shows beside it: one glass (or ground) under both, the
-/// first lit toward the second and the second lit from where they meet
-/// the other way. The two lights run against each other, so where they
-/// meet is seen as a line between them, as a border would be, and the
-/// two are seen as one thing of two parts.
+/// A bar and the column it opens, the bar the parent: one pane, one
+/// shape with the bar's corners, lit from the right; the column, its
+/// child, lit against it from where it begins, so where the column's
+/// light begins is the line between them. Its light reaches no further
+/// than its middle, so it needs no corners of its own.
 pub fn bond(paint: &mut dyn PPaint, first: PRect, second: PRect, radius: f32, token: &str) {
     let whole = PRect::new(first.origin.x, first.origin.y, first.size.width + second.size.width, first.size.height.max(second.size.height));
     match PLight::Rest.shade(paint.theme()) {
         Some(_) => {
             under(paint, whole, radius);
-            label(paint, first, radius, PLight::Rest, true, token);
-            label(paint, second, radius, PLight::Rest, false, token);
+            label(paint, whole, radius, PLight::Rest, true, token);
+            label(paint, second, 0.0, PLight::Rest, false, token);
         }
         None => flat(paint, whole, radius, token),
     }

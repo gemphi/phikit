@@ -83,9 +83,11 @@ fn strength(variant: &str) -> PLight {
     }
 }
 
-/// What a block of a kind draws from a place across a width: where it
+/// What a block of a kind draws from a place across a width, lit from
+/// the right where told (against the ground it stands on): where it
 /// ends, and where each of its choices can be pressed.
-pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, wide: f32) -> (f32, Vec<PRect>) {
+#[allow(clippy::too_many_arguments)]
+pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, wide: f32, right: bool) -> (f32, Vec<PRect>) {
     match kind {
         "swatch" => {
             let colour: Vec<(PColor, bool)> = choice.iter().map(|c| (c.colour.unwrap_or_default(), c.value == now)).collect();
@@ -93,7 +95,7 @@ pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &m
             (end, rect)
         }
         "text" => (text(choice, paint, at, wide), Vec::new()),
-        "rows" => rows(variant, choice, now, paint, at, wide),
+        "rows" => rows(variant, choice, now, paint, at, wide, right),
         "cards" => {
             let (rect, end) = choice.draw(paint, at, wide);
             (end, rect)
@@ -101,7 +103,7 @@ pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &m
         "grid" => grid(choice, paint, at, wide),
         _ => {
             let pill: Vec<(&str, &str, bool)> = choice.iter().map(|c| (c.icon.as_str(), c.label.as_str(), c.value == now)).collect();
-            let rect = pill.draw_full(paint, at, wide);
+            let rect = pill.draw_full(paint, at, wide, right);
             (at.y + pill.high(paint), rect)
         }
     }
@@ -122,7 +124,7 @@ fn text(choice: &[PChoice], paint: &mut dyn PPaint, at: PPoint, wide: f32) -> f3
 }
 
 /// Rows, each lit from the left, a note and a level at the end.
-fn rows(variant: &str, choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, wide: f32) -> (f32, Vec<PRect>) {
+fn rows(variant: &str, choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, wide: f32, right: bool) -> (f32, Vec<PRect>) {
     let (gap, line, radius, dim) = (paint.size(GAP), paint.size(LINE), paint.size(RADIUS), paint.color(DIM));
     let high = paint.theme().size(ROW).unwrap_or(line * 2.0 + gap / 2.0);
     let mut rect = Vec::new();
@@ -132,7 +134,7 @@ fn rows(variant: &str, choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at
             true => PLight::Strong,
             false => strength(variant),
         };
-        label(paint, r, radius, light, false, "");
+        label(paint, r, radius, light, right, "");
         let inner = r.inset(gap / 4.0);
         let right = inner.origin.x + inner.size.width - gap / 4.0;
         let note = paint.measure(&c.end);

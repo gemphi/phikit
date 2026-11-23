@@ -66,8 +66,11 @@ impl PState for PMemory {
 /// app's world answers by path, handed over without a type of its own.
 pub struct PFn {
     pub get: Box<dyn Fn(&str) -> String>,
-    pub set: Box<dyn Fn(&str, &str)>,
+    pub set: PSetter,
 }
+
+/// What keeps a value at a path, for `PFn`.
+pub type PSetter = Box<dyn Fn(&str, &str)>;
 
 impl PState for PFn {
     fn get(&self, path: &str) -> String {

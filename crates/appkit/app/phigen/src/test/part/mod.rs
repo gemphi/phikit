@@ -42,7 +42,10 @@ fn everything_in_the_body_keeps_to_one_column_down_its_middle() {
         let button = lit(&mark, ask, 90.0, false);
         // Thirds of a width do not add up to it to the last bit.
         let near = |got: (f32, f32)| (got.0 - edge.0).abs() < 0.01 && (got.1 - edge.1).abs() < 0.01;
-        assert!(near((across(&field).0, across(&button).1)), "{size:?}");
+        // A button's light reaches as far across it as the theme says.
+        let reach = appkit::theme::PTheme::size(look.as_ref(), "shade.reach").unwrap_or(1.0);
+        let (from, to) = across(&button);
+        assert!(near((across(&field).0, from + (to - from) / reach)), "{size:?}");
         assert!(near(across(&lit(&mark, card, 0.0, false))), "{size:?}");
         // The heading over the field is in the middle too.
         let sheet = PSheet::new(look.as_ref());
@@ -57,7 +60,8 @@ fn everything_in_the_body_keeps_to_one_column_down_its_middle() {
         let (mark, talk, ask) = (drawn(&stage, &look), rect(&stage, "talk"), rect(&stage, "ask"));
         let turn = [lit(&mark, talk, 90.0, false), lit(&mark, talk, 90.0, true)].concat();
         assert!(near(across(&turn)), "{size:?}");
-        assert!(near((across(&lit(&mark, ask, 0.0, false)).0, across(&lit(&mark, ask, 90.0, false)).1)));
+        let (from, to) = across(&lit(&mark, ask, 90.0, false));
+        assert!(near((across(&lit(&mark, ask, 0.0, false)).0, from + (to - from) / reach)));
     }
 }
 

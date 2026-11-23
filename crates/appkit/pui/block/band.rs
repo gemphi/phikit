@@ -52,7 +52,7 @@ pub trait PBand {
     /// Draw it across the whole of a width: each pill is given the same
     /// share of what is left beside what it holds, so the band fills it.
     /// Too narrow for that, it is drawn as `draw_in` draws it.
-    fn draw_full(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32) -> Vec<PRect> {
+    fn draw_full(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, right: bool) -> Vec<PRect> {
         let (gap, radius, list) = (paint.size(GAP), paint.size(RADIUS), self.pill());
         let count = list.len().max(1) as f32;
         let held: f32 = list.iter().map(|pill| pill.sized(paint, 0.0).width).sum();
@@ -60,11 +60,11 @@ pub trait PBand {
         match (room >= gap, list.is_empty()) {
             (_, true) => Vec::new(),
             (false, false) => self.draw_in(paint, at, wide),
-            // Lit against the section it stands on, so its edge shows and
-            // lines up with the heading over it.
+            // Lit against the ground it stands on (`right`), so its edge
+            // shows and lines up with the heading over it.
             (true, false) => {
                 let high = self.high(paint);
-                label(paint, PRect::new(at.x, at.y, wide, high), radius, PLight::Rest, false, "");
+                label(paint, PRect::new(at.x, at.y, wide, high), radius, PLight::Rest, right, "");
                 let mut left = at.x + gap / 4.0;
                 let place = |pill: &&dyn PPill| {
                     let rect = pill.lay(paint, PPoint::new(left, at.y + gap / 4.0), true, room);
@@ -83,7 +83,7 @@ pub trait PBand {
     fn draw_moving(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, from: usize, to: usize, share: f32) -> Vec<PRect> {
         let (gap, radius) = (paint.size(GAP), paint.size(RADIUS));
         let off: Vec<Off> = self.pill().into_iter().map(Off).collect();
-        let rect = off.draw_full(&mut PDry(&*paint), at, wide);
+        let rect = off.draw_full(&mut PDry(&*paint), at, wide, true);
         let (Some(first), Some(last)) = (rect.first(), rect.last()) else { return rect };
         let high = self.high(paint);
         // Tabs stand over the ground that holds what they choose, lit from

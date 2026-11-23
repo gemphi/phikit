@@ -108,7 +108,7 @@ impl PForm {
         let shown: Vec<(&Block, Vec<PChoice>, String)> = block.iter().map(|b| (*b, self.source.list(&b.list), self.source.get(&b.path))).filter(|(_, c, _)| !c.is_empty()).collect();
         let group = shown.iter().map(|(b, choice, now)| {
             let (kind, variant, choice, now) = (b.kind.clone(), b.variant.clone(), choice.clone(), now.clone());
-            PGrouped { head: self.text.get(&b.head).to_string(), draw: Box::new(move |paint: &mut dyn PPaint, at: PPoint, wide: f32| drawn(&kind, &variant, &choice, &now, paint, at, wide)) }
+            PGrouped { head: self.text.get(&b.head).to_string(), draw: Box::new(move |paint: &mut dyn PPaint, at: PPoint, wide: f32, right: bool| drawn(&kind, &variant, &choice, &now, paint, at, wide, right)) }
         }).collect();
         (group, shown.into_iter().map(|(b, c, _)| (b, c)).collect())
     }
@@ -136,7 +136,7 @@ impl PForm {
         let space = paint.theme().size(SPACE).unwrap_or(gap / 2.0);
         let high = match own.is_empty() {
             true => -space,
-            false => stack(&mut PDry(&*paint), PPoint::new(left, 0.0), wide, 0.0, &mut own).0,
+            false => stack(&mut PDry(&*paint), PPoint::new(left, 0.0), wide, 0.0, true, &mut own).0,
         };
         let mut end = top - space;
         for tabs in self.of("tabs") {
@@ -160,7 +160,7 @@ impl PForm {
                     true => foot - high,
                     false => end + space,
                 };
-                let (last, pressed) = stack(paint, PPoint::new(left, at), wide, foot.max(at + high), &mut own);
+                let (last, pressed) = stack(paint, PPoint::new(left, at), wide, foot.max(at + high), true, &mut own);
                 for (rect, (block, choice)) in pressed.into_iter().zip(&own_shown) {
                     spot.extend(rect.into_iter().zip(choice).map(|(r, c)| (r, block.path.clone(), c.value.clone())));
                 }

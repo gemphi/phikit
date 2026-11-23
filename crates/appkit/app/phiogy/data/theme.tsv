@@ -14,7 +14,7 @@ size	shade.share	0.58
 size	shade.rest	0.72
 size	shade.soft	0.48
 # A ground's light is gone seven tenths of the way across it.
-size	shade.reach	0.7
+size	shade.reach	0.5
 size	surface.turn	0
 size	label.turn	90
 # No glass: the window is opaque and its panes stand on its ground. A

@@ -49,11 +49,17 @@ impl PPaint for PDry<'_> {
 /// the right, against the pane it stands in. Nothing for a section
 /// with nothing in it.
 pub fn ground(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32) {
+    lit(paint, at, wide, end, true);
+}
+
+/// The same ground, lit from the right (`right`) or from the left: a
+/// ground lit against the one it stands on.
+pub fn lit(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32, right: bool) {
     let (gap, theme) = (paint.size(GAP), paint.theme());
     let (side, top) = (theme.size(SIDE).unwrap_or(gap / 2.0), theme.size(TOP).unwrap_or(gap / 4.0));
     let radius = theme.size(ROUND).unwrap_or(paint.size(RADIUS));
     if end > at.y {
-        label(paint, PRect::new(at.x - side, at.y - top, wide + side * 2.0, end - at.y + top * 2.0), radius, PLight::Soft, true, "");
+        label(paint, PRect::new(at.x - side, at.y - top, wide + side * 2.0, end - at.y + top * 2.0), radius, PLight::Soft, right, "");
     }
 }
 
