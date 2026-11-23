@@ -249,6 +249,8 @@ mod share;
 pub(crate) mod texture;
 /// Find Missing Files: an image by its name under the `.blend`'s folder.
 pub(crate) mod texture_find;
+/// File - External Data - Find Missing Files: search this folder too.
+pub use texture_find::point_at as point_at_texture_folder;
 /// What a file asked for and could not be given, said once.
 pub(crate) mod texture_miss;
 mod texture_rough;

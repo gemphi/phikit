@@ -36,14 +36,44 @@ pub fn find(dir: &Path, name: &str) -> Option<PathBuf> {
     }
     let key = name.to_lowercase();
     if let Some(hit) = INDEX.read().ok().and_then(|i| i.as_ref().filter(|(d, _)| d == dir).map(|(_, m)| m.get(&key).cloned())) {
-        return hit;
+        return hit.or_else(|| pointed(&key));
     }
     let built = index(dir);
     let hit = built.get(&key).cloned();
     if let Ok(mut i) = INDEX.write() {
         *i = Some((dir.to_path_buf(), built));
     }
-    hit
+    hit.or_else(|| pointed(&key))
+}
+
+/// The folders the user pointed at (File - External Data - Find Missing
+/// Files), each with its files by lower-cased name: Blender's command,
+/// over a folder of the user's choosing. They are searched after the
+/// `.blend`'s own folder and stay for the session, so a file reopened, or
+/// the next one from the same set, finds its images there too.
+static POINTED: RwLock<Vec<(PathBuf, HashMap<String, PathBuf>)>> = RwLock::new(Vec::new());
+
+/// Search `dir` too from here on. Answers how many files were listed
+/// under it; a folder already pointed at is listed again, so files copied
+/// into it since are seen.
+pub fn point_at(dir: &Path) -> usize {
+    let mut listed = HashMap::new();
+    walk(dir, 0, &mut listed);
+    let count = listed.len();
+    if let Ok(mut all) = POINTED.write() {
+        all.retain(|(known, _)| known != dir);
+        all.push((dir.to_path_buf(), listed));
+    }
+    // The file's own index answered "not there" for these names before.
+    if let Ok(mut i) = INDEX.write() {
+        *i = None;
+    }
+    count
+}
+
+/// `key` (a lower-cased file name) under a pointed-at folder, newest first.
+fn pointed(key: &str) -> Option<PathBuf> {
+    POINTED.read().ok()?.iter().rev().find_map(|(_, listed)| listed.get(key).cloned())
 }
 
 /// Every file under `dir` (to `DEPTH`) by lower-cased name; the first seen
