@@ -127,7 +127,10 @@ impl PForm {
         for block in self.of("tools") {
             let choice = self.source.list(&block.list);
             let icon: Vec<(&str, &str, bool)> = choice.iter().map(|c| (c.icon.as_str(), "", false)).collect();
-            let rect = icon.draw_end(paint, PPoint::new(left + wide, top));
+            let rect = match crate::pui::layout::bare(paint) {
+                true => icon.draw_end(&mut PDry(&*paint), PPoint::new(left + wide, top)),
+                false => icon.draw_end(paint, PPoint::new(left + wide, top)),
+            };
             spot.extend(rect.into_iter().zip(&choice).map(|(r, c)| (r, block.path.clone(), c.value.clone())));
             top += icon.high(paint) + gap / 2.0;
         }

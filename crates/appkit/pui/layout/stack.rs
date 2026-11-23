@@ -17,6 +17,14 @@ use crate::pui::core::{PLight, PPaint, PPoint, PRect};
 /// The theme's tokens: the least room between two groups, a group's
 /// heading's ink, and the room under a heading.
 pub const SPACE: &str = "section.space";
+/// Whether only the grounds are drawn, what stands on them laid out but
+/// not drawn: to see the grounds alone (more than nothing says so).
+pub const BARE: &str = "section.bare";
+
+/// Whether a theme has only the grounds drawn.
+pub fn bare(paint: &dyn PPaint) -> bool {
+    paint.theme().size(BARE).unwrap_or_default() > 0.0
+}
 pub const INK: &str = "text.ink";
 pub const LINE: &str = "text.line";
 pub const GAP: &str = "gap";
@@ -59,8 +67,15 @@ pub fn stack(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32, right: boo
         let from = PPoint::new(at.x + side, y + top);
         lit(paint, from, inner, from.y + high, right);
         let below = head(g);
-        (below > 0.0).then(|| paint.text(from, &g.head, ink));
-        pressed.push((g.draw)(paint, PPoint::new(from.x, from.y + below), inner, !right).1);
+        let place = PPoint::new(from.x, from.y + below);
+        let drawn = match bare(paint) {
+            true => (g.draw)(&mut PDry(&*paint), place, inner, !right).1,
+            false => {
+                (below > 0.0).then(|| paint.text(from, &g.head, ink));
+                (g.draw)(paint, place, inner, !right).1
+            }
+        };
+        pressed.push(drawn);
         y = from.y + high + top + space;
     }
     (y - space, pressed)
@@ -77,7 +92,10 @@ pub fn tabbed<B: PBand + ?Sized>(paint: &mut dyn PPaint, at: PPoint, wide: f32, 
     let radius = paint.theme().size(ROUND).unwrap_or_default() + side;
     let least = paint.theme().size(SPACE).unwrap_or(paint.size(GAP) / 2.0);
     let (from, to, share) = motion.now();
-    let tabs = tab.draw_moving(paint, at, wide, from, to, share);
+    let tabs = match bare(paint) {
+        true => tab.draw_moving(&mut PDry(&*paint), at, wide, from, to, share),
+        false => tab.draw_moving(paint, at, wide, from, to, share),
+    };
     let held = at.y + tab.high(paint) + least;
     let inner = wide - side * 2.0;
     let need = stack(&mut PDry(&*paint), PPoint::new(at.x + side, held + top), inner, 0.0, false, group).0;
