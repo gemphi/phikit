@@ -97,6 +97,13 @@ fn the_robot_walks_the_greenhouse_propagates_every_plant_and_celebrates() {
     }
     bot.step(0.02);
     assert_eq!((bot.garden().map(|g| g.found()), bot.state()), (Some(3), CELEBRATE.to_string()));
+    // Held long one way, it stops at the floor's edge, as walls stop it.
+    let reach = bot.garden().map(|g| g.reach).unwrap_or_default();
+    bot.press("d");
+    (0..600).for_each(|_| bot.step(1.0 / 60.0));
+    bot.lift("d");
+    let at = matrix(&bot.world, bot.robot).origin();
+    assert!(at[0].hypot(at[2]) <= reach + 1e-4, "{at:?} past {reach}");
     // Replay: nothing propagated, the robot standing where it began.
     bot.replay();
     assert_eq!((bot.garden().map(|g| g.found()), bot.state()), (Some(0), IDLE.to_string()));

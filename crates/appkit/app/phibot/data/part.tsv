@@ -1,0 +1,5 @@
+# The parts: slug, label, icon.
+pick	Customise	robot
+robot	Robot	robot
+ground	Greenhouse	leaf
+score	Greenhouse score	star

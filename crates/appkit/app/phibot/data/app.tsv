@@ -1,0 +1,8 @@
+# The app: its name in the window's bar (all lower case, as a logo's
+# name is), the space it opens on, and the folder its choices are kept in.
+name	botanist
+space	make
+front	make
+focus	ground
+tab	no
+folder	phibot

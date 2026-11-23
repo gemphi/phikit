@@ -1,0 +1,28 @@
+# What the botanist says. The words are BOT-anist's own.
+title	botanist
+loading	Loading assets…
+start	Start Planting
+part	Component
+shape	Type
+face	Eye Shape
+material	Material
+colour	Material Color
+light	Light Color
+reset	Reset
+random	Randomize
+score.title	Greenhouse score
+score.lead	Propagate plants to earn points
+score.done	Awesome job!
+score.won	You propagated {n} plants
+replay	Replay
+exit	Exit Game
+# The robot's state, said under it.
+state	{state}
+# Where the greenhouse's scene is not on this disk.
+missing	The greenhouse's scene is not on this disk: {path}
+# How to walk the robot.
+walk	Walk with W A S D or the arrows, or press where it should go.
+look.light	Light
+look.dark	Dark
+look.glass	Glass
+look.frost	Frost

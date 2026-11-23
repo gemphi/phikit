@@ -1,0 +1,16 @@
+[package]
+name = "phibot"
+version = "0.1.0"
+edition = "2024"
+description = "The botanist: Apple's BOT-anist sample as an app on appkit. Its robot and greenhouse are phiace's world on phiecs; its window, look and words are the files in data/"
+publish = false
+
+[[bin]]
+name = "phibot"
+path = "src/main.rs"
+
+[dependencies]
+appkit = { path = "../.." }
+# The robot and its greenhouse: the world the screens show.
+phiace = { path = "../../../phiace" }
+phiecs = { path = "../../../phicore/phiecs" }

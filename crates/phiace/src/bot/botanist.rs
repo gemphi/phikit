@@ -116,8 +116,22 @@ impl Botanist {
     /// "Start Planting": into the greenhouse, where its scene is on this
     /// disk. `false` where it is not.
     pub fn start_planting(&mut self) -> bool {
+        let stage = garden::read(self.data());
+        stage.is_some_and(|stage| self.plant_in(&stage))
+    }
+
+    /// Into the greenhouse of a scene read before (`garden::read`). A
+    /// second time, the greenhouse is already in the world: Replay.
+    pub fn plant_in(&mut self, stage: &phiecs::usd::Stage) -> bool {
         let data = self.data().clone();
-        let Some((root, garden)) = open(&mut self.world, &data) else { return false };
+        if self.world.resources.get::<Garden>().is_some() {
+            let root = self.world.coin_bare(garden::GREENHOUSE);
+            enter(&mut self.world, self.robot, root, &data);
+            self.replay();
+            self.phase = Phase::Exploration;
+            return true;
+        }
+        let (root, garden) = open(&mut self.world, stage, &data);
         enter(&mut self.world, self.robot, root, &data);
         self.world.bind(self.robot, drive::Drive::default());
         self.world.resources.insert(garden);

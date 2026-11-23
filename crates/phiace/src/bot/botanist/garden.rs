@@ -25,6 +25,10 @@ pub struct Planter {
 pub struct Garden {
     pub planter: Vec<Planter>,
     pub total: usize,
+    /// How far from the greenhouse's middle the robot may walk, in the
+    /// world: the farthest planter, and the floor's margin past it. The
+    /// sample keeps it in with walls (`MovementBoundaries`); a mock.
+    pub reach: f32,
 }
 
 impl Garden {
@@ -42,18 +46,26 @@ impl Garden {
 /// The word the greenhouse stands under.
 pub const GREENHOUSE: &str = "greenhouse";
 
-/// Read the greenhouse into the world under its word, at its size, and
-/// find its planters. `None` where its scene is not on this disk.
-pub fn open(world: &mut World, data: &Data) -> Option<(Word, Garden)> {
-    let stage = Stage::open(&data.asset().join(data.game.get("scene.greenhouse")))?;
+/// Read the greenhouse's scene: the slow part, which needs no world, so
+/// it can be read while a screen says it is loading. `None` where its
+/// scene is not on this disk.
+pub fn read(data: &Data) -> Option<Stage> {
+    Stage::open(&data.asset().join(data.game.get("scene.greenhouse")))
+}
+
+/// Put the greenhouse into the world under its word, at its size, and
+/// find its planters.
+pub fn open(world: &mut World, stage: &Stage, data: &Data) -> (Word, Garden) {
     let root = world.coin_bare(GREENHOUSE);
     let s = data.game.num("explore.scale");
     world.bind(root, Pose { scale: [s; 3], ..Pose::default() });
-    intake(world, &stage, Some(root));
+    intake(world, stage, Some(root));
     place(world);
     let (id, key) = (data.game.get("plant.component"), data.game.get("plant.type"));
     let planter = world.each::<ComponentSet>().filter_map(|(word, set)| set.find(id).map(|c| Planter { word, plant: c.get(key).map_or("", Value::text).to_string(), grown: false })).collect();
-    Some((root, Garden { planter, total: data.game.num("plant.total") as usize }))
+    let planter: Vec<Planter> = planter;
+    let far = planter.iter().map(|p| ground(world, p.word)).map(|[x, z]| x.hypot(z)).fold(0.0, f32::max);
+    (root, Garden { planter, total: data.game.num("plant.total") as usize, reach: far + data.game.num("floor.margin") })
 }
 
 /// Put the robot in the greenhouse where the game begins.
@@ -83,7 +95,14 @@ pub fn run(world: &mut World, _dt: f32) {
     let (Some(data), Some(garden)) = (world.resources.get::<Data>().cloned(), world.resources.get::<Garden>().cloned()) else { return };
     let robot: Vec<Word> = world.each::<super::drive::Drive>().map(|(word, _)| word).collect();
     let mut garden = garden;
+    let size = data.game.num("explore.scale").max(f32::EPSILON);
     for word in robot {
+        // It stays on the floor: no farther from the middle than its reach.
+        if let Some(pose) = world.read_mut::<Pose>(word) {
+            let far = pose.translate[0].hypot(pose.translate[2]) * size;
+            let keep = (garden.reach / far.max(f32::EPSILON)).min(1.0);
+            (pose.translate[0], pose.translate[2]) = (pose.translate[0] * keep, pose.translate[2] * keep);
+        }
         let at = ground(world, word);
         for planter in garden.planter.iter_mut().filter(|p| !p.grown) {
             let there = ground(world, planter.word);

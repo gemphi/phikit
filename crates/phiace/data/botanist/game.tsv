@@ -35,3 +35,6 @@ asset	../../../phi-old/apple-old/crates/apple/apps/botanist/BOTAnist/BOTAnist/Pa
 # How long a clip that plays once lasts, in seconds. The sample's clips
 # are binary USD the stage does not open yet: a mock until it does.
 clip.length	1
+# How far past the farthest planter the floor goes, in metres: the robot
+# walks no farther from the middle. The sample's walls stand there; a mock.
+floor.margin	0.06

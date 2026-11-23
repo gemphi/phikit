@@ -252,3 +252,13 @@ pin-open	ring	2.5 3.5 5.5, 21.5 3.5 5.5, 21.5 20.5 5.5, 2.5 20.5 5.5
 pin-open	pill	6 7 6.5 10
 pin-shut	ring	2.5 3.5 5.5, 21.5 3.5 5.5, 21.5 20.5 5.5, 2.5 20.5 5.5
 pin-shut	pill	6 7 3 10
+#
+# --- the botanist
+#
+# A robot: a head with its screen's pill, a body under it.
+robot	ring	5.5 3 4, 18.5 3 4, 18.5 11 4, 5.5 11 4
+robot	pill	9 6 6 2.5
+robot	ring	7 13.5 2.5, 17 13.5 2.5, 17 21 5, 7 21 5
+# A leaf: round on one side, a tight point at its tip, and its vein.
+leaf	ring	4 20 1, 4 9 7, 20 4 0.5, 20 13 7
+leaf	run	4 20 0, 13 11 0

@@ -22,6 +22,8 @@ members = [
     # Phiogy, the app that carries the calls: the rules of a call, the line
     # pages find each other on, and its window, made as Phigen is.
     "crates/appkit/app/phiogy",
+    # The botanist: Apple's BOT-anist sample as an app, on phiace's world.
+    "crates/appkit/app/phibot",
     "crates/appkit/gpu",
     "crates/appkit/gpu/gpui_macros",
     "crates/appkit/gpu/gpui_platform",

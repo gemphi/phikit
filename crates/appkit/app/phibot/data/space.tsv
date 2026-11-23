@@ -1,0 +1,3 @@
+# The spaces: making the robot, and the greenhouse it walks.
+make	Robot	robot
+garden	Greenhouse	leaf
