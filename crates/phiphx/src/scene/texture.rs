@@ -440,6 +440,7 @@ pub(super) fn attach(objects: &mut [super::SceneObject], p: &crate::blend::Blend
     let mut rough = super::texture_rough::RoughBakeSet::default();
     for m in objects.iter_mut().flat_map(|o| o.materials.iter_mut()) {
         rough.attach(m, &mut cache);
+        super::texture_scale::attach(m, &mut cache);
     }
     missing.lines()
 }

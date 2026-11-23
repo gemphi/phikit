@@ -252,6 +252,7 @@ pub(crate) mod texture_find;
 /// What a file asked for and could not be given, said once.
 pub(crate) mod texture_miss;
 mod texture_rough;
+mod texture_scale;
 mod types_ext;
 mod ui;
 

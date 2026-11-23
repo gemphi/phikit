@@ -126,6 +126,8 @@ pub struct BlendMaterial {
     /// The Roughness chain compiled likewise, when an image reaches it
     /// through other nodes (`BlendFile::rough_bake`).
     pub rough_bake: Option<crate::blend::shade::bake::BlendBake>,
+    /// The Subsurface Scale chain compiled likewise (`BlendFile::scale_bake`).
+    pub scale_bake: Option<crate::blend::shade::bake::BlendBake>,
 }
 
 pub use super::bsdf::BlendBsdf;

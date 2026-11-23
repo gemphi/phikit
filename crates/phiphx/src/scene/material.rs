@@ -46,6 +46,9 @@ pub struct SceneMaterial {
     /// The Roughness chain as a bake; `texture_rough.rs` runs it into
     /// `maps.rough`.
     pub rough_bake: Option<crate::blend::shade::bake::BlendBake>,
+    /// The Subsurface Scale chain as a bake; `texture_scale.rs` runs it
+    /// into `bsdf.subsurface_scale`.
+    pub scale_bake: Option<crate::blend::shade::bake::BlendBake>,
     /// A baked single image's Mapping, to apply to the mesh's UVs —
     /// `u' = m[0]·(u, v, 1)`, `v' = m[1]·(u, v, 1)`.
     pub uv_affine: Option<[[f32; 3]; 2]>,
@@ -117,6 +120,7 @@ impl SceneMaterial {
             maps: SceneMaps::default(),
             bake: None,
             rough_bake: None,
+            scale_bake: None,
             uv_affine: None,
             baked: false,
         }
@@ -152,6 +156,7 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
                 maps: SceneMaps::of(&m.maps),
                 bake: m.bake.clone(),
                 rough_bake: m.rough_bake.clone(),
+                scale_bake: m.scale_bake.clone(),
                 uv_affine: None,
                 baked: false,
             })
@@ -184,6 +189,7 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
         maps: SceneMaps::default(),
         bake: None,
         rough_bake: None,
+        scale_bake: None,
         uv_affine: None,
         baked: false,
     }]

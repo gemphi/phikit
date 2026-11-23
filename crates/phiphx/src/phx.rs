@@ -27,6 +27,7 @@ impl Phx {
     /// Open a file into a scene, reporting progress.
     pub fn open_with(path: &Path, progress: Progress) -> Result<SceneModel, PhxError> {
         crate::blend::set_image_source(path);
+        crate::blend::levels_differ_reset();
         blend(path, progress)
     }
 
@@ -41,6 +42,7 @@ impl Phx {
         progress: Progress,
     ) -> Result<(SceneModel, Option<crate::scene::DeferredModifiers>), PhxError> {
         crate::blend::set_image_source(path);
+        crate::blend::levels_differ_reset();
         crate::blend::with_progressive_open(|| blend_progressive(path, progress))
     }
 
@@ -65,6 +67,7 @@ impl Phx {
     /// file": the caller has already done the reading.
     pub fn open_bytes_with(name: &str, data: &[u8], progress: Progress) -> Result<SceneModel, PhxError> {
         crate::blend::clear_image_source();
+        crate::blend::levels_differ_reset();
         blend_bytes(name, data, progress)
     }
 

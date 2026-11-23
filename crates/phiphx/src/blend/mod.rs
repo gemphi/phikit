@@ -32,7 +32,8 @@ pub use file::types::{
     BlendSceneObject, DnaField, DnaStruct, DnaType,
 };
 pub use modifier::BlendEvalMesh;
-pub use modifier::eval_for_render;
+pub use modifier::{eval_for_render, render_levels_differ};
+pub(crate) use modifier::levels_differ_reset;
 pub use modifier::driven::BlendDrivenSource;
 pub use modifier::driver::{BModValue, BModWrite, BModifierDrivers};
 pub use modifier::skin::{CpuSkin, SKIN_MIN, SkinJob, SkinPair, Skinner, set_skinner};

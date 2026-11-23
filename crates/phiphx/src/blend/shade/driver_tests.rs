@@ -24,6 +24,7 @@ fn material() -> BlendMaterial {
         procedural: Default::default(),
         bake: None,
         rough_bake: None,
+        scale_bake: None,
     }
 }
 

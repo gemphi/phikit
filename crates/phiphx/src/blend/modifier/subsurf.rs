@@ -127,7 +127,27 @@ fn for_render() -> bool {
     FOR_RENDER.load(std::sync::atomic::Ordering::Relaxed)
 }
 
+/// Whether the file being read holds a Subdivision whose Render level is
+/// not its Viewport one: a final render of it needs its own evaluation.
+static LEVELS_DIFFER: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// A new file is being opened: nothing is known of its levels yet
+/// (`Phx::open_with` and its kin).
+pub(crate) fn levels_differ_reset() {
+    LEVELS_DIFFER.store(false, std::sync::atomic::Ordering::Relaxed);
+}
+
+/// Whether the file opened last renders at other Subdivision levels than
+/// it shows. The window asks before F12: when it does, the render reads
+/// the file again under [`eval_for_render`].
+pub fn render_levels_differ() -> bool {
+    LEVELS_DIFFER.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 pub(super) fn read(f: &BlendFile, md: &BlendBlock, _ob: &BlendBlock, dna: &DnaType) -> Option<Box<dyn BModifier>> {
+    if f.int_field(md, "SubsurfModifierData", "renderLevels", dna) != f.int_field(md, "SubsurfModifierData", "levels", dna) {
+        LEVELS_DIFFER.store(true, std::sync::atomic::Ordering::Relaxed);
+    }
     let levels = f.int_field(
         md,
         "SubsurfModifierData",

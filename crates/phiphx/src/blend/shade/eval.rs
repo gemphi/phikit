@@ -297,8 +297,21 @@ impl BlendFile {
     /// map already (`maps.rs`); the scene keeps that one
     /// (`scene/texture_rough.rs`).
     pub(crate) fn rough_bake(&self, ma: &BlendBlock, dna: &DnaType) -> Option<BlendBake> {
+        self.chain_bake(ma, dna, "Roughness")
+    }
+
+    /// The Subsurface Scale chain compiled likewise. CW-POSES' skin plugs
+    /// a `Subsurface` image into it; the link was dropped and the socket's
+    /// 0.05 default stood in for it (`scene/texture_scale.rs`).
+    pub(crate) fn scale_bake(&self, ma: &BlendBlock, dna: &DnaType) -> Option<BlendBake> {
+        self.chain_bake(ma, dna, "Subsurface Scale")
+    }
+
+    /// The chain into the Principled's float input `name`, when an image
+    /// reaches it through nodes the compiler knows.
+    fn chain_bake(&self, ma: &BlendBlock, dna: &DnaType, name: &str) -> Option<BlendBake> {
         let bsdf = self.surface_principled(ma, dna)?;
-        let sock = self.socket_named(bsdf, "Roughness", dna)?;
+        let sock = self.socket_named(bsdf, name, dna)?;
         let g = BGraph::new(self, ma, dna);
         g.linked(sock).then_some(())?;
         let mut bake = BlendBake { images: Vec::new(), ops: Vec::new(), alpha: None };

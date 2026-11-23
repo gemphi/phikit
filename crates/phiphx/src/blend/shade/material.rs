@@ -101,6 +101,12 @@ impl BlendFile {
                             all_textures.push(img.key.clone());
                         }
                     }
+                    let scale_bake = self.scale_bake(ma, dna);
+                    for img in scale_bake.iter().flat_map(|b| b.images.iter()) {
+                        if !all_textures.contains(&img.key) {
+                            all_textures.push(img.key.clone());
+                        }
+                    }
                     let graph = self.material_graph(ma, dna).unwrap_or_default();
                     materials.push(crate::blend::file::types::BlendMaterial {
                         name,
@@ -118,6 +124,7 @@ impl BlendFile {
                         maps: self.shade_maps(ma, dna),
                         bake,
                         rough_bake,
+                        scale_bake,
                     });
                 });
             }
@@ -142,6 +149,7 @@ impl BlendFile {
                 maps: Default::default(),
                 bake: None,
                 rough_bake: None,
+                scale_bake: None,
             });
         }
 
