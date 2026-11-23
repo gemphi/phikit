@@ -215,9 +215,6 @@ size	view.mark	2
 size	view.large	2
 # The botanist. The customiser's width beside the robot.
 size	pane.side	360
-# A swatch of the customiser, and the ring round the one chosen.
-size	bot.swatch	32
-size	bot.ring	3
 # Every section's ground, the same in every part: the room beside and
 # over what stands on it, how round it is, and the least room between
 # two sections (a pane shares out what it has left between them).
@@ -227,6 +224,11 @@ size	section.radius	22
 size	section.space	8
 # How high a pill is at least: options large enough to press easily.
 size	pill.high	36
+# A colour to choose: its side, and the ring of light round it.
+size	swatch.size	32
+size	swatch.ring	3
+# How much of its way a tab's light moves in a frame.
+size	tab.step	0.2
 # Text stands off its ground only in a look that says so (`text.lift`,
 # with its light's colour, `text.shade`, the look's own).
 size	text.lift	0

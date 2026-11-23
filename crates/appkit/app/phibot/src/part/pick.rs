@@ -1,29 +1,22 @@
 //! The customiser (RobotCustomizationView, SelectorViews): its title with
-//! Reset and Randomize, the part chosen (Head, Body, Backpack), then for
-//! that part its shape, its eyes (the head's), its material, the
-//! material's colour, and the lights' colour. Every name is phiace's
-//! tables; every control is the kit's pill, a colour a swatch. Each group
-//! stands on a ground of its own (the kit's section, its room the
-//! theme's), across the whole width, and the room left in the pane is
-//! shared out between the groups so they fill it.
+//! Reset and Randomize, then the part chosen (Head, Body, Backpack) as
+//! tabs over what they choose: for that part its shape, its eyes (the
+//! head's), its material and the material's colour, and the lights'
+//! colour. Every name is phiace's tables; how it is laid out is the
+//! kit's, the same for every app: the tabs and their groups on one ground
+//! (`tabbed`), each group on its own under its heading, filling the pane
+//! (`stack`), options in bands across the width, colours as swatches.
 
 use std::cell::RefCell;
 
-use appkit::pui::block::PBand;
-use appkit::pui::core::{PColor, PDraw, PEvent, PLight, PPaint, PPoint, PRect, PView, light};
-use appkit::pui::layout::{PDry, section};
+use appkit::pui::block::{PBand, PSwatch, PTabMove};
+use appkit::pui::core::{PColor, PDraw, PEvent, PPaint, PPoint, PRect, PView};
+use appkit::pui::layout::{PGrouped, tabbed};
+use appkit::theme::PTheme;
 use phiace::bot::botanist::Data;
 use phiace::bot::botanist::look::Look;
 
-use super::{Desk, GAP, INK, LINE, byte};
-
-/// The theme's tokens: a swatch's side, the ring round the chosen one,
-/// the room a section has round what stands on it, and the least room
-/// between two sections.
-pub const SWATCH: &str = "bot.swatch";
-pub const RING: &str = "bot.ring";
-pub const PAD: &str = "section.side";
-pub const SPACE: &str = "section.space";
+use super::{Desk, GAP, INK, byte};
 
 /// What a press on the customiser does.
 #[derive(Debug, Clone, PartialEq)]
@@ -38,111 +31,67 @@ enum Act {
     Light(usize),
 }
 
-/// What a group holds: pills (an icon, words, whether on, what a press
-/// does), or swatches.
+/// What a group holds: options (an icon, words, whether on), or colours
+/// (whether chosen); and what a press on each does.
 enum Hold {
-    Pill(Vec<(String, String, bool, Act)>),
-    Swatch(Vec<(PColor, bool, Act)>),
+    Pill(Vec<(String, String, bool)>),
+    Swatch(Vec<(PColor, bool)>),
 }
 
 pub struct Pick {
     frame: PRect,
     desk: Desk,
     spot: RefCell<Vec<(PRect, Act)>>,
+    /// The light on the chosen part's tab, on its way to it.
+    motion: PTabMove,
 }
 
 impl Pick {
     pub fn new(desk: Desk) -> Pick {
-        Pick { frame: PRect::default(), desk, spot: RefCell::default() }
+        Pick { frame: PRect::default(), desk, spot: RefCell::default(), motion: PTabMove::default() }
     }
 
-    /// The groups the chosen part has: a heading's key and what it holds.
-    fn groups(&self, data: &Data, look: &Look) -> Vec<(&'static str, Hold)> {
+    /// The groups the chosen part has: a heading's key, what it holds,
+    /// and what a press on each does.
+    fn groups(&self, data: &Data, look: &Look) -> Vec<(&'static str, Hold, Vec<Act>)> {
         let chosen = self.desk.chosen.get();
-        let part = data.part.row.iter().enumerate().map(|(i, row)| (String::new(), row.get(3).cloned().unwrap_or_default(), i == chosen, Act::Part(i))).collect();
         let name = data.part.row.get(chosen).and_then(|row| row.first()).cloned().unwrap_or_default();
         let count = data.part.rows(&name).next().and_then(|row| row.get(2)).and_then(|n| n.parse::<usize>().ok()).unwrap_or_default();
         let choice = look.part.iter().find(|(n, _)| *n == name).map(|(_, c)| c.clone()).unwrap_or_default();
-        let shape = (1..=count).map(|n| format!("{name}{n}")).map(|s| (String::new(), s.clone(), s == choice.shape, Act::Shape(s))).collect();
-        let face = data.face.row.iter().enumerate().map(|(i, row)| (row.get(1).cloned().unwrap_or_default(), String::new(), i == look.face, Act::Face(i))).collect();
-        let material = materials(data).into_iter().map(|m| (String::new(), m.clone(), m == choice.material, Act::Material(m))).collect();
-        let colour = data.material.rows(&choice.material).enumerate().map(|(i, row)| (byte([3, 4, 5].map(|c| row.get(c).and_then(|v| v.parse().ok()).unwrap_or_default())), i == choice.colour, Act::Colour(i))).collect();
-        let lights = (0..data.light.row.len()).map(|i| (super::light(data, i), i == look.light, Act::Light(i))).collect();
+        let shape: Vec<String> = (1..=count).map(|n| format!("{name}{n}")).collect();
+        let material = materials(data);
+        let colour: Vec<PColor> = data.material.rows(&choice.material).map(|row| byte([3, 4, 5].map(|c| row.get(c).and_then(|v| v.parse().ok()).unwrap_or_default()))).collect();
+        let light = data.light.row.len();
         let eyes = match name.as_str() {
-            "head" => vec![("face", Hold::Pill(face))],
+            "head" => vec![(
+                "face",
+                Hold::Pill(data.face.row.iter().enumerate().map(|(i, row)| (row.get(1).cloned().unwrap_or_default(), String::new(), i == look.face)).collect()),
+                (0..data.face.row.len()).map(Act::Face).collect(),
+            )],
             _ => Vec::new(),
         };
-        let rest = vec![("material", Hold::Pill(material)), ("colour", Hold::Swatch(colour)), ("light", Hold::Swatch(lights))];
-        [vec![("", Hold::Pill(part)), ("shape", Hold::Pill(shape))], eyes, rest].into_iter().flatten().collect()
+        let first = vec![("shape", Hold::Pill(shape.iter().map(|s| (String::new(), s.clone(), *s == choice.shape)).collect()), shape.iter().cloned().map(Act::Shape).collect())];
+        let rest = vec![
+            ("material", Hold::Pill(material.iter().map(|m| (String::new(), m.clone(), *m == choice.material)).collect()), material.iter().cloned().map(Act::Material).collect()),
+            ("colour", Hold::Swatch(colour.iter().enumerate().map(|(i, c)| (*c, i == choice.colour)).collect()), (0..colour.len()).map(Act::Colour).collect()),
+            ("light", Hold::Swatch((0..light).map(|i| (super::light(data, i), i == look.light)).collect()), (0..light).map(Act::Light).collect()),
+        ];
+        [first, eyes, rest].into_iter().flatten().collect()
     }
+}
 
-    /// One group on its ground, its heading over what it holds, from a
-    /// place across a width; where it ends.
-    fn group(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, key: &str, hold: &Hold) -> f32 {
-        let (gap, line, ink) = (paint.size(GAP), paint.size(LINE), paint.color(INK));
-        let mut top = at.y;
-        if !key.is_empty() {
-            paint.text(PPoint::new(at.x, top), self.desk.text.get(key), ink);
-            top += line + gap / 2.0;
+/// What a group draws: its options across the width, or its colours.
+fn drawn(hold: &Hold, paint: &mut dyn PPaint, at: PPoint, wide: f32) -> (f32, Vec<PRect>) {
+    match hold {
+        Hold::Pill(list) => {
+            let pill: Vec<(&str, &str, bool)> = list.iter().map(|(icon, word, on)| (icon.as_str(), word.as_str(), *on)).collect();
+            let rect = pill.draw_full(paint, at, wide);
+            (at.y + pill.high(paint), rect)
         }
-        match hold {
-            Hold::Pill(list) => {
-                let pill: Vec<(&str, &str, bool)> = list.iter().map(|(icon, word, on, _)| (icon.as_str(), word.as_str(), *on)).collect();
-                let rect = pill.draw_full(paint, PPoint::new(at.x, top), wide);
-                self.spot.borrow_mut().extend(rect.into_iter().zip(list.iter().map(|(.., act)| act.clone())));
-                top + pill.high(paint)
-            }
-            Hold::Swatch(list) => self.swatches(paint, PPoint::new(at.x, top), wide, list),
+        Hold::Swatch(list) => {
+            let (rect, end) = list.draw_in(paint, at, wide);
+            (end, rect)
         }
-    }
-
-    /// A row of round swatches across a width, each lit as a surface is
-    /// and ringed in soft light, the chosen one in strong light; where
-    /// the rows end.
-    fn swatches(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, list: &[(PColor, bool, Act)]) -> f32 {
-        let (gap, side, ring) = (paint.size(GAP), paint.size(SWATCH), paint.size(RING));
-        // A little smaller, down to three quarters, where that keeps them
-        // all on one row.
-        let count = list.len().max(1) as f32;
-        let fit = (wide + ring) / count - ring * 3.0;
-        let side = match fit >= side * 0.75 {
-            true => side.min(fit),
-            false => side,
-        };
-        let cell = side + ring * 2.0;
-        // As many on a row as fit with a ring's room between them.
-        let across = ((wide + ring) / (cell + ring)).floor().clamp(1.0, list.len().max(1) as f32) as usize;
-        let step = match across {
-            1 => 0.0,
-            n => (wide - cell) / (n - 1) as f32,
-        };
-        let rows = list.len().div_ceil(across);
-        for (index, (colour, on, act)) in list.iter().enumerate() {
-            let (x, y) = ((index % across) as f32, (index / across) as f32);
-            let rect = PRect::new(at.x + ring + x * step, at.y + ring + y * (cell + gap / 4.0), side, side);
-            let strength = match on {
-                true => PLight::Strong,
-                false => PLight::Soft,
-            };
-            light::label(paint, rect.inset(-ring), side / 2.0 + ring, strength, false, "");
-            paint.round(rect, side / 2.0, *colour);
-            light::surface(paint, rect, side / 2.0, PLight::Rest, "");
-            self.spot.borrow_mut().push((rect, act.clone()));
-        }
-        at.y + rows as f32 * (cell + gap / 4.0) - gap / 4.0
-    }
-
-    /// Every group from a place, with so much room between them; where
-    /// the last ends.
-    fn groups_from(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, space: f32, group: &[(&str, Hold)]) -> f32 {
-        let pad = paint.theme().size(PAD).unwrap_or_default();
-        let (left, inner) = (at.x + pad, wide - pad * 2.0);
-        let mut top = at.y + pad;
-        for (key, hold) in group {
-            let end = section(paint, PPoint::new(left, top), inner, &mut |paint| self.group(paint, PPoint::new(left, top), inner, key, hold));
-            top = end + pad * 2.0 + space;
-        }
-        top - space - pad
     }
 }
 
@@ -162,15 +111,17 @@ impl PDraw for Pick {
         let rect = icon.draw_end(paint, PPoint::new(left + wide, top));
         self.spot.borrow_mut().extend(rect.into_iter().zip([Act::Reset, Act::Random]));
         let top = top + icon.high(paint) + gap / 2.0;
-        // The groups, the room left in the pane shared out between them.
+        // The parts as tabs, over the groups they choose, to the foot.
+        let part: Vec<(&str, &str, bool)> = data.part.row.iter().enumerate().map(|(i, row)| ("", row.get(3).map_or("", String::as_str), i == self.desk.chosen.get())).collect();
         let group = self.groups(&data, &look);
-        let least = paint.theme().size(SPACE).unwrap_or(gap / 2.0);
-        // The grounds stand in the title's column, what is on them inside.
-        let end = self.groups_from(&mut PDry(&*paint), PPoint::new(left, top), wide, least, &group);
-        let left_over = (origin.y + self.frame.size.height - gap - end).max(0.0);
-        let space = least + left_over / group.len().saturating_sub(1).max(1) as f32;
-        self.spot.borrow_mut().truncate(2);
-        self.groups_from(paint, PPoint::new(left, top), wide, space, &group);
+        let mut grouped: Vec<PGrouped> = group.iter().map(|(key, hold, _)| PGrouped { head: text.get(key).to_string(), draw: Box::new(move |paint: &mut dyn PPaint, at: PPoint, wide: f32| drawn(hold, paint, at, wide)) }).collect();
+        let foot = origin.y + self.frame.size.height - gap;
+        let (tabs, pressed) = tabbed(paint, PPoint::new(left, top), wide, foot, part.as_slice(), &self.motion, &mut grouped);
+        let mut spot = self.spot.borrow_mut();
+        spot.extend(tabs.into_iter().zip((0..part.len()).map(Act::Part)));
+        for (rect, (.., act)) in pressed.into_iter().zip(&group) {
+            spot.extend(rect.into_iter().zip(act.iter().cloned()));
+        }
     }
 }
 
@@ -234,11 +185,21 @@ impl PView for Pick {
         self.frame = frame;
     }
 
+    /// The tab's light moves while it is on its way.
+    fn tick(&mut self) -> bool {
+        self.motion.tick(self.desk.shade.as_ref() as &dyn PTheme)
+    }
+
     fn respond(&mut self, event: &PEvent) -> bool {
         let PEvent::PointerDown(at) = *event else { return false };
         let place = at.plus(self.frame.origin);
         let act = self.spot.borrow().iter().find(|(rect, _)| rect.contains(place)).map(|(_, act)| act.clone());
         act.is_some_and(|act| {
+            let tab = match act {
+                Act::Part(i) => Some(i),
+                _ => None,
+            };
+            tab.into_iter().for_each(|i| self.motion.to(i));
             apply(&self.desk, act);
             true
         })

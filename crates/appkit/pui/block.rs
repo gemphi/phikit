@@ -29,18 +29,22 @@
 //! holds it knows where a press does what. A page puts whole sections
 //! on grounds with `layout::section`.
 
+mod band;
 mod card;
+mod swatch;
 mod crumb;
 mod face;
 mod row;
 mod say;
 mod tip;
 
+pub use band::{PBand, PTabMove};
 pub use card::{CARD, FACE, PCard, PDeck};
 pub use crumb::PCrumb;
 pub use face::PFace;
 pub use row::{LEAD, PLead, PRow};
 pub use say::{PSaid, PSay};
+pub use swatch::PSwatch;
 pub use tip::PTip;
 
 use super::core::light::label;
@@ -170,89 +174,6 @@ impl PPill for (&str, &str, bool) {
 
     fn on(&self) -> bool {
         self.2
-    }
-}
-
-/// Pills that belong together, on one ground.
-pub trait PBand {
-    /// Its pills, in order.
-    fn pill(&self) -> Vec<&dyn PPill>;
-
-    /// How high it is: a pill and half a gap.
-    fn high(&self, paint: &dyn PPaint) -> f32 {
-        (paint.size(LINE) + paint.size(GAP) / 2.0).max(paint.theme().size(HIGH).unwrap_or_default()) + paint.size(GAP) / 2.0
-    }
-
-    /// How wide it is, with the room between and round its pills.
-    fn span(&self, paint: &dyn PPaint) -> f32 {
-        let (gap, list) = (paint.size(GAP), self.pill());
-        let all: f32 = list.iter().map(|pill| pill.size(paint).width).sum();
-        all + list.len().saturating_sub(1) as f32 * gap / 4.0 + gap / 2.0
-    }
-
-    /// Draw it from a place in no more than that width: where its pills
-    /// are too wide together, each gives up the same share of the room
-    /// beside what it holds, down to a quarter of a gap. Where each
-    /// stands. No pill, no ground.
-    fn draw_in(&self, paint: &mut dyn PPaint, at: PPoint, most: f32) -> Vec<PRect> {
-        let (gap, radius, list) = (paint.size(GAP), paint.size(RADIUS), self.pill());
-        let count = list.len().max(1) as f32;
-        let room = (gap - (self.span(paint) - most).max(0.0) / count).max(gap / 4.0);
-        let wide = self.span(paint) - (gap - room) * count;
-        let high = self.high(paint);
-        match list.is_empty() {
-            true => {}
-            false => label(paint, PRect::new(at.x, at.y, wide, high), radius, PLight::Rest, true, ""),
-        }
-        let mut left = at.x + gap / 4.0;
-        let place = |pill: &&dyn PPill| {
-            let rect = pill.lay(paint, PPoint::new(left, at.y + gap / 4.0), true, room);
-            left += rect.size.width + gap / 4.0;
-            rect
-        };
-        list.iter().map(place).collect()
-    }
-
-    /// Draw it across the whole of a width: each pill is given the same
-    /// share of what is left beside what it holds, so the band fills it.
-    /// Too narrow for that, it is drawn as `draw_in` draws it.
-    fn draw_full(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32) -> Vec<PRect> {
-        let (gap, radius, list) = (paint.size(GAP), paint.size(RADIUS), self.pill());
-        let count = list.len().max(1) as f32;
-        let held: f32 = list.iter().map(|pill| pill.sized(paint, 0.0).width).sum();
-        let room = (wide - gap / 2.0 - (count - 1.0) * gap / 4.0 - held) / count;
-        match (room >= gap, list.is_empty()) {
-            (_, true) => Vec::new(),
-            (false, false) => self.draw_in(paint, at, wide),
-            (true, false) => {
-                let high = self.high(paint);
-                label(paint, PRect::new(at.x, at.y, wide, high), radius, PLight::Rest, true, "");
-                let mut left = at.x + gap / 4.0;
-                let place = |pill: &&dyn PPill| {
-                    let rect = pill.lay(paint, PPoint::new(left, at.y + gap / 4.0), true, room);
-                    left += rect.size.width + gap / 4.0;
-                    rect
-                };
-                list.iter().map(place).collect()
-            }
-        }
-    }
-
-    /// Draw it from a place; where each pill stands.
-    fn draw(&self, paint: &mut dyn PPaint, at: PPoint) -> Vec<PRect> {
-        self.draw_in(paint, at, f32::MAX)
-    }
-
-    /// Draw it so that it ends at a place.
-    fn draw_end(&self, paint: &mut dyn PPaint, end: PPoint) -> Vec<PRect> {
-        let wide = self.span(paint);
-        self.draw(paint, PPoint::new(end.x - wide, end.y))
-    }
-}
-
-impl<T: PPill> PBand for [T] {
-    fn pill(&self) -> Vec<&dyn PPill> {
-        self.iter().map(|pill| pill as &dyn PPill).collect()
     }
 }
 

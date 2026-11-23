@@ -5,8 +5,10 @@
 
 mod scroll;
 mod section;
+mod stack;
 mod wrap;
 
 pub use scroll::PScroll;
 pub use section::{PDry, ground, section};
+pub use stack::{PDrawn, PGrouped, stack, tabbed};
 pub use wrap::{fold, wrap};

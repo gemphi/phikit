@@ -46,9 +46,10 @@ fn pills_that_belong_together_stand_on_one_ground_and_the_one_that_is_on_is_lit(
     assert_eq!(list.span(&sheet), 36.0 * 3.0 + 4.0 * 2.0 + 8.0);
     let rect = list.draw(&mut sheet, PPoint::new(100.0, 50.0));
     assert_eq!(rect, [PRect::new(104.0, 54.0, 36.0, 28.0), PRect::new(144.0, 54.0, 36.0, 28.0), PRect::new(184.0, 54.0, 36.0, 28.0)]);
-    // One ground under them all, lit from the right, against what it
-    // stands on; and only the one that is on has a light of its own.
-    assert_eq!(blend(&sheet), [(PRect::new(100.0, 50.0, 124.0, 36.0), 0.0, 0.25), (rect[2], 0.5, 0.0)]);
+    // One ground under them all, lit from the left, against a section's
+    // ground (lit from the right) that it stands on; and only the one
+    // that is on has a light of its own.
+    assert_eq!(blend(&sheet), [(PRect::new(100.0, 50.0, 124.0, 36.0), 0.25, 0.0), (rect[2], 0.5, 0.0)]);
     // No pill, no ground.
     let mut sheet = PSheet::new(&look);
     let none: [(&str, &str, bool); 0] = [];

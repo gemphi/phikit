@@ -43,11 +43,16 @@ The robot's colours come from `paint.tsv`, the greenhouse's from
 held as the system repeats them (`garden.hold`), because the window
 sends no key-up.
 
-The customiser stands each group on a ground of its own: the kit's
-`section`, its room the theme's (`section.side`, `section.top`,
-`section.radius`, `section.space`). Each set of options spans the whole
-width (`PBand::draw_full`, `pill.high`), and the room left in the pane is
-shared out between the groups. The swatches are lit and ringed.
+The customiser is data on the kit's layout, the same for every app. The
+part's tabs and the groups they choose stand on one ground (`tabbed`).
+The light on the chosen tab slides to the next (`PTabMove`,
+`tab.step`). Each group stands on its own section ground under its
+heading, and the room left in the pane is shared out between them
+(`stack`, `section.side`, `section.top`, `section.radius`,
+`section.space`). Options fill the width (`PBand::draw_full`,
+`pill.high`), and colours are lit, ringed swatches (`PSwatch`,
+`swatch.size`, `swatch.ring`). Each ground is lit against the one it
+stands on, so the edges of headings and options line up.
 
 The botanist opens in the Liquid Glass look (`data/look.tsv`, first
 row). Every part stands on a glass pane (`part.glass`), the corners are
