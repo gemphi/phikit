@@ -3,14 +3,14 @@
 //! window for a deed, and the greenhouse while it loads.
 
 mod ground;
-mod pick;
+mod choose;
 mod robot;
 mod scene;
 mod score;
 mod view;
 
 pub use ground::Ground;
-pub use pick::Pick;
+pub use choose::Choose;
 pub use robot::Robot;
 pub use score::Score;
 

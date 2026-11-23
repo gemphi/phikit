@@ -5,6 +5,7 @@ mod app;
 mod block;
 mod control;
 mod core;
+mod form;
 mod layout;
 mod screen;
 mod service;

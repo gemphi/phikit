@@ -7,6 +7,7 @@ mod app;
 pub mod block;
 pub mod control;
 pub mod core;
+pub mod form;
 pub mod layout;
 pub mod state;
 pub mod view;

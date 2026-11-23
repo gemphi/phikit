@@ -5,12 +5,13 @@ use std::rc::Rc;
 
 use appkit::pui::PApp;
 use appkit::pui::core::PView;
+use appkit::pui::form::PForm;
 use appkit::pui::window::{PActivity, PHost, PModal, PPart, PSet, PSpace, PWish};
 use appkit::service::PTable;
 use appkit::theme::{PLook, PShade, PTheme};
 
 use crate::data;
-use crate::part::{Desk, Ground, Pick, Robot, Score};
+use crate::part::{Choose, Desk, Ground, Robot, Score};
 
 pub struct Phibot {
     own: PTable,
@@ -94,7 +95,8 @@ impl PApp for Phibot {
     fn content(&self, part: &str) -> Option<Box<dyn PView>> {
         let desk = self.desk.clone();
         match part {
-            "pick" => Some(Box::new(Pick::new(desk))),
+            // The customiser is the kit's form, as data/form.tsv lays it.
+            "pick" => Some(Box::new(PForm::new("choose", data::FORM, Rc::new(Choose(desk.clone())), desk.text.clone(), desk.shade.clone()))),
             "robot" => Some(Box::new(Robot::new(desk))),
             "ground" => Some(Box::new(Ground::new(desk))),
             "score" => Some(Box::new(Score::new(desk))),

@@ -43,19 +43,15 @@ The robot's colours come from `paint.tsv`, the greenhouse's from
 held as the system repeats them (`garden.hold`), because the window
 sends no key-up.
 
-The customiser is data on the kit's layout, the same for every app, in
-levels. At the top is the robot, with Reset and Randomize. Under it are
-the part's tabs, standing off any ground over one ground that holds only
-what they choose (`tabbed`). Beside that ground is one of the robot's
-own for its lights, which every part shares.
-The light on the chosen tab slides to the next (`PTabMove`,
-`tab.step`). Each group stands on its own section ground under its
-heading, and the room left in the pane is shared out between them
-(`stack`, `section.side`, `section.top`, `section.radius`,
-`section.space`). Options fill the width (`PBand::draw_full`,
-`pill.high`), and colours are lit, ringed swatches (`PSwatch`,
-`swatch.size`, `swatch.ring`). Each ground is lit against the one it
-stands on, so the edges of headings and options line up.
+The customiser stands in the bar's second column, as Phiogy's rooms
+do (`app.tsv` `side`, a `side` row in `menu.tsv`, `activity.width`). It
+is the kit's form (`appkit/pui/form.rs`), with no drawing of its own.
+`data/form.tsv` names its blocks: tools, the part's tabs over the
+chosen part's bands and swatches, and the robot's lights under no tabs.
+`src/part/choose.rs` only answers what each list holds and what each
+path keeps, from phiace's tables. The kit lays it out the same as for
+any app: the tabs off any ground over one ground of their children
+(`tabbed`), each group on its own (`stack`), and a sliding tab light.
 
 The botanist opens in the Liquid Glass look (`data/look.tsv`, first
 row). Every part stands on a glass pane (`part.glass`), the corners are
@@ -65,5 +61,5 @@ light, dark, glass and frost looks are still in the profile's Appearance.
 
 Files: `data/` (the window's tables, words and theme), `src/app.rs` (the
 app as appkit sees it), `src/part.rs` (the desk the parts share),
-`src/part/*.rs` (the parts; `part/view.rs` frames the 3D cameras and turns them by hand, `part/scene.rs` draws the greenhouse), `src/test.rs` (the screens tested as a
+`src/part/*.rs` (the parts; `part/choose.rs` is the customiser's source, `part/view.rs` frames the 3D cameras and turns them by hand, `part/scene.rs` draws the greenhouse), `src/test.rs` (the screens tested as a
 person meets them). The user steps it is tested on are `FLOW.md`.
