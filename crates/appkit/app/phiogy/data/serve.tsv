@@ -1,0 +1,28 @@
+# What the line answers besides a room's call, as Phiora does
+# (puikit: app/phiora-server), so a page pointed at the line gets its
+# config and keeps its own documents there: a name, a value.
+#
+# The first part of each path: an app's own document, who the page
+# belongs to, and a person's saved documents. `alias` rows are older
+# spellings of a first part that still answer.
+app	app
+me	me
+state	state
+alias	apps	app
+# Where the apps' own files are, from this crate's folder, and an app's
+# document in it ({key} is the app). The setting of the system named by
+# `given`, when it is set, is the folder instead.
+folder	../../../../../puikit/app
+file	{key}/public/data/{key}.json
+given	PHI_APPS
+# What `me` says of a person, as a page reads it.
+me.id	id
+me.name	name
+me.handle	handle
+me.guest	guest
+me.mail	email
+me.checked	emailVerified
+me.demo	canDemo
+# The statuses of a document that was read, and of one that was kept.
+read	200
+kept	204

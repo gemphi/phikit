@@ -95,6 +95,12 @@ impl BlendFile {
                             all_textures.push(img.key.clone());
                         }
                     }
+                    let rough_bake = self.rough_bake(ma, dna);
+                    for img in rough_bake.iter().flat_map(|b| b.images.iter()) {
+                        if !all_textures.contains(&img.key) {
+                            all_textures.push(img.key.clone());
+                        }
+                    }
                     let graph = self.material_graph(ma, dna).unwrap_or_default();
                     materials.push(crate::blend::file::types::BlendMaterial {
                         name,
@@ -111,6 +117,7 @@ impl BlendFile {
                         normal_map: self.normal_map(ma, dna),
                         maps: self.shade_maps(ma, dna),
                         bake,
+                        rough_bake,
                     });
                 });
             }
@@ -134,6 +141,7 @@ impl BlendFile {
                 normal_map: None,
                 maps: Default::default(),
                 bake: None,
+                rough_bake: None,
             });
         }
 
@@ -152,6 +160,11 @@ impl BlendFile {
                 _ => default,
             }
         };
+        // A volume with no surface draws none (`volume.rs`).
+        if self.volume_alone(ma, dna) {
+            let b = super::volume::no_surface();
+            return (b.base, b.roughness, b.metallic, b);
+        }
         // The surface the Material Output is linked to (`surface.rs`) —
         // its Principled BSDF, or the other closures folded to one — wins;
         // the legacy `Material.r/g/b/roughness/metallic` fields are the

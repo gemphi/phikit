@@ -1,0 +1,103 @@
+# What Phigen looks like: kind, token, value. One ink on one ground, and
+# one light that every surface wears (puikit's: src/tokens/tokens.scss).
+color	window.fill	#dededa
+color	line.ink	#c9c9c4
+color	text.ink	#1d1d1b
+color	text.dim	#5f5f5a
+color	control.ink	#1d1d1b
+color	control.accent	#1d1d1b
+color	icon.ink	#1d1d1b
+# The light: its colour, how much of it the strongest shade is, and the
+# share of that a shade at rest and a soft one have. A surface is lit
+# from its foot (0 degrees: the light fades upward), a label from its
+# left (90: it fades to the right). Nothing has a fill of its own.
+color	shade.light	#ffffff
+size	shade.share	0.58
+size	shade.rest	0.72
+size	shade.soft	0.48
+# How much of a ground's width its light reaches: all of it here. Phiogy
+# has 0.7 (the user's rule of 23 November 2026); say if Phigen is to.
+size	shade.reach	1
+size	surface.turn	0
+size	label.turn	90
+# No glass: the window is opaque and its panes stand on its ground. A
+# look that is glass says otherwise (data/look.tsv).
+size	window.glass	0
+size	glass.blur	0
+size	window.width	1040
+size	window.height	720
+size	text.size	15
+size	text.line	22
+size	text.weight	300
+size	text.advance	7.5
+size	region.header	56
+size	region.footer	84
+size	gap	16
+size	line.width	1
+size	row.height	40
+size	row.radius	10
+size	icon.size	20
+size	turn.inset	12
+size	turn.radius	16
+size	turn.share	0.7
+size	control.inset	14
+size	control.line	0
+size	control.caret	2
+size	control.radius	14
+size	button.width	84
+# The column down the middle of the body, which every part there keeps
+# to; and the mark that ends a text cut short.
+size	column.width	744
+word	text.cut	...
+word	text.face	Phi-Pill Open
+word	text.file	font/PhiPillOpen-Light.otf
+# The window's own furniture, which appkit draws: the activity bar, the
+# user's mark, the tabs, a modal's panel, the profile.
+# The bar is `activity.low` thick, and a menu beside it `activity.width`
+# wide (puikit's shell: a rail of icons and a panel).
+color	activity.ink	#1d1d1b
+size	activity.width	200
+size	activity.low	56
+# It stands clear of the window's top, foot and side, its corners round.
+size	activity.margin	8
+size	activity.corner	16
+size	activity.row	40
+size	activity.radius	12
+# The caption: the row at the window's very top, where a system puts
+# its title bar. It has the app's mark over the bar, its name, and the
+# pin that puts the bar's menu away and brings it back. On Windows it
+# stands in the system's bar's place and has the window's three
+# buttons at its right end.
+size	caption.height	44
+color	tab.ink	#5f5f5a
+size	tab.height	52
+size	tab.width	112
+size	tab.radius	18
+size	tab.gap	8
+# A modal is a square that fills half of the window's space, and never
+# more of its shorter side than the share given: at a desk, in a hand.
+color	modal.veil	#1d1d1b66
+size	modal.area	0.5
+size	modal.share	0.92
+size	modal.hand	0.92
+size	modal.radius	20
+# A modal that is a drawer stands at the right edge, this wide; one that
+# is a sheet lies at the foot, this share of the window high and no
+# wider than this. Both stay a margin clear of the window's edges.
+size	modal.margin	8
+size	drawer.width	400
+size	sheet.share	0.5
+size	sheet.width	776
+size	modal.head	56
+size	profile.avatar	72
+size	profile.radius	14
+size	profile.split	0.34
+size	card.height	96
+size	card.radius	14
+size	card.narrow	620
+# The Search window, and a heading's type.
+size	head.size	26
+size	head.line	34
+size	find.top	72
+size	find.field	56
+size	find.row	72

@@ -1,0 +1,16 @@
+# What this window asks of the line when it is a caller itself: the
+# kind of ask, then a line of its head. `stream` opens a room's line,
+# `post` joins, leaves and sends. {path} is the room's path, {name} the
+# word a page names itself under, {peer} what this window calls itself,
+# {speak} the protocol, {host} where the line is, {cookie} who it is to
+# the line, {length} how long what it posts is.
+stream	GET {path}?{name}={peer} {speak}
+stream	Host: {host}
+stream	Cookie: {cookie}
+stream	Accept: text/event-stream
+post	POST {path} {speak}
+post	Host: {host}
+post	Cookie: {cookie}
+post	Content-Type: application/json
+post	Content-Length: {length}
+post	Connection: close

@@ -1,0 +1,140 @@
+# The names in the web Phiogy's files (puikit: app/phiogy/public/data):
+# what the code calls each, and how the files spell it. A name that
+# changes there changes here, never in the code.
+#
+# The app's own file: the app, the room it starts on, the file of its
+# rooms and people, the file of every host, the hosts shown in its
+# rail, and the ids of the hosts of that file the person joined.
+app	app
+start	start
+people	people
+host	host
+nav	nav
+joined	joined
+# A host, a heading under it and a room: its id, what it is called, its
+# icon, what it holds, and whether it is a heading.
+id	id
+label	label
+icon	icon
+item	items
+head	head
+# A host's numbers: how many members, how many of them are here.
+count	members
+online	online
+# The rooms' file: the rooms by id, the people, and of a room its
+# topic, its kind (and the kind that is a voice room), and its people;
+# of a person their name.
+room	room
+member	member
+topic	topic
+kind	kind
+voice	voice
+name	name
+# How many of a room's messages are not read, and what was said in it:
+# who said it, the day and the hour, the words, the pictures, what it
+# was marked with (an icon, and how many), which message it answers,
+# and whether it is pinned.
+unread	unread
+message	message
+by	by
+day	day
+at	at
+text	text
+image	image
+mark	mark
+mark.count	n
+reply	reply
+pin	pin
+# The pages of the app's file, and what a page is made of. A block
+# that shows a room is of this kind and variant.
+view	views
+block	blocks
+variant	variant
+block.kind	chat
+block.variant	room
+# The people: who the person using the app is among them; of each
+# their handle, what they are there, what they say of themself,
+# whether they are about (a word, and in words), since when, their
+# tags, how many they are linked to, the picture over their profile;
+# the spaces by name with who is in each; a room's space; and the file
+# of who is linked to whom, with its two lists.
+me	me
+handle	handle
+role	role
+bio	bio
+presence	presence
+state	state
+since	since
+tag	tag
+linked	link
+banner	banner
+space	space
+link	link
+link.id	id
+link.list	link
+# What the person writes: how the id of a message of theirs begins
+# (the moment follows), and the mark a like is.
+sent.id	m
+like	heart
+# Around the rooms. In the app's document: the group of the rail that
+# lists direct conversations, and the shops' index. In the hosts'
+# file: what a new host starts from, each with its rooms and the
+# heading each stands under. In the rooms' file: how the person's
+# friends start. In a host the person made: its group of the rail and
+# its rooms, with the icons of a text room and of a voice room.
+direct	direct
+shop	shop
+template	template
+template.head	head
+friend	friend
+friend.with	with
+friend.asked	asked
+group	group
+made.text	hash
+made.voice	volume
+# The shops' index: the folder of the shops' own files, the ones open
+# from the start, every shop, and of a shop a line about it and how
+# many things it has.
+shop.folder	folder
+shop.open	open
+shop.list	shop
+sub	sub
+shop.count	count
+# A shop's own file: its menu, its products and its landing; of a
+# page of the menu the places of its products; of a product what it
+# is called, its price as a number, a line about it, its cell of a
+# sheet, whether Phiora prices it, whether it can be worn, and its own
+# page with its views, what is said of it and its facts.
+shop.menu	menu
+shop.product	product
+shop.landing	landing
+shop.at	at
+shop.title	title
+shop.cost	cost
+shop.meta	meta
+shop.sprite	sprite
+shop.look	look
+shop.wear	wear
+shop.page	page
+shop.view	viewList
+shop.body	body
+shop.field	fieldList
+shop.swatch	swatch
+# A picture the person posts from this disk: how its key begins (the
+# file's path follows, with strokes that lean forward), and the
+# endings of the files that are pictures.
+posted	file:///
+posted.kind	png jpg jpeg webp gif
+# Faces and marks: the sheet all faces share (its file, and how many
+# faces it has across), a person's own sheet and the number of their
+# face on it, the number of a place's mark on its sheet, and the person
+# a direct room is with.
+sheet	sheet
+sheet.src	src
+sheet.column	cols
+face	face
+mark.index	index
+with	with
+# The fact of a thing that is its colour, as the site calls it: the
+# same thing in its other colours is found by it.
+shop.colour	Colour

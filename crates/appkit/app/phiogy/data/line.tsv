@@ -1,0 +1,30 @@
+# The line pages find each other on: where it listens (a name that
+# stands for more than one address is listened on at each, so a page
+# reaches it whichever it tries first), the first part
+# of a room's path, the cookie a page is known by and what follows its
+# value, what a guest is called and how their id begins, the pages that
+# may call from a browser (a scheme and a name, with any port), and the
+# names of two settings of the system: a JSON list of ICE servers, and
+# a list of origins, with commas, that replaces the ones here.
+host	localhost
+port	4310
+path	call
+speak	HTTP/1.1
+cookie	phi_sid
+guest	Guest
+id	guest_
+origin	http://localhost
+origin	http://127.0.0.1
+ice	PHI_CALL_ICE
+allow	PHI_ORIGINS
+# When the line stands behind one that knows who people are (Phiora,
+# which keeps the accounts), that one says who each page belongs to:
+# the heads it says it in (the shared word, who, their name, their
+# handle, each with its bytes written as %XX), and the name of the
+# system's setting that holds the word. With no word set nobody is
+# believed, and every page is a guest.
+key	x-phi-key
+user	x-phi-user
+name	x-phi-name
+handle	x-phi-handle
+trust	PHI_CALL_KEY

@@ -1,0 +1,83 @@
+# What a person keeps: their own documents, as the web keeps them
+# (puikit: persisted in app/phi-kit/src/api.ts). Each is kept in the
+# person's own folder for Phiogy and, with Phiora answering, on Phiora
+# under their session, by the same names the web's pages use, so what
+# is written in one is there in the other: a name, a value.
+#
+# The file of the folder the documents are in, and the one that holds
+# the session Phiora gave, which is sent back the next time so the
+# person is the same one there.
+file	state.json
+session	session
+# The documents: `doc.` and what the code calls it, then the name
+# Phiora keeps it under.
+#
+# What the person wrote in each room; the marks they gave; what they
+# pinned and unpinned; the rooms they opened; whom they follow.
+doc.sent	room
+doc.mark	room-mark
+doc.pin	room-pin
+doc.read	room-read
+doc.follow	room-follow
+# The hosts the person joined or left, and the ones they made; whom
+# they began a conversation with; how they stand with each person.
+doc.host	host-in
+doc.made	host-made
+doc.direct	room-direct
+# When the person opened each room last, and the rooms they starred.
+doc.seen	room-seen
+doc.star	room-star
+doc.friend	room-friend
+# The shops the person opened or closed; their bag; what they bought.
+doc.shop	shop-in
+doc.bag	shop-bag
+doc.owned	shop-owned
+# The things of the shops the person likes.
+doc.like	shop-like
+# The wallet and its history. These two are Phiora's to write, so with
+# Phiora answering a change to them is never sent as a document: the
+# money is moved by asking (`ask.` rows: what the code calls an ask,
+# and its path on Phiora).
+doc.wallet	wallet
+doc.history	history
+server	wallet history
+ask.buy	/shop/buy
+ask.spend	/wallet/spend
+# Who the person is, as Phiora says it: the names in what it answers
+# when asked (their id, name and handle, whether they are a guest, and
+# whether anyone may be one of its members to try things); what it is
+# asked for those members by, to be one of them (and the name their id
+# is sent under), and to be nobody again.
+me.id	id
+me.name	name
+me.handle	handle
+me.guest	guest
+me.demo	canDemo
+ask.list	/auth/demo-user
+ask.demo	/auth/demo
+demo.user	userId
+ask.out	/auth/logout
+# Whom the person muted, and the theme they wear (a thing of a shop,
+# by its shop and its id). The web keeps neither as a document: a mute
+# does nothing there, and what is worn is its theme's own setting.
+doc.quiet	room-quiet
+doc.wear	shop-wear
+# Signing in with a handle and a password: what it is asked by, the
+# names the two are sent under, and the name of what Phiora says when
+# it refuses.
+ask.signin	/auth/signin
+signin.handle	handle
+signin.secret	password
+said.message	message
+# The sessions signed in as the person: what they are asked by, the
+# names of what each is on and of whether it is this one; signing the
+# others out, and the name that says the others; and taking out
+# everything Phiora keeps about the person, with the name the file of
+# it is given before the person says where to keep it.
+ask.session	/auth/session
+session.on	browser
+session.this	current
+ask.revoke	/auth/session/revoke
+revoke.other	others
+ask.export	/me/export
+export.file	phiogy-export.json

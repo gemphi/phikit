@@ -1,0 +1,20 @@
+# The web Phiogy's icons, and the icon each is drawn with here: one of
+# appkit's shared icons, or one of Phiogy's own (`asset/icon`, lucide's
+# drawings as the web draws them, written by `script/icon.mjs`). The row `any` is for a name with no row of its own.
+chat	chat
+user	user
+users	users
+network	globe
+cube	box
+hash	hash
+volume	volume
+spark	phiogy-bar
+plus	plus
+bag	shopping-bag
+home	home
+layers	layers
+any	circle
+# What a message is marked with.
+thumb	thumbs-up
+heart	heart
+flame	flame

@@ -1,0 +1,270 @@
+# What a person reads. {at} is where the line listens, {key} a room's
+# name on the line, {count} a number, {why} what went wrong.
+between	·
+# The room: who is on its line.
+present.head	On the line
+present.call	In the call
+present.watch	Has the room open
+present.none	Nobody has this room open.
+present.how	A page that opens it is here at once: {at}/call/{key}
+present.shut	The line is not open, so nobody can be here.
+present.member	Members
+present.voice	Voice room
+present.nowhere	No room is open. Choose one in the bar.
+# The line, at the foot of a room.
+status.open	The line is open at {at}
+status.shut	The line is not open: {why}
+status.browser	a browser has no line of its own
+status.off	it was not asked for
+status.caller	{count} in a call
+status.watch	{count} pages on a line
+status.beat	a beat every {count} s
+# The hosts.
+venue.head	Hosts
+venue.count	members: {count}
+venue.online	here: {count}
+venue.room	rooms: {count}
+venue.none	No host was read from {at}
+guide.none	No rooms
+# The looks.
+look.light	Light
+look.dark	Dark
+look.glass	Glass
+look.frost	Glass Light
+# What is true now, in the profile.
+fact.line	Line
+fact.closed	not open
+fact.room	Rooms open
+fact.call	In calls
+fact.venue	Hosts
+fact.count	{count}
+fact.look	Look
+fact.keep	Kept in
+fact.nowhere	nowhere: this window keeps nothing
+fact.version	Phiogy
+# Where the hosts and rooms were read from: Phiora, the app's own
+# files, or the files because Phiora did not answer ({at} is where it
+# was asked).
+fact.site	Read from
+fact.phiora	Phiora at {at}
+fact.file	its own files
+fact.unanswered	its own files - Phiora did not answer at {at}
+# This window as a caller: the pills of a room, what is said of each
+# caller, and why a call could not be joined ({why} is what the line
+# or the system said).
+call.join	Join
+call.leave	Leave
+call.start	Call
+call.video	Call with the camera
+call.end	End the call
+call.incoming	{name} is calling
+call.mute	Mute
+call.unmute	Unmute
+call.here	this window
+call.muted	muted
+call.new	finding a way
+call.connecting	connecting
+call.connected	connected
+call.failed	no way found
+call.seen	pictures: {count}
+call.refused	The call could not be joined: {why}
+call.over.409	The call is full.
+call.over	The line let this window go.
+call.carry	Carried by {engine}.
+call.calling	Calling {room}
+call.you	You
+call.incall	In the call
+call.ringing	Ringing
+call.tile.muted	Muted
+call.cam.on	Camera on
+call.cam.off	Camera off
+call.share	Share a screen
+call.unshare	Stop sharing
+call.live	Your microphone, camera and screen go to everyone who joins this call.
+call.fault.mic	The system gave no microphone, so nobody hears you ({why}).
+call.fault.camera	The system gave no camera ({why}).
+call.fault.speaker	The system gave no sound out, so you hear nobody ({why}).
+call.fault.scene	The system gave no screen to share ({why}).
+# A voice room, as the web's says it: how one who is in it is, the
+# sound of the others off and on, and what the room does.
+voice.inroom	In the room
+voice.empty	Nobody is in here yet
+voice.deaf	Sound off
+voice.undeaf	Sound on
+voice.connected	In a voice room
+voice.wait	Join to talk. Your microphone is opened then.
+voice.live	Your microphone goes to everyone in this room, and you hear them. It goes on while you look at other pages.
+voice.soundless	Sound needs the line, which is not open here. This room shows who is in it.
+# What was said in a room: when nothing was, whom a message answers
+# ({name}, and {text}, how that began), and a block of a page this
+# window does not draw yet ({kind}).
+# The viewer's controls, as the web's viewer names them; what is
+# copied here is where the picture's file is, and it is kept and
+# opened by the system. `view.strip` names the strip to what reads a
+# window aloud, which appkit has not yet.
+view.close	Close
+view.prev	Previous
+view.next	Next
+view.zoom	Zoom in
+view.fit	Fit to the window
+view.share	Share
+view.shared	Path copied
+view.save	Save a copy
+view.open	Open in the system's viewer
+view.strip	Pictures
+stream.none	Nothing was said here yet.
+# Writing in a room, as the web's room says it: the day and the hour
+# of what is written now (the hour as the clock's own form), what the
+# empty field says ({room}), whom an answer is to ({name}), what the
+# search field says, what a search that finds nothing says, the list
+# of what is pinned, and what stands for a message with no words.
+stream.today	Today
+stream.hour	%H:%M
+stream.write	Message {room}
+stream.answer	Replying to {name}
+stream.find	Search {room}
+stream.unfound	No message here holds that
+stream.pins	Pinned messages
+stream.unpinned	Nothing is pinned here yet
+stream.media	Pictures
+# In place of what a muted person said ({name}).
+stream.muted	{name} is muted - what they said is not shown
+# What a place in the stream is called under the pointer.
+stream.seek	Go to the message {name} wrote
+stream.open	Open {name}
+stream.see	Open the picture {name} posted
+# The hosts' page, as the web's says it ({n} is a number).
+host.add	Add a host
+host.create	Create your host
+host.lead	Your host is where you and your people meet. Name it, then pick how it starts.
+host.name	Name your host
+host.join	Join a host
+host.find	Search hosts
+host.enter	Join
+host.leave	Leave
+host.remove	Remove
+host.members	{n} members
+host.count	{n} hosts to join
+host.none	No host has that name
+# Friends, and finding people, as the web's pages say them.
+friend.title	Friends
+friend.here	Here now
+friend.all	All
+friend.pending	Pending
+friend.add	Add a friend
+friend.search	Search people
+friend.message	Message
+friend.ask	Add friend
+friend.cancel	Cancel request
+friend.accept	Accept
+friend.decline	Decline
+friend.remove	Remove friend
+friend.with	Friends
+friend.sent	Request sent
+friend.asked	Asked to be your friend
+friend.yours	You asked
+friend.nobody	No friends here yet
+friend.nothing	No request waits
+friend.unfound	Nobody has that name
+friend.waits	A request you send waits here. Nobody is on the other side to answer it yet.
+direct.find	Find or start a conversation
+direct.search	Search people
+direct.none	Nobody has that name
+direct.count	{n} people
+# The shops, a thing and the bag, as the web's pages say them ({n} is
+# a number).
+shop.add	Shops
+shop.title	Shops
+shop.lead	Open a shop and it stands in your menu, with its own departments beside it.
+shop.find	Search shops
+shop.open	Open
+shop.close	Close
+shop.home	Home
+shop.items	{n} items
+shop.count	{n} shops
+shop.none	No shop has that name
+shop.bag	Bag
+shop.put	Add to bag
+shop.inbag	In the bag
+shop.owned	Owned
+shop.wear	Put on
+shop.worn	Wearing
+shop.remove	Take out of the bag
+shop.empty	Your bag is empty
+shop.emptylead	Add something from a shop and it waits here.
+shop.subtotal	Subtotal
+shop.delivery	Delivery
+shop.free	At once
+shop.total	Total
+shop.pay	Pay from wallet
+shop.wallet	In your wallet
+shop.short	Not enough in your wallet for this bag.
+shop.paid	Shop - {n} bought
+shop.yours	Yours
+shop.more	More like this
+# The account, as the web's drawer says it.
+account.title	You
+account.close	Close
+account.guest	Guest
+account.nobody	Not signed in
+account.profile	Profile
+account.wallet	Wallet
+account.total	Total
+account.look	Look
+account.account	Account
+account.signIn	Sign in
+account.signOut	Sign out
+account.signed	Signed in on Phiora
+account.demo	Demo members: be one of them to try things.
+account.nodemo	Phiora lets nobody in without a password here, and this window has no place to type one yet.
+account.offline	Signing in needs Phiora, which did not answer.
+account.handle	Handle or email
+account.secret	Password
+account.refused	Phiora did not sign you in.
+account.session	Sessions
+account.this	This window
+account.other	Signed in elsewhere
+account.alone	Sign out the others
+account.data	Everything Phiora keeps about you
+account.export	Save a copy
+account.unkept	This window was opened to keep nothing, so it is nobody to Phiora.
+account.phione	Managed by Phione
+# A person beside the room, as the web's room names its parts.
+person.title	Profile
+person.back	Back to who is here
+person.message	Message
+person.follow	Follow
+person.following	Following
+person.mute	Mute
+person.unmute	Unmute
+person.since	Member since
+person.linked	Linked
+person.space	Spaces
+person.media	Pictures
+person.none	Nothing here yet
+# A room's controls.
+room.reply	Reply
+room.like	Like
+room.pin	Pin
+room.unpin	Unpin
+room.send	Send
+room.post	Post a picture
+room.unanswer	Answer nobody
+room.find	Search this room
+room.pins	Pinned messages
+stream.reply	{name}: {text}
+room.undrawn	This page has a block this window does not draw yet: {kind}
+# A thing's page: its other colours, and liking it.
+shop.colours	In other colours
+shop.like	Like
+shop.liked	Liked
+# The guide's tabs, what each says with nothing to show, and the star
+# of a room's title.
+guide.tab.recent	Recent
+guide.tab.favorite	Favorites
+guide.tab.older	Older
+guide.none.recent	Nothing recent
+guide.none.favorite	No favorites yet
+guide.none.older	Nothing older
+room.fave	Add to favorites
+room.unfave	Remove from favorites

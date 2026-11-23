@@ -17,6 +17,8 @@ test-support = ["gpui/test-support"]
 screen-capture = ["gpui/screen-capture", "scap"]
 
 [dependencies]
+# The glass: what to copy and the block each of its four draws reads.
+gpui_glass.workspace = true
 gpui.workspace = true
 
 [target.'cfg(target_os = "windows")'.dependencies]

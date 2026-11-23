@@ -123,6 +123,9 @@ pub struct BlendMaterial {
     /// The Base Color chain compiled to a bake (`shade/bake.rs`), when it
     /// holds images; run over the decoded images when textures attach.
     pub bake: Option<crate::blend::shade::bake::BlendBake>,
+    /// The Roughness chain compiled likewise, when an image reaches it
+    /// through other nodes (`BlendFile::rough_bake`).
+    pub rough_bake: Option<crate::blend::shade::bake::BlendBake>,
 }
 
 pub use super::bsdf::BlendBsdf;

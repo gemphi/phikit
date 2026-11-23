@@ -1,0 +1,18 @@
+# The words the line and a page say to each other: what the code calls
+# each, and how it is spelled on the wire. The browser's side reads the
+# same words (puikit: app/phi-kit/src/call.ts).
+roster	roster
+ice	ice
+peer	peer
+name	name
+handle	handle
+from	from
+signal	signal
+join	join
+send	send
+to	to
+error	error
+message	message
+# How an event of the stream begins, and the line that is a beat.
+event	data:
+beat	: beat

@@ -1,0 +1,21 @@
+[package]
+name = "gpui_glass"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Glass: a surface made from what is drawn beneath it. One home for the material, the stages on the CPU, and the shader every GPU renderer runs. No dependencies."
+
+# Everything glass lives in this folder:
+#   src/     the material, the shape, the CPU stages, the plan a GPU renderer
+#            follows, and the stages as shaders (glass.hlsl for DirectX,
+#            glass.wgsl for wgpu and the web). The DirectX pass is the
+#            renderer's: gpui_windows/src/directx_backdrop.rs
+#   data/    the table of styles
+#   src/tests/  the tests, in the same folders as the code
+#
+# It depends on nothing, so it builds for wasm32 as it is and any renderer
+# can take it.
+[dependencies]
+
+[lints]
+workspace = true

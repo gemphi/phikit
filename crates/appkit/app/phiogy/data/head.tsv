@@ -1,0 +1,20 @@
+# The lines at the head of what the line answers: the kind of answer,
+# then the line. `stream` is a room's line, `json` every other answer,
+# `cors` is added for a page that may call, `ask` answers a browser
+# that asks first, `cookie` names a new guest, `length` says how long
+# an answer that is not a stream is.
+stream	content-type: text/event-stream; charset=utf-8
+stream	cache-control: no-store
+stream	x-accel-buffering: no
+stream	connection: close
+json	content-type: application/json; charset=utf-8
+json	cache-control: no-store
+json	connection: close
+cors	access-control-allow-origin: {origin}
+cors	access-control-allow-credentials: true
+cors	vary: Origin
+ask	access-control-allow-methods: GET,PUT,POST,PATCH,DELETE,OPTIONS
+ask	access-control-allow-headers: content-type
+ask	access-control-max-age: 600
+cookie	set-cookie: {name}={value}; Path=/; HttpOnly; Max-Age=31536000; SameSite=Lax
+length	content-length: {length}

@@ -1,0 +1,9 @@
+# Who answers: the kind of server (ollama, or stand for nobody), its
+# address and path, the model's name there, and the path where the
+# server says which models it has. The server is on this
+# computer: nothing of a chat leaves it.
+kind	ollama
+host	127.0.0.1:11434
+path	/api/chat
+name	phi4-builder
+list	/api/tags

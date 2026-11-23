@@ -69,7 +69,7 @@ mod shader_compilation {
 
         {
             let shader_path = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap())
-                .join("../../src/glass/gpu/glass.hlsl");
+                .join("../gpui_glass/src/glass.hlsl");
             println!("cargo:rerun-if-changed={}", shader_path.display());
             compile_shader_for_module(
                 "backdrop",

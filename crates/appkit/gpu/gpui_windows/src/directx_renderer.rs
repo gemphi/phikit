@@ -1756,7 +1756,7 @@ pub(crate) mod shader_resources {
 
             let shader_name = match entry {
                 ShaderModule::EmojiRasterization => "color_text_raster.hlsl",
-                ShaderModule::Backdrop => "../../../src/glass/gpu/glass.hlsl",
+                ShaderModule::Backdrop => "../../gpui_glass/src/glass.hlsl",
                 _ => "shaders.hlsl",
             };
 

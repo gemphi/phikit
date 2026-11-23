@@ -1,0 +1,4 @@
+# Phigen's spaces: slug, label, icon. They are reached from the bar; no
+# tabs are shown over the body (app.tsv, `tab`).
+chat	Chat	chat
+search	Search	search

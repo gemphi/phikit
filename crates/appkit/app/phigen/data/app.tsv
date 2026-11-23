@@ -1,0 +1,19 @@
+# What Phigen is to appkit: its name, the host a chat is shown in once
+# something was said (in front on a mobile window), the host a chat is
+# shown in before, the part that takes the keys when the window opens,
+# the host shown in the bar's menu, the space a chat is shown in,
+# whether the spaces are shown as tabs over the body, the
+# person's own folder for Phigen, the file there the chats are kept in,
+# the file there what the person chose is kept in, and the modal the
+# pick over a chat opens.
+name	Phigen
+front	chat
+empty	start
+focus	ask
+side	history
+space	chat
+tab	no
+folder	phigen
+keep	history.tsv
+setting	setting.tsv
+pick	model

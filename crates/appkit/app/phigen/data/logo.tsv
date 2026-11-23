@@ -1,0 +1,26 @@
+# Phigen's mark, drawn on the measures of the face Phigen is set in:
+# name, how many, and of which measure of the font. The measures are
+# read from the font file by script/logo.py: `stem` (an upright stroke),
+# `thin` (a lying one, the hyphen's height), `round` (how wide the o
+# is), `inside` (how wide the o's inside is), `pitch` (from one bar of
+# the equal sign to the other), `drop` (how far the p goes under the
+# line), `one` (1). Nothing here is a size by eye.
+font	../../../asset/font/PhiPillOpen-Light.otf
+# How much of the picture is left clear round a mark.
+room	0.08	one
+# The bars: two lying bars that make a P. The upper is as long as the o
+# is wide and the lower half of that, so the upper is 100% bigger.
+bar.long	1	round
+bar.share	0.5	one
+bar.thick	1	stem
+bar.gap	1	thin
+# The chat: the o as a square bubble, a beak under its left corner, and
+# two lines in it, the upper twice the lower, as the bars are.
+beak.drop	0.5	drop
+beak.wide	1.5	stem
+beak.root	1	stem
+beak.soft	0.5	thin
+line.thick	1	thin
+line.inset	0.5	thin
+line.share	0.5	one
+line.pitch	1	pitch

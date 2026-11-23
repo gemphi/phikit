@@ -1,0 +1,193 @@
+# What Phiogy looks like: kind, token, value. One ink on one ground, and
+# one light that every surface wears (puikit's: src/tokens/tokens.scss).
+color	window.fill	#dededa
+color	line.ink	#c9c9c4
+color	text.ink	#1d1d1b
+color	text.dim	#5f5f5a
+color	icon.ink	#1d1d1b
+# The light: its colour, how much of it the strongest shade is, and the
+# share of that a shade at rest and a soft one have. A surface is lit
+# from its foot (0 degrees: the light fades upward), a label from its
+# left (90: it fades to the right). Nothing has a fill of its own.
+color	shade.light	#ffffff
+size	shade.share	0.58
+size	shade.rest	0.72
+size	shade.soft	0.48
+# A ground's light is gone seven tenths of the way across it.
+size	shade.reach	0.7
+size	surface.turn	0
+size	label.turn	90
+# No glass: the window is opaque and its panes stand on its ground. A
+# look that is glass says otherwise (data/look.tsv).
+size	window.glass	0
+size	glass.blur	0
+size	window.width	1040
+size	window.height	720
+size	text.size	15
+size	text.line	22
+size	text.weight	300
+size	text.advance	7.5
+size	region.header	56
+size	gap	16
+size	line.width	1
+size	row.height	40
+size	row.radius	10
+size	icon.size	20
+# The column down the middle of the body, which every part there keeps
+# to; and the mark that ends a text cut short.
+size	column.width	744
+word	text.cut	...
+word	text.face	Phi-Pill Open
+word	text.file	font/PhiPillOpen-Light.otf
+# The window's own furniture, which appkit draws: the activity bar, the
+# user's mark, the tabs, a modal's panel, the profile.
+# The bar is `activity.low` thick, and a menu beside it `activity.width`
+# wide (puikit's shell: a rail of icons and a panel).
+color	activity.ink	#1d1d1b
+size	activity.width	200
+size	activity.low	56
+# It stands clear of the window's top, foot and side, its corners round.
+size	activity.margin	8
+size	activity.corner	16
+size	activity.row	40
+size	activity.radius	12
+# Every part of the body stands on a ground of its own: how far inside
+# the part it stands, and how round it is.
+size	part.inset	4
+size	part.radius	12
+# The caption: the row at the window's very top, where a system puts
+# its title bar. It has the app's mark over the bar, its name, and the
+# pin that puts the bar's menu away and brings it back. On Windows it
+# stands in the system's bar's place and has the window's three
+# buttons at its right end.
+size	caption.height	44
+color	tab.ink	#5f5f5a
+size	tab.height	52
+size	tab.width	112
+size	tab.radius	18
+size	tab.gap	8
+# A modal is a square that fills half of the window's space, and never
+# more of its shorter side than the share given: at a desk, in a hand.
+color	modal.veil	#1d1d1b66
+size	modal.area	0.5
+size	modal.share	0.92
+size	modal.hand	0.92
+size	modal.radius	20
+# A modal that is a drawer stands at the right edge, this wide; one that
+# is a sheet lies at the foot, this share of the window high and no
+# wider than this. Both stay a margin clear of the window's edges.
+size	modal.margin	8
+size	drawer.width	400
+size	sheet.share	0.5
+size	sheet.width	776
+size	modal.head	56
+# How much of its way a modal slides in a frame, coming in and going out.
+size	modal.step	0.1
+size	profile.avatar	72
+size	profile.radius	14
+size	profile.split	0.34
+size	head.size	26
+size	head.line	34
+# What appkit's field and button ask for, in a part that has one.
+color	control.ink	#1d1d1b
+color	control.accent	#1d1d1b
+size	control.inset	14
+size	control.line	0
+size	control.caret	2
+# The mark drawn in place of each character of a password.
+word	control.mask	•
+size	control.radius	14
+size	button.width	84
+# The foot of a room, where the line says where it is.
+size	region.footer	56
+# A room: how high a row of who is on its line is, how round its
+# light, and how wide the mark before a name.
+size	present.row	56
+size	present.radius	14
+size	present.mark	36
+# The hosts: how far down their heading is, and how high a host's row.
+size	venue.top	72
+size	venue.row	72
+# A caller this window is connected to: how wide the bar that shows
+# how loud they are is at its loudest, and how high.
+size	present.meter	96
+size	present.bar	6
+# A call over a room's stream, as the web's stands there: how wide a
+# camera's tile is at most (15rem) and a screen's (24rem), how high
+# each is for its width (4 to 3, 16 to 9), how large a face is, the
+# most of the stream's height a call takes, how loud a caller is, as
+# a share of full, to count as heard; and, where the tiles would need
+# more height than that, the share of its size each keeps at every
+# step smaller, down to the least.
+size	call.tile	240
+size	call.scene	384
+size	call.tile.high	0.75
+size	call.scene.high	0.5625
+size	call.face	96
+size	call.share	0.85
+size	call.speak	0.04
+size	call.less	0.85
+size	call.least	0.3
+# How wide the room for a name under a tile is at least.
+size	call.name	96
+# A figure, which is a number on a ground of its own (appkit's
+# `figure`): a coin's amount, a sum, how many wait in a room. How high
+# its ground is, the room at each side of its text, and how round its
+# corners.
+size	figure.height	26
+size	figure.inset	10
+size	figure.radius	9
+# A voice room: how wide the card of one who is in it is, and how large
+# the face on it.
+size	voice.card	136
+size	voice.face	64
+# A room: how wide its part must be for its people to stand beside what
+# was said, how wide they stand there, and the share of its height they
+# have where they stand over it.
+size	room.split	640
+size	room.side	300
+size	room.share	0.34
+# Pictures. A face beside a message and in a direct room's title; a
+# picture posted in a room, how wide and how high; a place's mark; and
+# the viewer: the face of who posted it, a picture of its strip, the
+# square a control that stands alone is in (the way out, an arrow), a
+# tool, how thick the mark around the picture shown is in the strip,
+# and how many times the width of its room a picture shown larger is.
+# They are the web's: 2.75rem, 2.75rem less 0.5rem, 2px, twice.
+size	stream.face	36
+size	stream.picture	256
+size	stream.shot	160
+size	title.face	28
+size	venue.mark	44
+size	view.face	40
+# A page that is a list (the hosts, friends, finding people, the
+# shops, the bag): how far down it begins, how high a line of it is,
+# and how large what stands at a line's head; and how many hosts and
+# how many people a search lists at most, as on the web.
+size	list.top	16
+size	list.row	56
+size	list.mark	40
+size	host.most	24
+size	people.most	30
+# The shops: how many a search lists at most; how wide a card of a
+# grid is; how many times as wide as high a landing's picture is; the
+# widest a thing's picture is on its own page; and how many more like
+# it are shown there, as on the web.
+size	shop.most	32
+size	shop.card	168
+size	shop.hero	4
+size	shop.picture	360
+size	shop.more	8
+# How many of a thing's other colours stand in a row on its page.
+size	shop.kin	8
+# A person beside the room: how large their face is, how many times
+# as wide as high the picture over their profile is (the web's 3/1),
+# and how many of their pictures stand in a row.
+size	person.face	64
+size	person.banner	3
+size	person.across	3
+size	view.thumb	44
+size	view.control	44
+size	view.tool	36
+size	view.mark	2
+size	view.large	2

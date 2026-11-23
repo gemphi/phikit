@@ -50,10 +50,23 @@ pub fn find(dir: &Path, name: &str) -> Option<PathBuf> {
 /// wins, and `textures/` is walked first so a deliberate copy there beats a
 /// stray one elsewhere.
 fn index(dir: &Path) -> HashMap<String, PathBuf> {
+    let dir = rooted(dir);
     let mut out = HashMap::new();
     walk(&dir.join("textures"), 0, &mut out);
     walk(dir, 0, &mut out);
     out
+}
+
+/// The folder to list for `dir`. A file opened by its bare name
+/// (`phiber -b pose.blend`) has the empty path for a parent, which joins
+/// well (`textures` beside it was found) and cannot be listed: the walk of
+/// the file's own folder found nothing, so a sky image in `sky/` beside the
+/// file was reported missing. The empty path is the current folder.
+fn rooted(dir: &Path) -> &Path {
+    match dir.as_os_str().is_empty() {
+        true => Path::new("."),
+        false => dir,
+    }
 }
 
 fn walk(dir: &Path, depth: usize, out: &mut HashMap<String, PathBuf>) {
@@ -92,5 +105,14 @@ mod tests {
         std::fs::create_dir_all(&other).unwrap();
         assert_eq!(find(&other, "body_diffuse.png"), None);
         let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// A file opened by its bare name has the empty path for a folder; the
+    /// walk lists the current folder for it, and leaves any other alone.
+    #[test]
+    fn the_empty_folder_is_the_current_one() {
+        assert_eq!(rooted(Path::new("")), Path::new("."));
+        assert_eq!(rooted(Path::new("poses")), Path::new("poses"));
+        assert!(std::fs::read_dir(rooted(Path::new(""))).is_ok(), "and it can be listed");
     }
 }

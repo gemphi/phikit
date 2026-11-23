@@ -1,0 +1,18 @@
+# One glass style a line, by the name Apple's NSGlassEffectView.Style gives it.
+# Lengths are in logical pixels; the rest are shares from 0 to 1, or a factor.
+#
+# style	blur	saturation	tint	lens	edge	shadow
+regular	24	1.5	0.28	26	0.75	0.42
+clear	8	1.1	0.05	36	0.75	0.42
+#
+# The materials Apple names by thickness (SwiftUI Material, NSVisualEffectView).
+# A material frosts and tints; it has no lens and no rim. Apple publishes no
+# numbers for these: blur and tint are the ones in
+# gemphi/ext/phiber-refs/apple/src/swiftui/styling/material.rs:41-62, and the
+# saturation is that tree's default (appkit/gpu/glass_pipeline/shader_config.rs:24-33).
+ultra_thin	4	1.4	0.15	0	0	0
+thin	8	1.4	0.3	0	0	0
+material	16	1.4	0.5	0	0	0
+thick	24	1.4	0.7	0	0	0
+ultra_thick	32	1.4	0.85	0	0	0
+bar	20	1.4	0.6	0	0	0

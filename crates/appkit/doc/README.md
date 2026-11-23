@@ -1,0 +1,1 @@
+#ensure tht the doc automaticaally creates docs and with a folder to each app so each app can have a the doc folder and all he md files for the docs of each applicable feature

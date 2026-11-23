@@ -291,6 +291,20 @@ impl BlendFile {
         g.emit_input(sock, &mut bake, 0)?;
         (!bake.images.is_empty()).then_some(bake)
     }
+
+    /// The Roughness chain compiled the same way, when an image reaches it
+    /// through nodes the compiler knows. An image plugged straight in is a
+    /// map already (`maps.rs`); the scene keeps that one
+    /// (`scene/texture_rough.rs`).
+    pub(crate) fn rough_bake(&self, ma: &BlendBlock, dna: &DnaType) -> Option<BlendBake> {
+        let bsdf = self.surface_principled(ma, dna)?;
+        let sock = self.socket_named(bsdf, "Roughness", dna)?;
+        let g = BGraph::new(self, ma, dna);
+        g.linked(sock).then_some(())?;
+        let mut bake = BlendBake { images: Vec::new(), ops: Vec::new(), alpha: None };
+        g.emit_input(sock, &mut bake, 0)?;
+        (!bake.images.is_empty()).then_some(bake)
+    }
 }
 
 impl BGraph<'_> {

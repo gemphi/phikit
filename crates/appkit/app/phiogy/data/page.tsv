@@ -1,0 +1,17 @@
+# The pages that are no room, as the web has them: what the code calls
+# each, its id (the web's own, which is what a person's documents and
+# the rail name it by), the space it is shown in, the row of
+# `data/text.tsv` the rail calls it by, and its icon among the web's.
+friend	_friends	friend	friend.title	users
+people	_people	people	direct.find	plus	user
+hosts	_hosts	venue	host.add	plus
+shops	_shops	shop	shop.add	bag
+bag	_bag	shop	shop.bag	bag
+# How the id of a direct conversation that no file holds begins: the
+# id of the person it is with follows. And, on the row of finding
+# people above, the icon of somebody with no face.
+direct	dm-
+# The landing of a shop, in the rail: its id is the shop's own.
+home	.	.	shop.home	home
+# The account, which is a modal: its id among them.
+account	account

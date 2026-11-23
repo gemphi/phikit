@@ -1,0 +1,62 @@
+# Phiora, which keeps every app's records and every person's own
+# documents (puikit: app/phiora-server). The window asks it first for
+# Phiogy's own document, as a page does (puikit: loadApp in
+# app/phi-kit/src/data.ts), and reads the app's own file where Phiora
+# does not answer. With Phiora answering, what a person writes, marks
+# and pins is kept there too, as a page keeps it (puikit: persisted in
+# app/phi-kit/src/api.ts): a name, a value.
+#
+# Where it is; the setting of the system that names another place, as
+# the web's VITE_PHI_API does (the place alone, or written as an
+# address that begins as `scheme` says); the word that, given as the
+# place, has nobody asked; how long it is waited for at each address
+# its name stands for, and how long for its answer once it is reached,
+# in milliseconds.
+at	localhost:4300
+given	PHI_API
+scheme	http://
+none	none
+wait	400
+answer	3000
+# What it is asked by: an app's document ({key} is the app), who the
+# one asking is, and one of their own documents ({name} is its name).
+app	/app/{key}
+me	/me
+state	/state/{name}
+# The status of an answer that is one, and of a document that was
+# kept; the head that says how long what follows is; the head that says
+# it comes in pieces, and its word for that; and the head that gives
+# the one asking a session, which is sent back with every ask after.
+fine	200
+kept	204
+length	content-length
+pieces	transfer-encoding
+piece	chunked
+session	set-cookie
+# What the window calls itself to Phiora, which names a session by it.
+agent	Phiogy (Windows)
+# What is asked: the kind of ask, then a line of its head. `get` reads,
+# `put` keeps a document, and `post` asks for something to be done.
+# {path} is what is asked for, {speak} the protocol, {host} where
+# Phiora is, {agent} what the window calls itself, {cookie} the
+# session, {length} how long what is sent is.
+get	GET {path} {speak}
+get	Host: {host}
+get	User-Agent: {agent}
+get	Cookie: {cookie}
+get	Accept: application/json
+get	Connection: close
+put	PUT {path} {speak}
+put	Host: {host}
+put	User-Agent: {agent}
+put	Cookie: {cookie}
+put	Content-Type: application/json
+put	Content-Length: {length}
+put	Connection: close
+post	POST {path} {speak}
+post	Host: {host}
+post	User-Agent: {agent}
+post	Cookie: {cookie}
+post	Content-Type: application/json
+post	Content-Length: {length}
+post	Connection: close

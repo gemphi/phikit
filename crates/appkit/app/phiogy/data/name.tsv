@@ -1,0 +1,8 @@
+# What a name on the line may be: the kind, the fewest and the most
+# characters, and the marks it may have besides letters, digits and the
+# underscore.
+app	1	64	-
+room	1	64	.-
+peer	8	64	-
+# A document a person keeps on the line.
+state	1	64	.-

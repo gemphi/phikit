@@ -1,0 +1,18 @@
+# What the line says when it refuses: the fault, the status it answers
+# with, the word a page reads it by, and the sentence for a person.
+peer	400	bad_peer	Name this page: ?peer=<id>.
+owner	403	not_yours	That peer is someone else.
+watch	429	full	That room is full.
+line	403	no_line	Open the room's line first.
+caller	409	full	That call is full.
+origin	403	origin	Origin not allowed.
+route	404	not_found	Nothing answers here.
+large	413	too_large	That is more than the line reads.
+json	400	bad_json	That is not JSON.
+wire	503	busy	The line has no room for another page.
+# What the line says of an app's document and a person's documents, as
+# Phiora says it; {key} is the app that was asked for.
+app	404	no_app	No app {key}.
+name	400	bad_name	Bad document name.
+unset	404	unset	Not set.
+empty	400	empty	Send a JSON value.

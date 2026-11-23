@@ -1,0 +1,42 @@
+# The wallet, as the web's is (puikit: app/phi-kit/src/wallet.ts,
+# bag.tsx): a name, a value. It is play money: nothing real is paid.
+#
+# The coin things are paid in, and what a person starts with of each
+# coin where neither Phiora nor their folder has a wallet yet: `coin.`
+# and the coin, then how much.
+pay	usd
+coin.usd	2500
+coin.egg	12000
+coin.sum	140
+coin.eth	0.42
+# The names in a line of the bag and of what was bought, as the web's
+# documents spell them.
+line.id	id
+line.shop	shop
+line.title	title
+line.cost	cost
+line.image	image
+line.look	look
+# The names in a line of the wallet's history: when, which coin, how
+# much (less than nothing when it was spent), and for what.
+log.when	t
+log.coin	coin
+log.amount	amt
+log.what	what
+# What Phiora is asked to move the money by: for looks, which it
+# prices itself, their ids and what the history says; for anything
+# else, a spend of a coin.
+buy.look	lookIds
+buy.label	label
+spend.coin	coin
+spend.amount	amt
+spend.what	what
+# What each coin is called, and what one of it is worth in dollars.
+label.usd	USD
+label.egg	$EGG
+label.sum	$UM
+label.eth	ETH
+rate.usd	1
+rate.egg	0.25
+rate.sum	6
+rate.eth	3200

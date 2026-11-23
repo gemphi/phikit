@@ -24,5 +24,6 @@ pub(crate) mod texnode;
 pub(crate) mod scalar;
 pub(crate) mod slots;
 pub mod surface;
+pub(crate) mod volume;
 pub(crate) mod world;
 pub mod world_driver;

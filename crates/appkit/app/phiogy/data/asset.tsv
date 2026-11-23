@@ -1,0 +1,11 @@
+# Where the pictures the web Phiogy names are on disk. A picture's key
+# is `app:path` (puikit: assetUrl in app/phi-kit/src/data.ts): the path
+# is in the public folder of that app. Each row: the app, and its
+# public folder from this crate's folder. A picture is read from there
+# as it is; none is made or stood in for.
+phiegg	../../../../../puikit/app/phiegg/public
+phiogy	../../../../../puikit/app/phiogy/public
+# A picture the person posted from this disk is named by where it is:
+# `file:///` and its path. Its "app" is `file`, and its folder the
+# root, so the path after it is the whole of where the file is.
+file	/

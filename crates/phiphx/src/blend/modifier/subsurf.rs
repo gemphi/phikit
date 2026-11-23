@@ -105,8 +105,38 @@ impl BSubsurf {
     }
 }
 
+/// Whether the file is being evaluated for a final render rather than for
+/// the viewport — Blender's `DAG_EVAL_RENDER` against `DAG_EVAL_VIEWPORT`.
+static FOR_RENDER: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Evaluate the files read from here on for a final render: a Subdivision
+/// takes its Render level, not its Viewport one, and the Simplify cap is
+/// the render's (`get_render_subsurf_level(r, lvl, for_render)`).
+///
+/// The CW pose files set the body to Viewport 0, Render 2, so a render
+/// that read the viewport's level drew every figure unsubdivided: flat
+/// faces on the limbs, and in pose 24 a slit of the car showing black
+/// between the arm and the torso that Blender's rounder arm closes. A
+/// background render sets this before it opens the file; the window's F12
+/// still renders the viewport's evaluation.
+pub fn eval_for_render(on: bool) {
+    FOR_RENDER.store(on, std::sync::atomic::Ordering::Relaxed);
+}
+
+fn for_render() -> bool {
+    FOR_RENDER.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 pub(super) fn read(f: &BlendFile, md: &BlendBlock, _ob: &BlendBlock, dna: &DnaType) -> Option<Box<dyn BModifier>> {
-    let levels = f.int_field(md, "SubsurfModifierData", "levels", dna);
+    let levels = f.int_field(
+        md,
+        "SubsurfModifierData",
+        match for_render() {
+            true => "renderLevels",
+            false => "levels",
+        },
+        dna,
+    );
     // Built whatever the level is. Blender decides a Subdivision is disabled
     // from the level on the EVALUATED modifier (`MOD_subsurf.cc`'s
     // `is_disabled` → `get_render_subsurf_level(…) == 0`), which is after its
@@ -352,6 +382,12 @@ impl BlendFile {
     pub(crate) fn simplify_subsurf(&self, dna: &DnaType) -> Option<u32> {
         let sc = self.file_global_curscene(dna).or_else(|| self.blocks.iter().find(|b| b.code_str == "SC"))?;
         let mode = self.nested_int(sc, "Scene", "r", "RenderData", "mode", dna)?;
-        (mode & R_SIMPLIFY != 0).then(|| self.nested_int(sc, "Scene", "r", "RenderData", "simplify_subsurf", dna)).flatten()
+        // A render has its own cap beside the viewport's
+        // (`r.simplify_subsurf_render`).
+        let cap = match for_render() {
+            true => "simplify_subsurf_render",
+            false => "simplify_subsurf",
+        };
+        (mode & R_SIMPLIFY != 0).then(|| self.nested_int(sc, "Scene", "r", "RenderData", cap, dna)).flatten()
     }
 }
