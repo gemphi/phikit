@@ -147,7 +147,7 @@ impl PStage {
         // A part draws inside its own rectangle and nowhere else, on a
         // ground of its own where it stands in the body.
         for (slot, view) in self.slot.iter().filter_map(|slot| Some((slot, self.view(&slot.part)?))) {
-            self.ground(slot.rect, paint);
+            self.ground(slot.rect, &slot.region, paint);
             paint.clip(slot.rect);
             show(view, paint, PPoint::default());
             paint.unclip();

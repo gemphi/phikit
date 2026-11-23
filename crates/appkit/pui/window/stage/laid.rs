@@ -12,6 +12,9 @@ use crate::theme::PTheme;
 
 /// The theme's tokens for the ground of a part of the body: how far
 /// inside the part it stands, and how round it is.
+/// The region of a host that is over its page, as an app's data names
+/// it.
+pub const HEADER: &str = "header";
 pub const INSET: &str = "part.inset";
 pub const RADIUS: &str = "part.radius";
 
@@ -179,11 +182,19 @@ impl PStage {
     /// inset and rounded as the theme says (`part.inset`,
     /// `part.radius`). A part inside the bar's menu stands on its
     /// group's ground already, and a theme with no `part.inset` has none.
-    pub(super) fn ground(&self, rect: PRect, paint: &mut dyn PPaint) {
+    ///
+    /// The light is at its foot and gone at its head. A part in the
+    /// header (`region`) stands in the light of rest, so that what is
+    /// over a page is seen to be over it; every other in the faintest.
+    pub(super) fn ground(&self, rect: PRect, region: &str, paint: &mut dyn PPaint) {
         let inset = self.theme.size(INSET);
         let body = self.frame.body;
+        let light = match region == HEADER {
+            true => PLight::Rest,
+            false => PLight::Soft,
+        };
         if let (Some(inset), true) = (inset, body.contains(rect.center())) {
-            surface(paint, rect.inset(inset), self.theme.size(RADIUS).unwrap_or_default(), PLight::Soft, "");
+            surface(paint, rect.inset(inset), self.theme.size(RADIUS).unwrap_or_default(), light, "");
         }
     }
 

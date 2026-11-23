@@ -8,7 +8,8 @@ use appkit::pui::core::{PDraw, PEvent, PFit, PPaint, PPoint, PRect, PSize, PView
 
 use std::cell::{Cell, RefCell};
 
-use appkit::pui::block::PBand;
+use appkit::pui::block::{PBand, PCrumb, PPill};
+use appkit::pui::window::PDeed;
 
 use super::{DIM, Desk, GAP, ICON, INK, Join, LINE, Tool, fit};
 use crate::data;
@@ -24,6 +25,10 @@ pub const FIND: &str = "find";
 pub const PINS: &str = "pins";
 /// Star the room, so that it is among the favorites.
 pub const FAVE: &str = "fave";
+/// The search field: it opens the Search window in the middle. And
+/// how wide it is, where there is room for it.
+pub const SEEK: &str = "seek";
+pub const SEARCH: &str = "title.search";
 /// And the two that begin a call: without the camera, and with it.
 pub const CALL: &str = "call";
 pub const VIDEO: &str = "video";
@@ -41,11 +46,14 @@ pub struct Title {
     over: Cell<Option<&'static str>>,
     /// Where the face of a direct room's person was drawn last.
     face: Cell<PRect>,
+    /// Where each step of the way to the room was drawn last, and the
+    /// host a press on it goes to.
+    crumb: RefCell<Vec<(PRect, String)>>,
 }
 
 impl Title {
     pub fn new(desk: Desk) -> Title {
-        Title { frame: PRect::default(), join: Join::new(desk.clone()), tool: Tool::read(data::ACT), spot: RefCell::default(), over: Cell::default(), face: Cell::default(), desk }
+        Title { frame: PRect::default(), join: Join::new(desk.clone()), tool: Tool::read(data::ACT), spot: RefCell::default(), over: Cell::default(), crumb: RefCell::default(), face: Cell::default(), desk }
     }
 
     /// Whether a tool is on: one that begins a call never is.
@@ -64,6 +72,7 @@ impl Title {
         let now = &self.desk.now;
         match name {
             FIND => now.finding.set(!now.finding.get()),
+            SEEK => self.desk.wish.borrow_mut().push(PDeed::Open(super::SEARCH.to_string())),
             PINS => now.pins.set(!now.pins.get()),
             FAVE => self.desk.star(&self.desk.room(), !self.desk.starred(&self.desk.room())),
             CALL => self.desk.dial(false),
@@ -74,7 +83,7 @@ impl Title {
     /// Draw the tools so that the last ends at `end`, their middle at
     /// its height. How wide they are together, and what the one under
     /// the pointer is called.
-    fn tools(&self, paint: &mut dyn PPaint, end: PPoint) -> (f32, String) {
+    fn tools(&self, paint: &mut dyn PPaint, end: PPoint, from: f32) -> (f32, String) {
         let text = &self.desk.text;
         // In reading order; a call is begun only where one can be.
         let call = [CALL, VIDEO].into_iter().filter(|_| self.desk.callable());
@@ -84,8 +93,21 @@ impl Title {
         let high = pill.high(paint);
         let rect = pill.draw_end(paint, PPoint::new(end.x, end.y - high / 2.0));
         let said = list.iter().find(|(name, ..)| self.over.get() == Some(*name)).map(|(_, _, word, _)| word.to_string()).unwrap_or_default();
-        *self.spot.borrow_mut() = rect.into_iter().zip(list.iter().map(|(name, ..)| *name)).collect();
-        (pill.span(paint), said)
+        let mut spot: Vec<(PRect, &'static str)> = rect.into_iter().zip(list.iter().map(|(name, ..)| *name)).collect();
+        // Left of them the search field: the kit's pill, as wide as the
+        // theme says, with its icon and what it finds.
+        let gap = paint.size(GAP);
+        let seek = self.tool.of(SEEK, false, text).map(|(icon, word)| (icon, word, false));
+        // Only where it leaves the room's name as much room as itself.
+        let field = seek.and_then(|seek| {
+            let room = (paint.size(SEARCH) - seek.sized(paint, 0.0).width).max(gap);
+            let size = seek.sized(paint, room);
+            let at = PPoint::new(end.x - pill.span(paint) - gap / 2.0 - size.width, end.y - size.height / 2.0);
+            (at.x - from >= size.width).then(|| seek.lay(paint, at, false, room))
+        });
+        spot.extend(field.map(|rect| (rect, SEEK)));
+        *self.spot.borrow_mut() = spot;
+        (pill.span(paint) + field.map_or(0.0, |rect| rect.size.width + gap / 2.0), said)
     }
 }
 
@@ -101,8 +123,14 @@ impl PDraw for Title {
         // The pills of its call stand at the right; its name has the rest.
         let pill = self.join.draw(paint, PPoint::new(origin.x + start + full, middle));
         // Its tools stand left of them: search, and what is pinned.
-        let (tools, said) = self.tools(paint, PPoint::new(origin.x + start + full - pill - gap / 2.0, middle));
+        let (tools, said) = self.tools(paint, PPoint::new(origin.x + start + full - pill - gap / 2.0, middle), origin.x + start);
         let wide = full - pill - tools - gap / 2.0;
+        // Before it the way to it: the host it is a room of, as a crumb.
+        let host = self.desk.host_of(&open);
+        let way: Vec<&str> = host.iter().map(|(_, label)| label.as_str()).collect();
+        let (crumb, begun) = way.lead(paint, PPoint::new(origin.x + start, middle - line / 2.0));
+        *self.crumb.borrow_mut() = crumb.into_iter().zip(host.iter().map(|(id, _)| id.clone())).collect();
+        let (start, wide) = (start + begun - (origin.x + start), wide - (begun - (origin.x + start)));
         // A room with one person has their face; any other its icon.
         let face = paint.size(FACE);
         let (icon, left) = match self.desk.site.face(&plate.with) {
@@ -139,7 +167,8 @@ impl PDraw for Title {
 impl PView for Title {
     /// Where a press on it does something.
     fn hand(&self) -> Vec<PRect> {
-        self.spot.borrow().iter().map(|(rect, _)| *rect).chain(self.join.hands()).collect()
+        let crumb: Vec<PRect> = self.crumb.borrow().iter().map(|(rect, _)| *rect).collect();
+        self.spot.borrow().iter().map(|(rect, _)| *rect).chain(crumb).chain(self.join.hands()).collect()
     }
 
     fn frame(&self) -> PRect {
@@ -163,7 +192,10 @@ impl PView for Title {
                 let with = self.desk.plate(&self.desk.room()).map(|plate| plate.with).filter(|_| self.face.get().contains(place));
                 let faced = with.is_some();
                 with.into_iter().for_each(|id| *self.desk.now.who.borrow_mut() = Some(id));
-                tool.is_some() || faced || self.join.press(place)
+                // A press on a step of the way goes to that host.
+                let step = self.crumb.borrow().iter().find(|(rect, _)| rect.contains(place)).map(|(_, id)| id.clone());
+                let went = step.is_some_and(|id| self.desk.visit(&id));
+                tool.is_some() || faced || went || self.join.press(place)
             }
             PEvent::PointerMove(at) => {
                 let place = at.plus(self.frame.origin);

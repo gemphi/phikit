@@ -20,7 +20,7 @@ use crate::comp::Limit;
 use crate::data;
 use crate::fact;
 use crate::kept::Kept;
-use crate::part::{Account, Desk, Friend, Guide, Page, ROOM, Room, Shopping, Status, Title, Venue, Viewer};
+use crate::part::{Account, Desk, Friend, Guide, Page, ROOM, Room, SEARCH, Search, Shopping, Status, Title, Venue, Viewer};
 use crate::peer::{Maker, Stand};
 use crate::site::Site;
 
@@ -200,6 +200,7 @@ impl PApp for Phiogy {
             "account" => Some(Box::new(Account::new(desk))),
             "friend" => Some(Box::new(Friend::new(desk, false))),
             "people" => Some(Box::new(Friend::new(desk, true))),
+            SEARCH => Some(Box::new(Search::new(desk))),
             "view" => Some(Box::new(Viewer::new(desk))),
             _ => None,
         }

@@ -50,3 +50,5 @@ hush.on	mic-off	call.unmute
 deaf	volume	voice.deaf
 deaf.on	volume-x	voice.undeaf
 leave	phone-off	call.leave
+# The title's search field: it opens the Search window.
+seek	search	search.open

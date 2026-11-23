@@ -27,7 +27,8 @@ fn step_3_a_press_on_a_room_in_the_bar_opens_it() {
     assert!(row(&mut stage, &look, "lobby"));
     assert_eq!(app.desk().open.borrow().as_str(), "lobby");
     let text = shown(&stage, &look);
-    assert!(text.contains(&"Say hello, tell us what you are building.".to_string()), "{text:?}");
+    // Its topic is after its name, cut where the search field needs the room.
+    assert!(text.iter().any(|said| said.starts_with("Say hello, tell us")), "{text:?}");
     // Its line is the room's own.
     assert!(text.concat().contains(&format!("http://{AT}/call/phiogy/lobby")));
 }

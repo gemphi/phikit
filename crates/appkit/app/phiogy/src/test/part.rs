@@ -11,7 +11,9 @@ fn the_title_names_the_room_and_says_its_topic() {
     let (app, stage, look) = staged(DESK);
     assert!(app.desk().show("lobby"));
     let text = shown(&stage, &look);
-    assert!(text.contains(&"lobby".to_string()) && text.contains(&"Say hello, tell us what you are building.".to_string()), "{text:?}");
+    // Before its name the host it is a room of; after it its topic, cut
+    // where the search field needs the room.
+    assert!(text.contains(&"lobby".to_string()) && text.contains(&"Phiace".to_string()) && text.iter().any(|said| said.starts_with("Say hello, tell us")), "{text:?}");
 }
 
 #[test]

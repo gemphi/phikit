@@ -1,4 +1,4 @@
-use crate::pui::block::{PBand, PDeck, PFacts, PPill, PText, PTip};
+use crate::pui::block::{PBand, PCrumb, PDeck, PFacts, PPill, PText, PTip};
 use crate::pui::core::*;
 use crate::theme::{PLook, PTheme};
 
@@ -135,4 +135,25 @@ fn a_tip_is_said_under_a_place_in_the_upper_half_over_one_in_the_lower_and_insid
     let before = sheet.mark.len();
     assert_eq!("".tip(&mut sheet, PRect::new(0.0, 0.0, 10.0, 10.0), frame), None);
     assert_eq!(sheet.mark.len(), before);
+}
+
+#[test]
+fn crumbs_say_the_way_each_step_dim_with_the_mark_of_what_comes_next() {
+    let look = PLook::read(LOOK);
+    let mut sheet = PSheet::new(&look);
+    let gap = look.size("gap").unwrap_or_default();
+    let way = ["Phiace", "Text"];
+    let (rect, begun) = way.lead(&mut sheet, PPoint::new(10.0, 20.0));
+    let (one, two) = (sheet.measure("Phiace"), sheet.measure("Text"));
+    // Each step stands where a press on it is taken, a line high.
+    assert_eq!(rect, [PRect::new(10.0, 20.0, one, 20.0), PRect::new(10.0 + one + gap * 1.5, 20.0, two, 20.0)]);
+    // What they lead to begins after the last mark.
+    assert_eq!(begun, 10.0 + one + two + gap * 3.0);
+    let dim = look.color("text.dim").unwrap_or_default();
+    assert!(sheet.mark.contains(&PMark::Text { at: PPoint::new(10.0, 20.0), text: "Phiace".to_string(), color: dim }));
+    let next = sheet.mark.iter().filter(|mark| matches!(mark, PMark::Icon { name, .. } if name == "chevron-right")).count();
+    assert_eq!(next, 2);
+    // No steps, nothing drawn, and the thing begins where it was to.
+    let none: [&str; 0] = [];
+    assert_eq!(none.lead(&mut PSheet::new(&look), PPoint::new(10.0, 20.0)), (Vec::new(), 10.0));
 }

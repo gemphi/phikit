@@ -10,3 +10,4 @@ account	You	user	drawer	bare
 # A picture posted in a room, looked at alone: over the whole window,
 # with its own controls and no head.
 view	Picture	image	whole	bare
+search	Search	search

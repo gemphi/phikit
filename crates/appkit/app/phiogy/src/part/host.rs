@@ -70,6 +70,13 @@ impl Desk {
         }).collect()
     }
 
+    /// The host a room is a room of: its id and what it is called.
+    pub fn host_of(&self, room: &str) -> Option<(String, String)> {
+        let made = self.made();
+        let host = self.site.venue.iter().chain(&made).find(|venue| venue.plate.iter().any(|plate| plate.id == room));
+        host.map(|venue| (venue.id.clone(), venue.label.clone()))
+    }
+
     /// Go to a host: its first room. `false` when there is no such host.
     pub fn visit(&self, id: &str) -> bool {
         let made = self.made();

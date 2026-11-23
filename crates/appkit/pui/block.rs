@@ -15,6 +15,8 @@
 //!   them: `(cell of a sheet, name, line)`. `PDeck`: cards that belong
 //!   together, in rows that fold; any list of cards is one.
 //! * `PText`: a text cut to fit a width.
+//! * `PCrumb`: the way to something, each step before it with the mark
+//!   of what comes next. Any list of texts is one.
 //! * `PTip`: what something is called, said by it under the pointer,
 //!   on a ground that floats. Any text is one.
 //!
@@ -23,10 +25,12 @@
 //! on grounds with `layout::section`.
 
 mod card;
+mod crumb;
 mod face;
 mod tip;
 
 pub use card::{CARD, FACE, PCard, PDeck};
+pub use crumb::PCrumb;
 pub use face::PFace;
 pub use tip::PTip;
 
