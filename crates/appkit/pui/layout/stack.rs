@@ -1,8 +1,9 @@
 //! A stack: groups one under another, each on a section's ground under
 //! its heading, and the room a pane has left shared out between them so
-//! they fill it. And tabs over a stack: the tabs on one ground with the
-//! groups they choose, so it is plain that they choose what is under
-//! them, the light on the chosen tab moving to the next one chosen.
+//! they fill it. And tabs over a stack: the tabs above, on the pane, and
+//! the groups they choose on one ground of their own under them, so the
+//! tabs stand over what they choose and do not sit in it; the light on
+//! the chosen tab moves to the next one chosen.
 //!
 //! The room round every group, its roundness and the least room between
 //! two are the theme's, the same for every app (`section.*`).
@@ -63,21 +64,22 @@ pub fn stack(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32, group: &mu
     (y - space, pressed)
 }
 
-/// Tabs over a stack, all on one ground from a place across a width to
-/// `end` (further, where they need more). The ground is lit from the
-/// left, the groups' from the right, so each stands against what holds
-/// it. What can be pressed: the tabs, and in each group.
+/// Tabs over a stack, from a place across a width to `end` (further,
+/// where they need more): the tabs at the top, and under them, a little
+/// apart, one ground holding the groups they choose. The ground is lit
+/// from the left, the groups' from the right, so each stands against
+/// what holds it. What can be pressed: the tabs, and in each group.
 pub fn tabbed<B: PBand + ?Sized>(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32, tab: &B, motion: &PTabMove, group: &mut [PGrouped]) -> (Vec<PRect>, Vec<Vec<PRect>>) {
     let (side, top) = room(paint);
     let radius = paint.theme().size(ROUND).unwrap_or_default() + side;
     let least = paint.theme().size(SPACE).unwrap_or(paint.size(GAP) / 2.0);
-    let inner = wide - side * 2.0;
-    let below = at.y + top + tab.high(paint) + least;
-    let need = stack(&mut PDry(&*paint), PPoint::new(at.x + side, below), inner, 0.0, group).0;
-    let bottom = end.max(need + top);
-    label(paint, PRect::new(at.x, at.y, wide, bottom - at.y), radius, PLight::Rest, false, "");
     let (from, to, share) = motion.now();
-    let tabs = tab.draw_moving(paint, PPoint::new(at.x + side, at.y + top), inner, from, to, share);
-    let (_, pressed) = stack(paint, PPoint::new(at.x + side, below), inner, bottom - top, group);
+    let tabs = tab.draw_moving(paint, at, wide, from, to, share);
+    let held = at.y + tab.high(paint) + least;
+    let inner = wide - side * 2.0;
+    let need = stack(&mut PDry(&*paint), PPoint::new(at.x + side, held + top), inner, 0.0, group).0;
+    let bottom = end.max(need + top);
+    label(paint, PRect::new(at.x, held, wide, bottom - held), radius, PLight::Rest, false, "");
+    let (_, pressed) = stack(paint, PPoint::new(at.x + side, held + top), inner, bottom - top, group);
     (tabs, pressed)
 }

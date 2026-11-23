@@ -86,7 +86,7 @@ pub trait PBand {
         let rect = off.draw_full(&mut PDry(&*paint), at, wide);
         let (Some(first), Some(last)) = (rect.first(), rect.last()) else { return rect };
         let high = self.high(paint);
-        // Tabs stand on the ground that holds what they choose, lit from
+        // Tabs stand over the ground that holds what they choose, lit from
         // the left: theirs runs from the right.
         label(paint, PRect::new(at.x, at.y, last.origin.x + last.size.width + gap / 4.0 - at.x, high), radius, PLight::Rest, true, "");
         let (a, b) = (rect.get(from).unwrap_or(first), rect.get(to).unwrap_or(first));

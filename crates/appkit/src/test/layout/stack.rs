@@ -30,22 +30,23 @@ fn groups_share_out_the_room_a_pane_has_left_between_them() {
 }
 
 #[test]
-fn tabs_stand_with_what_they_choose_on_one_ground_and_their_light_moves() {
+fn tabs_stand_over_the_ground_of_what_they_choose_and_their_light_moves() {
     let look = PLook::read(LOOK);
     let mut sheet = PSheet::new(&look);
     let tab = [("", "Head", true), ("", "Body", false)];
     let motion = PTabMove::default();
     let (tabs, pressed) = tabbed(&mut sheet, PPoint::new(0.0, 0.0), 300.0, 0.0, tab.as_slice(), &motion, &mut two());
     assert_eq!(tabs.len(), 2);
-    // The first ground is the one that holds them all, as wide as given,
-    // and the groups stand inside it, under the tabs.
-    let ground = sheet.mark.iter().find_map(|mark| match mark {
+    // The tabs stand above the ground that holds the groups, not on it:
+    // it is as wide as given and begins under them, and the groups stand
+    // inside it.
+    let ground = sheet.mark.iter().filter_map(|mark| match mark {
         PMark::Blend { rect, .. } => Some(*rect),
         _ => None,
-    });
-    let ground = ground.expect("a ground");
-    assert_eq!((ground.origin, ground.size.width), (PPoint::new(0.0, 0.0), 300.0));
-    assert!(pressed.iter().flatten().all(|r| r.origin.y > tabs[0].origin.y + tabs[0].size.height && r.origin.y + r.size.height <= ground.origin.y + ground.size.height));
+    }).find(|rect| rect.size.width == 300.0 && rect.origin.y > 0.0);
+    let ground = ground.expect("a ground under the tabs");
+    assert!(tabs.iter().all(|t| t.origin.y + t.size.height < ground.origin.y));
+    assert!(pressed.iter().flatten().all(|r| r.origin.y > ground.origin.y && r.origin.y + r.size.height <= ground.origin.y + ground.size.height));
     // Another tab chosen: the light is on its way for two frames, then there.
     motion.to(1);
     assert_eq!(motion.now(), (0, 1, 0.0));

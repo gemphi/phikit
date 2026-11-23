@@ -43,8 +43,11 @@ The robot's colours come from `paint.tsv`, the greenhouse's from
 held as the system repeats them (`garden.hold`), because the window
 sends no key-up.
 
-The customiser is data on the kit's layout, the same for every app. The
-part's tabs and the groups they choose stand on one ground (`tabbed`).
+The customiser is data on the kit's layout, the same for every app, in
+levels. At the top is the robot, with Reset and Randomize. Under it are
+the part's tabs, standing off any ground over one ground that holds only
+what they choose (`tabbed`). Beside that ground is one of the robot's
+own for its lights, which every part shares.
 The light on the chosen tab slides to the next (`PTabMove`,
 `tab.step`). Each group stands on its own section ground under its
 heading, and the room left in the pane is shared out between them

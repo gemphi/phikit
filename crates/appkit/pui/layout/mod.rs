@@ -10,5 +10,5 @@ mod wrap;
 
 pub use scroll::PScroll;
 pub use section::{PDry, ground, section};
-pub use stack::{PDrawn, PGrouped, stack, tabbed};
+pub use stack::{PDrawn, PGrouped, SPACE, stack, tabbed};
 pub use wrap::{fold, wrap};

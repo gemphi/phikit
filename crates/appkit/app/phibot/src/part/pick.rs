@@ -3,15 +3,18 @@
 //! tabs over what they choose: for that part its shape, its eyes (the
 //! head's), its material and the material's colour, and the lights'
 //! colour. Every name is phiace's tables; how it is laid out is the
-//! kit's, the same for every app: the tabs and their groups on one ground
-//! (`tabbed`), each group on its own under its heading, filling the pane
-//! (`stack`), options in bands across the width, colours as swatches.
+//! kit's, the same for every app, in levels: the robot (its title, Reset
+//! and Randomize); under it the parts as tabs over the ground of the
+//! chosen part's groups (`tabbed`), and the robot's own lights on a
+//! ground beside that one, for they are every part's (`stack`); in each,
+//! a group under its heading, options in bands across the width, colours
+//! as swatches.
 
 use std::cell::RefCell;
 
 use appkit::pui::block::{PBand, PSwatch, PTabMove};
 use appkit::pui::core::{PColor, PDraw, PEvent, PPaint, PPoint, PRect, PView};
-use appkit::pui::layout::{PGrouped, tabbed};
+use appkit::pui::layout::{PDry, PGrouped, stack, tabbed};
 use appkit::theme::PTheme;
 use phiace::bot::botanist::Data;
 use phiace::bot::botanist::look::Look;
@@ -51,9 +54,9 @@ impl Pick {
         Pick { frame: PRect::default(), desk, spot: RefCell::default(), motion: PTabMove::default() }
     }
 
-    /// The groups the chosen part has: a heading's key, what it holds,
-    /// and what a press on each does.
-    fn groups(&self, data: &Data, look: &Look) -> Vec<(&'static str, Hold, Vec<Act>)> {
+    /// The groups the chosen part has, and the robot's own: a heading's
+    /// key, what it holds, and what a press on each does.
+    fn groups(&self, data: &Data, look: &Look) -> (Vec<Group>, Vec<Group>) {
         let chosen = self.desk.chosen.get();
         let name = data.part.row.get(chosen).and_then(|row| row.first()).cloned().unwrap_or_default();
         let count = data.part.rows(&name).next().and_then(|row| row.get(2)).and_then(|n| n.parse::<usize>().ok()).unwrap_or_default();
@@ -74,10 +77,18 @@ impl Pick {
         let rest = vec![
             ("material", Hold::Pill(material.iter().map(|m| (String::new(), m.clone(), *m == choice.material)).collect()), material.iter().cloned().map(Act::Material).collect()),
             ("colour", Hold::Swatch(colour.iter().enumerate().map(|(i, c)| (*c, i == choice.colour)).collect()), (0..colour.len()).map(Act::Colour).collect()),
-            ("light", Hold::Swatch((0..light).map(|i| (super::light(data, i), i == look.light)).collect()), (0..light).map(Act::Light).collect()),
         ];
-        [first, eyes, rest].into_iter().flatten().collect()
+        let robot = vec![("light", Hold::Swatch((0..light).map(|i| (super::light(data, i), i == look.light)).collect()), (0..light).map(Act::Light).collect())];
+        ([first, eyes, rest].into_iter().flatten().collect(), robot)
     }
+}
+
+/// A group: its heading's key, what it holds, what a press on each does.
+type Group = (&'static str, Hold, Vec<Act>);
+
+/// The kit's groups for some of ours.
+fn grouped<'a>(group: &'a [Group], text: &appkit::service::PTable) -> Vec<PGrouped<'a>> {
+    group.iter().map(|(key, hold, _)| PGrouped { head: text.get(key).to_string(), draw: Box::new(move |paint: &mut dyn PPaint, at: PPoint, wide: f32| drawn(hold, paint, at, wide)) }).collect()
 }
 
 /// What a group draws: its options across the width, or its colours.
@@ -111,15 +122,19 @@ impl PDraw for Pick {
         let rect = icon.draw_end(paint, PPoint::new(left + wide, top));
         self.spot.borrow_mut().extend(rect.into_iter().zip([Act::Reset, Act::Random]));
         let top = top + icon.high(paint) + gap / 2.0;
-        // The parts as tabs, over the groups they choose, to the foot.
+        // The robot's own groups at the foot, and the parts as tabs over
+        // the chosen part's groups, down to them.
         let part: Vec<(&str, &str, bool)> = data.part.row.iter().enumerate().map(|(i, row)| ("", row.get(3).map_or("", String::as_str), i == self.desk.chosen.get())).collect();
-        let group = self.groups(&data, &look);
-        let mut grouped: Vec<PGrouped> = group.iter().map(|(key, hold, _)| PGrouped { head: text.get(key).to_string(), draw: Box::new(move |paint: &mut dyn PPaint, at: PPoint, wide: f32| drawn(hold, paint, at, wide)) }).collect();
+        let (group, robot) = self.groups(&data, &look);
+        let (mut chosen, mut own) = (grouped(&group, text), grouped(&robot, text));
         let foot = origin.y + self.frame.size.height - gap;
-        let (tabs, pressed) = tabbed(paint, PPoint::new(left, top), wide, foot, part.as_slice(), &self.motion, &mut grouped);
+        let space = paint.theme().size(appkit::pui::layout::SPACE).unwrap_or(gap / 2.0);
+        let high = stack(&mut PDry(&*paint), PPoint::new(left, 0.0), wide, 0.0, &mut own).0;
+        let (tabs, pressed) = tabbed(paint, PPoint::new(left, top), wide, foot - high - space, part.as_slice(), &self.motion, &mut chosen);
+        let (_, held) = stack(paint, PPoint::new(left, foot - high), wide, foot, &mut own);
         let mut spot = self.spot.borrow_mut();
         spot.extend(tabs.into_iter().zip((0..part.len()).map(Act::Part)));
-        for (rect, (.., act)) in pressed.into_iter().zip(&group) {
+        for (rect, (.., act)) in pressed.into_iter().zip(&group).chain(held.into_iter().zip(&robot)) {
             spot.extend(rect.into_iter().zip(act.iter().cloned()));
         }
     }
