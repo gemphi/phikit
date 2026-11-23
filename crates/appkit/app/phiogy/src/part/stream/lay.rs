@@ -178,9 +178,20 @@ impl Stream {
             // Every message stands on a ground of its own, against the
             // room's: how high is learned with nothing drawn.
             let high = self.message(&mut PDry(&*paint), PRect::new(left, next, wide, 0.0), one, follows, &all, &mut Vec::new()) - next;
-            let radius = paint.size(RADIUS);
-            light::label(paint, PRect::new(left - gap / 2.0, next - gap / 4.0, wide + gap, high + gap / 4.0), radius, PLight::Soft, true, "");
-            let foot = self.message(paint, PRect::new(left, next, wide, 0.0), one, follows, &all, &mut spot);
+            let foot = next + high;
+            // The one the pointer is over has its controls: found here,
+            // where it now stands, and not by the move that follows.
+            let pointed = self.point.get().is_some_and(|point| body.contains(point) && next <= point.y && point.y < foot);
+            pointed.then(|| *self.over.borrow_mut() = one.id.clone());
+            // One out of sight is measured, and not drawn.
+            match foot < body.origin.y || next > body.origin.y + body.size.height {
+                true => {}
+                false => {
+                    let radius = paint.size(RADIUS);
+                    light::label(paint, PRect::new(left - gap / 2.0, next - gap / 4.0, wide + gap, high + gap / 4.0), radius, PLight::Soft, true, "");
+                    self.message(paint, PRect::new(left, next, wide, 0.0), one, follows, &all, &mut spot);
+                }
+            }
             place.push((one.id.clone(), next, foot));
             next = foot;
         }
@@ -189,7 +200,10 @@ impl Stream {
         spot.retain(|spot| body.contains(spot.rect.center()));
         self.head(paint, origin, &all, &mut spot);
         self.foot(paint, origin, &all, &mut spot);
-        // What the control under the pointer is called, by it.
+        // The control under the pointer, where the stream now stands;
+        // and what it is called, by it.
+        let under = self.point.get().and_then(|point| spot.iter().rev().find(|spot| spot.rect.contains(point)).map(|spot| spot.act.clone()));
+        self.point.get().is_some().then(|| *self.hand.borrow_mut() = under);
         let hand = self.hand.borrow().clone();
         let said = hand.and_then(|act| spot.iter().find(|spot| spot.act == act).cloned());
         said.into_iter().for_each(|spot| _ = spot.word.tip(paint, spot.rect, PRect { origin, size: self.frame.size }));

@@ -28,6 +28,8 @@ pub struct Type {
     line: Pixels,
     /// A heading's size and line height.
     head: (Pixels, Pixels),
+    /// What sets it apart from another type: its face, weight and size.
+    key: String,
 }
 
 impl Type {
@@ -35,13 +37,14 @@ impl Type {
         let weight = theme.size(WEIGHT).map_or(FontWeight::default(), FontWeight);
         let font = Font { weight, ..font(theme.word(FACE).unwrap_or_default().to_string()) };
         let size = |token: &str| px(theme.size(token).unwrap_or_default());
-        Type { font, size: size(SIZE), line: size(LINE), head: (size(HEAD), size(HEAD_LINE)) }
+        let key = format!("{}/{}/{}", font.family, weight.0, size(SIZE).as_f32());
+        Type { font, size: size(SIZE), line: size(LINE), head: (size(HEAD), size(HEAD_LINE)), key }
     }
 
     /// What sets this type apart from another: its face, its weight and
     /// its size, as a key for what is kept of it.
-    pub fn key(&self) -> String {
-        format!("{}/{}/{}", self.font.family, self.font.weight.0, self.size.as_f32())
+    pub fn key(&self) -> &str {
+        &self.key
     }
 
     fn run(&self, text: &str, color: Hsla) -> TextRun {

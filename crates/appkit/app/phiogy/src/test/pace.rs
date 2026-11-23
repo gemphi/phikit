@@ -51,3 +51,27 @@ fn a_move_that_changes_nothing_under_the_pointer_draws_nothing_again() {
     }
     assert!(said.iter().all(|turned| *turned < 20), "{said:?}");
 }
+
+#[test]
+fn after_a_turn_of_the_wheel_the_move_that_follows_draws_nothing_again() {
+    use appkit::pui::core::{PEvent, PPoint};
+    // The lobby in a short window, so that its messages are more than it shows.
+    let (app, mut stage, look) = staged(DESK);
+    assert!(app.desk().show("lobby"));
+    let short = appkit::pui::core::PSize { width: DESK.width, height: 400.0 };
+    stage.lay(short, PMode::of_width(short.width));
+    let at = PPoint::new(700.0, 200.0);
+    stage.draw(&mut PSheet::new(look.as_ref()));
+    stage.send(&PEvent::PointerMove(at));
+    stage.draw(&mut PSheet::new(look.as_ref()));
+    // A turn brings another message under the pointer: the window is
+    // drawn with that message's controls, and the system's move at the
+    // same place then finds nothing changed.
+    let turn: Vec<(bool, bool)> = (0..6).map(|_| {
+        let moved = stage.send(&PEvent::Scroll(at, PPoint::new(0.0, 40.0)));
+        stage.draw(&mut PSheet::new(look.as_ref()));
+        (moved, stage.send(&PEvent::PointerMove(at)))
+    }).collect();
+    assert!(turn.iter().any(|(moved, _)| *moved), "the room is long enough to turn: {turn:?}");
+    assert!(turn.iter().all(|(_, again)| !again), "{turn:?}");
+}

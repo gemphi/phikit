@@ -17,23 +17,27 @@ use crate::theme::PTheme;
 /// The theme's token for how many widths are kept at most.
 pub const MEMO: &str = "screen.memo";
 
-/// The widths set so far: by the type they were set in and the text.
+/// The widths set so far in one type, by their text, and which type
+/// that is. Set in another type, they are all let go.
 #[derive(Default)]
 pub struct Gauge {
-    kept: RefCell<HashMap<(String, String), f32>>,
+    kept: RefCell<HashMap<String, f32>>,
+    face: RefCell<String>,
 }
 
 impl Gauge {
     /// How wide a line is set in that face: kept, or set now and kept.
     pub fn width(&self, text: &str, face: &Type, theme: &dyn PTheme, window: &Window) -> f32 {
-        let key = (face.key(), text.to_string());
-        let kept = self.kept.borrow().get(&key).copied();
+        // Looked up by the text alone: nothing is made to look it up.
+        let same = *self.face.borrow() == face.key();
+        let kept = same.then(|| self.kept.borrow().get(text).copied()).flatten();
         kept.unwrap_or_else(|| {
             let wide = face.width(text, window);
             let most = theme.size(MEMO).unwrap_or(f32::MAX) as usize;
             let mut all = self.kept.borrow_mut();
-            (all.len() >= most).then(|| all.clear());
-            all.insert(key, wide);
+            (all.len() >= most || !same).then(|| all.clear());
+            (!same).then(|| *self.face.borrow_mut() = face.key().to_string());
+            all.insert(text.to_string(), wide);
             wide
         })
     }

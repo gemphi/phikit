@@ -83,8 +83,10 @@ impl PScreen {
 
     fn wheel(&mut self, event: &ScrollWheelEvent, window: &mut Window, cx: &mut Context<Self>) {
         let (at, by) = (event.position, event.delta.pixel_delta(window.line_height()));
-        self.stage.send(&PEvent::Scroll(PPoint::new(at.x.as_f32(), at.y.as_f32()), PPoint::new(by.x.as_f32(), by.y.as_f32())));
-        cx.notify();
+        // A turn that moves nothing, at the end of a list, draws nothing.
+        if self.stage.send(&PEvent::Scroll(PPoint::new(at.x.as_f32(), at.y.as_f32()), PPoint::new(by.x.as_f32(), by.y.as_f32()))) {
+            cx.notify();
+        }
     }
 
     fn key(&mut self, event: &KeyDownEvent, _: &mut Window, cx: &mut Context<Self>) {

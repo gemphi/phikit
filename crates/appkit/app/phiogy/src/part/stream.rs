@@ -70,6 +70,10 @@ pub struct Stream {
     /// the control the pointer is over.
     over: RefCell<String>,
     hand: RefCell<Option<Act>>,
+    /// Where the pointer was last over the stream, in the window: what
+    /// is under it is found again as the stream is drawn, so a turn of
+    /// the wheel brings the controls of the message it brought there.
+    point: Cell<Option<PPoint>>,
     /// The field a message is written in, and the one the room is
     /// searched with; and whether the keys are the first's while the
     /// second is shown.
@@ -82,7 +86,7 @@ impl Stream {
     pub fn new(desk: Desk) -> Stream {
         let mut write = PField::new(PRect::default());
         write.focused = true;
-        Stream { frame: PRect::default(), desk, tool: Tool::read(data::ACT), scroll: Cell::default(), seen: RefCell::default(), origin: Cell::default(), spot: RefCell::default(), body: Cell::default(), place: RefCell::default(), over: RefCell::default(), hand: RefCell::default(), write, find: PField::new(PRect::default()), aim: Cell::default() }
+        Stream { frame: PRect::default(), desk, tool: Tool::read(data::ACT), scroll: Cell::default(), seen: RefCell::default(), origin: Cell::default(), spot: RefCell::default(), body: Cell::default(), place: RefCell::default(), over: RefCell::default(), hand: RefCell::default(), point: Cell::default(), write, find: PField::new(PRect::default()), aim: Cell::default() }
     }
 
     /// Whether the keys are the search field's.
@@ -215,6 +219,7 @@ impl PView for Stream {
             // The window is drawn again when the pointer comes over
             // another message or another control.
             PEvent::PointerMove(at) => {
+                self.point.set(Some(window(at)));
                 let (message, hand) = (self.at(window(at).y), under(at));
                 let moved = *self.over.borrow() != message || *self.hand.borrow() != hand;
                 (*self.over.borrow_mut(), *self.hand.borrow_mut()) = (message, hand);
