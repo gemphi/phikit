@@ -125,6 +125,7 @@ impl BlendFile {
                         bake,
                         rough_bake,
                         scale_bake,
+                        volume: self.volume_of(ma, dna),
                     });
                 });
             }
@@ -150,6 +151,7 @@ impl BlendFile {
                 bake: None,
                 rough_bake: None,
                 scale_bake: None,
+                volume: None,
             });
         }
 

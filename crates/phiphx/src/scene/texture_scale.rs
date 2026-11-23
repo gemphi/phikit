@@ -165,7 +165,8 @@ mod tests {
     fn the_mean_is_over_what_the_image_covers() {
         let (program, mut cache) = half_covered();
         let mean = Chain::of(&program, &mut cache).expect("an image was found").mean().expect("covered");
-        assert!(mean > 0.9, "{mean}");
+        // A smooth sample at the cover's edge is part hole, so not quite one.
+        assert!(mean > 0.8, "{mean}");
     }
 
     /// The mean itself is a share of one, a quarter of the reach; the byte

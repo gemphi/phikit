@@ -25,6 +25,7 @@ fn material() -> BlendMaterial {
         bake: None,
         rough_bake: None,
         scale_bake: None,
+        volume: None,
     }
 }
 

@@ -128,6 +128,8 @@ pub struct BlendMaterial {
     pub rough_bake: Option<crate::blend::shade::bake::BlendBake>,
     /// The Subsurface Scale chain compiled likewise (`BlendFile::scale_bake`).
     pub scale_bake: Option<crate::blend::shade::bake::BlendBake>,
+    /// What fills the mesh, when the material has a Volume (`shade/volume.rs`).
+    pub volume: Option<crate::blend::shade::volume::BlendVolume>,
 }
 
 pub use super::bsdf::BlendBsdf;

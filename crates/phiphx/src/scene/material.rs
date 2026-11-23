@@ -49,6 +49,10 @@ pub struct SceneMaterial {
     /// The Subsurface Scale chain as a bake; `texture_scale.rs` runs it
     /// into `bsdf.subsurface_scale`.
     pub scale_bake: Option<crate::blend::shade::bake::BlendBake>,
+    /// What fills the mesh, when the material has a Volume
+    /// (`blend::shade::volume`): scattering and extinction per unit of
+    /// the scene's length.
+    pub volume: Option<crate::blend::shade::volume::BlendVolume>,
     /// A baked single image's Mapping, to apply to the mesh's UVs —
     /// `u' = m[0]·(u, v, 1)`, `v' = m[1]·(u, v, 1)`.
     pub uv_affine: Option<[[f32; 3]; 2]>,
@@ -121,6 +125,7 @@ impl SceneMaterial {
             bake: None,
             rough_bake: None,
             scale_bake: None,
+            volume: None,
             uv_affine: None,
             baked: false,
         }
@@ -157,6 +162,7 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
                 bake: m.bake.clone(),
                 rough_bake: m.rough_bake.clone(),
                 scale_bake: m.scale_bake.clone(),
+                volume: m.volume,
                 uv_affine: None,
                 baked: false,
             })
@@ -190,6 +196,7 @@ pub(super) fn materials_from_blend(obj: &BlendSceneObject) -> Vec<SceneMaterial>
         bake: None,
         rough_bake: None,
         scale_bake: None,
+        volume: None,
         uv_affine: None,
         baked: false,
     }]
