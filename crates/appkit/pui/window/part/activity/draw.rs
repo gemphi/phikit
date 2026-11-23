@@ -4,7 +4,7 @@ use super::super::menu::{self, INK, LIT, ROUND, ROW};
 use super::super::{GAP, ICON, INK as TEXT, ROW as LINE, person};
 use super::{CORNER, FACE, FILL, PActivity, PIN, SHARE, share, square};
 use crate::pui::core::letter::letter;
-use crate::pui::core::light::{edge, label, pane};
+use crate::pui::core::light::{bond, edge, label, pane};
 use crate::pui::core::{PFit, PLight, PPaint, PPoint, PRect};
 use crate::pui::window::PWindow;
 
@@ -30,7 +30,10 @@ impl PActivity {
         match (plan.lying, shown.is_some()) {
             (true, true) => [bar, side].into_iter().for_each(|rect| pane(paint, rect, corner, FILL)),
             (true, false) => pane(paint, bar, corner, FILL),
-            (false, _) => edge(paint, PRect::new(bar.origin.x, bar.origin.y, bar.size.width + side.size.width, bar.size.height), corner, false, FILL),
+            // Standing, the bar and its menu are one pane of two parts,
+            // their lights running against each other where they meet.
+            (false, true) => bond(paint, bar, side, corner, FILL),
+            (false, false) => edge(paint, bar, corner, false, FILL),
         }
         match (plan.lying || !headed, self.logo.icon.is_empty()) {
             (true, _) => {}
