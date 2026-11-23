@@ -128,16 +128,16 @@ pub fn edge(paint: &mut dyn PPaint, rect: PRect, radius: f32, end: bool, token: 
 }
 
 /// A bar and the column it opens: one pane, one shape with the bar's
-/// corners. The bar has no light of its own (its icons carry theirs);
-/// the column is lit from where it begins, on its left, and its light is
-/// gone by its middle, so where it begins is the line between them, and
-/// it needs no corners of its own. What stands in the column is lit
-/// against it, from the right.
+/// corners, and two lights woven: the bar's from its right, the column,
+/// its child, against it from its left, each gone by its middle, so
+/// neither needs corners of its own. What stands in the column is lit
+/// against the column, from the right, and so on down.
 pub fn bond(paint: &mut dyn PPaint, first: PRect, second: PRect, radius: f32, token: &str) {
     let whole = PRect::new(first.origin.x, first.origin.y, first.size.width + second.size.width, first.size.height.max(second.size.height));
     match PLight::Rest.shade(paint.theme()) {
         Some(_) => {
             under(paint, whole, radius);
+            label(paint, first, 0.0, PLight::Rest, true, token);
             label(paint, second, 0.0, PLight::Rest, false, token);
         }
         None => flat(paint, whole, radius, token),
