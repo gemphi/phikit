@@ -1,7 +1,8 @@
 # Where each part stands in its host: host, region, side, part. The
-# customiser stands at the left of the robot, as BOT-anist's does; the
-# greenhouse's score stands at its right, where its ornament floats.
-make	center	left	pick
+# customiser is the host beside the bar (app.tsv's `side`), in the bar's
+# second column, as Phiogy's rooms are; the greenhouse's score stands at
+# its right, where its ornament floats.
 make	center	center	robot
 garden	center	center	ground
 garden	center	right	score
+choose	center	center	pick

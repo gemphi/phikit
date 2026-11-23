@@ -44,7 +44,7 @@ word	text.file	font/PhiPillOpen-Light.otf
 # The bar is `activity.low` thick, and a menu beside it `activity.width`
 # wide (puikit's shell: a rail of icons and a panel).
 color	activity.ink	#1d1d1b
-size	activity.width	200
+size	activity.width	340
 size	activity.low	56
 # It stands clear of the window's top, foot and side, its corners round.
 size	activity.margin	8

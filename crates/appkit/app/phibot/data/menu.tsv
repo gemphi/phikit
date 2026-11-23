@@ -1,1 +1,5 @@
-# No menus beside the bar.
+# What a row of the bar shows beside it, as Phiogy's table writes it: the
+# row, the seat of the group, the group, then slug, label, icon, and what
+# a press does. A `side` row has the group hold the host app.tsv calls
+# `side`: the customiser, beside the bar while the robot is made.
+make	center	joined	choose	Customise	robot	side

@@ -1,5 +1,5 @@
-//! The customiser (RobotCustomizationView, SelectorViews): its title with
-//! Reset and Randomize, then the part chosen (Head, Body, Backpack) as
+//! The customiser (RobotCustomizationView, SelectorViews), in the bar's
+//! second column as Phiogy's rooms are: Reset and Randomize, then the part chosen (Head, Body, Backpack) as
 //! tabs over what they choose: for that part its shape, its eyes (the
 //! head's), its material and the material's colour, and the lights'
 //! colour. Every name is phiace's tables; how it is laid out is the
@@ -19,7 +19,7 @@ use appkit::theme::PTheme;
 use phiace::bot::botanist::Data;
 use phiace::bot::botanist::look::Look;
 
-use super::{Desk, GAP, INK, byte};
+use super::{Desk, GAP, byte};
 
 /// What a press on the customiser does.
 #[derive(Debug, Clone, PartialEq)]
@@ -109,14 +109,14 @@ fn drawn(hold: &Hold, paint: &mut dyn PPaint, at: PPoint, wide: f32) -> (f32, Ve
 impl PDraw for Pick {
     fn draw(&self, paint: &mut dyn PPaint, origin: PPoint) {
         self.spot.borrow_mut().clear();
-        let (gap, ink) = (paint.size(GAP), paint.color(INK));
+        let gap = paint.size(GAP);
         let data = self.desk.data();
         let look = self.desk.bot.borrow().look();
         let (left, wide) = (origin.x + gap, self.frame.size.width - gap * 2.0);
         let text = &self.desk.text;
-        // The title, then Reset and Randomize at its end.
+        // Reset and Randomize at the top right: the app's name is the
+        // window's, in its top row.
         let top = origin.y + gap;
-        paint.head(PPoint::new(left, top), text.get("title"), ink);
         let tool = [("undo", text.get("reset"), false), ("rotate", text.get("random"), false)];
         let icon: Vec<(&str, &str, bool)> = tool.iter().map(|(icon, _, on)| (*icon, "", *on)).collect();
         let rect = icon.draw_end(paint, PPoint::new(left + wide, top));

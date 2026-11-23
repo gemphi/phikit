@@ -1,3 +1,4 @@
 # The hosts: slug, label, icon.
 make	Robot	robot
 garden	Greenhouse	leaf
+choose	Customise	robot

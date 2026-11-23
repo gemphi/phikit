@@ -106,6 +106,10 @@ impl PApp for Phibot {
         self.own.get("front")
     }
 
+    fn side(&self) -> &str {
+        self.own.get("side")
+    }
+
     fn focus(&self) -> &str {
         self.own.get("focus")
     }
