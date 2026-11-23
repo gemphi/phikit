@@ -1,0 +1,37 @@
+# How the greenhouse plays (AppState, RobotCharacter+Movement,
+# PlantAnimationProvider). Sizes are in metres, times in seconds.
+# How many plants there are to propagate.
+plant.total	3
+# The component a planter carries, and its plant's name in it.
+plant.component	BOTanistAssets.PlantComponent
+plant.type	plantType
+# A key's step, and the least a move is divided by.
+key.step	100
+move.floor	100
+# How far the robot goes a second, and while it stops.
+speed.base	0.165
+speed.end	0.001
+# How long a key's release waits before the walk ends.
+key.settle	0.1
+# How long the robot stands before it waves, and how long it turns.
+wave.after	2
+wave.turn	0.5
+# The size of the robot's model, and of the greenhouse in its volume.
+model.scale	0.065
+explore.scale	0.7
+# Where the robot stands when the game begins or is replayed.
+start.x	0
+start.y	0.065
+start.z	0
+# How near the robot's middle must come to a planter's box to touch
+# it (the sample's character controller: radius 0.2 at the robot's
+# scale). A mock: tuned so the planters are touched where they stand.
+touch.reach	0.03
+# The greenhouse's scene, and a part's scene, under the assets folder.
+scene.greenhouse	scenes/volume.usda
+scene.part	scenes/{part}{n}.usda
+# Where Apple's BOT-anist assets are, from this crate's folder.
+asset	../../../phi-old/apple-old/crates/apple/apps/botanist/BOTAnist/BOTAnist/Packages/BOTanistAssets/Sources/BOTanistAssets/BOTanistAssets.rkassets
+# How long a clip that plays once lasts, in seconds. The sample's clips
+# are binary USD the stage does not open yet: a mock until it does.
+clip.length	1

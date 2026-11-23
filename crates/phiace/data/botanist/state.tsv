@@ -1,0 +1,11 @@
+# The animation states (AnimationStateMachine.swift): whether each loops,
+# and the state a clip that plays once goes to when it ends. A body's
+# clip is Assets/Robot/animations/body<n>/body<n>_<state>_anim.usd; plant
+# has no clip in the sample.
+# state	loop	next
+idle	loop	idle
+walkLoop	loop	walkLoop
+walkEnd	once	idle
+plant	once	idle
+celebrate	loop	celebrate
+wave	once	idle

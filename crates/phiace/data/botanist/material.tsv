@@ -1,0 +1,20 @@
+# The materials and their four colours (RobotData.swift:68-103, the
+# colours from ColorExtensions.swift:33-80). The index is what the
+# material's mat_switch takes.
+# material	index	colour	r	g	b
+metal	0	metalPink	226	95	151
+metal	1	metalOrange	227	138	29
+metal	2	metalGreen	150	194	70
+metal	3	metalBlue	92	140	199
+rainbow	0	beige	224	211	180
+rainbow	1	rainbowRed	255	59	48
+rainbow	2	rose	244	201	201
+rainbow	3	black	0	0	0
+plastic	0	plasticBlue	59	152	167
+plastic	1	plasticPink	233	73	127
+plastic	2	plasticOrange	247	150	31
+plastic	3	plasticGreen	61	160	87
+mesh	0	meshGray	199	199	204
+mesh	1	meshOrange	206	78	52
+mesh	2	meshYellow	245	181	58
+mesh	3	black	0	0	0

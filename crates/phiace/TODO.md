@@ -6,6 +6,22 @@ read from. phiace stands on phiecs, so the first three items of
 [phiecs's list](../phicore/phiecs/TODO.md) come first: clock and events,
 tree and space, the journal.
 
+## botanist (2026-11-23)
+
+Apple's BOT-anist sample played out on phiecs: `src/bot/botanist*`, its
+tables in `data/botanist`, its scenes Apple's own USD where `game.tsv` says.
+
+- [x] the robot from its parts' USD scenes, its look from the tables (shapes, materials, colours, lights, eyes), reset
+- [x] the animation states and which may follow which, a clip that plays once going on to the next
+- [x] walking with the keys, facing where it goes, the walk ending after a key is let go
+- [x] the greenhouse from `volume.usda`, its planters by their plant component, a planter the robot comes to propagated, celebrating at three, replay, exit
+- [x] a test that plays a session through (`tests/botanist.rs`)
+- [ ] the screens, as an app on appkit: loading, the creator (customiser and the robot), the greenhouse with its score, Replay and Exit
+- [ ] the clips' lengths and poses from the binary animation files (a mock length now, `clip.length`); waving when the viewer moves
+- [ ] the head and backpack pinned to the body's joints (JointPinSystem), once the body's skeleton is read
+- [ ] the robot drawn from its meshes (`.usdz`) by phiray, as the stage gives them, live
+- [ ] `touch.reach` is a mock: from the character controller's capsule once the robot's size is read
+
 ## bot
 
 - [ ] a bot description as a data file: links with a parent, joints, limits

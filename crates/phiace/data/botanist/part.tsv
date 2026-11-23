@@ -1,0 +1,7 @@
+# The robot's parts, as BOT-anist builds one (RobotData.swift): the part,
+# the suffix its materials are named with, how many shapes it has, and
+# what the customiser calls it.
+# part	suffix	count	label
+head	H	3	Head
+body	B	3	Body
+backpack	BP	3	Backpack

@@ -1,0 +1,8 @@
+# Which state may follow which (AnimationStateMachine.swift:14-103).
+# from	to
+idle	walkLoop plant celebrate wave
+walkLoop	walkEnd celebrate
+walkEnd	idle celebrate wave walkLoop
+plant	idle celebrate wave walkLoop
+celebrate	idle
+wave	idle

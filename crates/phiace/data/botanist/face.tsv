@@ -1,0 +1,5 @@
+# The eye shapes (RobotFace). The index is what face_switch takes.
+# index	face
+0	square
+1	circle
+2	heart

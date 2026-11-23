@@ -1,4 +1,4 @@
-﻿//! # phiace
+//! # phiace
 //!
 //! The robotic system of phikit. A robot is a word in the phiecs world: its
 //! body, sensors and goals are relations under conditions, as a player is in
@@ -33,5 +33,11 @@
 //! checked out without `droidlet/`: that folder holds file names with a
 //! colon, which Windows cannot create. Clone it elsewhere to read droidlet.
 //!
-//! Nothing here is implemented yet. The nearest existing code is `simkit`
-//! (AirSim's AirLib in Rust), which is not a workspace member.
+//! The first robot is the botanist ([`bot::botanist`]): Apple's BOT-anist
+//! sample played out on phiecs, its scenes read from Apple's own USD and
+//! everything it is and does read from `data/botanist`. The nearest
+//! other code is `simkit` (AirSim's AirLib in Rust), which is not a
+//! workspace member.
+
+pub mod bot;
+pub mod table;

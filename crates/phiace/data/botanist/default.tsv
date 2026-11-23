@@ -1,0 +1,8 @@
+# The robot a session begins with (RobotData.swift:53-64).
+head	head2
+body	body2
+backpack	backpack1
+material	plastic
+colour	0
+light	white
+face	circle

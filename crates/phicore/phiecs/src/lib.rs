@@ -15,9 +15,11 @@
 //! ```
 
 pub mod aspect;
+pub mod comp;
 pub mod relation;
 pub mod resources;
 pub mod system;
+pub mod usd;
 pub mod word;
 pub mod world;
 

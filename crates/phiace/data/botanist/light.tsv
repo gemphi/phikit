@@ -1,0 +1,12 @@
+# The light colours (RobotLightColor; the values are M_lights.usda's
+# Switch_2). The index is what light_switch takes; the last two are
+# textures in the material, given here as the colour they lean to.
+# index	light	r	g	b
+0	red	1	0.084	0
+1	yellow	1	0.869	0
+2	green	0.066	1	0.002
+3	blue	0	0.727	0.882
+4	purple	0.653	0	1
+5	white	0.967	0.992	1
+6	purpleBlue	0.6	0.2	1
+7	rainbow	0.4	0.6	1

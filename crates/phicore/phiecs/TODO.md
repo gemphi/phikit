@@ -22,7 +22,8 @@ Every file stays under 250 lines and the crate keeps no dependencies.
 
 - [ ] `comp/aspect.rs`: `Aspect::name()`, `World::aspect_list(word)`, a changed tick per store, `Transient`
 - [ ] `comp/stored.rs`: `Stored`, `Value`, the stable id, `Owner`
-- [ ] `comp/space/pose.rs`: `Pose { t, r, s }`, `WorldMatrix`
+- [x] `comp/pose.rs`: `Pose { translate, orient, scale }` as USD's xformOps, `Matrix` (2026-11-23; at `comp/` for now, `comp/space/` when the folders move)
+- [x] `comp/tree.rs`: `Parent`, `Placed`, `adopt`, `children`, `matrix`, `place` (2026-11-23; `set_parent(keep_world)` still to do)
 - [ ] `comp/time/clock.rs`: `Clock { tick, time, dt, fps }`
 - [ ] `comp/time/track.rs`, `journal.rs`: `Track<A>`, the `Journal` trait, the in-memory journal
 - [ ] `comp/anim/bind.rs`: `Bind { word, aspect, field }`, `Animated<T> { base, live }`
@@ -53,3 +54,16 @@ Every file stays under 250 lines and the crate keeps no dependencies.
 - [ ] phiphx feature `ecs`: scene to words, actions as `Sample`, the rig solve as `Constrain`
 - [ ] the scene glue: `Simulate` over `phiray::sim`, `Readout` to `Tracer::reinstance` and `repose`
 - [ ] a feature gate in the phiecs repo so phikit takes the core with no phinet path, ending the hand copy
+
+## usd (2026-11-23)
+
+The world reads OpenUSD, as Reality Composer Pro writes it: a scene is
+data, and the same file is what the world runs.
+
+- [x] `usd/token.rs`, `read.rs`, `layer.rs`: a text layer (`.usda`) into prims: spec, type, name, metadata, properties, children
+- [x] `usd/stage.rs`: a stage that composes references and payloads to text layers, local opinions over referenced ones; binary layers kept as the prim's asset
+- [x] `usd/intake.rs`: prims into words (spelled under their parent), `Pose` from xformOps, `Kind`, and Reality Composer Pro components as a `ComponentSet`
+- [x] tests: a small greenhouse, and Apple's own BOT-anist `volume.usda` with its three planters
+- [ ] binary layers (`.usdc`, inside `.usdz`): the `openusd` 0.3 crate is in the offline cache; `ext/phiber-refs/apple/src/reality-foundation/scene_usd` reads meshes with it
+- [ ] variant sets, inherits, specializes, sublayers, time samples into `Track`s
+- [ ] reading is slow in a debug build: Apple's greenhouse is 36 MB of text across its layers, about 15 s
