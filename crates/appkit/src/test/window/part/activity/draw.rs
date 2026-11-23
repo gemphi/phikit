@@ -43,7 +43,7 @@ fn it_draws_the_mark_its_icons_the_user_and_the_menu_shown_under_the_app_s_name(
 }
 
 #[test]
-fn in_a_theme_with_light_the_bar_is_one_pane_its_menu_lit_against_it_and_every_icon_has_a_chip() {
+fn in_a_theme_with_light_the_bar_is_one_pane_its_menu_lit_from_the_left_and_every_icon_has_a_chip() {
     let look = PLook::read(&format!("{LOOK}color\tshade.light\t#ffffff\nsize\tshade.share\t0.5\nsize\tshade.rest\t0.5\nsize\tshade.soft\t0.25\ncolor\twindow.fill\t#eeeeee\nsize\tactivity.radius\t12\nsize\tactivity.corner\t16\n"));
     let mut sheet = PSheet::new(&look);
     bar().draw(BAR, SIDE, &picked("layout"), None, &mut sheet);
@@ -55,18 +55,17 @@ fn in_a_theme_with_light_the_bar_is_one_pane_its_menu_lit_against_it_and_every_i
         PMark::Blend { rect, from, to, turn, .. } => Some((*rect, from.a, to.a, *turn)),
         _ => None,
     }).collect();
-    // The bar is the parent: one pane, lit from the right, nothing at
-    // the window's edge. The menu it opens, its child, is lit against it
-    // from where it begins, so the line between them is where the menu's
-    // light begins. What stands on the bar runs against it too: the mark
-    // and the row whose menu is shown at full strength, the other rows at
-    // the light of rest, each a chip 37.5 square in the middle of its cell.
+    // The bar has no light of its own; the menu it opens is lit from
+    // where it begins, on its left, so the line between them is where the
+    // menu's light begins. The bar's icons carry their own: the mark and
+    // the row whose menu is shown at full strength, the other rows at the
+    // light of rest, each a chip 37.5 square in the middle of its cell.
     let menu = PRect::new(50.0, 0.0, 200.0, 600.0);
     let chip = |top: f32, from: f32| (PRect::new(6.25, top, 37.5, 37.5), from, 0.0, 90.0);
-    assert_eq!(lit[..7], [(whole, 0.0, 0.25, 90.0), (menu, 0.25, 0.0, 90.0), chip(6.25, 0.5), chip(51.25, 0.5), chip(91.25, 0.25), chip(281.25, 0.25), chip(511.25, 0.25)]);
+    assert_eq!(lit[..6], [(menu, 0.25, 0.0, 90.0), chip(6.25, 0.5), chip(51.25, 0.5), chip(91.25, 0.25), chip(281.25, 0.25), chip(511.25, 0.25)]);
     // The user's mark is no light of its own but Phi-Soft's shape, as
     // large as a chip, in the light's colour at full strength; then
     // the menu's three groups.
     assert!(sheet.mark.iter().any(|mark| matches!(mark, PMark::Icon { name, rect, color } if name == "soft-fill" && *rect == PRect::new(6.25, 556.25, 37.5, 37.5) && color.a == 0.5)));
-    assert_eq!(lit.len(), 10);
+    assert_eq!(lit.len(), 9);
 }

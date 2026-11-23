@@ -109,13 +109,14 @@ impl PDraw for Guide {
         // Only the rows the part has room for are drawn.
         let shown = |index: &usize| (*index + 1) as f32 * row > scroll.at() && *index as f32 * row < scroll.at() + high;
         // Each run of rooms under a heading is a group, on a ground of
-        // its own against the menu's; the open room is lit against that.
+        // its own lit from the right, against the column's (lit from the
+        // left); the open room is lit against that, from the left.
         let mut from = None;
         for index in 0..=list.len() {
             match (matches!(list.get(index), Some(Row::Room(_))), from) {
                 (true, None) => from = Some(index),
                 (false, Some(first)) => {
-                    light::label(paint, PRect::new(origin.x + gap / 4.0, origin.y + first as f32 * row, width - gap / 2.0, (index - first) as f32 * row), radius, PLight::Soft, false, "");
+                    light::label(paint, PRect::new(origin.x + gap / 4.0, origin.y + first as f32 * row, width - gap / 2.0, (index - first) as f32 * row), radius, PLight::Soft, true, "");
                     from = None;
                 }
                 _ => {}
@@ -131,8 +132,8 @@ impl PDraw for Guide {
                     // row is; more softly under the pointer.
                     let place = PRect::new(origin.x + gap / 2.0, top, width - gap, row);
                     match (plate.id == *open, self.over.get() == Some(index)) {
-                        (true, _) => light::label(paint, place, radius, PLight::Rest, true, ""),
-                        (false, true) => light::label(paint, place, radius, PLight::Soft, true, ""),
+                        (true, _) => light::label(paint, place, radius, PLight::Rest, false, ""),
+                        (false, true) => light::label(paint, place, radius, PLight::Soft, false, ""),
                         (false, false) => {}
                     }
                     let seat = PRect::new(origin.x + gap, top + (row - icon) / 2.0, icon, icon);
