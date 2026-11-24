@@ -78,8 +78,9 @@ impl Desk {
     /// The people whose name or handle holds what was typed, never the
     /// person; the first of everyone when nothing was.
     pub fn seek(&self, find: &str, most: usize) -> Vec<Member> {
-        let wanted = find.trim().to_lowercase();
-        let holds = |member: &&Member| member.id != self.site.me && (wanted.is_empty() || member.name.to_lowercase().contains(&wanted) || member.handle.to_lowercase().contains(&wanted));
-        self.site.member.iter().filter(holds).take(most).cloned().collect()
+        // As search ranks (search/rank.rs): every word sought begins a word
+        // of their name or handle, the best first.
+        let others = self.site.member.iter().filter(|member| member.id != self.site.me);
+        super::search::rank::sift(others, find, most, |member| (member.name.clone(), member.handle.clone())).into_iter().cloned().collect()
     }
 }

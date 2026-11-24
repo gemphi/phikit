@@ -11,6 +11,7 @@
 use std::cell::{Cell, RefCell};
 
 use appkit::pui::block::{PBand, PRow};
+use appkit::pui::core::PLight;
 use appkit::pui::control::{PControl, PField, inside};
 use appkit::pui::core::{PPaint, PPoint, PRect, PView, figure, show};
 use appkit::pui::layout::{PDry, PScroll, ground, wrap};
@@ -18,7 +19,7 @@ use appkit::pui::layout::{PDry, PScroll, ground, wrap};
 mod item;
 
 pub use super::tool::grouped;
-pub use item::{Deed, Item, Seat};
+pub use item::{Card, Deed, Item, Seat};
 use super::{DIM, Desk, GAP, INK, LINE, ROW, fit};
 
 /// The theme's tokens: how high a line of a list is, and how far
@@ -26,6 +27,8 @@ use super::{DIM, Desk, GAP, INK, LINE, ROW, fit};
 /// (`row.lead`).
 pub const HIGH: &str = "list.row";
 pub const TOP: &str = "list.top";
+/// How wide a card of a grid is at least: the kit's card.
+pub const CARD: &str = "card.width";
 
 /// Where a field of a page stands in itself: as wide as the page's
 /// column, as high as a row. The page puts it where its item is.
@@ -139,6 +142,25 @@ impl<A: Clone> Lister<A> {
                     let (rect, high) = pill.draw_lines(paint, PPoint::new(left, top), wide);
                     spot.extend(rect.into_iter().zip(tab.iter().map(|one| one.act.clone())));
                     top += high + gap / 2.0;
+                }
+                Item::Hero(key) => {
+                    // As wide as the page, sixteen to nine, filled.
+                    let rect = PRect::new(left, top, wide, wide * 9.0 / 16.0);
+                    paint.picture(key, rect, paint.size(super::RADIUS), appkit::pui::core::PFit::Cover);
+                    top += rect.size.height + gap;
+                }
+                Item::Grid(card) => {
+                    // As many across as fit, sharing the width; each the
+                    // kit's tile, its picture square over its words.
+                    let across = ((wide + gap / 2.0) / (paint.size(CARD).max(1.0) + gap / 2.0)).floor().max(1.0) as usize;
+                    let side = (wide - (across - 1) as f32 * gap / 2.0) / across as f32;
+                    let tall = side + line * 2.0 + gap * 1.5;
+                    for (index, one) in card.iter().enumerate() {
+                        let rect = PRect::new(left + (index % across) as f32 * (side + gap / 2.0), top + (index / across) as f32 * (tall + gap / 2.0), side, tall);
+                        (one.seat.lead(), one.title.as_str(), one.sub.as_str()).tile(paint, rect, PLight::Soft);
+                        one.act.iter().for_each(|act| spot.push((rect, act.clone())));
+                    }
+                    top += card.len().div_ceil(across) as f32 * (tall + gap / 2.0) + gap / 2.0;
                 }
                 Item::Line(seat, title, sub, open, deed) => {
                     // The kit's row, with what can be done at its end.

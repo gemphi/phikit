@@ -105,7 +105,7 @@ impl Phiogy {
         let first = site.venue.iter().flat_map(|venue| &venue.plate).map(|plate| plate.id.clone()).next();
         let wanted = [choice.get(ROOM), site.start.clone()].into_iter().find(|id| site.plate(id).is_some() || id.starts_with(Page::own().id(crate::part::page::DIRECT)));
         let open = Rc::new(RefCell::new(wanted.or(first).unwrap_or_default()));
-        let desk = Desk { site: Rc::new(site), board, text: Rc::new(PTable::read(data::TEXT)), icon: Rc::new(PTable::read(data::ICON)), look, shade, choice: choice.clone(), wish: PWish::default(), open, line: Rc::new(line), home: own.get("space").to_string(), view: Rc::default(), kept: Rc::new(Kept::none()), now: Rc::default(), page: Rc::new(Page::own()), stock: Rc::default(), call: Rc::default(), engine: Rc::new(|| -> Maker { Box::new(|| Box::new(Stand::default())) }), refused: Rc::default(), away: false, ring: Rc::default(), #[cfg(not(target_family = "wasm"))] library: Rc::new(crate::library::Library::own(std::path::Path::new(&site_path), choice.clone())), shelf: Rc::new(appkit::pui::state::PMemory::read(data::STATE)) };
+        let desk = Desk { site: Rc::new(site), book: Rc::default(), board, text: Rc::new(PTable::read(data::TEXT)), icon: Rc::new(PTable::read(data::ICON)), look, shade, choice: choice.clone(), wish: PWish::default(), open, line: Rc::new(line), home: own.get("space").to_string(), view: Rc::default(), kept: Rc::new(Kept::none()), now: Rc::default(), page: Rc::new(Page::own()), stock: Rc::default(), call: Rc::default(), engine: Rc::new(|| -> Maker { Box::new(|| Box::new(Stand::default())) }), refused: Rc::default(), away: false, ring: Rc::default(), #[cfg(not(target_family = "wasm"))] library: Rc::new(crate::library::Library::own(std::path::Path::new(&site_path), choice.clone())), shelf: Rc::new(appkit::pui::state::PMemory::read(data::STATE)) };
         Phiogy { own, space, host, part: PSet::read(data::PART), modal: PSet::read(data::MODAL), desk }
     }
 
@@ -210,6 +210,7 @@ impl PApp for Phiogy {
             "friend" => Some(Box::new(Friend::new(desk, false))),
             "people" => Some(Box::new(Friend::new(desk, true))),
             SEARCH => Some(Box::new(Search::new(desk))),
+            crate::part::record::RECORD => Some(Box::new(crate::part::record::Record::new(desk))),
             "view" => Some(Box::new(Viewer::new(desk))),
             _ => None,
         }

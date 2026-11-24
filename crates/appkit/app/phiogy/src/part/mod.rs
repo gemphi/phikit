@@ -23,6 +23,7 @@ mod now;
 pub mod page;
 mod person;
 mod present;
+pub mod record;
 mod room;
 mod search;
 pub mod state;
@@ -100,6 +101,9 @@ pub const ROOM: &str = "room";
 #[derive(Clone)]
 pub struct Desk {
     pub site: Rc<Site>,
+    /// Phiegg's records search finds and pages show, read once when first
+    /// asked for.
+    pub book: Rc<std::cell::OnceCell<search::Book>>,
     /// Who is on every room's line. The line, where there is one, runs
     /// on other threads and changes it.
     pub board: Arc<Mutex<Board>>,
@@ -148,6 +152,15 @@ pub struct Desk {
 }
 
 impl Desk {
+    /// Phiegg's records (search/book.rs), read the first time they are
+    /// asked for and kept: search finds in them, a record's page shows one.
+    pub fn book(&self) -> &search::Book {
+        self.book.get_or_init(|| {
+            let kinds = search::Book::kinds();
+            search::Book::read(&self.kept, &kinds.iter().map(String::as_str).collect::<Vec<_>>())
+        })
+    }
+
     /// The window's film: the pictures that move, a call's and the
     /// library's 3D ones.
     pub fn film(&self) -> appkit::pui::core::PFilm {

@@ -11,11 +11,17 @@ use serde_json::Value;
 use crate::data;
 use crate::kept::Kept;
 
-/// A record found: its name and its line.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// A record found: its kind, its id, its name, its line, its picture by
+/// its key (its own, else its world's; none where it has neither), and
+/// the record whole, for its page.
+#[derive(Debug, Clone, PartialEq)]
 pub struct Found {
+    pub kind: String,
+    pub id: String,
     pub name: String,
     pub line: String,
+    pub picture: String,
+    pub row: Value,
 }
 
 /// Every record of each kind search asks for, and what is sought most.
@@ -47,12 +53,53 @@ impl Book {
             from_phiora.unwrap_or_else(|| Book::files(kind))
         };
         let words = |row: &str| cells(row).iter().flat_map(|cell| cell.split_whitespace()).collect::<Vec<_>>();
-        let (name, line) = (words("name"), words("line"));
+        let (name, line, picture, borrow) = (words("name"), words("line"), words("picture"), words("borrow"));
         let word = |row: &Value, fields: &[&str]| fields.iter().find_map(|field| row.get(*field).and_then(Value::as_str).filter(|text| !text.is_empty())).unwrap_or_default().to_string();
-        let kind = kinds.iter().map(|kind| (kind.to_string(), rows(kind).iter().map(|row| Found { name: word(row, &name), line: word(row, &line) }).filter(|found| !found.name.is_empty()).collect())).collect();
+        // A picture's key: the table's start, then its path less what the
+        // table says to leave off it.
+        let (key, strip) = (cells("key").first().copied().unwrap_or_default(), cells("strip").first().copied().unwrap_or_default());
+        let keyed = |path: String| match path.is_empty() {
+            true => path,
+            false => format!("{key}{}", path.strip_prefix(strip).unwrap_or(&path)),
+        };
+        // The worlds' pictures, which a record with none of its own wears.
+        let world: Vec<(String, String)> = rows(cells("world").first().copied().unwrap_or("world")).iter().map(|row| (word(row, &["id"]), keyed(word(row, &picture)))).collect();
+        let worn = |row: &Value| borrow.iter().find_map(|field| match row.get(*field)? {
+            Value::String(id) => Some(id.clone()),
+            Value::Array(list) => list.first()?.as_str().map(str::to_string),
+            _ => None,
+        }).and_then(|id| world.iter().find(|(known, _)| *known == id).map(|(_, picture)| picture.clone())).unwrap_or_default();
+        let found = |kind: &str, row: &Value| {
+            let own = keyed(word(row, &picture));
+            Found { kind: kind.to_string(), id: word(row, &["id"]), name: word(row, &name), line: word(row, &line), picture: if own.is_empty() { worn(row) } else { own }, row: row.clone() }
+        };
+        let kind = kinds.iter().map(|kind| (kind.to_string(), rows(kind).iter().map(|row| found(kind, row)).filter(|found| !found.name.is_empty()).collect())).collect();
         let popular = cells("popular");
         let popular = popular.first().and_then(|path| file(path)).and_then(|site| site.get(*popular.get(1)?)?.as_array().cloned()).unwrap_or_default();
         Book { kind, popular: popular.iter().filter_map(Value::as_str).map(str::to_string).collect() }
+    }
+
+    /// The kinds of Phiora's records search's tabs find.
+    pub fn kinds() -> Vec<String> {
+        data::row(data::SEARCH).into_iter().filter(|row| row.first() == Some(&"tab")).filter_map(|row| row.get(3)?.strip_prefix("tree:").map(str::to_string)).collect()
+    }
+
+    /// A record by its kind and id.
+    pub fn record(&self, kind: &str, id: &str) -> Option<&Found> {
+        self.kind.iter().find(|(name, _)| name == kind)?.1.iter().find(|found| found.id == id)
+    }
+
+    /// The records related to one: those that name it, and those it names,
+    /// by the fields `link` lists (its world, its club).
+    pub fn related(&self, one: &Found) -> Vec<&Found> {
+        let field = cells("link").iter().flat_map(|cell| cell.split_whitespace()).collect::<Vec<_>>();
+        let names = |row: &Value, id: &str| field.iter().any(|field| match row.get(*field) {
+            Some(Value::String(own)) => own == id,
+            Some(Value::Array(list)) => list.iter().any(|own| own.as_str() == Some(id)),
+            _ => false,
+        });
+        let every = self.kind.iter().flat_map(|(_, found)| found);
+        every.filter(|other| other.id != one.id && (names(&other.row, &one.id) || names(&one.row, &other.id))).collect()
     }
 
     /// A kind's rows from Phiegg's own files, by the manifest: the list
@@ -80,5 +127,9 @@ mod tests {
         assert!(count("world") > 100 && count("club") > 100 && count("show") > 100, "{:?}", book.kind.iter().map(|(k, f)| (k, f.len())).collect::<Vec<_>>());
         assert!(book.kind[0].1.iter().any(|found| found.name == "Opalia"));
         assert!(book.popular.contains(&"Once City".to_string()));
+        // A world has its own picture, a club and a show wear their world's.
+        let of = |kind: &str| book.kind.iter().find(|(name, _)| name == kind).map(|(_, found)| found.clone()).unwrap_or_default();
+        assert!(of("world").iter().any(|found| found.name == "Opalia" && found.picture.starts_with("phiegg:worlds/")));
+        assert!(of("club").iter().filter(|found| !found.picture.is_empty()).count() > 100 && of("show").iter().any(|found| !found.picture.is_empty()));
     }
 }

@@ -237,7 +237,7 @@ impl PView for Guide {
         match (word, word.strip_prefix(LOOK), word.strip_prefix(super::host::GO)) {
             (START, ..) => self.desk.show(&self.desk.site.start),
             // The bar's Rooms row: the direct list, led by friends.
-            (super::page::DIRECT, ..) => self.desk.show(&self.desk.page.id(super::page::FRIEND).to_string()),
+            (super::page::DIRECT, ..) => self.desk.show(self.desk.page.id(super::page::FRIEND)),
             (_, Some(look), _) => self.desk.dress(look),
             (_, _, _) if word.starts_with(PREFER) => self.desk.prefer(&word[PREFER.len()..]),
             (_, _, Some(host)) => self.desk.visit(host),

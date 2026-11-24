@@ -27,3 +27,21 @@ line	tagline description synopsis vibe sub
 # What is sought most often, shown before anything is: Phiegg's own,
 # from its site file, the list of that name.
 popular	../../../../../puikit/app/phiegg/src/data/site.json	searchPopular
+# A record's picture: the first of these fields it has, as a key of
+# Phiegg's pictures (this start, then the path, less what is left off
+# its front). A record with none wears its world's: the world named by
+# the first of these fields it has (an id, or a list of them), from the
+# kind of this name.
+picture	image logo cover
+key	phiegg:
+strip	assets/
+borrow	worldId worldIds
+world	world
+# How many cards each kind shows under All; a kind's own tab shows as
+# many as the theme's people.most.
+all	8
+# A record's page (part/record.rs): the records it is related to are
+# those that name it, and those it names, by these fields; its host is
+# the Phiogy host the first of these fields names.
+link	worldId worldIds clubId
+host	hostId

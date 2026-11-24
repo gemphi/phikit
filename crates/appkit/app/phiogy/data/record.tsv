@@ -1,0 +1,14 @@
+# A record's page, as Phiegg's: the facts it shows of each kind, in
+# order: the kind, the record's field, and the word (text.tsv) it is
+# shown under. A field the record has not is left out; a number is
+# grouped.
+world	kind	record.kind
+world	visitorsNow	record.inside
+club	ticker	record.ticker
+club	holders	record.holders
+club	floor	record.floor
+club	supply	record.supply
+club	chain	record.chain
+club	status	record.status
+show	season	record.season
+show	date	record.date

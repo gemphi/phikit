@@ -47,6 +47,16 @@ impl<A> Deed<A> {
     }
 }
 
+/// A card of a grid: its picture (what leads it), its title, a line
+/// about it, and what a press on it means.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Card<A> {
+    pub seat: Seat,
+    pub title: String,
+    pub sub: String,
+    pub act: Option<A>,
+}
+
 /// One thing of a page, from its top down.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Item<A> {
@@ -66,6 +76,11 @@ pub enum Item<A> {
     /// A line: its head, two lines of words, what a press on it means
     /// if it means something, and what can be done at its end.
     Line(Seat, String, String, Option<A>, Vec<Deed<A>>),
+    /// A picture across the page, by its key: a page's own (a record's).
+    Hero(String),
+    /// Cards in a grid, as many across as the page has room for, each
+    /// the kit's tile: its picture large over its title and its line.
+    Grid(Vec<Card<A>>),
 }
 
 impl Seat {

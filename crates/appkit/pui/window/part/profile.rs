@@ -47,6 +47,11 @@ pub const TOLD: &str = "look";
 /// may change while the window is open.
 pub type PFact = Rc<dyn Fn() -> PTable>;
 
+/// Where each press of the profile was drawn, and what it says.
+type Spot = Vec<(PRect, String)>;
+/// What a group holds, drawn from a height down; how far it ends.
+type Fill<'a> = dyn FnMut(&mut dyn PPaint, f32, &mut Spot) -> f32 + 'a;
+
 /// Who the user is.
 pub struct PProfile {
     frame: PRect,
@@ -92,7 +97,7 @@ impl PProfile {
     /// and while open what it holds on a ground of its own, measured
     /// first with nothing drawn. How far down it ends.
     #[allow(clippy::too_many_arguments)]
-    fn group(&self, key: &str, said: &str, at: PPoint, wide: f32, paint: &mut dyn PPaint, spot: &mut Vec<(PRect, String)>, fill: &mut dyn FnMut(&mut dyn PPaint, f32, &mut Vec<(PRect, String)>) -> f32) -> f32 {
+    fn group(&self, key: &str, said: &str, at: PPoint, wide: f32, paint: &mut dyn PPaint, spot: &mut Spot, fill: &mut Fill) -> f32 {
         let gap = paint.size(GAP);
         // A group the user's table gives no word has no heading: it is
         // its ground alone, and never folds.

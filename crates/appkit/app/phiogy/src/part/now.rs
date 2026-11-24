@@ -33,4 +33,6 @@ pub struct Now {
     pub album: RefCell<Vec<Shot>>,
     /// The thing of a shop that has the page, by its id.
     pub product: RefCell<Option<String>>,
+    /// The record of Phiegg's whose page is open (a world, a club, a show).
+    pub record: RefCell<Option<crate::part::search::Found>>,
 }

@@ -43,3 +43,24 @@ fn step_63_search_is_phiegg_s_its_tabs_what_is_sought_most_and_every_kind_it_fin
     let text = shown(&stage, &look);
     assert!(text.iter().filter(|line| line.contains("Once City")).count() >= 2, "{text:?}");
 }
+
+#[test]
+fn step_64_what_search_finds_is_cards_and_a_world_opens_its_page_with_its_facts_and_what_it_is_related_to() {
+    let (app, mut stage, look) = staged(DESK);
+    let desk = app.desk();
+    let word = |name: &str| desk.text.get(name).to_string();
+    assert!(press(&mut stage, &look, &word("search.open")));
+    // A world sought by the first letters of its name: a card, its picture over its name.
+    assert!(tab(&mut stage, &look, &word("search.world")));
+    for key in "opal".chars() {
+        stage.send(&PEvent::KeyDown(key));
+    }
+    let marks = drawn(&stage, &look);
+    let picture = marks.iter().any(|mark| matches!(mark, PMark::Picture { name, .. } if name.starts_with("phiegg:worlds/")));
+    assert!(picture && shown(&stage, &look).contains(&"Opalia".to_string()), "{:?}", shown(&stage, &look));
+    // Its card opens its page: its name, its facts, what it is related to.
+    assert!(tab(&mut stage, &look, "Opalia"));
+    assert_eq!(stage.window.modal(), Some("record"));
+    let text = shown(&stage, &look);
+    assert!(text.contains(&"Opalia".to_string()) && text.contains(&word("record.inside")) && text.contains(&word("record.near")), "{text:?}");
+}

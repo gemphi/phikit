@@ -131,7 +131,7 @@ impl PDraw for Person {
         let end = match chosen.and_then(|index| every.get(index)) {
             Some(shown) => section(paint, PPoint::new(left, top), wide, &mut |paint| {
                 got.clear();
-                self.body(paint, PPoint::new(left, top), wide, &one, &shot, shown, &mut got)
+                self.body(paint, PPoint::new(left, top), wide, (&one, &shot, shown), &mut got)
             }),
             None => top,
         };

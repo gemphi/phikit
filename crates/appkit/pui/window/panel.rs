@@ -154,10 +154,10 @@ impl PPanel {
         pane(paint, self.rect, round, FILL);
         // Only a look with glass has a tint for a modal, and only a tint
         // with some colour is laid.
-        if crate::pui::core::PGlass::of(paint.theme()).is_some() {
-            if let Some(tint) = paint.theme().color(TINT).filter(|tint| tint.a > 0.0) {
-                paint.round(self.rect, round, tint);
-            }
+        if crate::pui::core::PGlass::of(paint.theme()).is_some()
+            && let Some(tint) = paint.theme().color(TINT).filter(|tint| tint.a > 0.0)
+        {
+            paint.round(self.rect, round, tint);
         }
         if self.bare {
             return;

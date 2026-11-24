@@ -299,6 +299,7 @@ search.popular	Popular
 search.room	Rooms
 search.people	People
 search.none	Nothing found.
+search.every	See all
 search.open	Search
 # The asset library: its tree's sections, places, kinds, orders and
 # tools; what a place holds; an item in the inspector. UI words use `-`,
@@ -405,3 +406,18 @@ import.done	Imported {name} into the Phiegg space
 import.turned	Turning {name} into USD: it shows here when it is done
 import.wait	{name} waits to be turned into USD: no converter here
 size.unit	B KB MB GB
+# A record's page (a world, a club, a show).
+record.title	About
+record.host	Go to its host
+record.near	Related
+record.rooms	Its rooms
+record.kind	Kind
+record.inside	Inside now
+record.ticker	Ticker
+record.holders	Holders
+record.floor	Floor
+record.supply	Supply
+record.chain	Chain
+record.status	Status
+record.season	Season
+record.date	Date

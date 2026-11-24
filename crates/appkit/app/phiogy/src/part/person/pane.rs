@@ -12,6 +12,9 @@ use crate::data;
 use crate::part::{DIM, GAP, LINE, RADIUS, Shot};
 use crate::site::Member;
 
+/// A card of the kit's: a cell of a sheet or none, a name, a line.
+type Kit<'a> = (Option<(&'a str, u32, u32)>, &'a str, &'a str);
+
 /// A tab: what it shows, and its word (the table's first column names
 /// the row for whoever reads the table).
 pub(super) struct Pane {
@@ -37,7 +40,9 @@ impl Person {
     }
 
     /// The body of the tab shown, from `at` down; how far it goes.
-    pub(super) fn body(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, one: &Member, shot: &[Shot], pane: &Pane, spot: &mut Vec<(PRect, Act)>) -> f32 {
+    /// `shown`: whose profile, their pictures, and the tab.
+    pub(super) fn body(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, shown: (&Member, &[Shot], &Pane), spot: &mut Vec<(PRect, Act)>) -> f32 {
+        let (one, shot, pane) = shown;
         let (gap, line, dim) = (paint.size(GAP), paint.size(LINE), paint.color(DIM));
         let text = &self.desk.text;
         let count = |word: &str, n: u64| text.get(word).replace("{n}", &crate::part::tool::grouped(n));
@@ -55,13 +60,13 @@ impl Person {
             }
             "club" => {
                 let note: Vec<String> = one.club.iter().map(|club| count("person.holder", club.holder)).collect();
-                let card: Vec<(Option<(&str, u32, u32)>, &str, &str)> = one.club.iter().zip(&note).map(|(club, note)| (Some((club.mark.sheet.as_str(), club.mark.column, club.mark.index)), club.name.as_str(), note.as_str())).collect();
+                let card: Vec<Kit> = one.club.iter().zip(&note).map(|(club, note)| (Some((club.mark.sheet.as_str(), club.mark.column, club.mark.index)), club.name.as_str(), note.as_str())).collect();
                 card.as_slice().draw(paint, at, wide).1
             }
             "space" => {
                 let venue: Vec<_> = one.space.iter().map(|space| self.desk.site.venue.iter().find(|venue| venue.label == *space)).collect();
                 let note: Vec<String> = venue.iter().map(|venue| venue.filter(|venue| venue.count > 0).map(|venue| count("person.inside", venue.count)).unwrap_or_default()).collect();
-                let card: Vec<(Option<(&str, u32, u32)>, &str, &str)> = one.space.iter().zip(&venue).zip(&note)
+                let card: Vec<Kit> = one.space.iter().zip(&venue).zip(&note)
                     .map(|((space, venue), note)| (venue.and_then(|venue| venue.mark.as_ref()).map(|cell| (cell.sheet.as_str(), cell.column, cell.index)), space.as_str(), note.as_str())).collect();
                 let (rect, end) = card.as_slice().draw(paint, at, wide);
                 let first = venue.iter().map(|venue| venue.and_then(|venue| venue.plate.first()).map(|plate| plate.id.clone()));
@@ -72,7 +77,7 @@ impl Person {
                 let list = self.linked(&one.id);
                 let other: Vec<&Member> = list.iter().filter_map(|id| self.desk.site.member(id)).collect();
                 let handle: Vec<String> = other.iter().map(|other| format!("@{}", other.handle)).collect();
-                let card: Vec<(Option<(&str, u32, u32)>, &str, &str)> = other.iter().zip(&handle)
+                let card: Vec<Kit> = other.iter().zip(&handle)
                     .map(|(other, handle)| (self.desk.site.face(&other.id).map(|cell| (cell.sheet.as_str(), cell.column, cell.index)), other.name.as_str(), handle.as_str())).collect();
                 let (rect, end) = card.as_slice().draw(paint, at, wide);
                 spot.extend(rect.into_iter().zip(other.iter().map(|other| Act::Open(other.id.clone()))));
