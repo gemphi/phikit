@@ -72,24 +72,16 @@ impl Calling {
         self.desk.tile(&self.table, self.desk.size(SPEAK))
     }
 
-    /// The pills: what each reads, what a press does, whether it says
-    /// what is so.
-    fn pill(&self) -> Vec<(String, Press, bool)> {
-        let text = |name: &str| self.desk.text.get(name).to_string();
+    /// The pills: its icon and what it reads (`data/act.tsv`), what a
+    /// press does, whether it says what is so.
+    fn pill(&self) -> Vec<(String, String, Press, bool)> {
         let Some(seen) = self.desk.calling() else { return Vec::new() };
-        let hush = match seen.quiet {
-            true => (text("call.unmute"), Press::Hush(false), true),
-            false => (text("call.mute"), Press::Hush(true), false),
-        };
-        let camera = match seen.own.camera {
-            true => (text("call.cam.off"), Press::Camera(false), true),
-            false => (text("call.cam.on"), Press::Camera(true), false),
-        };
-        let share = match seen.own.screen {
-            true => (text("call.unshare"), Press::Share(false), true),
-            false => (text("call.share"), Press::Share(true), false),
-        };
-        vec![hush, camera, share, (text("call.end"), Press::End, false)]
+        let tool = super::tool::Tool::read(data::ACT);
+        let one = |name: &str, on: bool, press: Press| tool.of(name, on, &self.desk.text).map(|(icon, said)| (icon.to_string(), said.to_string(), press, on));
+        [one("hush", seen.quiet, Press::Hush(!seen.quiet)), one("camera", seen.own.camera, Press::Camera(!seen.own.camera)), one("screen", seen.own.screen, Press::Share(!seen.own.screen)), one("end", false, Press::End)]
+            .into_iter()
+            .flatten()
+            .collect()
     }
 
     /// What the call does with what this window sends; or, first, what
@@ -150,8 +142,8 @@ impl PDraw for Calling {
         next += bar + gap / 2.0;
         // Its buttons: the kit's band, tightened to the room it has.
         let list = self.pill();
-        let pill: Vec<(&str, &str, bool)> = list.iter().map(|(label, _, so)| ("", label.as_str(), *so)).collect();
-        *self.spot.borrow_mut() = pill.draw_in(paint, PPoint::new(left, next), inside).into_iter().zip(list.iter().map(|(_, press, _)| *press)).collect();
+        let pill: Vec<(&str, &str, bool)> = list.iter().map(|(icon, label, _, so)| (icon.as_str(), label.as_str(), *so)).collect();
+        *self.spot.borrow_mut() = pill.draw_in(paint, PPoint::new(left, next), inside).into_iter().zip(list.iter().map(|(_, _, press, _)| *press)).collect();
         self.row.set(1.0);
         next += line + gap + gap / 2.0;
         // What it says is broken to fit; the next frame makes room for

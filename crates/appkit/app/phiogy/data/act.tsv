@@ -50,5 +50,13 @@ hush.on	mic-off	call.unmute
 deaf	volume	voice.deaf
 deaf.on	volume-x	voice.undeaf
 leave	phone-off	call.leave
+# A call's own controls, each with its icon, all one height, each on a
+# ground of its own in the group's: the voice, the camera, the screen,
+# and the end.
+camera	video	call.cam.on
+camera.on	video	call.cam.off
+screen	share-2	call.share
+screen.on	share-2	call.unshare
+end	phone-off	call.end
 # The title's search field: it opens the Search window.
 seek	search	search.open
