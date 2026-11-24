@@ -22,7 +22,7 @@ fn step_62_once_city_is_a_place_of_the_library_with_its_things() {
     let city = place.iter().find(|place| place.key == "once").expect("Once City's place");
     assert_eq!((city.section.as_str(), city.icon.as_str()), ("own", "letter-o"));
     let file: Vec<String> = std::fs::read_dir(once()).expect("its folder").filter_map(|f| f.ok()).map(|f| f.file_name().to_string_lossy().to_string()).collect();
-    for name in ["once-city.usda", "letter-gate.usda", "lotus-dome.usda", "lioness-amber.usda", "lioness-onyx.usda", "couch-bird.usda", "zebra-rose.usda", "tree-bird.usda"] {
+    for name in ["once-city.usda", "letter-gate.usda", "lotus-dome.usda", "petal-dome.usda", "cake-tower.usda", "pad-bubble.usda", "wave-ring.usda", "lioness-amber.usda", "lioness-onyx.usda", "couch-bird.usda", "zebra-rose.usda", "tree-bird.usda"] {
         assert!(file.iter().any(|f| f == name), "no {name} in {file:?}");
     }
     let couch = file.iter().filter(|f| f.starts_with("couch-") || f.starts_with("ottoman-") || f.starts_with("pouf-") || f.starts_with("stool-")).count();
@@ -37,14 +37,14 @@ fn the_city_is_read_through_each_thing_s_own_file() {
     // parts stand three things deep in the city.
     let deep = model.part.iter().find(|part| part.path.contains("/gate/amber/lioness/")).expect("Amber in the gate");
     assert!(deep.path.ends_with("/head") || model.part.iter().any(|part| part.path.ends_with("/gate/amber/lioness/head")), "{}", deep.path);
-    // Every part once, and only the city's: its things make 336,928
+    // Every part once, and only the city's: its things make 422,272
     // triangles, and no file it refers to stands at the root beside it.
     let mut path: Vec<&str> = model.part.iter().map(|part| part.path.as_str()).collect();
     path.sort();
     let twice: Vec<&&str> = path.windows(2).filter(|w| w[0] == w[1]).map(|w| &w[0]).take(8).collect();
     assert!(twice.is_empty(), "read twice: {twice:?}");
     assert!(model.part.iter().all(|part| part.path.starts_with("/once_city/")), "a root of another file");
-    assert_eq!(model.count, 336_928, "{} parts", model.part.len());
+    assert_eq!(model.count, 422_272, "{} parts", model.part.len());
     // The tree shows it: the city, the gate, Amber, the lioness, her parts.
     let tree = model.tree();
     assert!(tree.iter().any(|node| node.name == "amber" && node.depth == 2 && node.holds), "{:?}", tree.iter().take(12).collect::<Vec<_>>());

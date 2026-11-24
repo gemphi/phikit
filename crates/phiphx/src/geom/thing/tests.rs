@@ -106,6 +106,33 @@ fn a_repeat_moves_then_turns_each_copy() {
 }
 
 #[test]
+fn a_bloom_has_its_lobes_and_its_hole() {
+    let set = once();
+    let ring = set.build("wave-ring").expect("the wavy ring");
+    let band = ring.mesh().into_iter().find(|(p, _)| p.name == "band").expect("its band").0.clone();
+    let radius: Vec<f32> = band.point.iter().map(|p| (p[0] * p[0] + p[2] * p[2]).sqrt()).collect();
+    let (near, far) = radius.iter().fold((f32::MAX, 0.0f32), |(a, b), r| (a.min(*r), b.max(*r)));
+    // Nine lobes 0.07 deep, reaching 60 m at the farthest from its own
+    // middle; the hole 0.82 as large, its nearest between two lobes, a
+    // little less for the rounded edge.
+    assert!((far - 60.0).abs() < 0.1, "{far}");
+    let hole = 60.0 * 0.82 * 0.93 / 1.07;
+    assert!(near < hole && near > hole - 1.5, "{near} {hole}");
+    assert!((band.extent()[1][1] - band.extent()[0][1] - 1.6).abs() < 1e-3);
+}
+
+#[test]
+fn a_turned_form_scalloped_swells_at_each_lobe() {
+    let set = once();
+    let tower = set.build("cake-tower").expect("the tower");
+    let tier = tower.mesh().into_iter().find(|(p, _)| p.name == "tier").expect("its tier").0.clone();
+    // Eight lobes 0.08 deep on a 3 m radius: out along x, in between.
+    let at = |angle: f32| tier.point.iter().filter(|p| (p[2].atan2(p[0]) - angle).abs() < 0.01).map(|p| (p[0] * p[0] + p[2] * p[2]).sqrt()).fold(0.0f32, f32::max);
+    assert!((at(0.0) - 3.0 * 1.08).abs() < 0.02, "{}", at(0.0));
+    assert!((at(std::f32::consts::PI / 8.0) - 3.0 * 0.92).abs() < 0.02, "{}", at(std::f32::consts::PI / 8.0));
+}
+
+#[test]
 fn phiogy_once_files_match_their_tables() {
     let folder = Path::new(env!("CARGO_MANIFEST_DIR")).join("../appkit/app/phiogy/asset/once");
     let set = once();

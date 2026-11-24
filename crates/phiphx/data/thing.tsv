@@ -1,7 +1,8 @@
 # How finely each form of a thing's part is made (geom/thing.rs): steps
 # round it (segment) and steps along it (ring: pole to pole, a pill's
 # ends, a ring's tube, a box's rounded edges, a dome's rim to its pole;
-# a letter's or an outline's curves between two points), and `bevel` the
+# a letter's or an outline's curves between two points; a bloom's
+# points round, as segment), and `bevel` the
 # steps round a letter's or an outline's rounded edge. Fine enough to
 # look round, coarse enough that a city of things draws at once.
 form	segment	ring	bevel
@@ -14,3 +15,4 @@ torus	24	8	-
 dome	24	6	-
 letter	-	3	2
 outline	-	3	2
+bloom	96	-	2

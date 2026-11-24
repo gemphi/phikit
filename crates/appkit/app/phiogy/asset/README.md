@@ -60,6 +60,14 @@ the tables. Nothing in a file is drawn by hand.
 - The gate, ONCE in gold letters 5.5 high, each letter's counter a
   door 1.1 wide; the lotus dome with its lounge; the i of the font as
   the lamps of the way in.
+- The floating city's pieces, after the Floating City drawings of
+  February 2026 (`D:\Dowloads\OLD-FEB-2026`) and the purple render of
+  24 November 2026: the petal dome of gold ribs and glowing lattice,
+  cake towers of scalloped tiers under a teal orb, bubble domes, clover
+  houses of three-lobed tiers, blob pads with glowing rims, tubes of
+  glass for bridges, the wavy ring and the gliders. Scalloped forms
+  are the turned forms with lobes (`from` "8 0.08") and the `bloom`
+  form, a flat outline of lobes with or without a hole.
 - `once-city.usda`, the whole city on its island over the clouds:
   each thing in it is a reference to its own file, so the library's
   scene tree shows the city, the gate, Amber, the lioness and her parts.

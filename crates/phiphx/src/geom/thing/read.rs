@@ -21,6 +21,7 @@ pub enum ThingForm {
     Dome,
     Letter,
     Outline,
+    Bloom,
     Thing,
 }
 
@@ -37,6 +38,7 @@ impl ThingForm {
             "dome" => Some(Self::Dome),
             "letter" => Some(Self::Letter),
             "outline" => Some(Self::Outline),
+            "bloom" => Some(Self::Bloom),
             "thing" => Some(Self::Thing),
             _ => None,
         }
@@ -66,9 +68,10 @@ impl ThingLook {
 /// thing's is how many times its own size), where its middle stands,
 /// how it is turned (degrees about x, then y, then z), how round its
 /// edges are (a share of its smallest side; a letter's or an outline's
-/// of its height), its look (a thing's: the looks it swaps, `from=to`),
+/// of its height; a bloom's of its thickness), its look (a thing's: the looks it swaps, `from=to`),
 /// what it is made from (a letter: `font:character`; an outline: a
-/// drawing; a thing: its name) and how often it repeats, each copy
+/// drawing; a bloom: its lobes, how deep, its hole; a turned form:
+/// lobes and how deep, to scallop it; a thing: its name) and how often it repeats, each copy
 /// moved and then turned a step on about the thing's middle.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ThingRow {
