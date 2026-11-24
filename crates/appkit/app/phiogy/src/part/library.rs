@@ -18,7 +18,7 @@ use appkit::pui::form::{PForm, PListed};
 use appkit::pui::state::{PMemory, PState};
 use appkit::pui::window::{PDeed, PWish};
 
-use super::Desk;
+use super::{Desk, Shot};
 use crate::data;
 use crate::library::{Attribute, Library, item};
 
@@ -36,6 +36,8 @@ struct Ui {
     library: Rc<Library>,
     /// The word a new set's name begins with.
     set: String,
+    /// The window's desk: a picture opened is looked at in its viewer.
+    desk: Desk,
 }
 
 impl Ui {
@@ -46,6 +48,20 @@ impl Ui {
             Some(("club", id)) => self.library.shelf.club(id).map(|club| format!("collection:{}", club.collection)).unwrap_or_else(|| at.to_string()),
             _ => at.to_string(),
         }
+    }
+
+    /// Look at a picture of the place shown in the viewer, the place's
+    /// other pictures in its strip, in the order chosen.
+    fn look(&self, key: &str) {
+        let at = match self.memory.get(FOLDER) {
+            kept if kept.is_empty() => self.library.home(),
+            kept => kept,
+        };
+        let list = self.library.item(&at, "picture", &self.memory.get("ui/sort"));
+        let unit = self.desk.text.get("size.unit");
+        let album: Vec<Shot> = list.iter().map(|one| Shot { key: one.picture.clone(), by: one.name.clone(), when: item::size(one.size, unit), file: Some(one.path.clone()), ..Shot::default() }).collect();
+        let number = list.iter().position(|one| one.key == key).unwrap_or_default();
+        self.desk.look(album, number);
     }
 
     /// Show another place: the one shown before is kept to go back to,
@@ -120,6 +136,8 @@ impl PState for Ui {
             // beside the inspector.
             ("ui/item", key) => match self.library.get(key) {
                 Some(item) if matches!(item.kind.as_str(), "folder" | "club") => self.go(&item.key),
+                // A picture is looked at alone, among the place's others.
+                Some(item) if item.kind == "picture" => self.look(&item.key),
                 Some(_) => {
                     self.memory.set(path, key);
                     self.memory.set("ui/part", "0");
@@ -137,7 +155,7 @@ impl PState for Ui {
 /// memory (`ui`) and with what the person chose (`look`, `note`).
 pub fn source(desk: &Desk) -> Rc<PListed> {
     let attribute = Rc::new(Attribute::new(desk.choice.clone()));
-    let ui = Rc::new(Ui { memory: desk.shelf.clone(), wish: desk.wish.clone(), library: desk.library.clone(), set: desk.text.get("set.word").to_string() });
+    let ui = Rc::new(Ui { memory: desk.shelf.clone(), wish: desk.wish.clone(), library: desk.library.clone(), set: desk.text.get("set.word").to_string(), desk: desk.clone() });
     let list = row::List { library: desk.library.clone(), text: desk.text.clone(), shade: desk.shade.clone(), attribute: attribute.clone(), ui: desk.shelf.clone() };
     let rows = move |name: &str| list.rows(name);
     let state: Vec<(String, Rc<dyn PState>)> = vec![("ui".to_string(), ui), ("look".to_string(), attribute.clone()), ("note".to_string(), attribute)];

@@ -23,16 +23,24 @@
 //! window and whose panel is bare (`data/modal.tsv`). Its controls,
 //! their icons and their words are `data/tool.tsv`; `lay.rs` draws it.
 
+mod foot;
 mod lay;
+mod mark;
+mod pen;
+mod view;
 
 use std::cell::{Cell, RefCell};
+use std::collections::HashSet;
+use std::path::PathBuf;
 
-use appkit::pui::core::{PEvent, PPoint, PRect, PView};
+use appkit::pui::core::{PPoint, PRect};
 use appkit::pui::window::PDeed;
 
 use super::{Desk, Tool};
 use crate::data;
 use crate::hosted::Hosted;
+pub use mark::{Mark, Sheet};
+pub use pen::Pen;
 
 /// The theme's tokens: the face of who posted it, a picture of the
 /// strip, the square a round control stands in, a tool, how thick the
@@ -55,6 +63,17 @@ pub const OPEN: &str = "open";
 pub const CLOSE: &str = "close";
 pub const BEFORE: &str = "before";
 pub const AFTER: &str = "after";
+pub const UNDO: &str = "undo";
+pub const REDO: &str = "redo";
+pub const KEEP: &str = "keep";
+pub const SKETCH: &str = "sketch";
+pub const TEXT: &str = "text";
+/// The theme's tokens: how thick a sketched line is, how much of the
+/// window's ground lies over the picture's haze, and an ink's dot.
+pub const PEN: &str = "view.pen";
+pub const VEIL: &str = "view.veil";
+pub const DOT: &str = "view.dot";
+
 
 /// What a press on a control does.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -69,6 +88,14 @@ pub enum Act {
     Save,
     Open,
     Close,
+    /// Take the last mark back, put it back, keep the marks.
+    Undo,
+    Redo,
+    Keep,
+    /// Mark with that pen, or press the picture as before again.
+    Pen(Pen),
+    /// Mark in the ink of that number.
+    Ink(usize),
 }
 
 impl Act {
@@ -80,6 +107,11 @@ impl Act {
             SAVE => Some(Act::Save),
             OPEN => Some(Act::Open),
             CLOSE => Some(Act::Close),
+            UNDO => Some(Act::Undo),
+            REDO => Some(Act::Redo),
+            KEEP => Some(Act::Keep),
+            SKETCH => Some(Act::Pen(Pen::Sketch)),
+            TEXT => Some(Act::Pen(Pen::Text)),
             _ => None,
         }
     }
@@ -103,8 +135,10 @@ pub struct Viewer {
     /// Where it was drawn last, and its controls.
     origin: Cell<PPoint>,
     spot: RefCell<Vec<Spot>>,
-    /// Where the picture itself lies: a press there is not beside it.
+    /// Where the picture itself lies: a press there is not beside it;
+    /// and where the whole of it is, larger than its room when it is.
     shown: Cell<PRect>,
+    whole: Cell<PRect>,
     /// The picture the rest is true of: another is seen whole first.
     seen: Cell<Option<usize>>,
     large: Cell<bool>,
@@ -118,11 +152,21 @@ pub struct Viewer {
     /// Whether it was drawn since the last frame began: put away, it
     /// is not, and the next time it is opened it begins afresh.
     live: Cell<bool>,
+    /// The pen, the ink, the marks of the picture shown and its key, and
+    /// whether a line is being drawn or words written.
+    pen: Cell<Option<Pen>>,
+    ink: Cell<usize>,
+    sheet: RefCell<(String, Sheet)>,
+    drawing: Cell<bool>,
+    writing: Cell<bool>,
+    /// The pictures whose haze was asked for.
+    hazed: RefCell<HashSet<String>>,
 }
 
 impl Viewer {
     pub fn new(desk: Desk) -> Viewer {
-        Viewer { frame: PRect::default(), desk, tool: Tool::read(data::TOOL), origin: Cell::default(), spot: RefCell::default(), shown: Cell::default(), seen: Cell::default(), large: Cell::default(), told: Cell::default(), shift: Cell::default(), reach: Cell::default(), over: Cell::default(), live: Cell::default() }
+        let (pen, ink, sheet, drawing, writing, hazed) = (Cell::default(), Cell::default(), RefCell::default(), Cell::default(), Cell::default(), RefCell::default());
+        Viewer { frame: PRect::default(), desk, tool: Tool::read(data::TOOL), origin: Cell::default(), spot: RefCell::default(), shown: Cell::default(), whole: Cell::default(), seen: Cell::default(), large: Cell::default(), told: Cell::default(), shift: Cell::default(), reach: Cell::default(), over: Cell::default(), live: Cell::default(), pen, ink, sheet, drawing, writing, hazed }
     }
 
     /// Show the picture so many after the one shown, if there is one.
@@ -133,10 +177,17 @@ impl Viewer {
         next.is_some()
     }
 
-    /// Where the file of the picture shown is, as a person reads it.
+    /// Where the file of the picture shown is, as a person reads it:
+    /// one of the person's own where it lies, a posted one where the web
+    /// keeps it.
     fn file(&self) -> Option<String> {
+        self.path().map(|path| path.to_string_lossy().to_string())
+    }
+
+    fn path(&self) -> Option<PathBuf> {
         let list = self.desk.now.album.borrow();
-        Hosted::own().place(&list.get(self.desk.view.get()?)?.key)
+        let shot = list.get(self.desk.view.get()?)?;
+        shot.file.clone().or_else(|| Hosted::own().place(&shot.key).map(PathBuf::from))
     }
 
     /// Larger, or whole again: from its top left either way. It is
@@ -165,72 +216,19 @@ impl Viewer {
             Act::Save => wish(self.file().map(PDeed::Save)),
             Act::Open => wish(self.file().map(PDeed::Launch)),
             Act::Close => wish(Some(PDeed::Close)),
-        }
-    }
-}
-
-impl PView for Viewer {
-    /// Where a press on it does something.
-    fn hand(&self) -> Vec<PRect> {
-        self.spot.borrow().iter().map(|spot| spot.rect).collect()
-    }
-
-    fn frame(&self) -> PRect {
-        self.frame
-    }
-
-    fn set_frame(&mut self, frame: PRect) {
-        self.frame = frame;
-    }
-
-    /// A viewer that was put away forgets what was true of its picture:
-    /// opened again, the picture is whole and was not shared.
-    fn tick(&mut self) -> bool {
-        if !self.live.replace(false) {
-            self.seen.set(None);
-            self.over.set(None);
-        }
-        false
-    }
-
-    /// A tool's name told as a word does what a press on it does.
-    fn tell(&mut self, word: &str) -> bool {
-        let tool = Act::named(word).filter(|act| *act != Act::Close && self.desk.view.get().is_some());
-        // What a tool leaves so is true of the picture shown now, and
-        // holds through the first frame.
-        if tool.is_some() {
-            self.seen.set(self.desk.view.get());
-            self.live.set(true);
-        }
-        tool.into_iter().for_each(|act| self.act(act));
-        tool.is_some()
-    }
-
-    fn respond(&mut self, event: &PEvent) -> bool {
-        // What was drawn is in the window's coordinates.
-        let under = |at: PPoint| self.spot.borrow().iter().find(|spot| spot.rect.contains(at.plus(self.origin.get()))).map(|spot| spot.act);
-        match *event {
-            PEvent::KeyDown(PEvent::LEFT) => self.step(-1),
-            PEvent::KeyDown(PEvent::RIGHT) => self.step(1),
-            // The window is drawn again when the pointer comes over
-            // another control, or leaves one.
-            PEvent::PointerMove(at) => self.over.replace(under(at)) != under(at),
-            // The wheel moves a picture shown larger, as far as it goes.
-            PEvent::Scroll(_, by) if self.large.get() => {
-                let (now, most) = (self.shift.get(), self.reach.get());
-                self.shift.set(PPoint::new((now.x - by.x).clamp(0.0, most.x), (now.y - by.y).clamp(0.0, most.y)));
-                true
+            Act::Undo => _ = self.marks().undo(),
+            Act::Redo => _ = self.marks().redo(),
+            Act::Keep => {
+                let value = self.marks().value();
+                self.desk.choice.put(&format!("mark/{}", self.key().unwrap_or_default()), &value);
+                self.marks().kept = true;
             }
-            PEvent::PointerDown(at) => {
-                match (under(at), self.shown.get().contains(at.plus(self.origin.get()))) {
-                    (Some(act), _) => self.act(act),
-                    (None, true) => self.zoom(),
-                    // A press beside the picture puts the viewer away.
-                    (None, false) => self.act(Act::Close),
-                }
-                true
+            Act::Pen(pen) => {
+                let next = Some(pen).filter(|pen| self.pen.get() != Some(*pen));
+                self.pen.set(next);
+                self.large.set(false);
             }
-            _ => false,
+            Act::Ink(ink) => self.ink.set(ink),
         }
     }
 }

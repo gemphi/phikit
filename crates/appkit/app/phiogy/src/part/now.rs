@@ -4,13 +4,15 @@
 use std::cell::{Cell, RefCell};
 
 /// A picture that was posted: its key, who posted it, by their id and
-/// by name, and when.
+/// by name, and when; and of one of the person's own files (the
+/// library's), where it is on this disk.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Shot {
     pub key: String,
     pub who: String,
     pub by: String,
     pub when: String,
+    pub file: Option<std::path::PathBuf>,
 }
 
 /// What is so of the open room just now. Another room begins without

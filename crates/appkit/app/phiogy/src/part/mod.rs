@@ -196,7 +196,7 @@ impl Desk {
     /// The pictures posted with one message.
     fn posted(&self, one: &Message) -> Vec<Shot> {
         let when = format!("{} {} {}", one.day, self.text.get("between"), one.at);
-        one.image.iter().map(|key| Shot { key: key.clone(), who: one.who.clone(), by: one.by.clone(), when: when.clone() }).collect()
+        one.image.iter().map(|key| Shot { key: key.clone(), who: one.who.clone(), by: one.by.clone(), when: when.clone(), file: None }).collect()
     }
 
     /// The pictures posted in the open room, in order.

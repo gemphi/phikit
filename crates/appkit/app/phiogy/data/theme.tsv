@@ -228,6 +228,11 @@ size	view.control	44
 size	view.tool	36
 size	view.mark	2
 size	view.large	2
+# Marks on a picture: how thick a sketched line is, and an ink's dot.
+size	view.pen	4
+size	view.dot	22
+# How much of the window's ground lies over a picture's haze behind it.
+size	view.veil	0.78
 # The library's 3D pictures (appkit pui/core/orbit.rs): a ground the
 # window shows through, the room round a model, how much larger a
 # picture is made than shown, how far a drag turns it, how much nearer

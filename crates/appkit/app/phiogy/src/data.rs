@@ -36,6 +36,8 @@ pub const KEEP: &str = include_str!("../data/keep.tsv");
 /// word.
 pub const ACT: &str = include_str!("../data/act.tsv");
 pub const TOOL: &str = include_str!("../data/tool.tsv");
+/// The inks a mark on a picture can be in.
+pub const MARK: &str = include_str!("../data/mark.tsv");
 /// Where the pictures the site names are on disk.
 pub const ASSET: &str = include_str!("../data/asset.tsv");
 /// The rules of a call.

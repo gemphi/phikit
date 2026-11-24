@@ -1,0 +1,10 @@
+# The inks a mark on a picture can be in, as Google Photos offers them,
+# from the left: key, red, green, blue (0 to 255). A row taken out is
+# an ink not offered; the first is the one a mark is in at first.
+coal	24	24	27
+red	239	68	68
+yellow	250	204	21
+green	34	197	94
+cyan	6	182	212
+magenta	217	70	239
+grey	200	200	204

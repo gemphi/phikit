@@ -15,6 +15,7 @@ pub mod figure;
 pub mod letter;
 mod film;
 mod glass;
+pub mod haze;
 mod icon;
 mod lens;
 pub mod light;

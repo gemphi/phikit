@@ -1,7 +1,9 @@
-//! The viewer as the web's: no head of a panel's, one row of who and
-//! when, the tools and the way out; a picture shown larger and whole
-//! again; what share, save and open ask the system for; and what a
-//! control is called, shown under the pointer.
+//! The viewer as Google Photos' and the web's: no head of a panel's, one
+//! row of the way back, who and when, the tools and Save; the picture
+//! on its own haze; a picture shown larger and whole again; what share,
+//! save and open ask the system for; what a control is called, shown
+//! under the pointer; marks sketched and set on a picture, taken back,
+//! put back and kept; and a picture of the library looked at alone.
 
 use std::path::Path;
 
@@ -64,26 +66,33 @@ fn tool(stage: &mut PStage, look: &PLook, name: &str) -> bool {
 }
 
 #[test]
-fn step_17_the_viewer_has_no_head_and_one_row_of_who_and_when_its_tools_and_its_way_out() {
+fn step_17_the_viewer_has_no_head_and_one_row_of_the_way_back_who_and_when_its_tools_and_save() {
     let (_, stage, look) = opened(DESK, 1);
     // Its panel is bare: no title of a modal's, no button of appkit's.
     let panel = stage.panel().expect("the viewer is open");
     assert!(panel.bare && panel.body == panel.rect);
     let (mark, text) = (sized(&stage, &look), shown(&stage, &look));
     assert!(!text.contains(&"Picture".to_string()) && icon(&mark, "maximize").is_none());
-    // The tools from the left, then the way out, on one line at the
-    // right; who posted it at the left of the same row.
-    let row: Vec<PRect> = ["zoom-in", "share-2", "download", "external-link", "x"].iter().map(|name| icon(&mark, name).unwrap_or_else(|| panic!("{name}"))).collect();
-    assert!(row.windows(2).all(|pair| pair[0].origin.x < pair[1].origin.x && pair[0].center().y == pair[1].center().y), "{row:?}");
-    assert!(row[0].origin.x > DESK.width / 2.0 && row[4].origin.x + row[4].size.width < DESK.width);
+    // The tools from the left, then Save, on one line at the right; the
+    // way back at the left, who posted it beside it.
+    let row: Vec<PRect> = ["zoom-in", "share-2", "download", "external-link", "undo", "redo", "check"].iter().map(|name| icon(&mark, name).unwrap_or_else(|| panic!("{name}"))).collect();
+    assert!(row.windows(2).all(|pair| pair[0].origin.x < pair[1].origin.x && (pair[0].center().y - pair[1].center().y).abs() < 1.0), "{row:?}");
+    assert!(row[0].origin.x > DESK.width / 2.0 && row[6].origin.x + row[6].size.width < DESK.width);
+    let back = icon(&mark, "arrow-left").expect("the way back");
+    assert!(back.origin.x < DESK.width / 8.0 && (back.center().y - row[0].center().y).abs() < 1.0);
     let who = mark.iter().rev().find_map(|mark| match mark {
         PMark::Text { at, text, .. } if text == "You" => Some(*at),
         _ => None,
     });
     let who = who.expect("who posted it");
-    assert!(who.x < DESK.width / 2.0 && (who.y - row[0].center().y).abs() < look.size("view.control").unwrap_or_default(), "{who:?} {row:?}");
+    assert!(who.x > back.origin.x + back.size.width && who.x < DESK.width / 2.0 && (who.y - row[0].center().y).abs() < look.size("view.control").unwrap_or_default(), "{who:?} {row:?}");
     // It is the last picture: one before it, none after.
-    assert!(icon(&mark, "arrow-left").is_some() && icon(&mark, "arrow-right").is_none());
+    let after = mark.iter().any(|mark| matches!(mark, PMark::Icon { name, rect, .. } if name == "chevron-right" && rect.origin.x > DESK.width * 0.8 && rect.center().y > DESK.height / 4.0));
+    assert!(icon(&mark, "chevron-left").is_some() && !after);
+    // The inks and the pens are under the picture.
+    let (picture, _) = looked(&stage, &look);
+    let sketch = icon(&mark, "pencil").expect("Sketch");
+    assert!(sketch.origin.y > picture.origin.y + picture.size.height && icon(&mark, "type").is_some());
 }
 
 #[test]
@@ -143,8 +152,8 @@ fn step_19_share_save_and_open_ask_the_system_for_the_picture_s_own_file() {
     assert_eq!(stage.window.modal(), Some("view"));
     assert!(stage.send(&PEvent::KeyDown(PEvent::LEFT)));
     assert!(!shown(&stage, &look).contains(&said));
-    // Its way out is its own.
-    assert!(tool(&mut stage, &look, "x"));
+    // Its way back is its own.
+    assert!(tool(&mut stage, &look, "arrow-left"));
     assert_eq!(stage.window.modal(), None);
 }
 
@@ -158,7 +167,7 @@ fn what_a_control_is_called_is_shown_by_it_while_the_pointer_is_over_it() {
     };
     // The window is drawn again when the pointer comes over a control,
     // and not while it stays there.
-    assert!(over(&mut stage, "x") && !over(&mut stage, "x"));
+    assert!(over(&mut stage, "arrow-left") && !over(&mut stage, "arrow-left"));
     assert!(shown(&stage, &look).contains(&word("view.close")));
     assert!(over(&mut stage, "zoom-in"));
     let text = shown(&stage, &look);
@@ -166,7 +175,7 @@ fn what_a_control_is_called_is_shown_by_it_while_the_pointer_is_over_it() {
     // A tool that is on is called by what a press on it does now.
     assert!(tool(&mut stage, &look, "zoom-in"));
     assert!(shown(&stage, &look).contains(&word("view.fit")));
-    assert!(over(&mut stage, "arrow-left"));
+    assert!(over(&mut stage, "chevron-left"));
     assert!(shown(&stage, &look).contains(&word("view.prev")));
     // Off every control, nothing is said.
     assert!(stage.send(&PEvent::PointerMove(PPoint::new(DESK.width / 2.0, DESK.height / 2.0))));
@@ -185,7 +194,7 @@ fn in_a_hand_the_picture_has_the_width_and_the_arrows_lie_over_its_edges() {
     let room = room.expect("the picture");
     let gap = look.size("gap").unwrap_or_default() / 2.0;
     assert_eq!((room.origin.x, room.size.width), (gap, HAND.width - gap * 2.0));
-    assert!(room.contains(icon(&mark, "arrow-left").expect("the one before").center()));
+    assert!(room.contains(icon(&mark, "chevron-left").expect("the one before").center()));
     // The tools keep the top row; who and when stand under the picture.
     assert!(icon(&mark, "zoom-in").is_some_and(|tool| tool.center().y < room.origin.y));
     let who = mark.iter().rev().find_map(|mark| match mark {
@@ -216,4 +225,90 @@ fn put_away_and_opened_again_a_picture_is_whole_and_was_not_shared() {
     stage.tick();
     assert!(icon(&sized(&stage, &look), "zoom-out").is_some());
     assert!(shown(&stage, &look).contains(&app.desk().text.get("view.shared").to_string()));
+}
+
+#[test]
+fn step_57_a_picture_is_marked_a_line_sketched_and_words_set_taken_back_put_back_and_kept() {
+    let (app, mut stage, look) = opened(DESK, 1);
+    let (room, _) = looked(&stage, &look);
+    let ink = |stage: &PStage| sized(stage, &look).iter().filter(|mark| matches!(mark, PMark::Fill { rect, .. } if room.contains(rect.center()) && rect.size.width <= 8.0)).count();
+    // The red ink, and Sketch: a press on the picture begins a line that
+    // follows the pointer while it is held.
+    let dot: Vec<PRect> = sized(&stage, &look).iter().filter_map(|mark| match mark {
+        PMark::Fill { rect, .. } if rect.size.width == look.size("view.dot").unwrap_or_default() => Some(*rect),
+        _ => None,
+    }).collect();
+    assert_eq!(dot.len(), 7, "{dot:?}");
+    assert!(stage.send(&PEvent::PointerDown(dot[1].center())));
+    assert!(tool(&mut stage, &look, "pencil"));
+    let from = room.center();
+    assert!(stage.send(&PEvent::PointerDown(from)));
+    assert!(stage.send(&PEvent::PointerMove(from.plus(PPoint::new(80.0, 20.0)))));
+    assert!(stage.send(&PEvent::PointerUp(from.plus(PPoint::new(80.0, 20.0)))));
+    let drawn = ink(&stage);
+    assert!(drawn > 10, "{drawn}");
+    // Taken back, put back.
+    assert!(tool(&mut stage, &look, "undo"));
+    assert_eq!(ink(&stage), 0);
+    assert!(tool(&mut stage, &look, "redo"));
+    assert_eq!(ink(&stage), drawn);
+    // Text: a press sets words where it was, the keys write them.
+    assert!(tool(&mut stage, &look, "type"));
+    assert!(stage.send(&PEvent::PointerDown(room.origin.plus(PPoint::new(room.size.width / 4.0, room.size.height / 4.0)))));
+    "Nice".chars().for_each(|key| _ = stage.send(&PEvent::KeyDown(key)));
+    assert!(stage.send(&PEvent::KeyDown(PEvent::ENTER)));
+    assert!(shown(&stage, &look).contains(&"Nice".to_string()));
+    // Kept: put away and opened again, the picture has its marks.
+    let saved = app.desk().text.get("view.kept").to_string();
+    assert!(!shown(&stage, &look).contains(&saved));
+    assert!(tool(&mut stage, &look, "check"));
+    assert!(shown(&stage, &look).contains(&saved));
+    assert!(app.desk().choice.get(&format!("mark/{KEY}")).contains("Nice"));
+    assert!(stage.send(&PEvent::KeyDown(PEvent::ESCAPE)));
+    stage.tick();
+    assert!(stage.window.apply(&PDeed::Open("view".to_string())));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(shown(&stage, &look).contains(&"Nice".to_string()));
+}
+
+#[test]
+fn the_picture_stands_on_its_own_haze_under_the_window_s_ground() {
+    let (app, stage, look) = opened(DESK, 1);
+    // The haze is made from the picture's file away from the window.
+    let film = app.desk().film();
+    let name = format!("haze/{KEY}");
+    let made = (0..200).any(|_| {
+        sized(&stage, &look);
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        film.frame(&name).is_some()
+    });
+    assert!(made);
+    let frame = film.frame(&name).expect("the haze");
+    assert!(frame.width <= appkit::pui::core::haze::SIDE && frame.height <= appkit::pui::core::haze::SIDE);
+    // It is drawn over the whole window, the ground over it.
+    let mark = sized(&stage, &look);
+    let at = mark.iter().position(|mark| matches!(mark, PMark::Picture { name: known, rect, .. } if *known == name && rect.size.width >= DESK.width)).expect("drawn");
+    assert!(matches!(mark[at + 1], PMark::Fill { rect, color, .. } if rect.size.width >= DESK.width && color.a < 1.0 && color.a > 0.5));
+}
+
+#[test]
+fn step_58_a_picture_of_the_library_is_looked_at_alone_among_the_place_s_others() {
+    let at = std::env::temp_dir().join(format!("phiogy-viewer-{}", std::process::id()));
+    _ = std::fs::create_dir_all(&at);
+    ["a.png", "b.png", "c.png"].iter().for_each(|name| _ = std::fs::write(at.join(name), b"png"));
+    let (app, _, _) = staged(DESK);
+    let mut desk = app.desk().clone();
+    desk.library = std::rc::Rc::new(crate::library::Library::at(vec![crate::library::Place::at("mine", at.clone(), true)], std::rc::Rc::default()));
+    let source = crate::part::library::source(&desk);
+    use appkit::pui::state::PState;
+    source.set("ui/folder", &format!("dir:{}", at.to_string_lossy()));
+    source.set("ui/item", &format!("dir:{}", at.join("b.png").to_string_lossy()));
+    // The viewer opens on it, the place's pictures in its strip.
+    assert_eq!(desk.wish.borrow().last(), Some(&PDeed::Open("view".to_string())));
+    let album = desk.now.album.borrow().clone();
+    assert_eq!(album.iter().map(|shot| shot.by.clone()).collect::<Vec<_>>(), ["a.png", "b.png", "c.png"]);
+    assert_eq!(desk.view.get(), Some(1));
+    // Its file is the one on the disk: share copies where it is.
+    assert_eq!(album[1].file.as_deref(), Some(at.join("b.png").as_path()));
+    assert!(album[1].key.starts_with("file:///"));
 }

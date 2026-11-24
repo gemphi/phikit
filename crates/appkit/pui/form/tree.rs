@@ -26,7 +26,7 @@ const RADIUS: &str = "row.radius";
 /// is a step in, as wide as an icon; at the step a line's arrow, down
 /// where it is open and to the right where it can open. From the middle
 /// of an open arrow a thin line runs down the gap at its depth to the
-/// last line right under it, so the depths read as Finder's and Reality
+/// foot of the tree, so the depths read as Finder's and Reality
 /// Composer Pro's outlines do. The chosen line is lit, and the one under
 /// the pointer softly.
 pub fn tree(choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, wide: f32, over: Option<PPoint>) -> (f32, Vec<PRect>) {
@@ -38,12 +38,11 @@ pub fn tree(choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, w
     let row = |index: usize| PRect::new(at.x, at.y + index as f32 * high, wide, high);
     // The lines down the gaps, first, under everything.
     for (index, c) in choice.iter().enumerate().filter(|(_, c)| c.fold == Some(true)) {
-        // It ends at the middle of the last line right under it: what
-        // stands deeper has lines of its own.
-        let under = choice[index + 1..].iter().take_while(|one| one.depth > c.depth).enumerate().filter(|(_, one)| one.depth == c.depth + 1).last().map(|(at, _)| index + 1 + at);
-        if let Some(last) = under {
+        // It runs to the foot of the tree, past everything under it.
+        let under = choice.get(index + 1).is_some_and(|one| one.depth > c.depth);
+        if under {
             let x = arrow(c.depth) + step / 2.0;
-            let (from, to) = (row(index).center().y + step / 2.0, row(last).center().y);
+            let (from, to) = (row(index).center().y + step / 2.0, at.y + choice.len() as f32 * high);
             paint.fill(PRect::new(x - 0.5, from, 1.0, (to - from).max(0.0)), rule);
         }
     }

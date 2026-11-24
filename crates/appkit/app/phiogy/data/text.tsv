@@ -106,7 +106,13 @@ voice.soundless	Sound needs the line, which is not open here. This room shows wh
 # copied here is where the picture's file is, and it is kept and
 # opened by the system. `view.strip` names the strip to what reads a
 # window aloud, which appkit has not yet.
-view.close	Close
+view.close	Back
+view.undo	Undo
+view.redo	Redo
+view.keep	Save
+view.kept	Saved
+view.sketch	Sketch
+view.text	Text
 view.prev	Previous
 view.next	Next
 view.zoom	Zoom in
