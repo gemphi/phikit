@@ -35,9 +35,10 @@ fn every(table: &str) -> Vec<Row> {
     data::row(table).into_iter().map(|cell| cell.into_iter().map(str::to_string).collect()).collect()
 }
 
-/// A line of the tree: where it goes, its words, its icon, its depth.
-fn line(at: String, words: &str, icon: &str, depth: usize) -> Row {
-    vec![at, words.to_string(), icon.to_string(), depth.to_string()]
+/// A line of the tree: where it goes, its words, its icon, its depth,
+/// and whether it is open (`1`), can open (`0`) or neither (empty).
+fn line(at: String, words: &str, icon: &str, depth: usize, fold: &str) -> Row {
+    vec![at, words.to_string(), icon.to_string(), depth.to_string(), fold.to_string()]
 }
 
 /// The folder at a path as the tree names it: its own name, or a drive's.
@@ -70,7 +71,7 @@ impl List {
                 place.filter_map(|place| Some(line(format!("dir:{}", place.folder.as_ref()?.to_string_lossy()), match text.get(&place.word) {
                     "" => &place.word,
                     words => words,
-                }, &place.icon, 0))).collect()
+                }, &place.icon, 0, ""))).collect()
             }
             "folder" => self.tree(&at),
             "collection" => {
@@ -81,14 +82,18 @@ impl List {
                 };
                 let mut out = Vec::new();
                 for one in &self.library.shelf.collection {
-                    out.push(line(format!("collection:{}", one.id), &one.name, own.get("collection"), 0));
+                    let fold = match one.id == open {
+                        true => "1",
+                        false => "0",
+                    };
+                    out.push(line(format!("collection:{}", one.id), &one.name, own.get("collection"), 0, fold));
                     let clubs = one.club.iter().filter(|_| one.id == open).filter_map(|id| self.library.shelf.club(id));
-                    out.extend(clubs.map(|club| line(format!("club:{}", club.id), &club.name, own.get("club"), 1)));
+                    out.extend(clubs.map(|club| line(format!("club:{}", club.id), &club.name, own.get("club"), 1, "")));
                 }
                 out
             }
-            "club" => self.library.shelf.club.iter().map(|club| line(format!("club:{}", club.id), &club.name, own.get("club"), 0)).collect(),
-            "set" => self.library.sets().iter().map(|set| line(format!("set:{}", set.name), &set.name, own.get("set"), 0)).collect(),
+            "club" => self.library.shelf.club.iter().map(|club| line(format!("club:{}", club.id), &club.name, own.get("club"), 0, "")).collect(),
+            "set" => self.library.sets().iter().map(|set| line(format!("set:{}", set.name), &set.name, own.get("set"), 0, "")).collect(),
             "path" => self.path(&at),
             "kind" | "sort" | "tool" | "back" => group(name),
             "paint" => every(data::PAINT),
@@ -104,15 +109,15 @@ impl List {
         }
     }
 
-    /// The folders down to where the library is, and those in it, each
-    /// set in by its depth.
+    /// The folders down to where the library is, open, and those in it,
+    /// which can open, each set in by its depth.
     fn tree(&self, at: &str) -> Vec<Row> {
         let Some(("dir", path)) = at.split_once(':') else { return Vec::new() };
         let icon = self.library.own.get("folder");
         let path = Path::new(path);
         let over: Vec<&Path> = path.ancestors().collect::<Vec<_>>().into_iter().rev().collect();
-        let mut out: Vec<Row> = over.iter().enumerate().map(|(depth, folder)| line(format!("dir:{}", folder.to_string_lossy()), &named(folder), icon, depth)).collect();
-        out.extend(folders(path).iter().map(|folder| line(format!("dir:{}", folder.to_string_lossy()), &named(folder), icon, over.len())));
+        let mut out: Vec<Row> = over.iter().enumerate().map(|(depth, folder)| line(format!("dir:{}", folder.to_string_lossy()), &named(folder), icon, depth, "1")).collect();
+        out.extend(folders(path).iter().map(|folder| line(format!("dir:{}", folder.to_string_lossy()), &named(folder), icon, over.len(), "0")));
         out
     }
 

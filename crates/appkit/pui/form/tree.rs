@@ -16,20 +16,51 @@ use crate::pui::core::{PFit, PLight, PPaint, PPoint, PRect};
 const GAP: &str = "gap";
 const LINE: &str = "text.line";
 const INK: &str = "text.ink";
+const DIM: &str = "text.dim";
+/// The thin lines down a tree's gaps.
+const RULE: &str = "line.ink";
 const ICON: &str = "icon.size";
 const RADIUS: &str = "row.radius";
 
-/// A tree's lines: where it ends, and where each line stands.
+/// A tree's lines: where it ends, and where each line stands. Each depth
+/// is a step in, as wide as an icon; at the step a line's arrow, down
+/// where it is open and to the right where it can open. From the middle
+/// of an open arrow a thin line runs down the gap at its depth to the
+/// last line right under it, so the depths read as Finder's and Reality
+/// Composer Pro's outlines do.
 pub fn tree(choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, wide: f32) -> (f32, Vec<PRect>) {
     let (gap, line, ink, icon, radius) = (paint.size(GAP), paint.size(LINE), paint.color(INK), paint.size(ICON), paint.size(RADIUS));
+    let (dim, rule) = (paint.color(DIM), paint.color(RULE));
     let high = line + gap / 2.0;
+    let step = icon;
+    let arrow = |depth: u32| at.x + gap / 4.0 + depth as f32 * step;
+    let row = |index: usize| PRect::new(at.x, at.y + index as f32 * high, wide, high);
+    // The lines down the gaps, first, under everything.
+    for (index, c) in choice.iter().enumerate().filter(|(_, c)| c.fold == Some(true)) {
+        // It ends at the middle of the last line right under it: what
+        // stands deeper has lines of its own.
+        let under = choice[index + 1..].iter().take_while(|one| one.depth > c.depth).enumerate().filter(|(_, one)| one.depth == c.depth + 1).last().map(|(at, _)| index + 1 + at);
+        if let Some(last) = under {
+            let x = arrow(c.depth) + step / 2.0;
+            let (from, to) = (row(index).center().y + step / 2.0, row(last).center().y);
+            paint.fill(PRect::new(x - 0.5, from, 1.0, (to - from).max(0.0)), rule);
+        }
+    }
     let mut rect = Vec::new();
     for (index, c) in choice.iter().enumerate() {
-        let r = PRect::new(at.x, at.y + index as f32 * high, wide, high);
+        let r = row(index);
         if c.value == now && !now.is_empty() {
             label(paint, r, radius, PLight::Strong, false, "");
         }
-        let left = r.origin.x + gap / 4.0 + c.depth as f32 * gap;
+        let left = arrow(c.depth);
+        let mark = match c.fold {
+            Some(true) => Some("chevron-down"),
+            Some(false) => Some("chevron-right"),
+            None => None,
+        };
+        let shrink = step / 4.0;
+        mark.into_iter().for_each(|mark| paint.icon(mark, PRect::new(left + shrink, r.center().y - step / 2.0 + shrink, step - shrink * 2.0, step - shrink * 2.0), dim));
+        let left = left + step;
         let words = match c.icon.is_empty() {
             true => left,
             false => {

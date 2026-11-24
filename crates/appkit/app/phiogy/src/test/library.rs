@@ -11,6 +11,7 @@ use appkit::pui::core::{PEvent, PMark, PMode, PPaint, PRect, PSheet};
 use appkit::pui::form::PSource;
 use appkit::pui::state::PState;
 use appkit::pui::window::PDeed;
+use appkit::theme::PTheme;
 
 use super::{DESK, drawn, staged};
 use crate::Phiogy;
@@ -216,6 +217,34 @@ fn step_55_the_toolbar_says_the_way_in_crumbs_and_one_line_chooses_what_in_what_
     }).expect(want);
     let (all, name) = (at(app.desk().text.get("filter.all")), at(app.desk().text.get("sort.name")));
     assert!(name.y > all.y, "{all:?} {name:?}");
+}
+
+#[test]
+fn step_56_the_tree_has_an_arrow_at_each_depth_and_lines_down_the_gaps_under_an_open_one() {
+    let (_, mut stage, look) = staged(DESK);
+    assert!(stage.window.apply(&PDeed::Show("library".to_string())));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    let mark = drawn(&stage, &look);
+    let tree = super::part(&stage).iter().position(|part| *part == "tree").map(|_| DESK.width / 3.0).unwrap_or_default();
+    // A line's arrow is smaller than an icon: a heading's fold is not one.
+    let small = look.size("icon.size").unwrap_or_default() - 1.0;
+    let arrow = |name: &str| mark.iter().filter_map(|mark| match mark {
+        PMark::Icon { name: known, rect, .. } if known == name && rect.origin.x < tree && rect.size.width < small => Some(*rect),
+        _ => None,
+    }).collect::<Vec<_>>();
+    // The folders down to the shapes are open, one step further in each.
+    let open = arrow("chevron-down");
+    let mut x: Vec<f32> = open.iter().map(|rect| rect.origin.x).collect();
+    x.dedup();
+    assert!(x.len() >= 4 && x.windows(2).filter(|pair| pair[1] > pair[0]).count() >= 3, "{x:?}");
+    // A thin line runs down from the middle of an open arrow.
+    let rule: Vec<PRect> = mark.iter().filter_map(|mark| match mark {
+        PMark::Fill { rect, .. } if rect.size.width <= 1.0 && rect.origin.x < tree && rect.size.height > 4.0 => Some(*rect),
+        _ => None,
+    }).collect();
+    assert!(open.iter().any(|arrow| rule.iter().any(|line| (line.center().x - arrow.center().x).abs() < 1.0 && line.origin.y >= arrow.center().y)), "{rule:?}");
+    // Collections that are not open can be.
+    assert!(!arrow("chevron-right").is_empty());
 }
 
 #[test]

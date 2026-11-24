@@ -8,13 +8,13 @@
 # (src/part/library.rs): the tree's sections, filter.tsv's kinds,
 # orders and tools, paint.tsv, finish.tsv, and what a place and an
 # item hold now.
-volume	volume	0	1	2	-	-	-	-	-	-	-	3
-system	system	0	1	2	-	-	-	-	-	-	-	3
-own	own	0	1	2	-	-	-	-	-	-	-	3
-folder	folder	0	1	2	-	-	-	-	-	-	-	3
-collection	collection	0	1	2	-	-	-	-	-	-	-	3
-club	club	0	1	2	-	-	-	-	-	-	-	3
-set	set	0	1	2	-	-	-	-	-	-	-	3
+volume	volume	0	1	2	-	-	-	-	-	-	-	3	-	4
+system	system	0	1	2	-	-	-	-	-	-	-	3	-	4
+own	own	0	1	2	-	-	-	-	-	-	-	3	-	4
+folder	folder	0	1	2	-	-	-	-	-	-	-	3	-	4
+collection	collection	0	1	2	-	-	-	-	-	-	-	3	-	4
+club	club	0	1	2	-	-	-	-	-	-	-	3	-	4
+set	set	0	1	2	-	-	-	-	-	-	-	3	-	4
 path	path	0	1	2	-	-	-	-
 kind	kind	0	text:1	2	-	-	-	-
 sort	sort	0	text:1	2	-	-	-	-

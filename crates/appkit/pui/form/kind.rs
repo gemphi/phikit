@@ -46,8 +46,10 @@ pub struct PChoice {
     pub picture: String,
     pub colour: Option<PColor>,
     pub level: Option<f32>,
-    /// How deep it stands in a tree: 0 at the top.
+    /// How deep it stands in a tree: 0 at the top; and whether its line
+    /// is open, its own under it, or can be opened.
     pub depth: u32,
+    pub fold: Option<bool>,
 }
 
 impl PChoice {
