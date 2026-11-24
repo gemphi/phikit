@@ -26,7 +26,7 @@ graph TB
     end
     subgraph win["the window"]
         w_app["Phiogy: PApp<br/>app.rs"]
-        w_part["part/<br/>title · join · present ·<br/>status · venue · guide"]
+        w_part["part/<br/>title · join · present ·<br/>status · venue · guide · search"]
         w_peer["peer/<br/>the window as a caller"]
         w_site["site.rs<br/>the web Phiogy's hosts and rooms"]
     end
@@ -232,7 +232,7 @@ graph TB
     p_desk["Desk"]
     board["Board<br/>behind one lock,<br/>changed by the line"]
     p_room["a room<br/>title, stream, present,<br/>person, viewer"]
-    p_around["around the rooms<br/>guide, venue, friend,<br/>people, shop, account"]
+    p_around["around the rooms<br/>guide, search, venue, friend,<br/>people, shop, account"]
     p_fact["fact.rs"]
     k_stage["appkit: PStage<br/>lays out, draws, sends"]
     k_bar["appkit: the bar, its menu,<br/>the profile, a modal's panel"]
@@ -259,7 +259,7 @@ graph TB
 graph TB
     subgraph win["the window"]
         j_pill["Title, Join: part/title.rs, join.rs<br/>Call, Call with the camera;<br/>or who is calling, and Join"]
-        j_call["Calling: part/call.rs<br/>the tiles; Mute, Camera, Share, End"]
+        j_call["Calling: part/call.rs<br/>the tiles; voice, camera, screen, end,<br/>each on its ground in the group's"]
         j_voice["Voice: part/voice.rs<br/>who is in a voice room;<br/>Join, Leave, Mute, Sound off"]
         j_foot["Foot: part/guide/foot.rs<br/>the voice room I am in,<br/>at the foot of the menu on every page"]
         j_desk["Desk<br/>dial · join · leave · hush · deaf<br/>camera · share · listen"]

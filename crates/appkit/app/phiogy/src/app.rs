@@ -98,7 +98,10 @@ impl Phiogy {
         let choice = store.map(|store| Choice::kept(store, own.get("setting"))).unwrap_or_default();
         shade.turn(&choice.get("look"));
         shade.prefer(&choice.get("prefer"));
-        let (choice, site_path) = (Rc::new(choice), site.from.clone());
+        let choice = Rc::new(choice);
+        // The library is a desk's: a browser has no disk to read it from.
+        #[cfg(not(target_family = "wasm"))]
+        let site_path = site.from.clone();
         let first = site.venue.iter().flat_map(|venue| &venue.plate).map(|plate| plate.id.clone()).next();
         let wanted = [choice.get(ROOM), site.start.clone()].into_iter().find(|id| site.plate(id).is_some() || id.starts_with(Page::own().id(crate::part::page::DIRECT)));
         let open = Rc::new(RefCell::new(wanted.or(first).unwrap_or_default()));

@@ -47,7 +47,7 @@ What is suggested is marked so; the rest is built and tested.
 | `src/kept.rs` (`kept/who.rs`), `src/hour.rs` | a person's own documents; who they are to Phiora, signing in, sessions, export; the hour on their clock | 291 |
 | `src/hosted.rs` | a picture's key to its file; the film of a call's pictures | 68 |
 | `src/app.rs`, `fact.rs`, `choice.rs`, `data.rs`, `run.rs` (`run/caller.rs`, `run/read.rs`), `main.rs`, `web.rs`, `lib.rs` | the app, and opening it | 814 |
-| `src/part/` | a room: `title.rs`, `join.rs`, `call.rs` (`call/`), `voice.rs`, `room.rs`, `stream.rs` (`stream/`), `talk.rs`, `present.rs`, `person.rs` (`person/`), `status.rs`, `viewer.rs` (`viewer/`); around the rooms: `page.rs`, `guide.rs` (`guide/foot.rs`), `venue.rs`, `host.rs`, `friend.rs`, `bond.rs`, `shop.rs` (`shop/`), `store.rs`, `account.rs` (`account/`); shared: `list.rs` (`list/item.rs`), `tool.rs`, `now.rs`, and `Desk` in `mod.rs` | 5,448 |
+| `src/part/` | a room: `title.rs`, `join.rs`, `call.rs` (`call/`), `voice.rs`, `room.rs`, `stream.rs` (`stream/`), `talk.rs`, `present.rs`, `person.rs` (`person/`), `status.rs`, `viewer.rs` (`viewer/`); around the rooms: `page.rs`, `guide.rs` (`guide/foot.rs`, `guide/tab.rs`), `search.rs` (`search/book.rs`), `venue.rs`, `host.rs`, `friend.rs`, `bond.rs`, `shop.rs` (`shop/`), `store.rs`, `account.rs` (`account/`); shared: `list.rs` (`list/item.rs`), `tool.rs`, `now.rs`, and `Desk` in `mod.rs` | 5,448 |
 | `src/test/` | the tests, in the same folders; `site/` is a small site written as the web writes its own, with a shop | 3,562 |
 | `asset/icon/phiogy.svg` | the mark | |
 | `data/task.tsv`, `src/comp/task.rs`, `src/system/task.rs`, `src/part/task.rs` (`task/`) | planned, not built: the tasks module (the lists, a task, its rules, its page), drawn in `ARCHITECTURE.md` under Tasks, planned | |
@@ -84,7 +84,8 @@ No file is over 250 lines.
 | `page.tsv` | `part/page.rs` | the pages that are no room: the web's id of each, the space it is shown in, what the rail calls it, its icon |
 | `wear.tsv` | `part/shop/swatch.rs` | what a theme that is worn changes of the window: a colour of the theme's, and which colour of the swatch takes its place |
 | `wallet.tsv` | `part/store.rs`, `part/account.rs` | the coins a person starts with, what each is called and worth, and the names in the bag's and the wallet's documents |
-| `act.tsv` | `part/stream.rs`, `part/title.rs`, `part/person.rs`, `part/friend.rs`, `part/shop.rs` | a room's controls: what each does, its icon, the row of `text.tsv` that names it |
+| `act.tsv` | `part/stream.rs`, `part/title.rs`, `part/person.rs`, `part/friend.rs`, `part/shop.rs`, `part/call.rs` | a room's controls and a call's buttons (voice, camera, screen, end, each with its lit one): what each does, its icon, the row of `text.tsv` that names it |
+| `search.tsv` | `part/search.rs`, `part/search/book.rs` | Search's tabs (the word, what each finds, its icon); where Phiegg's records and its most-sought words are |
 | `tool.tsv` | `part/viewer.rs` | the viewer's controls: what each does, its icon, the row of `text.tsv` that names it |
 | `asset.tsv` | `hosted.rs` | where each app's public folder is: a picture's key is `app:path` |
 | `serve.tsv` | `exchange/person.rs` | the paths of an app's document, `me` and a person's documents; where the apps' files are; the names in `me` |

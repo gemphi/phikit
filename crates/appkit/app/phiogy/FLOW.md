@@ -345,5 +345,6 @@ These are not steps of the journey because they do not work yet:
 - signing in: everyone on the line is a guest
 - a wake from the line: while the line is open the window draws every
   frame to see who came
-- the browser build: it compiles for a browser, where there is no line
-  and no disk to read the site from; it has not been built or opened
+- the browser build: it is built (`web/pkg`, 24 November 2026), where
+  there is no line and no disk to read the site from; it has not been
+  opened

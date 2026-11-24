@@ -283,17 +283,33 @@ kept in `src/peer/rtc/link.rs`:
 - [ ] the hosts' own marks (`mark` in `host.json`, a cell of a sheet of
   portraits) are not drawn: each place has its icon
 - [ ] a room's messages, its unread count, and a person's presence
-- [ ] the headings under a place (Text, Voice) are not shown: a voice
-  room is told by its icon
-- [ ] searching the hosts: 277 are scrolled
+- [x] a place's headings: its categories, as Phiegg keeps them, over
+  their channels, and a channel's own channels under it, as Discord
+  shows a server (24 November 2026)
+- [x] searching the hosts: Search's Hosts tab, with Phiegg's worlds,
+  clubs and shows beside them (24 November 2026)
+- [ ] the hand-written places (Phiace, Makers) keep their Text and
+  Voice headings, Discord's own defaults
+- [ ] Search's worlds, clubs and shows go nowhere when pressed: Phiogy
+  has no page of a world yet
+- [ ] the running Phiora keeps the seed it was started with: the new
+  host tree shows from Phiora after a restart (`npm run seed`)
 - [ ] the site is read from a path in this crate's folder
   (`data/app.tsv`, `site`); a program moved elsewhere needs `--site`
 
 ## In a browser
 
-- [ ] built and opened: it compiles for a browser
-  (`cargo check -p phiogy --target wasm32-unknown-unknown`), where it
-  has no line and reads no site, and says so. `web/pkg` is not built
+- [x] built: `target/phiogy_web.ps1` builds the library for
+  `wasm32-unknown-unknown` at low priority (about 10 minutes cold, 20
+  seconds after) and makes `web/pkg` with the `wasm-bindgen` that
+  wasm-pack keeps on this machine; no warnings (24 November 2026). The
+  module is 13 MB
+- [ ] opened in a browser and seen: `web/index.html` served (a
+  `phiogy-web` entry in `.claude/launch.json`, port 4397), where it
+  needs WebGPU; it has no line and reads no site, and says so
+- [ ] a site in the browser: read the web Phiogy's files over HTTP
+  (`/phiogy/data/`) or from Phiora, as the desk reads them from disk
+- [ ] served beside the web Phiogy on phiegg.com
 
 ## Not checked
 

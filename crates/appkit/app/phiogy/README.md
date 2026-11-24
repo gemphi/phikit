@@ -95,8 +95,11 @@ other people, build it for Windows and macOS, and what Discord allows:
   page belongs to; `GET` and `PUT /state/NAME` keep a person's own
   documents while the line runs. So the web Phiogy pointed at the line
   gets its config there. The wallet, the shop and accounts are not here.
-- **A room as the web has it.** The bar's menu is the web's own `nav`:
-  each place, its Text and Voice headings, its rooms. A page is its
+- **A room as the web has it.** The bar's menu is the web's own `nav`,
+  each place as Discord shows a server: its categories, as Phiegg keeps
+  them, are headings over their channels; a channel's own channels (a
+  world's cities) stand an icon in under it, a thin line coming to each;
+  a place of no category is one group, with no made-up heading. A page is its
   blocks, as the app's file writes them: a block that is a room shows
   what was said in it (who, when, the words, what it answers, its marks,
   its pictures by name, a pin), the newest at the foot, with the room's
@@ -127,9 +130,23 @@ other people, build it for Windows and macOS, and what Discord allows:
   gives it or takes it back. In the title: search the room, and list
   what is pinned in it; a press on a pinned line or on what a message
   answers brings that message into sight. A press on a face puts that
-  person beside the room: who they are, what to do (write to them,
-  follow them), the spaces they are in, who they are linked to, and
-  their pictures, which open in the viewer.
+  person beside the room as Phiegg's profile card: the picture over it
+  with their face standing over its foot, their name, handle, role and
+  how they stand, how many links, spaces and pictures, the bio, tags
+  and since when; what to do (write to them, follow them); the spaces
+  they are in as rows with each one's mark and how many are in it, a
+  press going to its first room; who they are linked to; and their
+  pictures, which open in the viewer. The actions and panes wrap to the
+  column.
+- **Search, Phiegg's.** The title's field opens it in the middle of the
+  window: the field, then tabs of what it finds (`data/search.tsv`:
+  All, Rooms, People, Hosts, Worlds, Clubs, Shows). Before anything is
+  sought it shows what Phiegg says is sought most often; a press on one
+  seeks it. Worlds, clubs and shows are Phiegg's own records, asked of
+  Phiora's `/tree` where Phiora gave the site, else read from Phiegg's
+  files by the manifest Phiora seeds from (`src/part/search/book.rs`).
+  Nothing of them is written in the code. Tabs and chips wrap to the
+  window's width.
 - **Pages around the rooms, the web's.** What the window is opened on
   is a page: a room, a room of a host the person made, a direct
   conversation with anybody, or one of the pages that are no room
@@ -178,8 +195,10 @@ other people, build it for Windows and macOS, and what Discord allows:
   stream, as the web's call stands there: this window's own tile, the
   screen it shares, each other caller's camera or face, a screen they
   share, and the room's person ringing; under them its buttons, as the
-  web's call has them: Mute, Camera on, Share a screen, End the call
-  (`src/part/call.rs`). A voice room has, in the stream's place, who
+  web's call has them: the voice, the camera, the screen and the end,
+  each with its icon (`data/act.tsv`) and one height, the group on a
+  ground and each button on one of its own in it, the one that is on
+  lit full (`src/part/call.rs`, the kit's bands). A voice room has, in the stream's place, who
   is in it, Join and Leave, Mute, and Sound off for the others
   (`src/part/voice.rs`); while a person is in one it stands at the
   foot of the menu on every page, with the microphone, the others'

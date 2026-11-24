@@ -28,6 +28,22 @@ window), `--forget` (keep nothing). Real sound and pictures need the
 `rtc` build: `target/phiogy_run.ps1 -Verb build -Rtc` (it uses the
 prebuilt WebRTC already on this disk and fetches nothing).
 
+## 1b. On the web
+
+Two things are called Phiogy on the web.
+
+- **The web Phiogy**, live at `https://phiegg.com/phiogy/`: puikit's
+  one app (`app/phi`) under its key, reading `puikit/app/phiogy/public`
+  and Phiora. Seen running on 24 November 2026. Its data there is older
+  than puikit `a7ff8fe` (the host tree as Discord shows a server):
+  `host.json`, `room.json` and `phiogy.json` differ from the commit.
+  Sending it is `puikit/app/DEPLOY.md` section 8; the kit's menu
+  (`phi-kit/src/PhiShell.tsx`) already draws entries at any depth.
+- **This program in a browser**: `target/phiogy_web.ps1` builds it into
+  `web/pkg`; serve `web/` (`phiogy-web` in `.claude/launch.json`) and
+  open it in a browser with WebGPU. Built, not yet opened: it has no
+  line and no site there (`TODO.md`, "In a browser").
+
 ## 2. Testing with other people
 
 **Works now, on one machine.** Several callers meet on one line: the
