@@ -214,8 +214,9 @@ size	shop.card	168
 size	shop.hero	4
 size	shop.picture	360
 size	shop.more	8
-# How many of a thing's other colours stand in a row on its page.
-size	shop.kin	8
+# How wide the bar of a thing's variants is on its page, left of its
+# picture: each variant its picture and its colour's name.
+size	shop.variant	88
 # A person beside the room: how large their face is, how many times
 # as wide as high the picture over their profile is (the web's 3/1),
 # and how many of their pictures stand in a row.
@@ -227,3 +228,18 @@ size	view.control	44
 size	view.tool	36
 size	view.mark	2
 size	view.large	2
+# The library's 3D pictures (appkit pui/core/orbit.rs): a ground the
+# window shows through, the room round a model, how much larger a
+# picture is made than shown, how far a drag turns it, how much nearer
+# the wheel brings it and how near and far it may come.
+color	scene.ground	#00000000
+size	scene.room	1.25
+size	scene.smooth	2
+size	scene.drag	180
+size	scene.zoom	0.12
+size	scene.nearest	3
+size	scene.farthest	0.6
+# A faint line down the sidebar's edge (appkit's activity.line and
+# activity.rim): none in the theme itself, a plain look draws one.
+color	activity.line	#00000000
+size	activity.rim	1

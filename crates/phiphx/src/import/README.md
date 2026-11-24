@@ -10,6 +10,7 @@ Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its 
 
 | File | What it is |
 |---|---|
+| `scene.rs` | The open side's one `match`: `FileFormat::of_path` (first bytes, else extension) and `FileFormat::open` — USD, glTF (feature `gltf-import`), OBJ, PLY and PHX into a `SceneModel`; `.blend` goes to `Phx::open`. `Phx::open` calls it for every format but `.blend`. |
 | `asset.rs` | Unified asset importer — the **single entry point** for all format imports. |
 | `format.rs` | Known 3D formats and basic format detection / parsing. |
 | `gltf/` | `.gltf` / `.glb` format importer Converts glTF 2.0 scenes to point clouds and meshes. |

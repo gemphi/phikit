@@ -1,0 +1,25 @@
+# The forms: parts made only of the kit's blocks (appkit pui/form.rs).
+# A row is a block: the form, its kind (head, tools, tabs, band, swatch,
+# text, rows, cards, grid, fill), its key, its heading (a word of
+# text.tsv), the list its content comes from (data/listing.tsv), the
+# path a press keeps its value at, the tabs it stands under, and its
+# variation. `-` for none. A path's `{path}` is what that path keeps.
+#
+# The asset library: Import at the top right; the places as tabs; under
+# them the kinds and the order as filters, its files as a grid of tiles
+# straight under them, and what the place holds counted at the foot.
+library	head	-	library.head	-	-	-	-
+library	tools	tool	-	tool	ui/do	-	-
+library	tabs	place	-	place	ui/place	-	-
+library	band	kind	library.kind	kind	ui/kind	place	-
+library	band	sort	library.sort	sort	ui/sort	place	-
+library	grid	item	-	item	ui/item	place	-
+library	rows	stat	library.stat	stat	-	place	soft
+# A model opened from the library, dressed: its parts as tabs over the
+# chosen part's colour; its finish; what it is.
+custom	head	-	custom.head	-	-	-	-
+custom	tools	back	-	back	ui/do	-	-
+custom	tabs	part	-	part	ui/part	-	-
+custom	swatch	paint	custom.paint	paint	look/{ui/item}/{ui/part}	part	-
+custom	band	finish	custom.finish	finish	look/{ui/item}/finish	-	-
+custom	rows	about	custom.about	about	-	-	soft

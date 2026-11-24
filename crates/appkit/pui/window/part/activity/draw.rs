@@ -2,7 +2,7 @@
 
 use super::super::menu::{self, INK, LIT, ROUND, ROW};
 use super::super::{GAP, ICON, INK as TEXT, ROW as LINE, person};
-use super::{CORNER, FACE, FILL, PActivity, PIN, SHARE, share, square};
+use super::{CORNER, EDGE, FACE, FILL, PActivity, PIN, RIM, SHARE, share, square};
 use crate::pui::core::letter::letter;
 use crate::pui::core::light::{bond, edge, label, pane};
 use crate::pui::core::{PFit, PLight, PPaint, PPoint, PRect};
@@ -34,6 +34,15 @@ impl PActivity {
             // their lights running against each other where they meet.
             (false, true) => bond(paint, bar, side, corner, FILL),
             (false, false) => edge(paint, bar, corner, false, FILL),
+        }
+        // A plain look's faint line down the side toward the page.
+        let last = match shown.is_some() {
+            true => side,
+            false => bar,
+        };
+        let rim = paint.theme().size(RIM).unwrap_or(1.0);
+        if let Some(colour) = paint.theme().color(EDGE).filter(|colour| colour.a > 0.0 && !plan.lying) {
+            paint.fill(PRect::new(last.origin.x + last.size.width - rim, last.origin.y + corner, rim, (last.size.height - corner * 2.0).max(0.0)), colour);
         }
         match (plan.lying || !headed, self.logo.icon.is_empty()) {
             (true, _) => {}

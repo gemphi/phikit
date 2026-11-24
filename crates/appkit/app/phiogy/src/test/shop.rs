@@ -83,8 +83,8 @@ fn step_30_a_page_of_a_shop_is_its_things_and_a_thing_has_a_page_of_its_own() {
     assert_eq!(desk.now.product.borrow().as_deref(), Some("s_one/lk1"));
     let text = shown(&stage, &look);
     assert!(["Outerwear", "Teal Signal", "$7,000", "Teal · Common", "Cut for after the show.", "Colour", "Fabric", "silk"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
-    // Its picture and its words are two equal columns, and each fact
-    // is a row: what it is at the left, its value ending at the right.
+    // Its picture and its sections are two columns, and each fact is a
+    // row: what it is at the left, its value ending at the right.
     let column = |wanted: &str| super::written(&stage, &look, wanted).map(|at| at.x).expect("drawn");
     let room = super::rect(&stage, "shop");
     assert!(column("Fabric") > room.center().x && column("silk") > column("Fabric"), "{} {}", column("Fabric"), column("silk"));
@@ -93,18 +93,39 @@ fn step_30_a_page_of_a_shop_is_its_things_and_a_thing_has_a_page_of_its_own() {
     assert!(press(&mut stage, &look, &word("shop.liked")) && !desk.liked("s_one/lk1"));
     // More like it: the others of its page of the menu.
     assert!(text.contains(&word("shop.more")) && text.contains(&"Plum Line".to_string()));
-    // Its views stand under its picture: a press on one shows it.
+    // Its picture stands at the top of its frame; its views are tabs
+    // under it: a press on one shows it.
     let whole = |stage: &PStage| drawn(stage, &look).iter().find_map(|mark| match mark {
-        PMark::Picture { name, fit: PFit::Whole, rect, .. } if rect.size.width > 200.0 => Some(name.clone()),
+        PMark::Picture { name, fit: PFit::Top, rect, .. } if rect.size.width > 200.0 => Some((name.clone(), *rect)),
         _ => None,
     });
-    assert_eq!(whole(&stage).as_deref(), Some("phiegg:worlds/w_brocade.png"));
-    let thumb = drawn(&stage, &look).iter().find_map(|mark| match mark {
-        PMark::Picture { name, fit: PFit::Whole, rect, .. } if name == "phiegg:worlds/w_carousel.png" => Some(rect.center()),
+    let (shown_first, frame) = whole(&stage).expect("its picture");
+    assert_eq!(shown_first, "phiegg:worlds/w_brocade.png");
+    assert!(press(&mut stage, &look, "Back"));
+    assert_eq!(whole(&stage).map(|(name, _)| name).as_deref(), Some("phiegg:worlds/w_carousel.png"));
+    // Its variants stand in a bar at the left of its picture, itself
+    // first: each its colour's name; a press on another goes to it.
+    // The colours' names in the bar: the first of each left of the picture.
+    let left_of = |wanted: &str| drawn(&stage, &look).iter().find_map(|mark| match mark {
+        PMark::Text { at, text, .. } if text == wanted && at.x < frame.origin.x => Some(*at),
         _ => None,
     });
-    assert!(stage.send(&PEvent::PointerDown(thumb.expect("its second view"))));
-    assert_eq!(whole(&stage).as_deref(), Some("phiegg:worlds/w_carousel.png"));
+    let plum = left_of("Plum").expect("the other colour");
+    let teal = left_of("Teal").expect("its own colour");
+    assert!(plum.x < frame.origin.x && teal.x < frame.origin.x && teal.y < plum.y, "{teal:?} {plum:?} {frame:?}");
+    // Every section stands at the right of the picture.
+    let right = |wanted: &str| super::written(&stage, &look, wanted).map(|at| at.x).expect("drawn");
+    assert!(right("Outerwear") > frame.origin.x + frame.size.width && right(&word("shop.more")) > frame.origin.x + frame.size.width);
+    assert!(stage.send(&PEvent::PointerDown(plum.plus(PPoint::new(2.0, 2.0)))));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert_eq!(desk.now.product.borrow().as_deref(), Some("s_one/lk3"));
+    let teal = drawn(&stage, &look).iter().find_map(|mark| match mark {
+        PMark::Text { at, text, .. } if text == "Teal" => Some(*at),
+        _ => None,
+    });
+    assert!(stage.send(&PEvent::PointerDown(teal.expect("Teal in the bar").plus(PPoint::new(2.0, 2.0)))));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert_eq!(desk.now.product.borrow().as_deref(), Some("s_one/lk1"));
     // The way back is at its head: its page of the menu, and its shop.
     assert!(press(&mut stage, &look, "Coats"));
     assert_eq!((desk.open.borrow().as_str(), desk.now.product.borrow().clone()), ("s_one.women.coats", None));

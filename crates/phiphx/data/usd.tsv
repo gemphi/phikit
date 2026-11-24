@@ -1,0 +1,9 @@
+# Names the USDA writer gives prims it makes itself (export/usd/name.rs):
+# root - the scene's top prim when it has no name of its own; look - the
+# scope materials live in; shader - each material's surface shader; up -
+# the stage's up axis.
+key	value
+root	Root
+look	Materials
+shader	surface
+up	Y

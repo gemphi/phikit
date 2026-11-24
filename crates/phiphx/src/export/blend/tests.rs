@@ -153,3 +153,48 @@ fn test_export_scene_to_phx_roundtrip() {
         json_len
     );
 }
+
+#[test]
+fn to_usda_goes_through_the_scene_path() {
+    let identity = [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]];
+    let scene = BlenderScene {
+        name: "Two".to_string(),
+        frame: 1,
+        resolution: [1, 1],
+        camera: None,
+        lights: vec![],
+        meshes: vec![MeshObjectData {
+            name: "My Quad".to_string(),
+            vertices: vec![[1.0, 1.0, 0.0], [-1.0, 1.0, 0.0], [-1.0, -1.0, 0.0], [1.0, -1.0, 0.0]],
+            normals: vec![],
+            uvs: vec![],
+            colors: vec![],
+            indices: vec![[0, 1, 2], [0, 2, 3]],
+            material_names: vec!["Red".to_string()],
+            matrix_world: identity,
+            visible: true,
+        }],
+        instances: vec![],
+        materials: vec![MaterialData {
+            name: "Red".to_string(),
+            base_color: [1.0, 0.0, 0.0, 1.0],
+            metallic: 0.0,
+            roughness: 0.4,
+            emission: [0.0; 3],
+            emission_strength: 0.0,
+            alpha: 1.0,
+            use_nodes: true,
+            base_color_texture: None,
+            normal_texture: None,
+            roughness_texture: None,
+        }],
+        collections: vec![],
+    };
+    let usda = scene.to_usda().unwrap();
+    assert!(usda.contains("defaultPrim = \"Two\""));
+    assert!(usda.contains("def Xform \"My_Quad\""));
+    assert!(usda.contains("int[] faceVertexCounts = [3, 3]"));
+    assert!(usda.contains("def Material \"Red\""));
+    assert!(usda.contains("color3f inputs:diffuseColor = (1, 0, 0)"));
+    assert!(usda.contains("rel material:binding = </Two/Materials/Red>"));
+}

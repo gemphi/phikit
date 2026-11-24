@@ -152,6 +152,8 @@ pub trait PPill {
             true => {}
             false => paint.text(PPoint::new(words, rect.center().y - line / 2.0), self.label(), ink),
         }
+        // A pill is pressed for something: the pointer is a hand over it.
+        paint.press(rect);
         rect
     }
 

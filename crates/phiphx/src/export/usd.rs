@@ -1,12 +1,20 @@
 //! Native USD Exporter
 //!
-//! Direct export to USDA/USDC format without external dependencies.
-//! Optimized for PHI PHX workflow.
+//! Direct export to USDA/USDC format without external dependencies:
+//! meshes, point clouds, the shapes of `data/shape.tsv` (`Shape::to_usda`)
+//! and whole scenes (`SceneModel::to_usda`).
 
 pub mod mesh;
+mod name;
 mod point_cloud;
+mod scene;
+mod shape;
+mod stage;
 mod writer;
 
+pub use name::{UsdNameSet, usd_word};
+pub use scene::{UsdaScene, Z_TO_Y};
+pub use stage::{UsdMesh, extent};
 pub use writer::UsdaWriter;
 
 /// Exporter for USDA and USDC formats.

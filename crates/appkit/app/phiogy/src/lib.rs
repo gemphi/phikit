@@ -29,6 +29,8 @@ pub mod fact;
 pub mod hosted;
 pub mod hour;
 pub mod kept;
+#[cfg(not(target_family = "wasm"))]
+pub mod library;
 pub mod part;
 pub mod peer;
 pub mod phiora;

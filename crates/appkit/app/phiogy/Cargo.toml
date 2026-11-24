@@ -39,6 +39,10 @@ serde_json.workspace = true
 # gpui already builds.
 chrono.workspace = true
 rand.workspace = true
+# The asset library: the folders the system keeps for the person
+# (Downloads, Videos...), and USD read for its models.
+dirs.workspace = true
+phiusd = { path = "../../../phicore/phiusd" }
 # WebRTC, for the `rtc` feature: LiveKit's bindings as Zed keeps them,
 # at the commit cargo's git cache already holds, so nothing is fetched.
 libwebrtc = { git = "https://github.com/zed-industries/livekit-rust-sdks", rev = "d0e27be0cdad89eadab3e36207cda0a2b6e359ee", optional = true }

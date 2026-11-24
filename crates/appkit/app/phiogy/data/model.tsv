@@ -1,0 +1,14 @@
+# The library's 3D pictures: how wide the lens is (degrees), the light
+# (where it comes from, how strong the key, the sky's and the ground's
+# colour 0 to 1), the finish a model has before one is chosen, and how
+# large a tile's picture is made (points), the most files a place
+# lists, and the colour of a part its file gives none.
+camera.fov	30
+sun.way	-0.4 -1 -0.5
+sun.key	0.9
+light.sky	0.55 0.58 0.62
+light.ground	0.28 0.26 0.24
+finish	satin
+tile	192
+most	256
+colour	0.72 0.72 0.7

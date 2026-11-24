@@ -24,11 +24,18 @@ impl Phx {
         Self::open_with(path, &|_, _| true)
     }
 
-    /// Open a file into a scene, reporting progress.
+    /// Open a file into a scene, reporting progress. The format (first
+    /// bytes, else extension) picks the reader: `.blend` here, USD, glTF,
+    /// OBJ, PLY and PHX through `FileFormat::open` (`import/scene.rs`).
     pub fn open_with(path: &Path, progress: Progress) -> Result<SceneModel, PhxError> {
-        crate::blend::set_image_source(path);
-        crate::blend::levels_differ_reset();
-        blend(path, progress)
+        match FileFormat::of_path(path) {
+            None | Some(FileFormat::Blend) => {
+                crate::blend::set_image_source(path);
+                crate::blend::levels_differ_reset();
+                blend(path, progress)
+            }
+            Some(format) => format.open(path),
+        }
     }
 
     /// Open a file progressively: the base scene now, the modifier work

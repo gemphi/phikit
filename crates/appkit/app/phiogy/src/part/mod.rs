@@ -7,6 +7,10 @@
 //! what a hand does.
 
 mod account;
+#[cfg(not(target_family = "wasm"))]
+mod figure;
+#[cfg(not(target_family = "wasm"))]
+pub mod library;
 pub mod bond;
 pub mod call;
 pub mod crowd;
@@ -34,6 +38,10 @@ mod viewer;
 pub mod voice;
 
 pub use account::{Account, who};
+#[cfg(not(target_family = "wasm"))]
+pub use figure::Figure;
+#[cfg(not(target_family = "wasm"))]
+pub use library::Shelf;
 pub use call::Calling;
 pub use friend::Friend;
 pub use guide::Guide;
@@ -132,9 +140,23 @@ pub struct Desk {
     /// and, then, the open room's line listened to (`Desk::listen`).
     pub away: bool,
     pub ring: Rc<RefCell<Option<Ring>>>,
+    /// The asset library, and what only the window keeps of it: the
+    /// place, kind and order shown, the file opened.
+    #[cfg(not(target_family = "wasm"))]
+    pub library: Rc<crate::library::Library>,
+    pub shelf: Rc<appkit::pui::state::PMemory>,
 }
 
 impl Desk {
+    /// The window's film: the pictures that move, a call's and the
+    /// library's 3D ones.
+    pub fn film(&self) -> appkit::pui::core::PFilm {
+        #[cfg(not(target_family = "wasm"))]
+        return self.library.film.clone();
+        #[cfg(target_family = "wasm")]
+        return appkit::pui::core::PFilm::default();
+    }
+
     /// A size of the look; nothing for a token it does not have.
     pub fn size(&self, token: &str) -> f32 {
         self.look.size(token).unwrap_or_default()

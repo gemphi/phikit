@@ -1,0 +1,25 @@
+# What a file is, by the end of its name: the end, its kind and its
+# icon. A `model` is USD, which Phiogy shows and dresses; a `source` is
+# turned into USD first (data/convert.tsv); a `picture` is shown as it
+# is; a `video` and a `sound` are listed with their icon. A file of no
+# end here is not listed.
+usd	model	box
+usda	model	box
+usdc	model	box
+usdz	model	box
+blend	source	blend
+gltf	source	box
+glb	source	box
+ply	source	box
+phx	source	box
+png	picture	image
+jpg	picture	image
+jpeg	picture	image
+webp	picture	image
+gif	picture	image
+mp4	video	video
+mov	video	video
+webm	video	video
+mkv	video	video
+mp3	sound	music
+wav	sound	music

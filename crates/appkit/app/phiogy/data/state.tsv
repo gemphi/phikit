@@ -1,0 +1,6 @@
+# What the library's forms begin with: the place shown, every kind, in
+# order of name, the first part of a model.
+ui/place	shape
+ui/kind	all
+ui/sort	name
+ui/part	0

@@ -48,7 +48,9 @@ impl UsdImporter {
                         current_num.clear();
                     }
                 }
-                c if c.is_ascii_digit() || c == '.' || c == '-' || c == 'e' || c == 'E' => {
+                // Only inside a tuple: the `3` of `point3f[]` / `normal3f[]`
+                // is part of the type, not a coordinate.
+                c if paren_depth > 0 && (c.is_ascii_digit() || c == '.' || c == '-' || c == 'e' || c == 'E') => {
                     current_num.push(c);
                 }
                 _ => {

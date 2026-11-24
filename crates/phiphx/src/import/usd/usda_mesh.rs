@@ -64,12 +64,13 @@ impl UsdImporter {
                 if current_transform_floats.len() >= 16 {
                     in_transform_attr = false;
 
-                    // Construct glam::Mat4 (USD uses row-major, glam uses column-major)
+                    // USD writes row vectors (`p * M`, translation in the
+                    // fourth row), so its rows are glam's columns as they
+                    // stand: the flat list is glam's column-major array.
                     let m = &current_transform_floats;
-                    let local_transform = glam::Mat4::from_cols_array(&[
-                        m[0], m[4], m[8], m[12], m[1], m[5], m[9], m[13], m[2], m[6], m[10], m[14],
-                        m[3], m[7], m[11], m[15],
-                    ]);
+                    let mut flat = [0.0f32; 16];
+                    flat.copy_from_slice(&m[..16]);
+                    let local_transform = glam::Mat4::from_cols_array(&flat);
 
                     // Multiply with parent if exists
                     let parent_transform = transform_stack
@@ -155,31 +156,24 @@ impl UsdImporter {
 
     /// Parse the floats out of a `matrix4d xformOp:transform` line fragment.
     ///
-    /// Mirrors the original inline scanner: characters that make up the
-    /// attribute keyword/punctuation act as separators, and runs of digits
-    /// (with `.`, `-`, `e`/`E`) are parsed as `f32` values.
+    /// Only what follows the `=` is read (the attribute's name has digits
+    /// of its own: the `4` of `matrix4d`); runs of digits with `.`, `-`,
+    /// `e` / `E` are numbers, anything else separates them.
     fn accumulate_transform_floats(trimmed: &str, out: &mut Vec<f32>) {
+        let data = match trimmed.split_once('=') {
+            Some((_, value)) => value,
+            None => trimmed,
+        };
         let mut current_num = String::new();
-        for c in trimmed.chars() {
-            match c {
-                '(' | ')' | ',' | ' ' | '\t' | '\r' | '\n' | '[' | ']' | '=' | 'm' | 'a' | 't'
-                | 'r' | 'i' | 'x' | '4' | 'd' | 'f' | 'o' | 'O' | 'p' | ':' | 's' => {
-                    if !current_num.is_empty() {
-                        if let Ok(n) = current_num.parse::<f32>() {
-                            out.push(n);
-                        }
-                        current_num.clear();
+        for c in data.chars().chain(std::iter::once(' ')) {
+            match c.is_ascii_digit() || matches!(c, '.' | '-' | '+' | 'e' | 'E') {
+                true => current_num.push(c),
+                false => {
+                    if let Ok(n) = current_num.parse::<f32>() {
+                        out.push(n);
                     }
+                    current_num.clear();
                 }
-                c if c.is_ascii_digit() || c == '.' || c == '-' || c == 'e' || c == 'E' => {
-                    current_num.push(c);
-                }
-                _ => {}
-            }
-        }
-        if !current_num.is_empty() {
-            if let Ok(n) = current_num.parse::<f32>() {
-                out.push(n);
             }
         }
     }

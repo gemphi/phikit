@@ -50,3 +50,13 @@ fn test_export_mesh_usda() {
     assert!(usda.contains("point3f[] points"));
     assert!(usda.contains("int[] faceVertexCounts"));
 }
+
+#[test]
+fn usd_name_are_identifiers_and_unique() {
+    let mut name = UsdNameSet::default();
+    assert_eq!(name.take("Cube.001"), "Cube_001");
+    assert_eq!(name.take("Cube.001"), "Cube_001_1");
+    assert_eq!(name.take("3 dice"), "_3_dice");
+    assert_eq!(name.take(""), "_");
+    assert_eq!(usd_word("up"), "Y");
+}

@@ -1,0 +1,12 @@
+# The dice's pips (geom/shape/pip.rs): which face shows which value, and
+# where its pips sit on the face's 3 x 3 grid (u,v each -1, 0 or 1; the grid
+# step is the shape's spread). Opposite faces sum to 7.
+# face: the axis the face looks along (+x -x +y -y +z -z); u and v are the
+# next two axes in turn (x: y z, y: z x, z: x y).
+value	face	cell
+1	+y	0,0
+6	-y	-1,-1 -1,0 -1,1 1,-1 1,0 1,1
+2	+x	-1,-1 1,1
+5	-x	-1,-1 -1,1 0,0 1,-1 1,1
+3	+z	-1,-1 0,0 1,1
+4	-z	-1,-1 -1,1 1,-1 1,1

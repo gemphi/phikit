@@ -140,7 +140,7 @@ pub fn run(word: &[String]) {
         false => app.away(),
     };
     // Where the real library is built in, it carries this window's calls.
-    let film = appkit::pui::core::PFilm::default();
+    let film = app.desk().film();
     let (over, shown) = (caller::over(word), film.clone());
     let app = app.carried(Rc::new(move || caller::engine(&over, &shown)));
     given(word, "--look").iter().for_each(|look| _ = app.desk().shade.turn(look));

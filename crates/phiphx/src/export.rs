@@ -6,7 +6,9 @@ pub mod blend;
 pub mod gltf;
 pub mod phx;
 pub mod scene;
+pub mod target;
 pub mod usd;
+pub use target::SceneTarget;
 pub use scene::*;
 
 pub mod binary;

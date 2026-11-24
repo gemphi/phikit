@@ -241,6 +241,7 @@ mod extras;
 mod geometry;
 mod import;
 mod import_extras;
+mod import_mesh;
 mod material;
 mod object;
 pub(crate) mod polyfill;

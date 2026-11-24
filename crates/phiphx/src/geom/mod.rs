@@ -6,5 +6,6 @@
 pub mod bounds;
 pub mod bvh;
 pub mod mesh;
+pub mod shape;
 pub mod selector;
 pub mod vertex;

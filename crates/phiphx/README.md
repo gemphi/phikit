@@ -18,6 +18,9 @@ glTF, USD and point-cloud formats.
 | [`src/geom`](src/geom/README.md) | geometry primitives |
 | [`src/format`](src/format/README.md) | output formats, materials |
 | [`src/spatial`](src/spatial/README.md) | spatial UI objects |
+| [`src/convert.rs`](src/convert.rs) | `Phx::convert(in, out)`: any format in, the scene format the output names out (`examples/convert.rs`) |
+| [`src/table.rs`](src/table.rs) | `TsvTable`, the reader for `data/*.tsv` |
+| [`data`](data) | the tables code reads: `shape.tsv`, `pip.tsv`, `usd.tsv` |
 
 Rules: types own behaviour (methods and traits, no loose `pub fn`), short
 names, at most 200 substantive lines per file, every Blender-derived reader

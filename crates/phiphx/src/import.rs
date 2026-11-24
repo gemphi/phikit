@@ -10,6 +10,7 @@ pub mod usd;
 
 pub mod asset;
 pub mod format;
+pub mod scene;
 
 pub use asset::{
     AssetImportResult, AssetImporter, ImportedCollection, ImportedMaterial, ImportedObject,

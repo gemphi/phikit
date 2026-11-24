@@ -59,6 +59,8 @@ pub trait PDeck {
         };
         let rect: Vec<PRect> = (0..list.len()).map(place).collect();
         list.iter().zip(&rect).for_each(|(one, rect)| one.card(paint, *rect));
+        // A card is pressed for something: the pointer is a hand over it.
+        rect.iter().for_each(|rect| paint.press(*rect));
         let rows = list.len().div_ceil(across as usize) as f32;
         (rect, at.y + rows * high + (rows - 1.0).max(0.0) * gap / 2.0)
     }

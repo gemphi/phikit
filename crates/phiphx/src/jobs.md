@@ -2,16 +2,17 @@
 
 | State | Open | Done |
 |---|---|---|
-| 🟡 in progress | 4 | 3 |
+| 🟡 in progress | 3 | 4 |
 
 ## Todo
 
-- [ ] USD scenes through `Phx::open` (read with the `openusd` crate: usda/usdc/usdz, composition)
-- [ ] glTF scenes through `Phx::open` into the same `SceneModel`
+- [ ] USD scenes through `Phx::open` with the `openusd` crate (composition, references, materials); today they open through the in-crate scanner (`import/usd`)
 - [ ] Progressive open: return rest meshes first, evaluated meshes when the modifier stack finishes
 - [ ] WebAssembly build of `Phx`: the byte door and the Zstd decoder are in (below); what is left is `rayon` with no threads
 
 ## Done
+
+- [x] `Phx::open` matches on the detected format (`import/scene.rs`): `.blend` through its own reader, USD / glTF / OBJ / PLY / PHX into the same `SceneModel`. `Phx::convert` (`convert.rs`) writes any of them by `SceneTarget`. Test: `tests/usd_scene.rs`
 
 - [x] `Phx::open` / `open_with` (progress + cancel), `peek`, `detect`, `modifiers`
 - [x] Errors categorised (`Inaccessible` / `Malformed` / `Unsupported` / `Cancelled`); parser panics caught

@@ -33,6 +33,8 @@ look.glass	Glass
 look.frost	Glass Light
 look.liquid	Liquid Glass
 look.liquid-dark	Liquid Glass Dark
+look.plain	Plain
+look.plain-dark	Plain Dark
 # What is true now, in the profile.
 fact.line	Line
 fact.closed	not open
@@ -275,3 +277,66 @@ search.room	Rooms
 search.people	People
 search.none	Nothing found.
 search.open	Search
+# The asset library: its places, kinds, orders and tools; what a place
+# holds; a model dressed. UI words use `-`, never a long dash.
+library.head	Library
+library.kind	Show
+library.sort	Order
+library.stat	In this place
+library.import	Import
+library.none	Nothing here yet
+stat.file	Files
+stat.model	Models
+stat.source	To turn into USD
+stat.picture	Pictures
+stat.video	Videos
+stat.size	Size
+place.shape	Shapes
+place.phiegg	Phiegg space
+place.download	Downloads
+place.video	Videos
+place.picture	Pictures
+place.document	Documents
+place.desktop	Desktop
+filter.all	All
+filter.model	Models
+filter.source	Blender and more
+filter.picture	Pictures
+filter.video	Videos
+filter.sound	Sounds
+sort.name	Name
+sort.new	Newest
+sort.large	Largest
+kind.model	USD
+kind.source	Waits for USD
+kind.picture	Picture
+kind.video	Video
+kind.sound	Sound
+custom.head	Dress
+custom.back	Back to the library
+custom.paint	Colour
+custom.finish	Finish
+custom.about	About
+about.part	Parts
+about.triangle	Triangles
+about.size	Size
+about.file	File
+paint.chalk	Chalk
+paint.coal	Coal
+paint.ruby	Ruby
+paint.amber	Amber
+paint.lemon	Lemon
+paint.moss	Moss
+paint.sea	Sea
+paint.cobalt	Cobalt
+paint.plum	Plum
+paint.rose	Rose
+paint.gold	Gold
+finish.matte	Matte
+finish.satin	Satin
+finish.gloss	Gloss
+finish.metal	Metal
+import.done	Imported {name} into the Phiegg space
+import.turned	Turning {name} into USD: it shows here when it is done
+import.wait	{name} waits to be turned into USD: no converter here
+size.unit	B KB MB GB

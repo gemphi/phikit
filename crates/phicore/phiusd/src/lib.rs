@@ -17,13 +17,15 @@ use read::{ints, points, text, tokens};
 pub use xform::world;
 
 /// A mesh: its prim's path, where it stands in the layer's world, its
-/// points and its triangles (three indices each into the points).
+/// points, its triangles (three indices each into the points), and its
+/// colour where the layer gives one (`primvars:displayColor`, the first).
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Mesh {
     pub path: String,
     pub world: Matrix,
     pub point: Vec<[f32; 3]>,
     pub index: Vec<u32>,
+    pub colour: Option<[f32; 3]>,
 }
 
 impl Mesh {
@@ -85,7 +87,8 @@ pub fn read(file: &Path) -> Scene {
         match point.is_empty() {
             false => {
                 let index = triangulate(&ints(&stage, &prim, "faceVertexCounts"), &ints(&stage, &prim, "faceVertexIndices"));
-                scene.mesh.push(Mesh { world: world(&stage, &prim), path: prim, point, index });
+                let colour = points(&stage, &prim, "primvars:displayColor").first().copied();
+                scene.mesh.push(Mesh { world: world(&stage, &prim), path: prim, point, index, colour });
             }
             true => {
                 let joint = tokens(&stage, &prim, "joints");

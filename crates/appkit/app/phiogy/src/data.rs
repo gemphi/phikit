@@ -63,3 +63,18 @@ pub fn row(text: &str) -> Vec<Vec<&str>> {
     let line = text.lines().filter(|line| !line.trim().is_empty() && !line.starts_with('#'));
     line.map(|line| line.split('\t').map(str::trim).collect()).collect()
 }
+
+/// The asset library: its places, what a file is by its end, its
+/// filters, orders and tools, how a source is turned into USD, the
+/// colours and finishes a model is dressed in, its 3D pictures, and
+/// the forms it is shown in, their lists and the values they begin with.
+pub const PLACE: &str = include_str!("../data/place.tsv");
+pub const KIND: &str = include_str!("../data/kind.tsv");
+pub const FILTER: &str = include_str!("../data/filter.tsv");
+pub const CONVERT: &str = include_str!("../data/convert.tsv");
+pub const PAINT: &str = include_str!("../data/paint.tsv");
+pub const FINISH: &str = include_str!("../data/finish.tsv");
+pub const MODEL: &str = include_str!("../data/model.tsv");
+pub const FORM: &str = include_str!("../data/form.tsv");
+pub const LISTING: &str = include_str!("../data/listing.tsv");
+pub const STATE: &str = include_str!("../data/state.tsv");

@@ -1,0 +1,19 @@
+# The lists the forms show (appkit pui/form/list.rs): the list, the
+# table its rows come from, the value's column, the words' column
+# (text: for the app's words for that column's value), the icon's
+# column, the colour's columns, the rows it keeps, whether each value is
+# kept once, when it is shown, and the columns of its picture, its line
+# and the note at its end. `-` for none. The tables are the library's
+# (src/library.rs): place.tsv, filter.tsv's kinds, orders and tools,
+# paint.tsv, finish.tsv, and what a place and a model hold now.
+place	place	0	text:1	2	-	-	-	-
+kind	kind	0	text:1	2	-	-	-	-
+sort	sort	0	text:1	2	-	-	-	-
+tool	tool	0	text:1	2	-	-	-	-
+back	back	0	text:1	2	-	-	-	-
+stat	stat	0	1	-	-	-	-	-	-	-	2
+item	item	0	1	2	-	-	-	-	3	4	5
+part	part	0	1	-	-	-	-	-
+paint	paint	0	text:1	-	2,3,4/255	-	-	-
+finish	finish	0	text:1	-	-	-	-	-
+about	about	0	1	-	-	-	-	-	-	-	2

@@ -10,9 +10,11 @@
 //! text for that column's value), the icon's column, the colour's
 //! columns (three, red green blue, `/255` after them where they run to
 //! 255), the rows it keeps (`column=path`: those whose column holds
-//! what the path keeps), whether it keeps each value once (`once`), and
-//! when it is shown (`path=value`). `-` for none. A path may hold
-//! `{path}`: what that path keeps, put in its place.
+//! what the path keeps), whether it keeps each value once (`once`), when
+//! it is shown (`path=value`), and, where a list has them, the columns
+//! of its picture (a grid's tile), its line and the note at its end.
+//! `-` for none, and a row may stop before the last three. A path may
+//! hold `{path}`: what that path keeps, put in its place.
 
 use std::rc::Rc;
 
@@ -100,7 +102,7 @@ impl PSource for PListed {
         };
         let mut out: Vec<PChoice> = Vec::new();
         for row in self.rows.rows(at(1)).iter().filter(|row| kept.as_ref().is_none_or(|(c, v)| row.get(*c) == Some(v))).filter(|_| shown) {
-            let choice = PChoice { value: column(row, at(2)), label: words(row), icon: column(row, at(4)), colour: paint(row), ..PChoice::default() };
+            let choice = PChoice { value: column(row, at(2)), label: words(row), icon: column(row, at(4)), colour: paint(row), picture: column(row, at(9)), note: column(row, at(10)), end: column(row, at(11)), ..PChoice::default() };
             match at(7) == "once" && out.iter().any(|c| c.value == choice.value) {
                 true => {}
                 false => out.push(choice),

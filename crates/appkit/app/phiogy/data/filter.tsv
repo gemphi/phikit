@@ -1,0 +1,14 @@
+# The library's filters: which kinds a tab of kinds shows (`all` shows
+# every kind), and its words; then how the files are put in order.
+kind	all	filter.all	layers
+kind	model	filter.model	box
+kind	source	filter.source	blend
+kind	picture	filter.picture	image
+kind	video	filter.video	video
+kind	sound	filter.sound	music
+sort	name	sort.name	sort
+sort	new	sort.new	sort
+sort	large	sort.large	sort
+# The library's tools: what a press does, its words and its icon.
+tool	import	library.import	plus
+back	back	custom.back	arrow-left

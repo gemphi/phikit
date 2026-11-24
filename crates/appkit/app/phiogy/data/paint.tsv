@@ -1,0 +1,14 @@
+# The colours a part of a model can be given: its key, its words (a
+# word of text.tsv), red, green, blue (0 to 255).
+own	paint.own	-	-	-
+chalk	paint.chalk	240	236	228
+coal	paint.coal	38	38	42
+ruby	paint.ruby	196	40	58
+amber	paint.amber	236	156	40
+lemon	paint.lemon	238	214	70
+moss	paint.moss	92	140	70
+sea	paint.sea	40	150	160
+cobalt	paint.cobalt	48	86	196
+plum	paint.plum	120	60	140
+rose	paint.rose	232	140	170
+gold	paint.gold	212	172	80

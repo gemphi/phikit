@@ -13,6 +13,8 @@ mod exchange;
 mod flow;
 mod hosts;
 mod left;
+#[cfg(not(target_family = "wasm"))]
+mod library;
 mod pace;
 mod pill;
 mod ring;

@@ -30,6 +30,7 @@ Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its 
 | `extras.rs` | Non-mesh objects the viewport overlay draws: cameras, lights, empties. |
 | `geometry.rs` | Pure geometry helpers shared by the blend and phx mappers: per-vertex UVs from per-corner UVs, and normal selection / synthesis. |
 | `import.rs` | Blend → scene conversion helpers. |
+| `import_mesh.rs` | `SceneModel::from_meshes` (meshes the USD, glTF, OBJ and PLY readers make; Y up turned to Z up) and `SceneModel::from_phx` (a `.phx` scene) — the same model a `.blend` opens into. |
 | `import_extras.rs` | Camera / light / empty objects → `SceneCamera` / `SceneLight` / `SceneEmpty`, from the DNA read by `importer::blend::object_data`. |
 | `material.rs` | Material slot data shared by the viewport and the Properties panel (Principled inputs, normal map). |
 | `object.rs` | One read object → renderable `SceneObject` (triangulation, normals, UVs, slots). |

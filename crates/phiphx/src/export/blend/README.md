@@ -33,7 +33,7 @@ Callers enter through [`phx::Phx`](../../phx/README.md); this folder is one of i
 | `helpers.rs` | Blender type-name parsing (`From<&str>`). |
 | `script_gltf.rs` | glTF 2.0 scene writer (delegates to `gltf_native`). |
 | `script_phx.rs` | PHX scene format writer (binary: magic + JSON). |
-| `script_usd.rs` | USDA scene writer (delegates to `usd_native`). |
+| `script_usd.rs` | `BlenderScene` → `SceneModel` (`From`), and `to_usda` through the one scene path (`SceneModel::to_usda`). |
 | `tests.rs` | Unit tests for Blender native scene export. |
 | `types.rs` | Core data types for Blender native scene export. |
 

@@ -34,6 +34,11 @@ use crate::theme::PTheme;
 pub const LOW: &str = "activity.low";
 pub const WIDE: &str = "activity.width";
 pub const FILL: &str = "activity.fill";
+/// A faint line down the bar's side toward the page, as plain looks
+/// draw one (Apple's sidebar has a hairline at its edge): its colour,
+/// and how thick it is. A look without the colour draws none.
+pub const EDGE: &str = "activity.line";
+pub const RIM: &str = "activity.rim";
 /// How round the corners of the bar are, where it stands clear of the
 /// window's edges (`activity.margin`, which the frame reads).
 pub const CORNER: &str = "activity.corner";

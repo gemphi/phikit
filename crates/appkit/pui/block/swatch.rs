@@ -41,6 +41,7 @@ pub trait PSwatch {
             label(paint, r.inset(-ring), side / 2.0 + ring, strength, false, "");
             paint.round(*r, side / 2.0, *colour);
             surface(paint, *r, side / 2.0, PLight::Rest, "");
+            paint.press(r.inset(-ring));
         }
         let rows = list.len().div_ceil(across) as f32;
         (rect, at.y + rows * (cell + ring) - ring)

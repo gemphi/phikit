@@ -123,6 +123,24 @@
         "palette": "sphere"
       },
       "page": {}
+    },
+    {
+      "id": "lk3",
+      "title": "Plum Signal",
+      "sub": "$7,000",
+      "cost": 7000,
+      "look": true,
+      "image": "phiegg:worlds/w_carousel.png",
+      "kind": "Outerwear",
+      "meta": "Plum",
+      "page": {
+        "fieldList": [
+          [
+            "Colour",
+            "Plum"
+          ]
+        ]
+      }
     }
   ],
   "landing": [

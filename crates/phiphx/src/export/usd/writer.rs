@@ -13,33 +13,48 @@ pub struct UsdaWriter {
 impl UsdaWriter {
     /// Create a new USDA writer with default header
     pub fn new() -> Self {
+        Self::stage("Root", "Y")
+    }
+
+    /// A writer whose stage opens on `default_prim`, in metres, `up` the up axis.
+    pub fn stage(default_prim: &str, up: &str) -> Self {
         let mut writer = Self {
             lines: Vec::new(),
             indent: 0,
         };
-        writer.write_header();
+        writer.lines.push("#usda 1.0".to_string());
+        writer.lines.push("(".to_string());
+        writer.lines.push(format!("    defaultPrim = \"{default_prim}\""));
+        writer.lines.push("    metersPerUnit = 1".to_string());
+        writer.lines.push(format!("    upAxis = \"{up}\""));
+        writer.lines.push(")".to_string());
+        writer.lines.push(String::new());
         writer
-    }
-
-    fn write_header(&mut self) {
-        self.lines.push("#usda 1.0".to_string());
-        self.lines.push("(".to_string());
-        self.lines.push("    defaultPrim = \"Root\"".to_string());
-        self.lines.push("    metersPerUnit = 1.0".to_string());
-        self.lines.push("    upAxis = \"Y\"".to_string());
-        self.lines.push(")".to_string());
-        self.lines.push(String::new());
     }
 
     /// Write a line with current indentation
     pub fn line(&mut self, text: &str) {
-        let indent = "    ".repeat(self.indent);
+        let indent = match text.is_empty() {
+            true => String::new(),
+            false => "    ".repeat(self.indent),
+        };
         self.lines.push(format!("{}{}", indent, text));
     }
 
     /// Push a new scope (Xform, Mesh, etc.)
     pub fn push_scope(&mut self, name: &str, prim_type: &str) {
         self.line(&format!("def {} \"{}\"", prim_type, name));
+        self.line("{");
+        self.indent += 1;
+    }
+
+    /// Push a scope whose prim carries metadata lines (`prepend apiSchemas = …`).
+    pub fn push_scope_with(&mut self, name: &str, prim_type: &str, meta: &[&str]) {
+        self.line(&format!("def {} \"{}\" (", prim_type, name));
+        for m in meta {
+            self.line(&format!("    {m}"));
+        }
+        self.line(")");
         self.line("{");
         self.indent += 1;
     }

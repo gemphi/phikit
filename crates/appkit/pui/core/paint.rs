@@ -92,6 +92,10 @@ pub enum PFit {
     /// the rectangle's middle. Nothing of it is cut away.
     #[default]
     Whole,
+    /// The whole picture as `Whole` has it, but standing at the top of
+    /// the rectangle, in the middle across: a model or a look on a
+    /// page, which reads from its head down.
+    Top,
     /// The rectangle covered, what of the picture does not fit cut away
     /// evenly: a face, a thumb.
     Cover,
@@ -112,6 +116,11 @@ impl PFit {
         match self {
             PFit::Whole => {
                 let lie = centred((rect.size.width / wide).min(rect.size.height / high).min(1.0), whole);
+                (lie, lie)
+            }
+            PFit::Top => {
+                let lie = centred((rect.size.width / wide).min(rect.size.height / high).min(1.0), whole);
+                let lie = PRect { origin: PPoint::new(lie.origin.x, rect.origin.y), ..lie };
                 (lie, lie)
             }
             PFit::Cover => (rect, centred((rect.size.width / wide).max(rect.size.height / high), whole)),
@@ -215,4 +224,41 @@ pub trait PPaint {
     fn natural(&self, _name: &str) -> Option<PSize> {
         None
     }
+
+    /// Say that what was just drawn in that rectangle is pressed for
+    /// something, so the pointer is a hand over it. Every block of the
+    /// kit that a press acts on says so as it is drawn (`PPress`), so no
+    /// part has to list what it can be pressed on. A painter that keeps
+    /// nothing forgets it.
+    fn press(&mut self, _rect: PRect) {}
+
+    /// Every rectangle said to be pressed so far, each cut to what was in
+    /// sight where it was drawn.
+    fn pressed(&self) -> Vec<PRect> {
+        Vec::new()
+    }
+}
+
+/// Something of the kit a press acts on: drawn, it tells the painter
+/// where it stands (`PPaint::press`), and the pointer is a hand there.
+/// The pill, the band's pills, the swatch, the card and a form's every
+/// choice are; an app's own drawing says so with `paint.press(rect)`.
+pub trait PPress {
+    /// Where it stands, said to the painter as pressed.
+    fn pressed_at(&self, paint: &mut dyn PPaint) -> PRect;
+}
+
+impl PPress for PRect {
+    fn pressed_at(&self, paint: &mut dyn PPaint) -> PRect {
+        paint.press(*self);
+        *self
+    }
+}
+
+/// What of a rectangle is inside another; nothing when no part is.
+pub fn within(rect: PRect, sight: PRect) -> Option<PRect> {
+    let (left, top) = (rect.origin.x.max(sight.origin.x), rect.origin.y.max(sight.origin.y));
+    let right = (rect.origin.x + rect.size.width).min(sight.origin.x + sight.size.width);
+    let bottom = (rect.origin.y + rect.size.height).min(sight.origin.y + sight.size.height);
+    (right > left && bottom > top).then(|| PRect::new(left, top, right - left, bottom - top))
 }

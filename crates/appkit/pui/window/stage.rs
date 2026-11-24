@@ -156,10 +156,18 @@ impl PStage {
             show(view, paint, PPoint::default());
             paint.unclip();
         }
+        let under = paint.pressed().len();
         self.sheet(paint);
-        // What can be pressed is what was just drawn: kept, so that a
-        // move of the pointer need not ask every part again.
-        *self.drawn.borrow_mut() = self.pressed();
+        // What can be pressed is what was just drawn: what the kit's
+        // blocks said as they were drawn (with a modal open, only those
+        // drawn over it), and what each part says of itself. Kept, so
+        // that a move of the pointer need not ask every part again.
+        let said = paint.pressed();
+        let said = match self.window.modal() {
+            Some(_) => said.get(under..).map(<[PRect]>::to_vec).unwrap_or_default(),
+            None => said,
+        };
+        *self.drawn.borrow_mut() = self.pressed().into_iter().chain(said).collect();
         self.glow(paint);
     }
 

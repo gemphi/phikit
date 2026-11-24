@@ -1,0 +1,28 @@
+# The ordinary shapes every asset library starts with (geom/shape.rs).
+# One row per shape; the name is the file it is written to (<name>.usda).
+# form: how it is made - box, sphere, cylinder, cone, torus, plane, capsule,
+#   pyramid, tetrahedron, octahedron, icosahedron.
+# size: metres - edge (box, plane, pyramid base), diameter (sphere, cylinder,
+#   cone, capsule), outer diameter (torus), circumscribed diameter (the
+#   three regular solids).
+# height: metres - cylinder, cone, capsule (end to end), pyramid; torus: tube diameter.
+# segment: steps around; ring: steps along (sphere, capsule, torus tube) or
+#   steps in a rounded edge (box).  bevel: rounded-edge radius, metres.
+# pip: pip radius, metres; pip_depth: a pip disc's thickness (half below the
+#   face, half above it, so it shows as a shallow disc); spread: a pip
+#   corner's offset from the face centre (layouts in pip.tsv).
+# part / colour / roughness / metallic: one entry per part, space-separated;
+#   colour is r g b (0-1, linear) per part.  - means not used.
+name	form	size	height	segment	ring	bevel	pip	pip_depth	spread	part	colour	roughness	metallic
+cube	box	0.1	-	-	0	0	-	-	-	body	0.80 0.80 0.80	0.5	0
+dice	box	0.016	-	24	4	0.0016	0.0014	0.0003	0.0042	body pip	0.96 0.95 0.92 0.05 0.05 0.06	0.35 0.6	0 0
+sphere	sphere	0.1	-	32	16	-	-	-	-	body	0.85 0.30 0.25	0.45	0
+cylinder	cylinder	0.1	0.15	32	-	-	-	-	-	body	0.25 0.55 0.85	0.45	0
+cone	cone	0.1	0.15	32	-	-	-	-	-	body	0.95 0.70 0.20	0.45	0
+torus	torus	0.15	0.04	48	16	-	-	-	-	body	0.55 0.35 0.80	0.4	0
+plane	plane	0.2	-	-	-	-	-	-	-	body	0.70 0.72 0.70	0.6	0
+capsule	capsule	0.06	0.15	32	16	-	-	-	-	body	0.30 0.75 0.50	0.45	0
+pyramid	pyramid	0.12	0.1	-	-	-	-	-	-	body	0.90 0.55 0.35	0.5	0
+tetrahedron	tetrahedron	0.12	-	-	-	-	-	-	-	body	0.95 0.40 0.55	0.4	0
+octahedron	octahedron	0.12	-	-	-	-	-	-	-	body	0.35 0.80 0.85	0.4	0
+icosahedron	icosahedron	0.12	-	-	-	-	-	-	-	body	0.20 0.30 0.70	0.35	0

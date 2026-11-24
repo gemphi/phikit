@@ -46,17 +46,22 @@ pub struct PSheet<'a> {
     known: Option<PKnown<'a>>,
     /// What was drawn, the first mark the lowest.
     pub mark: Vec<PMark>,
+    /// Where a press acts, as the kit's blocks said while drawn, each cut
+    /// to what was in sight; and the rectangles drawing is kept inside,
+    /// the innermost last.
+    pub press: Vec<PRect>,
+    sight: Vec<PRect>,
 }
 
 impl<'a> PSheet<'a> {
     /// An empty sheet in that theme. Text is measured by counting.
     pub fn new(theme: &'a dyn PTheme) -> PSheet<'a> {
-        PSheet { theme, gauge: None, known: None, mark: Vec::new() }
+        PSheet { theme, gauge: None, known: None, mark: Vec::new(), press: Vec::new(), sight: Vec::new() }
     }
 
     /// An empty sheet whose text is measured by the screen it is for.
     pub fn gauged(theme: &'a dyn PTheme, gauge: &'a dyn Fn(&str) -> f32) -> PSheet<'a> {
-        PSheet { theme, gauge: Some(gauge), known: None, mark: Vec::new() }
+        PSheet { theme, gauge: Some(gauge), known: None, mark: Vec::new(), press: Vec::new(), sight: Vec::new() }
     }
 
     /// The same sheet, told how large each picture is by what has them.
@@ -151,11 +156,23 @@ impl PPaint for PSheet<'_> {
     }
 
     fn clip(&mut self, rect: PRect) {
+        let inner = self.sight.last().map_or(Some(rect), |outer| super::paint::within(rect, *outer));
+        self.sight.push(inner.unwrap_or(PRect::new(rect.origin.x, rect.origin.y, 0.0, 0.0)));
         self.mark.push(PMark::Clip(rect));
     }
 
     fn unclip(&mut self) {
+        self.sight.pop();
         self.mark.push(PMark::Unclip);
+    }
+
+    fn press(&mut self, rect: PRect) {
+        let seen = self.sight.last().map_or(Some(rect), |sight| super::paint::within(rect, *sight));
+        self.press.extend(seen);
+    }
+
+    fn pressed(&self) -> Vec<PRect> {
+        self.press.clone()
     }
 
     fn measure(&self, text: &str) -> f32 {

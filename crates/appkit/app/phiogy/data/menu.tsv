@@ -16,8 +16,19 @@ menu	center	look	light	Light	sun	tell	look light
 menu	center	look	dark	Dark	moon	tell	look dark
 menu	center	look	glass	Glass	layers	tell	look glass
 menu	center	look	frost	Glass Light	blend	tell	look frost
+menu	center	look	liquid	Liquid Glass	layers	tell	look liquid
+menu	center	look	liquid-dark	Liquid Glass Dark	layers	tell	look liquid-dark
+menu	center	look	plain	Plain	square	tell	look plain
+menu	center	look	plain-dark	Plain Dark	square	tell	look plain-dark
 menu	bottom	you	account	Account	wallet	modal	account
 menu	bottom	you	profile	Profile	user	modal	profile
 shop	top	go	start	Start	home	tell	start
 shop	top	go	venue	Hosts	globe	space	venue
 shop	center	joined	guide	Rooms	chat	side
+# The library: the way back, and the rooms beside it as everywhere.
+library	top	go	start	Start	home	tell	start
+library	top	go	venue	Hosts	globe	space	venue
+library	center	joined	guide	Rooms	chat	side
+# A model opened from it: the way back to the library, and the rooms.
+model	top	go	library	Library	box	space	library
+model	center	joined	guide	Rooms	chat	side

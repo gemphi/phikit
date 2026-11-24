@@ -355,3 +355,45 @@ What was asked and answered is in [`RUN.md`](RUN.md).
 - [ ] Phiegg's own people repeat 68 names and 7 handles; renamed there
   (`puikit/app/phiegg/src/data`), the skipped test
   `tree::across_the_app_no_two_people_share_a_name_or_a_handle` passes
+
+## The creators' library (asked 24 November 2026)
+
+Built (FLOW steps 48-54): the Library row; places as tabs (Phiogy's
+shapes, the Phiegg space at `~/Phiegg`, and the person's own Downloads,
+Videos, Pictures, Documents, Desktop, `data/place.tsv`); kinds and
+orders as filters, counts, files as tiles; a model in 3D with its dress
+(colour a part, finish), kept; Import into the Phiegg space under a
+free name, a source turned into USD by `data/convert.tsv`'s command; the
+thing page as Phiegg's (variants bar, picture at the top, sections at
+the right); the hand cursor said by the kit's blocks; eight looks.
+
+Not built, the nearest first:
+
+- [ ] the server receives what a creator brings: an upload route on
+  Phiora (`PUT /file/<space>/<name>`, a length, not chunks), kept under
+  `/srv/phi-cdn/<user>/`, and the line told; every source (`.blend`,
+  `.gltf`, `.ply`, `.phx`) turned into USD there by phiphx's converter
+  (or Blender's own USD exporter where Blender is installed), the USD
+  kept beside it; the library then reads the person's space from
+  Phiora as it reads their folder now
+- [ ] the converter on this machine: `data/convert.tsv` names
+  `phiphx-convert`; until a binary of that name is on the path a source
+  says it waits (`cargo run -p phiphx --example convert -- IN OUT` does
+  the same by hand)
+- [ ] collections and clubs set up from the library: choose files,
+  name a collection, and it becomes a host from the `collection`
+  template with its gallery room showing them; a club the same way
+- [ ] a folder that changes outside Phiogy is seen when the place is
+  chosen again (the listing is kept until then); a watch on the folder
+- [ ] a large model's tile and view drawn away from the window, as
+  phibot reads the greenhouse; a video's first frame as its tile
+- [ ] the library written as Apple's samples keep theirs
+  (`D:/Dowloads/C-DOWNLOADS-NOV-26`: Diorama, PresentingAnArtistsScene,
+  the RealityKit animation sample): an `.rkassets` folder with a root
+  `.usda` whose `Root` Xform references each asset's own `.usdc`, each
+  bound to a material under `/Root/Materials` (`bindMaterialAs =
+  "weakerThanDescendants"`), the materials ShaderGraph (MaterialX `ND_*`
+  nodes), the light an image (`RealityKit.ImageBasedLight`), so Reality
+  Composer Pro and a Vision Pro open a creator's library as it is
+- [ ] phibot's robot view on the kit's orbit (`pui/core/orbit.rs`, made
+  from phibot's `part/view.rs`), so the two share one

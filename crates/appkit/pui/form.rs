@@ -155,7 +155,7 @@ impl PForm {
             }
             end = bottom;
         }
-        match own.is_empty() {
+        let (last, spot) = match own.is_empty() {
             true => (end + space, spot),
             false => {
                 // Filling, they stand at the foot; else after what is over them.
@@ -169,7 +169,10 @@ impl PForm {
                 }
                 (last, spot)
             }
-        }
+        };
+        // Every choice that keeps a value is pressed for something.
+        spot.iter().filter(|(_, path, _)| !path.is_empty()).for_each(|(rect, _, _)| paint.press(*rect));
+        (last, spot)
     }
 }
 

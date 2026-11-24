@@ -142,3 +142,26 @@ liquid-dark	size	profile.radius	22
 liquid-dark	size	control.radius	22
 liquid-dark	size	present.radius	22
 liquid-dark	size	figure.radius	14
+# The plain looks are the ordinary ones, as Apple's own apps on a Mac
+# stand: a grey ground with white grounds on it, and a faint hairline down
+# the sidebar's edge toward the page (activity.line, activity.rim).
+plain	color	window.fill	#e8e8ed
+plain	color	text.ink	#1d1d1f
+plain	color	text.dim	#6e6e73
+plain	color	line.ink	#d2d2d7
+plain	color	activity.line	#0000001a
+plain	size	activity.rim	1
+plain-dark	color	window.fill	#1e1e1e
+plain-dark	color	line.ink	#38383a
+plain-dark	color	text.ink	#f5f5f7
+plain-dark	color	text.dim	#98989d
+plain-dark	color	control.ink	#f5f5f7
+plain-dark	color	control.accent	#f5f5f7
+plain-dark	color	icon.ink	#f5f5f7
+plain-dark	color	shade.light	#ffffff
+plain-dark	color	activity.ink	#f5f5f7
+plain-dark	color	tab.ink	#98989d
+plain-dark	color	modal.veil	#000000aa
+plain-dark	color	activity.line	#ffffff1f
+plain-dark	size	activity.rim	1
+plain-dark	size	shade.share	0.12

@@ -26,9 +26,14 @@ fn real() -> (Site, Value, PTable) {
     (site, people, key)
 }
 
-/// Who each place seats, by id, in the file's order; and who wrote in
-/// the rooms of each place, which the data step seats first.
-fn seated(people: &Value, key: &PTable) -> (Vec<(String, Vec<String>)>, HashMap<String, HashSet<String>>) {
+/// Who each place seats, by id, in the file's order.
+type Seat = Vec<(String, Vec<String>)>;
+/// Who wrote in the rooms of each place, by the place's name.
+type Wrote = HashMap<String, HashSet<String>>;
+
+/// Who each place seats; and who wrote in the rooms of each place,
+/// which the data step seats first.
+fn seated(people: &Value, key: &PTable) -> (Seat, Wrote) {
     let every: Vec<&str> = people[key.get("member")].as_array().into_iter().flatten().filter_map(|one| one[key.get("id")].as_str()).collect();
     let place = people[key.get("space")].as_object().cloned().unwrap_or_default();
     let at = |index: &Value| index.as_u64().and_then(|index| every.get(index as usize)).map(|id| id.to_string());

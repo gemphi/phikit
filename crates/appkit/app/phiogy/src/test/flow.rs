@@ -199,10 +199,11 @@ fn step_44_the_hosts_i_am_in_stand_in_the_bar_each_with_its_mark() {
     };
     let chat = pictured(&stage, &look, "chat").expect("the Rooms row");
     let all = rows(&stage);
-    assert!(all >= 3 + 1 + 2, "the three rows that go somewhere, Menu, and two hosts: {all}");
+    assert!(all >= 4 + 1 + 2, "the four rows that go somewhere, Menu, and two hosts: {all}");
     // A press on a host's row goes to its first room, and marks it.
     let row = stage.theme().size("activity.row").unwrap_or_default();
-    let first = appkit::pui::core::PPoint::new(chat.x, chat.y + row * 3.0);
+    // Under Rooms: Hosts, Shops and the Library, then the first host.
+    let first = appkit::pui::core::PPoint::new(chat.x, chat.y + row * 4.0);
     assert!(stage.send(&PEvent::PointerDown(first)));
     assert_eq!(app.desk().open.borrow().as_str(), "lobby");
     assert_eq!(app.desk().place().iter().map(|row| row.on).collect::<Vec<_>>(), [true, false]);

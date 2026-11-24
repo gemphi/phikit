@@ -1,0 +1,8 @@
+# Turning a source into USD: the command, then its words, `{in}` the
+# file and `{out}` the USD to write beside it. phiphx is the one that
+# runs everywhere (`cargo run -p phiphx --example convert`); on the
+# server the same command runs on every upload. Where no command is
+# there, the source is listed and says it waits to be turned.
+command	phiphx-convert
+argument	{in} {out}
+end	usda

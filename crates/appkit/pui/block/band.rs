@@ -136,11 +136,19 @@ pub const STEP: &str = "tab.step";
 
 /// Where a row of tabs' light is: on its way from the tab that was
 /// chosen to the one that is, and how far.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct PTabMove {
     from: std::cell::Cell<usize>,
     to: std::cell::Cell<usize>,
     share: std::cell::Cell<f32>,
+}
+
+/// A light at rest on the first tab: it has arrived, so a form's tabs
+/// ask for no frame until another is chosen.
+impl Default for PTabMove {
+    fn default() -> PTabMove {
+        PTabMove { from: std::cell::Cell::new(0), to: std::cell::Cell::new(0), share: std::cell::Cell::new(1.0) }
+    }
 }
 
 impl PTabMove {

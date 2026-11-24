@@ -1,0 +1,7 @@
+# How a model's surface takes the light: its key, its words (a word of
+# text.tsv), how much of the key light it shines back, and how tight
+# that shine is.
+matte	finish.matte	0.02	8
+satin	finish.satin	0.18	24
+gloss	finish.gloss	0.45	64
+metal	finish.metal	0.8	96

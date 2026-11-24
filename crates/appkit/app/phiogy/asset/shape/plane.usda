@@ -1,0 +1,46 @@
+#usda 1.0
+(
+    defaultPrim = "plane"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "plane"
+{
+    def Mesh "body" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        float3[] extent = [(-0.1, 0, -0.1), (0.1, 0, 0.1)]
+        int[] faceVertexCounts = [4]
+        int[] faceVertexIndices = [0, 1, 2, 3]
+        point3f[] points = [(-0.1, 0, -0.1), (-0.1, 0, 0.1), (0.1, 0, 0.1), (0.1, 0, -0.1)]
+        normal3f[] normals = [(0, 1, 0), (0, 1, 0), (0, 1, 0), (0, 1, 0)] (
+            interpolation = "faceVarying"
+        )
+        color3f[] primvars:displayColor = [(0.7, 0.72, 0.7)] (
+            interpolation = "constant"
+        )
+        uniform token subdivisionScheme = "none"
+        rel material:binding = </plane/Materials/body>
+    }
+
+    def Scope "Materials"
+    {
+        def Material "body"
+        {
+            token outputs:surface.connect = </plane/Materials/body/surface.outputs:surface>
+            def Shader "surface"
+            {
+                uniform token info:id = "UsdPreviewSurface"
+                color3f inputs:diffuseColor = (0.7, 0.72, 0.7)
+                float inputs:roughness = 0.6
+                float inputs:metallic = 0
+                token outputs:surface
+            }
+
+        }
+
+    }
+
+}

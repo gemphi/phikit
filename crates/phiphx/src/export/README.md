@@ -23,6 +23,7 @@ Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its 
 | `ply.rs` | PLY (PHX) format exporter and importer. |
 | `scene/` | PHX Scene Format — Extended PHX with Scene Metadata The PHX Scene format extends the standard PHX point cloud format to include: - Scene metadata… |
 | `scene.rs` | PHX Scene Format — Extended PHX with Scene Metadata |
+| `target.rs` | `SceneTarget` — the write side's one `match`: a scene to USDA, PHX, glTF or PLY by the output's extension, each arm one writer module; `SceneModel::world_mesh`; `PhxScene: From<&SceneModel>`. `Phx::convert` (`src/convert.rs`) puts the open and write matches together. |
 | `usd/` | Native USD Exporter Direct export to USDA/USDC format without external dependencies. Optimized for PHI PHX workflow. |
 | `usd.rs` | Native USD Exporter |
 | `xyz.rs` | XYZ ASCII format exporter and importer. |
