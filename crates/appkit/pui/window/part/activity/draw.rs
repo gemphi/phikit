@@ -49,9 +49,8 @@ impl PActivity {
             (false, false) => paint.icon(&self.logo.icon, square(plan.head, chip), ink),
             (false, true) => {
                 // An app with no mark of its own has its name's letter,
-                // drawn as every icon is.
-                label(paint, square(plan.head, chip), round, PLight::Strong, false, LIT);
-                { let mark = square(plan.head, share(paint, SHARE, chip, icon)); draw_letter(paint, name, mark, text) };
+                // drawn and standing as every icon does: no ground of its own.
+                { let mark = square(plan.head, share(paint, SHARE, chip, icon)); draw_letter(paint, name, mark, ink) };
             }
         }
         for (rect, item) in &plan.item {

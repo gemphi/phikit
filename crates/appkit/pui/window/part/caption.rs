@@ -181,8 +181,9 @@ impl PCaption {
                 paint.icon(&activity.logo.icon, square(plan.mark, mark), ink);
             }
             (false, false, true) => {
-                label(paint, ground, round, PLight::Strong, false, LIT);
-                { let mark = square(plan.mark, share(paint, MARK, chip, icon)); draw_letter(paint, name, mark, text) };
+                // A letter stands as an icon does, on no ground of its own.
+                label(paint, ground, round, PLight::Soft, false, "");
+                { let mark = square(plan.mark, share(paint, MARK, chip, icon)); draw_letter(paint, name, mark, ink) };
             }
         }
         for at in plan.name.into_iter().filter(|_| !activity.is_empty()) {

@@ -57,15 +57,16 @@ fn in_a_theme_with_light_the_bar_and_its_menu_are_one_pane_their_lights_woven_an
     }).collect();
     // The two lights are woven: the bar's from its right, the menu, its
     // child, against it from its left. The bar's icons are lit against
-    // the bar: the mark and the row whose menu is shown at full strength,
-    // the other rows at the light of rest, each a chip 37.5 square in the
-    // middle of its cell.
+    // the bar: the row whose menu is shown at full strength, the other
+    // rows at the light of rest, each a chip 37.5 square in the middle of
+    // its cell. The app's mark, a letter here, stands as an icon does, on
+    // no ground of its own.
     let (bar, menu) = (PRect::new(0.0, 0.0, 50.0, 600.0), PRect::new(50.0, 0.0, 200.0, 600.0));
     let chip = |top: f32, from: f32| (PRect::new(6.25, top, 37.5, 37.5), from, 0.0, 90.0);
-    assert_eq!(lit[..7], [(bar, 0.0, 0.25, 90.0), (menu, 0.25, 0.0, 90.0), chip(6.25, 0.5), chip(51.25, 0.5), chip(91.25, 0.25), chip(281.25, 0.25), chip(511.25, 0.25)]);
+    assert_eq!(lit[..6], [(bar, 0.0, 0.25, 90.0), (menu, 0.25, 0.0, 90.0), chip(51.25, 0.5), chip(91.25, 0.25), chip(281.25, 0.25), chip(511.25, 0.25)]);
     // The user's mark is no light of its own but Phi-Soft's shape, as
     // large as a chip, in the light's colour at full strength; then
     // the menu's three groups.
     assert!(sheet.mark.iter().any(|mark| matches!(mark, PMark::Icon { name, rect, color } if name == "soft-fill" && *rect == PRect::new(6.25, 556.25, 37.5, 37.5) && color.a == 0.5)));
-    assert_eq!(lit.len(), 10);
+    assert_eq!(lit.len(), 9);
 }
