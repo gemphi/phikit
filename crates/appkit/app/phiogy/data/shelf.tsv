@@ -9,5 +9,8 @@ folder	folder
 collection	layers
 club	users
 set	sparkles
+# A scene's tree in the inspector: what holds parts, and a part.
+group	layers
+mesh	box
 count	64
 drive	CDEFGHIJKLMNOPQRSTUVWXYZ

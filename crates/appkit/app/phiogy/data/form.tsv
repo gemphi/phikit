@@ -36,7 +36,7 @@ library	facts	stat	library.stat	stat	-	-	fold
 item	head	-	item.head	-	-	-	-
 item	tools	back	-	back	ui/do	-	-
 item	facts	about	item.about	about	-	-	fold
-item	band	part	item.part	part	ui/part	-	fold
+item	tree	scene	item.scene	scene	ui/part	-	fold
 item	swatch	paint	item.paint	paint	look/{ui/item}/{ui/part}	-	fold
 item	wheel	wheel	item.wheel	-	look/{ui/item}/{ui/part}	-	fold
 item	band	finish	item.finish	finish	look/{ui/item}/finish	-	fold

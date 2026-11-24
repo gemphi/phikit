@@ -15,7 +15,11 @@
 #   colour is r g b (0-1, linear) per part.  - means not used.
 name	form	size	height	segment	ring	bevel	pip	pip_depth	spread	part	colour	roughness	metallic
 cube	box	0.1	-	-	0	0	-	-	-	body	0.80 0.80 0.80	0.5	0
-dice	box	0.016	-	24	4	0.0016	0.0014	0.0003	0.0042	body pip	0.96 0.95 0.92 0.05 0.05 0.06	0.35 0.6	0 0
+# A dice's edges are as round as the Phi fonts' corners: their share of
+# the capital height (script/font_corner.py: Phi-Soft 0.0577, Phiber
+# 0.0501) of its 16 mm edge.
+dice	box	0.016	-	24	4	0.00092	0.0014	0.0003	0.0042	body pip	0.96 0.95 0.92 0.05 0.05 0.06	0.35 0.6	0 0
+dice-phiber	box	0.016	-	24	4	0.00080	0.0014	0.0003	0.0042	body pip	0.96 0.95 0.92 0.05 0.05 0.06	0.35 0.6	0 0
 sphere	sphere	0.1	-	32	16	-	-	-	-	body	0.85 0.30 0.25	0.45	0
 cylinder	cylinder	0.1	0.15	32	-	-	-	-	-	body	0.25 0.55 0.85	0.45	0
 cone	cone	0.1	0.15	32	-	-	-	-	-	body	0.95 0.70 0.20	0.45	0

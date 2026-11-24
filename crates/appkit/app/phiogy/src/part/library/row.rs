@@ -101,6 +101,13 @@ impl List {
             "stat" => self.stat(&at),
             "about" => self.open().map(|one| self.about(&one)).unwrap_or_default(),
             "attribute" => self.open().map(|one| one.attribute.iter().map(|(name, value)| vec![name.clone(), name.clone(), value.clone()]).collect()).unwrap_or_default(),
+            "scene" => self.open().filter(|one| one.kind == "model").map(|one| self.library.model(&one.path).tree().into_iter().map(|node| {
+                let (icon, fold) = match node.holds {
+                    true => (self.library.own.get("group"), "1"),
+                    false => (self.library.own.get("mesh"), ""),
+                };
+                line(node.part.to_string(), &node.name, icon, node.depth, fold)
+            }).collect()).unwrap_or_default(),
             "part" => self.open().filter(|one| one.kind == "model").map(|one| self.library.model(&one.path).part.iter().enumerate().map(|(index, part)| vec![index.to_string(), part.name.clone()]).collect()).unwrap_or_default(),
             "comment" => self.open().map(|one| self.attribute.note(&one.key).into_iter().enumerate().map(|(index, said)| vec![index.to_string(), said]).collect()).unwrap_or_default(),
             "say" => self.open().map(|_| vec![vec!["say".to_string(), "item.say".to_string()]]).unwrap_or_default(),

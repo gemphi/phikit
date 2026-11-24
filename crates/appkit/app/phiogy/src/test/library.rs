@@ -299,3 +299,89 @@ fn eight_looks_and_the_plain_ones_draw_a_faint_line_down_the_sidebar() {
     app.desk().shade.turn("plain");
     assert!(line(&stage));
 }
+
+/// The dice opened in the 3D view of a window of that size.
+fn dice(size: appkit::pui::core::PSize) -> (Phiogy, appkit::pui::window::PStage, Rc<appkit::theme::PLook>) {
+    let (app, mut stage, look) = staged(size);
+    let desk = app.desk();
+    let shape = desk.library.place.iter().find(|place| place.key == "shape").and_then(|place| place.folder.clone()).expect("the shapes");
+    crate::part::library::source(desk).set("ui/item", &dir(&shape.join("dice.usda")));
+    assert!(stage.window.apply(&PDeed::Show("model".to_string())));
+    stage.lay(size, PMode::of_width(size.width));
+    (app, stage, look)
+}
+
+#[test]
+fn step_60_the_3d_view_has_the_ball_in_its_corner_its_tools_four_views_and_wire() {
+    let (app, mut stage, look) = dice(DESK);
+    let desk = app.desk();
+    let colour = |token: &str| desk.shade.color(token).expect(token);
+    let ball = |stage: &appkit::pui::window::PStage| drawn(stage, &look).iter().filter_map(|mark| match mark {
+        PMark::Fill { rect, color, .. } if *color == colour("scene.x") && rect.size.width > 10.0 => Some(*rect),
+        _ => None,
+    }).collect::<Vec<_>>();
+    // The ball, in the view's lower right; its across-way pressed looks
+    // along it.
+    let x = ball(&stage);
+    assert_eq!(x.len(), 1, "{x:?}");
+    assert!(x[0].origin.x > DESK.width / 3.0 && x[0].origin.y > DESK.height / 2.0);
+    let picture = |stage: &appkit::pui::window::PStage| drawn(stage, &look).iter().filter_map(|mark| match mark {
+        PMark::Picture { name, .. } if name.starts_with(crate::part::figure::FILM) => Some(name.clone()),
+        _ => None,
+    }).collect::<Vec<_>>();
+    let before = desk.library.film.frame(crate::part::figure::FILM).expect("drawn").pixel;
+    stage.send(&PEvent::PointerDown(x[0].center()));
+    assert!(stage.send(&PEvent::PointerUp(x[0].center())));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    drawn(&stage, &look);
+    assert_ne!(desk.library.film.frame(crate::part::figure::FILM).expect("drawn").pixel, before);
+    // Four views: the main one and the top, the front and the right.
+    let tool = |stage: &appkit::pui::window::PStage, name: &str| drawn(stage, &look).iter().rev().find_map(|mark| match mark {
+        PMark::Icon { name: known, rect, .. } if known == name => Some(rect.center()),
+        _ => None,
+    }).expect(name);
+    assert!(stage.send(&PEvent::PointerDown(tool(&stage, "layout-grid"))));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert_eq!(picture(&stage).len(), 4, "{:?}", picture(&stage));
+    assert!(super::shown(&stage, &look).contains(&desk.text.get("view3d.top").to_string()));
+    // Wire: the model drawn as its edges, in the wire's ink.
+    assert!(stage.send(&PEvent::PointerDown(tool(&stage, "box"))));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    drawn(&stage, &look);
+    let frame = desk.library.film.frame(crate::part::figure::FILM).expect("drawn");
+    let ink = colour("scene.wire");
+    let near = |at: usize| (frame.pixel[at + 2] as f32 / 255.0 - ink.r).abs() < 0.1 && (frame.pixel[at + 1] as f32 / 255.0 - ink.g).abs() < 0.1;
+    assert!((0..frame.pixel.len()).step_by(4).filter(|at| near(*at)).count() > 100);
+}
+
+#[test]
+fn step_61_the_inspector_has_the_scene_as_a_tree_what_holds_parts_and_the_parts_in_it() {
+    let (app, _, _) = dice(DESK);
+    let source = crate::part::library::source(app.desk());
+    let scene = source.list("scene");
+    // The dice holds its body and its pips, a step in.
+    let line: Vec<(String, u32, Option<bool>)> = scene.iter().map(|c| (c.label.clone(), c.depth, c.fold)).collect();
+    assert_eq!(line[0], ("dice".to_string(), 0, Some(true)));
+    assert!(line[1..].iter().all(|(_, depth, fold)| *depth == 1 && fold.is_none()), "{line:?}");
+    assert!(line.iter().any(|(name, ..)| name == "body") && line.iter().any(|(name, ..)| name == "pip"));
+    // A part pressed is the part chosen.
+    source.set("ui/part", &scene[2].value);
+    assert_eq!(app.desk().shelf.get("ui/part"), scene[2].value);
+}
+
+#[test]
+fn the_dice_s_edges_are_as_round_as_the_phi_fonts_corners() {
+    let shape = Path::new(env!("CARGO_MANIFEST_DIR")).join("asset").join("shape");
+    let library = Library::own(Path::new(&Phiogy::source()), Rc::default());
+    let bounds = |name: &str| {
+        let model = library.model(&shape.join(name));
+        appkit::pui::core::orbit::bounds(&model.part.iter().map(|part| part.piece.clone()).collect::<Vec<_>>())
+    };
+    // Both are as large; the Phi-Soft one rounder than the Phiber one,
+    // and each is a dice of 16 mm.
+    let (soft, hard) = (bounds("dice.usda"), bounds("dice-phiber.usda"));
+    assert!(((soft.1[0] - soft.0[0]) - 0.016).abs() < 0.002 && ((hard.1[0] - hard.0[0]) - 0.016).abs() < 0.002, "{soft:?} {hard:?}");
+    let rows = std::fs::read_to_string(Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../phiphx/data/shape.tsv")).unwrap_or_default();
+    let bevel = |name: &str| rows.lines().find(|line| line.starts_with(&format!("{name}\t"))).and_then(|line| line.split('\t').nth(6)).and_then(|v| v.parse::<f32>().ok());
+    assert_eq!((bevel("dice"), bevel("dice-phiber")), (Some(0.00092), Some(0.00080)));
+}

@@ -8,7 +8,7 @@
 
 mod account;
 #[cfg(not(target_family = "wasm"))]
-mod figure;
+pub mod figure;
 #[cfg(not(target_family = "wasm"))]
 pub mod library;
 pub mod bond;

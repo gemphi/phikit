@@ -151,6 +151,14 @@ impl POrbit {
         pressed
     }
 
+    /// Back as it began: not turned, tipped or brought nearer.
+    pub fn reset(&self) {
+        self.turn.set(0.0);
+        self.tip.set(0.0);
+        self.zoom.set(0.0);
+        self.held.set(None);
+    }
+
     /// A turn of the wheel brings it nearer or farther.
     pub fn wheel(&self, by: f32, theme: &dyn PTheme) -> bool {
         let step = theme.size(ZOOM).unwrap_or_default();

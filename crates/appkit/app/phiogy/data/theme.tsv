@@ -242,8 +242,19 @@ size	scene.room	1.25
 size	scene.smooth	2
 size	scene.drag	180
 size	scene.zoom	0.12
-size	scene.nearest	3
+size	scene.nearest	12
 size	scene.farthest	0.6
+# The orientation ball in a 3D view's corner: its ground, its side, and
+# the colour of each way (across, up, toward), as Blender's and Reality
+# Composer Pro's; the ink of a model drawn as wire, and how wide a side
+# view sees (nearly flat).
+color	scene.ball	#80808026
+size	scene.ball.size	72
+color	scene.x	#e5484d
+color	scene.y	#46a758
+color	scene.z	#3e63dd
+color	scene.wire	#9aa0a6
+size	scene.side.fov	2
 # A faint line down the sidebar's edge (appkit's activity.line and
 # activity.rim): none in the theme itself, a plain look draws one.
 color	activity.line	#00000000

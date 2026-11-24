@@ -7,12 +7,24 @@ use std::path::Path;
 
 use appkit::pui::core::PPiece;
 
-/// A part of a model: its name (the last step of its mesh's path) and
-/// its piece, in the file's own colour or the one given for none.
+/// A part of a model: its name (the last step of its mesh's path), the
+/// path itself (where it stands in the scene, inside what), and its
+/// piece, in the file's own colour or the one given for none.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Part {
     pub name: String,
+    pub path: String,
     pub piece: PPiece,
+}
+
+/// A line of a scene's tree: the part it stands for (the first under it,
+/// for what holds parts), its name, its depth, and whether it holds any.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Node {
+    pub part: usize,
+    pub name: String,
+    pub depth: usize,
+    pub holds: bool,
 }
 
 /// A model: its parts, and how many triangles they have.
@@ -29,9 +41,26 @@ impl Model {
         let scene = phiusd::read(path);
         let part: Vec<Part> = scene.mesh.iter().map(|mesh| {
             let name = mesh.path.rsplit('/').next().unwrap_or(&mesh.path).to_string();
-            Part { name, piece: PPiece::flat(mesh.triangle().collect(), mesh.colour.unwrap_or(colour)) }
+            Part { name, path: mesh.path.clone(), piece: PPiece::flat(mesh.triangle().collect(), mesh.colour.unwrap_or(colour)) }
         }).collect();
         Model { count: scene.count(), part }
+    }
+
+    /// Its scene as a tree, as Reality Composer Pro's navigator shows it:
+    /// every step of every part's path once, in the order met, each set
+    /// in by how deep it is, what holds parts before them.
+    pub fn tree(&self) -> Vec<Node> {
+        let mut out: Vec<(String, Node)> = Vec::new();
+        for (index, part) in self.part.iter().enumerate() {
+            let step: Vec<&str> = part.path.split('/').filter(|step| !step.is_empty()).collect();
+            for depth in 0..step.len() {
+                let at = step[..=depth].join("/");
+                if out.iter().all(|(known, _)| *known != at) {
+                    out.push((at, Node { part: index, name: step[depth].to_string(), depth, holds: depth + 1 < step.len() }));
+                }
+            }
+        }
+        out.into_iter().map(|(_, node)| node).collect()
     }
 
     /// Its pieces, each part in the colour given for it where one is.

@@ -26,6 +26,7 @@ stat	stat	0	1	-	-	-	-	-	-	-	2
 about	about	0	1	-	-	-	-	-	-	-	2
 attribute	attribute	0	1	-	-	-	-	-	-	-	2
 part	part	0	1	-	-	-	-	-
+scene	scene	0	1	2	-	-	-	-	-	-	-	3	-	4
 paint	paint	0	text:1	-	2,3,4/255	-	-	-
 finish	finish	0	text:1	-	-	-	-	-
 comment	comment	0	1	-	-	-	-	-

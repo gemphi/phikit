@@ -291,6 +291,14 @@ library.kind	Show
 library.sort	Order
 library.item	Items
 item.wheel	Any colour
+item.scene	Scene
+viewport.reset	Reset the view
+viewport.four	Four views
+viewport.wire	Wireframe
+view3d.main	Perspective
+view3d.top	Top
+view3d.front	Front
+view3d.right	Right
 library.back	Back
 library.forward	Forward
 layout.grid	Grid

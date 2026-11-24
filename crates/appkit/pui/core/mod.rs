@@ -9,6 +9,7 @@
 //! each has an owner of its own (`../../PLAN.md`, "Who owns what").
 
 mod asset;
+pub mod ball;
 mod draw;
 mod event;
 pub mod figure;
@@ -27,6 +28,7 @@ mod scan;
 mod sheet;
 mod sun;
 mod view;
+pub mod wire;
 
 pub use asset::PAsset;
 pub use draw::PDraw;
