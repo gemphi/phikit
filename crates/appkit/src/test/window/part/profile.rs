@@ -27,7 +27,7 @@ fn a_profile_shows_who_the_user_is_and_every_other_row_of_their_table() {
     show(&profile, &mut sheet, PPoint::default());
     // Their mark, their name and address, then the rows: the modal the
     // table names is not a row.
-    assert_eq!(sheet.text_list(), ["a", "Ada Lovelace", "ada@example.com", "Model", "none", "Plan", "free"]);
+    assert_eq!(sheet.text_list(), ["Ada Lovelace", "ada@example.com", "Model", "none", "Plan", "free"]);
     // The mark stands on Phi-Soft's own shape.
     let shape = sheet.mark.iter().find(|mark| matches!(mark, PMark::Icon { .. }));
     assert_eq!(shape, Some(&PMark::Icon { name: "soft-fill".to_string(), rect: PRect::new(110.0, 110.0, 60.0, 60.0), color: PColor::default() }));
@@ -67,12 +67,12 @@ fn what_is_true_now_is_asked_once_a_frame_and_shown_under_the_table_s_rows() {
     };
     // Nothing was asked before the first frame; the heading is the word
     // the table gives for it, and is not a row.
-    assert_eq!(text(&profile), ["a", "Ada", "", "About", "Plan", "free"]);
+    assert_eq!(text(&profile), ["Ada", "", "About", "Plan", "free"]);
     assert!(!profile.tick());
-    assert_eq!(text(&profile)[4..], ["Plan", "free", "Chats", "1"]);
+    assert_eq!(text(&profile)[3..], ["Plan", "free", "Chats", "1"]);
     *count.borrow_mut() = 7;
     profile.tick();
-    assert_eq!(text(&profile)[6..], ["Chats", "7"]);
+    assert_eq!(text(&profile)[5..], ["Chats", "7"]);
 }
 
 #[test]
@@ -87,7 +87,7 @@ fn it_has_a_pill_for_each_look_and_a_press_turns_the_window_and_tells_the_app() 
     show(&profile, &mut sheet, PPoint::default());
     // The heading, then a pill a look: one the table has a word for reads
     // that word, the other its own name. Neither is a row.
-    assert_eq!(sheet.text_list()[3..], ["Appearance", "Light", "dark"]);
+    assert_eq!(sheet.text_list()[2..], ["Appearance", "Light", "dark"]);
     // A press on the second turns the window to it and tells the app.
     let pill = at(&sheet, "dark").expect("a pill");
     assert!(send(&mut profile, &PEvent::PointerDown(pill.plus(PPoint::new(2.0, 2.0)))));
@@ -99,7 +99,7 @@ fn it_has_a_pill_for_each_look_and_a_press_turns_the_window_and_tells_the_app() 
     bare.set_frame(PRect::new(0.0, 0.0, 300.0, 260.0));
     let mut plain = PSheet::new(&look);
     show(&bare, &mut plain, PPoint::default());
-    assert_eq!(plain.text_list(), ["a", "Ada", ""]);
+    assert_eq!(plain.text_list(), ["Ada", ""]);
 }
 
 #[test]

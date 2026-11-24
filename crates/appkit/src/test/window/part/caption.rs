@@ -77,7 +77,7 @@ fn it_draws_the_mark_the_name_and_the_buttons_the_pin_under_the_pointer_and_the_
     // With no logo yet the mark is the first letter of the app's name;
     // the name starts a gap inside the menu's cell, on the caption's
     // middle line.
-    assert_eq!((sheet.text_list(), icon(&sheet)), (vec!["b", "Book"], ["x", "square", "minus"].map(str::to_string).to_vec()));
+    assert_eq!((sheet.text_list(), icon(&sheet)), (vec!["Book"], ["letter-b", "x", "square", "minus"].map(str::to_string).to_vec()));
     assert!(sheet.mark.contains(&PMark::Text { at: PPoint::new(60.0, 10.0), text: "Book".to_string(), color: PColor::default() }));
     // With the pointer over the mark, the pin stands in its place, in
     // the middle of the mark's cell.
@@ -89,14 +89,14 @@ fn it_draws_the_mark_the_name_and_the_buttons_the_pin_under_the_pointer_and_the_
     // button of their own, and their first row is 5 under the caption.
     let mut under = PSheet::new(&look);
     bar().draw(laid.activity, laid.menu, &window, None, &mut under);
-    assert_eq!((icon(&under), under.text_list()), (["grid", "palette", "box", "book", "soft-fill", "plus", "folder", "settings"].map(str::to_string).to_vec(), vec!["a", "New", "Open", "Preferences"]));
+    assert_eq!((icon(&under), under.text_list()), (["grid", "palette", "box", "book", "soft-fill", "letter-a", "plus", "folder", "settings"].map(str::to_string).to_vec(), vec!["New", "Open", "Preferences"]));
     assert_eq!(bar().spot(laid.activity, laid.menu, &window, &look)[0], (PRect::new(0.0, 45.0, 50.0, 40.0), PDeed::Fold));
     // Put away, the name goes, and under the pointer the pin is the
     // narrow one; under the system's bar there are no buttons.
     assert!(window.apply(&PDeed::Fold));
     let mut shut = PSheet::new(&look);
     PCaption::default().draw(&frame(&window, PMode::Desktop, &look), &bar(), &window, &mut shut);
-    assert_eq!((shut.text_list(), icon(&shut)), (vec!["b"], Vec::<String>::new()));
+    assert_eq!((shut.text_list(), icon(&shut)), (Vec::<&str>::new(), vec!["letter-b".to_string()]));
     let mut shut = PSheet::new(&look);
     PCaption { bare: false, over: true }.draw(&frame(&window, PMode::Desktop, &look), &bar(), &window, &mut shut);
     assert_eq!((shut.text_list(), icon(&shut)), (Vec::<&str>::new(), vec!["pin-shut".to_string()]));

@@ -109,12 +109,11 @@ size	card.face	40"));
         _ => None,
     }).collect();
     assert_eq!(text, ["Lora Vale", "Here now", "Tavi Reyes", "Away", "Mina Okoro", ""]);
-    // A face with no picture is its name's letter, set in the face of the window.
     let letter: Vec<&str> = sheet.mark.iter().filter_map(|mark| match mark {
-        PMark::Head { text, .. } => Some(text.as_str()),
+        PMark::Icon { name, .. } => Some(name.as_str()),
         _ => None,
     }).collect();
-    assert!(letter.contains(&"t") && letter.contains(&"m"), "{letter:?}");
+    assert_eq!(letter, ["letter-t", "letter-m"]);
     // Every card and every face stands on a ground of its own.
     assert_eq!(blend(&sheet).len(), 6);
     // Too narrow for one card, a card is as wide as the room there is.
@@ -229,7 +228,7 @@ fn a_message_says_whom_it_answers_who_said_it_what_and_what_it_was_marked_with()
     let laid = Said("Good. Show it.", "Tavi: the mark", false).say(&mut sheet, PRect::new(0.0, 0.0, 400.0, 0.0));
     // What it answers is a line over it; its own head begins under that.
     assert_eq!((laid.quote.map(|rect| rect.origin.y), laid.head), (Some(0.0), line));
-    assert_eq!(sheet.text_list(), ["Tavi: the mark", "l", "Lora Vale", "Today - 09:02", "Good. Show it.", "2"]);
+    assert_eq!(sheet.text_list(), ["Tavi: the mark", "Lora Vale", "Today - 09:02", "Good. Show it.", "2"]);
     // Its face at the left of its head, its picture under its words, its mark under that.
     assert_eq!(laid.face, Some(PRect::new(0.0, line, 36.0, 36.0)));
     assert_eq!(laid.image, [PRect::new(36.0 + gap / 2.0, line * 3.0 + gap / 4.0, 200.0, 100.0)]);
