@@ -15,10 +15,10 @@
 # Glass opens first: it is the default (the user, 25 November 2026).
 # In the dark looks the light is faint, so what is chosen or on is lit
 # three and a half times the share (`shade.strong`): it reads as chosen.
-# Glass with nothing open is as dark as the window under a modal's veil
-# (the user, 25 November 2026): its fill near black and nearly opaque,
-# the theme's colour mixed in (theme.tsv tint).
-glass	color	window.fill	#0a0c0bf2
+# Glass with nothing open keeps its own grey ground; only a modal's veil
+# darkens the window (the user, 25 November 2026: "darkness not needed
+# here", after it was made as dark as the veil).
+glass	color	window.fill	#1e1e1ce6
 glass	color	modal.tint	#1e1e1cd9
 glass	color	line.ink	#ffffff24
 glass	color	text.ink	#f4f4f0
