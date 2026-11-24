@@ -263,10 +263,11 @@ robot	ring	7 13.5 2.5, 17 13.5 2.5, 17 21 5, 7 21 5
 leaf	ring	4 20 1, 4 9 7, 20 4 0.5, 20 13 7
 leaf	run	4 20 0, 13 11 0
 
-# --- the botanist's mark: Phiber's square with Phiogy's kind of corners
-# (sharp at top-left and bottom-right, round at the other two), and two
-# bars cut in it, each a pill sharp at two opposite corners as Phiogy's
-# long bar is; the long one 3 to the short one's 2.
-phibot	fill	2 2 0, 22 2 10, 22 22 0, 2 22 10
-phibot	cut	6 6 2, 10 6 0, 10 18 2, 6 18 0
-phibot	cut	13 7 2, 17 7 0, 17 15 2, 13 15 0
+# --- the botanist's mark: Phiber's square, every corner round: 10 at
+# top-right and bottom-left, 6 at top-left, 4 at bottom-right; and two bars
+# cut in it, the pair in the middle of the square, each a pill softened at
+# two opposite corners as Phiogy's long bar is, the short one half the long
+# one's height and two thirds its width, two apart and a point lower.
+phibot	fill	2 2 6, 22 2 10, 22 22 4, 2 22 10
+phibot	cut	7.667 6 2, 11.667 6 0.75, 11.667 18 2, 7.667 18 0.75
+phibot	cut	13.667 7 1.333, 16.333 7 0.75, 16.333 13 1.333, 13.667 13 0.75
