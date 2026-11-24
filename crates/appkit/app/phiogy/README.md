@@ -58,7 +58,9 @@ with another caller, [`doc/call-rtc.png`](doc/call-rtc.png).
 The diagrams are in [`ARCHITECTURE.md`](ARCHITECTURE.md), the folders
 and the order of work in [`PLAN.md`](PLAN.md), each piece and its test
 in [`SPECS.md`](SPECS.md), what a person does in [`FLOW.md`](FLOW.md),
-and what is left in [`TODO.md`](TODO.md).
+and what is left in [`TODO.md`](TODO.md). How to launch it, test it with
+other people, build it for Windows and macOS, and what Discord allows:
+[`RUN.md`](RUN.md).
 
 ## What it does
 

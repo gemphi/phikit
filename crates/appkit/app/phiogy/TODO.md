@@ -336,3 +336,22 @@ is a space creators work in. Its shape is drawn in `ARCHITECTURE.md`
 - [ ] a host's own list, which everyone in the host sees: over Phiora,
   as the rooms are
 - [ ] FLOW steps and SPECS rows as each lands
+
+## With other people, on other machines (asked 24 November 2026)
+
+What was asked and answered is in [`RUN.md`](RUN.md).
+
+- [x] the line served beyond `localhost`: `--host` and the computer's
+  name or address (`exchange::a_line_listens_at_the_name_it_is_given_so_another_machine_reaches_it`)
+- [ ] a build that runs on another computer: the site, pictures, icons
+  and keeping folder are found through `CARGO_MANIFEST_DIR`; look
+  beside the exe first, and a script that gathers one folder to hand on
+- [ ] a call between two machines on one network, then two networks
+- [ ] a macOS build, on a Mac: Xcode, the Mac WebRTC, a bundle with its
+  permissions, signing and notarising (`RUN.md`, 3)
+- [ ] Discord: a bot the user adds to their own server, showing the
+  pictures and videos of the channels they pick (`RUN.md`, 4); never a
+  person's cache, token or pages
+- [ ] Phiegg's own people repeat 68 names and 7 handles; renamed there
+  (`puikit/app/phiegg/src/data`), the skipped test
+  `tree::across_the_app_no_two_people_share_a_name_or_a_handle` passes

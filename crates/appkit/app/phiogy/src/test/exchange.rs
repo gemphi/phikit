@@ -234,3 +234,13 @@ fn the_line_listens_on_every_address_its_name_stands_for() {
         assert_eq!(status, 404, "{at}");
     }
 }
+
+#[test]
+fn a_line_listens_at_the_name_it_is_given_so_another_machine_reaches_it() {
+    // `--host` stands a row before the table's own, as `--port` does.
+    let line = Exchange::open(Set::own("host\t127.0.0.1\nport\t0\n"), crate::Phiogy::board()).expect("it listens");
+    let at = line.at();
+    assert!(at.starts_with("127.0.0.1:"), "{at}");
+    let (_, status, _) = ask(&at, &format!("GET /nothing HTTP/1.1\r\nHost: {at}\r\n\r\n"));
+    assert_eq!(status, 404);
+}

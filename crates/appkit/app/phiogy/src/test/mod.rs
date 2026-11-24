@@ -35,6 +35,8 @@ mod talk;
 #[cfg(not(target_family = "wasm"))]
 mod told;
 mod tools;
+#[cfg(not(target_family = "wasm"))]
+mod tree;
 mod viewer;
 mod voice;
 

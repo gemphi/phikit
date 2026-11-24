@@ -3,7 +3,8 @@
 //!
 //! At a desk the window serves the line as well, where `data/line.tsv`
 //! says, so pages that open a room are seen in it at once. `--port 4300`
-//! serves it on another port, and 0 has the system choose; `--quiet`
+//! serves it on another port, and 0 has the system choose; `--host PC`
+//! at that name, which another machine's window reaches; `--quiet`
 //! opens the window with no line, and `--at localhost:4311` on the line
 //! another serves there. `--line` serves the line alone, with no
 //! window, and says where it is.
@@ -89,8 +90,8 @@ fn serve(word: &[String], board: &Arc<Mutex<Board>>, text: &PTable) -> (Option<c
     if let Some(place) = given(word, "--at").pop() {
         return (None, Ok(place));
     }
-    let port = given(word, "--port").last().map(|port| format!("port\t{port}")).unwrap_or_default();
-    match Exchange::open(Set::own(&port), Arc::clone(board)) {
+    let row = |flag: &str, name: &str| given(word, flag).last().map(|value| format!("{name}\t{value}\n")).unwrap_or_default();
+    match Exchange::open(Set::own(&(row("--port", "port") + &row("--host", "host"))), Arc::clone(board)) {
         Ok(line) => {
             let at = line.at();
             (Some(line), Ok(at))
