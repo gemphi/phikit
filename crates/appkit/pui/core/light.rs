@@ -25,6 +25,9 @@ pub const LIGHT: &str = "shade.light";
 pub const SHARE: &str = "shade.share";
 pub const REST: &str = "shade.rest";
 pub const SOFT: &str = "shade.soft";
+/// How many times the share what is chosen or on is lit (1 where a
+/// theme does not say).
+pub const STRONG: &str = "shade.strong";
 /// Where the light fades to, in degrees: 0 is up, 90 to the right.
 pub const SURFACE: &str = "surface.turn";
 pub const LABEL: &str = "label.turn";
@@ -47,7 +50,9 @@ impl PLight {
     pub fn shade(self, theme: &dyn PTheme) -> Option<PColor> {
         let light = theme.color(LIGHT)?;
         let part = match self {
-            PLight::Strong => 1.0,
+            // What is chosen or on: a look may give it more than the
+            // whole share (`shade.strong`), so it reads where the light is faint.
+            PLight::Strong => theme.size(STRONG).unwrap_or(1.0),
             PLight::Rest => theme.size(REST).unwrap_or(1.0),
             PLight::Soft => theme.size(SOFT).unwrap_or(1.0),
         };

@@ -13,6 +13,7 @@ color	shade.light	#ffffff
 size	shade.share	0.58
 size	shade.rest	0.72
 size	shade.soft	0.48
+size	shade.strong	1
 # A ground's light is gone seven tenths of the way across it.
 size	shade.reach	1
 # Every light, as puikit's: all of it until three tenths of the way, and
