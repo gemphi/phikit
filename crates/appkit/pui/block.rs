@@ -132,13 +132,15 @@ pub trait PPill {
     /// Draw it at a place with that much room beside what it holds;
     /// where it stands. On, it is lit at full strength; at rest it has a
     /// soft ground of its own, held in a band or not: a group of buttons
-    /// is a ground, and each button in it one of its own.
-    fn lay(&self, paint: &mut dyn PPaint, at: PPoint, _held: bool, room: f32) -> PRect {
+    /// is a ground, and each button in it one of its own. Held on a
+    /// ground (a band's, a bar's), its light runs against that ground's,
+    /// from its right end, as every ground inside a ground does.
+    fn lay(&self, paint: &mut dyn PPaint, at: PPoint, held: bool, room: f32) -> PRect {
         let (gap, line, icon, radius, ink) = (paint.size(GAP), paint.size(LINE), paint.size(ICON), paint.size(RADIUS), paint.color(INK));
         let rect = PRect { origin: at, size: self.sized(paint, room) };
         match self.on() {
-            true => label(paint, rect, radius, PLight::Strong, false, ""),
-            false => label(paint, rect, radius, PLight::Soft, false, ""),
+            true => label(paint, rect, radius, PLight::Strong, held, ""),
+            false => label(paint, rect, radius, PLight::Soft, held, ""),
         }
         let left = at.x + room / 2.0;
         let words = match self.icon().is_empty() {

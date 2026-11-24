@@ -103,7 +103,8 @@ impl Title {
             let room = (paint.size(SEARCH) - seek.sized(paint, 0.0).width).max(gap);
             let size = seek.sized(paint, room);
             let at = PPoint::new(end.x - pill.span(paint) - gap / 2.0 - size.width, end.y - size.height / 2.0);
-            (at.x - from >= size.width).then(|| seek.lay(paint, at, false, room))
+            // It stands on the title's ground: its light runs against it.
+            (at.x - from >= size.width).then(|| seek.lay(paint, at, true, room))
         });
         spot.extend(field.map(|rect| (rect, SEEK)));
         *self.spot.borrow_mut() = spot;

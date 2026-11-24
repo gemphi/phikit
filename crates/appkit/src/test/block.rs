@@ -32,10 +32,11 @@ fn a_pill_is_as_wide_as_what_it_holds_and_stands_on_a_ground_lit_as_it_is() {
     ("", "Follow", true).draw(&mut sheet, PPoint::new(10.0, 10.0), false);
     assert_eq!(blend(&sheet)[0].1, 0.5);
     // Held by a group, it still has a soft ground of its own at rest:
-    // the group is a ground, and each button in it one of its own.
+    // the group is a ground, and each button in it one of its own, its
+    // light running against the group's, from its right end.
     let mut sheet = PSheet::new(&look);
     word.draw(&mut sheet, PPoint::new(10.0, 10.0), true);
-    assert_eq!(blend(&sheet), [(rect, 0.125, 0.0)]);
+    assert_eq!(blend(&sheet), [(rect, 0.0, 0.125)]);
 }
 
 #[test]
@@ -49,8 +50,9 @@ fn pills_that_belong_together_stand_on_one_ground_each_on_its_own_and_the_one_th
     assert_eq!(rect, [PRect::new(104.0, 54.0, 36.0, 28.0), PRect::new(144.0, 54.0, 36.0, 28.0), PRect::new(184.0, 54.0, 36.0, 28.0)]);
     // One ground under them all, lit from the left, against a section's
     // ground (lit from the right) that it stands on; each on a soft
-    // ground of its own in it, the one that is on lit at full strength.
-    assert_eq!(blend(&sheet), [(PRect::new(100.0, 50.0, 124.0, 36.0), 0.25, 0.0), (rect[0], 0.125, 0.0), (rect[1], 0.125, 0.0), (rect[2], 0.5, 0.0)]);
+    // ground of its own in it, lit against the group's (from the right),
+    // the one that is on lit at full strength.
+    assert_eq!(blend(&sheet), [(PRect::new(100.0, 50.0, 124.0, 36.0), 0.25, 0.0), (rect[0], 0.0, 0.125), (rect[1], 0.0, 0.125), (rect[2], 0.0, 0.5)]);
     // No pill, no ground.
     let mut sheet = PSheet::new(&look);
     let none: [(&str, &str, bool); 0] = [];
