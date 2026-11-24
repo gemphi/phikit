@@ -290,6 +290,7 @@ library.head	Library
 library.kind	Show
 library.sort	Order
 library.item	Items
+item.wheel	Any colour
 library.back	Back
 library.forward	Forward
 layout.grid	Grid

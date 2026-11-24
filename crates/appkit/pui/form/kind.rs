@@ -13,6 +13,8 @@
 //! * `cards`: each choice a card with its face, its words and its line.
 //! * `grid`: each choice a tile, its picture or face large over its words;
 //!   `large`, the same in tiles larger. The one under the pointer is lit.
+//! * `wheel`: any colour, on the kit's colour wheel; its choices are the
+//!   wheel's own (`block::wheel`), and a press keeps one as `#rrggbb`.
 //! * `tree`, `facts`, `picture`: a navigator, an item's attributes, and an
 //!   item seen large (`tree.rs`); `field`, a line to type (`field.rs`).
 
@@ -112,6 +114,13 @@ pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &m
         "tree" => super::tree::tree(choice, now, paint, at, wide, over),
         "facts" => super::tree::facts(choice, paint, at, wide),
         "picture" => super::tree::picture(choice, paint, at, wide),
+        // Any colour: the wheel, as wide as the block or a card, whichever
+        // is less.
+        "wheel" => {
+            let (side, ink) = (wide.min(paint.size(CARD) * 1.5), paint.color(INK));
+            let rect: Vec<PRect> = crate::pui::block::wheel::wheel(paint, PRect::new(at.x, at.y, side, side), now, ink).into_iter().map(|(rect, _)| rect).collect();
+            (at.y + side, rect)
+        }
         _ => {
             let pill: Vec<(&str, &str, bool)> = choice.iter().map(|c| (c.icon.as_str(), c.label.as_str(), c.value == now)).collect();
             let rect = pill.draw_full(paint, at, wide, right);

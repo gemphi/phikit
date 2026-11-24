@@ -27,6 +27,8 @@ use crate::board::lock;
 /// in; and the word before a look's name when one was chosen.
 pub const START: &str = "start";
 pub const LOOK: &str = "look ";
+/// What the profile tells, before all that is preferred.
+pub const PREFER: &str = "prefer ";
 
 /// A row of the guide: a place's heading, or one of its rooms.
 enum Row {
@@ -219,6 +221,7 @@ impl PView for Guide {
         match (word, word.strip_prefix(LOOK), word.strip_prefix(super::host::GO)) {
             (START, ..) => self.desk.show(&self.desk.site.start),
             (_, Some(look), _) => self.desk.dress(look),
+            (_, _, _) if word.starts_with(PREFER) => self.desk.prefer(&word[PREFER.len()..]),
             (_, _, Some(host)) => self.desk.visit(host),
             _ => false,
         }

@@ -10,6 +10,9 @@ use crate::pui::core::PColor;
 
 /// A theme that is one of several looks.
 #[derive(Debug, Clone, PartialEq, Default)]
+/// A preference: its kind (`size`, `color`), its token, its value.
+type Liked = (String, String, String);
+
 pub struct PShade {
     /// The looks, each under its name.
     look: Vec<(String, PLook)>,
@@ -18,12 +21,15 @@ pub struct PShade {
     /// What is worn over the look shown: colours and sizes that take
     /// the place of its own, whichever look is turned to.
     over: RefCell<Option<PLook>>,
+    /// What the person prefers, under what is worn and over the look:
+    /// each row its kind, its token and its value; and as a look.
+    prefer: RefCell<(Vec<Liked>, Option<PLook>)>,
 }
 
 impl PShade {
     /// A shade of those looks, showing the first.
     pub fn new(look: Vec<(String, PLook)>) -> PShade {
-        PShade { look, at: Cell::new(0), over: RefCell::default() }
+        PShade { look, at: Cell::new(0), over: RefCell::default(), prefer: RefCell::default() }
     }
 
     /// The names of its looks, in order.
@@ -51,6 +57,34 @@ impl PShade {
         *self.over.borrow_mut() = Some(text).filter(|text| !text.trim().is_empty()).map(PLook::read);
     }
 
+    /// What the person prefers, as it is kept: `kind token value` rows,
+    /// apart by `;`. Nothing takes every preference off.
+    pub fn prefer(&self, kept: &str) {
+        let row = kept.split(';').filter_map(|one| {
+            let mut part = one.split_whitespace();
+            Some((part.next()?.to_string(), part.next()?.to_string(), part.next()?.to_string()))
+        });
+        self.preferred(row.collect());
+    }
+
+    /// Prefer a value for a token of a kind (`size`, `color`) from now on.
+    pub fn put(&self, kind: &str, token: &str, value: &str) {
+        let mut row: Vec<Liked> = self.prefer.borrow().0.iter().filter(|(_, known, _)| known != token).cloned().collect();
+        row.push((kind.to_string(), token.to_string(), value.to_string()));
+        self.preferred(row);
+    }
+
+    /// What is preferred, as it is kept.
+    pub fn kept(&self) -> String {
+        self.prefer.borrow().0.iter().map(|(kind, token, value)| format!("{kind} {token} {value}")).collect::<Vec<_>>().join(";")
+    }
+
+    fn preferred(&self, row: Vec<Liked>) {
+        let table: String = row.iter().map(|(kind, token, value)| format!("{kind}\t{token}\t{value}\n")).collect();
+        let look = Some(table).filter(|table| !table.is_empty()).map(|table| PLook::read(&table));
+        *self.prefer.borrow_mut() = (row, look);
+    }
+
     /// The look that is shown.
     fn shown(&self) -> Option<&PLook> {
         self.look.get(self.at.get()).map(|(_, look)| look)
@@ -60,12 +94,14 @@ impl PShade {
 impl PTheme for PShade {
     fn color(&self, token: &str) -> Option<PColor> {
         let worn = self.over.borrow().as_ref().and_then(|over| over.color(token));
-        worn.or_else(|| self.shown()?.color(token))
+        let liked = || self.prefer.borrow().1.as_ref().and_then(|prefer| prefer.color(token));
+        worn.or_else(liked).or_else(|| self.shown()?.color(token))
     }
 
     fn size(&self, token: &str) -> Option<f32> {
         let worn = self.over.borrow().as_ref().and_then(|over| over.size(token));
-        worn.or_else(|| self.shown()?.size(token))
+        let liked = || self.prefer.borrow().1.as_ref().and_then(|prefer| prefer.size(token));
+        worn.or_else(liked).or_else(|| self.shown()?.size(token))
     }
 
     fn word(&self, token: &str) -> Option<&str> {

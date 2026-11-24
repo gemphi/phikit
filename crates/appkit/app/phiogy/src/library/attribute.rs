@@ -74,6 +74,10 @@ impl PState for Attribute {
 
 /// A colour of `data/paint.tsv` by its key, 0 to 1.
 pub fn paint(key: &str) -> Option<[f32; 3]> {
+    // Any colour from the wheel, as `#rrggbb`.
+    if let Some(colour) = appkit::pui::block::wheel::read(key) {
+        return Some([colour.r, colour.g, colour.b]);
+    }
     let row = data::row(data::PAINT).into_iter().find(|cell| cell.first() == Some(&key))?;
     let value: Vec<f32> = row.iter().skip(2).take(3).filter_map(|v| v.parse::<f32>().ok()).map(|v| v / 255.0).collect();
     (value.len() == 3).then(|| [value[0], value[1], value[2]])

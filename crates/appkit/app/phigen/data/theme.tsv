@@ -125,3 +125,7 @@ size	find.row	72
 # How many widths of text the window keeps from frame to frame, so
 # that it sets a line once and not on every frame.
 size	screen.memo	4096
+# A faint line down the sidebar's edge (appkit's activity.line and
+# activity.rim): none in Phigen's looks.
+color	activity.line	#00000000
+size	activity.rim	1

@@ -27,7 +27,11 @@ impl PForm {
                 head.tool.clear();
                 head.left.clear();
             }
-            (*b, self.source.list(&b.list), self.source.get(&b.path), head)
+            let list = match b.kind.as_str() {
+                "wheel" => crate::pui::block::wheel::colours().into_iter().map(|value| PChoice { value, ..PChoice::default() }).collect(),
+                _ => self.source.list(&b.list),
+            };
+            (*b, list, self.source.get(&b.path), head)
         };
         let shown: Vec<(&Block, Vec<PChoice>, String, PHead)> = block.iter().map(one).filter(|(b, c, _, _)| !c.is_empty() || b.kind == "field").collect();
         let (typing, draft) = (self.typing.borrow().clone(), self.draft.borrow().clone());

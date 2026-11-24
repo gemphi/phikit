@@ -9,3 +9,19 @@ mail	not signed in
 modal	profile
 about	About
 appearance	Appearance
+# What can be preferred of how Phiogy appears, under the looks: each
+# group's heading and each value's words (appkit's asset/prefer.tsv),
+# under their own heading.
+prefer	Grounds
+prefer.turn	Light runs
+prefer.across	Left to right
+prefer.up	Bottom to top
+prefer.share	Strength
+prefer.even	Even
+prefer.faint	Faint
+prefer.strong	Strong
+prefer.reach	Reaches
+prefer.most	70%
+prefer.half	50%
+prefer.all	All the way
+prefer.light	Light's colour

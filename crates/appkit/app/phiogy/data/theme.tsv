@@ -10,7 +10,7 @@ color	icon.ink	#1d1d1b
 # from its foot (0 degrees: the light fades upward), a label from its
 # left (90: it fades to the right). Nothing has a fill of its own.
 color	shade.light	#ffffff
-size	shade.share	0.58
+size	shade.share	0.44
 size	shade.rest	0.72
 size	shade.soft	0.48
 # A ground's light is gone seven tenths of the way across it.

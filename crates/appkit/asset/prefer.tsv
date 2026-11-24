@@ -1,0 +1,22 @@
+# What a person can change of how every app on appkit appears, in the
+# profile's Appearance, over the look they chose: the group, the kind
+# and the tokens it sets (apart by spaces), the value, and the word of
+# the app's text that names it (`prefer.<group>` names the group). The
+# first value of a group is what it is when nothing was chosen.
+#
+# group	kind	tokens	value	word
+#
+# Which way the light of a ground runs: from the left to the right, or
+# from the foot up (degrees: 90 is to the right, 0 is up).
+turn	size	surface.turn label.turn	90	prefer.across
+turn	size	surface.turn label.turn	0	prefer.up
+# How strong a ground's light is at rest, as a share of the strongest.
+share	size	shade.rest	0.72	prefer.even
+share	size	shade.rest	0.45	prefer.faint
+share	size	shade.rest	0.95	prefer.strong
+# How far across the light reaches before it is gone.
+reach	size	light.to	0.7	prefer.most
+reach	size	light.to	0.5	prefer.half
+reach	size	light.to	1	prefer.all
+# The light's own colour: any from the wheel.
+light	color	shade.light	#ffffff	prefer.white

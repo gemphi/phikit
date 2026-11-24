@@ -2,11 +2,14 @@
 //! name and their address; then what is known of them, a name and what
 //! it stands for; then how the app appears, a pill for each look there
 //! is. It is the same view in every app: the user, what is true of them
-//! now and the looks are the app's data.
+//! now and the looks are the app's data; and under them what the person
+//! prefers of how it appears (`profile/prefer.rs`).
 //!
 //! A press on a look turns the window to it, and tells the app the word
 //! `look` and the look's name, so the app can keep it. A profile longer
 //! than its panel is scrolled with the wheel.
+
+mod prefer;
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -31,9 +34,10 @@ pub const SPLIT: &str = "profile.split";
 
 /// The rows of a user's table that are not shown as rows: `name` and
 /// `mail` head the profile, `modal` says which modal it is, and `about`
-/// and `appearance` are the headings over the rows and over the looks. A row whose name
+/// and `appearance` are the headings over the rows and over the looks;
+/// `prefer`, where it has one, over what the person prefers. A row whose name
 /// starts with `look.` is what a look is called.
-const HEAD: [&str; 5] = ["name", "mail", "modal", "about", "appearance"];
+const HEAD: [&str; 6] = ["name", "mail", "modal", "about", "appearance", "prefer"];
 pub const LOOK: &str = "look.";
 /// The word the app is told when a look is chosen, before its name.
 pub const TOLD: &str = "look";
@@ -75,7 +79,7 @@ impl PProfile {
     /// The rows: those of the user's table that are rows, then what is
     /// true now.
     fn row(&self) -> Vec<(&str, &str)> {
-        let shown = |name: &str| !HEAD.contains(&name) && !name.starts_with(LOOK);
+        let shown = |name: &str| !HEAD.contains(&name) && !name.starts_with(LOOK) && !name.starts_with(prefer::WORD);
         let own = self.user.list().iter().filter(|(name, _)| shown(name));
         own.chain(self.live.list()).map(|(name, value)| (name.as_str(), value.as_str())).collect()
     }
@@ -152,6 +156,14 @@ impl PDraw for PProfile {
             spot.push((rect, look.to_string()));
             at.x += long + gap / 2.0;
         }
+        // Under the looks, what the person prefers of how they appear,
+        // where the user's table gives that a heading.
+        if let Some(shade) = self.shade.as_ref().filter(|_| !self.user.get("prefer").is_empty()) {
+            let top = self.head("prefer", PPoint::new(left, down + gap * 1.25 - line * 0.5), paint);
+            let (end, more) = self.prefer(shade, paint, left, top, wide);
+            spot.extend(more);
+            down = end;
+        }
         *self.spot.borrow_mut() = spot;
         paint.unclip();
         // How long all of it is, from its top to a gap under its foot.
@@ -190,6 +202,13 @@ impl PView for PProfile {
         // What was drawn is in the window's coordinates.
         let place = at.plus(self.frame.origin);
         let look = self.spot.borrow().iter().find(|(rect, _)| rect.contains(place)).map(|(_, look)| look.clone());
+        // A preference is put over the look, and the app told all that is
+        // preferred now.
+        let prefer = look.as_ref().zip(self.shade.as_ref()).and_then(|(look, shade)| PProfile::chose(shade, look));
+        if let Some(kept) = prefer {
+            self.wish.iter().for_each(|wish| wish.borrow_mut().push(PDeed::Tell(format!("{} {kept}", prefer::TOLD))));
+            return true;
+        }
         let turned = look.as_ref().is_some_and(|look| self.shade.as_ref().is_some_and(|shade| shade.turn(look)));
         if let (true, Some(look), Some(wish)) = (turned, look, &self.wish) {
             wish.borrow_mut().push(PDeed::Tell(format!("{TOLD} {look}")));

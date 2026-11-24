@@ -24,7 +24,7 @@ dark	color	shade.light	#ffffff
 dark	color	activity.ink	#f0f0ec
 dark	color	tab.ink	#9a9a94
 dark	color	modal.veil	#000000aa
-dark	size	shade.share	0.1
+dark	size	shade.share	0.08
 glass	color	window.fill	#1e1e1cb8
 glass	color	line.ink	#ffffff24
 glass	color	text.ink	#f4f4f0
@@ -36,7 +36,7 @@ glass	color	shade.light	#ffffff
 glass	color	activity.ink	#f4f4f0
 glass	color	tab.ink	#b4b4ae
 glass	color	modal.veil	#00000055
-glass	size	shade.share	0.12
+glass	size	shade.share	0.09
 glass	size	window.glass	1
 glass	size	glass.blur	24
 glass	size	glass.saturation	1.2
@@ -117,7 +117,7 @@ liquid-dark	color	shade.light	#ffffff
 liquid-dark	color	activity.ink	#f6f6f2
 liquid-dark	color	tab.ink	#b8b8b2
 liquid-dark	color	modal.veil	#00000055
-liquid-dark	size	shade.share	0.12
+liquid-dark	size	shade.share	0.09
 liquid-dark	color	glass.tint	#1c1c1a
 liquid-dark	size	window.glass	1
 liquid-dark	size	glass.blur	14
@@ -164,4 +164,4 @@ plain-dark	color	tab.ink	#98989d
 plain-dark	color	modal.veil	#000000aa
 plain-dark	color	activity.line	#ffffff1f
 plain-dark	size	activity.rim	1
-plain-dark	size	shade.share	0.12
+plain-dark	size	shade.share	0.09

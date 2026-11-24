@@ -228,6 +228,14 @@ impl Desk {
         board.room(&self.key(room)).map(|word| (board.roster(word), board.watch(word))).unwrap_or_default()
     }
 
+    /// Show Phiogy as the person prefers from now on (`kind token value`
+    /// rows apart by `;`, as the profile tells it), and keep that.
+    pub fn prefer(&self, kept: &str) -> bool {
+        self.shade.prefer(kept);
+        self.choice.put("prefer", kept);
+        true
+    }
+
     /// Show Phiogy in the look of that name from now on, and keep that.
     /// `false` when there is no such look.
     pub fn dress(&self, name: &str) -> bool {

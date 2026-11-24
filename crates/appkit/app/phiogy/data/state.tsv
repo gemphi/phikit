@@ -7,3 +7,5 @@ ui/part	0
 ui/fold/club	1
 ui/fold/collection	1
 ui/fold/set	0
+# The wheel of any colour starts folded under the inspector's colours.
+ui/fold/wheel	1

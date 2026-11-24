@@ -97,6 +97,7 @@ impl Phiogy {
         let shade = Rc::new(Phiogy::shade(&look));
         let choice = store.map(|store| Choice::kept(store, own.get("setting"))).unwrap_or_default();
         shade.turn(&choice.get("look"));
+        shade.prefer(&choice.get("prefer"));
         let (choice, site_path) = (Rc::new(choice), site.from.clone());
         let first = site.venue.iter().flat_map(|venue| &venue.plate).map(|plate| plate.id.clone()).next();
         let wanted = [choice.get(ROOM), site.start.clone()].into_iter().find(|id| site.plate(id).is_some() || id.starts_with(Page::own().id(crate::part::page::DIRECT)));

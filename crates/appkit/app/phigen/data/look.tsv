@@ -131,3 +131,9 @@ liquid-dark	size	modal.radius	34
 liquid-dark	size	modal.margin	12
 liquid-dark	size	profile.radius	22
 liquid-dark	size	control.radius	22
+# No line down the sidebar's edge in any of them (appkit's activity.line).
+dark	color	activity.line	#00000000
+glass	color	activity.line	#00000000
+frost	color	activity.line	#00000000
+liquid	color	activity.line	#00000000
+liquid-dark	color	activity.line	#00000000

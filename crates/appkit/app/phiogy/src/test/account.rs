@@ -6,7 +6,7 @@ use std::rc::Rc;
 use appkit::pui::PApp;
 use appkit::pui::core::{PEvent, PMark, PMode, PPoint};
 use appkit::pui::window::{PDeed, PStage};
-use appkit::theme::PLook;
+use appkit::theme::{PLook, PTheme};
 
 use super::exchange::line;
 use super::{AT, DESK, drawn, shown, site, staged};
@@ -84,4 +84,47 @@ fn where_phiora_answers_the_account_says_who_it_says_i_am() {
     // Being nobody again is a new guest, with a session of their own.
     let was = app.desk().kept.me()["id"].clone();
     assert!(!app.desk().kept.sign(None) || app.desk().kept.me()["id"] != was);
+}
+
+#[test]
+fn step_59_the_profile_sets_which_way_the_light_runs_how_strong_how_far_and_its_colour() {
+    let (app, mut stage, look) = staged(DESK);
+    let desk = app.desk();
+    let user = appkit::service::PTable::read(crate::data::USER);
+    let word = |name: &str| user.get(name).to_string();
+    assert!(stage.window.apply(&PDeed::Open("profile".to_string())));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    // Across at first; from the foot up once chosen, and kept.
+    assert_eq!(desk.shade.size("surface.turn"), Some(90.0));
+    assert!(press(&mut stage, &look, &word("prefer.up")));
+    assert_eq!((desk.shade.size("surface.turn"), desk.shade.size("label.turn")), (Some(0.0), Some(0.0)));
+    stage.send(&PEvent::KeyUp(' '));
+    assert!(desk.choice.get("prefer").contains("surface.turn 0"), "{}", desk.choice.get("prefer"));
+    // Fainter, and half the way, further down the profile.
+    let body = stage.panel().expect("the profile").body;
+    stage.send(&PEvent::Scroll(body.center(), PPoint::new(0.0, -100000.0)));
+    assert!(press(&mut stage, &look, &word("prefer.faint")) && press(&mut stage, &look, &word("prefer.half")));
+    assert_eq!((desk.shade.size("shade.rest"), desk.shade.size("light.to")), (Some(0.45), Some(0.5)));
+    // The light's colour from the wheel: a dot pressed.
+    // The wheel, scrolled to where it is in sight.
+    let red = |stage: &PStage| drawn(stage, &look).iter().rev().find_map(|mark| match mark {
+        PMark::Fill { rect, color, .. } if color.r > 0.9 && color.g < 0.2 && color.b < 0.2 && rect.size.width < 20.0 && body.contains(rect.center()) => Some(rect.center()),
+        _ => None,
+    });
+    for _ in 0..20 {
+        if red(&stage).is_some() {
+            break;
+        }
+        stage.send(&PEvent::Scroll(body.center(), PPoint::new(0.0, -120.0)));
+    }
+    let dot = red(&stage).expect("a red dot of the wheel");
+    assert!(stage.send(&PEvent::PointerDown(dot)));
+    let light = desk.shade.color("shade.light").expect("the light");
+    assert!(light.r > 0.9 && light.g < 0.2);
+    // Kept, the next window shows it so.
+    stage.send(&PEvent::KeyUp(' '));
+    let kept = desk.choice.get("prefer");
+    let other = appkit::theme::PShade::new(vec![("one".to_string(), appkit::theme::PLook::read("size\tsurface.turn\t90\n"))]);
+    other.prefer(&kept);
+    assert_eq!(other.size("surface.turn"), Some(0.0));
 }

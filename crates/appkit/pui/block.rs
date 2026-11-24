@@ -37,6 +37,7 @@ mod face;
 mod row;
 mod say;
 mod tip;
+pub mod wheel;
 
 pub use band::{PBand, PTabMove};
 pub use card::{CARD, FACE, PCard, PDeck};
