@@ -36,12 +36,13 @@ pub struct Model {
 
 impl Model {
     /// The model of a USD file; one with no parts where it cannot be
-    /// read. A part the file gives no colour is in `colour`.
+    /// read. A part the file gives no colour is in `colour`; a file's
+    /// colours are linear, as USD keeps them, and are shown as seen.
     pub fn read(path: &Path, colour: [f32; 3]) -> Model {
         let scene = phiusd::read(path);
         let part: Vec<Part> = scene.mesh.iter().map(|mesh| {
             let name = mesh.path.rsplit('/').next().unwrap_or(&mesh.path).to_string();
-            Part { name, path: mesh.path.clone(), piece: PPiece::flat(mesh.triangle().collect(), mesh.colour.unwrap_or(colour)) }
+            Part { name, path: mesh.path.clone(), piece: PPiece::flat(mesh.triangle().collect(), mesh.colour.map(seen).unwrap_or(colour)) }
         }).collect();
         Model { count: scene.count(), part }
     }
@@ -68,4 +69,12 @@ impl Model {
         let one = |(index, part): (usize, &Part)| PPiece { colour: colour(index).unwrap_or(part.piece.colour), ..part.piece.clone() };
         self.part.iter().enumerate().map(one).collect()
     }
+}
+
+/// A linear colour as it is seen (sRGB), as the picture is drawn.
+fn seen(colour: [f32; 3]) -> [f32; 3] {
+    colour.map(|c| match c <= 0.003_130_8 {
+        true => c * 12.92,
+        false => 1.055 * c.max(0.0).powf(1.0 / 2.4) - 0.055,
+    })
 }

@@ -5,27 +5,38 @@
 use super::part::{ShapeMesh, unit};
 
 /// A box `size` on each edge, its edges rounded to `bevel` in `ring` steps.
-/// Each face is a grid; every grid point is pulled onto the rounded
-/// surface, so the faces stay flat and the edges and corners turn smoothly.
 pub fn rounded_box(mesh: &mut ShapeMesh, size: f32, bevel: f32, ring: usize) {
-    let h = size / 2.0;
-    let b = bevel.clamp(0.0, h);
+    rounded_block(mesh, [size; 3], bevel, ring);
+}
+
+/// A box `size` along x, y and z, its edges rounded to `bevel` in `ring`
+/// steps. Each face is a grid; every grid point is pulled onto the
+/// rounded surface, so the faces stay flat and the edges and corners
+/// turn smoothly.
+pub fn rounded_block(mesh: &mut ShapeMesh, size: [f32; 3], bevel: f32, ring: usize) {
+    let h = size.map(|s| s / 2.0);
+    let b = bevel.clamp(0.0, h[0].min(h[1]).min(h[2]));
     let steps = match b > 0.0 {
         true => ring.max(1),
         false => 0,
     };
-    let inner = h - b;
-    let arc = |k: usize| inner + b * (std::f32::consts::FRAC_PI_2 * k as f32 / steps.max(1) as f32).sin();
-    let mut line: Vec<f32> = (0..=steps).rev().map(|k| -arc(k)).collect();
-    line.extend((0..=steps).map(arc));
-    // The ends exactly ±h, as the neighbouring faces' planes are, so the
-    // points on a shared edge are the same point bit for bit.
-    let last = line.len() - 1;
-    (line[0], line[last]) = (-h, h);
+    let inner = h.map(|h| h - b);
+    let line = |axis: usize| {
+        let arc = |k: usize| inner[axis] + b * (std::f32::consts::FRAC_PI_2 * k as f32 / steps.max(1) as f32).sin();
+        let mut line: Vec<f32> = (0..=steps).rev().map(|k| -arc(k)).collect();
+        line.extend((0..=steps).map(arc));
+        // The ends exactly ±h, as the neighbouring faces' planes are, so
+        // the points on a shared edge are the same point bit for bit.
+        let last = line.len() - 1;
+        (line[0], line[last]) = (-h[axis], h[axis]);
+        line
+    };
+    let lines = [line(0), line(1), line(2)];
     for axis in 0..3 {
         for sign in [1.0f32, -1.0] {
-            grid(mesh, axis, sign, h, &line, &|p: [f32; 3]| {
-                let c = p.map(|v| v.clamp(-inner, inner));
+            let (u, v) = ((axis + 1) % 3, (axis + 2) % 3);
+            grid(mesh, axis, sign, h[axis], [&lines[u], &lines[v]], &|p: [f32; 3]| {
+                let c = [0, 1, 2].map(|i| p[i].clamp(-inner[i], inner[i]));
                 let d = [p[0] - c[0], p[1] - c[1], p[2] - c[2]];
                 let mut flat = [0.0; 3];
                 flat[axis] = sign;
@@ -42,24 +53,25 @@ pub fn rounded_box(mesh: &mut ShapeMesh, size: f32, bevel: f32, ring: usize) {
 /// A flat square `size` across, facing up.
 pub fn plane(mesh: &mut ShapeMesh, size: f32) {
     let h = size / 2.0;
-    grid(mesh, 1, 1.0, 0.0, &[-h, h], &|p| (p, [0.0, 1.0, 0.0]));
+    grid(mesh, 1, 1.0, 0.0, [&[-h, h], &[-h, h]], &|p| (p, [0.0, 1.0, 0.0]));
 }
 
 /// One face of a box: the face looking along `sign` × axis `axis` at
-/// distance `h`, a grid over `line` on the next two axes, each point placed
-/// by `place` (position, normal). Quads wind counter-clockwise from outside.
-fn grid(mesh: &mut ShapeMesh, axis: usize, sign: f32, h: f32, line: &[f32], place: &dyn Fn([f32; 3]) -> ([f32; 3], [f32; 3])) {
+/// distance `h`, a grid over `line` on the next two axes (one line each),
+/// each point placed by `place` (position, normal). Quads wind
+/// counter-clockwise from outside.
+fn grid(mesh: &mut ShapeMesh, axis: usize, sign: f32, h: f32, line: [&[f32]; 2], place: &dyn Fn([f32; 3]) -> ([f32; 3], [f32; 3])) {
     let (u, v) = ((axis + 1) % 3, (axis + 2) % 3);
     let at = |i: usize, j: usize| {
         let mut p = [0.0; 3];
         p[axis] = sign * h;
-        p[u] = line[i];
-        p[v] = line[j];
+        p[u] = line[0][i];
+        p[v] = line[1][j];
         place(p)
     };
-    for i in 0..line.len() - 1 {
-        for j in 0..line.len() - 1 {
-            if line[i] == line[i + 1] || line[j] == line[j + 1] {
+    for i in 0..line[0].len() - 1 {
+        for j in 0..line[1].len() - 1 {
+            if line[0][i] == line[0][i + 1] || line[1][j] == line[1][j + 1] {
                 continue;
             }
             let quad = [at(i, j), at(i + 1, j), at(i + 1, j + 1), at(i, j + 1)];

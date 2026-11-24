@@ -55,10 +55,11 @@ fn step_49_the_tree_has_the_drives_the_person_s_folders_and_phiogy_s_own() {
     // The drives this system has, as Blender's Volumes.
     assert!(section("volume").iter().any(|key| key.starts_with('C')), "{:?}", section("volume"));
     assert_eq!(section("system"), ["home", "desktop", "document", "download", "picture", "video", "audio"]);
-    assert_eq!(section("own"), ["shape", "phiegg"]);
+    assert_eq!(section("own"), ["shape", "once", "phiegg"]);
     let own: Vec<&Place> = place.iter().filter(|place| place.section == "own").collect();
     assert!(own[0].folder.as_ref().is_some_and(|folder| folder.ends_with(Path::new("asset").join("shape"))) && !own[0].make);
-    assert!(own[1].make && own[1].folder.as_ref().is_some_and(|folder| folder.ends_with("Phiegg")));
+    assert!(own[1].folder.as_ref().is_some_and(|folder| folder.ends_with(Path::new("asset").join("once"))) && !own[1].make);
+    assert!(own[2].make && own[2].folder.as_ref().is_some_and(|folder| folder.ends_with("Phiegg")));
 }
 
 #[test]

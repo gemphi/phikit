@@ -116,6 +116,7 @@ fn object_mesh(w: &mut UsdaWriter, o: &SceneObject, prim: &str, slot: &[String])
         count: &count,
         index: &mesh.indices,
         normal: &normal,
+        normal_by_point: false,
         uv: &o.uvs,
         colour: [colour[0], colour[1], colour[2]],
         look: slot.get(first).or(slot.first()).cloned(),

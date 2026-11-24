@@ -9,7 +9,8 @@ use crate::format::PreviewSurfaceMaterial;
 use std::fmt::Write;
 
 /// One mesh prim as the writer takes it: polygons of `count` corners over
-/// `point`, one normal per corner (`normal`, may be empty), one UV per
+/// `point`, one normal per corner (`normal`, may be empty; one per point
+/// where `normal_by_point`), one UV per
 /// point (`uv`, may be empty), a constant display colour, the material
 /// path it is bound to, and faces bound to other materials.
 #[derive(Clone, Debug, Default)]
@@ -19,6 +20,7 @@ pub struct UsdMesh<'a> {
     pub count: &'a [u32],
     pub index: &'a [u32],
     pub normal: &'a [[f32; 3]],
+    pub normal_by_point: bool,
     pub uv: &'a [[f32; 2]],
     pub colour: [f32; 3],
     pub look: Option<String>,
@@ -39,7 +41,10 @@ impl UsdaWriter {
         self.line(&format!("point3f[] points = [{}]", list(mesh.point.iter().map(|p| three(*p)))));
         if !mesh.normal.is_empty() {
             self.line(&format!("normal3f[] normals = [{}] (", list(mesh.normal.iter().map(|n| three(*n)))));
-            self.line("    interpolation = \"faceVarying\"");
+            match mesh.normal_by_point {
+                true => self.line("    interpolation = \"vertex\""),
+                false => self.line("    interpolation = \"faceVarying\""),
+            }
             self.line(")");
         }
         if !mesh.uv.is_empty() && mesh.uv.len() == mesh.point.len() {

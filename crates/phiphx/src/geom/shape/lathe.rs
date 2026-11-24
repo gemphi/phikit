@@ -103,3 +103,14 @@ pub fn torus(outer: f32, tube: f32, ring: usize) -> Profile {
     });
     vec![rings.collect()]
 }
+
+/// A dome: the upper half of a sphere of `radius`, `ring` steps from its
+/// rim to its pole, closed by a flat floor at its rim.
+pub fn dome(radius: f32, ring: usize) -> Profile {
+    let ring = ring.max(1);
+    let down = [0.0, -1.0];
+    vec![
+        vec![Ring { radius: 0.0, y: 0.0, normal: down }, Ring { radius, y: 0.0, normal: down }],
+        (0..=ring).map(|k| latitude(radius, FRAC_PI_2 * k as f32 / ring as f32, 0.0)).collect(),
+    ]
+}

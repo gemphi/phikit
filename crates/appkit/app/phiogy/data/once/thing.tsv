@@ -1,0 +1,266 @@
+# Once City's things (phiphx geom::thing), a row each part: the thing,
+# the part, its form, its size (metres along x, y, z; a thing's: times
+# its own), where its middle stands (y up; a thing faces +z, an animal
+# walking +x), its turn (degrees about x, then y, then z), how round
+# (a share of its smallest side; a letter's of its height), its look (a
+# thing's: the looks it swaps, from=to), what it is made from (a
+# letter: source:letter; an outline: a source; a thing: its name) and
+# how often it repeats (copies, then each copy's step: moved x y z,
+# then turned x y z about the thing's middle). - for none.
+thing	part	form	size	at	turn	round	look	from	repeat
+# A couch's body: what lies between its two side panels. Seats are
+# 0.46 high on the top of their cushion; each seat 0.62 wide.
+seat-1	base	box	0.62 0.2 0.76	0 0.2 0	-	0.1	frame	-	-
+seat-1	board	box	0.62 0.48 0.1	0 0.54 -0.33	-	0.2	frame	-	-
+seat-1	seat	box	0.6 0.16 0.7	0 0.38 0.02	-	0.35	cushion	-	-
+seat-1	back	box	0.58 0.42 0.16	0 0.64 -0.2	-10 0 0	0.4	pillow	-	-
+seat-2	base	box	1.26 0.2 0.76	0 0.2 0	-	0.1	frame	-	-
+seat-2	board	box	1.26 0.48 0.1	0 0.54 -0.33	-	0.2	frame	-	-
+seat-2	seat	box	0.62 0.16 0.7	-0.315 0.38 0.02	-	0.35	cushion	-	2 0.63 0 0
+seat-2	back	box	0.6 0.42 0.16	-0.315 0.64 -0.2	-10 0 0	0.4	pillow	-	2 0.63 0 0
+seat-3	base	box	1.9 0.2 0.76	0 0.2 0	-	0.1	frame	-	-
+seat-3	board	box	1.9 0.48 0.1	0 0.54 -0.33	-	0.2	frame	-	-
+seat-3	seat	box	0.62 0.16 0.7	-0.635 0.38 0.02	-	0.35	cushion	-	3 0.635 0 0
+seat-3	back	box	0.6 0.42 0.16	-0.635 0.64 -0.2	-10 0 0	0.4	pillow	-	3 0.635 0 0
+# The couches: each a letter of Phi-Pill Bold as its two side panels,
+# 0.12 thick, seen from the side (the letter's left at the back), and a
+# body between them.
+couch-l	side	letter	0 0.85 0.12	-1.01 0.425 0	0 -90 0	0.02	cream	pill-bold:L	2 2.02 0 0
+couch-l	body	thing	1	0 0 0	-	-	frame=cream cushion=rose pillow=blush	seat-3	-
+couch-h	side	letter	0 0.85 0.12	-0.69 0.425 0	0 -90 0	0.02	scarlet	pill-bold:h	2 1.38 0 0
+couch-h	body	thing	1	0 0 0	-	-	frame=scarlet cushion=scarlet pillow=blush	seat-2	-
+couch-n	side	letter	0 0.66 0.12	-1.01 0.33 0	0 -90 0	0.02	jade	pill-bold:n	2 2.02 0 0
+couch-n	body	thing	1	0 0 0	-	-	frame=jade cushion=mint pillow=pearl	seat-3	-
+couch-u	side	letter	0 0.66 0.12	-0.37 0.33 0	0 -90 0	0.02	scarlet	pill-bold:u	2 0.74 0 0
+couch-u	body	thing	1	0 0 0	-	-	frame=scarlet cushion=ruby pillow=blush	seat-1	-
+couch-d	side	letter	0 0.85 0.12	-0.37 0.425 0	0 90 0	0.02	amber	pill-bold:d	2 0.74 0 0
+couch-d	body	thing	1	0 0 0	-	-	frame=amber cushion=cream pillow=pearl	seat-1	-
+couch-b	side	letter	0 0.85 0.12	-1.01 0.425 0	0 -90 0	0.02	navy	pill-bold:b	2 2.02 0 0
+couch-b	body	thing	1	0 0 0	-	-	frame=navy cushion=sky pillow=pearl	seat-3	-
+couch-r	side	letter	0 0.66 0.12	-0.37 0.33 0	0 -90 0	0.02	lilac	pill-bold:r	2 0.74 0 0
+couch-r	body	thing	1	0 0 0	-	-	frame=lilac cushion=lilac pillow=pearl	seat-1	-
+couch-e	side	letter	0 0.66 0.12	-0.69 0.33 0	0 -90 0	0.02	mint	pill-bold:e	2 1.38 0 0
+couch-e	body	thing	1	0 0 0	-	-	frame=mint cushion=pearl pillow=mint	seat-2	-
+couch-c	side	letter	0 0.66 0.12	-0.37 0.33 0	0 -90 0	0.02	rose	pill-bold:c	2 0.74 0 0
+couch-c	body	thing	1	0 0 0	-	-	frame=rose cushion=rose pillow=blush	seat-1	-
+couch-z	side	letter	0 0.66 0.12	-0.37 0.33 0	0 -90 0	0.02	onyx	pill-bold:z	2 0.74 0 0
+couch-z	body	thing	1	0 0 0	-	-	frame=onyx cushion=coal pillow=gold	seat-1	-
+couch-j	side	letter	0 0.85 0.12	-0.69 0.425 0	0 90 0	0.02	coal	pill-bold:J	2 1.38 0 0
+couch-j	body	thing	1	0 0 0	-	-	frame=coal cushion=cream pillow=pearl	seat-2	-
+couch-w	side	letter	0 0.55 0.12	-1.01 0.275 0	0 -90 0	0.02	blossom	pill-bold:w	2 2.02 0 0
+couch-w	body	thing	1	0 0 0	-	-	frame=blossom cushion=rose pillow=blush	seat-3	-
+# Four more made of a letter whole: the pill of an I lying down, as long
+# as the letter is high; the o lying flat, a ring to sit on; the m's two
+# arches under a cushion; and the bird, Phiogy's p, as the side panels
+# of the rose chaise of the lounge.
+ottoman-i	pill	letter	0 1.24 0.6	0 0.23 0	0 0 90	0.02	rose	pill-bold:I	-
+ottoman-i	top	box	1.2 0.06 0.5	0 0.47 0	-	0.4	blush	-	-
+pouf-o	ring	letter	0 0.9 0.42	0 0.21 0	90 0 0	0.03	scarlet	pill-bold:o	-
+pouf-o	button	sphere	0.22 0.1 0.22	0 0.42 0	-	-	gold	-	-
+stool-m	arch	letter	0 0.42 0.42	0 0.21 0	-	0.02	gold	pill-bold:m	-
+stool-m	seat	box	0.66 0.08 0.44	0 0.46 0	-	0.4	cushion	-	-
+couch-bird	side	outline	0 0.95 0.12	-0.69 0.475 0	0 -90 0	0.02	gold	bird	2 1.38 0 0
+couch-bird	body	thing	1	0 0 0	-	-	frame=rose cushion=rose pillow=blush	seat-2	-
+# The lioness, sitting as a gate's guardian does, facing +z: built of
+# pills and balls.
+lioness	haunch	sphere	0.68 0.55 0.9	0 0.3 -0.25	-	-	amber	-	-
+lioness	body	capsule	0.5 1.0 0.5	0 0.7 -0.08	25 0 0	-	amber	-	-
+lioness	chest	sphere	0.48 0.55 0.45	0 0.95 0.12	-	-	amber	-	-
+lioness	neck	capsule	0.34 0.5 0.32	0 1.2 0.14	20 0 0	-	amber	-	-
+lioness	leg	capsule	0.15 0.85 0.15	-0.14 0.45 0.25	-	-	amber	-	2 0.28 0 0
+lioness	paw	sphere	0.19 0.11 0.27	-0.14 0.055 0.32	-	-	amber	-	2 0.28 0 0
+lioness	hind	sphere	0.2 0.12 0.32	-0.3 0.06 0.05	-	-	amber	-	2 0.6 0 0
+lioness	head	sphere	0.4 0.38 0.5	0 1.46 0.22	-	-	amber	-	-
+lioness	muzzle	sphere	0.25 0.19 0.3	0 1.37 0.45	-	-	cream	-	-
+lioness	chin	sphere	0.16 0.1 0.16	0 1.28 0.42	-	-	cream	-	-
+lioness	nose	sphere	0.09 0.06 0.06	0 1.43 0.6	-	-	nose	-	-
+lioness	ear	sphere	0.11 0.11 0.05	-0.15 1.63 0.1	0 0 20	-	amber	-	2 0.3 0 0
+lioness	eye	sphere	0.08 0.035 0.04	-0.09 1.53 0.42	-	-	eye	-	2 0.18 0 0
+lioness	tail	capsule	0.08 0.9 0.08	0.38 0.05 0.1	90 0 0	-	amber	-	-
+lioness	tuft	sphere	0.13	0.38 0.07 0.56	-	-	brass	-	-
+# Amber, the gate's lioness, wears the lioness's own looks; Onyx is
+# black and gold; Jade is the lounge's green lion.
+lioness-amber	lioness	thing	1	0 0 0	-	-	-	lioness	-
+lioness-onyx	lioness	thing	1	0 0 0	-	-	amber=onyx cream=coal brass=gold	lioness	-
+lion-jade	lion	thing	1	0 0 0	-	-	amber=lime brass=jade	lioness	-
+# The zebra, walking +x: its neck and legs are things of their own, each
+# with its stripes.
+zebra-leg	leg	capsule	0.12 0.85 0.12	0 0.425 0	-	-	chalk	-	-
+zebra-leg	stripe	cylinder	0.13 0.04 0.13	0 0.25 0	-	-	coal	-	4 0 0.13 0
+zebra-leg	hoof	cylinder	0.13 0.08 0.13	0 0.04 0	-	-	coal	-	-
+zebra-neck	neck	capsule	0.24 0.75 0.2	0 0 0	-	-	chalk	-	-
+zebra-neck	stripe	cylinder	0.26 0.05 0.22	0 -0.24 0	-	-	coal	-	5 0 0.12 0
+zebra-neck	mane	capsule	0.06 0.7 0.05	-0.12 0.02 0	-	-	coal	-	-
+zebra	body	capsule	0.5 1.5 0.45	0 1.05 0	0 0 90	-	chalk	-	-
+zebra	stripe	cylinder	0.53 0.07 0.48	-0.5 1.05 0	0 0 90	-	coal	-	8 0.14 0 0
+zebra	neck	thing	1	0.62 1.42 0	0 0 -35	-	-	zebra-neck	-
+zebra	head	capsule	0.2 0.55 0.2	0.95 1.62 0	0 0 -110	-	chalk	-	-
+zebra	muzzle	sphere	0.17 0.16 0.17	1.18 1.53 0	-	-	coal	-	-
+zebra	ear	capsule	0.06 0.16 0.04	0.86 1.86 -0.06	-	-	chalk	-	2 0 0 0.12
+zebra	eye	sphere	0.04	1.0 1.7 -0.09	-	-	coal	-	2 0 0 0.18
+zebra	front	thing	1	0.45 0 -0.12	-	-	-	zebra-leg	2 0 0 0.24
+zebra	hind	thing	1	-0.45 0 -0.12	-	-	-	zebra-leg	2 0 0 0.24
+zebra	tail	capsule	0.05 0.6 0.05	-0.82 0.85 0	0 0 15	-	coal	-	-
+# Zebras of the city's colours: each the zebra, its white and its black
+# swapped.
+zebra-rose	zebra	thing	1	0 0 0	-	-	chalk=pearl coal=rose	zebra	-
+zebra-sky	zebra	thing	1	0 0 0	-	-	chalk=sky coal=navy	zebra	-
+zebra-gold	zebra	thing	1	0 0 0	-	-	chalk=cream coal=gold	zebra	-
+zebra-lilac	zebra	thing	1	0 0 0	-	-	chalk=lilac coal=onyx	zebra	-
+zebra-mint	zebra	thing	1	0 0 0	-	-	chalk=mint coal=jade	zebra	-
+# The trees: sixteen kinds, of pills, balls, cones and rings, and of the
+# font's letters (the Y, the T, the S and the f as trunks) and the bird.
+tree-pill	trunk	capsule	0.18 1.0 0.18	0 0.5 0	-	-	bark	-	-
+tree-pill	crown	capsule	0.9 3.2 0.9	0 2.4 0	-	-	moss	-	-
+tree-ball	trunk	capsule	0.22 1.8 0.22	0 0.9 0	-	-	bark	-	-
+tree-ball	crown	sphere	2.2	0 2.7 0	-	-	leaf	-	-
+tree-eight	trunk	capsule	0.2 1.6 0.2	0 0.8 0	-	-	bark	-	-
+tree-eight	low	sphere	1.6	0 2.2 0	-	-	jade	-	-
+tree-eight	high	sphere	1.2	0 3.45 0	-	-	jade	-	-
+tree-y	trunk	letter	0 2.0 0.3	0 1.0 0	-	0.02	bark	pill-bold:Y	-
+tree-y	crown	sphere	1.3	-0.72 2.55 0	-	-	leaf	-	2 1.44 0 0
+tree-t	trunk	letter	0 2.6 0.3	0 1.3 0	-	0.02	bark	pill-bold:T	-
+tree-t	crown	sphere	3.0 0.9 3.0	0 2.9 0	-	-	moss	-	-
+tree-palm	trunk	capsule	0.28 3.6 0.28	0 1.8 0	0 0 6	-	bark	-	-
+tree-palm	frond	capsule	0.6 2.5 0.14	1.1 3.65 0	0 0 -74	-	leaf	-	7 0 0 0 0 51.43 0
+tree-palm	nut	sphere	0.22	0.12 3.45 0	-	-	bark	-	3 0 0 0 0 120 0
+tree-fir	trunk	capsule	0.22 0.9 0.22	0 0.45 0	-	-	bark	-	-
+tree-fir	low	cone	2.2 1.4 2.2	0 1.4 0	-	-	moss	-	-
+tree-fir	mid	cone	1.7 1.2 1.7	0 2.2 0	-	-	moss	-	-
+tree-fir	top	cone	1.1 1.1 1.1	0 3.0 0	-	-	moss	-	-
+tree-lotus	trunk	capsule	0.2 2.4 0.2	0 1.2 0	-	-	bark	-	-
+tree-lotus	petal	capsule	0.5 1.4 0.22	0.42 2.75 0	0 0 -35	-	blossom	-	8 0 0 0 0 45 0
+tree-lotus	heart	sphere	0.45	0 2.55 0	-	-	gold	-	-
+tree-willow	trunk	capsule	0.26 3.0 0.26	0 1.5 0	-	-	bark	-	-
+tree-willow	crown	sphere	2.4 1.6 2.4	0 3.2 0	-	-	leaf	-	-
+tree-willow	drape	capsule	0.16 1.8 0.16	1.05 2.4 0	-	-	leaf	-	12 0 0 0 0 30 0
+tree-ring	trunk	capsule	0.18 1.6 0.18	0 0.8 0	-	-	bark	-	-
+tree-ring	ring	torus	1.8 0.45 1.8	0 2.45 0	90 0 0	-	jade	-	-
+tree-hedge	trunk	capsule	0.2 1.2 0.2	0 0.6 0	-	-	bark	-	-
+tree-hedge	low	box	1.4 1.4 1.4	0 1.6 0	-	0.3	leaf	-	-
+tree-hedge	high	box	0.9 0.9 0.9	0 2.75 0	0 45 0	0.3	leaf	-	-
+tree-spiral	trunk	capsule	0.14 3.4 0.14	0 1.7 0	-	-	bark	-	-
+tree-spiral	leaf	sphere	0.55	0.45 0.9 0	-	-	moss	-	11 0 0.22 0 0 40 0
+tree-blossom	trunk	capsule	0.22 1.8 0.22	0 0.9 0	-	-	bark	-	-
+tree-blossom	middle	sphere	1.4	0 2.6 0	-	-	blossom	-	-
+tree-blossom	cluster	sphere	1.0	0.62 2.3 0	-	-	blossom	-	5 0 0 0 0 72 0
+tree-blossom	top	sphere	0.9	0 3.3 0	-	-	blossom	-	-
+tree-bonsai	pot	cylinder	0.9 0.4 0.9	0 0.2 0	-	-	stone	-	-
+tree-bonsai	trunk	letter	0 1.5 0.24	0 1.15 0	-	0.02	bark	pill-bold:S	-
+tree-bonsai	pad	sphere	1.3 0.42 1.0	0.1 2.0 0	-	-	moss	-	-
+tree-bonsai	low	sphere	0.9 0.34 0.75	-0.5 1.3 0	-	-	moss	-	-
+tree-f	trunk	letter	0 2.4 0.3	0 1.2 0	-	0.02	bark	pill-bold:f	-
+tree-f	crown	sphere	1.4	0.62 2.75 0	-	-	leaf	-	-
+tree-bird	planter	box	1.3 0.3 0.8	0 0.15 0	-	0.2	stone	-	-
+tree-bird	hedge	outline	0 2.2 0.7	0 1.4 0	-	0.03	jade	bird	-
+# The gate: ONCE in Phi-Pill Bold, 5.5 high and gold, on two plinths
+# with the way in between them; each letter's counter a door 1.1 wide
+# and 3.4 high. Amber and Onyx sit either side of the way in, outside.
+letter-gate	plinth	box	11.55 0.5 2.0	-7.675 0.25 0	-	0.05	stone	-	-
+letter-gate	plinth	box	10.76 0.5 2.0	7.28 0.25 0	-	0.05	stone	-	-
+letter-gate	O	letter	0 5.5 0.8	-10.55 3.25 0	-	0.015	gold	pill-bold:O	-
+letter-gate	N	letter	0 5.5 0.8	-4.875 3.25 0	-	0.015	gold	pill-bold:N	-
+letter-gate	C	letter	0 5.5 0.8	4.64 3.25 0	-	0.015	gold	pill-bold:C	-
+letter-gate	E	letter	0 5.5 0.8	9.92 3.25 0	-	0.015	gold	pill-bold:E	-
+letter-gate	stand	box	2.2 1.0 3.6	-3.9 0.5 3.2	-	0.05	stone	-	2 7.8 0 0
+letter-gate	amber	thing	2.2	-3.9 1.0 3.3	-	-	-	lioness-amber	-
+letter-gate	onyx	thing	2.2	3.9 1.0 3.3	-	-	-	lioness-onyx	-
+# The lotus dome: a bowl under its floor, two rings of petals, gold ribs
+# meeting in a crown; the lounge inside it (the bird chaise, the red
+# chairs, the pouf, the stool, and Jade).
+lotus-dome	bowl	dome	16 6.5 16	0 -3.25 0	180 0 0	-	pearl	-	-
+lotus-dome	floor	cylinder	16.2 0.3 16.2	0 0.15 0	-	-	pearl	-	-
+lotus-dome	petal	capsule	2.6 4.6 0.35	0 0.9 8.4	38 0 0	-	blush	-	12 0 0 0 0 30 0
+lotus-dome	inner	capsule	2.2 3.6 0.3	1.915 0.9 7.148	30 15 0	-	rose	-	12 0 0 0 0 30 0
+lotus-dome	rib	torus	12 0.16 12	0 0.3 0	90 0 0	-	gold	-	4 0 0 0 0 45 0
+lotus-dome	rim	torus	12.4 0.3 12.4	0 0.4 0	-	-	gold	-	-
+lotus-dome	crown	torus	2.2 0.3 2.2	0 6.1 0	-	-	gold	-	-
+lotus-dome	finial	sphere	0.7	0 6.65 0	-	-	gold	-	-
+lotus-dome	chaise	thing	1	0 0.3 -2.6	-	-	-	couch-bird	-
+lotus-dome	chair	thing	1	-2.4 0.3 0.4	0 60 0	-	-	couch-u	-
+lotus-dome	chair	thing	1	2.4 0.3 0.4	0 -60 0	-	-	couch-u	-
+lotus-dome	pouf	thing	1	0 0.3 0.6	-	-	-	pouf-o	-
+lotus-dome	stool	thing	1	-3.2 0.3 -2.0	0 30 0	-	-	stool-m	-
+lotus-dome	jade	thing	0.75	3.2 0.3 -2.2	0 -30 0	-	-	lion-jade	-
+# A lamp of the way in: the i of Phi-Pill, its dot the light.
+lamp-i	post	letter	0 3.2 0.25	0 1.6 0	-	0.02	gold	pill-bold:i	-
+# The lotus dome in lilac and sky, and in mint and jade.
+lotus-dome-lilac	dome	thing	1	0 0 0	-	-	blush=lilac rose=sky	lotus-dome	-
+lotus-dome-mint	dome	thing	1	0 0 0	-	-	blush=mint rose=jade	lotus-dome	-
+# Once City: the floating island over a sea of cloud, its plaza, the
+# way in through the gate between lamps, the lotus dome in its middle
+# and three small domes behind it, the sixteen trees twice round the
+# plaza (the outer ring from 30 degrees off the way in, every 20; the
+# inner from 40, the other way round), the sixteen couches round the
+# dome facing it, and the zebras about the way in.
+once-city	island	dome	74 16 74	0 -8.8 0	180 0 0	-	stone	-	-
+once-city	plaza	cylinder	74 0.8 74	0 -0.4 0	-	-	pearl	-	-
+once-city	cloud	sphere	26 7 18	-22 -16 10	-	-	cloud	-	-
+once-city	cloud	sphere	30 8 20	18 -18 -6	-	-	cloud	-	-
+once-city	cloud	sphere	22 6 16	2 -14 28	-	-	cloud	-	-
+once-city	cloud	sphere	24 6 18	-6 -19 -26	-	-	cloud	-	-
+once-city	cloud	sphere	18 5 14	30 -12 24	-	-	cloud	-	-
+once-city	way	box	3.6 0.06 22	0 0.03 19	-	0.3	cream	-	-
+once-city	gate	thing	1	0 0 30	-	-	-	letter-gate	-
+once-city	dome	thing	1	0 0 0	-	-	-	lotus-dome	-
+once-city	dome	thing	0.55	-22 0 -14	0 30 0	-	-	lotus-dome-lilac	-
+once-city	dome	thing	0.55	21 0 -17	0 -30 0	-	-	lotus-dome-mint	-
+once-city	dome	thing	0.6	0 0 -27	-	-	-	lotus-dome	-
+once-city	tree	thing	1.6	15.5 0 26.85	0 30 0	-	-	tree-pill	-
+once-city	tree	thing	1.6	23.75 0 19.93	0 50 0	-	-	tree-ball	-
+once-city	tree	thing	1.6	29.13 0 10.6	0 70 0	-	-	tree-eight	-
+once-city	tree	thing	1.6	31 0 0	0 90 0	-	-	tree-y	-
+once-city	tree	thing	1.6	29.13 0 -10.6	0 110 0	-	-	tree-t	-
+once-city	tree	thing	1.6	23.75 0 -19.93	0 130 0	-	-	tree-palm	-
+once-city	tree	thing	1.6	15.5 0 -26.85	0 150 0	-	-	tree-fir	-
+once-city	tree	thing	1.6	5.38 0 -30.53	0 170 0	-	-	tree-lotus	-
+once-city	tree	thing	1.6	-5.38 0 -30.53	0 190 0	-	-	tree-willow	-
+once-city	tree	thing	1.6	-15.5 0 -26.85	0 210 0	-	-	tree-ring	-
+once-city	tree	thing	1.6	-23.75 0 -19.93	0 230 0	-	-	tree-hedge	-
+once-city	tree	thing	1.6	-29.13 0 -10.6	0 250 0	-	-	tree-spiral	-
+once-city	tree	thing	1.6	-31 0 -0	0 270 0	-	-	tree-blossom	-
+once-city	tree	thing	1.6	-29.13 0 10.6	0 290 0	-	-	tree-bonsai	-
+once-city	tree	thing	1.6	-23.75 0 19.93	0 310 0	-	-	tree-f	-
+once-city	tree	thing	1.6	-15.5 0 26.85	0 330 0	-	-	tree-bird	-
+once-city	couch	thing	1	8 0 13.86	0 210 0	-	-	couch-l	-
+once-city	couch	thing	1	12.26 0 10.28	0 230 0	-	-	couch-h	-
+once-city	couch	thing	1	15.04 0 5.47	0 250 0	-	-	couch-n	-
+once-city	couch	thing	1	16 0 0	0 270 0	-	-	couch-u	-
+once-city	couch	thing	1	15.04 0 -5.47	0 290 0	-	-	couch-d	-
+once-city	couch	thing	1	12.26 0 -10.28	0 310 0	-	-	couch-b	-
+once-city	couch	thing	1	8 0 -13.86	0 330 0	-	-	couch-r	-
+once-city	couch	thing	1	2.78 0 -15.76	0 350 0	-	-	couch-e	-
+once-city	couch	thing	1	-2.78 0 -15.76	0 10 0	-	-	couch-c	-
+once-city	couch	thing	1	-8 0 -13.86	0 30 0	-	-	couch-z	-
+once-city	couch	thing	1	-12.26 0 -10.28	0 50 0	-	-	couch-j	-
+once-city	couch	thing	1	-15.04 0 -5.47	0 70 0	-	-	couch-w	-
+once-city	couch	thing	1	-16 0 -0	0 90 0	-	-	ottoman-i	-
+once-city	couch	thing	1	-15.04 0 5.47	0 110 0	-	-	pouf-o	-
+once-city	couch	thing	1	-12.26 0 10.28	0 130 0	-	-	stool-m	-
+once-city	couch	thing	1	-8 0 13.86	0 150 0	-	-	couch-bird	-
+once-city	zebra	thing	1	-9 0 24	0 20 0	-	-	zebra	-
+once-city	zebra	thing	1	8 0 23	0 150 0	-	-	zebra-rose	-
+once-city	zebra	thing	1	-13 0 15	0 -40 0	-	-	zebra-sky	-
+once-city	zebra	thing	1	13 0 13	0 200 0	-	-	zebra-gold	-
+once-city	zebra	thing	1	-6 0 34	0 70 0	-	-	zebra-lilac	-
+once-city	zebra	thing	1	7 0 34.5	0 110 0	-	-	zebra-mint	-
+once-city	cloud	sphere	18 4 12	39 -14 0	-	-	cloud	-	10 0 0 0 0 36 0
+once-city	cloud	sphere	16 4 12	24 -19 12	-	-	cloud	-	8 0 0 0 0 45 0
+once-city	lamp	thing	1	-2.8 0 10.5	-	-	-	lamp-i	6 0 0 3.6
+once-city	lamp	thing	1	2.8 0 10.5	-	-	-	lamp-i	6 0 0 3.6
+once-city	tree	thing	1.3	15.43 0 18.39	0 40 0	-	-	tree-bird	-
+once-city	tree	thing	1.3	20.78 0 12	0 60 0	-	-	tree-f	-
+once-city	tree	thing	1.3	23.64 0 4.17	0 80 0	-	-	tree-bonsai	-
+once-city	tree	thing	1.3	23.64 0 -4.17	0 100 0	-	-	tree-blossom	-
+once-city	tree	thing	1.3	20.78 0 -12	0 120 0	-	-	tree-spiral	-
+once-city	tree	thing	1.3	15.43 0 -18.39	0 140 0	-	-	tree-hedge	-
+once-city	tree	thing	1.3	8.21 0 -22.55	0 160 0	-	-	tree-ring	-
+once-city	tree	thing	1.3	0 0 -24	0 180 0	-	-	tree-willow	-
+once-city	tree	thing	1.3	-8.21 0 -22.55	0 200 0	-	-	tree-lotus	-
+once-city	tree	thing	1.3	-15.43 0 -18.39	0 220 0	-	-	tree-fir	-
+once-city	tree	thing	1.3	-20.78 0 -12	0 240 0	-	-	tree-palm	-
+once-city	tree	thing	1.3	-23.64 0 -4.17	0 260 0	-	-	tree-t	-
+once-city	tree	thing	1.3	-23.64 0 4.17	0 280 0	-	-	tree-y	-
+once-city	tree	thing	1.3	-20.78 0 12	0 300 0	-	-	tree-eight	-
+once-city	tree	thing	1.3	-15.43 0 18.39	0 320 0	-	-	tree-ball	-
+once-city	tree	thing	1.3	-8.21 0 22.55	0 340 0	-	-	tree-pill	-

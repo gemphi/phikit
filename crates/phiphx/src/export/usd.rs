@@ -10,6 +10,7 @@ mod point_cloud;
 mod scene;
 mod shape;
 mod stage;
+mod thing;
 mod writer;
 
 pub use name::{UsdNameSet, usd_word};

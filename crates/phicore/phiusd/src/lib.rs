@@ -11,6 +11,7 @@ mod xform;
 use std::path::Path;
 
 use openusd::Stage;
+use openusd::sdf::Value;
 use phiecs::comp::Matrix;
 
 use read::{ints, points, text, tokens};
@@ -75,6 +76,12 @@ pub fn read(file: &Path) -> Scene {
     let Ok(stage) = Stage::builder().on_error(|_| Ok(())).open(&file.to_string_lossy()) else { return Scene::default() };
     let mut path = Vec::new();
     let _ = stage.traverse(|p| path.push(p.to_string()));
+    // The stage's root holds the roots of every layer it read, those it
+    // only refers to too (openusd 0.3 merges them all there): only what
+    // stands under the file's own roots is the file's scene.
+    if let Some(own) = own_roots(file) {
+        path.retain(|p| own.iter().any(|root| p.trim_start_matches('/').split('/').next() == Some(root.as_str())));
+    }
     let root = stage.default_prim().map(|name| xform::local(&stage, &format!("/{}", name.trim_start_matches('/')))).unwrap_or_default();
     let mut scene = Scene { root, ..Scene::default() };
     for prim in path {
@@ -100,6 +107,17 @@ pub fn read(file: &Path) -> Scene {
         }
     }
     scene
+}
+
+/// The prims at the root of the file itself, as it alone writes them;
+/// none where it cannot be read on its own.
+fn own_roots(file: &Path) -> Option<Vec<String>> {
+    let resolved = openusd::ar::ResolvedPath::new(file);
+    let data = openusd::layer::open_layer(&openusd::ar::DefaultResolver::new(), &resolved).ok()?;
+    match data.get(&openusd::sdf::Path::abs_root(), "primChildren").ok()?.as_ref() {
+        Value::TokenVec(own) => Some(own.clone()),
+        _ => None,
+    }
 }
 
 /// Whether a prim or one above it is not active.

@@ -1,0 +1,37 @@
+# The looks Once City's things wear: a name, its colour as it is seen
+# (#rrggbb, sRGB; USD keeps it linear), and its finish: how rough, how
+# metal. The rose of the chaise, the red of the chairs, the green of the
+# sprite and the lion, the gold of the dome's ribs and the pink hat are
+# the two pictures' of 24 November 2026; the rest are the city's.
+look	colour	finish
+pearl	#f6f1ec	0.4 0
+chalk	#f3eee6	0.55 0
+cream	#eadcc4	0.6 0
+stone	#d8d0c2	0.85 0
+cloud	#f7f8fc	0.95 0
+rose	#ee8fb5	0.55 0
+blush	#f7c3d6	0.6 0
+scarlet	#d42a30	0.5 0
+ruby	#9c1730	0.45 0
+lime	#86d84a	0.5 0
+jade	#38a868	0.5 0
+leaf	#5aa040	0.75 0
+moss	#2e6b37	0.8 0
+blossom	#f4b4cc	0.65 0
+bark	#7b5437	0.85 0
+gold	#d8b35c	0.3 1
+brass	#bf923a	0.35 1
+amber	#de9f3c	0.5 0.15
+onyx	#1f1d22	0.35 0.2
+coal	#27272b	0.6 0
+sky	#90c8ef	0.5 0
+navy	#263c76	0.5 0
+lilac	#c6a5ee	0.5 0
+mint	#a6e9cf	0.5 0
+eye	#f2c44b	0.3 0.5
+nose	#3b2a27	0.6 0
+# What a couch's body wears until the couch says (its frame, its seat
+# cushions, its back cushions).
+frame	#eadcc4	0.6 0
+cushion	#ee8fb5	0.55 0
+pillow	#f7c3d6	0.6 0

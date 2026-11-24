@@ -38,3 +38,28 @@ same p as the `icon` of Phiogy's entry in
 `doc/logo/registry-icon.json`, and it is put there from that file. The row seated `head` in `data/activity.tsv`
 names it, and it is drawn in the window's caption, over the bar, in the theme's own
 ink, as every icon is.
+
+## Once City
+
+`once/` holds Once City's things as USD, a file each, written by
+phiphx's `thing_usd` example from the tables in `data/once/`
+(`thing.tsv` the parts, `look.tsv` the looks, `source.tsv` the font and
+the drawing they are made from); a test there keeps the files equal to
+the tables. Nothing in a file is drawn by hand.
+
+- Sixteen couches, each a letter of Phi-Pill Bold as its two side
+  panels with seat and back cushions between (L, h, n, u, d, b, r, e,
+  c, z, J, w), the I lying as an ottoman, the o as a pouf, the m as a
+  stool, and the bird (the p above) as the rose chaise's panels. The
+  seats are 0.46 high.
+- Sixteen trees of pills, balls, cones and rings, four with letters
+  as their trunks (Y, T, S, f) and one a hedge cut as the bird.
+- The lionesses Amber and Onyx, Jade the green lion, and six zebras of
+  the city's colours, built of pills; a zebra's legs and neck are
+  things of their own, stripes and all.
+- The gate, ONCE in gold letters 5.5 high, each letter's counter a
+  door 1.1 wide; the lotus dome with its lounge; the i of the font as
+  the lamps of the way in.
+- `once-city.usda`, the whole city on its island over the clouds:
+  each thing in it is a reference to its own file, so the library's
+  scene tree shows the city, the gate, Amber, the lioness and her parts.

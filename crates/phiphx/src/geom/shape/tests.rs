@@ -132,7 +132,10 @@ fn shape_usda_reads_back() {
         for needle in ["#usda 1.0", "metersPerUnit = 1", "upAxis = \"Y\"", "UsdPreviewSurface", "rel material:binding", "interpolation = \"faceVarying\""] {
             assert!(text.contains(needle), "{}: no {needle}", shape.name);
         }
-        assert!(text.contains(&format!("defaultPrim = \"{}\"", shape.name)));
+        // The prim is the shape's name made a USD word (`dice-phiber` is
+        // `dice_phiber`).
+        let prim = crate::export::usd::UsdNameSet::clean(&shape.name);
+        assert!(text.contains(&format!("defaultPrim = \"{prim}\"")), "{}: no default prim {prim}", shape.name);
         let mesh = crate::import::usd::UsdImporter::import_usda_as_mesh(&text).expect("reads back");
         let part = shape.part();
         assert_eq!(mesh.len(), part.len(), "{}: a mesh per part", shape.name);

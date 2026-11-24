@@ -4,10 +4,10 @@
 //! their names, measures, parts and looks; code only knows how each form
 //! is made. `export::usd` writes them as USDA (`Shape::to_usda`).
 
-mod lathe;
+pub(crate) mod lathe;
 pub mod part;
 pub mod pip;
-mod solid;
+pub(crate) mod solid;
 #[cfg(test)]
 mod tests;
 

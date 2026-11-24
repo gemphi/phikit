@@ -1,0 +1,12 @@
+# Where Once City's letters and drawings come from (phiphx geom::thing):
+# a source's name, as a thing's `from` names it (`name:letter` for a
+# font), and its file from this folder.
+#
+# Phi-Pill Bold: its upright strokes are 235 of its 635 units of
+# capital height, its lying ones 118 (`thin`), its small letters 495
+# high, and every letter's counter 130 wide, whatever the weight.
+source	file
+pill-bold	../../../../../phiber/assets/phi-fonts/Phi-Pill/PhiPill-Bold.otf
+pill	../../../../../phiber/assets/phi-fonts/Phi-Pill/PhiPill-Regular.otf
+# Phiogy's mark: the p, the bird (asset/README.md).
+bird	../../asset/icon/phiogy.svg

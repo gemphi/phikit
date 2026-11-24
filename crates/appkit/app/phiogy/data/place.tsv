@@ -15,4 +15,5 @@ picture	place.picture	image	system	picture	-	-
 video	place.video	video	system	video	-	-
 audio	place.audio	music	system	audio	-	-
 shape	place.shape	box	own	asset	shape	-
+once	place.once	letter-o	own	asset	once	-
 phiegg	place.phiegg	folder	own	home	Phiegg	make

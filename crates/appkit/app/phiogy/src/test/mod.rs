@@ -15,6 +15,8 @@ mod hosts;
 mod left;
 #[cfg(not(target_family = "wasm"))]
 mod library;
+#[cfg(not(target_family = "wasm"))]
+mod once;
 mod pace;
 mod pill;
 mod ring;
