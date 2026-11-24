@@ -272,34 +272,133 @@ jetski-5	ski	thing	1	0 0 0	-	-	cobalt=teal	jetski-short	-
 jetski-6	ski	thing	1	0 0 0	-	-	chalk=lime cobalt=coal lemon=chalk	jetski-short	-
 jetski-7	ski	thing	1	0 0 0	-	-	chalk=sky cobalt=navy	jetski-short	-
 jetski-8	ski	thing	1	0 0 0	-	-	chalk=sand cobalt=orange lemon=scarlet	jetski-short	-
-# The Phijet: a pill of a body, swept wings and a T tail, engines on the
-# tail, a row of Phiber o's for windows each side.
-phijet	body	capsule	1.8 14 1.8	0 2.2 0	0 0 -90	-	chalk	-	-
-phijet	cheat	box	12 0.2 1.86	0.2 2.05 0	-	0.5	cobalt	-	-
-phijet	screen	box	0.9 0.36 1.3	5.4 2.72 0	0 0 -18	0.4	glass	-	-
-phijet	window	letter	0 0.34 0.04	2.8 2.45 0.89	-	0.02	glass	phiber:o	7 -0.85 0 0
-phijet	window	letter	0 0.34 0.04	2.8 2.45 -0.89	-	0.02	glass	phiber:o	7 -0.85 0 0
-phijet	wing	box	2.4 0.2 5.6	-0.9 1.7 3.3	0 -18 0	0.4	chalk	-	-
-phijet	wing	box	2.4 0.2 5.6	-0.9 1.7 -3.3	0 18 0	0.4	chalk	-	-
-phijet	winglet	box	0.9 1.0 0.14	-2.0 2.2 6.0	0 0 20	0.3	cobalt	-	-
-phijet	winglet	box	0.9 1.0 0.14	-2.0 2.2 -6.0	0 0 20	0.3	cobalt	-	-
-phijet	fin	box	2.0 2.6 0.22	-5.7 3.7 0	0 0 25	0.3	cobalt	-	-
-phijet	stab	box	1.5 0.16 4.6	-6.6 4.85 0	-	0.3	chalk	-	-
-phijet	engine	capsule	0.8 2.6 0.8	-4.0 2.95 -1.45	0 0 90	-	chalk	-	2 0 0 2.9
-phijet	intake	torus	0.82 0.14 0.82	-2.75 2.95 -1.45	0 0 90	-	gold	-	2 0 0 2.9
-phijet	wheel	cylinder	0.5 0.25 0.5	4.6 0.25 0	90 0 0	-	coal	-	-
-phijet	wheel	cylinder	0.6 0.3 0.6	-1.0 0.3 -1.2	90 0 0	-	coal	-	2 0 0 2.4
-phijet	strut	capsule	0.12 1.1 0.12	4.6 0.85 0	-	-	steel	-	-
-phijet	strut	capsule	0.14 1.0 0.14	-1.0 0.85 -1.2	-	-	steel	-	2 0 0 2.4
-# Four Phijets, small to large: the light jet, the jet, the large jet
-# with engines under its wings too, and the liner with two more.
-phijet-1	jet	thing	0.8	0 0 0	-	-	cobalt=rose	phijet	-
-phijet-2	jet	thing	1	0 0 0	-	-	-	phijet	-
-phijet-3	jet	thing	1.5	0 0 0	-	-	cobalt=gold	phijet	-
-phijet-3	pod	capsule	1.1 3.2 1.1	-0.4 1.75 -5.0	0 0 90	-	chalk	-	2 0 0 10
-phijet-4	jet	thing	2.2	0 0 0	-	-	cobalt=teal chalk=pearl	phijet	-
-phijet-4	pod	capsule	1.5 4.4 1.5	0.2 2.6 -6.6	0 0 90	-	pearl	-	2 0 0 13.2
-phijet-4	pod	capsule	1.4 4.0 1.4	-1.6 2.8 -10.4	0 0 90	-	pearl	-	2 0 0 20.8
+# The Phijets, electric (the user, 24 November 2026: "ours are electric
+# and less furnished with huge wings"): the two jets of the user's
+# sketch raised from their outlines (jet-cabin.svg, jet-sleek.svg), a
+# dark visor over the cockpit and oval windows as the photo's, the huge
+# swept wings with their tips turned up, two ducted fans glowing at the
+# tail in place of engines. The cabin inside, after the user's sketch
+# of its seats. The flying car of the same sketch (fly-car.svg) with
+# its canopy, leaf windows and hover rings.
+jet-cabin	body	outline	18 5.6 2.8	0 3.9 0	-	0.2	chalk	jet-cabin	-
+jet-cabin	visor	sphere	4.03 1.329 2.576	5.91 4.422 0	0 0 -14	-	window	-	-
+jet-cabin	glass	cylinder	0.94 0.04 0.949	-5.722 3.568 1.372	90 0 0	-	window	-	-
+jet-cabin	frame	torus	1.053 0.132 1.063	-5.722 3.568 1.372	90 0 0	-	gold	-	-
+jet-cabin	glass	cylinder	0.94 0.04 0.949	-5.722 3.568 -1.372	90 0 0	-	window	-	-
+jet-cabin	frame	torus	1.053 0.132 1.063	-5.722 3.568 -1.372	90 0 0	-	gold	-	-
+jet-cabin	glass	cylinder	1.236 0.04 1.063	-3.493 3.53 1.372	90 0 0	-	window	-	-
+jet-cabin	frame	torus	1.384 0.149 1.191	-3.493 3.53 1.372	90 0 0	-	gold	-	-
+jet-cabin	glass	cylinder	1.236 0.04 1.063	-3.493 3.53 -1.372	90 0 0	-	window	-	-
+jet-cabin	frame	torus	1.384 0.149 1.191	-3.493 3.53 -1.372	90 0 0	-	gold	-	-
+jet-cabin	glass	cylinder	1.236 0.04 1.063	-0.94 3.53 1.372	90 0 0	-	window	-	-
+jet-cabin	frame	torus	1.384 0.149 1.191	-0.94 3.53 1.372	90 0 0	-	gold	-	-
+jet-cabin	glass	cylinder	1.236 0.04 1.063	-0.94 3.53 -1.372	90 0 0	-	window	-	-
+jet-cabin	frame	torus	1.384 0.149 1.191	-0.94 3.53 -1.372	90 0 0	-	gold	-	-
+jet-cabin	glass	cylinder	1.343 0.04 1.063	1.397 3.53 1.372	90 0 0	-	window	-	-
+jet-cabin	frame	torus	1.504 0.149 1.191	1.397 3.53 1.372	90 0 0	-	gold	-	-
+jet-cabin	glass	cylinder	1.343 0.04 1.063	1.397 3.53 -1.372	90 0 0	-	window	-	-
+jet-cabin	frame	torus	1.504 0.149 1.191	1.397 3.53 -1.372	90 0 0	-	gold	-	-
+jet-cabin	door	box	1.666 2.126 0.05	3.815 2.979 1.386	-	0.45	gold	-	-
+jet-cabin	wing	outline	5.04 27.9 0.3	-1.08 2.332 0	-90 0 0	0.004	chalk	jet-wing	-
+jet-cabin	winglet	box	0.9 3.08 0.16	-3.06 3.788 13.85	0 0 -20	0.4	cobalt	-	-
+jet-cabin	winglet	box	0.9 3.08 0.16	-3.06 3.788 -13.85	0 0 -20	0.4	cobalt	-	-
+jet-cabin	fin	outline	3.6 4.76 0.32	-7.2 7.932 0	-	0.02	chalk	jet-fin	-
+jet-cabin	tailplane	outline	2.16 7.56 0.2	-8.46 10.172 0	-90 0 0	0.004	chalk	jet-wing	-
+jet-cabin	fan	torus	2.352 0.504 2.352	-6.48 4.74 1.736	0 0 90	-	steel	-	-
+jet-cabin	glow	cylinder	1.68 0.05 1.68	-6.48 4.74 1.736	0 0 90	-	cyan	-	-
+jet-cabin	fan	torus	2.352 0.504 2.352	-6.48 4.74 -1.736	0 0 90	-	steel	-	-
+jet-cabin	glow	cylinder	1.68 0.05 1.68	-6.48 4.74 -1.736	0 0 90	-	cyan	-	-
+jet-cabin	wheel	cylinder	0.6 0.3 0.6	6.48 0.3 0	90 0 0	-	coal	-	-
+jet-cabin	wheel	cylinder	0.8 0.36 0.8	-1.44 0.4 -1.26	90 0 0	-	coal	-	2 0 0 2.52
+jet-cabin	strut	capsule	0.16 1.2 0.16	6.48 0.9 0	-	-	steel	-	-
+jet-cabin	strut	capsule	0.18 1.2 0.18	-1.44 0.95 -1.26	-	-	steel	-	2 0 0 2.52
+jet-sleek	body	outline	20 5.0 2.6	0 3.6 0	-	0.2	pearl	jet-sleek	-
+jet-sleek	visor	sphere	3.609 1.322 2.392	8.045 4.514 0	0 0 -14	-	window	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	-3.985 4.294 1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	-3.985 4.294 1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	-3.985 4.294 -1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	-3.985 4.294 -1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	-2.481 4.294 1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	-2.481 4.294 1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	-2.481 4.294 -1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	-2.481 4.294 -1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	-0.977 4.294 1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	-0.977 4.294 1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	-0.977 4.294 -1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	-0.977 4.294 -1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	0.526 4.294 1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	0.526 4.294 1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	0.526 4.294 -1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	0.526 4.294 -1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	2.03 4.294 1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	2.03 4.294 1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	2.03 4.294 -1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	2.03 4.294 -1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	3.534 4.294 1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	3.534 4.294 1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	3.534 4.294 -1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	3.534 4.294 -1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	5.038 4.294 1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	5.038 4.294 1.274	90 0 0	-	gold	-	-
+jet-sleek	glass	cylinder	0.902 0.04 0.925	5.038 4.294 -1.274	90 0 0	-	window	-	-
+jet-sleek	frame	torus	1.011 0.126 1.036	5.038 4.294 -1.274	90 0 0	-	gold	-	-
+jet-sleek	door	box	1.203 1.982 0.05	6.992 3.853 1.287	-	0.45	gold	-	-
+jet-sleek	wing	outline	5.6 31 0.3	-1.2 2.2 0	-90 0 0	0.004	pearl	jet-wing	-
+jet-sleek	winglet	box	1 2.75 0.16	-3.4 3.5 15.4	0 0 -20	0.4	cobalt	-	-
+jet-sleek	winglet	box	1 2.75 0.16	-3.4 3.5 -15.4	0 0 -20	0.4	cobalt	-	-
+jet-sleek	fin	outline	4 4.25 0.32	-8 7.2 0	-	0.02	pearl	jet-fin	-
+jet-sleek	tailplane	outline	2.4 8.4 0.2	-9.4 9.2 0	-90 0 0	0.004	pearl	jet-wing	-
+jet-sleek	fan	torus	2.1 0.45 2.1	-7.2 4.35 1.612	0 0 90	-	steel	-	-
+jet-sleek	glow	cylinder	1.5 0.05 1.5	-7.2 4.35 1.612	0 0 90	-	cyan	-	-
+jet-sleek	fan	torus	2.1 0.45 2.1	-7.2 4.35 -1.612	0 0 90	-	steel	-	-
+jet-sleek	glow	cylinder	1.5 0.05 1.5	-7.2 4.35 -1.612	0 0 90	-	cyan	-	-
+jet-sleek	wheel	cylinder	0.6 0.3 0.6	7.2 0.3 0	90 0 0	-	coal	-	-
+jet-sleek	wheel	cylinder	0.8 0.36 0.8	-1.6 0.4 -1.17	90 0 0	-	coal	-	2 0 0 2.34
+jet-sleek	strut	capsule	0.16 1.2 0.16	7.2 0.9 0	-	-	steel	-	-
+jet-sleek	strut	capsule	0.18 1.2 0.18	-1.6 0.95 -1.17	-	-	steel	-	2 0 0 2.34
+jet-inside	floor	box	8.4 0.12 2.4	0 0.06 0	-	0.1	stone	-	-
+jet-inside	aisle	box	8.2 0.02 0.62	0 0.13 0	-	0.3	plum	-	-
+jet-inside	wall	box	8.4 1.9 0.1	0 1.0 1.22	-6 0 0	0.3	pearl	-	-
+jet-inside	wall	box	8.4 1.9 0.1	0 1.0 -1.22	6 0 0	0.3	pearl	-	-
+jet-inside	glass	cylinder	0.34 0.04 0.5	-3.2 1.25 1.16	90 0 0	-	window	-	5 1.6 0 0
+jet-inside	frame	torus	0.4 0.05 0.58	-3.2 1.25 1.16	90 0 0	-	gold	-	5 1.6 0 0
+jet-inside	glass	cylinder	0.34 0.04 0.5	-3.2 1.25 -1.16	90 0 0	-	window	-	5 1.6 0 0
+jet-inside	frame	torus	0.4 0.05 0.58	-3.2 1.25 -1.16	90 0 0	-	gold	-	5 1.6 0 0
+jet-inside	seat	thing	1	-2.6 0.12 0.72	-	-	-	club-seat	3 2.0 0 0
+jet-inside	seat	thing	1	-2.6 0.12 -0.72	-	-	-	club-seat	3 2.0 0 0
+jet-inside	bulkhead	box	0.12 1.95 2.4	4.1 1.0 0	-	0.2	pearl	-	-
+jet-inside	door	box	0.14 1.6 0.62	4.06 0.9 0	-	0.3	window	-	-
+jet-inside	doorframe	letter	0.66 1.8 0.08	4.0 0.98 0	0 90 0	0.02	gold	phiber:O	-
+jet-inside	cabinet	box	0.5 1.25 0.5	3.75 0.75 0.85	-	0.2	pearl	-	2 0 0 -1.7
+club-seat	base	box	0.72 0.34 0.7	0 0.17 0	-	0.3	cream	-	-
+club-seat	cushion	box	0.62 0.14 0.6	0.04 0.41 0	-	0.45	cream	-	-
+club-seat	back	box	0.2 0.86 0.64	-0.3 0.82 0	0 0 8	0.45	cream	-	-
+club-seat	head	capsule	0.2 0.5 0.18	-0.36 1.3 0	90 0 0	-	chalk	-	-
+club-seat	arm	box	0.66 0.3 0.12	0.02 0.52 0.33	-	0.5	cream	-	2 0 0 -0.66
+fly-car	body	outline	5.2 2.2 2.0	0 1.85 0	-	0.25	chalk	fly-car	-
+fly-car	canopy	outline	2.391 1.07 1.4	-0.962 2.839 0	-	0.06	window	car-canopy	-
+fly-car	window	outline	2.137 1.009 0.05	-0.504 1.628 0.99	-	0.02	window	car-window	-
+fly-car	window	outline	2.137 1.009 0.05	-0.504 1.628 -0.99	-	0.02	window	car-window	-
+fly-car	window	outline	1.984 0.908 0.05	1.196 1.779 0.99	-	0.02	window	car-window	-
+fly-car	window	outline	1.984 0.908 0.05	1.196 1.779 -0.99	-	0.02	window	car-window	-
+fly-car	hover	torus	0.95 0.2 0.95	1.5 0.4 0.95	-	-	steel	-	-
+fly-car	glow	cylinder	0.72 0.05 0.72	1.5 0.38 0.95	-	-	cyan	-	-
+fly-car	hover	torus	0.95 0.2 0.95	1.5 0.4 -0.95	-	-	steel	-	-
+fly-car	glow	cylinder	0.72 0.05 0.72	1.5 0.38 -0.95	-	-	cyan	-	-
+fly-car	hover	torus	0.95 0.2 0.95	-1.5 0.4 0.95	-	-	steel	-	-
+fly-car	glow	cylinder	0.72 0.05 0.72	-1.5 0.38 0.95	-	-	cyan	-	-
+fly-car	hover	torus	0.95 0.2 0.95	-1.5 0.4 -0.95	-	-	steel	-	-
+fly-car	glow	cylinder	0.72 0.05 0.72	-1.5 0.38 -0.95	-	-	cyan	-	-
+phijet-1	jet	thing	0.8	0 0 0	-	-	pearl=rose	jet-sleek	-
+phijet-2	jet	thing	1	0 0 0	-	-	-	jet-sleek	-
+phijet-3	jet	thing	1	0 0 0	-	-	-	jet-cabin	-
+phijet-3	inside	thing	1	0.6 2.5 0	-	-	-	jet-inside	-
+phijet-4	jet	thing	1.4	0 0 0	-	-	chalk=pearl gold=lemon	jet-cabin	-
+phijet-4	inside	thing	1.4	0.84 3.5 0	-	-	-	jet-inside	-
+flycar-1	car	thing	1	0 0 0	-	-	-	fly-car	-
+flycar-2	car	thing	1	0 0 0	-	-	chalk=rose	fly-car	-
+flycar-3	car	thing	1	0 0 0	-	-	chalk=lilac window=onyx	fly-car	-
+flycar-4	car	thing	1	0 0 0	-	-	chalk=mint	fly-car	-
 # The rockets, as Starship is built: a can of steel, an ogive nose,
 # flaps, bells under it; Phiber o's for its windows.
 ship	body	cylinder	9 36 9	0 18 0	-	-	steel	-	-

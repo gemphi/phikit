@@ -1,8 +1,8 @@
 //! The outlines of a drawing: every `d` of an svg file's paths, read as
 //! closed rings of points (y turned up, as a font's is). Moves, lines
-//! (straight, across, down) and arcs are read, in place or relative;
-//! an arc is cut into `step` pieces a quarter turn. Curves of other
-//! kinds are not read (the house's drawings have none).
+//! (straight, across, down), arcs and curves (cubic and quadratic) are
+//! read, in place or relative; an arc is cut into `step` pieces a
+//! quarter turn, a curve into four times `step` pieces.
 
 use std::f32::consts::{FRAC_PI_2, TAU};
 
@@ -63,6 +63,20 @@ fn path(data: &str, step: usize) -> Vec<Vec<[f32; 2]>> {
             'L' => at = [base[0] + number(&mut k), base[1] + number(&mut k)],
             'H' => at = [base[0] + number(&mut k), at[1]],
             'V' => at = [at[0], base[1] + number(&mut k)],
+            'C' | 'Q' => {
+                let cubic = command.eq_ignore_ascii_case(&'C');
+                let mut point = vec![at];
+                for _ in 0..match cubic {
+                    true => 3,
+                    false => 2,
+                } {
+                    point.push([base[0] + number(&mut k), base[1] + number(&mut k)]);
+                }
+                let n = 4 * step.max(1);
+                ring.extend((1..=n).map(|i| bezier(&point, i as f32 / n as f32)));
+                at = *point.last().unwrap_or(&at);
+                continue;
+            }
             'A' => {
                 let (rx, ry, turn, large, sweep) = (number(&mut k), number(&mut k), number(&mut k), number(&mut k) != 0.0, number(&mut k) != 0.0);
                 let end = [base[0] + number(&mut k), base[1] + number(&mut k)];
@@ -88,6 +102,16 @@ fn path(data: &str, step: usize) -> Vec<Vec<[f32; 2]>> {
         }
         r
     }).collect()
+}
+
+/// The point of a curve (its control points, in order) at `t` (0 to 1),
+/// by de Casteljau's halving.
+fn bezier(point: &[[f32; 2]], t: f32) -> [f32; 2] {
+    let mut p = point.to_vec();
+    while p.len() > 1 {
+        p = p.windows(2).map(|w| [w[0][0] + (w[1][0] - w[0][0]) * t, w[0][1] + (w[1][1] - w[0][1]) * t]).collect();
+    }
+    p.first().copied().unwrap_or_default()
 }
 
 /// A path's words: its commands and its numbers.

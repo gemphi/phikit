@@ -16,3 +16,12 @@ phiber	../../../../../phiber/assets/phi-fonts/Phiber/Phiber-Regular.otf
 # The jetskis' hulls, drawn from the user's red sketches.
 hull-long	hull-long.svg
 hull-short	hull-short.svg
+# The jets and the flying car, from the user's sketch of their sides
+# (24 November 2026), and their wings, fin, canopy and windows.
+jet-cabin	jet-cabin.svg
+jet-sleek	jet-sleek.svg
+fly-car	fly-car.svg
+car-canopy	car-canopy.svg
+car-window	car-window.svg
+jet-wing	jet-wing.svg
+jet-fin	jet-fin.svg

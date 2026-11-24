@@ -25,3 +25,13 @@ fn a_half_turn_arc_keeps_to_its_circle() {
         assert!((d - 5.0).abs() < 1e-3, "{p:?}");
     }
 }
+
+#[test]
+fn a_cubic_curve_starts_and_ends_where_it_says_and_bends_between() {
+    let ring = rings(r#"<path d="M0 0C0 10 10 10 10 0Z"/>"#, 2);
+    let r = &ring[0];
+    assert_eq!(r.len(), 1 + 8);
+    assert_eq!(r[r.len() - 1], [10.0, 0.0]);
+    // Halfway it is three quarters of the way up (y turned up: -7.5).
+    assert!((r[4][0] - 5.0).abs() < 1e-4 && (r[4][1] + 7.5).abs() < 1e-4, "{:?}", r[4]);
+}
