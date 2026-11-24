@@ -78,10 +78,15 @@ fn a_long_room_is_scrolled_with_the_wheel_from_its_foot() {
 #[test]
 fn step_13_the_rail_is_the_web_s_own_with_its_headings_and_a_page_is_its_blocks() {
     let (app, mut stage, look) = staged(DESK);
+    assert!(app.desk().visit("phiace"));
     let text = shown(&stage, &look);
-    let at = |wanted: &str| text.iter().position(|line| line == wanted).unwrap_or_else(|| panic!("{wanted} in {text:?}"));
+    // The guide's lines are the last of those words: the room's title
+    // names its place and room too.
+    let at = |wanted: &str| text.iter().rposition(|line| line == wanted).unwrap_or_else(|| panic!("{wanted} in {text:?}"));
     // Under a place its headings, each over its rooms.
     assert!(at("Phiace") < at("Text") && at("Text") < at("lobby") && at("lobby") < at("Voice") && at("Voice") < at("Lounge"));
+    // The page `notes` is of the direct list: back there to open it.
+    assert!(app.desk().show("lora"));
     // A page that is not a room of its own opens what its block names;
     // a block of a kind not drawn yet is named, not left out silently.
     assert!(row(&mut stage, &look, "notes"));
@@ -97,6 +102,8 @@ fn step_13_the_rail_is_the_web_s_own_with_its_headings_and_a_page_is_its_blocks(
 fn how_many_wait_in_a_room_stands_on_a_ground_of_its_own_in_the_rail() {
     // The lobby has two that wait: its row of the rail says so at its
     // end, on a figure's ground, and what the row is called does not.
-    let (_, stage, look) = staged(DESK);
+    let (app, stage, look) = staged(DESK);
+    // The lobby's place, by its other room, so the lobby stays unread.
+    assert!(app.desk().show("lounge"));
     assert!(super::grounded(&stage, &look, "2") && !super::grounded(&stage, &look, "lobby"));
 }

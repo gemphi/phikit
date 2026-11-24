@@ -51,8 +51,9 @@ fn everything_in_the_body_keeps_to_one_column_down_its_middle() {
         assert!(near(across(&lit(&mark, card, surface, false))), "{size:?}");
         // The heading over the field is in the middle too.
         let sheet = PSheet::new(look.as_ref());
-        let head =mark.iter().find_map(|mark| match mark {
-            PMark::Head { at, text, .. } => Some(at.x + sheet.measure_head(text) / 2.0),
+        let head = mark.iter().find_map(|mark| match mark {
+            // A name's mark (one letter, in the bar) is no heading of the body.
+            PMark::Head { at, text, .. } if text.chars().count() > 1 => Some(at.x + sheet.measure_head(text) / 2.0),
             _ => None,
         });
         assert!(head.is_some_and(|middle| (middle - hello.center().x).abs() < 0.01), "{head:?}");

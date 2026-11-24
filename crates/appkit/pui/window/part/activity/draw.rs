@@ -3,7 +3,7 @@
 use super::super::menu::{self, INK, LIT, ROUND, ROW};
 use super::super::{GAP, ICON, INK as TEXT, ROW as LINE, person};
 use super::{CORNER, EDGE, FACE, FILL, PActivity, PIN, RIM, SHARE, share, square};
-use crate::pui::core::letter::letter;
+use crate::pui::core::letter::draw_letter;
 use crate::pui::core::light::{bond, edge, label, pane};
 use crate::pui::core::{PFit, PLight, PPaint, PPoint, PRect};
 use crate::pui::window::PWindow;
@@ -51,7 +51,7 @@ impl PActivity {
                 // An app with no mark of its own has its name's letter,
                 // drawn as every icon is.
                 label(paint, square(plan.head, chip), round, PLight::Strong, false, LIT);
-                paint.icon(&letter(name), square(plan.head, share(paint, SHARE, chip, icon)), text);
+                { let mark = square(plan.head, share(paint, SHARE, chip, icon)); draw_letter(paint, name, mark, text) };
             }
         }
         for (rect, item) in &plan.item {
@@ -69,9 +69,17 @@ impl PActivity {
             let face = square(*rect, share(paint, FACE, chip, icon * 7.0 / 5.0));
             match (&item.face, item.entry.icon.is_empty()) {
                 (Some((sheet, column, index)), _) => paint.picture(sheet, face, face.size.width / 2.0, PFit::Cell { column: *column, index: *index }),
-                (None, true) => paint.icon(&letter(&item.entry.label), square(*rect, share(paint, SHARE, chip, icon)), ink),
+                (None, true) => { let mark = square(*rect, share(paint, SHARE, chip, icon)); draw_letter(paint, &item.entry.label, mark, ink) },
                 (None, false) => paint.icon(&item.entry.icon, square(*rect, share(paint, SHARE, chip, icon)), ink),
             }
+        }
+        // The app's own rows and the places the person is in are told
+        // apart, as a list of servers is: a short line over the first place.
+        let first_place = plan.item.iter().position(|(_, item)| self.live.iter().any(|live| std::ptr::eq(live, *item)));
+        if let (Some(at), Some(colour)) = (first_place.filter(|at| *at > 0 && !plan.lying), paint.theme().color("line.ink")) {
+            let rect = plan.item[at].0;
+            let wide = rect.size.width / 2.0;
+            paint.fill(PRect::new(rect.center().x - wide / 2.0, rect.origin.y - rim / 2.0, wide, rim), colour);
         }
         if let Some(user) = &self.user {
             // The user is their own picture, as large as a row's; with

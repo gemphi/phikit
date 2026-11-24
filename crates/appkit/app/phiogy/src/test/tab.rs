@@ -10,8 +10,9 @@ fn step_46_the_guide_s_tabs_keep_the_recent_the_starred_and_the_older_rooms() {
     let (app, mut stage, look) = staged(DESK);
     let desk = app.desk();
     let has = |stage: &appkit::pui::window::PStage, text: &str| shown(stage, &look).contains(&text.to_string());
-    // With no tab chosen every room is listed, under the three tabs.
-    assert!(["Recent", "Favorites", "Older", "lobby", "front-row"].iter().all(|text| has(&stage, text)));
+    // With no tab chosen the rooms of the place open are listed, under
+    // the three tabs; a tab gathers from every place.
+    assert!(["Recent", "Favorites", "Older", "Lora Vale"].iter().all(|text| has(&stage, text)) && !has(&stage, "front-row"));
     assert_eq!(desk.tabs(), (vec!["recent".to_string(), "favorite".to_string(), "older".to_string()], String::new()));
     // Nothing is starred yet, and the tab says how to.
     assert!(press(&mut stage, &look, "Favorites"));
@@ -32,9 +33,9 @@ fn step_46_the_guide_s_tabs_keep_the_recent_the_starred_and_the_older_rooms() {
     let older = desk.sifted().into_iter().flat_map(|(_, rung)| rung).map(|rung| rung.id).collect::<Vec<_>>();
     assert!(older.contains(&front) && !older.contains(&"notes".to_string()), "{older:?}");
     assert!(recent.iter().all(|id| !older.contains(id)));
-    // The chosen tab again lets every room back.
+    // The chosen tab again lets the place open back, alone.
     assert!(press(&mut stage, &look, "Older"));
-    assert!(desk.tabs().1.is_empty() && has(&stage, "front-row") && has(&stage, "notes"));
+    assert!(desk.tabs().1.is_empty() && has(&stage, "notes") && !has(&stage, "front-row"));
 }
 
 #[test]

@@ -19,7 +19,7 @@ pub use profile::{PFact, PProfile};
 pub use tab::PTab;
 
 use super::{PDeed, PEntry, PLevel, PWindow};
-use crate::pui::core::letter::letter;
+use crate::pui::core::letter::draw_letter;
 use crate::pui::core::light::ink;
 use crate::pui::core::{PFit, PLight, PPaint, PRect};
 use crate::service::PTable;
@@ -97,5 +97,5 @@ pub fn mark(name: &str, square: PRect, paint: &mut dyn PPaint) {
     let fill = PLight::Strong.shade(paint.theme()).unwrap_or_else(|| paint.color(FACE));
     paint.icon(SHAPE, square, fill);
     let middle = square.center();
-    paint.icon(&letter(name), PRect::new(middle.x - side / 2.0, middle.y - side / 2.0, side, side), ink);
+    draw_letter(paint, name, PRect::new(middle.x - side / 2.0, middle.y - side / 2.0, side, side), ink);
 }

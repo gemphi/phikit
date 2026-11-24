@@ -2,7 +2,7 @@
 //! for one with no picture, the letter their name begins with, drawn.
 
 use super::super::core::light::surface;
-use super::super::core::letter::letter;
+use super::super::core::letter::draw_letter;
 use super::super::core::{PFit, PLight, PPaint, PRect};
 use super::{GAP, ICON, INK};
 
@@ -28,7 +28,7 @@ pub trait PFace {
         surface(paint, rect.inset(-gap / 8.0), rect.size.width / 2.0 + gap / 8.0, PLight::Rest, "");
         match self.cell() {
             Some((sheet, column, index)) => paint.picture(sheet, rect, rect.size.width / 2.0, PFit::Cell { column, index }),
-            None => paint.icon(&letter(self.name()), PRect::new(rect.center().x - side / 2.0, rect.center().y - side / 2.0, side, side), ink),
+            None => draw_letter(paint, self.name(), PRect::new(rect.center().x - side / 2.0, rect.center().y - side / 2.0, side, side), ink),
         }
     }
 }

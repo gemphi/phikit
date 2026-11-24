@@ -15,7 +15,7 @@
 use super::activity::{share, square};
 use super::menu::{INK, LIT, ROUND, ROW};
 use super::{GAP, ICON, INK as TEXT, PActivity, ROW as LINE};
-use crate::pui::core::letter::letter;
+use crate::pui::core::letter::draw_letter;
 use crate::pui::core::light::label;
 use crate::pui::core::{PLight, PPaint, PPoint, PRect};
 use crate::pui::window::{PDeed, PFrame, PWindow};
@@ -182,7 +182,7 @@ impl PCaption {
             }
             (false, false, true) => {
                 label(paint, ground, round, PLight::Strong, false, LIT);
-                paint.icon(&letter(name), square(plan.mark, share(paint, MARK, chip, icon)), text);
+                { let mark = square(plan.mark, share(paint, MARK, chip, icon)); draw_letter(paint, name, mark, text) };
             }
         }
         for at in plan.name.into_iter().filter(|_| !activity.is_empty()) {

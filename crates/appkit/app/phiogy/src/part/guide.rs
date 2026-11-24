@@ -5,7 +5,9 @@
 //! with somebody on its line says how many. A press on a room opens it;
 //! the word `start`, from a row of the menu, opens the room a person
 //! begins in; a look chosen in the menu or the profile is kept; and the
-//! word of a host's row of the bar goes to that host's first room.
+//! word of a host's row of the bar goes to that host's first room, and
+//! `direct`, the bar's Rooms row, to the direct list. Only one place is
+//! shown at a time: the one whose room is open (`tab.rs`, `sifted`).
 //! While the person is in a voice room, that room stands at its foot
 //! (`foot`), whichever page is open. Over its rows are its tabs (`tab`):
 //! Recent, Favorites, Older.
@@ -234,6 +236,8 @@ impl PView for Guide {
     fn tell(&mut self, word: &str) -> bool {
         match (word, word.strip_prefix(LOOK), word.strip_prefix(super::host::GO)) {
             (START, ..) => self.desk.show(&self.desk.site.start),
+            // The bar's Rooms row: the direct list, led by friends.
+            (super::page::DIRECT, ..) => self.desk.show(&self.desk.page.id(super::page::FRIEND).to_string()),
             (_, Some(look), _) => self.desk.dress(look),
             (_, _, _) if word.starts_with(PREFER) => self.desk.prefer(&word[PREFER.len()..]),
             (_, _, Some(host)) => self.desk.visit(host),

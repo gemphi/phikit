@@ -17,14 +17,21 @@ fn step_1_it_opens_on_the_room_i_begin_in_with_my_rooms_beside_it() {
     assert_eq!(app.desk().open.borrow().as_str(), "lora");
     assert_eq!(part(&stage), ["title", "room", "status", "guide"]);
     let text = shown(&stage, &look);
-    // The room over the body, and beside the bar the places I joined.
-    assert!(["Lora Vale", "On the line", "Start", "Hosts", "Direct", "Phiace", "lobby", "Lounge", "Opal Atelier", "front-row"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
+    // The room over the body, and beside the bar the one place its room
+    // is in: the direct list, alone.
+    assert!(["Lora Vale", "On the line", "Start", "Hosts", "Direct"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
+    assert!(!["Phiace", "Opal Atelier"].iter().any(|line| text.contains(&line.to_string())), "{text:?}");
+    // A host's row of the bar shows that host, and only it.
+    assert!(app.desk().visit("phiace"));
+    let text = shown(&stage, &look);
+    assert!(["Phiace", "lobby", "Lounge"].iter().all(|line| text.contains(&line.to_string())) && !text.contains(&"Opal Atelier".to_string()), "{text:?}");
+    assert!(app.desk().visit("h_opal") && shown(&stage, &look).contains(&"front-row".to_string()));
 }
 
 #[test]
 fn step_3_a_press_on_a_room_in_the_bar_opens_it() {
     let (app, mut stage, look) = staged(DESK);
-    assert!(row(&mut stage, &look, "lobby"));
+    assert!(app.desk().visit("phiace") && row(&mut stage, &look, "lobby"));
     assert_eq!(app.desk().open.borrow().as_str(), "lobby");
     let text = shown(&stage, &look);
     // Its topic is after its name, cut where the search field needs the room.
@@ -45,7 +52,7 @@ fn step_4_the_hosts_row_lists_every_place_and_a_press_on_one_opens_its_first_roo
 #[test]
 fn step_5_start_brings_me_back_to_the_room_i_begin_in() {
     let (app, mut stage, look) = staged(DESK);
-    assert!(row(&mut stage, &look, "lobby") && icon(&mut stage, &look, "globe"));
+    assert!(app.desk().visit("phiace") && row(&mut stage, &look, "lobby") && icon(&mut stage, &look, "globe"));
     assert!(row(&mut stage, &look, "Start"));
     assert_eq!((app.desk().open.borrow().as_str(), part(&stage)), ("lora", vec!["title", "room", "status", "guide"]));
 }
@@ -64,7 +71,7 @@ fn step_6_a_look_is_chosen_in_the_menu_and_phiogy_opens_the_way_i_left_it() {
     let look = Rc::new(Phiogy::look(""));
     // The Menu row holds the looks; a room is opened from the Rooms row.
     assert!(icon(&mut stage, &look, "layout-grid") && row(&mut stage, &look, "Dark"));
-    assert!(icon(&mut stage, &look, "chat") && row(&mut stage, &look, "lobby"));
+    assert!(icon(&mut stage, &look, "chat") && app.desk().visit("phiace") && row(&mut stage, &look, "lobby"));
     assert_eq!(left(&app), ("dark".to_string(), "lobby".to_string()));
     // A look there is not, and a room there is not, change nothing.
     assert!(!app.desk().dress("dusk") && !app.desk().show("nowhere"));
@@ -100,8 +107,9 @@ fn step_8_in_a_hand_the_room_is_alone_and_the_rooms_row_draws_my_rooms_out() {
     assert_eq!(part(&stage), ["title", "room", "status"]);
     assert!(icon(&mut stage, &look, "chat"));
     assert_eq!(part(&stage), ["guide"]);
-    assert!(press(&mut stage, &look, "lobby"));
-    assert_eq!((app.desk().open.borrow().as_str(), part(&stage)), ("lobby", vec!["title", "room", "status"]));
+    // The Rooms row draws out the direct list; a press on one opens it.
+    assert!(press(&mut stage, &look, "Lora Vale"));
+    assert_eq!((app.desk().open.borrow().as_str(), part(&stage)), ("lora", vec!["title", "room", "status"]));
 }
 
 #[test]

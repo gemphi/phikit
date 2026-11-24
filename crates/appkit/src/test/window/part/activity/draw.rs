@@ -21,25 +21,25 @@ fn it_draws_the_mark_its_icons_the_user_and_the_menu_shown_under_the_app_s_name(
     bar().draw(BAR, SIDE, &picked("layout"), None, &mut sheet);
     // The bar's icons, the shape the user's mark stands on, the button
     // that puts the menu away, the menu's.
-    assert_eq!(icon(&sheet), ["letter-b", "grid", "palette", "box", "book", "soft-fill", "letter-a", "panel-left", "plus", "folder", "settings"]);
+    assert_eq!(icon(&sheet), ["grid", "palette", "box", "book", "soft-fill", "panel-left", "plus", "folder", "settings"]);
     // With no logo yet the mark is the letter the app's name begins
-    // with, and the user's is theirs: both drawn, neither set in type.
-    assert_eq!(sheet.text_list(), ["Book", "New", "Open", "Preferences"]);
+    // with, and the user's is theirs: both set in the window's face.
+    assert!(sheet.text_list().starts_with(&["b", "a"]) && sheet.text_list().contains(&"Book"), "{:?}", sheet.text_list());
     // With no menu shown there is the bar alone.
     let mut alone = PSheet::new(&look);
     bar().draw(BAR, PRect::default(), &picked(""), None, &mut alone);
-    assert_eq!((icon(&alone), alone.text_list()), (["letter-b", "grid", "palette", "box", "book", "soft-fill", "letter-a"].map(str::to_string).to_vec(), Vec::<&str>::new()));
+    assert_eq!((icon(&alone), alone.text_list()), (["grid", "palette", "box", "book", "soft-fill"].map(str::to_string).to_vec(), vec!["b", "a"]));
     // A mark with an icon draws it in place of the letter; lying there
     // is no mark at all.
     let mut logo = PSheet::new(&look);
     PActivity::read("book\tBook\tfeather\thead\n").with(&PTable::read(USER)).draw(BAR, PRect::default(), &window(), None, &mut logo);
-    assert_eq!((icon(&logo), logo.text_list()), (vec!["feather".to_string(), "soft-fill".to_string(), "letter-a".to_string()], Vec::<&str>::new()));
+    assert_eq!((icon(&logo), logo.text_list()), (vec!["feather".to_string(), "soft-fill".to_string()], vec!["a"]));
     let mut lying = PSheet::new(&look);
     bar().draw(PRect::new(0.0, 550.0, 400.0, 50.0), PRect::default(), &window(), None, &mut lying);
-    assert!(lying.text_list().is_empty() && icon(&lying).contains(&"letter-a".to_string()));
-    // A name has the letter it begins with, small or capital alike; one
-    // that begins with no letter has the mark for any.
-    assert_eq!((letter("ada"), letter("Ada Byron King"), letter("3d")), ("letter-a".to_string(), "letter-a".to_string(), "letter-any".to_string()));
+    assert_eq!(lying.text_list(), ["a"]);
+    // A name has the letter it begins with, small for capital alike; a
+    // figure is its own mark, and a name of neither has a dot.
+    assert_eq!((letter("ada"), letter("Ada Byron King"), letter("3d"), letter("-")), ("a".to_string(), "a".to_string(), "3".to_string(), "\u{b7}".to_string()));
 }
 
 #[test]

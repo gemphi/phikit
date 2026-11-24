@@ -83,12 +83,16 @@ fn the_status_says_where_the_line_is_and_what_it_holds() {
 #[test]
 fn the_guide_lists_the_places_i_joined_with_their_rooms_and_opens_one() {
     let (app, mut stage, look) = staged(DESK);
+    // One place at a time, the one the rail chose: a heading with its
+    // rooms under it; one I did not join is never there.
+    let at = |text: &Vec<String>, wanted: &str| text.iter().position(|line| line == wanted).unwrap_or_else(|| panic!("{wanted} in {text:?}"));
+    assert!(app.desk().visit("phiace"));
     let text = shown(&stage, &look);
-    let at = |wanted: &str| text.iter().position(|line| line == wanted).unwrap_or_else(|| panic!("{wanted} in {text:?}"));
-    // Each place is a heading with its rooms under it; one I did not
-    // join is not there.
-    assert!(at("Direct") < at("Phiace") && at("Phiace") < at("Lounge") && at("Lounge") < at("Opal Atelier") && at("Opal Atelier") < at("front-row"));
-    assert!(!text.contains(&"The Swan Salon".to_string()));
+    assert!(at(&text, "Phiace") < at(&text, "Lounge") && !text.contains(&"Opal Atelier".to_string()));
+    assert!(app.desk().visit("h_opal"));
+    let text = shown(&stage, &look);
+    assert!(at(&text, "Opal Atelier") < at(&text, "front-row") && !text.contains(&"The Swan Salon".to_string()));
+    assert!(app.desk().visit("phiace"));
     // A room with pages on its line says how many.
     opened(&mut lock(&app.desk().board), "phiogy/lounge", "peer-aaaaaaaa", 1);
     opened(&mut lock(&app.desk().board), "phiogy/lounge", "peer-bbbbbbbb", 2);
