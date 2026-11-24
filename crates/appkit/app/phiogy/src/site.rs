@@ -48,8 +48,11 @@ pub struct Plate {
     pub voice: bool,
     pub topic: String,
     pub member: Vec<String>,
-    /// The heading it stands under in its place: Text, Voice; or none.
+    /// The heading it stands under in its place (a category); or none.
     pub head: String,
+    /// How deep it stands: 0 a channel, 1 a channel's sub-channel (a
+    /// world's city), and so on, as Discord nests threads.
+    pub depth: u32,
     /// How many of its messages the person has not read.
     pub unread: u64,
     /// The person a direct room is with, by id; nothing for any other.

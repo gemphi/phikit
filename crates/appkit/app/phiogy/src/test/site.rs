@@ -57,3 +57,24 @@ fn a_site_that_cannot_be_read_has_nothing_and_says_where_it_looked() {
     assert!(site.venue.is_empty() && site.start.is_empty());
     assert_eq!(site.from, "nowhere/data/phiogy.json");
 }
+
+#[test]
+fn a_host_is_as_discord_shows_a_server_its_categories_its_channels_and_their_sub_channels() {
+    let site = Site::open(&Phiogy::source());
+    // A host with categories: each category a heading over its channels,
+    // as Phiegg keeps them (Start here, Community, Live, World); no room
+    // under a made-up Text or Voice heading.
+    let host = site.venue.iter().find(|venue| venue.label == "Chrome Cherubs Host").expect("a host with categories");
+    let heads: Vec<&str> = host.plate.iter().map(|plate| plate.head.as_str()).collect();
+    assert!(["Start here", "Community", "Live", "World"].iter().all(|head| heads.contains(head)), "{heads:?}");
+    assert!(site.venue.iter().filter(|venue| venue.joined).chain(site.venue.iter()).flat_map(|venue| &venue.plate).all(|plate| plate.head != "Text" || plate.depth == 0));
+    // A world's cities are its sub-channels, a step in, under the same
+    // heading as the world.
+    let opal = site.venue.iter().find(|venue| venue.label == "Opal Atelier").expect("Opal Atelier");
+    let world = opal.plate.iter().position(|plate| plate.label == "Opalia").expect("its world");
+    let city: Vec<&str> = opal.plate[world + 1..].iter().take_while(|plate| plate.depth == 1).map(|plate| plate.label.as_str()).collect();
+    assert_eq!(city, ["Couture Row", "Marquee Market"]);
+    assert_eq!(opal.plate[world].depth, 0);
+    // A host of no category stands in one group: no heading at all.
+    assert!(opal.plate.iter().all(|plate| plate.head.is_empty()));
+}

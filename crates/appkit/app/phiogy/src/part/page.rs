@@ -39,12 +39,14 @@ pub struct Rung {
     pub icon: String,
     pub with: String,
     pub head: String,
+    /// How deep it stands under its channel (0 for a channel).
+    pub depth: u32,
     pub count: u64,
 }
 
 impl Rung {
     pub fn of(plate: &Plate) -> Rung {
-        Rung { id: plate.id.clone(), label: plate.label.clone(), icon: plate.icon.clone(), with: plate.with.clone(), head: plate.head.clone(), count: 0 }
+        Rung { id: plate.id.clone(), label: plate.label.clone(), icon: plate.icon.clone(), with: plate.with.clone(), head: plate.head.clone(), depth: plate.depth, count: 0 }
     }
 }
 

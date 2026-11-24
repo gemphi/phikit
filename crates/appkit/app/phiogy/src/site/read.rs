@@ -57,12 +57,27 @@ impl Read<'_> {
 
     /// A room: what the rail says of it, the heading it stands under,
     /// and what the rooms' file adds.
-    fn plate(&self, item: &Value, head: &str) -> Plate {
+    fn plate(&self, item: &Value, head: &str, depth: u32) -> Plate {
         let id = self.text(item, "id");
         let more = self.room.get(&id).cloned().unwrap_or_default();
         let member = self.list(&more, "member").iter().filter_map(Value::as_str).map(|id| self.named(id)).collect();
         let message = self.list(&more, "message").iter().map(|one| self.message(one)).collect();
-        Plate { label: self.text(item, "label"), icon: self.text(item, "icon"), voice: self.text(&more, "kind") == self.key.get("voice"), topic: self.text(&more, "topic"), member, head: head.to_string(), unread: self.count(&more, "unread"), with: self.text(&more, "with"), message, id }
+        Plate { label: self.text(item, "label"), icon: self.text(item, "icon"), voice: self.text(&more, "kind") == self.key.get("voice"), topic: self.text(&more, "topic"), member, head: head.to_string(), depth, unread: self.count(&more, "unread"), with: self.text(&more, "with"), message, id }
+    }
+
+    /// The rooms of a list, as Discord nests a server: what a heading
+    /// holds stands under it; a room's own rooms (a channel's
+    /// sub-channels) follow it a step deeper, under the same heading.
+    fn rooms(&self, list: &[Value], head: &str, depth: u32, out: &mut Vec<Plate>) {
+        for item in list {
+            match item.get(self.key.get("head")).and_then(Value::as_bool).unwrap_or(false) {
+                true => self.rooms(&self.list(item, "item"), &self.text(item, "label"), 0, out),
+                false => {
+                    out.push(self.plate(item, head, depth));
+                    self.rooms(&self.list(item, "item"), head, depth + 1, out);
+                }
+            }
+        }
     }
 
     /// A page's blocks, as the app's file writes them.
@@ -72,13 +87,8 @@ impl Read<'_> {
 
     /// A venue: its rooms are what it holds, and what its headings hold.
     fn venue(&self, item: &Value, joined: bool) -> Venue {
-        let head = |item: &Value| item.get(self.key.get("head")).and_then(Value::as_bool).unwrap_or(false);
-        // What a heading holds stands under it; the rest under none.
-        let under = |item: &Value| match head(item) {
-            true => self.list(item, "item").into_iter().map(|room| (self.text(item, "label"), room)).collect(),
-            false => vec![(String::new(), item.clone())],
-        };
-        let plate = self.list(item, "item").iter().flat_map(under).map(|(head, item)| self.plate(&item, &head)).collect();
+        let mut plate = Vec::new();
+        self.rooms(&self.list(item, "item"), "", 0, &mut plate);
         Venue { id: self.text(item, "id"), label: self.text(item, "label"), icon: self.text(item, "icon"), count: self.count(item, "count"), online: self.count(item, "online"), joined, mark: self.mark(item), plate }
     }
 }

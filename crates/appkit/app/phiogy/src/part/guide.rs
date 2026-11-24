@@ -23,6 +23,9 @@ use appkit::pui::layout::PScroll;
 use super::{DIM, Desk, GAP, ICON, INK, LINE, RADIUS, ROW, Rung, fit};
 use crate::board::lock;
 
+/// The kit's token for the thin line a sub-channel hangs from.
+const RULE: &str = "line.ink";
+
 /// The word a row of the menu tells to open the room a person begins
 /// in; and the word before a look's name when one was chosen.
 pub const START: &str = "start";
@@ -60,7 +63,8 @@ impl Guide {
         Guide { frame: PRect::default(), foot: Foot::new(desk.clone()), desk, scroll: Cell::default(), origin: Cell::default(), over: Cell::default(), point: Cell::default(), tab: RefCell::default() }
     }
 
-    /// Every row, in order.
+    /// Every row, in order: each place's name, its categories, their
+    /// channels and, a step in, the channels' sub-channels.
     fn row(&self) -> Vec<Row> {
         let mut list = Vec::new();
         for (label, rung) in self.desk.sifted() {
@@ -132,13 +136,23 @@ impl PDraw for Guide {
                 Row::Room(plate) => {
                     // Against the group it stands in, as a menu's own
                     // row is; more softly under the pointer.
-                    let place = PRect::new(origin.x + gap / 2.0, top, width - gap, row);
+                    // A sub-channel stands an icon in for each step down,
+                    // a thin line coming to it from its channel.
+                    let indent = plate.depth as f32 * icon;
+                    if plate.depth > 0 {
+                        let (x, mid, rule) = (origin.x + gap + icon / 2.0 + indent - icon, top + row / 2.0, paint.color(RULE));
+                        // From under the icon of the row above to this row's middle.
+                        let from = top - (row - icon) / 2.0;
+                        paint.fill(PRect::new(x - 0.5, from, 1.0, mid - from), rule);
+                        paint.fill(PRect::new(x, mid - 0.5, icon / 2.0 + gap / 4.0, 1.0), rule);
+                    }
+                    let place = PRect::new(origin.x + gap / 2.0 + indent, top, width - gap - indent, row);
                     match (plate.id == *open, self.over.get() == Some(index)) {
                         (true, _) => light::label(paint, place, radius, PLight::Rest, false, ""),
                         (false, true) => light::label(paint, place, radius, PLight::Soft, false, ""),
                         (false, false) => {}
                     }
-                    let seat = PRect::new(origin.x + gap, top + (row - icon) / 2.0, icon, icon);
+                    let seat = PRect::new(origin.x + gap + indent, top + (row - icon) / 2.0, icon, icon);
                     match self.desk.site.face(&plate.with) {
                         Some(cell) => paint.picture(&cell.sheet, seat.inset(-gap / 8.0), icon, PFit::Cell { column: cell.column, index: cell.index }),
                         None => paint.icon(self.desk.icon(&plate.icon), seat, ink),
@@ -148,8 +162,8 @@ impl PDraw for Guide {
                     let count = held.iter().find(|(key, ..)| *key == self.desk.key(&plate.id)).map(|(_, _, line)| line.to_string()).or(waits).unwrap_or_default();
                     // The count stands on a ground of its own, which runs
                     // against the row's where the row is the open one.
-                    let room = width - gap * 3.0 - icon - figure::size(paint, &count).width;
-                    paint.text(PPoint::new(origin.x + gap * 1.5 + icon, top + down), &fit(&plate.label, room, paint), ink);
+                    let room = width - gap * 3.0 - icon - indent - figure::size(paint, &count).width;
+                    paint.text(PPoint::new(origin.x + gap * 1.5 + icon + indent, top + down), &fit(&plate.label, room, paint), ink);
                     figure::end(paint, PPoint::new(origin.x + width - gap, top + row / 2.0), &count, plate.id != *open);
                 }
             }
