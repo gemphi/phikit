@@ -173,6 +173,52 @@ fn step_54_a_section_folds_and_the_items_switch_between_a_grid_and_a_list() {
 }
 
 #[test]
+fn step_55_the_toolbar_says_the_way_in_crumbs_and_one_line_chooses_what_in_what_order_and_how() {
+    // A screen as wide as most: the toolbar's two lines whole.
+    let wide = appkit::pui::core::PSize { width: 1920.0, height: 1032.0 };
+    let (app, mut stage, look) = staged(wide);
+    assert!(stage.window.apply(&PDeed::Show("library".to_string())));
+    stage.lay(wide, PMode::of_width(wide.width));
+    let mark = drawn(&stage, &look);
+    // The rightmost of a text: the crumbs', not the tree's.
+    let text = |want: &str| mark.iter().filter_map(|mark| match mark {
+        PMark::Text { at, text, .. } if text == want => Some(*at),
+        _ => None,
+    }).max_by(|a, b| a.x.total_cmp(&b.x));
+    let icon = |want: &str| mark.iter().filter_map(|mark| match mark {
+        PMark::Icon { name, rect, .. } if name == want => Some(*rect),
+        _ => None,
+    }).collect::<Vec<_>>();
+    // The way to the shapes, a mark between each step, no heading over it.
+    let shape = text("shape").expect("where it is");
+    let way: Vec<PRect> = icon("chevron-right").into_iter().filter(|rect| (rect.center().y - shape.y).abs() < 24.0).collect();
+    assert!(way.len() >= 3, "{way:?}");
+    assert!(text(app.desk().text.get("library.head")).is_none());
+    // What to show, in what order and how, on one line, without headings.
+    let (all, name) = (text(app.desk().text.get("filter.all")).expect("All"), text(app.desk().text.get("sort.name")).expect("Name"));
+    assert!((all.y - name.y).abs() < 1.0 && name.x > all.x);
+    let grid = icon("grid").into_iter().find(|rect| (rect.center().y - name.y).abs() < 24.0).expect("the switch on that line");
+    assert!(grid.origin.x > name.x);
+    assert!(text(app.desk().text.get("library.kind")).is_none() && text(app.desk().text.get("library.sort")).is_none());
+    // A step pressed goes there.
+    let up = text("asset").expect("a step back");
+    assert!(stage.send(&PEvent::PointerDown(appkit::pui::core::PPoint::new(up.x + 4.0, up.y + 4.0))));
+    assert!(app.desk().shelf.get("ui/folder").ends_with("asset"), "{}", app.desk().shelf.get("ui/folder"));
+    // Narrower, the order and the switch take a line of their own under
+    // what to show, still at its right.
+    let (app, mut stage, look) = staged(DESK);
+    assert!(stage.window.apply(&PDeed::Show("library".to_string())));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    let mark = drawn(&stage, &look);
+    let at = |want: &str| mark.iter().find_map(|mark| match mark {
+        PMark::Text { at, text, .. } if text == want => Some(*at),
+        _ => None,
+    }).expect(want);
+    let (all, name) = (at(app.desk().text.get("filter.all")), at(app.desk().text.get("sort.name")));
+    assert!(name.y > all.y, "{all:?} {name:?}");
+}
+
+#[test]
 fn every_block_a_press_acts_on_says_so_as_it_is_drawn_inside_what_is_in_sight() {
     let (_, _, look) = staged(DESK);
     let mut sheet = PSheet::new(look.as_ref());

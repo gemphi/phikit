@@ -12,6 +12,9 @@
 //! * `head`: the form's heading, at its top.
 //! * `tools`: icons at the top right, each keeping its value at the path.
 //! * `tabs`: a choice of which, standing over the blocks under it.
+//! * a block whose variation says `bar` stands in the form's toolbar
+//!   under its heading (`form/bar.rs`): crumbs, tools, bands, a layout
+//!   switch, on lines of their own with no heading or ground.
 //! * `fill`: the groups share out the room the pane has left. Without it
 //!   they stand one under another, and the form scrolls when they are
 //!   more than the pane holds.
@@ -19,6 +22,7 @@
 //! A block whose list is empty is not shown. Blocks under no tabs stand
 //! after the tabs, each on its own ground under its heading.
 
+mod bar;
 mod field;
 mod group;
 mod head;
@@ -125,7 +129,10 @@ impl PForm {
             paint.head(PPoint::new(left, top), self.text.get(&block.head), paint.color(kind::INK));
             top += paint.size(HEAD) + gap / 2.0;
         }
-        for block in self.of("tools") {
+        let (below, barred) = self.bar(paint, left, top, wide);
+        spot.extend(barred);
+        top = below;
+        for block in self.of("tools").filter(|b| !bar::barred(b)) {
             let choice = self.source.list(&block.list);
             let icon: Vec<(&str, &str, bool)> = choice.iter().map(|c| (c.icon.as_str(), "", false)).collect();
             let rect = match crate::pui::layout::bare(paint) {
@@ -135,7 +142,7 @@ impl PForm {
             spot.extend(rect.into_iter().zip(&choice).map(|(r, c)| (r, block.path.clone(), c.value.clone())));
             top += icon.high(paint) + gap / 2.0;
         }
-        let free: Vec<&Block> = self.block.iter().filter(|b| b.under.is_empty() && !matches!(b.kind.as_str(), "head" | "tools" | "tabs" | "fill")).collect();
+        let free: Vec<&Block> = self.block.iter().filter(|b| b.under.is_empty() && !bar::barred(b) && !matches!(b.kind.as_str(), "head" | "tools" | "tabs" | "fill")).collect();
         let (mut own, own_shown) = self.grouped(&free);
         let space = paint.theme().size(SPACE).unwrap_or(gap / 2.0);
         let high = match own.is_empty() {

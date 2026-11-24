@@ -19,15 +19,17 @@ tree	tree	folder	tree.folder	folder	ui/folder	-	fold
 tree	tree	collection	tree.collection	collection	ui/folder	-	fold
 tree	tree	club	tree.club	club	ui/folder	-	fold
 tree	tree	set	tree.set	set	ui/folder	-	fold
-# What the place chosen holds, its right column: Up, Import; where it
-# is; what to show and in what order; its items as a grid or a list; and
-# what the place is.
-library	head	-	library.head	-	-	-	-
-library	tools	tool	-	tool	ui/do	-	-
-library	band	path	-	path	ui/folder	-	-
-library	band	kind	library.kind	kind	ui/kind	-	fold
-library	band	sort	library.sort	sort	ui/sort	-	fold
-library	grid	item	library.item	item	ui/item	-	fold layout
+# What the place chosen holds, its right column. Its toolbar (`bar`):
+# the way to where it is, each step pressed to go back there, with Up
+# and Import at the right; under it what to show, and at the right in
+# what order and whether as a grid or a list. Then its items, and what
+# the place is.
+library	crumb	path	-	path	ui/folder	-	bar
+library	tools	tool	-	tool	ui/do	-	bar end
+library	band	kind	-	kind	ui/kind	-	bar next
+library	band	sort	-	sort	ui/sort	-	bar end
+library	layout	view	-	-	ui/layout/item	-	bar end
+library	grid	item	-	item	ui/item	-	layout
 library	facts	stat	library.stat	stat	-	-	fold
 # The inspector beside an item opened: back, and a set made of it; what
 # it is; a colour for each part and a finish; its attributes; comments
