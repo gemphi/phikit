@@ -1,6 +1,9 @@
-# What the library's forms begin with: the place shown, every kind, in
-# order of name, the first part of a model.
-ui/place	shape
+# What the library's forms begin with: every kind, in order of name, the
+# first part of a model; the long sections of its tree folded, as
+# Blender's are until opened. Where it opens is the Shapes place.
 ui/kind	all
 ui/sort	name
 ui/part	0
+ui/fold/club	1
+ui/fold/collection	1
+ui/fold/set	0

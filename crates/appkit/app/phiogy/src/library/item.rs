@@ -1,12 +1,17 @@
-//! A file of a place, as the library lists it: what it is by the end of
-//! its name (`data/kind.tsv`), how large and how new. A file of an end
-//! the table does not have, a folder and a hidden file are not listed.
+//! An item of the library: a file of a folder, a folder in it, an item
+//! of one of Phiegg's clubs, or a variant of a set. A file is what it is
+//! by the end of its name (`data/kind.tsv`), how large and how new; one
+//! of an end the table does not have, and a hidden one, is not listed.
 
 use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
-/// A file of a place: its key (`place:name`), where it is, its name, its
-/// kind and icon, its size in bytes and when it last changed.
+/// An item: its key (`dir:` and a path, `club:` and the club and the
+/// item, `set:` and the set and the variant), where its file is (nothing
+/// for one with none), its name, its kind and icon, its size in bytes,
+/// when it last changed, its picture (a key) or face (a cell of a
+/// sheet), what it is (its attributes, in words), and for a set's
+/// variant the colour each part of its model takes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Item {
     pub key: String,
@@ -16,6 +21,34 @@ pub struct Item {
     pub icon: String,
     pub size: u64,
     pub when: SystemTime,
+    pub picture: String,
+    pub face: Option<(String, u32, u32)>,
+    pub attribute: Vec<(String, String)>,
+    pub variant: Vec<String>,
+}
+
+impl Item {
+    /// An item with no file: its key, name, kind and icon.
+    pub fn named(key: String, name: String, kind: &str, icon: &str) -> Item {
+        Item { key, path: PathBuf::new(), name, kind: kind.to_string(), icon: icon.to_string(), size: 0, when: SystemTime::UNIX_EPOCH, picture: String::new(), face: None, attribute: Vec::new(), variant: Vec::new() }
+    }
+
+    /// The file or folder at a path, as the library lists it; nothing for
+    /// a file of no kind the table has.
+    pub fn file(path: &Path, table: &[Vec<String>], folder_icon: &str) -> Option<Item> {
+        let meta = std::fs::metadata(path).ok()?;
+        let name = path.file_name().map(|name| name.to_string_lossy().to_string()).unwrap_or_else(|| path.to_string_lossy().to_string());
+        let (kind, icon) = match meta.is_dir() {
+            true => ("folder", folder_icon),
+            false => kind(table, path)?,
+        };
+        let picture = match kind {
+            "picture" => format!("file:///{}", path.to_string_lossy().replace('\\', "/")),
+            _ => String::new(),
+        };
+        let when = meta.modified().unwrap_or(SystemTime::UNIX_EPOCH);
+        Some(Item { key: format!("dir:{}", path.to_string_lossy()), path: path.to_path_buf(), name, kind: kind.to_string(), icon: icon.to_string(), size: meta.len(), when, picture, ..Item::named(String::new(), String::new(), "", "") })
+    }
 }
 
 /// What a file is by its end: its kind and icon, from rows of
@@ -25,29 +58,31 @@ pub fn kind<'a>(table: &'a [Vec<String>], path: &Path) -> Option<(&'a str, &'a s
     table.iter().find(|row| row.first() == Some(&end)).map(|row| (row.get(1).map_or("", String::as_str), row.get(2).map_or("", String::as_str)))
 }
 
-/// The files of a folder that are of a kind the table has and, unless
-/// the kind is `all`, of that kind; in that order (`name`, `new`,
-/// `large`), no more than `most`.
-pub fn list(place: &str, folder: &Path, table: &[Vec<String>], want: &str, order: &str, most: usize) -> Vec<Item> {
+/// The folders and then the files of a folder that are of a kind the
+/// table has and, unless the kind is `all`, of that kind (folders are
+/// listed with `all` only); in that order (`name`, `new`, `large`), no
+/// more than `most`.
+pub fn list(folder: &Path, table: &[Vec<String>], want: &str, order: &str, most: usize, folder_icon: &str) -> Vec<Item> {
     let Ok(read) = std::fs::read_dir(folder) else { return Vec::new() };
     let mut out: Vec<Item> = Vec::new();
     for entry in read.flatten() {
-        let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
-        let Ok(meta) = entry.metadata() else { continue };
-        let Some((kind, icon)) = kind(table, &path) else { continue };
-        let wanted = want == "all" || want == kind;
-        if !meta.is_file() || name.starts_with('.') || !wanted {
-            continue;
+        let Some(item) = Item::file(&entry.path(), table, folder_icon).filter(|_| !name.starts_with(['.', '$'])) else { continue };
+        let wanted = match item.kind.as_str() {
+            "folder" => want == "all",
+            kind => want == "all" || want == kind,
+        };
+        if wanted {
+            out.push(item);
         }
-        let when = meta.modified().unwrap_or(SystemTime::UNIX_EPOCH);
-        out.push(Item { key: format!("{place}:{name}"), path, name, kind: kind.to_string(), icon: icon.to_string(), size: meta.len(), when });
     }
     match order {
         "new" => out.sort_by_key(|item| std::cmp::Reverse(item.when)),
         "large" => out.sort_by_key(|item| std::cmp::Reverse(item.size)),
         _ => out.sort_by_key(|item| item.name.to_lowercase()),
     }
+    // Folders first, as a browser lists them.
+    out.sort_by_key(|item| item.kind != "folder");
     out.truncate(most);
     out
 }

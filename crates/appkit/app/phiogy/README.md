@@ -193,18 +193,20 @@ other people, build it for Windows and macOS, and what Discord allows:
   device=stand` sends a tone and a grey ramp and plays nothing: the
   tests and every picture in `doc/` are made so, and nothing of a room
   or a screen is kept.
-- **The asset library**, a row of the bar (`src/library.rs`,
-  `src/part/library.rs`, `src/part/figure.rs`): the places a creator
-  keeps things as tabs (Phiogy's own shapes, their Phiegg space at
-  `~/Phiegg`, their own Downloads, Videos, Pictures, Documents and
-  Desktop, `data/place.tsv`), what to show and in what order, what the
-  place holds counted, and its files as tiles: a model drawn in 3D by
-  the kit's raster, a picture as itself. Phiogy shows USD only; a
-  Blender file or another source brought in with Import is turned into
-  USD beside it by the command `data/convert.tsv` names (phiphx's). A
-  model opens in 3D (drag to turn, the wheel to come nearer) beside its
-  dress: a colour for each part and a finish, kept. All of it is the
-  kit's form fed by `data/form.tsv` and `data/listing.tsv`.
+- **The asset library**, a row of the bar (`src/library*`,
+  `src/part/library*`, `src/part/figure.rs`), as Reality Composer Pro's
+  Project Browser and Blender's file browser are: two columns, a tree
+  (Volumes, System, Phiogy's own, the Folders down to where one is,
+  Phiegg's Collections and Clubs, Sets) and what the place holds (where
+  it is, Up and Import, what to show and in what order, the items as a
+  grid or a list, what the place is), every section folding. An item
+  opens beside the inspector: a model in 3D, its parts' colours, a
+  finish, its attributes, comments. A set made of a model draws each
+  part's colour by weight, as a 10,000-piece collection is made from
+  its traits. Phiogy shows USD only; a Blender file brought in is turned
+  into USD by phiphx. Phiegg's collections and clubs come from puikit's
+  `app/phiogy/library.py`. All of it the kit's form, fed by
+  `data/form.tsv` and `data/listing.tsv`.
 - Nothing has a fill of its own: every surface wears appkit's light,
   and every colour and size is `data/theme.tsv`. Four looks, kept with
   the room that was open.

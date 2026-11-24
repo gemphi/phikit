@@ -1,14 +1,18 @@
-# The places the asset library shows, in order: its key, its words (a
-# word of text.tsv), its icon, where it is and the folder under that.
-# Where: `asset`, this program's own folder; `home`, the person's own;
-# or a folder the system names for them, as the `dirs` crate knows it:
-# download, video, picture, document, desktop, audio. A place whose
-# folder is not there is made when it is the person's own (`make`).
-# `-` for none.
-shape	place.shape	box	asset	shape	-
-phiegg	place.phiegg	folder	home	Phiegg	make
-download	place.download	download	download	-	-
-video	place.video	video	video	-	-
-picture	place.picture	image	picture	-	-
-document	place.document	file	document	-	-
-desktop	place.desktop	layout-dashboard	desktop	-	-
+# The places the asset library's tree begins with, as Blender's file
+# browser and Reality Composer Pro's navigator have them: its key, its
+# words (a word of text.tsv), its icon, the section of the tree it
+# stands in, where it is and the folder under that. Where: `asset`, this
+# program's own folder; `home`, the person's own; or a folder the system
+# keeps for them, as the `dirs` crate knows it: desktop, document,
+# download, picture, video, audio. A place the person makes their own is
+# made when something is brought in (`make`). The drives (Volumes) are
+# the system's own, found as the library opens. `-` for none.
+home	place.home	home	system	home	-	-
+desktop	place.desktop	layout-dashboard	system	desktop	-	-
+document	place.document	file	system	document	-	-
+download	place.download	download	system	download	-	-
+picture	place.picture	image	system	picture	-	-
+video	place.video	video	system	video	-	-
+audio	place.audio	music	system	audio	-	-
+shape	place.shape	box	own	asset	shape	-
+phiegg	place.phiegg	folder	own	home	Phiegg	make

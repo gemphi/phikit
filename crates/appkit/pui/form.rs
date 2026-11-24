@@ -19,18 +19,25 @@
 //! A block whose list is empty is not shown. Blocks under no tabs stand
 //! after the tabs, each on its own ground under its heading.
 
+mod field;
+mod group;
+mod head;
 mod kind;
 mod list;
+mod tree;
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
+pub use field::PTyped;
+pub use head::{FOLD, FOLDED, LAYOUT, LIST, PHead, PTool};
 pub use kind::{PChoice, drawn};
 pub use list::{PListed, PRows};
 
 use crate::pui::block::{PBand, PTabMove};
 use crate::pui::core::{PDraw, PEvent, PPaint, PPoint, PRect, PView};
-use crate::pui::layout::{PDry, PGrouped, PScroll, SPACE, stack, tabbed};
+use crate::pui::layout::{PDry, PScroll, SPACE, stack, tabbed};
+use group::FOCUS;
 use crate::pui::state::PState;
 use crate::service::PTable;
 use crate::theme::PTheme;
@@ -72,6 +79,7 @@ struct Block {
 /// What a press on a form keeps: a value at a path.
 type Spot = (PRect, String, String);
 
+
 pub struct PForm {
     frame: PRect,
     block: Vec<Block>,
@@ -82,6 +90,9 @@ pub struct PForm {
     motion: PTabMove,
     scroll: Cell<PScroll>,
     origin: Cell<PPoint>,
+    /// The `field` block that has the keys, and what is typed in it.
+    typing: RefCell<Option<String>>,
+    draft: RefCell<String>,
 }
 
 impl PForm {
@@ -96,21 +107,11 @@ impl PForm {
             let at = |i: usize| c.get(i).cloned().unwrap_or_default();
             Block { kind: at(1), key: at(2), head: at(3), list: at(4), path: at(5), under: at(6), variant: at(7) }
         }).collect();
-        PForm { frame: PRect::default(), block, source, text, theme, spot: RefCell::default(), motion: PTabMove::default(), scroll: Cell::default(), origin: Cell::default() }
+        PForm { frame: PRect::default(), block, source, text, theme, spot: RefCell::default(), motion: PTabMove::default(), scroll: Cell::default(), origin: Cell::default(), typing: RefCell::default(), draft: RefCell::default() }
     }
 
     fn of(&self, kind: &str) -> impl Iterator<Item = &Block> {
         self.block.iter().filter(move |b| b.kind == kind)
-    }
-
-    /// The kit's groups for some blocks, with what each keeps when pressed.
-    fn grouped<'a>(&'a self, block: &[&'a Block]) -> (Vec<PGrouped<'a>>, Vec<(&'a Block, Vec<PChoice>)>) {
-        let shown: Vec<(&Block, Vec<PChoice>, String)> = block.iter().map(|b| (*b, self.source.list(&b.list), self.source.get(&b.path))).filter(|(_, c, _)| !c.is_empty()).collect();
-        let group = shown.iter().map(|(b, choice, now)| {
-            let (kind, variant, choice, now) = (b.kind.clone(), b.variant.clone(), choice.clone(), now.clone());
-            PGrouped { head: self.text.get(&b.head).to_string(), draw: Box::new(move |paint: &mut dyn PPaint, at: PPoint, wide: f32, right: bool| drawn(&kind, &variant, &choice, &now, paint, at, wide, right)) }
-        }).collect();
-        (group, shown.into_iter().map(|(b, c, _)| (b, c)).collect())
     }
 
     /// Draw the form from a place: its blocks, down to `foot` where it
@@ -150,8 +151,8 @@ impl PForm {
             let (mut group, shown) = self.grouped(&under);
             let (rect, pressed, bottom) = tabbed(paint, PPoint::new(left, top), wide, foot - high - space, pill.as_slice(), &self.motion, &mut group);
             spot.extend(rect.into_iter().zip(&choice).map(|(r, c)| (r, tabs.path.clone(), c.value.clone())));
-            for (rect, (block, choice)) in pressed.into_iter().zip(&shown) {
-                spot.extend(rect.into_iter().zip(choice).map(|(r, c)| (r, block.path.clone(), c.value.clone())));
+            for (rect, (block, choice, head)) in pressed.into_iter().zip(&shown) {
+                spot.extend(PForm::spots(block, head, choice, rect));
             }
             end = bottom;
         }
@@ -164,8 +165,8 @@ impl PForm {
                     false => end + space,
                 };
                 let (last, pressed) = stack(paint, PPoint::new(left, at), wide, foot.max(at + high), true, &mut own);
-                for (rect, (block, choice)) in pressed.into_iter().zip(&own_shown) {
-                    spot.extend(rect.into_iter().zip(choice).map(|(r, c)| (r, block.path.clone(), c.value.clone())));
+                for (rect, (block, choice, head)) in pressed.into_iter().zip(&own_shown) {
+                    spot.extend(PForm::spots(block, head, choice, rect));
                 }
                 (last, spot)
             }
@@ -226,11 +227,17 @@ impl PView for PForm {
             PEvent::PointerDown(at) => {
                 let place = at.plus(self.origin.get());
                 let hit = self.spot.borrow().iter().find(|(rect, ..)| rect.contains(place)).map(|(_, path, value)| (path.clone(), value.clone()));
-                hit.is_some_and(|(path, value)| {
-                    self.source.set(&path, &value);
-                    true
-                })
+                match hit {
+                    Some((path, key)) if path == FOCUS => *self.typing.borrow_mut() = Some(key),
+                    Some((path, value)) => {
+                        *self.typing.borrow_mut() = None;
+                        self.source.set(&path, &value);
+                    }
+                    None => return false,
+                }
+                true
             }
+            PEvent::KeyDown(_) => self.typed(event),
             PEvent::Scroll(_, by) => {
                 let mut scroll = self.scroll.get();
                 let any = scroll.turn(-by.y);

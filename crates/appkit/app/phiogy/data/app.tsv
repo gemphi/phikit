@@ -21,5 +21,9 @@ site	../../../../../puikit/app/phiogy/public/data/phiogy.json
 # The setting of the system that holds a password for `phiogy
 # --signin`, so none is ever a word of a command line.
 secret	PHIOGY_SECRET
+# The spaces that stand with no menu beside the bar: the library is its
+# own two columns, its tree and what is in it; an item opened from it
+# stands beside its inspector.
+bare	library model
 # The tabs over the guide's rooms, in order.
 guide	recent favorite older

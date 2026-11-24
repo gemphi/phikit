@@ -1,5 +1,5 @@
 # What a file is, by the end of its name: the end, its kind and its
-# icon. A `model` is USD, which Phiogy shows and dresses; a `source` is
+# icon. A `model` is USD, which Phiogy shows and sets the attributes of; a `source` is
 # turned into USD first (data/convert.tsv); a `picture` is shown as it
 # is; a `video` and a `sound` are listed with their icon. A file of no
 # end here is not listed.

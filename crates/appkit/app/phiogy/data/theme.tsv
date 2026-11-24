@@ -243,3 +243,7 @@ size	scene.farthest	0.6
 # activity.rim): none in the theme itself, a plain look draws one.
 color	activity.line	#00000000
 size	activity.rim	1
+# The colours a part of a model can be given, as round swatches: how
+# large one is, and the ring that marks the one chosen.
+size	swatch.size	32
+size	swatch.ring	3

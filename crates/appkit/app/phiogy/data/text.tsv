@@ -277,20 +277,34 @@ search.room	Rooms
 search.people	People
 search.none	Nothing found.
 search.open	Search
-# The asset library: its places, kinds, orders and tools; what a place
-# holds; a model dressed. UI words use `-`, never a long dash.
+# The asset library: its tree's sections, places, kinds, orders and
+# tools; what a place holds; an item in the inspector. UI words use `-`,
+# never a long dash.
 library.head	Library
 library.kind	Show
 library.sort	Order
-library.stat	In this place
+library.item	Items
+library.stat	This place
+library.up	Up
 library.import	Import
 library.none	Nothing here yet
-stat.file	Files
+tree.volume	Volumes
+tree.system	System
+tree.own	Phiogy
+tree.folder	Folders
+tree.collection	Collections
+tree.club	Clubs
+tree.set	Sets
+stat.file	Items
+stat.folder	Folders
 stat.model	Models
 stat.source	To turn into USD
 stat.picture	Pictures
 stat.video	Videos
 stat.size	Size
+stat.topic	About
+stat.supply	Made in all
+place.home	Home
 place.shape	Shapes
 place.phiegg	Phiegg space
 place.download	Downloads
@@ -298,7 +312,9 @@ place.video	Videos
 place.picture	Pictures
 place.document	Documents
 place.desktop	Desktop
+place.audio	Music
 filter.all	All
+filter.profile	Profiles
 filter.model	Models
 filter.source	Blender and more
 filter.picture	Pictures
@@ -307,20 +323,31 @@ filter.sound	Sounds
 sort.name	Name
 sort.new	Newest
 sort.large	Largest
+kind.folder	Folder
 kind.model	USD
 kind.source	Waits for USD
 kind.picture	Picture
 kind.video	Video
 kind.sound	Sound
-custom.head	Dress
-custom.back	Back to the library
-custom.paint	Colour
-custom.finish	Finish
-custom.about	About
+kind.profile	Profile
+kind.club	Club
+item.head	Inspector
+item.back	Back to the library
+item.set	Make a set of it
+item.about	About
+item.part	Part
+item.paint	Colour
+item.finish	Finish
+item.attribute	Attributes
+item.comment	Comments
+item.say	Write a comment
+about.kind	Kind
 about.part	Parts
 about.triangle	Triangles
 about.size	Size
 about.file	File
+about.where	Where
+set.word	Set
 paint.chalk	Chalk
 paint.coal	Coal
 paint.ruby	Ruby

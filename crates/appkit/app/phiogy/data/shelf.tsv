@@ -1,0 +1,13 @@
+# The asset library's own words and numbers that are no place: where
+# Phiegg's collections and clubs are (`shelf`, beside the web Phiogy's
+# own file, written by puikit app/phiogy/library.py); the icons of a
+# drive, a folder, a collection, a club and a set; how many items a new
+# set makes; the letters a drive may have.
+shelf	shelf.json
+volume	layers
+folder	folder
+collection	layers
+club	users
+set	sparkles
+count	64
+drive	CDEFGHIJKLMNOPQRSTUVWXYZ

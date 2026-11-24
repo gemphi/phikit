@@ -32,6 +32,11 @@ impl Choice {
         self.row.borrow().iter().rev().find(|(known, _)| known == name).map(|(_, value)| value.clone()).unwrap_or_default()
     }
 
+    /// Every choice whose name begins so, with the rest of its name.
+    pub fn starting(&self, prefix: &str) -> Vec<(String, String)> {
+        self.row.borrow().iter().filter_map(|(name, value)| Some((name.strip_prefix(prefix)?.to_string(), value.clone()))).collect()
+    }
+
     /// Choose something under that name, and keep it.
     pub fn put(&self, name: &str, value: &str) {
         let mut row = self.row.borrow_mut();

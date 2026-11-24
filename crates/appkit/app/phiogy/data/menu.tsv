@@ -25,10 +25,6 @@ menu	bottom	you	profile	Profile	user	modal	profile
 shop	top	go	start	Start	home	tell	start
 shop	top	go	venue	Hosts	globe	space	venue
 shop	center	joined	guide	Rooms	chat	side
-# The library: the way back, and the rooms beside it as everywhere.
-library	top	go	start	Start	home	tell	start
-library	top	go	venue	Hosts	globe	space	venue
-library	center	joined	guide	Rooms	chat	side
-# A model opened from it: the way back to the library, and the rooms.
-model	top	go	library	Library	box	space	library
-model	center	joined	guide	Rooms	chat	side
+# The library and an item opened from it have no menu: the library is
+# its own two columns, the tree and what is in it, as Reality Composer
+# Pro's Project Browser is; the inspector has the way back.

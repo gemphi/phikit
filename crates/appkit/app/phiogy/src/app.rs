@@ -97,10 +97,11 @@ impl Phiogy {
         let shade = Rc::new(Phiogy::shade(&look));
         let choice = store.map(|store| Choice::kept(store, own.get("setting"))).unwrap_or_default();
         shade.turn(&choice.get("look"));
+        let (choice, site_path) = (Rc::new(choice), site.from.clone());
         let first = site.venue.iter().flat_map(|venue| &venue.plate).map(|plate| plate.id.clone()).next();
         let wanted = [choice.get(ROOM), site.start.clone()].into_iter().find(|id| site.plate(id).is_some() || id.starts_with(Page::own().id(crate::part::page::DIRECT)));
         let open = Rc::new(RefCell::new(wanted.or(first).unwrap_or_default()));
-        let desk = Desk { site: Rc::new(site), board, text: Rc::new(PTable::read(data::TEXT)), icon: Rc::new(PTable::read(data::ICON)), look, shade, choice: Rc::new(choice), wish: PWish::default(), open, line: Rc::new(line), home: own.get("space").to_string(), view: Rc::default(), kept: Rc::new(Kept::none()), now: Rc::default(), page: Rc::new(Page::own()), stock: Rc::default(), call: Rc::default(), engine: Rc::new(|| -> Maker { Box::new(|| Box::new(Stand::default())) }), refused: Rc::default(), away: false, ring: Rc::default(), #[cfg(not(target_family = "wasm"))] library: Rc::new(crate::library::Library::own()), shelf: Rc::new(appkit::pui::state::PMemory::read(data::STATE)) };
+        let desk = Desk { site: Rc::new(site), board, text: Rc::new(PTable::read(data::TEXT)), icon: Rc::new(PTable::read(data::ICON)), look, shade, choice: choice.clone(), wish: PWish::default(), open, line: Rc::new(line), home: own.get("space").to_string(), view: Rc::default(), kept: Rc::new(Kept::none()), now: Rc::default(), page: Rc::new(Page::own()), stock: Rc::default(), call: Rc::default(), engine: Rc::new(|| -> Maker { Box::new(|| Box::new(Stand::default())) }), refused: Rc::default(), away: false, ring: Rc::default(), #[cfg(not(target_family = "wasm"))] library: Rc::new(crate::library::Library::own(std::path::Path::new(&site_path), choice.clone())), shelf: Rc::new(appkit::pui::state::PMemory::read(data::STATE)) };
         Phiogy { own, space, host, part: PSet::read(data::PART), modal: PSet::read(data::MODAL), desk }
     }
 
@@ -160,7 +161,7 @@ impl PApp for Phiogy {
     }
 
     fn activity(&self) -> PActivity {
-        PActivity::read(data::ACTIVITY).hold(data::MENU)
+        PActivity::read(data::ACTIVITY).hold(data::MENU).bare(self.own.get("bare"))
     }
 
     /// The hosts the person is in, each a row of the bar with its mark.
@@ -199,7 +200,7 @@ impl PApp for Phiogy {
             "shop" => Some(Box::new(Shopping::new(desk))),
             "account" => Some(Box::new(Account::new(desk))),
             #[cfg(not(target_family = "wasm"))]
-            "library" | "custom" => Some(Box::new(crate::part::Shelf::new(part, desk))),
+            "tree" | "library" | "item" => Some(Box::new(crate::part::Browse::new(part, desk))),
             #[cfg(not(target_family = "wasm"))]
             "model" => Some(Box::new(crate::part::Figure::new(desk))),
             "friend" => Some(Box::new(Friend::new(desk, false))),

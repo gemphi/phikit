@@ -12,7 +12,8 @@
 //! 255), the rows it keeps (`column=path`: those whose column holds
 //! what the path keeps), whether it keeps each value once (`once`), when
 //! it is shown (`path=value`), and, where a list has them, the columns
-//! of its picture (a grid's tile), its line and the note at its end.
+//! of its picture (a grid's tile), its line, the note at its end, its
+//! depth in a tree and its face (`sheet columns cell`).
 //! `-` for none, and a row may stop before the last three. A path may
 //! hold `{path}`: what that path keeps, put in its place.
 
@@ -102,7 +103,7 @@ impl PSource for PListed {
         };
         let mut out: Vec<PChoice> = Vec::new();
         for row in self.rows.rows(at(1)).iter().filter(|row| kept.as_ref().is_none_or(|(c, v)| row.get(*c) == Some(v))).filter(|_| shown) {
-            let choice = PChoice { value: column(row, at(2)), label: words(row), icon: column(row, at(4)), colour: paint(row), picture: column(row, at(9)), note: column(row, at(10)), end: column(row, at(11)), ..PChoice::default() };
+            let choice = PChoice { value: column(row, at(2)), label: words(row), icon: column(row, at(4)), colour: paint(row), picture: column(row, at(9)), note: column(row, at(10)), end: column(row, at(11)), depth: column(row, at(12)).parse().unwrap_or_default(), face: face(&column(row, at(13))), ..PChoice::default() };
             match at(7) == "once" && out.iter().any(|c| c.value == choice.value) {
                 true => {}
                 false => out.push(choice),
@@ -110,4 +111,12 @@ impl PSource for PListed {
         }
         out
     }
+}
+
+/// A face as a column writes it: a sheet, how many columns it has, and
+/// the cell, between spaces; nothing for anything else.
+fn face(cell: &str) -> Option<(String, u32, u32)> {
+    let mut part = cell.split_whitespace();
+    let (sheet, column, index) = (part.next()?, part.next()?.parse().ok()?, part.next()?.parse().ok()?);
+    Some((sheet.to_string(), column, index))
 }

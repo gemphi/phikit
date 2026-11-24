@@ -358,42 +358,37 @@ What was asked and answered is in [`RUN.md`](RUN.md).
 
 ## The creators' library (asked 24 November 2026)
 
-Built (FLOW steps 48-54): the Library row; places as tabs (Phiogy's
-shapes, the Phiegg space at `~/Phiegg`, and the person's own Downloads,
-Videos, Pictures, Documents, Desktop, `data/place.tsv`); kinds and
-orders as filters, counts, files as tiles; a model in 3D with its dress
-(colour a part, finish), kept; Import into the Phiegg space under a
-free name, a source turned into USD by `data/convert.tsv`'s command; the
-thing page as Phiegg's (variants bar, picture at the top, sections at
-the right); the hand cursor said by the kit's blocks; eight looks.
+Built: the library as two columns, a tree and what the place holds, as
+Reality Composer Pro's Project Browser and Blender's file browser
+(drives, the person's folders, Phiogy's, folders down to where one is,
+Phiegg's collections and clubs, sets); sections that fold and items as
+a grid or a list (appkit's form, for every app); the inspector beside an
+item (about, parts, colour, finish, attributes, comments); sets made of
+a model, each part's colour drawn by weight; Import into the Phiegg
+space, a source turned into USD by phiphx; the thing page as Phiegg's;
+the hand cursor said by the kit's blocks; eight looks. FLOW 48-54.
 
 Not built, the nearest first:
 
 - [ ] the server receives what a creator brings: an upload route on
   Phiora (`PUT /file/<space>/<name>`, a length, not chunks), kept under
-  `/srv/phi-cdn/<user>/`, and the line told; every source (`.blend`,
-  `.gltf`, `.ply`, `.phx`) turned into USD there by phiphx's converter
-  (or Blender's own USD exporter where Blender is installed), the USD
-  kept beside it; the library then reads the person's space from
-  Phiora as it reads their folder now
-- [ ] the converter on this machine: `data/convert.tsv` names
-  `phiphx-convert`; until a binary of that name is on the path a source
-  says it waits (`cargo run -p phiphx --example convert -- IN OUT` does
-  the same by hand)
-- [ ] collections and clubs set up from the library: choose files,
-  name a collection, and it becomes a host from the `collection`
-  template with its gallery room showing them; a club the same way
-- [ ] a folder that changes outside Phiogy is seen when the place is
-  chosen again (the listing is kept until then); a watch on the folder
-- [ ] a large model's tile and view drawn away from the window, as
-  phibot reads the greenhouse; a video's first frame as its tile
+  `/srv/phi-cdn/<user>/`; every source turned into USD there by
+  phiphx's converter (or Blender's own exporter where it is installed)
+- [ ] the library's collections and clubs read from Phiora's tree
+  (`GET /tree?kind=collection,club,pft`, its relations) where Phiora
+  answers, and from `shelf.json` where not, as the site is; a set made
+  here kept on Phiora as a collection with its items
+- [ ] a set's traits beyond colour: a part shown or not, a material, a
+  scale, each with its own weights (`data/paint.tsv` is the first)
+- [ ] `data/convert.tsv` names `phiphx-convert`: until it is on the
+  path a source waits (`cargo run -p phiphx --example convert -- IN OUT`)
+- [ ] a folder that changes outside Phiogy is seen when it is chosen
+  again (the listing is kept until then); a watch on the folder
+- [ ] a large model's tile drawn away from the window; a video's first
+  frame as its tile; on a Mac the system asks before Phiogy reads
+  Desktop, Documents and Downloads (Info.plist words)
 - [ ] the library written as Apple's samples keep theirs
-  (`D:/Dowloads/C-DOWNLOADS-NOV-26`: Diorama, PresentingAnArtistsScene,
-  the RealityKit animation sample): an `.rkassets` folder with a root
-  `.usda` whose `Root` Xform references each asset's own `.usdc`, each
-  bound to a material under `/Root/Materials` (`bindMaterialAs =
-  "weakerThanDescendants"`), the materials ShaderGraph (MaterialX `ND_*`
-  nodes), the light an image (`RealityKit.ImageBasedLight`), so Reality
-  Composer Pro and a Vision Pro open a creator's library as it is
-- [ ] phibot's robot view on the kit's orbit (`pui/core/orbit.rs`, made
-  from phibot's `part/view.rs`), so the two share one
+  (`D:/Dowloads/C-DOWNLOADS-NOV-26`: Diorama, PresentingAnArtistsScene):
+  an `.rkassets` folder whose root `.usda` references each asset's own
+  file, bound to materials under `/Root/Materials`, lit by an image
+- [ ] phibot's robot view on the kit's orbit (`pui/core/orbit.rs`)

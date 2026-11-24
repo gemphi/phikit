@@ -41,7 +41,7 @@ pub use account::{Account, who};
 #[cfg(not(target_family = "wasm"))]
 pub use figure::Figure;
 #[cfg(not(target_family = "wasm"))]
-pub use library::Shelf;
+pub use library::Browse;
 pub use call::Calling;
 pub use friend::Friend;
 pub use guide::Guide;

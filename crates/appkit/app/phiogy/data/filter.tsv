@@ -1,6 +1,7 @@
 # The library's filters: which kinds a tab of kinds shows (`all` shows
 # every kind), and its words; then how the files are put in order.
 kind	all	filter.all	layers
+kind	profile	filter.profile	user
 kind	model	filter.model	box
 kind	source	filter.source	blend
 kind	picture	filter.picture	image
@@ -9,6 +10,11 @@ kind	sound	filter.sound	music
 sort	name	sort.name	sort
 sort	new	sort.new	sort
 sort	large	sort.large	sort
-# The library's tools: what a press does, its words and its icon.
+# The library's tools: what a press does, its words and its icon. Up
+# goes to the folder over the one shown; Import brings a file into the
+# Phiegg space; back goes from an item to the library; Set makes a set
+# of the model opened.
+tool	up	library.up	arrow-up
 tool	import	library.import	plus
-back	back	custom.back	arrow-left
+back	back	item.back	arrow-left
+back	set	item.set	sparkles

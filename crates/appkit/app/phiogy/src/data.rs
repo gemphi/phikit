@@ -78,3 +78,6 @@ pub const MODEL: &str = include_str!("../data/model.tsv");
 pub const FORM: &str = include_str!("../data/form.tsv");
 pub const LISTING: &str = include_str!("../data/listing.tsv");
 pub const STATE: &str = include_str!("../data/state.tsv");
+/// The asset library's own words and numbers: where Phiegg's shelf is,
+/// its icons, a set's size, the drives' letters.
+pub const SHELF: &str = include_str!("../data/shelf.tsv");

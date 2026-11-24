@@ -12,6 +12,8 @@
 //!   level.
 //! * `cards`: each choice a card with its face, its words and its line.
 //! * `grid`: each choice a tile, its picture or face large over its words.
+//! * `tree`, `facts`, `picture`: a navigator, an item's attributes, and an
+//!   item seen large (`tree.rs`); `field`, a line to type (`field.rs`).
 
 use crate::pui::block::{CARD, PBand, PCard, PDeck, PFace, PLead, PRow, PSwatch};
 use crate::pui::core::light::label;
@@ -44,6 +46,8 @@ pub struct PChoice {
     pub picture: String,
     pub colour: Option<PColor>,
     pub level: Option<f32>,
+    /// How deep it stands in a tree: 0 at the top.
+    pub depth: u32,
 }
 
 impl PChoice {
@@ -101,6 +105,9 @@ pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &m
             (end, rect)
         }
         "grid" => grid(choice, paint, at, wide),
+        "tree" => super::tree::tree(choice, now, paint, at, wide),
+        "facts" => super::tree::facts(choice, paint, at, wide),
+        "picture" => super::tree::picture(choice, paint, at, wide),
         _ => {
             let pill: Vec<(&str, &str, bool)> = choice.iter().map(|c| (c.icon.as_str(), c.label.as_str(), c.value == now)).collect();
             let rect = pill.draw_full(paint, at, wide, right);

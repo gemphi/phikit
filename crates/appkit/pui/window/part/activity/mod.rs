@@ -63,6 +63,9 @@ pub struct PActivity {
     pub skip: usize,
     /// The user, at its foot: their name, and the modal a press opens.
     pub user: Option<PItem>,
+    /// The spaces that stand with no menu beside the bar: a page that is
+    /// its own columns, as a library's tree and what is in it.
+    pub bare: Vec<String>,
 }
 
 /// The lines of a table that say something.
@@ -113,6 +116,13 @@ impl PActivity {
     /// The same bar with the menus of its rows, from a table: one row of
     /// a menu a line, as the slug of the row of the bar it belongs to,
     /// and then what `PItem::hold` reads.
+    /// The same bar, with no menu beside it while one of these spaces
+    /// (their names, between spaces) is shown.
+    pub fn bare(mut self, space: &str) -> PActivity {
+        self.bare = space.split_whitespace().map(str::to_string).collect();
+        self
+    }
+
     pub fn hold(mut self, text: &str) -> PActivity {
         for cell in line(text) {
             let parent = self.item.iter_mut().find(|item| Some(&item.entry.slug.as_str()) == cell.first());
@@ -153,6 +163,8 @@ impl PActivity {
             true => window.drawer(),
             false => !window.fold(),
         };
+        let bare = self.bare.iter().any(|space| window.shows(&PDeed::Show(space.clone())));
+        let open = open && !bare;
         self.item.iter().find(|item| open && item.entry.slug == window.pick() && !item.group.is_empty())
     }
 

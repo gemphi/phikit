@@ -1,105 +1,175 @@
-//! The asset library: its places, what each holds by kind and order, a
-//! file brought in, a model read from USD and dressed, the kit's pressed
-//! places, and the looks.
+//! The asset library, as a hand works it: the tree's places, a folder
+//! listed and gone into, an item opened and its attributes set, a comment
+//! written, a set made of a model, Phiegg's clubs, a file brought in, the
+//! kit's folds and layouts, what can be pressed, and the looks.
 
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 
-use appkit::pui::core::{PMark, PPaint, PRect, PSheet};
-use appkit::pui::window::PDeed;
-use appkit::pui::state::PState;
 use appkit::pui::block::PPill;
+use appkit::pui::core::{PEvent, PMark, PMode, PPaint, PRect, PSheet};
+use appkit::pui::form::PSource;
+use appkit::pui::state::PState;
+use appkit::pui::window::PDeed;
 
 use super::{DESK, drawn, staged};
-use crate::library::{Dress, Library, Place, item};
+use crate::Phiogy;
+use crate::library::{Attribute, Library, Place, Shelf, item};
 
 /// A folder of its own under the system's, with these files in it.
 fn folder(name: &str, file: &[(&str, &[u8])]) -> PathBuf {
     let at = std::env::temp_dir().join(format!("phiogy-library-{name}-{}", std::process::id()));
-    _ = std::fs::create_dir_all(&at);
+    _ = std::fs::create_dir_all(at.join("inner"));
     file.iter().for_each(|(file, bytes)| _ = std::fs::write(at.join(file), bytes));
     at
 }
 
+/// The place of a folder, as the library keys it.
+fn dir(path: &Path) -> String {
+    format!("dir:{}", path.to_string_lossy())
+}
+
 #[test]
-fn step_48_the_library_lists_a_place_by_kind_and_order_and_leaves_out_what_it_does_not_know() {
+fn step_48_the_library_lists_a_folder_its_folders_first_by_kind_and_order() {
     let at = folder("list", &[("b.usda", b"#usda 1.0\n"), ("a.png", b"x"), ("clip.mp4", b"xyz"), ("notes.txt", b"t"), (".hidden.usda", b"")]);
-    let library = Library::at(vec![Place::at("mine", at.clone(), true)]);
-    let name = |kind: &str, order: &str| library.item("mine", kind, order).iter().map(|one| one.name.clone()).collect::<Vec<_>>();
-    // Every kind it knows, by name; a hidden file and an unknown end are not listed.
-    assert_eq!(name("all", "name"), ["a.png", "b.usda", "clip.mp4"]);
+    let library = Library::at(vec![Place::at("mine", at.clone(), true)], Rc::default());
+    let name = |kind: &str, order: &str| library.item(&dir(&at), kind, order).iter().map(|one| one.name.clone()).collect::<Vec<_>>();
+    // Its folders first, then every file of a kind it knows; a hidden
+    // file and an unknown end are not listed.
+    assert_eq!(name("all", "name"), ["inner", "a.png", "b.usda", "clip.mp4"]);
     assert_eq!(name("model", "name"), ["b.usda"]);
-    assert_eq!(name("video", "name"), ["clip.mp4"]);
-    // The largest first.
-    assert_eq!(name("all", "large")[0], "b.usda");
-    let one = library.get("mine:clip.mp4").expect("by its key");
+    assert_eq!(name("all", "large")[1], "b.usda");
+    let one = library.get(&dir(&at.join("clip.mp4"))).expect("by its key");
     assert_eq!((one.kind.as_str(), one.icon.as_str(), one.size), ("video", "video", 3));
+    assert!(library.get(&dir(&at.join("a.png"))).is_some_and(|one| one.picture.starts_with("file:///")));
     // A name already there is never written over.
     assert_eq!(item::free(&at, "a.png"), at.join("a 2.png"));
     assert_eq!(item::size(1536, "B KB MB"), "1.5 KB");
 }
 
 #[test]
-fn step_49_the_places_are_the_shapes_the_phiegg_space_and_the_person_s_own_folders() {
+fn step_49_the_tree_has_the_drives_the_person_s_folders_and_phiogy_s_own() {
     let place = Place::own();
-    let key: Vec<&str> = place.iter().map(|place| place.key.as_str()).collect();
-    assert_eq!(key, ["shape", "phiegg", "download", "video", "picture", "document", "desktop"]);
-    // The shapes are this program's own; the Phiegg space is the
-    // person's own, made when something is brought in.
-    let shape = place[0].folder.clone().expect("the shapes' folder");
-    assert!(shape.ends_with(Path::new("asset").join("shape")) && !place[0].make);
-    assert!(place[1].make && place[1].folder.as_ref().is_some_and(|folder| folder.ends_with("Phiegg")));
+    let section = |name: &str| place.iter().filter(|place| place.section == name).map(|place| place.key.clone()).collect::<Vec<_>>();
+    // The drives this system has, as Blender's Volumes.
+    assert!(section("volume").iter().any(|key| key.starts_with('C')), "{:?}", section("volume"));
+    assert_eq!(section("system"), ["home", "desktop", "document", "download", "picture", "video", "audio"]);
+    assert_eq!(section("own"), ["shape", "phiegg"]);
+    let own: Vec<&Place> = place.iter().filter(|place| place.section == "own").collect();
+    assert!(own[0].folder.as_ref().is_some_and(|folder| folder.ends_with(Path::new("asset").join("shape"))) && !own[0].make);
+    assert!(own[1].make && own[1].folder.as_ref().is_some_and(|folder| folder.ends_with("Phiegg")));
 }
 
 #[test]
 fn step_50_every_shape_is_a_model_with_parts_and_the_dice_has_its_pips() {
-    let library = Library::own();
-    let shape = library.item("shape", "model", "name");
-    assert!(shape.len() >= 12, "{:?}", shape.iter().map(|one| &one.name).collect::<Vec<_>>());
-    for one in shape.iter() {
+    let library = Library::own(Path::new(&Phiogy::source()), Rc::default());
+    let shape = library.place.iter().find(|place| place.key == "shape").and_then(|place| place.folder.clone()).expect("the shapes");
+    let list = library.item(&dir(&shape), "model", "name");
+    assert!(list.len() >= 12, "{:?}", list.iter().map(|one| &one.name).collect::<Vec<_>>());
+    for one in list.iter() {
         let model = library.model(&one.path);
         assert!(!model.part.is_empty() && model.count > 0, "{}", one.name);
     }
-    let dice = shape.iter().find(|one| one.name.starts_with("dice")).expect("a dice");
+    let dice = list.iter().find(|one| one.name.starts_with("dice")).expect("a dice");
     let part: Vec<String> = library.model(&dice.path).part.iter().map(|part| part.name.clone()).collect();
     assert!(part.iter().any(|name| name.contains("body")) && part.iter().any(|name| name.contains("pip")), "{part:?}");
 }
 
 #[test]
-fn step_51_a_model_is_opened_from_the_library_and_dressed_part_by_part() {
+fn step_51_an_item_is_opened_beside_the_inspector_its_attributes_set_and_commented_on() {
     let (app, mut stage, look) = staged(DESK);
     let desk = app.desk();
     assert!(stage.window.apply(&PDeed::Show("library".to_string())));
-    stage.lay(DESK, appkit::pui::core::PMode::of_width(DESK.width));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    // Two columns: the tree and what the place holds.
+    let part = super::part(&stage);
+    assert!(part.contains(&"tree") && part.contains(&"library"), "{part:?}");
     // The shapes' tiles are pictures the kit's raster drew.
-    let tile = drawn(&stage, &look).iter().filter(|mark| matches!(mark, PMark::Picture { name, .. } if name.starts_with("library/shape:"))).count();
+    let tile = drawn(&stage, &look).iter().filter(|mark| matches!(mark, PMark::Picture { name, .. } if name.starts_with("library/dir:"))).count();
     assert!(tile >= 12, "{tile}");
-    // A press on a model opens it beside its dress.
+    let shape = desk.library.place.iter().find(|place| place.key == "shape").and_then(|place| place.folder.clone()).expect("the shapes");
+    let cube = dir(&shape.join("cube.usda"));
     let source = crate::part::library::source(desk);
-    source.set("ui/item", "shape:cube.usda");
-    assert_eq!(desk.shelf.get("ui/item"), "shape:cube.usda");
-    // Dressed: a colour for its first part, and a finish, kept.
-    let dress = Dress::new(desk.choice.clone());
-    source.set("look/shape:cube.usda/0", "ruby");
-    assert_eq!(dress.colour("shape:cube.usda", 0), Some([196.0 / 255.0, 40.0 / 255.0, 58.0 / 255.0]));
-    let matte = dress.sun("shape:cube.usda", &desk.library.set).shine;
-    source.set("look/shape:cube.usda/finish", "metal");
-    assert!(dress.sun("shape:cube.usda", &desk.library.set).shine > matte);
+    source.set("ui/item", &cube);
+    assert_eq!(desk.shelf.get("ui/item"), cube);
+    assert_eq!(source.list("part").len(), 1);
+    // A colour for its part, a finish, kept; and a comment written.
+    let attribute = Attribute::new(desk.choice.clone());
+    source.set(&format!("look/{cube}/0"), "ruby");
+    assert_eq!(attribute.colour(&cube, 0), Some([196.0 / 255.0, 40.0 / 255.0, 58.0 / 255.0]));
+    let matte = attribute.sun(&cube, &desk.library.set).shine;
+    source.set(&format!("look/{cube}/finish"), "metal");
+    assert!(attribute.sun(&cube, &desk.library.set).shine > matte);
+    source.set(&format!("note/{cube}"), "Rounder corners next time.");
+    source.set(&format!("note/{cube}"), "Yes.");
+    assert_eq!(source.list("comment").iter().map(|c| c.label.clone()).collect::<Vec<_>>(), ["Rounder corners next time.", "Yes."]);
+    // A set made of it: its variants, each part in a colour drawn by
+    // weight, the same each time.
+    source.set("ui/do", "set");
+    let at = desk.shelf.get("ui/folder");
+    assert!(at.starts_with("set:"), "{at}");
+    let variant = desk.library.item(&at, "all", "name");
+    assert_eq!(variant.len(), desk.library.own.get("count").parse::<usize>().unwrap_or_default());
+    assert!(variant.iter().all(|one| one.kind == "model" && one.variant.len() == 1));
+    desk.library.again();
+    let again = desk.library.item(&at, "all", "name");
+    assert_eq!(variant.iter().map(|one| one.variant.clone()).collect::<Vec<_>>(), again.iter().map(|one| one.variant.clone()).collect::<Vec<_>>());
+    assert!(variant.iter().map(|one| one.variant[0].clone()).collect::<std::collections::HashSet<_>>().len() > 3);
 }
 
 #[test]
-fn step_52_a_file_brought_in_lands_in_the_phiegg_space_under_a_name_of_its_own() {
+fn step_52_phiegg_s_collections_and_clubs_are_in_the_tree_with_their_items() {
+    let source = Path::new(&Phiogy::source()).with_file_name("shelf.json");
+    let shelf = Shelf::read(&source, "users");
+    assert!(shelf.collection.len() > 10 && shelf.club.len() > 10, "{}", source.display());
+    // Bold Pups: what it is, in Phiegg's words, and its pups with their
+    // portraits and the traits they were made of.
+    let pup = shelf.club("c_bp").expect("Bold Pups");
+    assert!(pup.supply >= 10000 && pup.attribute.iter().any(|(name, _)| name == "Chain"));
+    let one = &pup.item[0];
+    assert!(one.face.is_some() && one.attribute.iter().any(|(name, _)| name == "Outfit"), "{one:?}");
+    // A collection holds its clubs.
+    let collection = shelf.collection(&pup.collection).expect("its collection");
+    assert!(collection.club.contains(&"c_bp".to_string()));
+}
+
+#[test]
+fn step_53_a_file_brought_in_lands_in_the_phiegg_space_under_a_name_of_its_own() {
     let from = folder("from", &[("look.png", b"png")]);
     let home = folder("home", &[("look.png", b"old")]);
     let (app, _, _) = staged(DESK);
     let mut desk = app.desk().clone();
-    desk.library = std::rc::Rc::new(Library::at(vec![Place::at("phiegg", home.clone(), true)]));
-    let shelf = crate::part::Shelf::new("library", desk.clone());
-    shelf.import(&from.join("look.png"));
-    // What was there is kept; the new one has a name of its own.
+    desk.library = Rc::new(Library::at(vec![Place::at("phiegg", home.clone(), true)], Rc::default()));
+    let browse = crate::part::Browse::new("library", desk.clone());
+    browse.import(&from.join("look.png"));
     assert_eq!(std::fs::read(home.join("look.png")).ok(), Some(b"old".to_vec()));
     assert_eq!(std::fs::read(home.join("look 2.png")).ok(), Some(b"png".to_vec()));
-    assert_eq!(desk.shelf.get("ui/place"), "phiegg");
+    assert_eq!(desk.shelf.get("ui/folder"), dir(&home));
     assert_eq!(desk.shelf.get("ui/said"), desk.text.fill("import.done", "name", "look.png"));
+}
+
+#[test]
+fn step_54_a_section_folds_and_the_items_switch_between_a_grid_and_a_list() {
+    let (app, mut stage, look) = staged(DESK);
+    assert!(stage.window.apply(&PDeed::Show("library".to_string())));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    let icon = |stage: &appkit::pui::window::PStage, name: &str| drawn(stage, &look).iter().filter_map(|mark| match mark {
+        PMark::Icon { name: known, rect, .. } if known == name => Some(rect.center()),
+        _ => None,
+    }).collect::<Vec<_>>();
+    // The items lie as a grid; the switch at their heading lays them as a list.
+    let list = icon(&stage, "list");
+    assert!(!list.is_empty());
+    assert!(stage.send(&PEvent::PointerDown(*list.last().expect("the switch"))));
+    assert_eq!(app.desk().shelf.get("ui/layout/item"), "list");
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(!icon(&stage, "grid").is_empty());
+    // A fold closes a section to its heading.
+    let before = super::shown(&stage, &look).len();
+    let fold = icon(&stage, "chevron-down");
+    assert!(stage.send(&PEvent::PointerDown(fold[0])));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(super::shown(&stage, &look).len() < before);
 }
 
 #[test]
@@ -110,25 +180,22 @@ fn every_block_a_press_acts_on_says_so_as_it_is_drawn_inside_what_is_in_sight() 
     let shown = ("", "In sight", false).draw(&mut sheet, appkit::pui::core::PPoint::new(10.0, 10.0), false);
     let hidden = ("", "Gone", false).draw(&mut sheet, appkit::pui::core::PPoint::new(10.0, 400.0), false);
     sheet.unclip();
-    // The one in sight is a hand; the one scrolled out of sight is not.
     assert_eq!(sheet.pressed(), [appkit::pui::core::within(shown, PRect::new(0.0, 0.0, 100.0, 100.0)).expect("in sight")]);
     assert!(hidden.origin.y > 100.0);
 }
 
 #[test]
 fn eight_looks_and_the_plain_ones_draw_a_faint_line_down_the_sidebar() {
-    let (app, stage, look) = staged(DESK);
+    let (app, stage, _) = staged(DESK);
     let list = app.desk().shade.list();
     assert_eq!(list.len(), 8, "{list:?}");
     assert!(list.contains(&"plain") && list.contains(&"plain-dark"));
-    // Drawn in the look the window wears now.
     let shade = app.desk().shade.clone();
     let line = |stage: &appkit::pui::window::PStage| {
         let mut sheet = PSheet::new(shade.as_ref());
         stage.draw(&mut sheet);
         sheet.mark.iter().any(|mark| matches!(mark, PMark::Fill { rect, .. } if rect.size.width <= 1.0 && rect.size.height > 100.0))
     };
-    let _ = &look;
     assert!(!line(&stage));
     app.desk().shade.turn("plain");
     assert!(line(&stage));
