@@ -8,11 +8,11 @@ use std::cell::{Cell, RefCell};
 use super::{PLook, PTheme};
 use crate::pui::core::PColor;
 
-/// A theme that is one of several looks.
-#[derive(Debug, Clone, PartialEq, Default)]
 /// A preference: its kind (`size`, `color`), its token, its value.
 type Liked = (String, String, String);
 
+/// A theme that is one of several looks.
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct PShade {
     /// The looks, each under its name.
     look: Vec<(String, PLook)>,
