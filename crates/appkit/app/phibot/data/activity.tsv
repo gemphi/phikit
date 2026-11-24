@@ -1,5 +1,5 @@
 # The bar: the app's mark at its head (its name's letter), the robot
 # and the greenhouse.
-phibot	botanist		head
+phibot	botanist	phibot	head
 make	Robot	robot	top	space	make
 garden	Greenhouse	leaf	top	space	garden
