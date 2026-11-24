@@ -34,7 +34,7 @@ fn a_surface_is_lit_from_its_foot_and_a_label_from_its_left_or_its_right() {
     label(&mut sheet, RECT, 8.0, PLight::Strong, true, "card.fill");
     // The light fades to itself with nothing of it left, so no other
     // colour shows on the way.
-    let blend = |from: f32, to: f32, turn: f32| PMark::Blend { rect: RECT, radius: 8.0, from: white(from), to: white(to), turn };
+    let blend = |from: f32, to: f32, turn: f32| PMark::Blend { rect: RECT, radius: 8.0, from: white(from), to: white(to), turn, stop: [0.0, 1.0] };
     assert_eq!(sheet.mark, [blend(0.5, 0.0, 0.0), blend(0.5, 0.0, 90.0), blend(0.0, 0.5, 90.0)]);
 }
 
@@ -63,7 +63,7 @@ fn a_pane_stands_on_the_window_s_ground_or_is_glass_where_the_theme_has_glass() 
     let mut sheet = PSheet::new(&look);
     pane(&mut sheet, RECT, 8.0, "");
     let ground = PMark::Fill { rect: RECT, radius: 8.0, color: look.color("window.fill").expect("in the look") };
-    let lit = PMark::Blend { rect: RECT, radius: 8.0, from: white(0.5 * 0.72), to: white(0.0), turn: 0.0 };
+    let lit = PMark::Blend { rect: RECT, radius: 8.0, from: white(0.5 * 0.72), to: white(0.0), turn: 0.0, stop: [0.0, 1.0] };
     assert_eq!(sheet.mark, [ground, lit.clone()]);
     // With glass, what is behind it shows through, and it has no ground.
     let glassy = look.with(GLASS);
@@ -102,7 +102,7 @@ fn a_pane_at_an_edge_of_the_window_is_lit_toward_the_page() {
     // On the window's ground; at the left edge nothing at its left and a
     // shade at rest at its right, at the right edge the other way.
     let ground = PMark::Fill { rect: RECT, radius: 0.0, color: look.color("window.fill").expect("in the look") };
-    let blend = |from: f32, to: f32| PMark::Blend { rect: RECT, radius: 0.0, from: white(from), to: white(to), turn: 90.0 };
+    let blend = |from: f32, to: f32| PMark::Blend { rect: RECT, radius: 0.0, from: white(from), to: white(to), turn: 90.0, stop: [0.0, 1.0] };
     assert_eq!(sheet.mark, [ground.clone(), blend(0.0, 0.5 * 0.72), ground, blend(0.5 * 0.72, 0.0)]);
     // Glass where the theme has glass, and in a flat theme its own fill.
     let glass = PLook::read(&format!("{LIT}{GLASS}"));

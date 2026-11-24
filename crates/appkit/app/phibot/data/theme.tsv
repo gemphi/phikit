@@ -14,8 +14,12 @@ size	shade.share	0.58
 size	shade.rest	0.72
 size	shade.soft	0.48
 # A ground's light is gone seven tenths of the way across it.
-size	shade.reach	0.5
-size	surface.turn	0
+size	shade.reach	1
+# Every light, as puikit's: all of it until three tenths of the way, and
+# none of it from seven tenths (--phi-light-from, --phi-light-to).
+size	light.from	0.3
+size	light.to	0.7
+size	surface.turn	90
 size	label.turn	90
 # No glass: the window is opaque and its panes stand on its ground. A
 # look that is glass says otherwise (data/look.tsv).
@@ -222,6 +226,9 @@ size	section.side	10
 size	section.top	10
 size	section.radius	22
 size	section.space	8
+# For now only the grounds are drawn, to see them alone (the user, 24
+# November 2026): take this row out to have what stands on them back.
+size	section.bare	1
 # How high a pill is at least: options large enough to press easily.
 size	pill.high	36
 # A colour to choose: its side, and the ring of light round it.

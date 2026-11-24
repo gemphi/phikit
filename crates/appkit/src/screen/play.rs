@@ -91,8 +91,8 @@ pub fn play(mark: &[PMark], face: &Type, album: &Album, window: &mut Window, cx:
         next += 1;
         match now {
             PMark::Fill { rect, radius, color } => window.paint_quad(quad(bound(rect), px(*radius), tint(color), px(0.), transparent_black(), Default::default())),
-            PMark::Blend { rect, radius, from, to, turn } => {
-                let ground = linear_gradient(*turn, linear_color_stop(tint(from), 0.0), linear_color_stop(tint(to), 1.0));
+            PMark::Blend { rect, radius, from, to, turn, stop } => {
+                let ground = linear_gradient(*turn, linear_color_stop(tint(from), stop[0]), linear_color_stop(tint(to), stop[1]));
                 window.paint_quad(quad(bound(rect), px(*radius), ground, px(0.), transparent_black(), Default::default()));
             }
             PMark::Glass { rect, radius, glass } => {

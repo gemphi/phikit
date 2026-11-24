@@ -14,7 +14,9 @@ pub enum PMark {
     /// A rounded rectangle that is `from` at one side and `to` at the
     /// other: `turn` says where `to` lies, in degrees, 0 over `from` and
     /// 90 to its right.
-    Blend { rect: PRect, radius: f32, from: PColor, to: PColor, turn: f32 },
+    /// `stop` is where along the way it is all `from` until, and where
+    /// it is all `to` from, as shares of the way (puikit's 30% and 70%).
+    Blend { rect: PRect, radius: f32, from: PColor, to: PColor, turn: f32, stop: [f32; 2] },
     /// A pane of glass: what was drawn before it shows through, blurred.
     Glass { rect: PRect, radius: f32, glass: PGlass },
     /// A line of text with its top left at `at`.
@@ -93,6 +95,11 @@ impl<'a> PSheet<'a> {
     }
 }
 
+/// The theme's tokens for where along its way a light is full until,
+/// and where it is gone from (puikit's `--phi-light-from`, `-to`).
+pub const FROM: &str = "light.from";
+pub const TO: &str = "light.to";
+
 /// The theme's tokens for text that stands off its ground: how far
 /// under it its light falls, and that light's colour.
 pub const LIFT: &str = "text.lift";
@@ -112,7 +119,8 @@ impl PPaint for PSheet<'_> {
     }
 
     fn blend(&mut self, rect: PRect, radius: f32, from: PColor, to: PColor, turn: f32) {
-        self.mark.push(PMark::Blend { rect, radius, from, to, turn });
+        let stop = [self.theme.size(FROM).unwrap_or(0.0), self.theme.size(TO).unwrap_or(1.0)];
+        self.mark.push(PMark::Blend { rect, radius, from, to, turn, stop });
     }
 
     fn glass(&mut self, rect: PRect, radius: f32) {

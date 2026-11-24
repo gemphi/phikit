@@ -17,8 +17,12 @@ size	shade.rest	0.72
 size	shade.soft	0.48
 # How much of a ground's width its light reaches: all of it here. Phiogy
 # has 0.7 (the user's rule of 23 November 2026); say if Phigen is to.
-size	shade.reach	0.5
-size	surface.turn	0
+size	shade.reach	1
+# Every light, as puikit's: all of it until three tenths of the way, and
+# none of it from seven tenths (--phi-light-from, --phi-light-to).
+size	light.from	0.3
+size	light.to	0.7
+size	surface.turn	90
 size	label.turn	90
 # No glass: the window is opaque and its panes stand on its ground. A
 # look that is glass says otherwise (data/look.tsv).

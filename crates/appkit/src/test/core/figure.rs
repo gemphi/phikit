@@ -18,7 +18,7 @@ fn a_figure_stands_on_a_ground_of_its_own_with_its_text_in_the_middle() {
     assert_eq!(rect, PRect::new(300.0 - wide - 20.0, 86.0, wide + 20.0, 28.0));
     // The ground is a label's light, from the left; then the text.
     let shade = PColor::new(1.0, 1.0, 1.0, 0.25);
-    assert_eq!(sheet.mark[0], PMark::Blend { rect, radius: 9.0, from: shade, to: PColor { a: 0.0, ..shade }, turn: 90.0 });
+    assert_eq!(sheet.mark[0], PMark::Blend { rect, radius: 9.0, from: shade, to: PColor { a: 0.0, ..shade }, turn: 90.0, stop: [0.0, 1.0] });
     assert!(matches!(&sheet.mark[1], PMark::Text { at, text, .. } if text == "2,500" && *at == PPoint::new(rect.origin.x + 10.0, 90.0)), "{:?}", sheet.mark[1]);
     assert_eq!(sheet.mark.len(), 2);
 }
@@ -32,7 +32,7 @@ fn a_figure_on_a_ground_runs_against_it_and_one_digit_stands_on_a_round_one() {
     assert_eq!((rect.origin.x, rect.size.width.max(28.0), rect.size.height), (40.0, rect.size.width, 28.0));
     // Against the ground it stands on: the light comes from the right.
     let shade = PColor::new(1.0, 1.0, 1.0, 0.25);
-    assert_eq!(sheet.mark[0], PMark::Blend { rect, radius: 9.0, from: PColor { a: 0.0, ..shade }, to: shade, turn: 90.0 });
+    assert_eq!(sheet.mark[0], PMark::Blend { rect, radius: 9.0, from: PColor { a: 0.0, ..shade }, to: shade, turn: 90.0, stop: [0.0, 1.0] });
 }
 
 #[test]

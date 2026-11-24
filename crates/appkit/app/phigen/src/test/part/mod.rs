@@ -38,7 +38,9 @@ fn everything_in_the_body_keeps_to_one_column_down_its_middle() {
         // The field begins at its left and the button ends at its right;
         // the cards go from one edge to the other.
         // The field wears the surface, the button the label.
-        let field = lit(&mark, ask, 0.0, false);
+        // Surfaces are lit as the theme turns them (sideways, as puikit's).
+        let surface = appkit::theme::PTheme::size(look.as_ref(), "surface.turn").unwrap_or_default();
+        let field = lit(&mark, ask, surface, false);
         let button = lit(&mark, ask, 90.0, false);
         // Thirds of a width do not add up to it to the last bit.
         let near = |got: (f32, f32)| (got.0 - edge.0).abs() < 0.01 && (got.1 - edge.1).abs() < 0.01;
@@ -46,7 +48,7 @@ fn everything_in_the_body_keeps_to_one_column_down_its_middle() {
         let reach = appkit::theme::PTheme::size(look.as_ref(), "shade.reach").unwrap_or(1.0);
         let (from, to) = across(&button);
         assert!(near((across(&field).0, from + (to - from) / reach)), "{size:?}");
-        assert!(near(across(&lit(&mark, card, 0.0, false))), "{size:?}");
+        assert!(near(across(&lit(&mark, card, surface, false))), "{size:?}");
         // The heading over the field is in the middle too.
         let sheet = PSheet::new(look.as_ref());
         let head =mark.iter().find_map(|mark| match mark {
@@ -61,7 +63,7 @@ fn everything_in_the_body_keeps_to_one_column_down_its_middle() {
         let turn = [lit(&mark, talk, 90.0, false), lit(&mark, talk, 90.0, true)].concat();
         assert!(near(across(&turn)), "{size:?}");
         let (from, to) = across(&lit(&mark, ask, 90.0, false));
-        assert!(near((across(&lit(&mark, ask, 0.0, false)).0, from + (to - from) / reach)));
+        assert!(near((across(&lit(&mark, ask, surface, false)).0, from + (to - from) / reach)));
     }
 }
 
@@ -98,7 +100,8 @@ fn a_text_cut_short_ends_with_the_theme_s_mark() {
 fn in_a_hand_the_cards_are_stacked_and_none_runs_past_its_part() {
     let (_, stage, look) = staged(HAND);
     let part = rect(&stage, "card");
-    let card = lit(&drawn(&stage, &look), part, 0.0, false);
+    let surface = appkit::theme::PTheme::size(look.as_ref(), "surface.turn").unwrap_or_default();
+    let card = lit(&drawn(&stage, &look), part, surface, false);
     assert_eq!(card.len(), 3);
     // One under the other, a gap apart, the last ending a gap from the
     // foot of the part or sooner.

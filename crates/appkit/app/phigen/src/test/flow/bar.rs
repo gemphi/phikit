@@ -40,11 +40,11 @@ fn step_31_home_and_chat_are_at_the_top_menu_in_the_middle_and_i_am_at_the_foot(
     let text = shown(&stage, &look);
     assert!(["Search", "Model", "Appearance", "Light", "Dark", "Glass", "Glass Light", "Settings", "Profile"].iter().all(|row| text.contains(&row.to_string())), "{text:?}");
     assert!(!part(&stage).contains(&"thread"));
-    // The menu is lit from the left, where it begins; its groups against
-    // it, from the right, each reaching half way across (appkit's shared
-    // menu, 24 November 2026).
+    // The menu is lit from its left; its groups against it, from nothing
+    // at their left to their light at their right (appkit's shared menu,
+    // 24 November 2026).
     let ground = lit(&drawn(&stage, &look), stage.frame().menu, 90.0, true);
-    assert_eq!(ground, [PRect::new(164.0, 44.0, 92.0, 96.0), PRect::new(164.0, 270.0, 92.0, 216.0), PRect::new(164.0, 608.0, 92.0, 96.0)]);
+    assert_eq!(ground, [PRect::new(72.0, 44.0, 184.0, 96.0), PRect::new(72.0, 270.0, 184.0, 216.0), PRect::new(72.0, 608.0, 184.0, 96.0)]);
     // A look is chosen there, and the settings and my profile opened.
     assert!(row(&mut stage, &look, "Dark"));
     assert_eq!(app.desk().shade.name(), "dark");

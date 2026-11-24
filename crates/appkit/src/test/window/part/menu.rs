@@ -70,7 +70,7 @@ fn every_group_has_a_ground_of_its_own_and_the_row_shown_is_lit_against_it() {
         let mut sheet = PSheet::new(&look);
         menu::draw(&group(row), ROOM, window, None, &mut sheet);
         let blend = |mark: &PMark| match mark {
-            PMark::Blend { rect, radius, from, to, turn } => Some((*rect, *radius, from.a, to.a, *turn)),
+            PMark::Blend { rect, radius, from, to, turn, .. } => Some((*rect, *radius, from.a, to.a, *turn)),
             _ => None,
         };
         (sheet.mark.iter().filter_map(blend).collect::<Vec<_>>(), sheet.text_list().into_iter().map(str::to_string).collect::<Vec<_>>())

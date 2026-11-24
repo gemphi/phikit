@@ -60,7 +60,7 @@ fn in_a_theme_with_light_a_button_wears_the_label_at_its_strongest_and_the_theme
     let mut sheet = PSheet::new(&look);
     show(&PButton::new("Go", PRect::new(0.0, 0.0, 80.0, 40.0)), &mut sheet, PPoint::default());
     let lit = PColor::new(1.0, 1.0, 1.0, 0.5);
-    assert_eq!(sheet.mark.first(), Some(&PMark::Blend { rect: PRect::new(0.0, 0.0, 80.0, 40.0), radius: 6.0, from: lit, to: PColor { a: 0.0, ..lit }, turn: 90.0 }));
+    assert_eq!(sheet.mark.first(), Some(&PMark::Blend { rect: PRect::new(0.0, 0.0, 80.0, 40.0), radius: 6.0, from: lit, to: PColor { a: 0.0, ..lit }, turn: 90.0, stop: [0.0, 1.0] }));
     // Light has no colour to set an ink of its own against.
     assert!(matches!(sheet.mark.last(), Some(PMark::Text { color, .. }) if *color == look.color("text.ink").expect("in the look")));
 }
