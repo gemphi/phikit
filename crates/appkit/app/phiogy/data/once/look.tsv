@@ -52,3 +52,29 @@ steel	#c9ced6	0.25 0.9
 cobalt	#2747c9	0.35 0.1
 lemon	#f2d64b	0.4 0
 orange	#ff8a2b	0.45 0
+
+# The lands', ice to the tropics.
+ice	#eaf6fc	0.3 0
+snow	#f7fbff	0.6 0
+frost	#b9d3e6	0.5 0
+glacier	#6fc6ec	0.15 0
+deep	#24548c	0.2 0
+night	#1c2250	0.6 0
+tundra	#a9bfa0	0.85 0
+alpine	#8fcf72	0.8 0
+taiga	#3f7a55	0.85 0
+dusk	#4b44a6	0.7 0
+mist	#7a78e0	0.7 0
+meadow	#4f9e3a	0.8 0
+spring	#8bd14f	0.75 0
+river	#3d7fd8	0.2 0
+vine	#5c3f7a	0.7 0
+lavender	#9b7fe6	0.6 0
+clay	#e0905a	0.85 0
+rust	#c4552f	0.85 0
+dune	#f0c27a	0.9 0
+savanna	#d8b552	0.85 0
+grass	#c9a640	0.85 0
+lagoon	#3fd6d0	0.15 0
+jungle	#227a3c	0.85 0
+reef	#7fe8e0	0.2 0

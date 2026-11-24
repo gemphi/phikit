@@ -78,3 +78,8 @@ the tables. Nothing in a file is drawn by hand.
   four rockets as Starship is built (the hopper, the ship, the full
   stack, the ship for Mars with legs and sun wings). Their lights and
   windows are Phiber's o and D.
+- Sixteen lands, ice to the tropics (`land-glacier` to
+  `land-tropics`), round tiles 40 m across with soft hills one behind
+  another as the user's pictures have them, rings of river, peaks
+  capped with snow, the city's trees; bright as a theme park's.
+  `lands.usda` lays them out four by four.
