@@ -150,32 +150,67 @@ fn step_53_a_file_brought_in_lands_in_the_phiegg_space_under_a_name_of_its_own()
 }
 
 #[test]
-fn step_54_a_section_folds_and_the_items_switch_between_a_grid_and_a_list() {
+fn step_54_the_items_heading_has_a_drop_of_three_layouts_at_its_left_and_a_filter_and_an_order_at_its_right() {
     let (app, mut stage, look) = staged(DESK);
     assert!(stage.window.apply(&PDeed::Show("library".to_string())));
     stage.lay(DESK, PMode::of_width(DESK.width));
-    let icon = |stage: &appkit::pui::window::PStage, name: &str| drawn(stage, &look).iter().filter_map(|mark| match mark {
-        PMark::Icon { name: known, rect, .. } if known == name => Some(rect.center()),
+    let text = |stage: &appkit::pui::window::PStage, want: &str| drawn(stage, &look).iter().filter_map(|mark| match mark {
+        PMark::Text { at, text, .. } if text == want => Some(*at),
         _ => None,
-    }).collect::<Vec<_>>();
-    // The items lie as a grid; the switch at their heading lays them as a list.
-    let list = icon(&stage, "list");
-    assert!(!list.is_empty());
-    assert!(stage.send(&PEvent::PointerDown(*list.last().expect("the switch"))));
-    assert_eq!(app.desk().shelf.get("ui/layout/item"), "list");
+    }).max_by(|a, b| a.x.total_cmp(&b.x));
+    let icon = |stage: &appkit::pui::window::PStage, name: &str| drawn(stage, &look).iter().filter_map(|mark| match mark {
+        PMark::Icon { name: known, rect, .. } if known == name => Some(*rect),
+        _ => None,
+    }).max_by(|a, b| a.origin.x.total_cmp(&b.origin.x));
+    let word = |name: &str| app.desk().text.get(name).to_string();
+    // The heading, the layout's drop just after its words, the filter
+    // and the order at its right; no line of pills for them any more.
+    let head = drawn(&stage, &look).iter().filter_map(|mark| match mark {
+        PMark::Text { at, text, .. } if *text == word("library.item") => Some(*at),
+        _ => None,
+    }).min_by(|a, b| a.y.total_cmp(&b.y)).expect("the heading");
+    let layout = icon(&stage, "grid").expect("the layout's drop");
+    let (filter, sort) = (icon(&stage, "filter").expect("the filter"), icon(&stage, "sort").expect("the order"));
+    assert!(layout.origin.x > head.x && layout.origin.x < DESK.width / 2.0 && (layout.center().y - head.y).abs() < 24.0, "{head:?} {layout:?}");
+    assert!(filter.origin.x > DESK.width / 2.0 && sort.origin.x > filter.origin.x);
+    assert!(text(&stage, &word("filter.source")).is_none() && text(&stage, &word("sort.large")).is_none());
+    // The layout's drop opens with its three; Large tiles chosen, it is
+    // put away and the tiles are larger.
+    let tile = |stage: &appkit::pui::window::PStage| drawn(stage, &look).iter().filter_map(|mark| match mark {
+        PMark::Picture { name, rect, .. } if name.starts_with("library/dir:") => Some(rect.size.width),
+        _ => None,
+    }).fold(0.0, f32::max);
+    let small = tile(&stage);
+    assert!(stage.send(&PEvent::PointerDown(layout.center())));
     stage.lay(DESK, PMode::of_width(DESK.width));
-    assert!(!icon(&stage, "grid").is_empty());
+    let large = text(&stage, &word("layout.large")).expect("the three");
+    assert!(text(&stage, &word("layout.list")).is_some());
+    assert!(stage.send(&PEvent::PointerDown(appkit::pui::core::PPoint::new(large.x + 4.0, large.y + 4.0))));
+    assert_eq!((app.desk().shelf.get("ui/layout/item").as_str(), app.desk().shelf.get("ui/drop").as_str()), ("large", ""));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(tile(&stage) > small * 1.3, "{small} {}", tile(&stage));
+    // The order's drop chooses the order.
+    let sort = icon(&stage, "sort").expect("the order");
+    assert!(stage.send(&PEvent::PointerDown(sort.center())));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    let newest = text(&stage, &word("sort.new")).expect("the orders");
+    assert!(stage.send(&PEvent::PointerDown(appkit::pui::core::PPoint::new(newest.x + 4.0, newest.y + 4.0))));
+    assert_eq!(app.desk().shelf.get("ui/sort"), "new");
     // A fold closes a section to its heading.
+    stage.lay(DESK, PMode::of_width(DESK.width));
     let before = super::shown(&stage, &look).len();
-    let fold = icon(&stage, "chevron-down");
-    assert!(stage.send(&PEvent::PointerDown(fold[0])));
+    let fold = drawn(&stage, &look).iter().find_map(|mark| match mark {
+        PMark::Icon { name, rect, .. } if name == "chevron-down" && rect.size.width >= look.size("icon.size").unwrap_or_default() - 1.0 => Some(rect.center()),
+        _ => None,
+    }).expect("a fold");
+    assert!(stage.send(&PEvent::PointerDown(fold)));
     stage.lay(DESK, PMode::of_width(DESK.width));
     assert!(super::shown(&stage, &look).len() < before);
 }
 
 #[test]
-fn step_55_the_toolbar_says_the_way_in_crumbs_and_one_line_chooses_what_in_what_order_and_how() {
-    // A screen as wide as most: the toolbar's two lines whole.
+fn step_55_the_toolbar_has_back_and_forward_and_the_way_in_crumbs_an_arrow_between_each_step() {
+    // A screen as wide as most: the way whole.
     let wide = appkit::pui::core::PSize { width: 1920.0, height: 1032.0 };
     let (app, mut stage, look) = staged(wide);
     assert!(stage.window.apply(&PDeed::Show("library".to_string())));
@@ -186,42 +221,31 @@ fn step_55_the_toolbar_says_the_way_in_crumbs_and_one_line_chooses_what_in_what_
         PMark::Text { at, text, .. } if text == want => Some(*at),
         _ => None,
     }).max_by(|a, b| a.x.total_cmp(&b.x));
-    let icon = |want: &str| mark.iter().filter_map(|mark| match mark {
-        PMark::Icon { name, rect, .. } if name == want => Some(*rect),
-        _ => None,
-    }).collect::<Vec<_>>();
-    // The way to the shapes, a mark between each step, no heading over it.
     let shape = text("shape").expect("where it is");
-    let way: Vec<PRect> = icon("chevron-right").into_iter().filter(|rect| (rect.center().y - shape.y).abs() < 24.0).collect();
+    let way: Vec<PRect> = mark.iter().filter_map(|mark| match mark {
+        PMark::Icon { name, rect, .. } if name == "chevron-right" && (rect.center().y - shape.y).abs() < 24.0 => Some(*rect),
+        _ => None,
+    }).collect();
     assert!(way.len() >= 3, "{way:?}");
     assert!(text(app.desk().text.get("library.head")).is_none());
-    // What to show, in what order and how, on one line, without headings.
-    let (all, name) = (text(app.desk().text.get("filter.all")).expect("All"), text(app.desk().text.get("sort.name")).expect("Name"));
-    assert!((all.y - name.y).abs() < 1.0 && name.x > all.x);
-    let grid = icon("grid").into_iter().find(|rect| (rect.center().y - name.y).abs() < 24.0).expect("the switch on that line");
-    assert!(grid.origin.x > name.x);
-    assert!(text(app.desk().text.get("library.kind")).is_none() && text(app.desk().text.get("library.sort")).is_none());
-    // A step pressed goes there.
+    // A step pressed goes there; back goes to where it was, forward again.
+    let shown = app.desk().library.home();
     let up = text("asset").expect("a step back");
     assert!(stage.send(&PEvent::PointerDown(appkit::pui::core::PPoint::new(up.x + 4.0, up.y + 4.0))));
-    assert!(app.desk().shelf.get("ui/folder").ends_with("asset"), "{}", app.desk().shelf.get("ui/folder"));
-    // Narrower, the order and the switch take a line of their own under
-    // what to show, still at its right.
-    let (app, mut stage, look) = staged(DESK);
-    assert!(stage.window.apply(&PDeed::Show("library".to_string())));
-    stage.lay(DESK, PMode::of_width(DESK.width));
-    let mark = drawn(&stage, &look);
-    let at = |want: &str| mark.iter().find_map(|mark| match mark {
-        PMark::Text { at, text, .. } if text == want => Some(*at),
-        _ => None,
-    }).expect(want);
-    let (all, name) = (at(app.desk().text.get("filter.all")), at(app.desk().text.get("sort.name")));
-    assert!(name.y > all.y, "{all:?} {name:?}");
+    let asset = app.desk().shelf.get("ui/folder");
+    assert!(asset.ends_with("asset") && asset != shown, "{asset}");
+    let source = crate::part::library::source(app.desk());
+    source.set("ui/do", "past");
+    assert_eq!(app.desk().shelf.get("ui/folder"), shown);
+    source.set("ui/do", "ahead");
+    assert_eq!(app.desk().shelf.get("ui/folder"), asset);
 }
 
 #[test]
 fn step_56_the_tree_has_an_arrow_at_each_depth_and_lines_down_the_gaps_under_an_open_one() {
-    let (_, mut stage, look) = staged(DESK);
+    let (app, mut stage, look) = staged(DESK);
+    // In Phiogy's own folder: its folders can open.
+    app.desk().shelf.set("ui/folder", &dir(Path::new(env!("CARGO_MANIFEST_DIR"))));
     assert!(stage.window.apply(&PDeed::Show("library".to_string())));
     stage.lay(DESK, PMode::of_width(DESK.width));
     let mark = drawn(&stage, &look);
@@ -243,7 +267,7 @@ fn step_56_the_tree_has_an_arrow_at_each_depth_and_lines_down_the_gaps_under_an_
         _ => None,
     }).collect();
     assert!(open.iter().any(|arrow| rule.iter().any(|line| (line.center().x - arrow.center().x).abs() < 1.0 && line.origin.y >= arrow.center().y)), "{rule:?}");
-    // Collections that are not open can be.
+    // The folders in it are not open, and can be.
     assert!(!arrow("chevron-right").is_empty());
 }
 

@@ -50,9 +50,8 @@ impl List {
     /// Where the library is: what the window keeps, or Phiogy's shapes.
     pub fn at(&self) -> String {
         let kept = self.ui.get("ui/folder");
-        let shape = || self.library.place.iter().find(|place| place.section == "own").and_then(|place| place.folder.clone());
         match kept.is_empty() {
-            true => shape().map(|folder| format!("dir:{}", folder.to_string_lossy())).unwrap_or_default(),
+            true => self.library.home(),
             false => kept,
         }
     }
@@ -95,7 +94,7 @@ impl List {
             "club" => self.library.shelf.club.iter().map(|club| line(format!("club:{}", club.id), &club.name, own.get("club"), 0, "")).collect(),
             "set" => self.library.sets().iter().map(|set| line(format!("set:{}", set.name), &set.name, own.get("set"), 0, "")).collect(),
             "path" => self.path(&at),
-            "kind" | "sort" | "tool" | "back" => group(name),
+            "kind" | "sort" | "tool" | "way" | "back" => group(name),
             "paint" => every(data::PAINT),
             "finish" => every(data::FINISH),
             "item" => self.items(&at),

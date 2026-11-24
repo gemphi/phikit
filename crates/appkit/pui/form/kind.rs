@@ -11,7 +11,8 @@
 //!   line, a note at its end, and under the note a bar as long as its
 //!   level.
 //! * `cards`: each choice a card with its face, its words and its line.
-//! * `grid`: each choice a tile, its picture or face large over its words.
+//! * `grid`: each choice a tile, its picture or face large over its words;
+//!   `large`, the same in tiles larger. The one under the pointer is lit.
 //! * `tree`, `facts`, `picture`: a navigator, an item's attributes, and an
 //!   item seen large (`tree.rs`); `field`, a line to type (`field.rs`).
 
@@ -93,7 +94,7 @@ fn strength(variant: &str) -> PLight {
 /// the right where told (against the ground it stands on): where it
 /// ends, and where each of its choices can be pressed.
 #[allow(clippy::too_many_arguments)]
-pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, wide: f32, right: bool) -> (f32, Vec<PRect>) {
+pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, wide: f32, right: bool, over: Option<PPoint>) -> (f32, Vec<PRect>) {
     match kind {
         "swatch" => {
             let colour: Vec<(PColor, bool)> = choice.iter().map(|c| (c.colour.unwrap_or_default(), c.value == now)).collect();
@@ -106,8 +107,9 @@ pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &m
             let (rect, end) = choice.draw(paint, at, wide);
             (end, rect)
         }
-        "grid" => grid(choice, paint, at, wide),
-        "tree" => super::tree::tree(choice, now, paint, at, wide),
+        "grid" => grid(choice, paint, at, wide, 1.0, over),
+        "large" => grid(choice, paint, at, wide, LARGE, over),
+        "tree" => super::tree::tree(choice, now, paint, at, wide, over),
         "facts" => super::tree::facts(choice, paint, at, wide),
         "picture" => super::tree::picture(choice, paint, at, wide),
         _ => {
@@ -161,16 +163,24 @@ fn rows(variant: &str, choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at
     (end.max(at.y), rect)
 }
 
-/// Tiles in as many columns as a card's width allows.
-fn grid(choice: &[PChoice], paint: &mut dyn PPaint, at: PPoint, wide: f32) -> (f32, Vec<PRect>) {
+/// How many times a card's width a large tile is.
+const LARGE: f32 = 1.75;
+
+/// Tiles in as many columns as a card's width, so many times, allows;
+/// the one under the pointer lit the more.
+fn grid(choice: &[PChoice], paint: &mut dyn PPaint, at: PPoint, wide: f32, times: f32, over: Option<PPoint>) -> (f32, Vec<PRect>) {
     let (gap, line) = (paint.size(GAP), paint.size(LINE));
-    let least = paint.size(CARD).min(wide).max(1.0);
+    let least = (paint.size(CARD) * times).min(wide).max(1.0);
     let across = ((wide + gap / 2.0) / (least + gap / 2.0)).floor().max(1.0);
     let side = (wide - (across - 1.0) * gap / 2.0) / across;
     let high = side + line * 2.0 + gap;
     let rect: Vec<PRect> = (0..choice.len()).map(|i| PRect::new(at.x + (i % across as usize) as f32 * (side + gap / 2.0), at.y + (i / across as usize) as f32 * (high + gap / 2.0), side, high)).collect();
     for (c, r) in choice.iter().zip(&rect) {
-        (c.lead(), c.label.as_str(), c.note.as_str()).tile(paint, *r, PLight::Soft);
+        let light = match over.is_some_and(|over| r.contains(over)) {
+            true => PLight::Strong,
+            false => PLight::Soft,
+        };
+        (c.lead(), c.label.as_str(), c.note.as_str()).tile(paint, *r, light);
     }
     let rows = choice.len().div_ceil(across as usize) as f32;
     (at.y + rows * (high + gap / 2.0) - gap / 2.0, rect)

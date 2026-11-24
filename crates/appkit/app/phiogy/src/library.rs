@@ -71,6 +71,12 @@ impl Library {
         Library { place, shelf: Shelf::default(), kind, set, own, film: PFilm::default(), choice, model: RefCell::default(), listed: RefCell::default(), shot: RefCell::default() }
     }
 
+    /// Where the library opens: Phiogy's own shapes.
+    pub fn home(&self) -> String {
+        let folder = self.place.iter().find(|place| place.section == "own").and_then(|place| place.folder.clone());
+        folder.map(|folder| format!("dir:{}", folder.to_string_lossy())).unwrap_or_default()
+    }
+
     /// The person's sets, by name.
     pub fn sets(&self) -> Vec<Set> {
         self.choice.starting("set/").into_iter().filter_map(|(name, value)| Set::kept(&name, &value)).collect()

@@ -18,6 +18,7 @@ set	set	0	1	2	-	-	-	-	-	-	-	3	-	4
 path	path	0	1	2	-	-	-	-
 kind	kind	0	text:1	2	-	-	-	-
 sort	sort	0	text:1	2	-	-	-	-
+way	way	0	text:1	2	-	-	-	-
 tool	tool	0	text:1	2	-	-	-	-
 back	back	0	text:1	2	-	-	-	-
 item	item	0	1	2	-	-	-	-	3	4	5	-	6

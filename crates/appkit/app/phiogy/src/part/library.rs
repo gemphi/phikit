@@ -48,12 +48,50 @@ impl Ui {
         }
     }
 
-    /// Show another place.
+    /// Show another place: the one shown before is kept to go back to,
+    /// and nothing is ahead any more.
     fn go(&self, at: &str) {
+        let now = match self.memory.get(FOLDER) {
+            kept if kept.is_empty() => self.library.home(),
+            kept => kept,
+        };
+        if now != at && !now.is_empty() {
+            self.push(PAST, &now);
+            self.memory.set(NEXT, "");
+        }
+        self.show(at);
+    }
+
+    fn show(&self, at: &str) {
         self.library.again();
-        self.memory.set("ui/folder", at);
+        self.memory.set(FOLDER, at);
+    }
+
+    /// Back to the place shown before, or forward to the one gone back
+    /// from: the one shown now kept on the other side.
+    fn way(&self, from: &str, to: &str) {
+        let mut list: Vec<String> = self.memory.get(from).lines().map(str::to_string).collect();
+        let Some(at) = list.pop() else { return };
+        self.memory.set(from, &list.join("\n"));
+        self.push(to, &self.memory.get(FOLDER));
+        self.show(&at);
+    }
+
+    fn push(&self, path: &str, at: &str) {
+        let list = self.memory.get(path);
+        let list = match list.is_empty() {
+            true => at.to_string(),
+            false => format!("{list}\n{at}"),
+        };
+        self.memory.set(path, &list);
     }
 }
+
+/// Where the place shown is kept, and those shown before it and gone
+/// back from, a line each.
+const FOLDER: &str = "ui/folder";
+const PAST: &str = "ui/past";
+const NEXT: &str = "ui/next";
 
 impl PState for Ui {
     fn get(&self, path: &str) -> String {
@@ -65,7 +103,9 @@ impl PState for Ui {
         let library = || PDeed::Show("library".to_string());
         match (path, value) {
             ("ui/do", IMPORT) => wish(PDeed::Choose(IMPORT.to_string())),
-            ("ui/do", "up") => self.go(&self.up(&self.memory.get("ui/folder"))),
+            ("ui/do", "up") => self.go(&self.up(&self.memory.get(FOLDER))),
+            ("ui/do", "past") => self.way(PAST, NEXT),
+            ("ui/do", "ahead") => self.way(NEXT, PAST),
             ("ui/do", "set") => match self.library.get(&self.memory.get("ui/item")).filter(|item| item.kind == "model") {
                 Some(item) => {
                     let name = self.library.make(&item.key, &self.set);

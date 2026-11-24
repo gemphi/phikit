@@ -284,6 +284,11 @@ library.head	Library
 library.kind	Show
 library.sort	Order
 library.item	Items
+library.back	Back
+library.forward	Forward
+layout.grid	Grid
+layout.large	Large tiles
+layout.list	List
 library.stat	This place
 library.up	Up
 library.import	Import

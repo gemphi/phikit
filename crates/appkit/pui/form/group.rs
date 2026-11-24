@@ -25,14 +25,16 @@ impl PForm {
             let mut head = PHead::of(&b.variant, &b.key, self.source.as_ref());
             if b.head.is_empty() {
                 head.tool.clear();
+                head.left.clear();
             }
             (*b, self.source.list(&b.list), self.source.get(&b.path), head)
         };
         let shown: Vec<(&Block, Vec<PChoice>, String, PHead)> = block.iter().map(one).filter(|(b, c, _, _)| !c.is_empty() || b.kind == "field").collect();
         let (typing, draft) = (self.typing.borrow().clone(), self.draft.borrow().clone());
         let group = shown.iter().map(|(b, choice, now, head)| {
-            let kind = match (b.kind.as_str(), head.list) {
-                ("grid", true) => "rows".to_string(),
+            let kind = match (b.kind.as_str(), head.layout.as_str()) {
+                ("grid", head::LIST) => "rows".to_string(),
+                ("grid", head::LARGE) => "large".to_string(),
                 (kind, _) => kind.to_string(),
             };
             let (light, choice, now, head) = (head::light(&b.variant), choice.clone(), now.clone(), head.clone());
@@ -40,14 +42,16 @@ impl PForm {
                 true => Some(draft.clone()),
                 false => None,
             };
+            let (words, over) = (self.text.get(&b.head).to_string(), self.over.get());
             let draw = move |paint: &mut dyn PPaint, at: PPoint, wide: f32, right: bool| {
-                let mut rect = head.draw(paint, at, wide);
+                let words = paint.measure(&words);
+                let mut rect = head.draw(paint, at, wide, words);
                 if head.folded {
                     return (at.y, rect);
                 }
                 let (end, more) = match kind.as_str() {
                     "field" => field::draw(&choice, typed.as_deref().unwrap_or_default(), typed.is_some(), paint, at, wide),
-                    _ => drawn(&kind, &light, &choice, &now, paint, at, wide, right),
+                    _ => drawn(&kind, &light, &choice, &now, paint, at, wide, right, over),
                 };
                 rect.extend(more);
                 (end, rect)
@@ -60,8 +64,8 @@ impl PForm {
     /// What a press on each place of a block keeps: its switches first,
     /// then its choices; a line to type takes the keys.
     pub(super) fn spots(block: &Block, head: &PHead, choice: &[PChoice], rect: Vec<PRect>) -> Vec<Spot> {
-        let count = head.tool.len();
-        let tool = rect.iter().take(count).zip(&head.tool).map(|(r, tool)| (*r, tool.path.clone(), tool.value.clone()));
+        let count = head.all().count();
+        let tool = rect.iter().take(count).zip(head.all()).map(|(r, tool)| (*r, tool.path.clone(), tool.value.clone()));
         let rest = rect.iter().skip(count);
         let content: Vec<Spot> = match block.kind.as_str() {
             "field" => rest.take(1).map(|r| (*r, FOCUS.to_string(), block.key.clone())).collect(),

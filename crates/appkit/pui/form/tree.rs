@@ -27,8 +27,9 @@ const RADIUS: &str = "row.radius";
 /// where it is open and to the right where it can open. From the middle
 /// of an open arrow a thin line runs down the gap at its depth to the
 /// last line right under it, so the depths read as Finder's and Reality
-/// Composer Pro's outlines do.
-pub fn tree(choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, wide: f32) -> (f32, Vec<PRect>) {
+/// Composer Pro's outlines do. The chosen line is lit, and the one under
+/// the pointer softly.
+pub fn tree(choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, wide: f32, over: Option<PPoint>) -> (f32, Vec<PRect>) {
     let (gap, line, ink, icon, radius) = (paint.size(GAP), paint.size(LINE), paint.color(INK), paint.size(ICON), paint.size(RADIUS));
     let (dim, rule) = (paint.color(DIM), paint.color(RULE));
     let high = line + gap / 2.0;
@@ -49,8 +50,11 @@ pub fn tree(choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, w
     let mut rect = Vec::new();
     for (index, c) in choice.iter().enumerate() {
         let r = row(index);
-        if c.value == now && !now.is_empty() {
-            label(paint, r, radius, PLight::Strong, false, "");
+        // The chosen line lit, and the one under the pointer softly.
+        match (c.value == now && !now.is_empty(), over.is_some_and(|over| r.contains(over))) {
+            (true, _) => label(paint, r, radius, PLight::Strong, false, ""),
+            (false, true) => label(paint, r, radius, PLight::Soft, false, ""),
+            (false, false) => {}
         }
         let left = arrow(c.depth);
         let mark = match c.fold {

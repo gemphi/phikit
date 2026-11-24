@@ -23,25 +23,26 @@
 //! after the tabs, each on its own ground under its heading.
 
 mod bar;
+mod drop;
 mod field;
 mod group;
 mod head;
 mod kind;
 mod list;
 mod tree;
+mod view;
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 pub use field::PTyped;
-pub use head::{FOLD, FOLDED, LAYOUT, LIST, PHead, PTool};
+pub use head::{DROP, FOLD, FOLDED, LARGE, LAYOUT, LAYOUTS, LIST, PDrop, PHead, PTool};
 pub use kind::{PChoice, drawn};
 pub use list::{PListed, PRows};
 
 use crate::pui::block::{PBand, PTabMove};
-use crate::pui::core::{PDraw, PEvent, PPaint, PPoint, PRect, PView};
+use crate::pui::core::{PDraw, PPaint, PPoint, PRect};
 use crate::pui::layout::{PDry, PScroll, SPACE, stack, tabbed};
-use group::FOCUS;
 use crate::pui::state::PState;
 use crate::service::PTable;
 use crate::theme::PTheme;
@@ -97,6 +98,8 @@ pub struct PForm {
     /// The `field` block that has the keys, and what is typed in it.
     typing: RefCell<Option<String>>,
     draft: RefCell<String>,
+    /// Where the pointer is, in the window: what is under it is lit.
+    over: Cell<Option<PPoint>>,
 }
 
 impl PForm {
@@ -111,7 +114,7 @@ impl PForm {
             let at = |i: usize| c.get(i).cloned().unwrap_or_default();
             Block { kind: at(1), key: at(2), head: at(3), list: at(4), path: at(5), under: at(6), variant: at(7) }
         }).collect();
-        PForm { frame: PRect::default(), block, source, text, theme, spot: RefCell::default(), motion: PTabMove::default(), scroll: Cell::default(), origin: Cell::default(), typing: RefCell::default(), draft: RefCell::default() }
+        PForm { frame: PRect::default(), block, source, text, theme, spot: RefCell::default(), motion: PTabMove::default(), scroll: Cell::default(), origin: Cell::default(), typing: RefCell::default(), draft: RefCell::default(), over: Cell::default() }
     }
 
     fn of(&self, kind: &str) -> impl Iterator<Item = &Block> {
@@ -161,6 +164,9 @@ impl PForm {
             for (rect, (block, choice, head)) in pressed.into_iter().zip(&shown) {
                 spot.extend(PForm::spots(block, head, choice, rect));
             }
+            // A drop over the groups of these tabs.
+            let drop = self.dropped(paint, &self.heads(&spot, &shown));
+            spot.splice(0..0, drop);
             end = bottom;
         }
         let (last, spot) = match own.is_empty() {
@@ -172,9 +178,13 @@ impl PForm {
                     false => end + space,
                 };
                 let (last, pressed) = stack(paint, PPoint::new(left, at), wide, foot.max(at + high), true, &mut own);
+                let mut spot = spot;
                 for (rect, (block, choice, head)) in pressed.into_iter().zip(&own_shown) {
                     spot.extend(PForm::spots(block, head, choice, rect));
                 }
+                // The drop that is open is over everything, and pressed first.
+                let drop = self.dropped(paint, &self.heads(&spot, &own_shown));
+                spot.splice(0..0, drop);
                 (last, spot)
             }
         };
@@ -201,57 +211,5 @@ impl PDraw for PForm {
         scroll.fit(end + scroll.at() - origin.y + gap, self.frame.size.height);
         self.scroll.set(scroll);
         *self.spot.borrow_mut() = spot;
-    }
-}
-
-impl PView for PForm {
-    fn hand(&self) -> Vec<PRect> {
-        self.spot.borrow().iter().map(|(rect, ..)| *rect).collect()
-    }
-
-    fn frame(&self) -> PRect {
-        self.frame
-    }
-
-    fn set_frame(&mut self, frame: PRect) {
-        self.frame = frame;
-    }
-
-    /// The tabs' light moves while it is on its way; what is live is
-    /// drawn every frame.
-    fn tick(&mut self) -> bool {
-        self.motion.tick(self.theme.as_ref()) || self.source.live()
-    }
-
-    fn beat(&self) -> Option<u64> {
-        self.source.beat()
-    }
-
-    /// A press keeps the value of what it pressed at its block's path;
-    /// the wheel scrolls it.
-    fn respond(&mut self, event: &PEvent) -> bool {
-        match *event {
-            PEvent::PointerDown(at) => {
-                let place = at.plus(self.origin.get());
-                let hit = self.spot.borrow().iter().find(|(rect, ..)| rect.contains(place)).map(|(_, path, value)| (path.clone(), value.clone()));
-                match hit {
-                    Some((path, key)) if path == FOCUS => *self.typing.borrow_mut() = Some(key),
-                    Some((path, value)) => {
-                        *self.typing.borrow_mut() = None;
-                        self.source.set(&path, &value);
-                    }
-                    None => return false,
-                }
-                true
-            }
-            PEvent::KeyDown(_) => self.typed(event),
-            PEvent::Scroll(_, by) => {
-                let mut scroll = self.scroll.get();
-                let any = scroll.turn(-by.y);
-                self.scroll.set(scroll);
-                any
-            }
-            _ => false,
-        }
     }
 }

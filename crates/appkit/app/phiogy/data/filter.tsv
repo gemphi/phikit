@@ -10,10 +10,13 @@ kind	sound	filter.sound	music
 sort	name	sort.name	sort
 sort	new	sort.new	sort
 sort	large	sort.large	sort
-# The library's tools: what a press does, its words and its icon. Up
+# The library's tools: what a press does, its words and its icon. Back
+# and forward go through the places shown, as a browser's do. Up
 # goes to the folder over the one shown; Import brings a file into the
 # Phiegg space; back goes from an item to the library; Set makes a set
 # of the model opened.
+way	past	library.back	chevron-left
+way	ahead	library.forward	chevron-right
 tool	up	library.up	arrow-up
 tool	import	library.import	plus
 back	back	item.back	arrow-left
