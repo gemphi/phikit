@@ -1,0 +1,64 @@
+# The Phijets drawn as the house's letters and cards are built: straight
+# lines and circles, nothing drawn by hand (the user, 24 November 2026:
+# "on the font and different radii only, not artist curves but geometric
+# ones"). Read by script/jet.py, which writes the outlines (jet-*.svg)
+# and the jets' body and window rows of thing.tsv.
+#
+# Every outline is a chain of circles taken with the clock (y runs
+# down), each joined to the next by the line that touches both, as a
+# letter's round corners are joined by its straight strokes:
+#   point  x y        a corner cut sharp
+#   round  x y r      a corner rounded outward
+#   hollow x y r      a corner rounded inward
+#   on     x y r h    the point of circle (x y r) at height h, its front
+#   pill   x0 y0 x1 y1  a pill: its ends half its width round
+# Lengths are shares of R, the nose's radius, which is the body's
+# height: every other radius is a share of it (1/4, 1/8), as a card's
+# parts take shares of the theme's corner. An opening set inside the
+# body keeps the body's centre and gives up the inset from its radius,
+# as an inner card does inside its card. `size` is the length and the
+# width in metres; y 0 is the keel.
+#
+# Where every body stands, and how round its edge is: the keel this high
+# in metres, the edge round by this share of the body's height (less than
+# an opening's inset of 1/8 R in 3/2 R, so every opening stays on the
+# flat), a window's edge by this share of its own.
+*	stand	-	1 1/20 1/50
+#
+# The long jet: the nose a quarter of a circle the body's height, cut
+# sharp at the keel; a flat roof; the tail's back one upright stroke, its
+# foot and its fin's top round by a quarter; the fin's front swept down
+# into the roof through a hollow of a quarter.
+jet-long	size	-	20 3.2
+jet-long	body	point	3 0
+jet-long	body	round	1/4 -1/4 1/4
+jet-long	body	round	1/4 -5/4 1/4
+jet-long	body	hollow	1 -5/4 1/4
+jet-long	body	round	2 0 1
+# The cockpit: the nose's circle stepped in by an eighth, its top a
+# stroke an eighth under the roof, its back corners round by an eighth,
+# cut sharp where it meets its foot.
+jet-long	cockpit	round	15/8 -3/4 1/8
+jet-long	cockpit	round	2 0 7/8
+jet-long	cockpit	on	2 0 7/8 -1/4
+jet-long	cockpit	round	15/8 -3/8 1/8
+# The door, a tall pill; the windows, pills a quarter wide, three eighths
+# apart.
+jet-long	door	pill	11/8 -13/16 13/8 -3/16
+jet-long	window	pill	1 -13/16 5/4 -7/16
+jet-long	window	pill	5/8 -13/16 7/8 -7/16
+jet-long	window	pill	1/4 -13/16 1/2 -7/16
+# The short jet: the same letters, a shorter roof.
+jet-short	size	-	13 2.8
+jet-short	body	point	5/2 0
+jet-short	body	round	1/4 -1/4 1/4
+jet-short	body	round	1/4 -5/4 1/4
+jet-short	body	hollow	7/8 -5/4 1/4
+jet-short	body	round	3/2 0 1
+jet-short	cockpit	round	11/8 -3/4 1/8
+jet-short	cockpit	round	3/2 0 7/8
+jet-short	cockpit	on	3/2 0 7/8 -1/4
+jet-short	cockpit	round	11/8 -3/8 1/8
+jet-short	door	pill	7/8 -13/16 9/8 -3/16
+jet-short	window	pill	1/2 -13/16 3/4 -7/16
+jet-short	window	pill	1/8 -13/16 3/8 -7/16

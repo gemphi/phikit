@@ -76,10 +76,15 @@ the tables. Nothing in a file is drawn by hand.
   sketches, `data/once/hull-*.svg`, in four liveries each, the first
   the white and blue of the photo), eight Phijets, electric
   (`phijet-long-1` to `-4`, `phijet-short-1` to `-4`: the long and the
-  short jet of the user's cyan sketch raised from `data/once/jet-long.svg`
-  and `jet-short.svg`, each window as drawn, two more on the short one,
-  huge swept wings with their tips turned up, small ducted fans, their
-  bodies in the house's gradients, back to front; the long ones carry
+  short jet of the user's cyan sketch, drawn again as the house's
+  letters are built: lines and circles only, every radius a share of
+  the nose's, which is the body's height (`data/once/jet.tsv`, drawn
+  into `jet-long.svg`, `jet-short.svg` and their windows by
+  `script/jet.py`). The nose a quarter circle cut sharp at the keel,
+  the tail one upright stroke, the fin swept into the roof through a
+  hollow; the cockpit the nose's circle stepped in, the door and
+  windows pills. No side wings; small ducted fans low on the rear
+  flanks; their bodies in the house's gradients, back to front; the long ones carry
   `jet-inside`, the cabin of club seats down an aisle), four flying cars (`fly-car`, from the
   same sketch, with a glass canopy, leaf windows, hover rings), and
   four rockets as Starship is built (the hopper, the ship, the full

@@ -21,9 +21,7 @@ hull-short	hull-short.svg
 fly-car	fly-car.svg
 car-canopy	car-canopy.svg
 car-window	car-window.svg
-jet-wing	jet-wing.svg
-jet-fin	jet-fin.svg
-# The jets of the cyan sketch and their windows.
+# The jets, from data/once/jet.tsv by script/jet.py.
 jet-long	jet-long.svg
 jet-long-window-1	jet-long-window-1.svg
 jet-long-window-2	jet-long-window-2.svg

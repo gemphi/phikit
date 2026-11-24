@@ -275,46 +275,41 @@ jetski-8	ski	thing	1	0 0 0	-	-	chalk=sand cobalt=orange lemon=scarlet	jetski-sho
 # The Phijets, electric, from the user's cyan sketch of 24 November 2026
 # ("simple, but exact, with more windows; four variants"): the long jet
 # and the short jet raised from their outlines at their own proportions
-# (jet-long.svg, jet-short.svg), each window as the sketch draws it and
-# two more on the short one where the sketch begins them, dark and flush;
-# huge swept wings with their tips turned up, small ducted fans. Their
+# (jet-long.svg, jet-short.svg). Drawn again as the house's letters are,
+# lines and circles only, every radius a share of the nose's (jet.tsv,
+# script/jet.py): the cockpit the nose's circle stepped in, the door and
+# windows pills, dark and flush. No side wings; small ducted fans. Their
 # bodies wear the house's gradients, back to front. Four of each.
-jet-long	body	outline	0 10.124 3.2	0 6.062 0	-	0.14	body	jet-long	-
-jet-long	window	outline	5.028 4.51 0.05	6.697 3.931 1.6	-	0.02	window	jet-long-window-1	-
-jet-long	window	outline	5.028 4.51 0.05	6.697 3.931 -1.6	-	0.02	window	jet-long-window-1	-
-jet-long	window	outline	2.255 4.555 0.05	1.454 4.089 1.6	-	0.02	window	jet-long-window-2	-
-jet-long	window	outline	2.255 4.555 0.05	1.454 4.089 -1.6	-	0.02	window	jet-long-window-2	-
-jet-long	window	outline	1.804 2.21 0.05	-1.95 5.419 1.6	-	0.02	window	jet-long-window-3	-
-jet-long	window	outline	1.804 2.21 0.05	-1.95 5.419 -1.6	-	0.02	window	jet-long-window-3	-
-jet-long	window	outline	2.029 2.142 0.05	-5.107 5.837 1.6	-	0.02	window	jet-long-window-4	-
-jet-long	window	outline	2.029 2.142 0.05	-5.107 5.837 -1.6	-	0.02	window	jet-long-window-4	-
-jet-long	window	outline	1.353 1.375 0.05	-7.565 6.513 1.6	-	0.02	window	jet-long-window-5	-
-jet-long	window	outline	1.353 1.375 0.05	-7.565 6.513 -1.6	-	0.02	window	jet-long-window-5	-
-jet-long	wing	outline	5.2 30 0.3	-0.8 3.227 0	-90 0 0	0.004	body	jet-wing	-
-jet-long	winglet	box	1 3.037 0.16	-3 4.645 14.9	0 0 -20	0.4	trim	-	-
-jet-long	winglet	box	1 3.037 0.16	-3 4.645 -14.9	0 0 -20	0.4	trim	-	-
-jet-long	fan	torus	1.62 0.354 1.62	-4.8 2.822 2.304	0 0 90	-	trim	-	-
-jet-long	glow	cylinder	1.215 0.05 1.215	-4.8 2.822 2.304	0 0 90	-	cyan	-	-
-jet-long	fan	torus	1.62 0.354 1.62	-4.8 2.822 -2.304	0 0 90	-	trim	-	-
-jet-long	glow	cylinder	1.215 0.05 1.215	-4.8 2.822 -2.304	0 0 90	-	cyan	-	-
+jet-long	body	outline	0 10 3.2	0 6 0	-	0.05	body	jet-long	-
+jet-long	window	outline	7.257 4.167 0.05	5.295 4.75 1.6	-	0.02	window	jet-long-window-1	-
+jet-long	window	outline	7.257 4.167 0.05	5.295 4.75 -1.6	-	0.02	window	jet-long-window-1	-
+jet-long	window	outline	1.667 4.167 0.05	0 4.333 1.6	-	0.02	window	jet-long-window-2	-
+jet-long	window	outline	1.667 4.167 0.05	0 4.333 -1.6	-	0.02	window	jet-long-window-2	-
+jet-long	window	outline	1.667 2.5 0.05	-2.5 5.167 1.6	-	0.02	window	jet-long-window-3	-
+jet-long	window	outline	1.667 2.5 0.05	-2.5 5.167 -1.6	-	0.02	window	jet-long-window-3	-
+jet-long	window	outline	1.667 2.5 0.05	-5 5.167 1.6	-	0.02	window	jet-long-window-4	-
+jet-long	window	outline	1.667 2.5 0.05	-5 5.167 -1.6	-	0.02	window	jet-long-window-4	-
+jet-long	window	outline	1.667 2.5 0.05	-7.5 5.167 1.6	-	0.02	window	jet-long-window-5	-
+jet-long	window	outline	1.667 2.5 0.05	-7.5 5.167 -1.6	-	0.02	window	jet-long-window-5	-
+jet-long	fan	torus	0.833 0.139 0.833	-6 2.667 2.225	0 0 90	-	trim	-	-
+jet-long	glow	cylinder	0.625 0.05 0.625	-6 2.667 2.225	0 0 90	-	cyan	-	-
+jet-long	fan	torus	0.833 0.139 0.833	-6 2.667 -2.225	0 0 90	-	trim	-	-
+jet-long	glow	cylinder	0.625 0.05 0.625	-6 2.667 -2.225	0 0 90	-	cyan	-	-
 jet-long	wheel	cylinder	0.5 0.26 0.5	6.4 0.25 0	90 0 0	-	coal	-	-
 jet-long	wheel	cylinder	0.7 0.32 0.7	-1.2 0.35 -1.12	90 0 0	-	coal	-	2 0 0 2.24
-jet-short	body	outline	0 7.196 2.8	0 4.598 0	-	0.14	body	jet-short	-
-jet-short	window	outline	1.435 3.271 0.05	2.131 3.944 1.4	-	0.02	window	jet-short-window-1	-
-jet-short	window	outline	1.435 3.271 0.05	2.131 3.944 -1.4	-	0.02	window	jet-short-window-1	-
-jet-short	window	outline	1.203 1.984 0.05	-0.348 4.841 1.4	-	0.02	window	jet-short-window-2	-
-jet-short	window	outline	1.203 1.984 0.05	-0.348 4.841 -1.4	-	0.02	window	jet-short-window-2	-
-jet-short	window	outline	1.076 1.773 0.05	-2.438 4.925 1.4	-	0.02	window	jet-short-window-3	-
-jet-short	window	outline	1.076 1.773 0.05	-2.438 4.925 -1.4	-	0.02	window	jet-short-window-3	-
-jet-short	window	outline	0.992 1.667 0.05	-4.4 5.147 1.4	-	0.02	window	jet-short-window-4	-
-jet-short	window	outline	0.992 1.667 0.05	-4.4 5.147 -1.4	-	0.02	window	jet-short-window-4	-
-jet-short	wing	outline	3.38 19.5 0.3	-0.52 2.583 0	-90 0 0	0.004	body	jet-wing	-
-jet-short	winglet	box	0.65 2.159 0.16	-1.95 3.591 9.65	0 0 -20	0.4	trim	-	-
-jet-short	winglet	box	0.65 2.159 0.16	-1.95 3.591 -9.65	0 0 -20	0.4	trim	-	-
-jet-short	fan	torus	1.151 0.252 1.151	-3.12 2.295 2.016	0 0 90	-	trim	-	-
-jet-short	glow	cylinder	0.864 0.05 0.864	-3.12 2.295 2.016	0 0 90	-	cyan	-	-
-jet-short	fan	torus	1.151 0.252 1.151	-3.12 2.295 -2.016	0 0 90	-	trim	-	-
-jet-short	glow	cylinder	0.864 0.05 0.864	-3.12 2.295 -2.016	0 0 90	-	cyan	-	-
+jet-short	body	outline	0 7.8 2.8	0 4.9 0	-	0.05	body	jet-short	-
+jet-short	window	outline	5.66 3.25 0.05	2.83 3.925 1.4	-	0.02	window	jet-short-window-1	-
+jet-short	window	outline	5.66 3.25 0.05	2.83 3.925 -1.4	-	0.02	window	jet-short-window-1	-
+jet-short	window	outline	1.3 3.25 0.05	-1.3 3.6 1.4	-	0.02	window	jet-short-window-2	-
+jet-short	window	outline	1.3 3.25 0.05	-1.3 3.6 -1.4	-	0.02	window	jet-short-window-2	-
+jet-short	window	outline	1.3 1.95 0.05	-3.25 4.25 1.4	-	0.02	window	jet-short-window-3	-
+jet-short	window	outline	1.3 1.95 0.05	-3.25 4.25 -1.4	-	0.02	window	jet-short-window-3	-
+jet-short	window	outline	1.3 1.95 0.05	-5.2 4.25 1.4	-	0.02	window	jet-short-window-4	-
+jet-short	window	outline	1.3 1.95 0.05	-5.2 4.25 -1.4	-	0.02	window	jet-short-window-4	-
+jet-short	fan	torus	0.65 0.108 0.65	-3.9 2.3 1.887	0 0 90	-	trim	-	-
+jet-short	glow	cylinder	0.488 0.05 0.488	-3.9 2.3 1.887	0 0 90	-	cyan	-	-
+jet-short	fan	torus	0.65 0.108 0.65	-3.9 2.3 -1.887	0 0 90	-	trim	-	-
+jet-short	glow	cylinder	0.488 0.05 0.488	-3.9 2.3 -1.887	0 0 90	-	cyan	-	-
 jet-short	wheel	cylinder	0.5 0.26 0.5	4.16 0.25 0	90 0 0	-	coal	-	-
 jet-short	wheel	cylinder	0.7 0.32 0.7	-0.78 0.35 -0.98	90 0 0	-	coal	-	2 0 0 1.96
 phijet-long-1	jet	thing	1	0 0 0	-	-	body=grad-rose trim=gold	jet-long	-
