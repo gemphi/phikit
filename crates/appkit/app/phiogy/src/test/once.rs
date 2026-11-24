@@ -28,6 +28,9 @@ fn step_62_once_city_is_a_place_of_the_library_with_its_things() {
     let couch = file.iter().filter(|f| f.starts_with("couch-") || f.starts_with("ottoman-") || f.starts_with("pouf-") || f.starts_with("stool-")).count();
     let tree = file.iter().filter(|f| f.starts_with("tree-")).count();
     assert_eq!((couch, tree), (16, 16));
+    // The craft: eight jetskis, four Phijets small to large, four rockets.
+    let craft = |lead: &str| file.iter().filter(|f| f.starts_with(lead) && f[lead.len()..].starts_with(|c: char| c.is_ascii_alphanumeric())).count();
+    assert_eq!((craft("jetski-"), craft("phijet-"), craft("rocket-")), (10, 4, 4), "{file:?}");
 }
 
 #[test]

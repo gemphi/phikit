@@ -71,3 +71,10 @@ the tables. Nothing in a file is drawn by hand.
 - `once-city.usda`, the whole city on its island over the clouds:
   each thing in it is a reference to its own file, so the library's
   scene tree shows the city, the gate, Amber, the lioness and her parts.
+- The craft, going +x: eight jetskis (`jetski-1` to `-8`, the two
+  hulls `jetski-long` and `jetski-short` raised from the user's red
+  sketches, `data/once/hull-*.svg`, in four liveries each, the first
+  the white and blue of the photo), four Phijets small to large, and
+  four rockets as Starship is built (the hopper, the ship, the full
+  stack, the ship for Mars with legs and sun wings). Their lights and
+  windows are Phiber's o and D.

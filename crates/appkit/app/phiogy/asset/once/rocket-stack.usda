@@ -1,0 +1,30 @@
+#usda 1.0
+(
+    defaultPrim = "rocket_stack"
+    metersPerUnit = 1
+    upAxis = "Y"
+)
+
+def Xform "rocket_stack"
+{
+    def Xform "booster" (
+        prepend references = @./booster.usda@
+    )
+    {
+        matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1) )
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+    }
+
+    def Xform "ship" (
+        prepend references = @./ship.usda@
+    )
+    {
+        matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 72.4, 0, 1) )
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+    }
+
+    def Scope "Materials"
+    {
+    }
+
+}

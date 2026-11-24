@@ -46,3 +46,9 @@ cyan	#4fe6e6	0.3 0
 teal	#3fb8c8	0.2 0.3
 glass	#a8dcf2	0.1 0
 sand	#e8c690	0.5 0.4
+# The craft's: steel for the rockets, the jetski's blue and yellow, an
+# orange.
+steel	#c9ced6	0.25 0.9
+cobalt	#2747c9	0.35 0.1
+lemon	#f2d64b	0.4 0
+orange	#ff8a2b	0.45 0

@@ -10,3 +10,9 @@ pill-bold	../../../../../phiber/assets/phi-fonts/Phi-Pill/PhiPill-Bold.otf
 pill	../../../../../phiber/assets/phi-fonts/Phi-Pill/PhiPill-Regular.otf
 # Phiogy's mark: the p, the bird (asset/README.md).
 bird	../../asset/icon/phiogy.svg
+# Phiber: its letters rounded squares (its o 462 wide, its strokes 110),
+# its corners 0.05 of its capital height. The craft's lights and windows.
+phiber	../../../../../phiber/assets/phi-fonts/Phiber/Phiber-Regular.otf
+# The jetskis' hulls, drawn from the user's red sketches.
+hull-long	hull-long.svg
+hull-short	hull-short.svg
