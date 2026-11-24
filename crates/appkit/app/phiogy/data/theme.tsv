@@ -1,6 +1,13 @@
 # What Phiogy looks like: kind, token, value. One ink on one ground, and
 # one light that every surface wears (puikit's: src/tokens/tokens.scss).
 color	window.fill	#dededa
+# The whole window wears the theme's colour (the user, 25 November 2026:
+# "slight black with a mixture of the current theme colour"): the
+# window's own fill, the veil under a modal and the lines are each mixed
+# with the light's colour (shade.light, which the person can choose) by
+# this share, in every look, so no part is a bare black or grey.
+word	tint.token	window.fill modal.veil line.ink
+size	tint.share	0.12
 color	line.ink	#c9c9c4
 color	text.ink	#1d1d1b
 color	text.dim	#5f5f5a

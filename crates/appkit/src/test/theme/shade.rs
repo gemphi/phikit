@@ -45,3 +45,15 @@ fn what_is_worn_takes_the_place_of_the_look_s_own_whichever_look_is_shown() {
     shade.wear("");
     assert_ne!(shade.color("window.fill"), worn);
 }
+
+#[test]
+fn a_look_s_tinted_colours_are_mixed_with_the_light_s_and_follow_the_light_a_person_chooses() {
+    // A black fill, a quarter of it the light's colour; the ink is not tinted.
+    let look = PLook::read("color\twindow.fill\t#000000\ncolor\tink\t#000000\ncolor\tshade.light\t#ffffff\nword\ttint.token\twindow.fill\nsize\ttint.share\t0.25\n");
+    let shade = PShade::new(vec![("dark".to_string(), look)]);
+    assert_eq!(shade.color("window.fill"), Some(PColor::new(0.25, 0.25, 0.25, 1.0)));
+    assert_eq!(shade.color("ink"), Some(PColor::new(0.0, 0.0, 0.0, 1.0)));
+    // The light the person prefers colours the fill: a dark of that colour, not a bare black.
+    shade.prefer("color shade.light #ff0000");
+    assert_eq!(shade.color("window.fill"), Some(PColor::new(0.25, 0.0, 0.0, 1.0)));
+}

@@ -89,13 +89,35 @@ impl PShade {
     fn shown(&self) -> Option<&PLook> {
         self.look.get(self.at.get()).map(|(_, look)| look)
     }
-}
 
-impl PTheme for PShade {
-    fn color(&self, token: &str) -> Option<PColor> {
+    /// A colour as it is worn, preferred or the look's own, untinted.
+    fn plain(&self, token: &str) -> Option<PColor> {
         let worn = self.over.borrow().as_ref().and_then(|over| over.color(token));
         let liked = || self.prefer.borrow().1.as_ref().and_then(|prefer| prefer.color(token));
         worn.or_else(liked).or_else(|| self.shown()?.color(token))
+    }
+}
+
+/// The tokens of a look that say which colours are mixed with the
+/// light's own colour, and how much of it; and the light's colour.
+pub const TINT_TOKEN: &str = "tint.token";
+pub const TINT_SHARE: &str = "tint.share";
+const LIGHT: &str = "shade.light";
+
+impl PTheme for PShade {
+    /// A colour, as worn, preferred or the look's own; and where the
+    /// look names it among its tinted ones (`tint.token`), mixed with
+    /// the light's own colour by the look's share (`tint.share`): so a
+    /// dark look is a dark of the theme's colour, never a bare black,
+    /// whatever colour the person gave the light.
+    fn color(&self, token: &str) -> Option<PColor> {
+        let own = self.plain(token)?;
+        let share = self.size(TINT_SHARE).unwrap_or_default().clamp(0.0, 1.0);
+        let tinted = share > 0.0 && self.word(TINT_TOKEN).is_some_and(|word| word.split_whitespace().any(|one| one == token));
+        match (tinted, self.plain(LIGHT)) {
+            (true, Some(light)) => Some(PColor { r: own.r + (light.r - own.r) * share, g: own.g + (light.g - own.g) * share, b: own.b + (light.b - own.b) * share, a: own.a }),
+            _ => Some(own),
+        }
     }
 
     fn size(&self, token: &str) -> Option<f32> {
