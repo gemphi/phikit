@@ -31,9 +31,22 @@ impl Person {
                 list.is_empty().then(|| none(paint, top));
             }
             "space" => {
-                one.space.iter().enumerate().for_each(|(index, space)| paint.text(PPoint::new(at.x, top + index as f32 * line), &fit(space, wide, paint), ink));
+                // Each a row: the space's mark, its name, how many are in
+                // it; a press goes to its first room.
+                for space in &one.space {
+                    let venue = self.desk.site.venue.iter().find(|venue| venue.label == *space);
+                    let mark = venue.and_then(|venue| venue.mark.as_ref()).map(|cell| (cell.sheet.as_str(), cell.column, cell.index));
+                    (mark, space.as_str()).face(paint, PRect::new(at.x + gap / 8.0, top + gap / 8.0, line, line));
+                    let count = venue.filter(|venue| venue.count > 0).map(|venue| crate::part::tool::grouped(venue.count)).unwrap_or_default();
+                    let room = wide - line - gap - paint.measure(&count);
+                    paint.text(PPoint::new(at.x + line + gap * 0.75, top + gap / 8.0), &fit(space, room, paint), ink);
+                    paint.text(PPoint::new(at.x + wide - paint.measure(&count), top + gap / 8.0), &count, dim);
+                    if let Some(first) = venue.and_then(|venue| venue.plate.first()) {
+                        spot.push((PRect::new(at.x, top, wide, line + gap / 4.0), Act::Go(first.id.clone())));
+                    }
+                    top += line + gap / 2.0;
+                }
                 one.space.is_empty().then(|| none(paint, top));
-                top += one.space.len() as f32 * line;
             }
             _ => {
                 let across = paint.size(ACROSS).max(1.0);

@@ -103,6 +103,32 @@ pub trait PBand {
         self.draw_in(paint, at, f32::MAX)
     }
 
+    /// Draw it from a place in lines no wider than that: as many pills
+    /// on a line as fit, each line a band of its own under the last.
+    /// Where each pill stands, and how high the lines are together.
+    fn draw_lines(&self, paint: &mut dyn PPaint, at: PPoint, most: f32) -> (Vec<PRect>, f32) {
+        let (gap, high) = (paint.size(GAP), self.high(paint));
+        let mut lines: Vec<Lined> = Vec::new();
+        let mut wide = gap / 2.0;
+        for pill in self.pill() {
+            let more = pill.size(paint).width + gap / 4.0;
+            match lines.last_mut() {
+                Some(line) if wide + more <= most || line.0.is_empty() => line.0.push(pill),
+                _ => {
+                    lines.push(Lined(vec![pill]));
+                    wide = gap / 2.0;
+                }
+            }
+            wide += more;
+        }
+        let mut rect = Vec::new();
+        for (index, line) in lines.iter().enumerate() {
+            rect.extend(line.draw_in(paint, PPoint::new(at.x, at.y + index as f32 * (high + gap / 4.0)), most));
+        }
+        let lines = lines.len() as f32;
+        (rect, lines * high + (lines - 1.0).max(0.0) * gap / 4.0)
+    }
+
     /// Draw it so that it ends at a place.
     fn draw_end(&self, paint: &mut dyn PPaint, end: PPoint) -> Vec<PRect> {
         let wide = self.span(paint);
@@ -113,6 +139,15 @@ pub trait PBand {
 impl<T: PPill> PBand for [T] {
     fn pill(&self) -> Vec<&dyn PPill> {
         self.iter().map(|pill| pill as &dyn PPill).collect()
+    }
+}
+
+/// A line of a band's pills, a band of its own (`draw_lines`).
+struct Lined<'a>(Vec<&'a dyn PPill>);
+
+impl PBand for Lined<'_> {
+    fn pill(&self) -> Vec<&dyn PPill> {
+        self.0.clone()
     }
 }
 

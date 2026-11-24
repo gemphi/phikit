@@ -85,7 +85,23 @@ impl Desk {
             FAVORITE => self.starred(&rung.id) || (!rung.with.is_empty() && self.follows(&rung.with)),
             _ => !self.lately(rung),
         };
-        let place = self.rail().into_iter().map(|(label, rung)| (label, rung.into_iter().filter(&keeps).collect::<Vec<_>>()));
+        // A sub-channel that is kept keeps the channels it stands under,
+        // so it is never shown without them.
+        let kept = |rung: Vec<Rung>| {
+            let mut out: Vec<Rung> = Vec::new();
+            let mut above: Vec<Rung> = Vec::new();
+            for one in rung {
+                above.truncate(one.depth as usize);
+                if keeps(&one) {
+                    let missing: Vec<Rung> = above.iter().filter(|over| !out.iter().any(|known| known.id == over.id)).cloned().collect();
+                    out.extend(missing);
+                    out.push(one.clone());
+                }
+                above.push(one);
+            }
+            out
+        };
+        let place = self.rail().into_iter().map(|(label, rung)| (label, kept(rung)));
         place.filter(|(_, rung)| !rung.is_empty()).collect()
     }
 }

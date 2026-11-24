@@ -12,15 +12,16 @@
 //! Its controls are rows of `data/act.tsv`; its words `person.*` in
 //! `data/text.tsv`.
 
+mod card;
 mod pane;
 
 use std::cell::{Cell, RefCell};
 
-use appkit::pui::block::{PBand, PFace, PPill, PText};
-use appkit::pui::core::{PDraw, PEvent, PFit, PPaint, PPoint, PRect, PView};
-use appkit::pui::layout::{PScroll, section, wrap};
+use appkit::pui::block::PBand;
+use appkit::pui::core::{PDraw, PEvent, PPaint, PPoint, PRect, PView};
+use appkit::pui::layout::{PScroll, section};
 
-use super::{DIM, Desk, GAP, INK, LINE, RADIUS, Tool};
+use super::{Desk, GAP, Tool};
 use crate::data;
 use crate::site::Member;
 
@@ -48,6 +49,8 @@ enum Act {
     Pane(usize),
     Open(String),
     Shot(usize),
+    /// Go to the room of that id (a space's first).
+    Go(String),
 }
 
 /// A person, beside the room.
@@ -94,8 +97,7 @@ impl PDraw for Person {
         if one.link == 0 && self.pane.get() == 0 {
             self.pane.set(1);
         }
-        let (gap, line, radius, face) = (paint.size(GAP), paint.size(LINE), paint.size(RADIUS), paint.size(FACE));
-        let (ink, dim, text) = (paint.color(INK), paint.color(DIM), &self.desk.text);
+        let (gap, text) = (paint.size(GAP), &self.desk.text);
         let (left, wide) = (origin.x + gap, (self.frame.size.width - gap * 2.0).max(0.0));
         let mut spot = Vec::new();
         self.origin.set(origin);
@@ -105,60 +107,29 @@ impl PDraw for Person {
         let back: Vec<(&str, &str, bool)> = self.tool.of(BACK, false, text).map(|(icon, _)| (icon, text.get("person.title"), false)).into_iter().collect();
         spot.extend(back.draw(paint, PPoint::new(left, begin)).into_iter().map(|rect| (rect, Act::Back)));
         let from = begin + back.high(paint) + gap * 0.75;
-        // Who they are: the picture over the profile, their face, their
-        // name and how they stand, what they say of themself, their tags.
-        let cell = self.desk.site.face(&one.id).map(|cell| (cell.sheet.as_str(), cell.column, cell.index));
-        let under = [one.handle.clone(), one.role.clone(), one.state.clone()];
-        let said = under.iter().filter(|said| !said.is_empty()).cloned().collect::<Vec<_>>().join(&format!(" {} ", text.get("between")));
-        let since = Some(format!("{} {} {}", text.get("person.since"), text.get("between"), one.since)).filter(|_| !one.since.is_empty());
-        let mut top = section(paint, PPoint::new(left, from), wide, &mut |paint| {
-            let mut top = from;
-            if !one.banner.is_empty() {
-                let high = wide / paint.size(BANNER).max(1.0);
-                paint.picture(&one.banner, PRect::new(left, top, wide, high), radius, PFit::Cover);
-                top += high + gap / 2.0;
-            }
-            (cell, one.name.as_str()).face(paint, PRect::new(left, top, face, face));
-            let beside = left + face + gap / 2.0;
-            paint.head(PPoint::new(beside, top), &one.name.fit(wide - face - gap / 2.0, paint), ink);
-            paint.text(PPoint::new(beside, top + face - line), &said.fit(wide - face - gap / 2.0, paint), dim);
-            top += face + gap / 2.0;
-            for words in wrap(&one.bio, wide, &|text| paint.measure(text)).into_iter().filter(|words| !words.is_empty()) {
-                paint.text(PPoint::new(left, top), &words, ink);
-                top += line;
-            }
-            let mut across = left;
-            for tag in &one.tag {
-                across += ("", tag.as_str(), false).draw(paint, PPoint::new(across, top + gap / 4.0), false).size.width + gap / 4.0;
-            }
-            top += match one.tag.is_empty() {
-                true => 0.0,
-                false => line + gap,
-            };
-            if let Some(said) = &since {
-                paint.text(PPoint::new(left, top), said, dim);
-                top += line;
-            }
-            top
-        }) + gap * 0.75;
+        // Who they are, as Phiegg's card has it (person/card.rs).
+        let mut top = section(paint, PPoint::new(left, from), wide, &mut |paint| self.card(paint, PPoint::new(left, from), wide, &one)) + gap * 0.75;
         // What can be done: write to them, follow them, mute them.
         let direct = Some(self.desk.direct_room(&one.id)).filter(|_| one.id != self.desk.site.me);
         let other = one.id != self.desk.site.me;
         let deed = [(MESSAGE, direct.map(Act::Message), false), (FOLLOW, Some(Act::Follow).filter(|_| other), self.desk.follows(&one.id)), (QUIET, Some(Act::Mute).filter(|_| other), self.desk.muted(&one.id))];
         let deed: Vec<((&str, &str, bool), Act)> = deed.into_iter().filter_map(|(name, act, on)| Some(((self.tool.of(name, on, text)?.0, self.tool.of(name, on, text)?.1, on), act?))).collect();
         let pill: Vec<(&str, &str, bool)> = deed.iter().map(|(pill, _)| *pill).collect();
-        spot.extend(pill.draw(paint, PPoint::new(left, top)).into_iter().zip(deed.into_iter().map(|(_, act)| act)));
+        // As many on a line as the column is wide, the rest under them.
+        let (rect, high) = pill.draw_lines(paint, PPoint::new(left, top), wide);
+        spot.extend(rect.into_iter().zip(deed.into_iter().map(|(_, act)| act)));
         top += match pill.is_empty() {
             true => 0.0,
-            false => pill.high(paint) + gap / 2.0,
+            false => high + gap / 2.0,
         };
         // The panes, each with how much it holds; then the one shown.
         let shot = self.desk.shot_of(&one.id);
         let count = [one.link as usize, one.space.len(), shot.len()];
         let pane: Vec<(usize, String)> = PANE.iter().enumerate().filter(|(index, _)| *index > 0 || one.link > 0).map(|(index, name)| (index, format!("{} {}", text.get(&format!("person.{name}")), count[index]))).collect();
         let tab: Vec<(&str, &str, bool)> = pane.iter().map(|(index, said)| ("", said.as_str(), *index == self.pane.get())).collect();
-        spot.extend(tab.draw(paint, PPoint::new(left, top)).into_iter().zip(pane.iter().map(|(index, _)| Act::Pane(*index))));
-        top += tab.high(paint) + gap * 0.75;
+        let (rect, high) = tab.draw_lines(paint, PPoint::new(left, top), wide);
+        spot.extend(rect.into_iter().zip(pane.iter().map(|(index, _)| Act::Pane(*index))));
+        top += high + gap * 0.75;
         let mut got = Vec::new();
         let end = section(paint, PPoint::new(left, top), wide, &mut |paint| {
             got.clear();
@@ -207,6 +178,7 @@ impl PView for Person {
                     Act::Pane(index) => self.pane.set(index),
                     Act::Open(id) => *self.desk.now.who.borrow_mut() = Some(id),
                     Act::Shot(number) => self.desk.look(self.desk.shot_of(&who), number),
+                    Act::Go(room) => _ = self.desk.show(&room),
                 }
                 true
             }

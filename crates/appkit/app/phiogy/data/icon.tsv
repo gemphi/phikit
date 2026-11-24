@@ -21,3 +21,10 @@ any	circle
 thumb	thumbs-up
 heart	heart
 flame	flame
+# A host's worlds, galleries, stages and quests (puikit: app/phiogy/server.json
+# icon), and search's tabs (data/search.tsv).
+globe	globe
+image	image
+mic	mic
+star	star
+video	video

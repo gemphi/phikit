@@ -21,6 +21,7 @@ mod pace;
 mod pill;
 mod ring;
 mod room;
+mod search;
 mod shop;
 mod part;
 mod peer;

@@ -1,0 +1,29 @@
+# Search, as Phiegg's is (puikit: app/phiegg/src/pages/phiegg/SearchPage.tsx):
+# a field; before anything is sought, what is sought most often; and
+# what it finds of every kind, the kind chosen by a tab.
+#
+# A tab: its name, the word of data/text.tsv on it, what it finds, the
+# icon its finds carry. What it finds: `room` (the rooms of every host
+# the person is in), `people`, `host` (every host), or, after `tree:`,
+# a kind of Phiora's records, the very ones Phiegg reads (asked of
+# Phiora where it gave the site, else read from Phiegg's own files by
+# the manifest Phiora seeds from). `all` is every other tab at once.
+tab	all	search.all	all	-
+tab	room	search.room	room	hash
+tab	people	search.people	people	user
+tab	host	search.host	host	users
+tab	world	search.world	tree:world	globe
+tab	club	search.club	tree:club	star
+tab	show	search.show	tree:show	video
+# What Phiora is asked for its records ({kind} the kinds, by commas).
+ask	/tree?kind={kind}
+# Phiegg's manifest of its files, from this crate's folder: which file
+# and which list each kind is in.
+tree	../../../../../puikit/app/phiegg/src/data/tree.json
+# A record's own words: the first of these fields it has is its name,
+# the first of the next its line.
+name	name title label
+line	tagline description synopsis vibe sub
+# What is sought most often, shown before anything is: Phiegg's own,
+# from its site file, the list of that name.
+popular	../../../../../puikit/app/phiegg/src/data/site.json	searchPopular

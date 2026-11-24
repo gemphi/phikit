@@ -40,6 +40,9 @@ pub const TOOL: &str = include_str!("../data/tool.tsv");
 pub const MARK: &str = include_str!("../data/mark.tsv");
 /// The 3D view's tools.
 pub const VIEWPORT: &str = include_str!("../data/viewport.tsv");
+/// Search, as Phiegg's is: its tabs, what each finds, where Phiegg's
+/// records and what is sought most often are.
+pub const SEARCH: &str = include_str!("../data/search.tsv");
 /// Where the pictures the site names are on disk.
 pub const ASSET: &str = include_str!("../data/asset.tsv");
 /// The rules of a call.

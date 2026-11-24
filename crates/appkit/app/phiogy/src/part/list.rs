@@ -133,9 +133,12 @@ impl<A: Clone> Lister<A> {
                     top += row + gap / 2.0;
                 }
                 Item::Tabs(tab) => {
+                    // As many on a line as the page is wide, the rest on
+                    // the lines under it.
                     let pill: Vec<(&str, &str, bool)> = tab.iter().map(Deed::pill).collect();
-                    spot.extend(pill.draw(paint, PPoint::new(left, top)).into_iter().zip(tab.iter().map(|one| one.act.clone())));
-                    top += pill.high(paint) + gap / 2.0;
+                    let (rect, high) = pill.draw_lines(paint, PPoint::new(left, top), wide);
+                    spot.extend(rect.into_iter().zip(tab.iter().map(|one| one.act.clone())));
+                    top += high + gap / 2.0;
                 }
                 Item::Line(seat, title, sub, open, deed) => {
                     // The kit's row, with what can be done at its end.

@@ -1,0 +1,77 @@
+//! Who a person is, as Phiegg's profile card has it
+//! (puikit: app/phi-kit/src/ProfileView.tsx): the picture over the
+//! profile, their face standing over its foot; their name; their
+//! handle, role and how they stand; how many they are linked to, the
+//! spaces they are in and the pictures they posted; what they say of
+//! themself; their tags; since when they are here.
+
+use appkit::pui::block::{PFace, PPill, PText};
+use appkit::pui::core::{PFit, PPaint, PPoint, PRect};
+use appkit::pui::layout::wrap;
+
+use super::{BANNER, FACE, PANE, Person};
+use crate::part::{DIM, GAP, INK, LINE, RADIUS};
+use crate::site::Member;
+
+impl Person {
+    /// The card, from `at` down; how far it goes.
+    pub(super) fn card(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, one: &Member) -> f32 {
+        let (gap, line, radius, face) = (paint.size(GAP), paint.size(LINE), paint.size(RADIUS), paint.size(FACE));
+        let (ink, dim, text) = (paint.color(INK), paint.color(DIM), &self.desk.text);
+        let (left, mut top) = (at.x, at.y);
+        let cell = self.desk.site.face(&one.id).map(|cell| (cell.sheet.as_str(), cell.column, cell.index));
+        // The picture over the profile, and the face standing over its
+        // foot; with none, the face at the top.
+        match one.banner.is_empty() {
+            true => {
+                (cell, one.name.as_str()).face(paint, PRect::new(left, top, face, face));
+                top += face + gap / 2.0;
+            }
+            false => {
+                let high = wide / paint.size(BANNER).max(1.0);
+                paint.picture(&one.banner, PRect::new(left, top, wide, high), radius, PFit::Cover);
+                (cell, one.name.as_str()).face(paint, PRect::new(left + gap / 2.0, top + high - face / 2.0, face, face));
+                top += high + face / 2.0 + gap / 2.0;
+            }
+        }
+        // Their name; under it their handle, role and how they stand.
+        let under = [one.handle.clone(), one.role.clone(), one.state.clone()];
+        let said = under.iter().filter(|said| !said.is_empty()).cloned().collect::<Vec<_>>().join(&format!(" {} ", text.get("between")));
+        paint.head(PPoint::new(left, top), &one.name.fit(wide, paint), ink);
+        top += line + gap / 4.0;
+        if !said.is_empty() {
+            paint.text(PPoint::new(left, top), &said.fit(wide, paint), dim);
+            top += line + gap / 2.0;
+        }
+        // How many: links, spaces, pictures, each a figure over its word,
+        // side by side, as the web counts shots, followers, following.
+        let count = [one.link as usize, one.space.len(), self.desk.shot_of(&one.id).len()];
+        let step = wide / PANE.len() as f32;
+        for (index, name) in PANE.iter().enumerate() {
+            let x = left + index as f32 * step;
+            paint.head(PPoint::new(x, top), &crate::part::tool::grouped(count[index] as u64), ink);
+            paint.text(PPoint::new(x, top + line + gap / 8.0), text.get(&format!("person.{name}")), dim);
+        }
+        top += line * 2.0 + gap * 0.75;
+        // What they say of themself.
+        for words in wrap(&one.bio, wide, &|text| paint.measure(text)).into_iter().filter(|words| !words.is_empty()) {
+            paint.text(PPoint::new(left, top), &words, ink);
+            top += line;
+        }
+        // Their tags, each a pill of its own.
+        let mut across = left;
+        for tag in &one.tag {
+            across += ("", tag.as_str(), false).draw(paint, PPoint::new(across, top + gap / 4.0), false).size.width + gap / 4.0;
+        }
+        top += match one.tag.is_empty() {
+            true => 0.0,
+            false => line + gap,
+        };
+        // Since when they are here.
+        if !one.since.is_empty() {
+            paint.text(PPoint::new(left, top), &format!("{} {} {}", text.get("person.since"), text.get("between"), one.since), dim);
+            top += line;
+        }
+        top
+    }
+}

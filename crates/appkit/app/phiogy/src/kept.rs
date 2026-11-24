@@ -46,6 +46,12 @@ pub struct Kept {
 }
 
 impl Kept {
+    /// What Phiora answers at a path, where it gave the site; nothing
+    /// where it did not (the files answer then).
+    pub fn read(&self, path: &str) -> Option<String> {
+        self.phiora.borrow().as_ref()?.get(path)
+    }
+
     /// Documents kept nowhere: they last as long as the window.
     pub fn none() -> Kept {
         Kept { word: PTable::read(data::KEEP), ..Kept::default() }
