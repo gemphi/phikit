@@ -36,8 +36,6 @@ pub const BACK: &str = "back";
 pub const MESSAGE: &str = "message";
 pub const FOLLOW: &str = "follow";
 pub const QUIET: &str = "quiet";
-/// The panes, in order: each is `person.` and this in the words.
-pub const PANE: [&str; 3] = ["linked", "space", "media"];
 
 /// What a press on the profile does.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -93,10 +91,6 @@ impl PDraw for Person {
     /// with them; the panes; and the pane that is shown.
     fn draw(&self, paint: &mut dyn PPaint, origin: PPoint) {
         let Some(one) = self.who() else { return };
-        // Somebody linked to nobody has no pane of links, as on the web.
-        if one.link == 0 && self.pane.get() == 0 {
-            self.pane.set(1);
-        }
         let (gap, text) = (paint.size(GAP), &self.desk.text);
         let (left, wide) = (origin.x + gap, (self.frame.size.width - gap * 2.0).max(0.0));
         let mut spot = Vec::new();
@@ -122,19 +116,25 @@ impl PDraw for Person {
             true => 0.0,
             false => high + gap / 2.0,
         };
-        // The panes, each with how much it holds; then the one shown.
+        // The tabs (data/profile.tsv), each with how much it holds, a tab
+        // that holds nothing left out; then the one shown.
         let shot = self.desk.shot_of(&one.id);
-        let count = [one.link as usize, one.space.len(), shot.len()];
-        let pane: Vec<(usize, String)> = PANE.iter().enumerate().filter(|(index, _)| *index > 0 || one.link > 0).map(|(index, name)| (index, format!("{} {}", text.get(&format!("person.{name}")), count[index]))).collect();
-        let tab: Vec<(&str, &str, bool)> = pane.iter().map(|(index, said)| ("", said.as_str(), *index == self.pane.get())).collect();
+        let every = pane::panes();
+        let held: Vec<(usize, String)> = every.iter().enumerate().map(|(index, pane)| (index, self.holds(pane, &one, &shot))).filter(|(_, n)| *n > 0)
+            .map(|(index, n)| (index, format!("{} {}", text.get(&every[index].word), crate::part::tool::grouped(n as u64)))).collect();
+        let chosen = held.iter().map(|(index, _)| *index).find(|index| *index == self.pane.get()).or(held.first().map(|(index, _)| *index));
+        let tab: Vec<(&str, &str, bool)> = held.iter().map(|(index, said)| ("", said.as_str(), Some(*index) == chosen)).collect();
         let (rect, high) = tab.draw_lines(paint, PPoint::new(left, top), wide);
-        spot.extend(rect.into_iter().zip(pane.iter().map(|(index, _)| Act::Pane(*index))));
+        spot.extend(rect.into_iter().zip(held.iter().map(|(index, _)| Act::Pane(*index))));
         top += high + gap * 0.75;
         let mut got = Vec::new();
-        let end = section(paint, PPoint::new(left, top), wide, &mut |paint| {
-            got.clear();
-            self.body(paint, PPoint::new(left, top), wide, &one, &shot, &mut got)
-        });
+        let end = match chosen.and_then(|index| every.get(index)) {
+            Some(shown) => section(paint, PPoint::new(left, top), wide, &mut |paint| {
+                got.clear();
+                self.body(paint, PPoint::new(left, top), wide, &one, &shot, shown, &mut got)
+            }),
+            None => top,
+        };
         spot.extend(got);
         paint.unclip();
         let mut scroll = self.scroll.get();

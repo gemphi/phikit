@@ -43,6 +43,8 @@ pub const VIEWPORT: &str = include_str!("../data/viewport.tsv");
 /// Search, as Phiegg's is: its tabs, what each finds, where Phiegg's
 /// records and what is sought most often are.
 pub const SEARCH: &str = include_str!("../data/search.tsv");
+/// A person's profile: its tabs.
+pub const PROFILE: &str = include_str!("../data/profile.tsv");
 /// Where the pictures the site names are on disk.
 pub const ASSET: &str = include_str!("../data/asset.tsv");
 /// The rules of a call.

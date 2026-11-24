@@ -143,3 +143,12 @@ shop.colour	Colour
 # shows the letter its name begins with in the rail, so that no two
 # hosts wear the same mark.
 host.kind	users
+# A person's profile, as Phiegg has it (puikit app/phiogy/server.py
+# `profile`): what Phiegg counts of them (word and how many), the
+# pictures they posted, their clubs (each with how many hold it), and
+# whether Phiegg says they are who they say.
+person.count	count
+picture	picture
+club	club
+club.holder	holder
+verified	verified

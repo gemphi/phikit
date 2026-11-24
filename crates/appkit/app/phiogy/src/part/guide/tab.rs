@@ -101,18 +101,13 @@ impl Desk {
             }
             out
         };
-        // With no tab chosen, one place at a time: the place whose room is
-        // open, which the rail's row chose; where the open room is in no
-        // place, the first (the direct list). A tab gathers its rooms from
-        // every place, so a starred room is found wherever it is.
+        // One place at a time: the place whose room is open, which the
+        // rail's row chose; where the open room is in no place, the first
+        // (the direct list). A tab sifts that place's rooms.
         let all = self.rail();
         let open = self.open.borrow().clone();
         let at = all.iter().position(|(_, rung)| rung.iter().any(|rung| rung.id == open)).unwrap_or(0);
-        let (skip, take) = match chosen.is_empty() {
-            true => (at, 1),
-            false => (0, all.len()),
-        };
-        let place = all.into_iter().skip(skip).take(take).map(|(label, rung)| (label, kept(rung)));
+        let place = all.into_iter().skip(at).take(1).map(|(label, rung)| (label, kept(rung)));
         place.filter(|(_, rung)| !rung.is_empty()).collect()
     }
 }

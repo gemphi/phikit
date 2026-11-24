@@ -9,7 +9,7 @@ use appkit::pui::block::{PFace, PPill, PText};
 use appkit::pui::core::{PFit, PPaint, PPoint, PRect};
 use appkit::pui::layout::wrap;
 
-use super::{BANNER, FACE, PANE, Person};
+use super::{BANNER, FACE, Person};
 use crate::part::{DIM, GAP, INK, LINE, RADIUS};
 use crate::site::Member;
 
@@ -43,14 +43,19 @@ impl Person {
             paint.text(PPoint::new(left, top), &said.fit(wide, paint), dim);
             top += line + gap / 2.0;
         }
-        // How many: links, spaces, pictures, each a figure over its word,
-        // side by side, as the web counts shots, followers, following.
-        let count = [one.link as usize, one.space.len(), self.desk.shot_of(&one.id).len()];
-        let step = wide / PANE.len() as f32;
-        for (index, name) in PANE.iter().enumerate() {
+        // How many, each a figure over its word, side by side: Phiegg's
+        // own counts of them (shots, followers, following, puts); for
+        // somebody Phiegg does not count, their links, spaces, pictures.
+        let own = [("linked".to_string(), one.link), ("space".to_string(), one.space.len() as u64), ("media".to_string(), self.desk.shot_of(&one.id).len() as u64)];
+        let count: Vec<(String, u64)> = match one.count.is_empty() {
+            true => own.to_vec(),
+            false => one.count.clone(),
+        };
+        let step = wide / count.len().max(1) as f32;
+        for (index, (word, n)) in count.iter().enumerate() {
             let x = left + index as f32 * step;
-            paint.head(PPoint::new(x, top), &crate::part::tool::grouped(count[index] as u64), ink);
-            paint.text(PPoint::new(x, top + line + gap / 8.0), text.get(&format!("person.{name}")), dim);
+            paint.head(PPoint::new(x, top), &crate::part::tool::grouped(*n), ink);
+            paint.text(PPoint::new(x, top + line + gap / 8.0), &text.get(&format!("person.count.{word}")).fit(step - gap / 4.0, paint), dim);
         }
         top += line * 2.0 + gap * 0.75;
         // What they say of themself.

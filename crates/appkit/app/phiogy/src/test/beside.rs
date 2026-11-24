@@ -45,10 +45,10 @@ fn step_24_a_press_on_a_face_puts_that_person_beside_the_room() {
     // The panes say how much each holds: who they are linked to, the
     // spaces they are in, the pictures they posted.
     let pane = |name: &str, count: usize| format!("{} {count}", words(name));
-    assert!([pane("person.linked", 1), pane("person.space", 1), pane("person.media", 1)].iter().all(|pane| text.contains(pane)), "{text:?}");
+    assert!([pane("person.linked", 1), pane("person.space", 1), pane("person.shot", 1)].iter().all(|pane| text.contains(pane)), "{text:?}");
     assert!(press(&mut stage, &look, &pane("person.space", 1)) && shown(&stage, &look).contains(&"Phiace".to_string()));
     // Their pictures open in the viewer, among their own alone.
-    assert!(press(&mut stage, &look, &pane("person.media", 1)));
+    assert!(press(&mut stage, &look, &pane("person.shot", 1)));
     let side = rect(&stage, "room");
     let shot = drawn(&stage, &look).iter().rev().find_map(|mark| match mark {
         PMark::Picture { name, rect, fit: PFit::Cover, .. } if name == "phiegg:worlds/w_brocade.png" && rect.origin.x > side.origin.x + side.size.width / 2.0 => Some(rect.center()),
@@ -93,7 +93,7 @@ fn the_way_back_from_a_person_is_at_their_head_and_in_a_hand_they_have_the_room(
     let text = laid(&mut stage, &look, HAND);
     assert!(text.contains(&desk.text.get("person.title").to_string()) && !text.contains(&desk.text.get("stream.none").to_string()), "{text:?}");
     // The way back is at their head.
-    let back = icon(&stage, &look, "arrow-left").expect("the way back").center();
+    let back = icon(&stage, &look, "chevron-left").expect("the way back").center();
     assert!(stage.send(&PEvent::PointerDown(back.plus(PPoint::new(1.0, 1.0)))));
     assert_eq!(desk.now.who.borrow().clone(), None);
     assert!(laid(&mut stage, &look, HAND).contains(&desk.text.get("stream.none").to_string()));

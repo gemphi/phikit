@@ -1,0 +1,12 @@
+# A person's profile, as Phiegg's has it: its tabs, in order. A tab's
+# key, what it shows, and its word (text.tsv). What it shows: `picture`,
+# the pictures they posted, in a grid, each opening in the viewer;
+# `club`, the clubs they hold, as cards; `space`, the spaces they are
+# in, as cards, each going to its first room; `linked`, who they are
+# linked to, as cards, each opening them. A tab with nothing in it is
+# not shown. The counts over the tabs are Phiegg's own (site.tsv
+# `person.count`), each named by `person.count.` and its word.
+shot	picture	person.shot
+club	club	person.club
+space	space	person.space
+linked	linked	person.linked

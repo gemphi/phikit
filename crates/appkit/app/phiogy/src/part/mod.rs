@@ -204,10 +204,13 @@ impl Desk {
         self.said().iter().flat_map(|one| self.posted(one)).collect()
     }
 
-    /// The pictures somebody posted, in every room the site has.
+    /// The pictures somebody posted: in every room the site has, then
+    /// those Phiegg keeps of them (their shots), newest first.
     pub fn shot_of(&self, id: &str) -> Vec<Shot> {
         let said = self.site.venue.iter().flat_map(|venue| &venue.plate).flat_map(|plate| &plate.message).filter(|one| one.who == id);
-        said.flat_map(|one| self.posted(one)).collect()
+        let own = self.site.member(id).map(|one| one.picture.clone()).unwrap_or_default();
+        let kept = own.into_iter().map(|key| Shot { key, who: id.to_string(), by: self.site.member(id).map(|one| one.name.clone()).unwrap_or_default(), when: String::new(), file: None });
+        said.flat_map(|one| self.posted(one)).chain(kept).collect()
     }
 
     /// Open the viewer on one of a list of pictures.

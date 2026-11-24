@@ -8,6 +8,8 @@ use std::collections::HashMap;
 use appkit::service::PTable;
 use serde_json::Value;
 
+use super::Face;
+
 /// Somebody of the app.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Member {
@@ -30,6 +32,23 @@ pub struct Member {
     pub banner: String,
     /// The spaces they are in, by name.
     pub space: Vec<String>,
+    /// What Phiegg counts of them, in its order: the word for each, and
+    /// how many (shots, followers, following, puts).
+    pub count: Vec<(String, u64)>,
+    /// The pictures they posted, by their keys.
+    pub picture: Vec<String>,
+    /// The clubs they hold, each with its mark and how many hold it.
+    pub club: Vec<Club>,
+    pub verified: bool,
+}
+
+/// A club somebody holds: its id, its name, its mark, its holders.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Club {
+    pub id: String,
+    pub name: String,
+    pub mark: Face,
+    pub holder: u64,
 }
 
 /// Everyone of the rooms' file, in its order, each with the spaces
@@ -38,6 +57,8 @@ pub struct Member {
 pub fn read(people: &Value, key: &PTable) -> Vec<Member> {
     let text = |value: &Value, name: &str| value.get(key.get(name)).and_then(Value::as_str).unwrap_or_default().to_string();
     let list = |value: &Value, name: &str| value.get(key.get(name)).and_then(Value::as_array).cloned().unwrap_or_default();
+    // The columns of the sheets faces are cells of, shared by every mark.
+    let column = people.get(key.get("sheet")).and_then(|sheet| sheet.get(key.get("sheet.column"))).and_then(Value::as_u64).unwrap_or(1) as u32;
     let one = |one: &Value| Member {
         id: text(one, "id"),
         name: text(one, "name"),
@@ -51,6 +72,15 @@ pub fn read(people: &Value, key: &PTable) -> Vec<Member> {
         link: one.get(key.get("linked")).and_then(Value::as_u64).unwrap_or_default(),
         banner: text(one, "banner"),
         space: Vec::new(),
+        count: list(one, "person.count").iter().filter_map(|pair| Some((pair.get(0)?.as_str()?.to_string(), pair.get(1)?.as_u64()?))).collect(),
+        picture: list(one, "picture").iter().filter_map(Value::as_str).map(str::to_string).collect(),
+        club: list(one, "club").iter().map(|club| Club {
+            id: text(club, "id"),
+            name: text(club, "name"),
+            mark: Face { sheet: text(club, "sheet"), column, index: club.get(key.get("face")).and_then(Value::as_u64).unwrap_or_default() as u32 },
+            holder: club.get(key.get("club.holder")).and_then(Value::as_u64).unwrap_or_default(),
+        }).collect(),
+        verified: one.get(key.get("verified")).and_then(Value::as_bool).unwrap_or_default(),
     };
     let mut member: Vec<Member> = list(people, "member").iter().map(one).collect();
     let place: HashMap<String, usize> = member.iter().enumerate().map(|(index, member)| (member.id.clone(), index)).collect();

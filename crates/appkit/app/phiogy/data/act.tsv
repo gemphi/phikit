@@ -22,7 +22,7 @@ call	phone	call.start
 video	video	call.video
 # Beside the room, on a person: back to who is here; write to them;
 # follow them.
-back	arrow-left	person.back
+back	chevron-left	person.back
 message	message-circle	person.message
 follow	star	person.follow
 follow.on	star	person.following

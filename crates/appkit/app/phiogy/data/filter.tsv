@@ -19,5 +19,5 @@ way	past	library.back	chevron-left
 way	ahead	library.forward	chevron-right
 tool	up	library.up	arrow-up
 tool	import	library.import	plus
-back	back	item.back	arrow-left
+back	back	item.back	chevron-left
 back	set	item.set	sparkles

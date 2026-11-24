@@ -11,12 +11,14 @@ fn step_46_the_guide_s_tabs_keep_the_recent_the_starred_and_the_older_rooms() {
     let desk = app.desk();
     let has = |stage: &appkit::pui::window::PStage, text: &str| shown(stage, &look).contains(&text.to_string());
     // With no tab chosen the rooms of the place open are listed, under
-    // the three tabs; a tab gathers from every place.
+    // the three tabs; a tab sifts that place's rooms. Opal Atelier's.
     assert!(["Recent", "Favorites", "Older", "Lora Vale"].iter().all(|text| has(&stage, text)) && !has(&stage, "front-row"));
+    assert!(desk.visit("h_opal") && has(&stage, "front-row"));
     assert_eq!(desk.tabs(), (vec!["recent".to_string(), "favorite".to_string(), "older".to_string()], String::new()));
     // Nothing is starred yet, and the tab says how to.
     assert!(press(&mut stage, &look, "Favorites"));
-    assert!(!has(&stage, "front-row") && has(&stage, "No favorites yet"));
+    // (The open room's title still names front-row.)
+    assert!(has(&stage, "No favorites yet"));
     // A room starred is among the favorites, and so is the room of a
     // person I follow.
     let front = desk.rail().into_iter().flat_map(|(_, rung)| rung).find(|rung| rung.label == "front-row").map(|rung| rung.id).expect("the room");
@@ -31,7 +33,9 @@ fn step_46_the_guide_s_tabs_keep_the_recent_the_starred_and_the_older_rooms() {
     assert!(recent.contains(&"notes".to_string()) && !recent.contains(&front), "{recent:?}");
     assert!(press(&mut stage, &look, "Older"));
     let older = desk.sifted().into_iter().flat_map(|(_, rung)| rung).map(|rung| rung.id).collect::<Vec<_>>();
-    assert!(older.contains(&front) && !older.contains(&"notes".to_string()), "{older:?}");
+    // The tabs sift the place open (the direct list): the room starred
+    // in Opal Atelier is in neither here.
+    assert!(!older.contains(&front) && !older.contains(&"notes".to_string()), "{older:?}");
     assert!(recent.iter().all(|id| !older.contains(id)));
     // The chosen tab again lets the place open back, alone.
     assert!(press(&mut stage, &look, "Older"));

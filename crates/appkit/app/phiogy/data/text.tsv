@@ -251,6 +251,17 @@ person.since	Member since
 person.linked	Linked
 person.space	Spaces
 person.media	Pictures
+person.shot	Shots
+person.club	Clubs
+person.holder	{n} holders
+person.inside	{n} inside
+person.count.shot	Shots
+person.count.follower	Followers
+person.count.following	Following
+person.count.put	Puts
+person.count.linked	Linked
+person.count.space	Spaces
+person.count.media	Pictures
 person.none	Nothing here yet
 # A room's controls.
 room.reply	Reply
