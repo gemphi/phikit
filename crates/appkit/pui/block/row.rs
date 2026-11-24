@@ -27,13 +27,17 @@ pub enum PLead<'a> {
 }
 
 impl PLead<'_> {
-    /// Draw it in a square: an icon at its own size in the middle, a
-    /// face round, a cell or a picture filling it.
+    /// Draw it in a square: an icon at its own size in the middle, on a
+    /// soft ground of its own (an icon alone looks as if it were
+    /// missing), a face round, a cell or a picture filling it.
     pub fn draw(&self, paint: &mut dyn PPaint, rect: PRect) {
         let (icon, radius, ink) = (paint.size(ICON), paint.size(RADIUS), paint.color(INK));
         match *self {
             PLead::None => {}
-            PLead::Icon(name) => paint.icon(name, PRect::new(rect.center().x - icon / 2.0, rect.center().y - icon / 2.0, icon, icon), ink),
+            PLead::Icon(name) => {
+                super::super::core::light::label(paint, rect, radius, super::super::core::PLight::Soft, true, "");
+                paint.icon(name, PRect::new(rect.center().x - icon / 2.0, rect.center().y - icon / 2.0, icon, icon), ink)
+            }
             PLead::Face(sheet, column, index) => paint.picture(sheet, rect, rect.size.width / 2.0, PFit::Cell { column, index }),
             PLead::Cell(sheet, column, index) => paint.picture(sheet, rect, radius, PFit::Cell { column, index }),
             PLead::Picture(key) => paint.picture(key, rect, radius, PFit::Whole),

@@ -9,15 +9,16 @@
 //! `look` and the look's name, so the app can keep it. A profile longer
 //! than its panel is scrolled with the wheel.
 
+mod axis;
 mod prefer;
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use super::{DIM, GAP, INK, ROW, person};
-use crate::pui::core::light::{label, surface};
+use crate::pui::core::light::label;
 use crate::pui::core::{PDraw, PEvent, PLight, PPaint, PPoint, PRect, PView};
-use crate::pui::layout::{PScroll, fold};
+use crate::pui::layout::{PDry, PScroll, fold};
 use crate::pui::window::{PDeed, PWish};
 use crate::service::PTable;
 use crate::theme::PShade;
@@ -37,7 +38,7 @@ pub const SPLIT: &str = "profile.split";
 /// and `appearance` are the headings over the rows and over the looks;
 /// `prefer`, where it has one, over what the person prefers. A row whose name
 /// starts with `look.` is what a look is called.
-const HEAD: [&str; 6] = ["name", "mail", "modal", "about", "appearance", "prefer"];
+const HEAD: [&str; 7] = ["name", "mail", "modal", "about", "appearance", "prefer", axis::AXIS];
 pub const LOOK: &str = "look.";
 /// The word the app is told when a look is chosen, before its name.
 pub const TOLD: &str = "look";
@@ -59,11 +60,13 @@ pub struct PProfile {
     /// Where each look's pill was drawn last, in the window.
     spot: RefCell<Vec<(PRect, String)>>,
     scroll: Cell<PScroll>,
+    /// The groups folded shut: every other is open.
+    shut: RefCell<Vec<String>>,
 }
 
 impl PProfile {
     pub fn new(user: PTable) -> PProfile {
-        PProfile { frame: PRect::default(), user, fact: None, live: PTable::default(), shade: None, wish: None, spot: RefCell::default(), scroll: Cell::default() }
+        PProfile { frame: PRect::default(), user, fact: None, live: PTable::default(), shade: None, wish: None, spot: RefCell::default(), scroll: Cell::default(), shut: RefCell::default() }
     }
 
     /// The same profile with rows that are asked for once a frame.
@@ -79,22 +82,35 @@ impl PProfile {
     /// The rows: those of the user's table that are rows, then what is
     /// true now.
     fn row(&self) -> Vec<(&str, &str)> {
-        let shown = |name: &str| !HEAD.contains(&name) && !name.starts_with(LOOK) && !name.starts_with(prefer::WORD);
+        let words = ["axis.", "value.", "place."];
+        let shown = |name: &str| !HEAD.contains(&name) && !name.starts_with(LOOK) && !name.starts_with(prefer::WORD) && !words.iter().any(|word| name.starts_with(word));
         let own = self.user.list().iter().filter(|(name, _)| shown(name));
         own.chain(self.live.list()).map(|(name, value)| (name.as_str(), value.as_str())).collect()
     }
 
-    /// A heading, when the user's table gives its word. How far down
-    /// what follows it begins.
-    fn head(&self, name: &str, at: PPoint, paint: &mut dyn PPaint) -> f32 {
-        let (word, dim, line, gap) = (self.user.get(name), paint.color(DIM), paint.size(ROW), paint.size(GAP));
-        match word.is_empty() {
+    /// A group as an accordion: its heading, pressed to fold or open it,
+    /// and while open what it holds on a ground of its own, measured
+    /// first with nothing drawn. How far down it ends.
+    #[allow(clippy::too_many_arguments)]
+    fn group(&self, key: &str, said: &str, at: PPoint, wide: f32, paint: &mut dyn PPaint, spot: &mut Vec<(PRect, String)>, fill: &mut dyn FnMut(&mut dyn PPaint, f32, &mut Vec<(PRect, String)>) -> f32) -> f32 {
+        let gap = paint.size(GAP);
+        // A group the user's table gives no word has no heading: it is
+        // its ground alone, and never folds.
+        let open = said.is_empty() || !self.shut.borrow().iter().any(|one| one == key);
+        let below = match said.is_empty() {
             true => at.y,
             false => {
-                paint.text(at, word, dim);
-                at.y + line + gap / 2.0
+                let (rect, below) = axis::heading(paint, at, wide, said, open);
+                spot.push((rect, format!("{}{key}", axis::FOLD)));
+                below
             }
+        };
+        if !open {
+            return below + gap / 2.0;
         }
+        let end = fill(&mut PDry(&*paint), below + gap / 2.0, &mut Vec::new());
+        axis::body(paint, PRect::new(at.x, below, wide, end - below + gap / 2.0));
+        fill(paint, below + gap / 2.0, spot) + gap
     }
 }
 
@@ -111,58 +127,71 @@ impl PDraw for PProfile {
         let beside = PPoint::new(left + face + gap, origin.y + gap + face / 2.0 - line);
         paint.text(beside, name, ink);
         paint.text(beside.plus(PPoint::new(0.0, line)), self.user.get("mail"), dim);
-        // What is known of them: one block, a name on the left and what it
-        // stands for beside it, in as many lines as it takes.
+        // What is known of them, how the app appears and what the person
+        // prefers: each a group that folds, on a ground of its own.
         let split = wide * paint.theme().size(SPLIT).unwrap_or(0.4);
         let row = self.row();
         let set: Vec<Vec<String>> = row.iter().map(|(_, value)| fold(value, wide - split - gap * 2.0, &|text| paint.measure(text))).collect();
         let high = |set: &Vec<String>| (set.len().max(1) as f32 + 0.5) * line;
-        let mut down = self.head("about", PPoint::new(left, origin.y + gap * 2.0 + face), paint);
-        if !row.is_empty() {
-            let tall = set.iter().map(high).sum::<f32>() + gap * 1.5 - line * 0.5;
-            surface(paint, PRect::new(left, down, wide, tall), round, PLight::Rest, FILL);
-            down += gap * 0.75;
-        }
-        for ((name, _), set) in row.iter().zip(&set) {
-            paint.text(PPoint::new(left + gap, down), name, dim);
-            for (index, text) in set.iter().enumerate() {
-                paint.text(PPoint::new(left + gap + split, down + index as f32 * line), text, ink);
-            }
-            down += high(set);
-        }
-        // How it appears: a pill for each look, the one shown lit. A pill
-        // that has no room left on its line begins the next.
         let mut spot = Vec::new();
-        let looks = self.shade.iter().flat_map(|shade| shade.list().into_iter().map(move |look| (look, look == shade.name())));
-        let top = match self.shade {
-            Some(_) => self.head("appearance", PPoint::new(left, down + gap * 1.25 - line * 0.5), paint),
-            None => down,
-        };
-        let mut at = PPoint::new(left, top);
-        for (look, shown) in looks {
-            let word = Some(self.user.get(&format!("{LOOK}{look}"))).filter(|word| !word.is_empty()).unwrap_or(look);
-            let long = paint.measure(word) + gap * 2.0;
-            if at.x + long > left + wide && at.x > left {
-                at = PPoint::new(left, at.y + line + gap * 1.5);
-            }
-            let rect = PRect::new(at.x, at.y, long, line + gap);
-            let (light, token) = match shown {
-                true => (PLight::Strong, LIT),
-                false => (PLight::Soft, FILL),
-            };
-            down = rect.origin.y + rect.size.height;
-            label(paint, rect, round, light, false, token);
-            paint.text(PPoint::new(rect.origin.x + gap, rect.center().y - line / 2.0), word, ink);
-            spot.push((rect, look.to_string()));
-            at.x += long + gap / 2.0;
+        let mut down = origin.y + gap * 2.0 + face;
+        if !row.is_empty() {
+            let said = self.user.get("about").to_string();
+            down = self.group("about", &said, PPoint::new(left, down), wide, paint, &mut spot, &mut |paint, mut top, _| {
+                for ((name, _), set) in row.iter().zip(&set) {
+                    paint.text(PPoint::new(left + gap, top), name, dim);
+                    for (index, text) in set.iter().enumerate() {
+                        paint.text(PPoint::new(left + gap + split, top + index as f32 * line), text, ink);
+                    }
+                    top += high(set);
+                }
+                top
+            });
         }
-        // Under the looks, what the person prefers of how they appear,
-        // where the user's table gives that a heading.
-        if let Some(shade) = self.shade.as_ref().filter(|_| !self.user.get("prefer").is_empty()) {
-            let top = self.head("prefer", PPoint::new(left, down + gap * 1.25 - line * 0.5), paint);
-            let (end, more) = self.prefer(shade, paint, left, top, wide);
-            spot.extend(more);
-            down = end;
+        if let Some(shade) = self.shade.clone() {
+            let axes = axis::axes(&self.user);
+            for (index, name) in axes.iter().enumerate() {
+                // An axis of how it appears: mode, surface.
+                let said = axis::said(&self.user, name).to_string();
+                let user = &self.user;
+                down = self.group(name, &said, PPoint::new(left, down), wide, paint, &mut spot, &mut |paint, top, spot| axis::values(user, &shade, index, paint, PPoint::new(left + gap, top), wide - gap * 2.0, spot));
+            }
+            if axes.is_empty() {
+                // With no axes, a pill for each look, the one shown lit.
+                let said = self.user.get("appearance").to_string();
+                down = self.group("appearance", &said, PPoint::new(left, down), wide, paint, &mut spot, &mut |paint, top, spot| {
+                    let mut at = PPoint::new(left + gap, top);
+                    let mut end = top;
+                    for look in shade.list() {
+                        let word = Some(self.user.get(&format!("{LOOK}{look}"))).filter(|word| !word.is_empty()).unwrap_or(look);
+                        let long = paint.measure(word) + gap * 2.0;
+                        if at.x + long > left + wide - gap && at.x > left + gap {
+                            at = PPoint::new(left + gap, at.y + line + gap * 1.5);
+                        }
+                        let rect = PRect::new(at.x, at.y, long, line + gap);
+                        let (light, token) = match look == shade.name() {
+                            true => (PLight::Strong, LIT),
+                            false => (PLight::Soft, FILL),
+                        };
+                        label(paint, rect, round, light, true, token);
+                        paint.text(PPoint::new(rect.origin.x + gap, rect.center().y - line / 2.0), word, ink);
+                        spot.push((rect, look.to_string()));
+                        at.x += long + gap / 2.0;
+                        end = rect.origin.y + rect.size.height;
+                    }
+                    end
+                });
+            }
+            // What the person prefers of how they appear, where the
+            // user's table gives that a heading.
+            if !self.user.get("prefer").is_empty() {
+                let said = self.user.get("prefer").to_string();
+                down = self.group("prefer", &said, PPoint::new(left, down), wide, paint, &mut spot, &mut |paint, top, spot| {
+                    let (end, more) = self.prefer(&shade, paint, left + gap, top, wide - gap * 2.0);
+                    spot.extend(more);
+                    end
+                });
+            }
         }
         *self.spot.borrow_mut() = spot;
         paint.unclip();
@@ -202,6 +231,15 @@ impl PView for PProfile {
         // What was drawn is in the window's coordinates.
         let place = at.plus(self.frame.origin);
         let look = self.spot.borrow().iter().find(|(rect, _)| rect.contains(place)).map(|(_, look)| look.clone());
+        // A heading folds its group or opens it.
+        if let Some(key) = look.as_deref().and_then(|look| look.strip_prefix(axis::FOLD)) {
+            let mut shut = self.shut.borrow_mut();
+            match shut.iter().position(|one| one == key) {
+                Some(at) => _ = shut.remove(at),
+                None => shut.push(key.to_string()),
+            }
+            return true;
+        }
         // A preference is put over the look, and the app told all that is
         // preferred now.
         let prefer = look.as_ref().zip(self.shade.as_ref()).and_then(|(look, shade)| PProfile::chose(shade, look));

@@ -25,3 +25,20 @@ prefer.most	70%
 prefer.half	50%
 prefer.all	All the way
 prefer.light	Light's colour
+# How it appears, as two choices (the user, 25 November 2026): the mode
+# and the surface. Each look stands on both (`place.`); a look with none
+# is not offered. The values are shown in this order.
+axis	mode surface
+axis.mode	Mode
+axis.surface	Surface
+value.light	Light
+value.dark	Dark
+value.solid	Solid
+value.gradient	Gradient
+value.glass	Glass
+place.glass	dark glass
+place.frost	light glass
+place.light	light gradient
+place.dark	dark gradient
+place.plain	light solid
+place.plain-dark	dark solid

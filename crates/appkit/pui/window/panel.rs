@@ -9,7 +9,8 @@
 //! its content's, which has its own way out; Escape closes it still.
 
 use super::{PDeed, PShape};
-use crate::pui::core::light::pane;
+use crate::pui::core::light::{label, pane};
+use crate::pui::core::PLight;
 use crate::pui::core::{PPaint, PPoint, PRect, PSize};
 use crate::theme::PTheme;
 
@@ -28,6 +29,10 @@ pub const VEIL: &str = "modal.veil";
 pub const FILL: &str = "modal.fill";
 pub const ROUND: &str = "modal.radius";
 pub const HEAD: &str = "modal.head";
+/// A colour laid over the panel's glass, where the theme has one: a
+/// modal is read over what it floats on, so in a glass look it is less
+/// see-through than the window (`modal.tint`, with its own alpha).
+pub const TINT: &str = "modal.tint";
 /// How far a drawer and a sheet stay from the window's edges, how wide a
 /// drawer is, how much of the window's height a sheet takes, and the
 /// most a sheet is wide. Neither is ever wider than the window leaves.
@@ -144,11 +149,21 @@ impl PPanel {
         };
         let head = self.close.size.height;
         paint.fill(self.whole, veil);
-        // A panel floats: it is a pane, glass where the theme has glass.
+        // A panel floats: it is a pane, glass where the theme has glass,
+        // and over the glass the theme's tint for a modal, so it reads.
         pane(paint, self.rect, round, FILL);
+        // Only a look with glass has a tint for a modal, and only a tint
+        // with some colour is laid.
+        if crate::pui::core::PGlass::of(paint.theme()).is_some() {
+            if let Some(tint) = paint.theme().color(TINT).filter(|tint| tint.a > 0.0) {
+                paint.round(self.rect, round, tint);
+            }
+        }
         if self.bare {
             return;
         }
+        // Its head stands on a ground of its own, against the panel's.
+        label(paint, PRect::new(self.rect.origin.x, self.rect.origin.y, self.rect.size.width, head), round, PLight::Soft, true, "");
         paint.text(self.rect.origin.plus(PPoint::new(gap, (head - line) / 2.0)), title, ink);
         paint.icon("maximize", self.expand.inset((head - icon) / 2.0), ink);
         paint.icon("x", self.close.inset((head - icon) / 2.0), ink);

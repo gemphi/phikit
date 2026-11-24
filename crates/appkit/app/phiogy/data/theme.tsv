@@ -6,7 +6,7 @@ color	window.fill	#dededa
 # window's own fill, the veil under a modal and the lines are each mixed
 # with the light's colour (shade.light, which the person can choose) by
 # this share, in every look, so no part is a bare black or grey.
-word	tint.token	window.fill modal.veil line.ink
+word	tint.token	window.fill modal.veil modal.tint line.ink
 size	tint.share	0.12
 color	line.ink	#c9c9c4
 color	text.ink	#1d1d1b

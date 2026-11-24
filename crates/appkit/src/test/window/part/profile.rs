@@ -46,10 +46,10 @@ fn a_row_too_long_for_the_profile_is_set_in_several_lines_and_the_next_begins_un
     // begins two gaps and the mark down. A name is a gap into the block;
     // what it stands for begins four tenths of the block's width after
     // that, and has what is left less a gap: 148, eighteen letters of 8.
-    assert_eq!(at(&sheet, "Chats"), Some(PPoint::new(20.0, 87.5)));
-    assert_eq!(["kept on this", "computer until the", "page closes"].map(|line| at(&sheet, line)), [87.5, 107.5, 127.5].map(|down| Some(PPoint::new(132.0, down))));
+    assert_eq!(at(&sheet, "Chats"), Some(PPoint::new(20.0, 85.0)));
+    assert_eq!(["kept on this", "computer until the", "page closes"].map(|line| at(&sheet, line)), [85.0, 105.0, 125.0].map(|down| Some(PPoint::new(132.0, down))));
     // Three lines and half a line under the row's top.
-    assert_eq!(at(&sheet, "Plan"), Some(PPoint::new(20.0, 157.5)));
+    assert_eq!(at(&sheet, "Plan"), Some(PPoint::new(20.0, 155.0)));
 }
 
 #[test]
@@ -111,14 +111,14 @@ fn in_a_theme_with_light_its_rows_are_one_surface_and_the_look_shown_is_lit_the_
     let mut sheet = PSheet::new(&look);
     show(&profile, &mut sheet, PPoint::default());
     let lit: Vec<(f32, f32, f32)> = sheet.mark.iter().filter_map(|mark| match mark {
-        PMark::Blend { rect, from, turn, .. } => Some((rect.size.width, from.a, *turn)),
+        PMark::Blend { rect, from, to, turn, .. } => Some((rect.size.width, from.a.max(to.a), *turn)),
         _ => None,
     }).collect();
-    // The block of rows, a surface as wide as the profile less its
-    // gaps; then the pills, lit from the left, the look shown the most
-    // and the other the least. The mark is Phi-Soft's shape in the light's
-    // colour, no light of its own.
-    assert_eq!(lit, [(280.0, 0.5, 0.0), (60.0, 0.5, 90.0), (52.0, 0.25, 90.0)]);
+    // The group of rows, a surface as wide as the profile less its
+    // gaps; the group of looks, as wide; then the pills on it, lit
+    // against it, the look shown the most and the other the least. The
+    // mark is Phi-Soft's shape in the light's colour, no light of its own.
+    assert_eq!(lit, [(280.0, 0.5, 0.0), (280.0, 0.5, 0.0), (60.0, 0.5, 90.0), (52.0, 0.25, 90.0)]);
 }
 
 #[test]
@@ -133,10 +133,10 @@ fn a_profile_longer_than_its_panel_is_scrolled_with_the_wheel() {
         show(profile, &mut sheet, PPoint::default());
         at(&sheet, text).map(|at| at.y)
     };
-    assert_eq!((down(&profile, "Ada"), down(&profile, "light")), (Some(20.0), Some(185.0)));
+    assert_eq!((down(&profile, "Ada"), down(&profile, "light")), (Some(20.0), Some(195.0)));
     assert!(send(&mut profile, &PEvent::Scroll(PPoint::new(10.0, 10.0), PPoint::new(0.0, -100000.0))));
-    // As far as its foot and no further: 70.
-    assert_eq!((down(&profile, "Ada"), down(&profile, "light")), (Some(-50.0), Some(115.0)));
+    // As far as its foot and no further: 90, its groups' headings and grounds included.
+    assert_eq!((down(&profile, "Ada"), down(&profile, "light")), (Some(-70.0), Some(105.0)));
     // One that fits does not scroll.
     profile.set_frame(PRect::new(0.0, 0.0, 300.0, 400.0));
     down(&profile, "Ada");

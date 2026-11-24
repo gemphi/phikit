@@ -65,7 +65,8 @@ fn step_6_a_look_is_chosen_in_the_menu_and_phiogy_opens_the_way_i_left_it() {
     let open = |store: Option<PStore>| Phiogy::holding(Rc::new(Phiogy::look("")), site(), Phiogy::board(), Ok(AT.to_string()), store);
     let left = |app: &Phiogy| (app.desk().shade.name().to_string(), app.desk().open.borrow().clone());
     let app = open(Some(kept.clone()));
-    assert_eq!(left(&app), ("light".to_string(), "lora".to_string()));
+    // Phiogy opens in Glass, the default look.
+    assert_eq!(left(&app), ("glass".to_string(), "lora".to_string()));
     let mut stage = app.stage();
     stage.lay(DESK, PMode::of_width(DESK.width));
     let look = Rc::new(Phiogy::look(""));
@@ -76,8 +77,8 @@ fn step_6_a_look_is_chosen_in_the_menu_and_phiogy_opens_the_way_i_left_it() {
     // A look there is not, and a room there is not, change nothing.
     assert!(!app.desk().dress("dusk") && !app.desk().show("nowhere"));
     assert_eq!(left(&open(Some(kept))), ("dark".to_string(), "lobby".to_string()));
-    // Opened with nowhere to keep things, it is as it ships.
-    assert_eq!(left(&open(None)), ("light".to_string(), "lora".to_string()));
+    // Opened with nowhere to keep things, it is as it ships: in Glass.
+    assert_eq!(left(&open(None)), ("glass".to_string(), "lora".to_string()));
 }
 
 #[test]
@@ -87,7 +88,7 @@ fn step_7_my_profile_says_where_the_line_is_and_how_many_are_on_it() {
     opened(&mut lock(&app.desk().board), "phiogy/lobby", "peer-bbbbbbbb", 2);
     post(&mut lock(&app.desk().board), "phiogy/lobby", "guest_2", &joining("peer-bbbbbbbb", true)).unwrap();
     let said = fact::fact(app.desk());
-    assert_eq!((said.get("Line"), said.get("Rooms open"), said.get("In calls"), said.get("Hosts"), said.get("Look")), (AT, "2", "1", "4", "Light"));
+    assert_eq!((said.get("Line"), said.get("Rooms open"), said.get("In calls"), said.get("Hosts"), said.get("Look")), (AT, "2", "1", "4", "Glass"));
     assert_eq!(said.get("Kept in"), app.desk().text.get("fact.nowhere"));
     // Where its hosts and rooms were read from: here, nobody was asked.
     assert_eq!(said.get("Read from"), app.desk().text.get("fact.file"));
