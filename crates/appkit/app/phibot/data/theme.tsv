@@ -96,8 +96,10 @@ size	drawer.width	400
 size	sheet.share	0.5
 size	sheet.width	776
 size	modal.head	56
-# How much of its way a modal slides in a frame, coming in and going out.
-size	modal.step	0.1
+# How much of its way a modal slides in a frame, coming in and going out:
+# a drawer from the right edge, any other up from the foot (the user,
+# 25 November 2026: slow enough to be seen as a slide).
+size	modal.step	0.07
 # How many thousandths of a second pass before a window that only
 # waits, for somebody to come on a line, is looked at again.
 size	screen.beat	250
