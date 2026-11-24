@@ -26,7 +26,7 @@ Callers enter through [`phx::Phx`](../phx/README.md); this folder is one of its 
 
 Regenerate the shape files Phiogy reads:
 `cargo run -p phiphx --example shape_usd -- crates/appkit/app/phiogy/asset/shape`
-| `thing.rs` | Things built of parts from a collection's tables (`thing.tsv`, `look.tsv`, `source.tsv` in one folder; steps per form in `data/thing.tsv`): each row a box, ball, pill, can, cone, ring, dome, a letter of a font, an outline of an svg drawing, or another thing, placed, turned, rounded, worn in a look, repeated. A thing inside keeps its layer; swapped looks pass down. Written as USDA by `export/usd/thing.rs`: a thing that wears its own looks is a reference to its own file. |
+| `thing.rs` | Things built of parts from a collection's tables (`thing.tsv`, `look.tsv`, `source.tsv` in one folder; steps per form in `data/thing.tsv`): each row a box, ball, pill, can, cone, ring, dome, a letter of a font, an outline of an svg drawing, or another thing, placed, turned, rounded, worn in a look (one colour, or two it turns between side to side, back to front, as the house's grounds turn: USD vertex colours), repeated. A thing inside keeps its layer; swapped looks pass down. Written as USDA by `export/usd/thing.rs`: a thing that wears its own looks is a reference to its own file. |
 | `thing/read.rs` | The tables read: `ThingSet`, `Thing`, `ThingRow`, `ThingForm`, `ThingLook`. |
 | `thing/build.rs` | `ThingSet::build`: `ThingTree` of `ThingNode` meshes and groups; repeats, turns, swaps; when a group may refer to its file. |
 | `thing/form.rs` | A row's own mesh, its form at its size. |

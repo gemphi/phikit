@@ -133,6 +133,21 @@ fn a_turned_form_scalloped_swells_at_each_lobe() {
 }
 
 #[test]
+fn a_look_of_two_colours_turns_from_the_back_to_the_front() {
+    let set = once();
+    let jet = set.build("jet-long").expect("the long jet");
+    let (part, shade) = jet.node.iter().find_map(|n| match n {
+        ThingNode::Mesh { part, shade, .. } if part.name == "body" => Some((part, shade)),
+        _ => None,
+    }).expect("its body");
+    assert_eq!(shade.len(), part.point.len());
+    let back = part.point.iter().zip(shade).min_by(|a, b| a.0[0].total_cmp(&b.0[0])).expect("a point").1;
+    let front = part.point.iter().zip(shade).max_by(|a, b| a.0[0].total_cmp(&b.0[0])).expect("a point").1;
+    assert!(front[1] < back[1] - 0.2, "pearl at the back to rose at the front: {back:?} {front:?}");
+    assert!(set.build("jet-long").expect("built").to_usda().contains("interpolation = \"vertex\""));
+}
+
+#[test]
 fn phiogy_once_files_match_their_tables() {
     let folder = Path::new(env!("CARGO_MANIFEST_DIR")).join("../appkit/app/phiogy/asset/once");
     let set = once();

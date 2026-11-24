@@ -74,12 +74,13 @@ the tables. Nothing in a file is drawn by hand.
 - The craft, going +x: eight jetskis (`jetski-1` to `-8`, the two
   hulls `jetski-long` and `jetski-short` raised from the user's red
   sketches, `data/once/hull-*.svg`, in four liveries each, the first
-  the white and blue of the photo), four Phijets small to large
-  (electric, after the user's sketch of two jets: `jet-sleek` and
-  `jet-cabin` raised from `data/once/jet-*.svg`, a dark visor, oval
-  windows in gold frames, huge swept wings with their tips turned up,
-  ducted fans at the tail; the large two carry `jet-inside`, the cabin
-  of club seats down an aisle), four flying cars (`fly-car`, from the
+  the white and blue of the photo), eight Phijets, electric
+  (`phijet-long-1` to `-4`, `phijet-short-1` to `-4`: the long and the
+  short jet of the user's cyan sketch raised from `data/once/jet-long.svg`
+  and `jet-short.svg`, each window as drawn, two more on the short one,
+  huge swept wings with their tips turned up, small ducted fans, their
+  bodies in the house's gradients, back to front; the long ones carry
+  `jet-inside`, the cabin of club seats down an aisle), four flying cars (`fly-car`, from the
   same sketch, with a glass canopy, leaf windows, hover rings), and
   four rockets as Starship is built (the hopper, the ship, the full
   stack, the ship for Mars with legs and sun wings). Their lights and

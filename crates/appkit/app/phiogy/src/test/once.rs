@@ -30,9 +30,9 @@ fn step_62_once_city_is_a_place_of_the_library_with_its_things() {
     assert_eq!((couch, tree), (16, 16));
     // The craft: eight jetskis, four Phijets small to large, four rockets.
     let craft = |lead: &str| file.iter().filter(|f| f.starts_with(lead) && f[lead.len()..].starts_with(|c: char| c.is_ascii_alphanumeric())).count();
-    assert_eq!((craft("jetski-"), craft("phijet-"), craft("rocket-"), craft("flycar-")), (10, 4, 4, 4), "{file:?}");
-    // The electric jets of the user's sketch, their cabin and its seats.
-    for name in ["jet-cabin.usda", "jet-sleek.usda", "jet-inside.usda", "club-seat.usda", "fly-car.usda"] {
+    assert_eq!((craft("jetski-"), craft("phijet-long-"), craft("phijet-short-"), craft("rocket-"), craft("flycar-")), (10, 4, 4, 4, 4), "{file:?}");
+    // The electric jets of the user's cyan sketch, their cabin and its seats.
+    for name in ["jet-long.usda", "jet-short.usda", "jet-inside.usda", "club-seat.usda", "fly-car.usda"] {
         assert!(file.iter().any(|f| f == name), "no {name}");
     }
     // Sixteen lands, ice to the tropics, and their map.

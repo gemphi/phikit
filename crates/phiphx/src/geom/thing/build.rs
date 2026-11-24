@@ -28,8 +28,9 @@ pub type Matrix = [[f32; 4]; 4];
 #[derive(Clone, Debug, PartialEq)]
 pub enum ThingNode {
     /// A part's mesh, its points where they stand in the group around
-    /// it, and the look it wears.
-    Mesh { part: ShapePart, look: ThingLook },
+    /// it, the look it wears, and where that look turns from one colour
+    /// to another, each point's colour (linear; empty for one colour).
+    Mesh { part: ShapePart, look: ThingLook, shade: Vec<[f32; 3]> },
     /// A thing inside: its name, where it stands, its layers, and the
     /// thing it is where it wears that thing's own looks (a file of its
     /// own can be referred to for it).
@@ -137,7 +138,8 @@ impl ThingSet {
                     part.count.extend(&own.count);
                     part.index.extend(own.index.iter().map(|i| i + start));
                 }
-                vec![ThingNode::Mesh { part, look }]
+                let shade = shaded(&part, &look);
+                vec![ThingNode::Mesh { part, look, shade }]
             }
         }
     }
@@ -164,8 +166,22 @@ impl ThingSet {
     /// the nearest first; grey where the collection has no such look.
     fn worn(&self, name: &str, swap: &[HashMap<String, String>]) -> ThingLook {
         let name = swap.iter().fold(name.to_string(), |name, map| map.get(&name).cloned().unwrap_or(name));
-        self.look.get(&name).cloned().unwrap_or(ThingLook { name, colour: [0.5; 3], roughness: 0.5, metallic: 0.0 })
+        self.look.get(&name).cloned().unwrap_or(ThingLook { name, colour: [0.5; 3], to: None, roughness: 0.5, metallic: 0.0 })
     }
+}
+
+/// Each point's colour where a look turns from one colour to another:
+/// side to side along the part, its back (-x) in the first, its front
+/// (+x) in the second, as the house's grounds turn.
+fn shaded(part: &ShapePart, look: &ThingLook) -> Vec<[f32; 3]> {
+    let Some(to) = look.linear_to() else { return Vec::new() };
+    let from = look.linear();
+    let (lo, hi) = part.point.iter().fold((f32::MAX, f32::MIN), |(lo, hi), p| (lo.min(p[0]), hi.max(p[0])));
+    let across = (hi - lo).max(f32::EPSILON);
+    part.point.iter().map(|p| {
+        let t = (p[0] - lo) / across;
+        [0, 1, 2].map(|i| from[i] + (to[i] - from[i]) * t)
+    }).collect()
 }
 
 /// A thing row's swaps: `from=to` words.

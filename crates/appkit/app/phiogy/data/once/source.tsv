@@ -18,10 +18,20 @@ hull-long	hull-long.svg
 hull-short	hull-short.svg
 # The jets and the flying car, from the user's sketch of their sides
 # (24 November 2026), and their wings, fin, canopy and windows.
-jet-cabin	jet-cabin.svg
-jet-sleek	jet-sleek.svg
 fly-car	fly-car.svg
 car-canopy	car-canopy.svg
 car-window	car-window.svg
 jet-wing	jet-wing.svg
 jet-fin	jet-fin.svg
+# The jets of the cyan sketch and their windows.
+jet-long	jet-long.svg
+jet-long-window-1	jet-long-window-1.svg
+jet-long-window-2	jet-long-window-2.svg
+jet-long-window-3	jet-long-window-3.svg
+jet-long-window-4	jet-long-window-4.svg
+jet-long-window-5	jet-long-window-5.svg
+jet-short	jet-short.svg
+jet-short-window-1	jet-short-window-1.svg
+jet-short-window-2	jet-short-window-2.svg
+jet-short-window-3	jet-short-window-3.svg
+jet-short-window-4	jet-short-window-4.svg

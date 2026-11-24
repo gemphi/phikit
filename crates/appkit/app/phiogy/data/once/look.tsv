@@ -80,3 +80,12 @@ jungle	#227a3c	0.85 0
 reef	#7fe8e0	0.2 0
 # The craft's window glass: dark, as Starship's and the photo's cockpit.
 window	#18222e	0.05 0.4
+# The jets' bodies in the house's gradients: each turns from its first
+# colour at the back to its second at the nose, as the grounds turn side
+# to side. `body` and `trim` are what a jet wears until its variant says.
+body	#f6f1ec #ee8fb5	0.3 0.1
+trim	#d8b35c	0.3 1
+grad-rose	#f6f1ec #ee8fb5	0.3 0.1
+grad-sky	#f6f1ec #90c8ef	0.3 0.1
+grad-night	#1f1d22 #5a2fa8	0.25 0.2
+grad-gold	#f3eee6 #d8b35c	0.3 0.4

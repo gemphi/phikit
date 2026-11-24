@@ -119,6 +119,7 @@ fn object_mesh(w: &mut UsdaWriter, o: &SceneObject, prim: &str, slot: &[String])
         normal_by_point: false,
         uv: &o.uvs,
         colour: [colour[0], colour[1], colour[2]],
+        colours: &[],
         look: slot.get(first).or(slot.first()).cloned(),
         subset,
     });

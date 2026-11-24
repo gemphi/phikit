@@ -45,11 +45,14 @@ impl ThingForm {
     }
 }
 
-/// A look: its colour as it is seen (sRGB, 0-1), how rough, how metal.
+/// A look: its colour as it is seen (sRGB, 0-1), how rough, how metal;
+/// and where a second colour is given, the colour it turns to along the
+/// part, side to side, as the house's grounds turn (a gradient).
 #[derive(Clone, Debug, PartialEq)]
 pub struct ThingLook {
     pub name: String,
     pub colour: [f32; 3],
+    pub to: Option<[f32; 3]>,
     pub roughness: f32,
     pub metallic: f32,
 }
@@ -57,11 +60,21 @@ pub struct ThingLook {
 impl ThingLook {
     /// Its colour as USD keeps it (linear).
     pub fn linear(&self) -> [f32; 3] {
-        self.colour.map(|c| match c <= 0.04045 {
-            true => c / 12.92,
-            false => ((c + 0.055) / 1.055).powf(2.4),
-        })
+        linear(self.colour)
     }
+
+    /// The colour it turns to, as USD keeps it; none for one colour.
+    pub fn linear_to(&self) -> Option<[f32; 3]> {
+        self.to.map(linear)
+    }
+}
+
+/// A seen colour (sRGB) as USD keeps it (linear).
+fn linear(colour: [f32; 3]) -> [f32; 3] {
+    colour.map(|c| match c <= 0.04045 {
+        true => c / 12.92,
+        false => ((c + 0.055) / 1.055).powf(2.4),
+    })
 }
 
 /// A part of a thing: its name, form, size (metres along x, y and z; a
@@ -121,7 +134,14 @@ impl ThingSet {
         }
         for row in table("look.tsv").row() {
             let finish = numbers(&row, "finish");
-            let look = ThingLook { name: row.get("look").to_string(), colour: hex(row.get("colour")), roughness: finish.first().copied().unwrap_or(0.5), metallic: finish.get(1).copied().unwrap_or(0.0) };
+            let colour = row.word_list("colour");
+            let look = ThingLook {
+                name: row.get("look").to_string(),
+                colour: hex(colour.first().copied().unwrap_or_default()),
+                to: colour.get(1).map(|c| hex(c)),
+                roughness: finish.first().copied().unwrap_or(0.5),
+                metallic: finish.get(1).copied().unwrap_or(0.0),
+            };
             set.look.insert(look.name.clone(), look);
         }
         for row in table("source.tsv").row() {

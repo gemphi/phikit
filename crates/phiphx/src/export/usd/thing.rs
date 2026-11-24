@@ -45,7 +45,7 @@ impl ThingTree {
 fn layers(w: &mut UsdaWriter, node: &[ThingNode], name: &mut UsdNameSet, scope: &str) {
     for n in node {
         match n {
-            ThingNode::Mesh { part, look } => {
+            ThingNode::Mesh { part, look, shade } => {
                 let prim = name.take(&part.name);
                 let by_point = by_point(part);
                 w.mesh(&UsdMesh {
@@ -56,6 +56,7 @@ fn layers(w: &mut UsdaWriter, node: &[ThingNode], name: &mut UsdNameSet, scope: 
                     normal: by_point.as_deref().unwrap_or(&part.normal),
                     normal_by_point: by_point.is_some(),
                     colour: part.colour,
+                    colours: shade,
                     look: Some(format!("{scope}/{}", UsdNameSet::clean(&look.name))),
                     ..Default::default()
                 });

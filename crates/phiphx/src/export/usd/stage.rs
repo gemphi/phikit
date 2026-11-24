@@ -23,6 +23,9 @@ pub struct UsdMesh<'a> {
     pub normal_by_point: bool,
     pub uv: &'a [[f32; 2]],
     pub colour: [f32; 3],
+    /// A colour for each point, where its colour turns across it (may
+    /// be empty: then `colour`, constant).
+    pub colours: &'a [[f32; 3]],
     pub look: Option<String>,
     /// `(subset name, material path, face indices)`.
     pub subset: Vec<(String, String, Vec<u32>)>,
@@ -52,8 +55,16 @@ impl UsdaWriter {
             self.line("    interpolation = \"vertex\"");
             self.line(")");
         }
-        self.line(&format!("color3f[] primvars:displayColor = [{}] (", three(mesh.colour)));
-        self.line("    interpolation = \"constant\"");
+        match mesh.colours.len() == mesh.point.len() && !mesh.colours.is_empty() {
+            true => {
+                self.line(&format!("color3f[] primvars:displayColor = [{}] (", list(mesh.colours.iter().map(|c| three(*c)))));
+                self.line("    interpolation = \"vertex\"");
+            }
+            false => {
+                self.line(&format!("color3f[] primvars:displayColor = [{}] (", three(mesh.colour)));
+                self.line("    interpolation = \"constant\"");
+            }
+        }
         self.line(")");
         self.line("uniform token subdivisionScheme = \"none\"");
         if let Some(look) = &mesh.look {
