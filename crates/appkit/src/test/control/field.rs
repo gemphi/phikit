@@ -153,7 +153,7 @@ fn in_a_theme_with_light_a_field_wears_the_surface_and_a_bare_one_draws_no_groun
         sheet.mark.into_iter().filter(|mark| matches!(mark, PMark::Blend { .. } | PMark::Fill { .. })).collect::<Vec<_>>()
     };
     let lit = PColor::new(1.0, 1.0, 1.0, 0.5);
-    assert_eq!(ground(&field), [PMark::Blend { rect: PRect::new(0.0, 0.0, 100.0, 30.0), radius: 6.0, from: lit, to: PColor { a: 0.0, ..lit }, turn: 0.0, stop: [0.0, 1.0] }]);
+    assert_eq!(ground(&field), [PMark::Blend { rect: PRect::new(0.0, 0.0, 100.0, 30.0), radius: 6.0, from: lit, to: PColor { a: 0.0, ..lit }, turn: 90.0, stop: [0.0, 1.0] }]);
     // One that stands in a box something else drew adds no light to it.
     field.bare = true;
     assert!(ground(&field).is_empty());

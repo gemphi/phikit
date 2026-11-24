@@ -29,6 +29,7 @@ size	light.from	0.3
 size	light.to	0.7
 size	surface.turn	90
 size	label.turn	90
+size	section.bare	0
 # No glass: the window is opaque and its panes stand on its ground. A
 # look that is glass says otherwise (data/look.tsv).
 size	window.glass	0

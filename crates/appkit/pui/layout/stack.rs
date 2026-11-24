@@ -28,6 +28,20 @@ pub fn bare(paint: &dyn PPaint) -> bool {
 pub const INK: &str = "text.ink";
 pub const LINE: &str = "text.line";
 pub const GAP: &str = "gap";
+/// The thin line down an open group's level.
+const RULE: &str = "line.ink";
+
+/// The thin line down an open level of an accordion, a tree or a stack
+/// (the user, 25 November 2026: a line down the middle of each level, on
+/// every accordion): one pixel wide, centred on `x`, from `from` to `to`.
+/// Every accordion draws its level with this, so they read as one.
+pub fn level(paint: &mut dyn PPaint, x: f32, from: f32, to: f32) {
+    if bare(paint) || to <= from {
+        return;
+    }
+    let rule = paint.theme().color(RULE).unwrap_or_default();
+    paint.fill(PRect::new(x - 0.5, from, 1.0, to - from), rule);
+}
 
 /// What a group draws under its heading, from a place across a width,
 /// lit from the right where told (against its ground): where it ends,
@@ -68,6 +82,11 @@ pub fn stack(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32, right: boo
         lit(paint, from, inner, from.y + high, right);
         let below = head(g);
         let place = PPoint::new(from.x, from.y + below);
+        // A group under a heading, open: a thin line down its level, in
+        // its margin, from under the heading to the end of what it holds.
+        if below > 0.0 && high > below + gap / 2.0 {
+            level(paint, from.x - side / 2.0, place.y, from.y + high);
+        }
         let drawn = match bare(paint) {
             true => (g.draw)(&mut PDry(&*paint), place, inner, !right).1,
             false => {

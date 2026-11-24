@@ -66,7 +66,7 @@ fn pills_that_belong_together_stand_on_one_ground_each_on_its_own_and_the_one_th
 }
 
 #[test]
-fn a_table_names_each_thing_at_the_left_and_ends_its_value_at_the_right_over_a_line() {
+fn a_table_names_each_thing_at_the_left_on_a_ground_and_ends_its_value_at_the_right() {
     let look = PLook::read(LOOK);
     let mut sheet = PSheet::new(&look);
     let row = [("Fabric".to_string(), "silk".to_string()), ("Care".to_string(), "Dry clean only, store flat in tissue".to_string())];
@@ -78,12 +78,14 @@ fn a_table_names_each_thing_at_the_left_and_ends_its_value_at_the_right_over_a_l
         _ => None,
     }).collect();
     let silk = sheet.measure("silk");
-    assert_eq!(text[0], (0.0, "Fabric".to_string()));
+    // A name half a gap into its ground.
+    assert_eq!(text[0], (8.0, "Fabric".to_string()));
     assert_eq!(text[1], (200.0 - silk, "silk".to_string()));
     // A value too long for its row is cut, and still ends at the right.
     assert!(text[3].1.ends_with("...") && text[3].1.len() < row[1].1.len());
     assert_eq!(text[3].0 + sheet.measure(&text[3].1), 200.0);
-    assert_eq!(sheet.mark.iter().filter(|mark| matches!(mark, PMark::Fill { rect, .. } if rect.size == PSize { width: 200.0, height: 1.0 })).count(), 2);
+    // No line between rows: the names read apart on their grounds.
+    assert_eq!(sheet.mark.iter().filter(|mark| matches!(mark, PMark::Fill { rect, .. } if rect.size == PSize { width: 200.0, height: 1.0 })).count(), 0);
     // A text that fits is as it is.
     assert_eq!("silk".fit(200.0, &sheet), "silk");
 }

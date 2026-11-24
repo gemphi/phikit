@@ -18,7 +18,7 @@ use std::rc::Rc;
 use super::{DIM, GAP, INK, ROW, person};
 use crate::pui::core::light::label;
 use crate::pui::core::{PDraw, PEvent, PLight, PPaint, PPoint, PRect, PView};
-use crate::pui::layout::{PDry, PScroll, fold};
+use crate::pui::layout::{PDry, PScroll, fold, level};
 use crate::pui::window::{PDeed, PWish};
 use crate::service::PTable;
 use crate::theme::PShade;
@@ -115,6 +115,10 @@ impl PProfile {
         }
         let end = fill(&mut PDry(&*paint), below + gap / 2.0, &mut Vec::new());
         axis::body(paint, PRect::new(at.x, below, wide, end - below + gap / 2.0));
+        // Under a heading, a line down the middle of its level's margin.
+        if !said.is_empty() {
+            level(paint, at.x + gap / 4.0, below + gap / 2.0, end);
+        }
         fill(paint, below + gap / 2.0, spot) + gap
     }
 }
@@ -144,6 +148,8 @@ impl PDraw for PProfile {
             let said = self.user.get("about").to_string();
             down = self.group("about", &said, PPoint::new(left, down), wide, paint, &mut spot, &mut |paint, mut top, _| {
                 for ((name, _), set) in row.iter().zip(&set) {
+                    // Its name on a ground lit from the left, so it reads apart from its value.
+                    label(paint, PRect::new(left + gap / 2.0, top - gap / 4.0, split, high(set)), round, PLight::Soft, false, FILL);
                     paint.text(PPoint::new(left + gap, top), name, dim);
                     for (index, text) in set.iter().enumerate() {
                         paint.text(PPoint::new(left + gap + split, top + index as f32 * line), text, ink);

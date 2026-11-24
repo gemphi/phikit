@@ -186,19 +186,24 @@ pub trait PFacts {
     /// Its rows: what each is, and its value.
     fn row(&self) -> Vec<(&str, &str)>;
 
-    /// Draw it from a place: a row each, what it is at the left, its
-    /// value ending at the right, a line under it. How far down it
+    /// Draw it from a place: a row each, what it is at the left on a
+    /// ground of its own lit from the left (one column as wide as the
+    /// widest name), its value ending at the right; no line between rows,
+    /// so names and values read apart by their grounds. How far down it
     /// ends.
     fn table(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32) -> f32 {
-        let (gap, line, rule) = (paint.size(GAP), paint.size(LINE), paint.size(WIDTH));
-        let (ink, dim, ruled) = (paint.color(INK), paint.color(DIM), paint.color(RULE));
+        let (gap, line, radius) = (paint.size(GAP), paint.size(LINE), paint.size(RADIUS));
+        let (ink, dim) = (paint.color(INK), paint.color(DIM));
+        let row = self.row();
+        let column = (row.iter().map(|(name, _)| paint.measure(name)).fold(0.0, f32::max) + gap * 1.5).min(wide / 2.0);
         let mut top = at.y;
-        for (name, value) in self.row() {
-            paint.text(PPoint::new(at.x, top + gap / 4.0), name, dim);
-            let value = value.fit((wide - paint.measure(name) - gap).max(0.0), paint);
+        for (name, value) in row {
+            let high = line + gap / 2.0;
+            super::core::light::label(paint, PRect::new(at.x, top, column, high - gap / 8.0), radius, super::core::PLight::Soft, false, "");
+            paint.text(PPoint::new(at.x + gap / 2.0, top + gap / 4.0), &name.fit(column - gap, paint), dim);
+            let value = value.fit((wide - column - gap / 2.0).max(0.0), paint);
             paint.text(PPoint::new(at.x + wide - paint.measure(&value), top + gap / 4.0), &value, ink);
-            top += line + gap / 2.0;
-            paint.fill(PRect::new(at.x, top - rule, wide, rule), ruled);
+            top += high;
         }
         top
     }

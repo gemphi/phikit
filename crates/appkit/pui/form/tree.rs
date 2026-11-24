@@ -3,8 +3,8 @@
 //! * `tree`: each choice a line, its icon and its words, set in by its
 //!   depth, the chosen one lit: a navigator, as Reality Composer Pro's
 //!   Project Browser and Blender's file browser have one.
-//! * `facts`: each choice a row, its words at the left and its note at
-//!   the right, a line under it: an item's attributes.
+//! * `facts`: each choice a row, its words at the left on a ground of
+//!   their own and its note at the right: an item's attributes.
 //! * `picture`: the first choice's picture across the whole width,
 //!   standing at the top: an item seen in the inspector.
 
@@ -12,13 +12,12 @@ use super::PChoice;
 use crate::pui::block::PFacts;
 use crate::pui::core::light::label;
 use crate::pui::core::{PFit, PLight, PPaint, PPoint, PRect};
+use crate::pui::layout::level;
 
 const GAP: &str = "gap";
 const LINE: &str = "text.line";
 const INK: &str = "text.ink";
 const DIM: &str = "text.dim";
-/// The thin lines down a tree's gaps.
-const RULE: &str = "line.ink";
 const ICON: &str = "icon.size";
 const RADIUS: &str = "row.radius";
 
@@ -31,7 +30,7 @@ const RADIUS: &str = "row.radius";
 /// the pointer softly.
 pub fn tree(choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, wide: f32, over: Option<PPoint>) -> (f32, Vec<PRect>) {
     let (gap, line, ink, icon, radius) = (paint.size(GAP), paint.size(LINE), paint.color(INK), paint.size(ICON), paint.size(RADIUS));
-    let (dim, rule) = (paint.color(DIM), paint.color(RULE));
+    let dim = paint.color(DIM);
     let high = line + gap / 2.0;
     let step = icon;
     let arrow = |depth: u32| at.x + gap / 4.0 + depth as f32 * step;
@@ -41,9 +40,7 @@ pub fn tree(choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at: PPoint, w
         // It runs to the foot of the tree, past everything under it.
         let under = choice.get(index + 1).is_some_and(|one| one.depth > c.depth);
         if under {
-            let x = arrow(c.depth) + step / 2.0;
-            let (from, to) = (row(index).center().y + step / 2.0, at.y + choice.len() as f32 * high);
-            paint.fill(PRect::new(x - 0.5, from, 1.0, (to - from).max(0.0)), rule);
+            level(paint, arrow(c.depth) + step / 2.0, row(index).center().y + step / 2.0, at.y + choice.len() as f32 * high);
         }
     }
     let mut rect = Vec::new();

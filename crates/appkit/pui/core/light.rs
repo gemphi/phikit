@@ -28,9 +28,23 @@ pub const SOFT: &str = "shade.soft";
 /// How many times the share what is chosen or on is lit (1 where a
 /// theme does not say).
 pub const STRONG: &str = "shade.strong";
-/// Where the light fades to, in degrees: 0 is up, 90 to the right.
+/// Where the light fades to, in degrees: 0 is up, 90 to the right, 180
+/// down, 270 to the left. A content ground (a card, a row, a label) runs
+/// side to side only, whatever the look says (`side`); the window's own
+/// panes, set apart from the content, take the surface's turn as it is.
 pub const SURFACE: &str = "surface.turn";
 pub const LABEL: &str = "label.turn";
+
+/// Which way a content ground's light runs: to the left where the turn
+/// is nearer the left, to the right otherwise; never up or down (the
+/// user, 25 November 2026: grounds from the foot up belong to set-apart
+/// places only, the content runs left to right and back).
+pub fn side(turn: f32) -> f32 {
+    match (turn.rem_euclid(360.0) - 270.0).abs() < 45.0 {
+        true => 270.0,
+        false => 90.0,
+    }
+}
 /// What a pane that is not glass stands on, and the ink on anything lit.
 pub const GROUND: &str = "window.fill";
 pub const INK: &str = "text.ink";
@@ -69,13 +83,16 @@ fn flat(paint: &mut dyn PPaint, rect: PRect, radius: f32, token: &str) {
     }
 }
 
-/// The surface: light at the foot, nothing at the head.
+/// The surface: light at one side, nothing at the other, side to side.
 pub fn surface(paint: &mut dyn PPaint, rect: PRect, radius: f32, light: PLight, token: &str) {
+    let turn = side(paint.size(SURFACE));
+    lay(paint, rect, radius, light, token, turn);
+}
+
+/// A ground lit along a turn: the light at its start, nothing at its end.
+fn lay(paint: &mut dyn PPaint, rect: PRect, radius: f32, light: PLight, token: &str, turn: f32) {
     match light.shade(paint.theme()) {
-        Some(shade) => {
-            let turn = paint.size(SURFACE);
-            paint.blend(rect, radius, shade, PColor { a: 0.0, ..shade }, turn);
-        }
+        Some(shade) => paint.blend(rect, radius, shade, PColor { a: 0.0, ..shade }, turn),
         None => flat(paint, rect, radius, token),
     }
 }
@@ -86,18 +103,16 @@ pub fn surface(paint: &mut dyn PPaint, rect: PRect, radius: f32, light: PLight, 
 pub const REACH: &str = "shade.reach";
 
 /// The label: light from the left, gone at the right, or sooner where
-/// the theme says how far it reaches. With `end` it runs the other way.
+/// the theme says how far it reaches. With `end` it runs the other way;
+/// where the look turns the light to the left, every label is mirrored.
 pub fn label(paint: &mut dyn PPaint, rect: PRect, radius: f32, light: PLight, end: bool, token: &str) {
     let reach = paint.theme().size(REACH).unwrap_or(1.0).clamp(0.0, 1.0);
     let wide = rect.size.width * reach;
-    match (light.shade(paint.theme()), end) {
-        (Some(shade), false) => {
-            let turn = paint.theme().size(LABEL).unwrap_or(90.0);
-            paint.blend(PRect::new(rect.origin.x, rect.origin.y, wide, rect.size.height), radius, shade, PColor { a: 0.0, ..shade }, turn);
-        }
+    let back = side(paint.theme().size(LABEL).unwrap_or(90.0)) == 270.0;
+    match (light.shade(paint.theme()), end != back) {
+        (Some(shade), false) => paint.blend(PRect::new(rect.origin.x, rect.origin.y, wide, rect.size.height), radius, shade, PColor { a: 0.0, ..shade }, 90.0),
         (Some(shade), true) => {
-            let turn = paint.theme().size(LABEL).unwrap_or(90.0);
-            paint.blend(PRect::new(rect.origin.x + rect.size.width - wide, rect.origin.y, wide, rect.size.height), radius, PColor { a: 0.0, ..shade }, shade, turn);
+            paint.blend(PRect::new(rect.origin.x + rect.size.width - wide, rect.origin.y, wide, rect.size.height), radius, PColor { a: 0.0, ..shade }, shade, 90.0)
         }
         (None, _) => flat(paint, rect, radius, token),
     }
@@ -111,7 +126,9 @@ pub fn pane(paint: &mut dyn PPaint, rect: PRect, radius: f32, token: &str) {
     match PLight::Rest.shade(paint.theme()) {
         Some(_) => {
             under(paint, rect, radius);
-            surface(paint, rect, radius, PLight::Rest, token);
+            // A pane is set apart from the content: its light may run up or down.
+            let turn = paint.size(SURFACE);
+            lay(paint, rect, radius, PLight::Rest, token, turn);
         }
         None => flat(paint, rect, radius, token),
     }

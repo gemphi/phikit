@@ -6,9 +6,13 @@
 #
 # group	kind	tokens	value	word
 #
-# Which way the light of a ground runs: from the left to the right, or
-# from the foot up (degrees: 90 is to the right, 0 is up).
+# Which way the light of a ground runs (degrees: 0 is up, 90 to the
+# right, 180 down, 270 to the left). The content's grounds run side to
+# side only, so up and down turn the window's own panes and leave the
+# content left to right (appkit's core/light.rs, `side`).
 turn	size	surface.turn label.turn	90	prefer.across
+turn	size	surface.turn label.turn	270	prefer.back
+turn	size	surface.turn label.turn	180	prefer.down
 turn	size	surface.turn label.turn	0	prefer.up
 # How strong a ground's light is at rest, as a share of the strongest.
 share	size	shade.rest	0.72	prefer.even

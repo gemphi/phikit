@@ -87,7 +87,7 @@ fn where_phiora_answers_the_account_says_who_it_says_i_am() {
 }
 
 #[test]
-fn step_59_the_profile_sets_which_way_the_light_runs_how_strong_how_far_and_its_colour() {
+fn step_59_the_profile_sets_which_of_four_ways_the_light_runs_how_strong_how_far_and_its_colour() {
     let (app, mut stage, look) = staged(DESK);
     let desk = app.desk();
     let user = appkit::service::PTable::read(crate::data::USER);
@@ -96,6 +96,23 @@ fn step_59_the_profile_sets_which_way_the_light_runs_how_strong_how_far_and_its_
     stage.lay(DESK, PMode::of_width(DESK.width));
     // Across at first; from the foot up once chosen, and kept.
     assert_eq!(desk.shade.size("surface.turn"), Some(90.0));
+    // Any of four ways: from the right, from the top, from the foot.
+    assert!(press(&mut stage, &look, &word("prefer.back")));
+    assert_eq!(desk.shade.size("surface.turn"), Some(270.0));
+    assert!(press(&mut stage, &look, &word("prefer.down")));
+    assert_eq!(desk.shade.size("label.turn"), Some(180.0));
+    // The last of them, scrolled into sight where the panel is short.
+    let body = stage.panel().expect("the profile").body;
+    let up = |stage: &PStage| drawn(stage, &look).iter().rev().find_map(|mark| match mark {
+        PMark::Text { at, text, .. } if *text == word("prefer.up") => Some(at.y),
+        _ => None,
+    });
+    for _ in 0..20 {
+        if up(&stage).is_some_and(|y| y + 40.0 < body.origin.y + body.size.height) {
+            break;
+        }
+        stage.send(&PEvent::Scroll(body.center(), PPoint::new(0.0, -60.0)));
+    }
     assert!(press(&mut stage, &look, &word("prefer.up")));
     assert_eq!((desk.shade.size("surface.turn"), desk.shade.size("label.turn")), (Some(0.0), Some(0.0)));
     stage.send(&PEvent::KeyUp(' '));

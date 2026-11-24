@@ -26,7 +26,7 @@ fn a_shade_is_the_theme_s_light_at_one_of_three_strengths() {
 }
 
 #[test]
-fn a_surface_is_lit_from_its_foot_and_a_label_from_its_left_or_its_right() {
+fn a_surface_is_lit_from_its_side_and_a_label_from_its_left_or_its_right() {
     let look = PLook::read(LIT);
     let mut sheet = PSheet::new(&look);
     surface(&mut sheet, RECT, 8.0, PLight::Strong, "card.fill");
@@ -35,7 +35,29 @@ fn a_surface_is_lit_from_its_foot_and_a_label_from_its_left_or_its_right() {
     // The light fades to itself with nothing of it left, so no other
     // colour shows on the way.
     let blend = |from: f32, to: f32, turn: f32| PMark::Blend { rect: RECT, radius: 8.0, from: white(from), to: white(to), turn, stop: [0.0, 1.0] };
-    assert_eq!(sheet.mark, [blend(0.5, 0.0, 0.0), blend(0.5, 0.0, 90.0), blend(0.0, 0.5, 90.0)]);
+    assert_eq!(sheet.mark, [blend(0.5, 0.0, 90.0), blend(0.5, 0.0, 90.0), blend(0.0, 0.5, 90.0)]);
+}
+
+#[test]
+fn content_runs_side_to_side_whatever_the_turn_and_only_a_pane_runs_up_or_down() {
+    let turned = |turn: f32| PLook::read(&format!("{LIT}size\tsurface.turn\t{turn}\nsize\tlabel.turn\t{turn}\n"));
+    let turn = |sheet: &PSheet| sheet.mark.iter().filter_map(|mark| match mark {
+        PMark::Blend { from, to, turn, .. } => Some((*turn, from.a > to.a)),
+        _ => None,
+    }).collect::<Vec<_>>();
+    for (look, side, pane_turn, mirrored) in [(turned(0.0), 90.0, 0.0, false), (turned(180.0), 90.0, 180.0, false), (turned(270.0), 270.0, 270.0, true), (turned(90.0), 90.0, 90.0, false)] {
+        let mut sheet = PSheet::new(&look);
+        surface(&mut sheet, RECT, 8.0, PLight::Strong, "");
+        label(&mut sheet, RECT, 8.0, PLight::Strong, false, "");
+        pane(&mut sheet, RECT, 8.0, "");
+        // The surface side to side; the label lit from its left, or from
+        // its right where the look turns the light to the left; the pane
+        // as the look turns it.
+        let got = turn(&sheet);
+        assert_eq!(got[0], (side, true));
+        assert_eq!(got[1], (90.0, !mirrored));
+        assert_eq!(got.last().copied(), Some((pane_turn, true)));
+    }
 }
 
 #[test]

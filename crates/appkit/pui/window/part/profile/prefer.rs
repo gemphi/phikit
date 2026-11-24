@@ -77,6 +77,9 @@ impl PProfile {
                     for (index, one) in &row {
                         let said = word(&one[4], &one[3]);
                         let long = paint.measure(&said) + gap * 2.0;
+                        if x + long > left + wide && x > left {
+                            (x, down) = (left, down + line + gap * 1.5);
+                        }
                         let rect = PRect::new(x, down, long, line + gap);
                         let (light, token) = match now(shade, one) {
                             true => (PLight::Strong, LIT),
