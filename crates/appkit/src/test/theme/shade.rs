@@ -47,13 +47,20 @@ fn what_is_worn_takes_the_place_of_the_look_s_own_whichever_look_is_shown() {
 }
 
 #[test]
-fn a_look_s_tinted_colours_are_mixed_with_the_light_s_and_follow_the_light_a_person_chooses() {
-    // A black fill, a quarter of it the light's colour; the ink is not tinted.
-    let look = PLook::read("color\twindow.fill\t#000000\ncolor\tink\t#000000\ncolor\tshade.light\t#ffffff\nword\ttint.token\twindow.fill\nsize\ttint.share\t0.25\n");
+fn a_look_s_tinted_colours_take_the_light_s_hue_keep_their_lightness_and_follow_the_light_a_person_chooses() {
+    use crate::theme::lightness;
+    // A dark grey fill, a quarter of it the light's colour; the ink is not tinted.
+    let look = PLook::read("color\twindow.fill\t#404040\ncolor\tink\t#000000\ncolor\tshade.light\t#ffffff\nword\ttint.token\twindow.fill\nsize\ttint.share\t0.25\n");
     let shade = PShade::new(vec![("dark".to_string(), look)]);
-    assert_eq!(shade.color("window.fill"), Some(PColor::new(0.25, 0.25, 0.25, 1.0)));
+    let grey = 64.0 / 255.0;
+    let near = |one: f32, other: f32| (one - other).abs() < 0.001;
+    // A white light gives no hue, and no lightness either: the grey stays.
+    let fill = shade.color("window.fill").expect("a fill");
+    assert!(near(fill.r, grey) && near(fill.g, grey) && near(fill.b, grey), "{fill:?}");
     assert_eq!(shade.color("ink"), Some(PColor::new(0.0, 0.0, 0.0, 1.0)));
-    // The light the person prefers colours the fill: a dark of that colour, not a bare black.
+    // The light the person prefers colours the fill: a dark of that colour,
+    // as light as the grey was, never lighter (the user, 25 November 2026).
     shade.prefer("color shade.light #ff0000");
-    assert_eq!(shade.color("window.fill"), Some(PColor::new(0.25, 0.0, 0.0, 1.0)));
+    let fill = shade.color("window.fill").expect("a fill");
+    assert!(fill.r > fill.g && near(fill.g, fill.b) && near(lightness(fill), lightness(PColor::new(grey, grey, grey, 1.0))), "{fill:?}");
 }

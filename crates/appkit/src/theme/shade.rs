@@ -101,6 +101,24 @@ impl PShade {
 /// The tokens of a look that say which colours are mixed with the
 /// light's own colour, and how much of it; and the light's colour.
 pub const TINT_TOKEN: &str = "tint.token";
+
+/// How light a colour looks (its luminance, from 0 to 1).
+pub fn lightness(color: PColor) -> f32 {
+    0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b
+}
+
+/// A colour of the same hue made as light as `level`: the hue a tint
+/// gave, at the lightness the colour had.
+fn lit_as(color: PColor, level: f32) -> PColor {
+    let now = lightness(color);
+    match now > 0.0 {
+        true => {
+            let k = level / now;
+            PColor { r: (color.r * k).clamp(0.0, 1.0), g: (color.g * k).clamp(0.0, 1.0), b: (color.b * k).clamp(0.0, 1.0), a: color.a }
+        }
+        false => color,
+    }
+}
 pub const TINT_SHARE: &str = "tint.share";
 const LIGHT: &str = "shade.light";
 
@@ -109,13 +127,19 @@ impl PTheme for PShade {
     /// look names it among its tinted ones (`tint.token`), mixed with
     /// the light's own colour by the look's share (`tint.share`): so a
     /// dark look is a dark of the theme's colour, never a bare black,
-    /// whatever colour the person gave the light.
+    /// whatever colour the person gave the light. The tint takes its hue
+    /// and keeps the colour's own lightness (the user, 25 November 2026:
+    /// a dark ground never lighter than what stands on it), so a bright
+    /// light never lifts a dark ground.
     fn color(&self, token: &str) -> Option<PColor> {
         let own = self.plain(token)?;
         let share = self.size(TINT_SHARE).unwrap_or_default().clamp(0.0, 1.0);
         let tinted = share > 0.0 && self.word(TINT_TOKEN).is_some_and(|word| word.split_whitespace().any(|one| one == token));
         match (tinted, self.plain(LIGHT)) {
-            (true, Some(light)) => Some(PColor { r: own.r + (light.r - own.r) * share, g: own.g + (light.g - own.g) * share, b: own.b + (light.b - own.b) * share, a: own.a }),
+            (true, Some(light)) => {
+                let mixed = PColor { r: own.r + (light.r - own.r) * share, g: own.g + (light.g - own.g) * share, b: own.b + (light.b - own.b) * share, a: own.a };
+                Some(lit_as(mixed, lightness(own)))
+            }
             _ => Some(own),
         }
     }

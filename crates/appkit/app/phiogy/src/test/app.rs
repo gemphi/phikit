@@ -143,3 +143,25 @@ fn every_icon_a_table_names_has_a_drawing_on_disk() {
     let missing: Vec<String> = icon.filter(|name| !name.is_empty()).filter(|name| ![own, shared].iter().any(|folder| std::path::Path::new(&format!("{folder}/{name}.svg")).is_file())).collect();
     assert!(missing.is_empty(), "no drawing for: {missing:?}");
 }
+
+#[test]
+fn in_every_dark_look_the_ground_is_whole_and_no_lighter_than_its_own_colour_whatever_the_light() {
+    use appkit::theme::{PTheme, lightness};
+    let look = crate::app::Phiogy::look("");
+    let shade = crate::app::Phiogy::shade(&look);
+    // The brightest light a person may give: a hard green.
+    shade.put("color", "shade.light", "#57ffb7");
+    for name in shade.list().iter().map(|name| name.to_string()).collect::<Vec<_>>() {
+        assert!(shade.turn(&name));
+        let ground = shade.color("window.fill").expect("a ground");
+        let ink = shade.color("text.ink").expect("an ink");
+        // A dark look: light ink on its ground.
+        if lightness(ink) > 0.5 {
+            assert_eq!(ground.a, 1.0, "{name}: its ground is see-through");
+            let own = crate::app::Phiogy::shade(&look);
+            own.turn(&name);
+            let bare = own.color("window.fill").expect("a ground");
+            assert!(lightness(ground) <= lightness(bare) + 0.005, "{name}: the light makes its ground lighter ({} > {})", lightness(ground), lightness(bare));
+        }
+    }
+}

@@ -17,8 +17,11 @@
 # three and a half times the share (`shade.strong`): it reads as chosen.
 # Glass with nothing open keeps its own grey ground; only a modal's veil
 # darkens the window (the user, 25 November 2026: "darkness not needed
-# here", after it was made as dark as the veil).
-glass	color	window.fill	#1e1e1ce6
+# here", after it was made as dark as the veil). A dark look's ground is
+# whole, never see-through: what shows through it (a light desktop) would
+# make the ground lighter than what stands on it (the user, the same day).
+# Its panes are still glass, blurring the window inside it.
+glass	color	window.fill	#1e1e1c
 glass	color	modal.tint	#1e1e1cd9
 glass	color	line.ink	#ffffff24
 glass	color	text.ink	#f4f4f0
@@ -116,7 +119,7 @@ liquid	size	profile.radius	22
 liquid	size	control.radius	22
 liquid	size	present.radius	22
 liquid	size	figure.radius	14
-liquid-dark	color	window.fill	#1c1c1aa0
+liquid-dark	color	window.fill	#1c1c1a
 liquid-dark	color	line.ink	#ffffff1f
 liquid-dark	color	text.ink	#f6f6f2
 liquid-dark	color	text.dim	#b8b8b2

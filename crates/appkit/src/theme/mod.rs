@@ -9,7 +9,7 @@ mod look;
 mod shade;
 
 pub use look::PLook;
-pub use shade::PShade;
+pub use shade::{PShade, lightness};
 
 use crate::pui::core::PColor;
 

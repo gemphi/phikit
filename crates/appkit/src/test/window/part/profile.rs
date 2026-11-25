@@ -44,10 +44,10 @@ fn a_row_too_long_for_the_profile_is_set_in_several_lines_and_the_next_begins_un
     show(&profile, &mut sheet, PPoint::default());
     // The rows are one block, a gap in from the profile's sides, which
     // begins two gaps and the mark down. A name is a gap into the block;
-    // what it stands for begins four tenths of the block's width after
-    // that, and has what is left less a gap: 148, eighteen letters of 8.
+    // what it stands for begins half the block's width after that, and
+    // has what is left less two gaps: 120, fifteen letters of 8.
     assert_eq!(at(&sheet, "Chats"), Some(PPoint::new(20.0, 85.0)));
-    assert_eq!(["kept on this", "computer until the", "page closes"].map(|line| at(&sheet, line)), [85.0, 105.0, 125.0].map(|down| Some(PPoint::new(132.0, down))));
+    assert_eq!(["kept on this", "computer until", "the page closes"].map(|line| at(&sheet, line)), [85.0, 105.0, 125.0].map(|down| Some(PPoint::new(160.0, down))));
     // Three lines and half a line under the row's top.
     assert_eq!(at(&sheet, "Plan"), Some(PPoint::new(20.0, 155.0)));
 }
@@ -118,7 +118,7 @@ fn in_a_theme_with_light_its_rows_are_one_surface_and_the_look_shown_is_lit_the_
     // gaps, its row's value on a ground of its own; the group of looks, as wide; then the pills on it, lit
     // against it, the look shown the most and the other the least. The
     // mark is Phi-Soft's shape in the light's colour, no light of its own.
-    assert_eq!(lit, [(280.0, 0.5, 90.0), (158.0, 0.25, 90.0), (280.0, 0.5, 90.0), (60.0, 0.5, 90.0), (52.0, 0.25, 90.0)]);
+    assert_eq!(lit, [(280.0, 0.5, 90.0), (130.0, 0.25, 90.0), (280.0, 0.5, 90.0), (60.0, 0.5, 90.0), (52.0, 0.25, 90.0)]);
 }
 
 #[test]
