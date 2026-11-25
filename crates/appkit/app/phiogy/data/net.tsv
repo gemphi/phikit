@@ -1,0 +1,36 @@
+# How the window reaches a place over the network (src/net.rs): its
+# server (phiegg.com), Phiora on it, the line calls are on, a line on
+# this machine. A place is written as an address: `localhost:4310`,
+# `https://phiegg.com/wrt`.
+#
+# The scheme of a place reached over TLS and of one reached plainly,
+# and the port each has where the place names none.
+secure	https://
+secure.port	443
+plain	http://
+plain.port	80
+# The names of this machine: a place here is waited for as long as its
+# table says; one anywhere else at least `far` milliseconds, since it
+# is over the internet.
+near	localhost 127.0.0.1 ::1
+far	6000
+# How long a file read whole is waited for (net.rs `fetch`), where its
+# place is here; one over the internet, as long as `far`.
+wait	1500
+# The head of an answer: how long what follows is; that it comes in
+# pieces, and the word for that; its status when it is what was asked.
+length	content-length
+pieces	transfer-encoding
+piece	chunked
+fine	200
+# A file read whole from a place (a picture, a file the app's document
+# names): a line of the ask's head each. {path} is what is asked for,
+# {speak} the protocol, {host} the place's name, {agent} what the
+# window calls itself.
+speak	HTTP/1.1
+agent	Phiogy
+get	GET {path} {speak}
+get	Host: {host}
+get	User-Agent: {agent}
+get	Accept: */*
+get	Connection: close

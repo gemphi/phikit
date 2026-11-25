@@ -24,6 +24,10 @@ pub const SITE: &str = include_str!("../data/site.tsv");
 pub const ICON: &str = include_str!("../data/icon.tsv");
 /// Phiora, which is asked for the app's document before its file is.
 pub const PHIORA: &str = include_str!("../data/phiora.tsv");
+/// How a place over the network is reached: the app's server, a line.
+pub const NET: &str = include_str!("../data/net.tsv");
+/// What a picture of Phiegg's is called on the app's server.
+pub const MEDIA: &str = include_str!("../data/media.tsv");
 /// The wallet a person starts with, and the names in its documents.
 pub const WALLET: &str = include_str!("../data/wallet.tsv");
 /// What a theme that is worn changes of the window.

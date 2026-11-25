@@ -133,6 +133,30 @@ pub struct Site {
     pub asked: Option<(String, bool)>,
 }
 
+/// A file read whole: from this disk, or from the app's server where it
+/// is written as an address there.
+fn whole(from: &str) -> Option<String> {
+    match crate::net::far(from) {
+        true => crate::net::fetch(from).and_then(|bytes| String::from_utf8(bytes).ok()),
+        false => std::fs::read_to_string(from).ok(),
+    }
+}
+
+/// A file named from the folder over the one a file is in, wherever
+/// that file is: `data/room.json` beside `data/phiogy.json`.
+fn beside(from: &str, name: &str) -> Option<String> {
+    match crate::net::far(from) {
+        true => {
+            let root = from.rsplitn(3, '/').nth(2)?;
+            whole(&format!("{root}/{}", name.trim_start_matches('/')))
+        }
+        false => {
+            let root = Path::new(from).parent().and_then(Path::parent)?;
+            std::fs::read_to_string(root.join(name)).ok()
+        }
+    }
+}
+
 impl Site {
     /// The site of the app's own file at a path on disk, with the files
     /// it names beside it. One that cannot be read is a site with
@@ -150,9 +174,8 @@ impl Site {
         let given = phiora.and_then(|phiora| phiora.app(app)).filter(|doc| Site::whole(doc, &key));
         let asked = phiora.map(|phiora| (phiora.at.clone(), given.is_some()));
         // The files it names are given from the folder over its own.
-        let root = Path::new(path).parent().and_then(Path::parent).map(Path::to_path_buf).unwrap_or_default();
-        let load = |name: &str| std::fs::read_to_string(root.join(name)).ok();
-        let doc = given.unwrap_or_else(|| std::fs::read_to_string(path).unwrap_or_default());
+        let load = |name: &str| beside(path, name);
+        let doc = given.unwrap_or_else(|| whole(path).unwrap_or_default());
         Site { from: path.to_string(), asked, ..Site::read(&doc, &load, &key) }
     }
 
@@ -176,8 +199,7 @@ impl Site {
 
     /// A file the app's document names, read from beside its own file.
     pub fn load(&self, name: &str) -> Option<String> {
-        let root = Path::new(&self.from).parent().and_then(Path::parent)?;
-        std::fs::read_to_string(root.join(name)).ok()
+        beside(&self.from, name)
     }
 
     /// Who somebody is linked to, by their ids: read from the file of

@@ -217,9 +217,13 @@ impl Aside {
             // why this window is not in the call, and what carries it.
             "aside.line" => {
                 let (call, watch) = desk.on(&plate.id);
-                let how = match desk.line.as_ref() {
-                    Ok(at) => text.fill("present.how", "at", &format!("http://{at}")).replace("{key}", &desk.key(&plate.id)),
-                    Err(_) => text.get("present.shut").to_string(),
+                // A line a window serves is reached at its rooms' own path;
+                // the app's server's, by its pages, the web Phiogy.
+                let place = desk.line.as_ref().as_ref().ok().map(|at| crate::net::Place::read(at));
+                let how = match place {
+                    Some(place) if place.base.is_empty() => text.fill("present.how", "at", &place.address()).replace("{key}", &desk.key(&plate.id)),
+                    Some(_) => text.fill("present.web", "at", &crate::Phiogy::server("server.web")),
+                    None => text.get("present.shut").to_string(),
                 };
                 let nobody = Some([text.get("present.none").to_string(), how]).filter(|_| call.is_empty() && watch.is_empty()).into_iter().flatten();
                 let carried = desk.calling().map(|seen| text.fill("call.carry", "engine", &seen.engine));

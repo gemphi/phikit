@@ -63,9 +63,11 @@ fn phiora_is_asked_as_a_page_asks_it_and_read_whole_or_in_pieces() {
 #[test]
 fn where_phiora_is_comes_from_the_command_line_first() {
     let at = |given: &str| Phiora::own(Some(given.to_string())).map(|phiora| phiora.at);
-    // The place alone, or written as the web writes it.
+    // The place alone, or written as the web writes it; and the app's
+    // server's, over TLS under its path. It is kept as it was given.
     assert_eq!(at("localhost:4320").as_deref(), Some("localhost:4320"));
-    assert_eq!(at("http://localhost:4320/").as_deref(), Some("localhost:4320"));
+    assert_eq!(at("http://localhost:4320/").as_deref(), Some("http://localhost:4320"));
+    assert_eq!(at("https://phiegg.com/api/").as_deref(), Some("https://phiegg.com/api"));
     // The word for none has nobody asked.
     assert_eq!(at(PTable::read(data::PHIORA).get("none")), None);
 }

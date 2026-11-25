@@ -6,11 +6,13 @@
 //! its candidates.
 //!
 //! It speaks to the line as a page does, over HTTP, so the line may be
-//! this window's own or one somewhere else. What it asks is the lines
-//! of `data/dial.tsv`, and the words are `data/wire.tsv`'s.
+//! this window's own or one somewhere else: on the app's server it is
+//! reached over TLS, at its place's path (`https://phiegg.com/wrt`,
+//! net.rs). What it asks is the lines of `data/dial.tsv`, and the words
+//! are `data/wire.tsv`'s.
 
 use std::io::{BufRead, BufReader, Error, Read, Write};
-use std::net::{Shutdown, TcpStream, ToSocketAddrs};
+use std::net::{Shutdown, TcpStream};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::time::Duration;
 
@@ -19,6 +21,7 @@ use serde_json::{Map, Value, json};
 
 use crate::comp::Wire;
 use crate::data;
+use crate::net::{self, Place, head, reach};
 
 /// The kinds of ask `data/dial.tsv` has.
 pub const STREAM: &str = "stream";
@@ -70,50 +73,30 @@ pub struct Line {
     pub peer: String,
     heard: Receiver<Heard>,
     post: Sender<Value>,
-    wire: TcpStream,
+    /// The socket under the line's stream: closed, the stream ends.
+    socket: TcpStream,
     word: Wire,
-}
-
-/// Connect to a line, waiting no longer than `wait` for each answer.
-pub(crate) fn reach(at: &str, wait: Duration) -> std::io::Result<TcpStream> {
-    let mut last = Error::other(at.to_string());
-    for address in at.to_socket_addrs()? {
-        match TcpStream::connect_timeout(&address, wait) {
-            Ok(wire) => {
-                wire.set_read_timeout(Some(wait))?;
-                wire.set_nodelay(true)?;
-                return Ok(wire);
-            }
-            Err(error) => last = error,
-        }
-    }
-    Err(last)
-}
-
-/// Read the head of an answer: its status, and its lines.
-pub(crate) fn head(reader: &mut impl BufRead) -> std::io::Result<(String, Vec<String>)> {
-    let mut line = Vec::new();
-    loop {
-        let mut text = String::new();
-        if reader.read_line(&mut text)? == 0 || text.trim().is_empty() {
-            break;
-        }
-        line.push(text.trim().to_string());
-    }
-    let status = line.first().and_then(|first| first.split_whitespace().nth(1)).unwrap_or_default().to_string();
-    Ok((status, line))
 }
 
 impl Line {
     /// Open a room's line at a place, as a caller of that name. `Err`
-    /// when the line is not there or refuses.
+    /// when the line is not there or refuses. A line on this machine is
+    /// asked at its rooms' own path (`/call/...`); one at a place with a
+    /// path of its own, under that path (`/wrt/...`).
     pub fn open(at: &str, key: &str, peer: &str, wait: Duration) -> std::io::Result<Line> {
         let line = PTable::read(data::LINE);
+        let place = Place::read(at);
+        let wait = place.patience(wait);
+        let base = match place.base.is_empty() {
+            true => format!("/{}", line.get("path")),
+            false => place.base.clone(),
+        };
         let asked = data::row(data::DIAL).into_iter().filter_map(|cell| Some((cell.first()?.to_string(), cell.get(1)?.to_string())));
-        let dial = Dial { head: asked.collect(), wire: Wire::own(), speak: line.get("speak").to_string(), path: format!("/{}/{key}", line.get("path")), host: at.to_string() };
-        let wire = reach(at, wait)?;
-        (&wire).write_all(dial.head(STREAM, &[("name", &dial.wire.peer), ("peer", peer), ("cookie", "")]).as_bytes())?;
-        let mut reader = BufReader::new(wire.try_clone()?);
+        let dial = Dial { head: asked.collect(), wire: Wire::own(), speak: line.get("speak").to_string(), path: format!("{base}/{key}"), host: place.authority() };
+        let mut wire = reach(&place, wait)?;
+        wire.write_all(dial.head(STREAM, &[("name", &dial.wire.peer), ("peer", peer), ("cookie", "")]).as_bytes())?;
+        let socket = wire.socket()?;
+        let mut reader = BufReader::new(wire);
         let (status, said) = head(&mut reader)?;
         if status != FINE {
             return Err(Error::other(status));
@@ -124,14 +107,13 @@ impl Line {
         // A line may say nothing for as long as nobody comes or goes: it
         // is read without a limit, on the very wire the reader holds.
         reader.get_ref().set_read_timeout(None)?;
-        wire.set_read_timeout(None)?;
         let (tell, heard) = channel();
         let (post, asked) = channel::<Value>();
         let (events, words) = (tell.clone(), dial.wire.clone());
         std::thread::Builder::new().spawn(move || listen(reader, &words, &events))?;
-        let (asking, place) = (dial.clone(), at.to_string());
+        let asking = dial.clone();
         std::thread::Builder::new().spawn(move || asked.iter().for_each(|body| send(&asking, &place, &cookie, &body, wait, &tell)))?;
-        Ok(Line { peer: peer.to_string(), heard, post, wire, word: dial.wire })
+        Ok(Line { peer: peer.to_string(), heard, post, socket, word: dial.wire })
     }
 
     /// What was heard since this was last asked, in order.
@@ -159,12 +141,12 @@ impl Line {
 impl Drop for Line {
     /// Letting the line go closes it: the line takes that as leaving.
     fn drop(&mut self) {
-        _ = self.wire.shutdown(Shutdown::Both);
+        _ = self.socket.shutdown(Shutdown::Both);
     }
 }
 
 /// Read the stream's events until it ends, and say each.
-fn listen(reader: BufReader<TcpStream>, word: &Wire, tell: &Sender<Heard>) {
+fn listen(reader: BufReader<net::Wire>, word: &Wire, tell: &Sender<Heard>) {
     let begin = format!("{} ", word.event);
     for line in reader.lines().map_while(Result::ok) {
         let Some(event) = line.strip_prefix(&begin).and_then(|text| serde_json::from_str::<Value>(text).ok()) else { continue };
@@ -187,11 +169,11 @@ fn listen(reader: BufReader<TcpStream>, word: &Wire, tell: &Sender<Heard>) {
 }
 
 /// Post one thing to the room, and say so when it was refused.
-fn send(dial: &Dial, at: &str, cookie: &str, body: &Value, wait: Duration, tell: &Sender<Heard>) {
+fn send(dial: &Dial, place: &Place, cookie: &str, body: &Value, wait: Duration, tell: &Sender<Heard>) {
     let text = body.to_string();
     let asked = dial.head(POST, &[("cookie", cookie), ("length", &text.len().to_string())]) + &text;
-    let answered = reach(at, wait).and_then(|wire| {
-        (&wire).write_all(asked.as_bytes())?;
+    let answered = reach(place, wait).and_then(|mut wire| {
+        wire.write_all(asked.as_bytes())?;
         let mut reader = BufReader::new(wire);
         let (status, _) = head(&mut reader)?;
         _ = reader.read_to_end(&mut Vec::new());

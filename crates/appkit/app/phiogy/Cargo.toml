@@ -47,6 +47,11 @@ rand.workspace = true
 # (Downloads, Videos...), and USD read for its models.
 dirs.workspace = true
 phiusd = { path = "../../../phicore/phiusd" }
+# HTTPS, for the app's server (phiegg.com: Phiora, the call line, its
+# files and pictures): rustls on ring, trusting the system's own roots.
+# The versions the lockfile already holds, so nothing is fetched.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rustls-native-certs = "0.8"
 # WebRTC, for the `rtc` feature: LiveKit's bindings as Zed keeps them,
 # at the commit cargo's git cache already holds, so nothing is fetched.
 libwebrtc = { git = "https://github.com/zed-industries/livekit-rust-sdks", rev = "d0e27be0cdad89eadab3e36207cda0a2b6e359ee", optional = true }

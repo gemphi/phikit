@@ -51,9 +51,28 @@ impl Phiogy {
     }
 
     /// Where the web Phiogy's own file is: `data/app.tsv` says, from
-    /// this crate's folder.
+    /// this crate's folder where it is on this disk; else on the app's
+    /// server.
     pub fn source() -> String {
-        format!("{}/{}", env!("CARGO_MANIFEST_DIR"), PTable::read(data::APP).get("site"))
+        let here = format!("{}/{}", env!("CARGO_MANIFEST_DIR"), PTable::read(data::APP).get("site"));
+        match std::path::Path::new(&here).exists() {
+            true => here,
+            false => Phiogy::server("server.site"),
+        }
+    }
+
+    /// An address on the app's server: its place, and the path
+    /// `data/app.tsv` gives under that name.
+    pub fn server(part: &str) -> String {
+        let app = PTable::read(data::APP);
+        format!("{}{}", app.get("server"), app.get(part))
+    }
+
+    /// Phiogy's own pictures and models: beside the program where it was
+    /// put somewhere with them, else in this crate's folder.
+    pub fn asset() -> std::path::PathBuf {
+        let beside = std::env::current_exe().ok().and_then(|exe| Some(exe.parent()?.join("asset"))).filter(|folder| folder.is_dir());
+        beside.unwrap_or_else(|| std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("asset"))
     }
 
     /// A board with the limits of `data/limit.tsv` and nobody on it.

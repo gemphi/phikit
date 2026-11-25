@@ -18,6 +18,19 @@ setting	setting.tsv
 # from beside it either way, and nothing of them is copied.
 # `phiogy --site` and a path reads another file, and asks nobody.
 site	../../../../../puikit/app/phiogy/public/data/phiogy.json
+# The app's server, for everybody who runs Phiogy on any machine (the
+# user, 25 November 2026: "for the webrtc and calls will use
+# phiegg.com/wrt|cdn etc for now"): Phiora under `server.phiora`, the
+# line the calls are on under `server.line`, the web Phiogy's own file
+# under `server.site`, and pictures by their keys (data/asset.tsv). A
+# file or a picture that is on this disk is read from here; one that is
+# not, from the server. `--local` keeps to this machine: Phiora where
+# data/phiora.tsv's `here` says, and a line served here.
+server	https://phiegg.com
+server.phiora	/api
+server.line	/wrt
+server.site	/phiogy/data/phiogy.json
+server.web	/phiogy/
 # The setting of the system that holds a password for `phiogy
 # --signin`, so none is ever a word of a command line.
 secret	PHIOGY_SECRET

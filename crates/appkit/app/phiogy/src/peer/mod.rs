@@ -29,7 +29,6 @@ mod stand;
 pub use call::{Call, Seen, name};
 pub use engine::{Engine, Kind, Link, Made, Maker, Own, Stage};
 pub use line::{Heard, Line};
-pub(crate) use line::{head, reach};
 pub use mesh::{Far, Mesh, Out, Picture};
 pub use ring::Ring;
 pub use stand::Stand;

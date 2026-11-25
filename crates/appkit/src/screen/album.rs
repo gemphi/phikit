@@ -126,18 +126,23 @@ impl Album {
             Some(Held::Wait | Held::Missing | Held::Live(..)) => return None,
             None => {}
         }
-        let Some(bytes) = cx.asset_source().load(name).ok().flatten() else {
-            self.put(name, Held::Missing);
-            return None;
-        };
         self.put(name, Held::Wait);
-        // Where there are no threads, in a browser, it is decoded here.
+        // Where there are no threads, in a browser, it is read and decoded
+        // here.
         #[cfg(target_family = "wasm")]
-        self.keep(name, &bytes);
+        match cx.asset_source().load(name).ok().flatten() {
+            Some(bytes) => self.keep(name, &bytes),
+            None => self.put(name, Held::Missing),
+        }
+        // Where it comes from may be slow (an app's server): its file is
+        // read on the thread that decodes it, never while the window draws.
         #[cfg(not(target_family = "wasm"))]
         {
-            let (album, name, bytes) = (self.clone(), name.to_string(), bytes.into_owned());
-            let begun = std::thread::Builder::new().spawn(move || album.keep(&name, &bytes));
+            let (album, name, source) = (self.clone(), name.to_string(), cx.asset_source().clone());
+            let begun = std::thread::Builder::new().spawn(move || match source.load(&name).ok().flatten() {
+                Some(bytes) => album.keep(&name, &bytes),
+                None => album.put(&name, Held::Missing),
+            });
             // With no thread to be had, it is not to be had either.
             if begun.is_err() {
                 self.held.lock().unwrap_or_else(PoisonError::into_inner).values_mut().filter(|held| matches!(held, Held::Wait)).for_each(|held| *held = Held::Missing);

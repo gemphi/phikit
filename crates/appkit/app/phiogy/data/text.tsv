@@ -7,6 +7,7 @@ present.call	In the call
 present.watch	Has the room open
 present.none	Nobody has this room open.
 present.how	A page that opens it is here at once: {at}/call/{key}
+present.web	Anyone opens it in a browser at {at}
 present.shut	The line is not open, so nobody can be here.
 present.member	Members
 present.voice	Voice room

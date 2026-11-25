@@ -48,7 +48,7 @@ impl Place {
 /// own, or one the system keeps for them.
 fn root(name: &str) -> Option<PathBuf> {
     match name {
-        "asset" => Some(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("asset")),
+        "asset" => Some(crate::Phiogy::asset()),
         "home" => dirs::home_dir(),
         "download" => dirs::download_dir(),
         "video" => dirs::video_dir(),

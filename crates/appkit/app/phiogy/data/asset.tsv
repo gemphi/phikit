@@ -9,3 +9,10 @@ phiogy	../../../../../puikit/app/phiogy/public
 # `file:///` and its path. Its "app" is `file`, and its folder the
 # root, so the path after it is the whole of where the file is.
 file	/
+# A picture that is not on this disk is read from the app's server
+# (data/app.tsv `server`) and kept in the person's cache, so it is read
+# from there once: each row `far`, the app, the path on the server its
+# pictures are under, and `key` where a picture is served there by its
+# key (data/media.tsv) rather than by its path.
+far	phiegg	/cdn/	key
+far	phiogy	/phiogy/

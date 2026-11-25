@@ -35,7 +35,7 @@ fn step_39_a_call_somebody_began_is_said_in_the_title_and_joined_there() {
     until("the call is seen", || app.desk().ringing().is_some());
     // The title says who is calling, and has Join where the two tools
     // that begin a call were.
-    assert!(has(&stage, "Guest is calling") && has(&stage, "Join"));
+    assert!(has(&stage, "Guest is calling") && has(&stage, "Join"), "{:?}", shown(&stage, &look));
     assert!(icon(&stage, &look, "phone").is_none() && icon(&stage, &look, "video").is_none());
     assert!(press(&mut stage, &look, "Join"));
     until("this window is in the call", || app.desk().calling().is_some_and(|seen| seen.joined));
@@ -90,7 +90,7 @@ fn step_40_a_window_on_another_s_line_sees_a_call_there_and_joins_it() {
     stage.tick();
     assert!(app.desk().ring.borrow().is_some());
     until("the call is seen", || app.desk().ringing().is_some());
-    assert!(has(&stage, "Guest is calling") && has(&stage, "Join"));
+    assert!(has(&stage, "Guest is calling") && has(&stage, "Join"), "{:?}", shown(&stage, &look));
     assert!(press(&mut stage, &look, "Join"));
     until("this window is in the call", || app.desk().calling().is_some_and(|seen| seen.joined && !seen.named.is_empty()));
     // In the call it listens no more: the call holds the line.

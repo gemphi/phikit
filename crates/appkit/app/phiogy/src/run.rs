@@ -1,13 +1,18 @@
 //! Open Phiogy in a window: at a desk from `main`, in a browser from
 //! `web`. The words are a command line's; a browser gives none.
 //!
-//! At a desk the window serves the line as well, where `data/line.tsv`
-//! says, so pages that open a room are seen in it at once. `--port 4300`
-//! serves it on another port, and 0 has the system choose; `--host PC`
-//! at that name, which another machine's window reaches; `--quiet`
-//! opens the window with no line, and `--at localhost:4311` on the line
-//! another serves there. `--line` serves the line alone, with no
-//! window, and says where it is.
+//! The window is on the app's server (`data/app.tsv`): Phiora there,
+//! and the calls on the line there (`https://phiegg.com/wrt`), so
+//! everybody who runs Phiogy, on any machine or in a browser, meets in
+//! the same rooms. `--local` keeps to this machine: Phiora here, and
+//! the window serving the line itself, where `data/line.tsv` says, so
+//! pages that open a room are seen in it at once. `--port 4300` serves
+//! it on another port (and is local), and 0 has the system choose;
+//! `--quiet` opens the window with no line, and `--at localhost:4311`
+//! on the line another serves there. `--line` serves the line alone,
+//! with no window, and says where it is. `--remote` reads nothing of
+//! this disk's source, as a copy on another machine does: the site and
+//! its pictures come from the server.
 //!
 //! `--demo u_noor` has it be that member of Phiora's, where Phiora
 //! lets anyone be one to try things, and `--signout` nobody again.
@@ -88,9 +93,13 @@ fn serve(word: &[String], board: &Arc<Mutex<Board>>, text: &PTable) -> (Option<c
     if word.iter().any(|word| word == "--quiet") {
         return (None, Err(text.get("status.off").to_string()));
     }
-    // On a line another serves, none is served here.
+    // On a line another serves, none is served here: the one named, or
+    // the app's server's.
     if let Some(place) = given(word, "--at").pop() {
         return (None, Ok(place));
+    }
+    if !local(word) {
+        return (None, Ok(Phiogy::server("server.line")));
     }
     let row = |flag: &str, name: &str| given(word, flag).last().map(|value| format!("{name}\t{value}\n")).unwrap_or_default();
     match Exchange::open(Set::own(&(row("--port", "port") + &row("--host", "host"))), Arc::clone(board)) {
@@ -100,6 +109,12 @@ fn serve(word: &[String], board: &Arc<Mutex<Board>>, text: &PTable) -> (Option<c
         }
         Err(error) => (None, Err(error.to_string())),
     }
+}
+
+/// Whether the window keeps to this machine: asked to, or to serve the
+/// line here.
+fn local(word: &[String]) -> bool {
+    word.iter().any(|word| word == "--local" || word == "--line") || !given(word, "--port").is_empty()
 }
 
 /// A browser cannot listen: there is no line.
@@ -127,8 +142,16 @@ pub fn run(word: &[String]) {
     }
     // A file that was named is read as it is; else Phiora is asked first.
     let named = given(word, "--site").pop();
-    let phiora = named.is_none().then(|| Phiora::own(given(word, "--phiora").pop())).flatten();
-    let site = Site::first(phiora.as_ref(), own.get("key"), &named.unwrap_or_else(Phiogy::source));
+    let here = local(word).then(|| PTable::read(data::PHIORA).get("here").to_string());
+    let phiora = named.is_none().then(|| Phiora::own(given(word, "--phiora").pop().or(here))).flatten();
+    // `--remote`: as a copy on another machine is, with nothing of this
+    // disk's source: the site and its pictures from the app's server.
+    let remote = has("--remote");
+    let source = || match remote {
+        true => Phiogy::server("server.site"),
+        false => Phiogy::source(),
+    };
+    let site = Site::first(phiora.as_ref(), own.get("key"), &named.unwrap_or_else(source));
     // What the person keeps is in their own folder and, where Phiora
     // gave the site, on Phiora too; asked to forget, it is nowhere.
     let keep = !has("--forget");
@@ -136,10 +159,12 @@ pub fn run(word: &[String]) {
     let kept = Kept::open(store, phiora.filter(|_| keep && site.asked.as_ref().is_some_and(|(_, gave)| *gave)));
     let row = |flag: &str, token: &str| given(word, flag).last().map(|value| format!("size\t{token}\t{value}\n")).unwrap_or_default();
     let look = Rc::new(Phiogy::look(&(row("--width", screen::WIDTH) + &row("--height", screen::HEIGHT))));
+    // On a line it does not serve, it listens to its rooms as a page does.
+    let away = line.is_none() && at.is_ok();
     let app = Phiogy::open(look, site, board, at, keep).keeping(kept);
-    let app = match given(word, "--at").is_empty() {
-        true => app,
-        false => app.away(),
+    let app = match away {
+        true => app.away(),
+        false => app,
     };
     // Where the real library is built in, it carries this window's calls.
     let film = app.desk().film();
@@ -227,11 +252,16 @@ pub fn run(word: &[String]) {
     turn.for_each(|by| _ = stage.send(&appkit::pui::core::PEvent::Scroll(middle, appkit::pui::core::PPoint::new(0.0, by))));
     // Phiogy's own assets, on disk, then the ones every app shares, which
     // are built into the program.
-    let own = PFolder::new(&[concat!(env!("CARGO_MANIFEST_DIR"), "/asset")]);
+    let asset = Phiogy::asset();
+    let own = PFolder::new(&[asset.to_string_lossy().as_ref()]);
     // The line is served until the window is closed: `line` is kept
     // to the end of this.
     // The pictures the site names are the web's own files, by their keys.
-    screen::run(stage, (crate::hosted::Moving(film), (crate::hosted::Hosted::own(), (own, PBundle))));
+    let hosted = match remote {
+        true => crate::hosted::Hosted::own().far_only(),
+        false => crate::hosted::Hosted::own(),
+    };
+    screen::run(stage, (crate::hosted::Moving(film), (hosted, (own, PBundle))));
 }
 
 /// The line alone: say where it is, and stay until the program is

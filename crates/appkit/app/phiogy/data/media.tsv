@@ -1,0 +1,17 @@
+# What a picture of Phiegg's is called on the app's server, where it is
+# served by its key (phiegg.com/cdn/<key>), as puikit's
+# app/phiegg/src/data/media-key.json says: the first rule that fits a
+# picture's path gives its key, and a path no rule fits is its own key.
+# Each row: what the path begins with and what that becomes; and,
+# where a rule says so, what it ends with and what that becomes.
+# test/hosted.rs checks these against that file where it is on this
+# disk.
+logos/	worlds/	.svg	/logo.svg
+world/	worlds/
+items/	assets/items/
+rides/	assets/rides/
+jewels/	assets/jewels/
+portraits/	assets/portraits/
+welcome/	assets/welcome/
+logo/	assets/logo/
+worlds/	assets/scenes/

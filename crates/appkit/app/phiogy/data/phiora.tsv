@@ -6,15 +6,15 @@
 # and pins is kept there too, as a page keeps it (puikit: persisted in
 # app/phi-kit/src/api.ts): a name, a value.
 #
-# Where it is; the setting of the system that names another place, as
-# the web's VITE_PHI_API does (the place alone, or written as an
-# address that begins as `scheme` says); the word that, given as the
-# place, has nobody asked; how long it is waited for at each address
-# its name stands for, and how long for its answer once it is reached,
-# in milliseconds.
-at	localhost:4300
+# Where it is on this machine, for `--local` (else it is on the app's
+# server, data/app.tsv); the setting of the system that names another
+# place, as the web's VITE_PHI_API does (`localhost:4300`,
+# `https://phiegg.com/api`); the word that, given as the place, has
+# nobody asked; how long it is waited for at each address its name
+# stands for, and how long for its answer once it is reached, in
+# milliseconds (one over the internet, at least data/net.tsv's `far`).
+here	localhost:4300
 given	PHI_API
-scheme	http://
 none	none
 wait	400
 answer	3000
@@ -29,9 +29,6 @@ state	/state/{name}
 # the one asking a session, which is sent back with every ask after.
 fine	200
 kept	204
-length	content-length
-pieces	transfer-encoding
-piece	chunked
 session	set-cookie
 # What the window calls itself to Phiora, which names a session by it.
 agent	Phiogy (Windows)

@@ -17,6 +17,7 @@ mod left;
 mod library;
 #[cfg(not(target_family = "wasm"))]
 mod once;
+mod net;
 mod pace;
 mod pill;
 mod ring;
