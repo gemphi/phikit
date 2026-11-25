@@ -1,12 +1,57 @@
-# A person's profile, as Phiegg's has it: its tabs, in order. A tab's
-# key, what it shows, and its word (text.tsv). What it shows: `picture`,
-# the pictures they posted, in a grid, each opening in the viewer;
-# `club`, the clubs they hold, as cards; `space`, the spaces they are
-# in, as cards, each going to its first room; `linked`, who they are
-# linked to, as cards, each opening them. A tab with nothing in it is
-# not shown. The counts over the tabs are Phiegg's own (site.tsv
-# `person.count`), each named by `person.count.` and its word.
-shot	picture	person.shot
-club	club	person.club
-space	space	person.space
-linked	linked	person.linked
+# A person's profile, as Phiegg's has it (the user, 25 November 2026:
+# info, PFTs, trail, stats, items, drops, each a grid with the common
+# filters). The tabs, in order, each a block of the kit's form `profile`
+# (data/form.tsv, its list `who.<key>` in data/listing.tsv), its heading
+# `person.<key>` of data/text.tsv. A tab with nothing in it is not shown.
+#
+# tab	key	show	icon	kind	where	sort	facet	name
+#
+# What a tab shows:
+#   info    the facts of them (the `fact` rows below)
+#   picture the pictures they posted, each opening in the viewer
+#   kind    Phiegg's records of `kind` that are theirs, by `where`: a
+#           field that holds their id (`holderId`), a field whose value
+#           is among one of their own (`clubId:clubIds`), or a field
+#           that must hold a value (`kind=drop`); any of the first two
+#           and all of the last. Each opens its page. `sort` is the field
+#           its order is by, highest first; `facet` the field its filter
+#           chooses by; `name` the field naming the record a nameless
+#           one is about (a sale's item).
+#   stat    the figures of them (the `sum` rows below, and a count of
+#           every other tab)
+#   club    the clubs they hold; `space` the spaces they are in, each
+#           going to its first room; `linked` who they are linked to,
+#           each opening them
+tab	info	info	user
+tab	shot	picture	image
+tab	pft	kind	sparkles	profilePft	holderId	priceUsd	set
+tab	item	kind	package	egg	ownerId	priceUsd	kind
+tab	drop	kind	flame	event	clubId:clubIds kind=drop	startsAt	worldId
+tab	trail	kind	workflow	sale	fromId toId	at	event	itemId
+tab	stat	stat	bar-chart
+tab	club	club	star
+tab	space	space	hash
+tab	linked	linked	users
+# The kind of their own record in Phiegg, whose fields `where` and the
+# facts read; and the kinds read only to name what a record is about (a
+# sale of a club's piece).
+own	person
+name	piece sum look
+# The facts of the info tab: a field of their Phiegg record, else of
+# their Phiogy membership (handle, role, state, since), and its word. A
+# field that holds ids shows the names of what they name.
+fact	handle	person.fact.handle
+fact	role	person.fact.role
+fact	state	person.fact.state
+fact	since	person.since
+fact	followers	person.count.follower
+fact	following	person.count.following
+fact	wallet	person.fact.wallet
+fact	badges	person.fact.badges
+fact	worldId	person.fact.world
+fact	cityId	person.fact.city
+fact	clubIds	person.club
+# The sums of the stats tab: a tab's records, the field that must hold
+# their id, the field added up, its word, and what comes before it.
+sum	trail	toId	priceUsd	person.bought	$
+sum	trail	fromId	priceUsd	person.sold	$

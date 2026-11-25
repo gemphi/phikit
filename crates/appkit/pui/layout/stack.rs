@@ -115,7 +115,7 @@ pub fn tabbed<B: PBand + ?Sized>(paint: &mut dyn PPaint, at: PPoint, wide: f32, 
         true => tab.draw_moving(&mut PDry(&*paint), at, wide, from, to, share),
         false => tab.draw_moving(paint, at, wide, from, to, share),
     };
-    let held = at.y + tab.high(paint) + least;
+    let held = at.y + tab.high_in(paint, wide) + least;
     let inner = wide - side * 2.0;
     let need = stack(&mut PDry(&*paint), PPoint::new(at.x + side, held + top), inner, 0.0, false, group).0;
     let bottom = end.max(need + top);

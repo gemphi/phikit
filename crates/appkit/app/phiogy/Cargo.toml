@@ -31,6 +31,10 @@ phiecs = { path = "../../../phicore/phiecs" }
 # What a page posts to the line and what the line tells it; and the web
 # Phiogy's own files, which name its hosts and its rooms.
 serde_json.workspace = true
+# Phiora's keys: a record's id there is the md5 of its kind and its
+# Phiegg id (`person:u_noor`), so a person is found by either. The
+# crate the lockfile already holds, so nothing is fetched.
+md-5 = "0.10"
 
 # A page's session: its name on the line's cookie. The line is not there
 # in a browser, where there is no socket to listen on.

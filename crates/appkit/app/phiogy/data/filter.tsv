@@ -21,3 +21,7 @@ tool	up	library.up	arrow-up
 tool	import	library.import	plus
 back	back	item.back	chevron-left
 back	set	item.set	sparkles
+# A profile tab's order: its records highest first by the tab's field, or
+# by name.
+who.sort	top	sort.top	sort
+who.sort	name	sort.name	sort

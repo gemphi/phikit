@@ -241,3 +241,28 @@ fn a_message_says_whom_it_answers_who_said_it_what_and_what_it_was_marked_with()
     let follows = Said("And more.", "", true).say(&mut on, PRect::new(0.0, 0.0, 400.0, 0.0));
     assert_eq!((follows.face, follows.quote, on.text_list()[0]), (None, None, "And more."));
 }
+
+#[test]
+fn tabs_too_many_for_their_width_fold_to_lines_each_in_the_middle() {
+    let look = PLook::read(LOOK);
+    let mut sheet = PSheet::new(&look);
+    let tab: Vec<(&str, &str, bool)> = ["Info", "Shots 12", "PFTs 3", "Items 40", "Trail 68", "Stats"].iter().map(|said| ("", *said, false)).collect();
+    // Wide enough, they stand on one line, as high as a band.
+    assert_eq!(tab.as_slice().high_in(&sheet, 2000.0), tab.as_slice().high(&sheet));
+    // Too narrow, they fold; every tab stays inside the width, and each
+    // line stands in its middle.
+    let rect = tab.as_slice().draw_moving(&mut sheet, PPoint::new(0.0, 0.0), 300.0, 0, 0, 1.0);
+    assert!(tab.as_slice().high_in(&sheet, 300.0) > tab.as_slice().high(&sheet));
+    assert!(rect.iter().all(|r| r.origin.x >= 0.0 && r.origin.x + r.size.width <= 300.0), "{rect:?}");
+    let first: Vec<&PRect> = rect.iter().filter(|r| r.origin.y == rect[0].origin.y).collect();
+    let (left, right) = (first[0].origin.x, 300.0 - (first.last().expect("a line").origin.x + first.last().expect("a line").size.width));
+    assert!((left - right).abs() < 0.01, "{left} {right}");
+    // The light of the tab chosen stands on its own line.
+    let mut sheet = PSheet::new(&look);
+    let rect = tab.as_slice().draw_moving(&mut sheet, PPoint::new(0.0, 0.0), 300.0, 0, 5, 1.0);
+    let lit = sheet.mark.iter().filter_map(|mark| match mark {
+        PMark::Blend { rect, from, .. } if from.a >= 0.5 => Some(*rect),
+        _ => None,
+    }).next_back().expect("the light");
+    assert_eq!(lit.origin, rect[5].origin);
+}

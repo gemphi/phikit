@@ -17,6 +17,32 @@ pub trait PBand {
         (paint.size(LINE) + paint.size(GAP) / 2.0).max(paint.theme().size(HIGH).unwrap_or_default()) + paint.size(GAP) / 2.0
     }
 
+    /// Its pills as lines no wider than that, by their place in it: as
+    /// many on a line as fit at their own size.
+    fn lined(&self, paint: &dyn PPaint, most: f32) -> Vec<Vec<usize>> {
+        let gap = paint.size(GAP);
+        let (mut lines, mut wide): (Vec<Vec<usize>>, f32) = (Vec::new(), gap / 2.0);
+        for (index, pill) in self.pill().iter().enumerate() {
+            let more = pill.size(paint).width + gap / 4.0;
+            match lines.last_mut() {
+                Some(line) if wide + more <= most => line.push(index),
+                _ => {
+                    lines.push(vec![index]);
+                    wide = gap / 2.0;
+                }
+            }
+            wide += more;
+        }
+        lines
+    }
+
+    /// How high it stands as tabs across a width: a line, or the lines
+    /// its pills fold to (`draw_moving`).
+    fn high_in(&self, paint: &dyn PPaint, wide: f32) -> f32 {
+        let lines = self.lined(paint, wide).len().max(1) as f32;
+        lines * self.high(paint) + (lines - 1.0) * paint.size(GAP) / 4.0
+    }
+
     /// How wide it is, with the room between and round its pills.
     fn span(&self, paint: &dyn PPaint) -> f32 {
         let (gap, list) = (paint.size(GAP), self.pill());
@@ -79,20 +105,41 @@ pub trait PBand {
     /// Draw it across a width as tabs whose light moves: every pill at
     /// rest on the band's ground, and one strong light `share` of the way
     /// from where the pill `from` stands to where the pill `to` does, as
-    /// the chosen tab changes. Where each pill stands.
+    /// the chosen tab changes. Too many for the width, they fold to
+    /// lines, each in the middle of the width. Where each pill stands.
     fn draw_moving(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, from: usize, to: usize, share: f32) -> Vec<PRect> {
-        let (gap, radius) = (paint.size(GAP), paint.size(RADIUS));
+        let (gap, radius, high) = (paint.size(GAP), paint.size(RADIUS), self.high(paint));
         let off: Vec<Off> = self.pill().into_iter().map(Off).collect();
-        let rect = off.draw_full(&mut PDry(&*paint), at, wide, true);
+        let lines = self.lined(paint, wide);
+        let rect = match lines.len() {
+            0 | 1 => off.draw_full(&mut PDry(&*paint), at, wide, true),
+            _ => {
+                let mut rect = Vec::new();
+                for (row, line) in lines.iter().enumerate() {
+                    let size: Vec<_> = line.iter().map(|index| off[*index].size(paint)).collect();
+                    let span = size.iter().map(|size| size.width).sum::<f32>() + (size.len() as f32 - 1.0) * gap / 4.0;
+                    let (mut left, top) = (at.x + (wide - span) / 2.0, at.y + row as f32 * (high + gap / 4.0) + gap / 4.0);
+                    for size in size {
+                        rect.push(PRect::new(left, top, size.width, size.height));
+                        left += size.width + gap / 4.0;
+                    }
+                }
+                rect
+            }
+        };
         let (Some(first), Some(last)) = (rect.first(), rect.last()) else { return rect };
-        let high = self.high(paint);
         // Tabs stand over the ground that holds what they choose, lit from
         // the left: theirs runs from the right.
-        label(paint, PRect::new(at.x, at.y, last.origin.x + last.size.width + gap / 4.0 - at.x, high), radius, PLight::Rest, true, "");
+        let ground = match lines.len() {
+            0 | 1 => PRect::new(at.x, at.y, last.origin.x + last.size.width + gap / 4.0 - at.x, high),
+            _ => PRect::new(at.x, at.y, wide, self.high_in(paint, wide)),
+        };
+        label(paint, ground, radius, PLight::Rest, true, "");
         let (a, b) = (rect.get(from).unwrap_or(first), rect.get(to).unwrap_or(first));
         let t = share.clamp(0.0, 1.0);
         let t = t * t * (3.0 - 2.0 * t);
-        let lit = PRect::new(a.origin.x + (b.origin.x - a.origin.x) * t, a.origin.y, a.size.width + (b.size.width - a.size.width) * t, a.size.height);
+        // Across, and down where the tabs fold to lines.
+        let lit = PRect::new(a.origin.x + (b.origin.x - a.origin.x) * t, a.origin.y + (b.origin.y - a.origin.y) * t, a.size.width + (b.size.width - a.size.width) * t, a.size.height);
         label(paint, lit, radius, PLight::Strong, false, "");
         let held: Vec<f32> = off.iter().map(|pill| pill.sized(paint, 0.0).width).collect();
         off.iter().zip(&rect).zip(held).map(|((pill, r), held)| pill.lay(paint, r.origin, true, r.size.width - held)).collect()

@@ -42,8 +42,9 @@ fn step_24_a_press_on_a_face_puts_that_person_beside_the_room() {
     assert!(text.contains(&words("person.title")) && !text.contains(&"On the line".to_string()), "{text:?}");
     assert!(text.contains(&"I will bring both versions.".to_string()));
     assert!(text.contains(&"tavi · Member · Away".to_string()) && text.contains(&"Member since · Jun 2026".to_string()), "{text:?}");
-    // The panes say how much each holds: who they are linked to, the
-    // spaces they are in, the pictures they posted.
+    // The tabs (the kit's form, as Phiegg's profile has them) say how
+    // much each holds: who they are linked to, the spaces they are in,
+    // the pictures they posted.
     let pane = |name: &str, count: usize| format!("{} {count}", words(name));
     assert!([pane("person.linked", 1), pane("person.space", 1), pane("person.shot", 1)].iter().all(|pane| text.contains(pane)), "{text:?}");
     assert!(press(&mut stage, &look, &pane("person.space", 1)) && shown(&stage, &look).contains(&"Phiace".to_string()));
@@ -51,7 +52,8 @@ fn step_24_a_press_on_a_face_puts_that_person_beside_the_room() {
     assert!(press(&mut stage, &look, &pane("person.shot", 1)));
     let side = rect(&stage, "room");
     let shot = drawn(&stage, &look).iter().rev().find_map(|mark| match mark {
-        PMark::Picture { name, rect, fit: PFit::Cover, .. } if name == "phiegg:worlds/w_brocade.png" && rect.origin.x > side.origin.x + side.size.width / 2.0 => Some(rect.center()),
+        // Its top, which is in sight under the tabs.
+        PMark::Picture { name, rect, .. } if name == "phiegg:worlds/w_brocade.png" && rect.origin.x > side.origin.x + side.size.width / 2.0 => Some(rect.origin.plus(PPoint::new(16.0, 16.0))),
         _ => None,
     });
     assert!(stage.send(&PEvent::PointerDown(shot.expect("their picture"))));
@@ -59,6 +61,9 @@ fn step_24_a_press_on_a_face_puts_that_person_beside_the_room() {
     assert!(stage.send(&PEvent::KeyDown(PEvent::ESCAPE)));
     // Who they are linked to is read when asked; a press opens them.
     assert!(press(&mut stage, &look, &pane("person.linked", 1)));
+    // Their card is under the tabs: the profile is scrolled to it.
+    let tab = super::written(&stage, &look, &pane("person.linked", 1)).expect("the tab");
+    stage.send(&PEvent::Scroll(tab, PPoint::new(0.0, -100000.0)));
     let linked = drawn(&stage, &look).iter().find_map(|mark| match mark {
         PMark::Text { at, text, .. } if text == "Lora Vale" && at.x > side.origin.x + side.size.width / 2.0 => Some(at.plus(PPoint::new(2.0, 2.0))),
         _ => None,

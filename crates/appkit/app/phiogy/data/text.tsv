@@ -263,6 +263,21 @@ person.count.linked	Linked
 person.count.space	Spaces
 person.count.media	Pictures
 person.none	Nothing here yet
+person.info	Info
+person.pft	PFTs
+person.item	Items
+person.drop	Drops
+person.trail	Trail
+person.stat	Stats
+person.fact.handle	Handle
+person.fact.role	Role
+person.fact.state	Now
+person.fact.wallet	Wallet
+person.fact.badges	Badges
+person.fact.world	World
+person.fact.city	City
+person.bought	Bought
+person.sold	Sold
 # A room's controls.
 room.reply	Reply
 room.like	Like
@@ -362,6 +377,7 @@ filter.sound	Sounds
 sort.name	Name
 sort.new	Newest
 sort.large	Largest
+sort.top	Top first
 kind.folder	Folder
 kind.model	USD
 kind.source	Waits for USD

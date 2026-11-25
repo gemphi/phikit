@@ -4,33 +4,33 @@
 //! their face, name, handle, what they are there and whether they are
 //! about; what they say of themself and their tags; what to do (write
 //! to them, follow them, mute them, which keeps what they said out of
-//! the streams); since when they are a member; and three
-//! panes: who they are linked to, the spaces they are in, and the
-//! pictures they posted, a press on which opens it in the viewer among
-//! their others. The way back to who is here is at its head.
+//! the streams); since when they are a member; and under it their tabs
+//! as Phiegg's profile has them, the kit's form `profile`
+//! (`person/held.rs`, `data/profile.tsv`): info, pictures, PFTs, items,
+//! drops, trail, stats, clubs, spaces, links, each a grid with its
+//! layout, filter and order. The way back to who is here is at its head.
 //!
 //! Its controls are rows of `data/act.tsv`; its words `person.*` in
 //! `data/text.tsv`.
 
 mod card;
-mod pane;
+mod held;
 
 use std::cell::{Cell, RefCell};
 
 use appkit::pui::block::PBand;
 use appkit::pui::core::{PDraw, PEvent, PPaint, PPoint, PRect, PView};
-use appkit::pui::layout::{PScroll, section};
+use appkit::pui::form::PForm;
+use appkit::pui::layout::section;
 
 use super::{Desk, GAP, Tool};
 use crate::data;
 use crate::site::Member;
 
-/// The theme's tokens: how large the face is, how many times as wide
-/// as high the picture over the profile is, and how many pictures a
-/// row of the pictures' pane has.
+/// The theme's tokens: how large the face is, and how many times as
+/// wide as high the picture over the profile is.
 pub const FACE: &str = "person.face";
 pub const BANNER: &str = "person.banner";
-pub const ACROSS: &str = "person.across";
 /// The rows of `data/act.tsv` it draws.
 pub const BACK: &str = "back";
 pub const MESSAGE: &str = "message";
@@ -44,11 +44,6 @@ enum Act {
     Message(String),
     Follow,
     Mute,
-    Pane(usize),
-    Open(String),
-    Shot(usize),
-    /// Go to the room of that id (a space's first).
-    Go(String),
 }
 
 /// A person, beside the room.
@@ -56,18 +51,19 @@ pub struct Person {
     frame: PRect,
     desk: Desk,
     tool: Tool,
-    scroll: Cell<PScroll>,
     origin: Cell<PPoint>,
     spot: RefCell<Vec<(PRect, Act)>>,
-    /// The pane shown, and the person whose links were read last with
-    /// who they are linked to.
-    pane: Cell<usize>,
-    linked: RefCell<(String, Vec<String>)>,
+    /// Their tabs, under who they are: where they begin, down the pane,
+    /// and how far who they are is scrolled away over them.
+    form: RefCell<PForm>,
+    under: Cell<f32>,
+    lift: Cell<f32>,
 }
 
 impl Person {
     pub fn new(desk: Desk) -> Person {
-        Person { frame: PRect::default(), desk, tool: Tool::read(data::ACT), scroll: Cell::default(), origin: Cell::default(), spot: RefCell::default(), pane: Cell::default(), linked: RefCell::default() }
+        let form = RefCell::new(held::form(&desk));
+        Person { frame: PRect::default(), desk, tool: Tool::read(data::ACT), origin: Cell::default(), spot: RefCell::default(), form, under: Cell::default(), lift: Cell::default() }
     }
 
     /// Who it is about.
@@ -75,20 +71,12 @@ impl Person {
         let id = self.desk.now.who.borrow().clone()?;
         self.desk.site.member(&id).cloned()
     }
-
-    /// Who a person is linked to, read once for each person shown.
-    pub(super) fn linked(&self, id: &str) -> Vec<String> {
-        if self.linked.borrow().0 != id {
-            *self.linked.borrow_mut() = (id.to_string(), self.desk.site.linked(id));
-        }
-        self.linked.borrow().1.clone()
-    }
 }
 
 impl PDraw for Person {
     /// The pane is made of the kit's blocks, in sections, each on a
     /// ground of its own: the way back; who they are; what can be done
-    /// with them; the panes; and the pane that is shown.
+    /// with them; and their tabs, the kit's form, in the room left.
     fn draw(&self, paint: &mut dyn PPaint, origin: PPoint) {
         let Some(one) = self.who() else { return };
         let (gap, text) = (paint.size(GAP), &self.desk.text);
@@ -96,7 +84,7 @@ impl PDraw for Person {
         let mut spot = Vec::new();
         self.origin.set(origin);
         paint.clip(PRect { origin, size: self.frame.size });
-        let begin = origin.y + gap / 2.0 - self.scroll.get().at();
+        let begin = origin.y + gap / 2.0 - self.lift.get();
         // The way back, and what this is.
         let back: Vec<(&str, &str, bool)> = self.tool.of(BACK, false, text).map(|(icon, _)| (icon, text.get("person.title"), false)).into_iter().collect();
         spot.extend(back.draw(paint, PPoint::new(left, begin)).into_iter().map(|rect| (rect, Act::Back)));
@@ -116,30 +104,15 @@ impl PDraw for Person {
             true => 0.0,
             false => high + gap / 2.0,
         };
-        // The tabs (data/profile.tsv), each with how much it holds, a tab
-        // that holds nothing left out; then the one shown.
-        let shot = self.desk.shot_of(&one.id);
-        let every = pane::panes();
-        let held: Vec<(usize, String)> = every.iter().enumerate().map(|(index, pane)| (index, self.holds(pane, &one, &shot))).filter(|(_, n)| *n > 0)
-            .map(|(index, n)| (index, format!("{} {}", text.get(&every[index].word), crate::part::tool::grouped(n as u64)))).collect();
-        let chosen = held.iter().map(|(index, _)| *index).find(|index| *index == self.pane.get()).or(held.first().map(|(index, _)| *index));
-        let tab: Vec<(&str, &str, bool)> = held.iter().map(|(index, said)| ("", said.as_str(), Some(*index) == chosen)).collect();
-        let (rect, high) = tab.draw_lines(paint, PPoint::new(left, top), wide);
-        spot.extend(rect.into_iter().zip(held.iter().map(|(index, _)| Act::Pane(*index))));
-        top += high + gap * 0.75;
-        let mut got = Vec::new();
-        let end = match chosen.and_then(|index| every.get(index)) {
-            Some(shown) => section(paint, PPoint::new(left, top), wide, &mut |paint| {
-                got.clear();
-                self.body(paint, PPoint::new(left, top), wide, (&one, &shot, shown), &mut got)
-            }),
-            None => top,
-        };
-        spot.extend(got);
         paint.unclip();
-        let mut scroll = self.scroll.get();
-        scroll.fit(end - begin + gap, self.frame.size.height);
-        self.scroll.set(scroll);
+        // Their tabs, the kit's form, in the room under all that; who they
+        // are scrolls away over them first.
+        let under = top - origin.y;
+        self.under.set(under);
+        self.lift.set(self.lift.get().clamp(0.0, (under + self.lift.get()).max(0.0)));
+        let mut form = self.form.borrow_mut();
+        form.set_frame(PRect::new(self.frame.origin.x, self.frame.origin.y + under, self.frame.size.width, (self.frame.size.height - under).max(0.0)));
+        form.draw(paint, PPoint::new(origin.x, origin.y + under));
         *self.spot.borrow_mut() = spot;
     }
 }
@@ -147,7 +120,13 @@ impl PDraw for Person {
 impl PView for Person {
     /// Where a press on it does something.
     fn hand(&self) -> Vec<PRect> {
-        self.spot.borrow().iter().map(|(rect, _)| *rect).collect()
+        let mut hand: Vec<PRect> = self.spot.borrow().iter().map(|(rect, _)| *rect).collect();
+        hand.extend(self.form.borrow().hand());
+        hand
+    }
+
+    fn tick(&mut self) -> bool {
+        self.form.get_mut().tick()
     }
 
     fn frame(&self) -> PRect {
@@ -158,14 +137,39 @@ impl PView for Person {
         self.frame = frame;
     }
 
+    /// What lies under who they are is the form's: told it as it stands
+    /// there. A press over it is the profile's own.
     fn respond(&mut self, event: &PEvent) -> bool {
+        let under = self.under.get();
+        let below = |at: PPoint| (at.y >= under).then(|| at.minus(PPoint::new(0.0, under)));
+        // A scroll down lifts who they are away first, then scrolls the
+        // tabs; up, the tabs first, then who they are comes back.
+        if let PEvent::Scroll(at, by) = *event {
+            let (lift, most) = (self.lift.get(), (under + self.lift.get()).max(0.0));
+            let form = self.form.get_mut();
+            let place = at.minus(PPoint::new(0.0, under));
+            return match by.y < 0.0 {
+                true if lift < most => {
+                    self.lift.set((lift - by.y).min(most));
+                    true
+                }
+                true => form.respond(&PEvent::Scroll(place, by)),
+                false => form.respond(&PEvent::Scroll(place, by)) || {
+                    self.lift.set((lift - by.y).max(0.0));
+                    lift > 0.0
+                },
+            };
+        }
+        let told = match *event {
+            PEvent::PointerDown(at) => below(at).map(PEvent::PointerDown),
+            PEvent::PointerMove(at) => below(at).map(PEvent::PointerMove),
+            // It has no line to type: keys are the window's (Escape).
+            _ => None,
+        };
+        if let Some(told) = told {
+            return self.form.get_mut().respond(&told);
+        }
         match *event {
-            PEvent::Scroll(_, by) => {
-                let mut scroll = self.scroll.get();
-                let any = scroll.turn(-by.y);
-                self.scroll.set(scroll);
-                any
-            }
             PEvent::PointerDown(at) => {
                 let place = at.plus(self.origin.get());
                 let Some(act) = self.spot.borrow().iter().find(|(rect, _)| rect.contains(place)).map(|(_, act)| act.clone()) else { return false };
@@ -175,10 +179,6 @@ impl PView for Person {
                     Act::Message(room) => _ = self.desk.show(&room),
                     Act::Follow => self.desk.follow(&who),
                     Act::Mute => self.desk.mute(&who),
-                    Act::Pane(index) => self.pane.set(index),
-                    Act::Open(id) => *self.desk.now.who.borrow_mut() = Some(id),
-                    Act::Shot(number) => self.desk.look(self.desk.shot_of(&who), number),
-                    Act::Go(room) => _ = self.desk.show(&room),
                 }
                 true
             }

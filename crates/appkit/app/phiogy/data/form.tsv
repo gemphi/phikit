@@ -43,3 +43,19 @@ item	band	finish	item.finish	finish	look/{ui/item}/finish	-	fold
 item	facts	attribute	item.attribute	attribute	-	-	fold
 item	text	comment	item.comment	comment	-	-	fold
 item	field	say	-	say	note/{ui/item}	-	-
+
+# A person's profile under who they are (part/person/held.rs): its tabs,
+# then each tab's block, shown while its tab is on: the facts of info and
+# stats, and the rest as grids that switch their layout, with a filter
+# and an order where their records have them (data/profile.tsv).
+profile	tabs	tab	-	who.tab	who/tab	-	-
+profile	facts	who.info	person.info	who.info	-	tab	-
+profile	grid	who.shot	person.shot	who.shot	who/open	tab	layout drop=sort:who.sort:who/sort
+profile	grid	who.pft	person.pft	who.pft	who/open	tab	layout drop=filter:who.pft.facet:who/kind drop=sort:who.sort:who/sort
+profile	grid	who.item	person.item	who.item	who/open	tab	layout drop=filter:who.item.facet:who/kind drop=sort:who.sort:who/sort
+profile	grid	who.drop	person.drop	who.drop	who/open	tab	layout drop=filter:who.drop.facet:who/kind drop=sort:who.sort:who/sort
+profile	grid	who.trail	person.trail	who.trail	who/open	tab	layout drop=filter:who.trail.facet:who/kind drop=sort:who.sort:who/sort
+profile	facts	who.stat	person.stat	who.stat	-	tab	-
+profile	grid	who.club	person.club	who.club	who/open	tab	layout drop=sort:who.sort:who/sort
+profile	grid	who.space	person.space	who.space	who/open	tab	layout drop=sort:who.sort:who/sort
+profile	grid	who.linked	person.linked	who.linked	who/open	tab	layout drop=sort:who.sort:who/sort

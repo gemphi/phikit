@@ -145,7 +145,8 @@ impl PView for Room {
         // On another's line the open room's is listened to, so a call
         // somebody began there is seen.
         self.desk.listen();
-        self.stream.tick() | self.present.tick()
+        // The person beside it moves its tabs' light.
+        self.stream.tick() | self.present.tick() | self.person.tick()
     }
 
     fn beat(&self) -> Option<u64> {

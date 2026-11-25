@@ -24,11 +24,13 @@ pub struct Found {
     pub row: Value,
 }
 
-/// Every record of each kind search asks for, and what is sought most.
+/// Every record of each kind search asks for, what is sought most, and
+/// the kinds Phiora gave (whose ids are its keys).
 #[derive(Debug, Clone, Default)]
 pub struct Book {
     pub kind: Vec<(String, Vec<Found>)>,
     pub popular: Vec<String>,
+    pub keyed: Vec<String>,
 }
 
 /// The cells of the first row of that name in `data/search.tsv`.
@@ -48,10 +50,9 @@ impl Book {
     pub fn read(kept: &Kept, kinds: &[&str]) -> Book {
         let ask = cells("ask").first().copied().unwrap_or_default().replace("{kind}", &kinds.join(","));
         let asked: Option<Value> = kept.read(&ask).and_then(|text| serde_json::from_str(&text).ok());
-        let rows = |kind: &str| -> Vec<Value> {
-            let from_phiora = asked.as_ref().and_then(|tree| tree.get("sources")?.as_array()?.iter().find(|s| s.get("kind").and_then(Value::as_str) == Some(kind))?.get("rows")?.as_array().cloned());
-            from_phiora.unwrap_or_else(|| Book::files(kind))
-        };
+        let phiora = |kind: &str| asked.as_ref().and_then(|tree| tree.get("sources")?.as_array()?.iter().find(|s| s.get("kind").and_then(Value::as_str) == Some(kind))?.get("rows")?.as_array().cloned());
+        let rows = |kind: &str| -> Vec<Value> { phiora(kind).unwrap_or_else(|| Book::files(kind)) };
+        let given: Vec<String> = kinds.iter().filter(|kind| phiora(kind).is_some()).map(|kind| kind.to_string()).collect();
         let words = |row: &str| cells(row).iter().flat_map(|cell| cell.split_whitespace()).collect::<Vec<_>>();
         let (name, line, picture, borrow) = (words("name"), words("line"), words("picture"), words("borrow"));
         let word = |row: &Value, fields: &[&str]| fields.iter().find_map(|field| row.get(*field).and_then(Value::as_str).filter(|text| !text.is_empty())).unwrap_or_default().to_string();
@@ -73,15 +74,51 @@ impl Book {
             let own = keyed(word(row, &picture));
             Found { kind: kind.to_string(), id: word(row, &["id"]), name: word(row, &name), line: word(row, &line), picture: if own.is_empty() { worn(row) } else { own }, row: row.clone() }
         };
-        let kind = kinds.iter().map(|kind| (kind.to_string(), rows(kind).iter().map(|row| found(kind, row)).filter(|found| !found.name.is_empty()).collect())).collect();
+        // A record with no name (a sale) is kept for the profile's trail; search never finds it.
+        let kind = kinds.iter().map(|kind| (kind.to_string(), rows(kind).iter().map(|row| found(kind, row)).filter(|found| !found.id.is_empty()).collect())).collect();
         let popular = cells("popular");
         let popular = popular.first().and_then(|path| file(path)).and_then(|site| site.get(*popular.get(1)?)?.as_array().cloned()).unwrap_or_default();
-        Book { kind, popular: popular.iter().filter_map(Value::as_str).map(str::to_string).collect() }
+        Book { kind, popular: popular.iter().filter_map(Value::as_str).map(str::to_string).collect(), keyed: given }
     }
 
     /// The kinds of Phiora's records search's tabs find.
-    pub fn kinds() -> Vec<String> {
+    pub fn sought() -> Vec<String> {
         data::row(data::SEARCH).into_iter().filter(|row| row.first() == Some(&"tab")).filter_map(|row| row.get(3)?.strip_prefix("tree:").map(str::to_string)).collect()
+    }
+
+    /// Every kind read: those search finds, and those a person's profile
+    /// shows (`data/profile.tsv`: its tabs' kinds and a person's own).
+    pub fn kinds() -> Vec<String> {
+        let profile = data::row(data::PROFILE).into_iter().filter_map(|row| match row.first() {
+            Some(&"tab") => row.get(4).filter(|kind| !kind.is_empty()).map(|kind| kind.to_string()),
+            Some(&"own") => row.get(1).map(|kind| kind.to_string()),
+            _ => None,
+        });
+        let named = data::row(data::PROFILE).into_iter().filter(|row| row.first() == Some(&"name")).flat_map(|row| row.get(1).map(|kinds| kinds.split_whitespace().map(str::to_string).collect::<Vec<_>>()).unwrap_or_default());
+        let profile = profile.chain(named);
+        let mut every = Book::sought();
+        profile.for_each(|kind| if !every.contains(&kind) { every.push(kind) });
+        every
+    }
+
+    /// A record's id as this book has it: Phiegg's own, or, for a kind
+    /// Phiora gave, Phiora's key for it (the md5 of `kind:id`).
+    pub fn key(&self, kind: &str, id: &str) -> String {
+        use md5::{Digest, Md5};
+        match self.keyed.iter().any(|known| known == kind) {
+            true => format!("{:x}", Md5::digest(format!("{kind}:{id}").as_bytes())),
+            false => id.to_string(),
+        }
+    }
+
+    /// The records of a kind.
+    pub fn of(&self, kind: &str) -> &[Found] {
+        self.kind.iter().find(|(name, _)| name == kind).map(|(_, found)| found.as_slice()).unwrap_or_default()
+    }
+
+    /// The record of any kind read that has that id.
+    pub fn named(&self, id: &str) -> Option<&Found> {
+        self.kind.iter().flat_map(|(_, found)| found).find(|found| found.id == id)
     }
 
     /// A record by its kind and id.
@@ -98,7 +135,8 @@ impl Book {
             Some(Value::Array(list)) => list.iter().any(|own| own.as_str() == Some(id)),
             _ => false,
         });
-        let every = self.kind.iter().flat_map(|(_, found)| found);
+        let sought = Book::sought();
+        let every = self.kind.iter().filter(|(kind, _)| sought.contains(kind)).flat_map(|(_, found)| found);
         every.filter(|other| other.id != one.id && (names(&other.row, &one.id) || names(&one.row, &other.id))).collect()
     }
 
@@ -131,5 +169,14 @@ mod tests {
         let of = |kind: &str| book.kind.iter().find(|(name, _)| name == kind).map(|(_, found)| found.clone()).unwrap_or_default();
         assert!(of("world").iter().any(|found| found.name == "Opalia" && found.picture.starts_with("phiegg:worlds/")));
         assert!(of("club").iter().filter(|found| !found.picture.is_empty()).count() > 100 && of("show").iter().any(|found| !found.picture.is_empty()));
+    }
+
+    #[test]
+    fn a_record_is_found_by_its_phiegg_id_where_phiora_keyed_it() {
+        // Phiora's key for a record is the md5 of its kind and its id.
+        let keyed = Book { keyed: vec!["person".to_string()], ..Book::default() };
+        assert_eq!(keyed.key("person", "u_noor"), "b551533bfd7df0be9bfc4880c03eb288");
+        // A kind read from Phiegg's own files keeps Phiegg's id.
+        assert_eq!(keyed.key("club", "c_opal"), "c_opal");
     }
 }

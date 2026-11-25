@@ -228,12 +228,10 @@ size	shop.more	8
 # How wide the bar of a thing's variants is on its page, left of its
 # picture: each variant its picture and its colour's name.
 size	shop.variant	88
-# A person beside the room: how large their face is, how many times
-# as wide as high the picture over their profile is (the web's 3/1),
-# and how many of their pictures stand in a row.
+# A person beside the room: how large their face is, and how many times
+# as wide as high the picture over their profile is (the web's 3/1).
 size	person.face	64
 size	person.banner	3
-size	person.across	3
 size	view.thumb	44
 size	view.control	44
 size	view.tool	36
