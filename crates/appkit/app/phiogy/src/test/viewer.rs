@@ -272,23 +272,16 @@ fn step_57_a_picture_is_marked_a_line_sketched_and_words_set_taken_back_put_back
 }
 
 #[test]
-fn the_picture_stands_on_its_own_haze_under_the_window_s_ground() {
+fn the_viewer_stands_on_the_look_s_own_ground_not_the_picture_s_colours() {
     let (app, stage, look) = opened(DESK, 1);
-    // The haze is made from the picture's file away from the window.
-    let film = app.desk().film();
     let name = format!("haze/{KEY}");
-    let made = (0..200).any(|_| {
-        sized(&stage, &look);
-        std::thread::sleep(std::time::Duration::from_millis(10));
-        film.frame(&name).is_some()
-    });
-    assert!(made);
-    let frame = film.frame(&name).expect("the haze");
-    assert!(frame.width <= appkit::pui::core::haze::SIDE && frame.height <= appkit::pui::core::haze::SIDE);
-    // It is drawn over the whole window, the ground over it.
+    // As every page: the look's own pane over the whole window, no haze.
     let mark = sized(&stage, &look);
-    let at = mark.iter().position(|mark| matches!(mark, PMark::Picture { name: known, rect, .. } if *known == name && rect.size.width >= DESK.width)).expect("drawn");
-    assert!(matches!(mark[at + 1], PMark::Fill { rect, color, .. } if rect.size.width >= DESK.width && color.a < 1.0 && color.a > 0.5));
+    assert!(!mark.iter().any(|mark| matches!(mark, PMark::Picture { name: known, .. } if *known == name)));
+    assert!(mark.iter().any(|mark| matches!(mark, PMark::Fill { rect, .. } | PMark::Blend { rect, .. } if rect.size.width >= DESK.width && rect.size.height >= DESK.height - 1.0)));
+    // (A theme with `view.haze` more than nothing has the picture's haze
+    // under the ground, as before: viewer/lay.rs.)
+    drop(app);
 }
 
 #[test]

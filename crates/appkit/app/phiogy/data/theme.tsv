@@ -242,7 +242,10 @@ size	view.large	2
 # Marks on a picture: how thick a sketched line is, and an ink's dot.
 size	view.pen	4
 size	view.dot	22
-# How much of the window's ground lies over a picture's haze behind it.
+# Whether a picture's haze lies behind the viewer (0: the look's own
+# ground, as every page; the user, 25 November 2026), and how much of the
+# window's ground lies over it where it does.
+size	view.haze	0
 size	view.veil	0.78
 # The library's 3D pictures (appkit pui/core/orbit.rs): a ground the
 # window shows through, the room round a model, how much larger a

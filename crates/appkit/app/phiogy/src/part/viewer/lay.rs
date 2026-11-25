@@ -14,8 +14,10 @@ use appkit::pui::core::{PDraw, PFit, PLight, PPaint, PPoint, PRect, haze, light}
 use super::{AFTER, Act, BEFORE, CLOSE, CONTROL, FACE, KEEP, LARGE, PEN, SPLIT, Spot, TOOL, VEIL, Viewer};
 use crate::part::{DIM, GAP, INK, LINE, RADIUS};
 
-/// The theme's token for the window's own ground.
+/// The theme's token for the window's own ground, and whether the
+/// picture's haze lies under it.
 const GROUND: &str = "window.fill";
+const HAZE: &str = "view.haze";
 
 impl Viewer {
     /// A control: its icon, on a ground when the pointer is over it,
@@ -30,10 +32,16 @@ impl Viewer {
         Some(Spot { rect, act, word: word.to_string() })
     }
 
-    /// The picture's haze over the whole window, asked for once and shown
-    /// when it is made, and the window's ground over it: a picture of
-    /// the person's own or one the web keeps; any other, the ground alone.
+    /// The viewer's ground: the look's own pane, as every page stands on
+    /// (the user, 25 November 2026: not the picture's colours). Where the
+    /// theme asks for it (`view.haze` more than nothing), the picture's
+    /// haze lies under it, asked for once and shown when it is made, and
+    /// the window's ground over that.
     fn haze(&self, paint: &mut dyn PPaint, key: &str, frame: PRect) {
+        if paint.theme().size(HAZE).unwrap_or_default() <= 0.0 {
+            light::pane(paint, frame, 0.0, GROUND);
+            return;
+        }
         let name = format!("haze/{key}");
         if self.hazed.borrow_mut().insert(key.to_string()) {
             let film = self.desk.film();
