@@ -1,7 +1,8 @@
 //! A form's `field` block: a line a hand types into, as a comment box
 //! has one. A press gives it the keys; Enter keeps what was typed at the
 //! block's path (the app adds it where it keeps such things) and empties
-//! the line; Escape lets the keys go. Its words before anything is
+//! the line; Escape lets the keys go. A field whose variation says `live`
+//! keeps what is typed at its path as it is typed (a search). Its words before anything is
 //! typed are the block's first choice's.
 
 use super::PChoice;

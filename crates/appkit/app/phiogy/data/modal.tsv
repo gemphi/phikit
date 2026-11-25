@@ -13,3 +13,7 @@ view	Picture	image	whole	bare
 search	Search	search
 # A record's page: a world, a club, a show found by search.
 record	About	globe
+# Making a host, and a host opened from the hosts: drawers at the right
+# edge (part/venue.rs).
+make	Create a host	plus	drawer
+host	Host	users	drawer

@@ -40,62 +40,83 @@ fn rail(app: &Phiogy) -> Vec<String> {
 }
 
 #[test]
-fn step_25_the_hosts_are_listed_to_join_and_one_that_is_joined_stands_in_my_rail() {
+fn step_25_the_hosts_are_cards_to_open_and_one_that_is_joined_stands_in_my_rail() {
     let (app, mut stage, look) = staged(DESK);
     let desk = app.desk();
     assert!(stage.window.apply(&PDeed::Show("venue".to_string())));
     stage.lay(DESK, PMode::of_width(DESK.width));
     assert_eq!(part(&stage), ["venue", "guide"]);
-    // Every host of the catalogue, with how many people it has.
+    // The kit's form: Create a host in its bar, then the person's hosts and
+    // every host to join, each a card with how many people it has.
     let text = shown(&stage, &look);
     let word = |name: &str| desk.text.get(name).to_string();
-    assert!([word("host.create"), word("host.join"), "4,102 members".to_string(), "90 members".to_string(), desk.text.fill("host.count", "n", "2")].iter().all(|line| text.contains(line)), "{text:?}");
-    // One the app's document says is joined can be left; another joined.
+    assert!([word("host.title"), word("host.make"), word("host.mine"), word("host.join"), "4,102 members".to_string(), "90 members".to_string()].iter().all(|line| text.contains(line)), "{text:?}");
+    // A card opens the host in a drawer: joined there, it stands in the rail.
     assert_eq!(rail(&app), ["Direct", "Phiace", "Opal Atelier"]);
-    assert!(press(&mut stage, &look, "venue", &word("host.enter")));
+    assert!(press(&mut stage, &look, "venue", "The Swan Salon"));
+    assert_eq!(stage.window.modal(), Some("host"));
+    assert!(super::press(&mut stage, &look, &word("host.enter")));
     assert_eq!(rail(&app), ["Direct", "Phiace", "Opal Atelier", "The Swan Salon"]);
     assert_eq!(desk.kept.get("host")["phiogy/h_swan"], json!(true));
-    assert!(press(&mut stage, &look, "venue", &word("host.leave")));
-    assert_eq!(rail(&app), ["Direct", "Phiace", "The Swan Salon"]);
-    // The field searches them by name.
+    // Joined, the drawer says Leave; left, it is gone from the rail.
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(super::press(&mut stage, &look, &word("host.leave")));
+    assert_eq!(rail(&app), ["Direct", "Phiace", "Opal Atelier"]);
+    assert!(stage.send(&PEvent::KeyDown(PEvent::ESCAPE)));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    // The line searches them by name as it is typed.
+    assert!(press(&mut stage, &look, "venue", &word("host.find")));
     typed(&mut stage, "swan");
+    stage.lay(DESK, PMode::of_width(DESK.width));
     let text = shown(&stage, &look);
     assert!(text.contains(&"90 members".to_string()) && !text.contains(&"4,102 members".to_string()), "{text:?}");
-    typed(&mut stage, "zz");
-    assert!(shown(&stage, &look).contains(&word("host.none")));
-    (0..2).for_each(|_| _ = stage.send(&PEvent::KeyDown(PEvent::BACKSPACE)));
-    // A press on a host's line opens its first room.
-    assert!(press(&mut stage, &look, "venue", "90 members"));
+    (0..4).for_each(|_| _ = stage.send(&PEvent::KeyDown(PEvent::BACKSPACE)));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    // Open, in the drawer, goes to its first room.
+    assert!(press(&mut stage, &look, "venue", "The Swan Salon"));
+    assert!(super::press(&mut stage, &look, &word("host.open")));
+    stage.lay(DESK, PMode::of_width(DESK.width));
     assert_eq!((desk.open.borrow().as_str(), part(&stage)), ("n_swan", vec!["title", "room", "status", "guide"]));
 }
 
 #[test]
-fn step_26_i_make_a_host_of_my_own_from_a_template_and_remove_it() {
+fn step_26_i_make_a_host_in_its_drawer_with_its_steps_said_and_remove_it() {
     let (app, mut stage, look) = staged(DESK);
     let desk = app.desk();
+    let word = |name: &str| desk.text.get(name).to_string();
     assert!(stage.window.apply(&PDeed::Show("venue".to_string())));
     stage.lay(DESK, PMode::of_width(DESK.width));
-    // Until it has a name a template makes nothing.
-    assert!(!press(&mut stage, &look, "venue", "A club") && desk.made().is_empty());
-    assert!(press(&mut stage, &look, "venue", desk.text.get("host.name")));
+    // Create a host opens its drawer, the steps said in it.
+    assert!(press(&mut stage, &look, "venue", &word("host.make")));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert_eq!(stage.window.modal(), Some("make"));
+    let text = shown(&stage, &look);
+    assert!(text.iter().any(|line| word("host.help.1").starts_with(line.as_str()) && line.len() > 10), "{text:?}");
+    // Until it has a name, Create makes nothing.
+    assert!(super::press(&mut stage, &look, "A club"));
+    assert!(super::press(&mut stage, &look, &word("host.made")));
+    assert!(desk.made().is_empty());
+    // Named, with a start chosen, it is made.
+    assert!(super::press(&mut stage, &look, &word("host.name")));
     typed(&mut stage, "Studio Nine");
-    assert!(press(&mut stage, &look, "venue", "A club"));
+    assert!(super::press(&mut stage, &look, &word("host.made")));
+    stage.lay(DESK, PMode::of_width(DESK.width));
     // Its rooms stand under their headings, and its first is opened.
     let made = desk.made();
     let room: Vec<(&str, &str, bool)> = made[0].plate.iter().map(|plate| (plate.label.as_str(), plate.head.as_str(), plate.voice)).collect();
     assert_eq!((made[0].label.as_str(), room), ("Studio Nine", vec![("welcome", "Text", false), ("news", "Text", false), ("Lounge", "Voice", true)]));
     let first = made[0].plate[0].id.clone();
-    assert_eq!((desk.room(), part(&stage).contains(&"room")), (first.clone(), true));
+    assert_eq!((desk.room(), part(&stage).contains(&"room"), stage.window.modal()), (first.clone(), true, None));
     assert_eq!(rail(&app).last().map(String::as_str), Some("Studio Nine"));
-    assert!(shown(&stage, &look).contains(&"welcome".to_string()));
     // It is kept as the web keeps it, and can be written in.
     let kept = desk.kept.get("made");
     assert_eq!((&kept["phiogy"][0]["group"]["label"], &kept["phiogy"][0]["room"][format!("{}-2", made[0].id)]["kind"]), (&json!("Studio Nine"), &json!("voice")));
     assert!(desk.write("First") && desk.said().len() == 1);
-    // Removed, it is gone from the hosts and from the rail.
+    // Opened from Your hosts, it is removed from its drawer.
     assert!(stage.window.apply(&PDeed::Show("venue".to_string())));
     stage.lay(DESK, PMode::of_width(DESK.width));
-    assert!(press(&mut stage, &look, "venue", desk.text.get("host.remove")));
+    assert!(press(&mut stage, &look, "venue", "Studio Nine"));
+    assert!(super::press(&mut stage, &look, &word("host.remove")));
     assert!(desk.made().is_empty() && !rail(&app).contains(&"Studio Nine".to_string()));
 }
 

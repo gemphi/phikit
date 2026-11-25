@@ -25,3 +25,15 @@ back	set	item.set	sparkles
 # by name.
 who.sort	top	sort.top	sort
 who.sort	name	sort.name	sort
+# The hosts' bar, the search's hint, their order; making a host: the
+# steps said in words, the name's hint, Create.
+hosts.tool	make	host.make	plus
+hosts.find	find	host.find	search
+hosts.sort	members	sort.members	sort
+hosts.sort	name	sort.name	sort
+make.help	1	host.help.1	-
+make.help	2	host.help.2	-
+make.help	3	host.help.3	-
+make.help	4	host.help.4	-
+make.name	name	host.name	-
+make.tool	create	host.made	check

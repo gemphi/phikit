@@ -41,11 +41,15 @@ fn step_3_a_press_on_a_room_in_the_bar_opens_it() {
 }
 
 #[test]
-fn step_4_the_hosts_row_lists_every_place_and_a_press_on_one_opens_its_first_room() {
+fn step_4_the_hosts_row_lists_every_place_and_a_host_opened_goes_to_its_first_room() {
     let (app, mut stage, look) = staged(DESK);
     assert!(icon(&mut stage, &look, "globe"));
     assert_eq!(part(&stage), ["venue", "guide"]);
+    // A host opens in its drawer; Open there goes to its first room.
     assert!(press(&mut stage, &look, "The Swan Salon"));
+    assert_eq!(stage.window.modal(), Some("host"));
+    assert!(press(&mut stage, &look, app.desk().text.get("host.open")));
+    stage.lay(DESK, appkit::pui::core::PMode::of_width(DESK.width));
     assert_eq!((app.desk().open.borrow().as_str(), part(&stage)), ("n_swan", vec!["title", "room", "status", "guide"]));
 }
 

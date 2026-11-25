@@ -156,6 +156,24 @@ host.remove	Remove
 host.members	{n} members
 host.count	{n} hosts to join
 host.none	No host has that name
+host.title	Hosts
+host.make	Create a host
+host.mine	Your hosts
+host.how	How it works
+host.help.1	1. Name your host. The name is what people see in the rail and in search; you can change it later.
+host.help.2	2. Pick how it starts. Each start comes with its own rooms (a lobby, a lounge, a stage...), which you can rename or add to.
+host.help.3	3. Press Create. Your host stands in your rail and you land in its first room.
+host.help.4	4. For now a host is kept on this computer, and in your account when Phiora is running; others can join it once hosts are shared through Phiora.
+host.template	How it starts
+host.made	Create
+host.about	About
+host.rooms	Rooms
+host.open	Open
+host.fact.name	Name
+host.fact.members	Members
+host.fact.here	Here now
+host.fact.rooms	Rooms
+sort.members	Most members
 # Friends, and finding people, as the web's pages say them.
 friend.title	Friends
 friend.here	Here now

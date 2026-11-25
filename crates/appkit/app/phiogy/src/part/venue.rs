@@ -1,141 +1,224 @@
-//! The hosts: the page a person adds a host from, as the web's is
-//! (`Hosts` in `puikit/app/phi-kit/src/hosts.tsx`). First, a host of
-//! their own: a name, then how it starts, one of the catalogue's
-//! templates; the hosts they made stand under it, each with the way to
-//! remove it. Then every host there is to join: a field that searches
-//! them, the first that match with their mark, how many people they
-//! have, and joining or leaving. A host that is joined stands in the
-//! rail; a press on its line opens its first room.
+//! The hosts, as the kit's forms (`data/form.tsv`): the page `hosts`, the
+//! drawer `make` a host is made in, and the drawer `host` a host opens
+//! in. The page: Create a host in its bar, the line that searches, then
+//! the hosts that are the person's (made or joined) and every host to
+//! join, each a grid that lays out as the person chooses. Making one: the
+//! steps said in words, its name, how it starts (a template), Create.
+//! A host: its mark, what it is, its rooms, and what can be done (open,
+//! join or leave, remove one of one's own). This file only says what each
+//! list holds and what a press does; how it all stands is the table's.
 
-use std::cell::Cell;
-
-use appkit::pui::control::{PControl, PField};
 use appkit::pui::core::{PDraw, PEvent, PPaint, PPoint, PRect, PView};
+use appkit::pui::form::{PForm, PListed};
+use appkit::pui::state::PState;
+use appkit::pui::window::PDeed;
+use std::rc::Rc;
 
-use super::list::{Deed, Item, Lister, Seat, field, grouped};
 use super::Desk;
+use super::list::grouped;
+use crate::data;
+use crate::site::Venue as Place;
 
 /// How many hosts of the catalogue are listed at most, as on the web.
 pub const MOST: &str = "host.most";
+/// The drawers, as `data/modal.tsv` names them.
+pub const MAKE: &str = "make";
+pub const HOST: &str = "host";
 
-/// What a press on the page means.
-#[derive(Debug, Clone, PartialEq)]
-enum Act {
-    /// Give the keys to the field of that number.
-    Field(usize),
-    /// Make a host from the template of that number.
-    Make(usize),
-    Remove(String),
-    Join(String, bool),
-    Open(String),
+/// The paths the forms keep and are told.
+const FIND: &str = "hosts/find";
+const SORT: &str = "hosts/sort";
+const DO: &str = "hosts/do";
+const OPEN: &str = "hosts/open";
+const NAME: &str = "make/name";
+const TEMPLATE: &str = "make/template";
+const MADE: &str = "make/do";
+const DEED: &str = "host/do";
+const ROOM: &str = "host/room";
+
+type Row = Vec<String>;
+
+/// What the hosts' forms hold, and what a press on them does.
+struct Hosts {
+    desk: Desk,
 }
 
-/// The hosts.
+impl Hosts {
+    fn get(&self, path: &str) -> String {
+        self.desk.shelf.get(path)
+    }
+
+    /// A card of a host: what a press opens, its name, its icon, its
+    /// members and who is here, its mark.
+    fn card(&self, place: &Place) -> Row {
+        let text = &self.desk.text;
+        let face = place.mark.as_ref().map(|cell| format!("{} {} {}", cell.sheet, cell.column, cell.index)).unwrap_or_default();
+        let icon = match face.is_empty() {
+            true => self.desk.icon(&place.icon).to_string(),
+            false => String::new(),
+        };
+        vec![place.id.clone(), place.label.clone(), icon, String::new(), text.fill("host.members", "n", &grouped(place.count)), String::new(), face]
+    }
+
+    /// The host a drawer is about.
+    fn open(&self) -> Option<Place> {
+        let id = self.get(OPEN);
+        self.desk.made().into_iter().chain(self.desk.site.venue.iter().cloned()).find(|place| place.id == id)
+    }
+
+    /// Whether a host is one the search leaves.
+    fn sought(&self, place: &Place) -> bool {
+        let wanted = self.get(FIND).trim().to_lowercase();
+        wanted.is_empty() || place.label.to_lowercase().contains(&wanted)
+    }
+
+    /// The catalogue's hosts: the site's, less the places of the rail's
+    /// own (the direct rooms, the site's home).
+    fn catalogue(&self) -> &[Place] {
+        let site = &self.desk.site;
+        &site.venue[site.extra.nav.min(site.venue.len())..]
+    }
+
+    /// The catalogue: every host to join, those the search leaves, in
+    /// the order chosen, no more than the theme says.
+    fn every(&self) -> Vec<Place> {
+        let mut all: Vec<Place> = self.catalogue().iter().filter(|place| self.sought(place)).cloned().collect();
+        match self.get(SORT).as_str() {
+            "name" => all.sort_by_key(|place| place.label.to_lowercase()),
+            _ => all.sort_by_key(|place| std::cmp::Reverse(place.count)),
+        }
+        all.truncate(self.desk.size(MOST) as usize);
+        all
+    }
+
+    fn rows(&self, name: &str) -> Vec<Row> {
+        let text = &self.desk.text;
+        match name {
+            // Theirs: the hosts they made, then those of the catalogue they
+            // joined; the search narrows them too.
+            "hosts.mine" => {
+                let made = self.desk.made();
+                let joined = self.catalogue().iter().filter(|place| self.desk.joined(place) && !made.iter().any(|one| one.id == place.id));
+                made.iter().chain(joined).filter(|place| self.sought(place)).map(|place| self.card(place)).collect()
+            }
+            "hosts.every" => self.every().iter().map(|place| self.card(place)).collect(),
+            "make.template" => self.desk.site.extra.template.iter().enumerate().map(|(index, template)| {
+                let room = template.room.iter().map(|(label, ..)| label.as_str()).collect::<Vec<_>>().join(&format!(" {} ", text.get("between")));
+                vec![index.to_string(), template.label.clone(), self.desk.icon(&template.icon).to_string(), room]
+            }).collect(),
+            "host.about" => self.open().map(|place| {
+                let rows = [("host.fact.name", place.label.clone()), ("host.fact.members", grouped(place.count)), ("host.fact.here", grouped(place.online)), ("host.fact.rooms", grouped(place.plate.len() as u64))];
+                rows.into_iter().map(|(word, value)| vec![word.to_string(), text.get(word).to_string(), value]).collect()
+            }).unwrap_or_default(),
+            "host.room" => self.open().map(|place| place.plate.iter().map(|plate| vec![plate.id.clone(), plate.label.clone(), self.desk.icon(&plate.icon).to_string(), plate.head.clone()]).collect()).unwrap_or_default(),
+            // What can be done with it: open it; join or leave one of the
+            // catalogue; remove one of their own.
+            "host.tool" => self.open().map(|place| {
+                let own = self.desk.made().iter().any(|one| one.id == place.id);
+                let deed = match (own, self.desk.joined(&place)) {
+                    (true, _) => ("remove", "host.remove", "trash"),
+                    (false, true) => ("leave", "host.leave", "log-out"),
+                    (false, false) => ("join", "host.enter", "log-in"),
+                };
+                vec![vec!["open".to_string(), "host.open".to_string(), "external-link".to_string()], vec![deed.0.to_string(), deed.1.to_string(), deed.2.to_string()]]
+            }).unwrap_or_default(),
+            // Any other list is a group of `data/filter.tsv`.
+            _ => data::row(data::FILTER).into_iter().filter(|row| row.first() == Some(&name)).map(|row| row[1..].iter().map(|cell| cell.to_string()).collect()).collect(),
+        }
+    }
+
+    /// Make the host named from the template chosen, go to its first room
+    /// and put the drawer away.
+    fn make(&self) {
+        let name = self.get(NAME);
+        let template = self.get(TEMPLATE).parse::<usize>().ok().and_then(|index| self.desk.site.extra.template.get(index).cloned());
+        let (Some(template), false) = (template, name.trim().is_empty()) else { return };
+        if let Some(room) = self.desk.create(name.trim(), &template) {
+            self.desk.shelf.set(NAME, "");
+            _ = self.desk.show(&room);
+            self.desk.wish.borrow_mut().push(PDeed::Close);
+        }
+    }
+}
+
+impl PState for Hosts {
+    fn get(&self, path: &str) -> String {
+        self.desk.shelf.get(path)
+    }
+
+    fn set(&self, path: &str, value: &str) {
+        let (desk, wish) = (&self.desk, |deed: PDeed| self.desk.wish.borrow_mut().push(deed));
+        match (path, value) {
+            (DO, MAKE) => wish(PDeed::Open(MAKE.to_string())),
+            (OPEN, id) => {
+                desk.shelf.set(OPEN, id);
+                wish(PDeed::Open(HOST.to_string()));
+            }
+            (MADE, _) => self.make(),
+            (ROOM, room) => {
+                _ = desk.show(room);
+                wish(PDeed::Close);
+            }
+            (DEED, deed) => {
+                let Some(place) = self.open() else { return };
+                match deed {
+                    "open" => {
+                        place.plate.first().into_iter().for_each(|plate| _ = desk.show(&plate.id));
+                        wish(PDeed::Close);
+                    }
+                    "join" => desk.enter(&place.id, true),
+                    "leave" => desk.enter(&place.id, false),
+                    "remove" => {
+                        desk.unmake(&place.id);
+                        wish(PDeed::Close);
+                    }
+                    _ => {}
+                }
+            }
+            _ => desk.shelf.set(path, value),
+        }
+    }
+}
+
+/// A form of the hosts: the page (`hosts`) or a drawer (`make`, `host`).
 pub struct Venue {
-    frame: PRect,
-    desk: Desk,
-    list: Lister<Act>,
-    /// The name of a host to make, and what the hosts are searched by;
-    /// and which of the two has the keys.
-    name: PField,
-    find: PField,
-    aim: Cell<usize>,
+    form: PForm,
 }
 
 impl Venue {
-    pub fn new(desk: Desk) -> Venue {
-        Venue { frame: PRect::default(), desk, list: Lister::default(), name: PField::new(PRect::default()), find: PField::new(PRect::default()), aim: Cell::new(1) }
-    }
-
-    /// What the page holds, from its top down.
-    fn item(&self) -> Vec<Item<Act>> {
-        let (text, site) = (&self.desk.text, &self.desk.site);
-        let word = |name: &str| text.get(name).to_string();
-        let named = !self.name.value().trim().is_empty();
-        let mut item = vec![Item::Head(word("host.create")), Item::Note(word("host.lead")), Item::Field(0, word("host.name"), Act::Field(0))];
-        // A template can be pressed once the host has a name.
-        for (index, template) in site.extra.template.iter().enumerate() {
-            let room = template.room.iter().map(|(label, ..)| label.as_str()).collect::<Vec<_>>().join(&format!(" {} ", text.get("between")));
-            item.push(Item::Line(Seat::Icon(self.desk.icon(&template.icon).to_string()), template.label.clone(), room, Some(Act::Make(index)).filter(|_| named), Vec::new()));
-        }
-        for made in self.desk.made() {
-            let first = made.plate.first().map(|plate| Act::Open(plate.id.clone()));
-            item.push(Item::Line(Seat::Icon(self.desk.icon(&made.icon).to_string()), made.label.clone(), String::new(), first, vec![Deed::word(text.get("host.remove"), false, Act::Remove(made.id.clone()))]));
-        }
-        item.extend([Item::Head(word("host.join")), Item::Field(1, word("host.find"), Act::Field(1))]);
-        let wanted = self.find.value().trim().to_lowercase();
-        let all = &site.venue[site.extra.nav.min(site.venue.len())..];
-        let most = self.desk.size(MOST) as usize;
-        let found: Vec<_> = all.iter().filter(|venue| wanted.is_empty() || venue.label.to_lowercase().contains(&wanted)).take(most).collect();
-        for venue in &found {
-            let inside = self.desk.joined(venue);
-            let seat = venue.mark.clone().map_or_else(|| Seat::Icon(self.desk.icon(&venue.icon).to_string()), Seat::Face);
-            let deed = match inside {
-                true => Deed::word(text.get("host.leave"), true, Act::Join(venue.id.clone(), false)),
-                false => Deed::word(text.get("host.enter"), false, Act::Join(venue.id.clone(), true)),
-            };
-            let first = venue.plate.first().map(|plate| Act::Open(plate.id.clone()));
-            item.push(Item::Line(seat, venue.label.clone(), text.fill("host.members", "n", &grouped(venue.count)), first, vec![deed]));
-        }
-        if found.is_empty() {
-            item.push(Item::Note(word("host.none")));
-        }
-        item.push(Item::Note(text.fill("host.count", "n", &all.len().to_string())));
-        item
+    pub fn new(name: &str, desk: Desk) -> Venue {
+        let hosts = Rc::new(Hosts { desk: desk.clone() });
+        let rows = hosts.clone();
+        let state: Vec<(String, Rc<dyn PState>)> = vec![("hosts".to_string(), hosts.clone()), ("make".to_string(), hosts.clone()), ("host".to_string(), hosts), ("ui".to_string(), desk.shelf.clone())];
+        let source = Rc::new(PListed::new(data::LISTING, Rc::new(move |list: &str| rows.rows(list)), desk.text.clone(), state));
+        Venue { form: PForm::new(name, data::FORM, source, desk.text.clone(), desk.shade.clone()) }
     }
 }
 
 impl PDraw for Venue {
     fn draw(&self, paint: &mut dyn PPaint, origin: PPoint) {
-        self.list.draw(paint, origin, self.frame, &self.desk, &self.item(), &[&self.name, &self.find]);
+        self.form.draw(paint, origin);
     }
 }
 
 impl PView for Venue {
-    /// Where a press on it does something.
-    fn hand(&self) -> Vec<PRect> {
-        self.list.hands()
-    }
-
     fn frame(&self) -> PRect {
-        self.frame
+        self.form.frame()
     }
 
     fn set_frame(&mut self, frame: PRect) {
-        self.frame = frame;
-        self.name.set_frame(field(&self.desk, frame.size.width));
-        self.find.set_frame(field(&self.desk, frame.size.width));
-    }
-
-    fn tick(&mut self) -> bool {
-        (self.name.focused, self.find.focused) = (self.aim.get() == 0, self.aim.get() == 1);
-        false
+        self.form.set_frame(frame);
     }
 
     fn respond(&mut self, event: &PEvent) -> bool {
-        self.tick();
-        match *event {
-            PEvent::KeyDown(_) => match self.aim.get() {
-                0 => self.name.respond(event),
-                _ => self.find.respond(event),
-            },
-            PEvent::Scroll(_, by) => self.list.wheel(by.y),
-            PEvent::PointerDown(at) => {
-                let Some(act) = self.list.press(at) else { return false };
-                match act {
-                    Act::Field(index) => self.aim.set(index),
-                    Act::Make(index) => {
-                        let made = self.desk.site.extra.template.get(index).and_then(|template| self.desk.create(&self.name.value(), template));
-                        self.name.store(String::new());
-                        made.into_iter().for_each(|room| _ = self.desk.show(&room));
-                    }
-                    Act::Remove(id) => self.desk.unmake(&id),
-                    Act::Join(id, on) => self.desk.enter(&id, on),
-                    Act::Open(room) => _ = self.desk.show(&room),
-                }
-                true
-            }
-            _ => false,
-        }
+        self.form.respond(event)
+    }
+
+    fn tick(&mut self) -> bool {
+        self.form.tick()
+    }
+
+    fn hand(&self) -> Vec<PRect> {
+        self.form.hand()
     }
 }

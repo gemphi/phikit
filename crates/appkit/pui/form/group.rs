@@ -95,7 +95,15 @@ impl PForm {
                 *self.typing.borrow_mut() = None;
                 true
             }
-            Some(PTyped::Edit) => true,
+            // A line that says `live` keeps what is typed as it is typed,
+            // so what it searches narrows at once.
+            Some(PTyped::Edit) => {
+                let block = self.block.iter().find(|b| b.key == key);
+                if let Some(block) = block.filter(|b| b.variant.split_whitespace().any(|word| word == "live")) {
+                    self.source.set(&block.path, self.draft.borrow().trim());
+                }
+                true
+            }
             None => false,
         }
     }

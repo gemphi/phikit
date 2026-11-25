@@ -51,3 +51,20 @@ who.pft.facet	who.pft.facet	0	1	2
 who.item.facet	who.item.facet	0	1	2
 who.drop.facet	who.drop.facet	0	1	2
 who.trail.facet	who.trail.facet	0	1	2
+
+# The hosts (part/venue.rs): the bar, the search's hint, the grids
+# (what a press opens, name, icon, picture, line, note, face), the
+# order, the steps, the name's hint, the templates (value, name, icon,
+# their rooms), Create, a host's facts, rooms and deeds.
+hosts.tool	hosts.tool	0	text:1	2
+hosts.find	hosts.find	0	text:1	-
+hosts.mine	hosts.mine	0	1	2	-	-	-	-	3	4	5	-	6
+hosts.every	hosts.every	0	1	2	-	-	-	-	3	4	5	-	6
+hosts.sort	hosts.sort	0	text:1	2
+make.help	make.help	0	text:1	-
+make.name	make.name	0	text:1	-
+make.template	make.template	0	1	2	-	-	-	-	-	3
+make.tool	make.tool	0	text:1	2
+host.about	host.about	0	1	-	-	-	-	-	-	-	2
+host.room	host.room	0	1	2	-	-	-	-	-	3
+host.tool	host.tool	0	text:1	2

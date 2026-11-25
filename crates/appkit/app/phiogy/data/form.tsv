@@ -59,3 +59,22 @@ profile	facts	who.stat	person.stat	who.stat	-	tab	-
 profile	grid	who.club	person.club	who.club	who/open	tab	layout drop=sort:who.sort:who/sort
 profile	grid	who.space	person.space	who.space	who/open	tab	layout drop=sort:who.sort:who/sort
 profile	grid	who.linked	person.linked	who.linked	who/open	tab	layout drop=sort:who.sort:who/sort
+
+# The hosts (part/venue.rs): the page, its bar with Create a host, the
+# line that searches as it is typed, the hosts that are the person's and
+# every host to join, each a grid laid out as the person chooses. The
+# drawer a host is made in: the steps in words, its name, how it starts,
+# Create. The drawer a host opens in: what it is, what can be done, its
+# rooms.
+hosts	head	-	host.title	-	-	-	-
+hosts	band	do	-	hosts.tool	hosts/do	-	bar end
+hosts	field	find	-	hosts.find	hosts/find	-	live
+hosts	grid	mine	host.mine	hosts.mine	hosts/open	-	fold layout
+hosts	grid	every	host.join	hosts.every	hosts/open	-	fold layout drop=sort:hosts.sort:hosts/sort
+make	band	do	-	make.tool	make/do	-	bar end
+make	text	help	host.how	make.help	-	-	fold
+make	field	name	host.name	make.name	make/name	-	live
+make	rows	template	host.template	make.template	make/template	-	-
+host	band	do	-	host.tool	host/do	-	bar end
+host	facts	about	host.about	host.about	-	-	fold
+host	grid	room	host.rooms	host.room	host/room	-	fold layout
