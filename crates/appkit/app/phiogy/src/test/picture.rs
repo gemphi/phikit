@@ -46,10 +46,11 @@ fn the_site_reads_faces_and_marks_as_cells_of_a_sheet() {
 #[test]
 fn step_14_faces_marks_and_posted_pictures_are_drawn_from_the_web_s_files() {
     let (app, mut stage, look) = staged(DESK);
-    // A direct room has its person's face in the title and in the rail.
+    // A direct room has its person's face in the title, in the rail, and
+    // beside the room, where the column is about them.
     let face = PFit::Cell { column: 8, index: 1 };
     let lora = pictured(&stage, &look).into_iter().filter(|(name, _, fit)| name == "phiegg:portraits/sheet-00.webp" && *fit == face).count();
-    assert_eq!(lora, 2);
+    assert_eq!(lora, 3);
     // In a room each message has the face of who said it, and a picture
     // posted with it covers a frame under its words.
     assert!(app.desk().show("lobby"));

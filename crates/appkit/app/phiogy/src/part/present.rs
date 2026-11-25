@@ -41,6 +41,8 @@ const TAB: &str = "aside/tab";
 const DO: &str = "aside/do";
 const ROOM: &str = "aside/room";
 const WHO: &str = "aside/who";
+/// What Profile keeps at `aside/do`: the person's whole profile opens.
+const PROFILE: &str = "profile";
 
 /// Its tabs, as data/aside.tsv has them.
 const TABS: Tabbed = Tabbed { table: data::ASIDE, path: TAB, prefix: "aside" };
@@ -63,6 +65,33 @@ impl Aside {
         let room = self.desk.room();
         let made = self.desk.made();
         self.desk.site.venue.iter().chain(&made).find(|venue| venue.plate.iter().any(|plate| plate.id == room)).cloned()
+    }
+
+    /// The person a direct room is with: the column is about them.
+    fn person(&self) -> Option<crate::site::Member> {
+        let room = self.desk.room();
+        let with = self.desk.plate(&room).map(|plate| plate.with).filter(|with| !with.is_empty()).or_else(|| self.desk.direct_with(&room))?;
+        self.desk.site.member(&with).cloned()
+    }
+
+    /// A direct room's column: the person it is with, their face, what
+    /// they are, what they say of themself, and Profile for all of them.
+    fn of_person(&self, name: &str, one: &crate::site::Member) -> Vec<Row> {
+        let text = &self.desk.text;
+        let between = format!(" {} ", text.get("between"));
+        match name {
+            "aside.head" => {
+                let line = [format!("@{}", one.handle), one.role.clone(), one.state.clone()].into_iter().filter(|said| said.len() > 1).collect::<Vec<_>>().join(&between);
+                vec![vec![one.id.clone(), one.name.clone(), line]]
+            }
+            "aside.do" => vec![vec![PROFILE.to_string(), "person.title".to_string(), "user".to_string()]],
+            "aside.face" => self.desk.site.face(&one.id).map(|cell| vec![one.id.clone(), String::new(), format!("{} {} {}", cell.sheet, cell.column, cell.index)]).into_iter().collect(),
+            "aside.picture" => Some(vec![one.id.clone(), String::new(), one.banner.clone()]).filter(|row| !row[2].is_empty()).into_iter().collect(),
+            "aside.about" => Some(vec!["bio".to_string(), one.bio.clone()]).filter(|row| !row[1].is_empty()).into_iter().collect(),
+            "aside.fact" => [("person.fact.handle", one.handle.clone()), ("person.fact.role", one.role.clone()), ("person.fact.state", one.state.clone()), ("person.since", one.since.clone())]
+                .into_iter().filter(|(_, value)| !value.is_empty()).map(|(word, value)| vec![word.to_string(), text.get(word).to_string(), value]).collect(),
+            _ => Vec::new(),
+        }
     }
 
     /// Phiegg's records of the host and of its club, where the book has
@@ -130,6 +159,10 @@ impl Aside {
                 _ => Vec::new(),
             };
         };
+        // A direct room is about the person it is with; its line stays.
+        if let Some(one) = self.person().filter(|_| !matches!(name, "aside.line" | "aside.call" | "aside.watch" | "aside.tab")) {
+            return self.of_person(name, &one);
+        }
         let venue = self.venue();
         let (host, club) = venue.as_ref().map(|venue| self.record(venue)).unwrap_or_default();
         let face = |cell: Option<&crate::site::Face>| cell.map(|cell| format!("{} {} {}", cell.sheet, cell.column, cell.index)).unwrap_or_default();
@@ -244,6 +277,7 @@ impl PState for Aside {
     fn set(&self, path: &str, value: &str) {
         let desk = &self.desk;
         match (path, value) {
+            (DO, PROFILE) => self.person().into_iter().for_each(|one| *desk.now.who.borrow_mut() = Some(one.id)),
             (DO, deed) => self.venue().into_iter().for_each(|venue| desk.enter(&venue.id, deed == "join")),
             (ROOM, room) => _ = desk.show(room),
             (WHO, id) if desk.site.member(id).is_some() => *desk.now.who.borrow_mut() = Some(id.to_string()),

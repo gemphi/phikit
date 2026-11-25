@@ -260,6 +260,10 @@ impl PForm {
         let mut end = top - space;
         for tabs in self.of("tabs") {
             let (choice, now) = (self.source.list(&tabs.list), self.source.get(&tabs.path));
+            // Tabs with nothing to choose are not drawn, nor their ground.
+            if choice.is_empty() {
+                continue;
+            }
             // One row of tabs, centred, as many as fit up to the theme's
             // most; arrows at its ends step to the tab before and after.
             let (pill, value) = self.row(paint, &choice, &now, wide);
