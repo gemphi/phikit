@@ -1,9 +1,10 @@
 //! A stack: groups one under another, each on a section's ground under
 //! its heading, and the room a pane has left shared out between them so
 //! they fill it. And tabs over a stack: the tabs above, on the pane, and
-//! the groups they choose on one ground of their own under them, so the
-//! tabs stand over what they choose and do not sit in it; the light on
-//! the chosen tab moves to the next one chosen.
+//! the groups they choose on one ground under them, standing on it
+//! directly (no ground in a ground), so the tabs stand over what they
+//! choose and do not sit in it; the light on the chosen tab moves to the
+//! next one chosen.
 //!
 //! The room round every group, its roundness and the least room between
 //! two are the theme's, the same for every app (`section.*`).
@@ -65,6 +66,16 @@ fn room(paint: &dyn PPaint) -> (f32, f32) {
 /// from the right (`right`) or the left, and what stands on them the
 /// other way. Where the last ends, and what can be pressed in each.
 pub fn stack(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32, right: bool, group: &mut [PGrouped]) -> (f32, Vec<Vec<PRect>>) {
+    stacked(paint, at, wide, end, right, group, true)
+}
+
+/// The groups of a stack, on grounds of their own (`grounded`) or, where
+/// what holds them has its ground already, on that one: every layer has
+/// what it holds standing on it directly, never only another ground (the
+/// user, 25 November 2026: a ground groups an accordion, a grid or cards;
+/// a heading in a ground needs none of its own, nor does what a ground
+/// holds).
+fn stacked(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32, right: bool, group: &mut [PGrouped], grounded: bool) -> (f32, Vec<Vec<PRect>>) {
     let (side, top) = room(paint);
     let (line, gap, ink) = (paint.size(LINE), paint.size(GAP), paint.color(INK));
     let least = paint.theme().size(SPACE).unwrap_or(gap / 2.0);
@@ -79,7 +90,7 @@ pub fn stack(paint: &mut dyn PPaint, at: PPoint, wide: f32, end: f32, right: boo
     let (mut y, mut pressed) = (at.y, Vec::new());
     for (g, high) in group.iter_mut().zip(tall) {
         let from = PPoint::new(at.x + side, y + top);
-        lit(paint, from, inner, from.y + high, right);
+        grounded.then(|| lit(paint, from, inner, from.y + high, right));
         let below = head(g);
         let place = PPoint::new(from.x, from.y + below);
         // A group under a heading, open: a thin line down its level, in
@@ -117,9 +128,11 @@ pub fn tabbed<B: PBand + ?Sized>(paint: &mut dyn PPaint, at: PPoint, wide: f32, 
     };
     let held = at.y + tab.high_in(paint, wide) + least;
     let inner = wide - side * 2.0;
-    let need = stack(&mut PDry(&*paint), PPoint::new(at.x + side, held + top), inner, 0.0, false, group).0;
+    // The groups stand on the tabs' ground itself, not on grounds of
+    // their own inside it.
+    let need = stacked(&mut PDry(&*paint), PPoint::new(at.x + side, held + top), inner, 0.0, false, group, false).0;
     let bottom = end.max(need + top);
     label(paint, PRect::new(at.x, held, wide, bottom - held), radius, PLight::Rest, true, "");
-    let (_, pressed) = stack(paint, PPoint::new(at.x + side, held + top), inner, bottom - top, false, group);
+    let (_, pressed) = stacked(paint, PPoint::new(at.x + side, held + top), inner, bottom - top, false, group, false);
     (tabs, pressed, bottom)
 }

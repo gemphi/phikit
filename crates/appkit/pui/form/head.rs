@@ -4,7 +4,9 @@
 //! (`layout`: a drop of three, a grid, large tiles, a list, `list` too
 //! where it begins as one); at its
 //! right, drops that choose from a list (`drop=icon:list:path`, a filter,
-//! an order), and a fold (`fold`: open, or only its heading). A block
+//! an order), for a block that lays out a switch that widens it to the
+//! whole form and back (`ui/expand/<key>`), and a fold (`fold`: open, or
+//! only its heading). A block
 //! asks for them by words of its variation; what a layout and a fold
 //! keep is a path of the app's `ui` state, the block's key after it, so
 //! the app needs nothing more. Which drop is open is kept at `ui/drop`.
@@ -15,6 +17,8 @@ use crate::pui::core::{PPaint, PPoint, PRect};
 /// The paths a fold and a layout are kept at, the block's key after them,
 /// and the one that says which drop is open.
 pub const FOLD: &str = "ui/fold/";
+/// The path a block widened to the whole form is kept at, its key after.
+pub const EXPAND: &str = "ui/expand/";
 pub const LAYOUT: &str = "ui/layout/";
 pub const DROP: &str = "ui/drop";
 /// What a folded block, and a block laid as a list or as large tiles,
@@ -95,6 +99,16 @@ impl PHead {
             let mut part = spec.splitn(3, ':');
             let (Some(icon), Some(list), Some(path)) = (part.next(), part.next(), part.next()) else { continue };
             head.tool.push(drop(format!("{key}/{icon}"), icon, list, path.to_string(), &open));
+        }
+        // Every block that lays out (a grid) can take the whole form, and
+        // give it back: as Figma's sections expand.
+        if word.contains(&"layout") {
+            let path = format!("{EXPAND}{key}");
+            let (icon, value) = match source.get(&path) == FOLDED {
+                true => ("x", String::new()),
+                false => ("maximize", FOLDED.to_string()),
+            };
+            head.tool.push(PTool { icon: icon.to_string(), path, value, drop: None });
         }
         if word.contains(&"fold") {
             let (icon, value) = match folded {

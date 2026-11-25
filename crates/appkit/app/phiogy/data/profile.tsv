@@ -1,6 +1,8 @@
 # A person's profile, as Phiegg's has it (the user, 25 November 2026:
 # info, PFTs, trail, stats, items, drops, each a grid with the common
-# filters). The tabs, in order, each a block of the kit's form `profile`
+# filters; and, the same day, every tab the web's profile has: their
+# shots and posts, hosts, clubs founded, worlds made, shows and casts
+# hosted, voice rooms, rides, jewellery, pieces, credits). The tabs, in order, each a block of the kit's form `profile`
 # (data/form.tsv, its list `who.<key>` in data/listing.tsv), its heading
 # `person.<key>` of data/text.tsv. A tab with nothing in it is not shown.
 #
@@ -23,14 +25,26 @@
 #           going to its first room; `linked` who they are linked to,
 #           each opening them
 tab	info	info	user
-tab	shot	picture	image
+tab	feed	kind	image	shot	authorId	likes	worldId
+tab	post	kind	layers	post	authorId	likes	kind
 tab	pft	kind	sparkles	profilePft	holderId	priceUsd	set
 tab	item	kind	package	egg	ownerId	priceUsd	kind
+tab	ride	kind	box	ride	holderId	priceUsd	kind
+tab	jewel	kind	star	jewel	holderId	priceUsd	piece
+tab	piece	kind	palette	piece	creatorId ownerId	-	trait
+tab	host	kind	users	host	ownerId id:hostIds	members	genre
+tab	founded	kind	flame	club	founderId	holders	status
+tab	world	kind	globe	world	creatorId	visitorsNow	kind
+tab	show	kind	video	show	hostAgentId	date	worldId
+tab	cast	kind	mic	cast	hostAgentId	plays	kind
+tab	voice	kind	volume	room	speakerIds	listeners	hostId
+tab	credit	kind	book	series	directorId	views	genre
 tab	drop	kind	flame	event	clubId:clubIds kind=drop	startsAt	worldId
 tab	trail	kind	workflow	sale	fromId toId	at	event	itemId
 tab	stat	stat	bar-chart
 tab	club	club	star
 tab	space	space	hash
+tab	shot	picture	image
 tab	linked	linked	users
 # The kind of their own record in Phiegg, whose fields `where` and the
 # facts read; and the kinds read beside them: to name what a record is

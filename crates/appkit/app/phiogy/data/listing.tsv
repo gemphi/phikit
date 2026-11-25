@@ -32,25 +32,10 @@ finish	finish	0	text:1	-	-	-	-	-
 comment	comment	0	1	-	-	-	-	-
 say	say	0	text:1	-	-	-	-	-
 
-# A person's profile (part/person/held.rs): its tabs, its order, each
+# A person's profile (part/person/held.rs): its lists are made from
+# data/profile.tsv's tabs (`held::tables`): its tabs, its order, each
 # tab's rows (facts: words and value; grids: what a press opens, title,
 # icon, picture, line, the note at the end, face) and its filter.
-who.tab	who.tab	0	1	2
-who.sort	who.sort	0	text:1	2
-who.info	who.info	0	1	-	-	-	-	-	-	-	2
-who.shot	who.shot	0	1	2	-	-	-	-	3	4	5	-	6
-who.pft	who.pft	0	1	2	-	-	-	-	3	4	5	-	6
-who.item	who.item	0	1	2	-	-	-	-	3	4	5	-	6
-who.drop	who.drop	0	1	2	-	-	-	-	3	4	5	-	6
-who.trail	who.trail	0	1	2	-	-	-	-	3	4	5	-	6
-who.stat	who.stat	0	1	-	-	-	-	-	-	-	2
-who.club	who.club	0	1	2	-	-	-	-	3	4	5	-	6
-who.space	who.space	0	1	2	-	-	-	-	3	4	5	-	6
-who.linked	who.linked	0	1	2	-	-	-	-	3	4	5	-	6
-who.pft.facet	who.pft.facet	0	1	2
-who.item.facet	who.item.facet	0	1	2
-who.drop.facet	who.drop.facet	0	1	2
-who.trail.facet	who.trail.facet	0	1	2
 
 # The hosts (part/venue.rs): the bar, the search's hint, the grids
 # (what a press opens, name, icon, picture, line, note, face), the

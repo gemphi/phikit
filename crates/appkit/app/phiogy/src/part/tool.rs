@@ -42,6 +42,18 @@ impl Tool {
     }
 }
 
+/// A number short, as a figure where room is little: under ten thousand
+/// whole, then in thousands or millions, one figure after the point (the
+/// words `number.thousand` and `number.million`, `{n}` the figure).
+pub fn compact(number: u64, text: &PTable) -> String {
+    let short = |size: f64, word: &str| text.get(word).replace("{n}", &format!("{:.1}", number as f64 / size).replace(".0", ""));
+    match number {
+        0..10_000 => grouped(number),
+        10_000..1_000_000 => short(1e3, "number.thousand"),
+        _ => short(1e6, "number.million"),
+    }
+}
+
 /// A number as a person reads it: its thousands apart, as the web
 /// writes them.
 pub fn grouped(number: u64) -> String {

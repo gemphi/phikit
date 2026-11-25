@@ -132,6 +132,11 @@ impl PForm {
         self.block.iter().filter(move |b| b.kind == kind)
     }
 
+    /// The block widened to the whole form, where one is.
+    fn expanded(&self) -> Option<&Block> {
+        self.block.iter().find(|b| b.variant.split_whitespace().any(|word| word == "layout") && self.source.get(&format!("{}{}", head::EXPAND, b.key)) == head::FOLDED)
+    }
+
     /// The blocks of the side column.
     fn sided(&self) -> Vec<&Block> {
         self.block.iter().filter(|b| side(b)).collect()
@@ -172,6 +177,18 @@ impl PForm {
         let (below, barred) = self.bar(paint, left, top, wide);
         spot.extend(barred);
         top = below;
+        // A block widened: it alone, under the heading and the bar.
+        if let Some(block) = self.expanded() {
+            let (mut group, shown) = self.grouped(&[block]);
+            let (end, pressed) = stack(paint, PPoint::new(left, top), wide, 0.0, true, &mut group);
+            for (rect, (block, choice, head)) in pressed.into_iter().zip(&shown) {
+                spot.extend(PForm::spots(block, head, choice, rect));
+            }
+            let drop = self.dropped(paint, &self.heads(&spot, &shown));
+            spot.splice(0..0, drop);
+            spot.iter().filter(|(_, path, _)| !path.is_empty()).for_each(|(rect, _, _)| paint.press(*rect));
+            return (end, spot);
+        }
         // The side, where it stands at the top.
         let sided = self.sided();
         if !apart && !sided.is_empty() {
@@ -250,7 +267,7 @@ impl PDraw for PForm {
         let (scroll, width, high) = (self.scroll.get(), self.frame.size.width, self.frame.size.height);
         // Wide, the side stands in a column at the left.
         let sided = self.sided();
-        let column = match !sided.is_empty() && width >= paint.theme().size(SPLIT).unwrap_or(f32::MAX) {
+        let column = match !sided.is_empty() && self.expanded().is_none() && width >= paint.theme().size(SPLIT).unwrap_or(f32::MAX) {
             true => (width * paint.theme().size(SIDE).unwrap_or(0.5)).floor(),
             false => 0.0,
         };

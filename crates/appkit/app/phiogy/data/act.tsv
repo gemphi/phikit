@@ -23,6 +23,8 @@ video	video	call.video
 # Beside the room, on a person: back to who is here; write to them;
 # follow them.
 back	chevron-left	person.back
+wide	maximize	person.wide
+wide.on	panel-right	person.narrow
 message	message-circle	person.message
 follow	star	person.follow
 follow.on	star	person.following

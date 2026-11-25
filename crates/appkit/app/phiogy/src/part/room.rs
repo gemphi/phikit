@@ -47,9 +47,10 @@ impl Room {
     }
 
     /// Whether the part is so narrow that the people stand over the
-    /// stream, and a person in its place.
+    /// stream, and a person in its place; or the person is widened over
+    /// the room (under a call's tiles, so the call stays in sight).
     fn narrow(&self) -> bool {
-        self.frame.size.width < self.desk.size(SPLIT)
+        self.frame.size.width < self.desk.size(SPLIT) || self.desk.now.wide.get()
     }
 
     /// How high the lines that name blocks not drawn yet are.
@@ -65,8 +66,10 @@ impl PDraw for Room {
             let said = self.desk.text.fill("room.undrawn", "kind", kind);
             paint.text(origin.plus(PPoint::new(gap, index as f32 * line)), &said, dim);
         }
-        // A person takes the people's place; narrow, the whole room.
+        // A person takes the people's place; narrow or widened, the whole
+        // room under the call this window is in.
         if self.picked() && self.narrow() {
+            show(&self.calling, paint, origin);
             return show(&self.person, paint, origin);
         }
         // Each column of the room stands on a ground of its own,
@@ -134,10 +137,10 @@ impl PView for Room {
         self.stream.set_frame(PRect::new(stream.origin.x, stream.origin.y + call, stream.size.width, stream.size.height - call));
         self.present.set_frame(present);
         // A person has the people's place beside the stream, and all of
-        // the room where it is narrow.
-        self.person.set_frame(match size.width >= self.desk.size(SPLIT) {
-            true => present,
-            false => PRect::new(0.0, top, size.width, high),
+        // the room under the call where it is narrow or widened.
+        self.person.set_frame(match self.narrow() {
+            false => present,
+            true => PRect::new(0.0, top + call, size.width, (high - call).max(0.0)),
         });
     }
 
@@ -164,7 +167,7 @@ impl PView for Room {
             false => send(&mut room.calling, event) || send(&mut room.stream, event),
         };
         match (self.picked(), self.narrow()) {
-            (true, true) => send(&mut self.person, event),
+            (true, true) => send(&mut self.person, event) || send(&mut self.calling, event),
             (true, false) => send(&mut self.person, event) || room(self),
             (false, _) => send(&mut self.present, event) || room(self),
         }

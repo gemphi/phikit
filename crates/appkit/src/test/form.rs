@@ -165,3 +165,38 @@ fn a_picture_has_what_can_be_done_with_it_floating_down_its_corner() {
     assert!(form.respond(&PEvent::PointerDown(picture.center())));
     assert_eq!(source.get("look/open"), "coat");
 }
+
+#[test]
+fn a_grid_widens_to_the_whole_form_and_gives_it_back() {
+    let look: Rc<dyn PTheme> = Rc::new(PLook::read(LOOK));
+    let source = Rc::new(Fixed::default());
+    let table = "mine	grid	size	size	size	size	-	layout
+mine	band	kind	kind	kind	kind	-	-
+";
+    let mut form = PForm::new("mine", table, source.clone(), Rc::new(PTable::read("size	Size
+kind	Kind
+")), look.clone());
+    form.set_frame(PRect::new(0.0, 0.0, 300.0, 600.0));
+    let drawn = |form: &PForm| {
+        let mut sheet = PSheet::new(look.as_ref());
+        form.draw(&mut sheet, PPoint::new(0.0, 0.0));
+        sheet
+    };
+    let sheet = drawn(&form);
+    let widen = sheet.mark.iter().find_map(|mark| match mark {
+        PMark::Icon { name, rect, .. } if name == "maximize" => Some(*rect),
+        _ => None,
+    }).expect("the switch that widens it");
+    assert!(sheet.text_list().contains(&"Kind"));
+    // Widened, it alone stands; the switch then gives the form back.
+    assert!(form.respond(&PEvent::PointerDown(widen.center())));
+    let sheet = drawn(&form);
+    assert!(sheet.text_list().contains(&"Size") && !sheet.text_list().contains(&"Kind"));
+    let back = sheet.mark.iter().find_map(|mark| match mark {
+        PMark::Icon { name, rect, .. } if name == "x" => Some(*rect),
+        _ => None,
+    }).expect("the switch that gives it back");
+    assert!(form.respond(&PEvent::PointerDown(back.center())));
+    assert!(drawn(&form).text_list().contains(&"Kind"));
+}
+

@@ -156,7 +156,7 @@ impl Held {
                         true => facet.clone(),
                         false => found.line.clone(),
                     };
-                    Card { open: format!("rec:{}:{}", tab.kind, found.id), title, picture, line, end: end.split('T').next().unwrap_or_default().to_string(), face: String::new(), rank: found.row.get(&tab.sort).and_then(Value::as_f64).unwrap_or_default(), facet }
+                    Card { open: format!("rec:{}:{}", tab.kind, found.id), title, picture, line, end: end.split('T').next().unwrap_or_default().to_string(), face: found.face.clone(), rank: found.row.get(&tab.sort).and_then(Value::as_f64).unwrap_or_default(), facet }
                 }).collect()
             }
             "club" => one.club.iter().map(|club| Card { open: format!("rec:club:{}", desk.book().key("club", &club.id)), title: club.name.clone(), line: text.get("person.holder").replace("{n}", &grouped(club.holder)), face: face(Some(&club.mark)), rank: club.holder as f64, ..Card::default() }).collect(),
@@ -336,13 +336,49 @@ impl PState for Held {
     }
 }
 
+/// The profile's form and lists, as the kit's tables write them, made
+/// from data/profile.tsv's tabs: its tabs, then a block for each, facts
+/// for info and stats, else a grid with its layout, its filter where its
+/// records have one, and its order. One tab, one row of that table.
+pub fn tables() -> (String, String) {
+    let mut form = String::from("profile	tabs	tab	-	who.tab	who/tab	-	-
+");
+    let mut list = String::from("who.tab	who.tab	0	1	2
+who.sort	who.sort	0	text:1	2
+");
+    for tab in tabs() {
+        let key = &tab.key;
+        match tab.show.as_str() {
+            "info" | "stat" => {
+                form += &format!("profile	facts	who.{key}	person.{key}	who.{key}	-	tab	-
+");
+                list += &format!("who.{key}	who.{key}	0	1	-	-	-	-	-	-	-	2
+");
+            }
+            _ => {
+                let filter = match tab.show == "kind" && !tab.facet.is_empty() {
+                    true => format!(" drop=filter:who.{key}.facet:who/kind"),
+                    false => String::new(),
+                };
+                form += &format!("profile	grid	who.{key}	person.{key}	who.{key}	who/open	tab	layout{filter} drop=sort:who.sort:who/sort
+");
+                list += &format!("who.{key}	who.{key}	0	1	2	-	-	-	-	3	4	5	-	6
+who.{key}.facet	who.{key}.facet	0	1	2
+");
+            }
+        }
+    }
+    (form, list)
+}
+
 /// The profile's form, its lists and values from a person's records.
 pub fn form(desk: &Desk) -> PForm {
     let held = Rc::new(Held { desk: desk.clone(), kept: RefCell::default() });
     let rows = held.clone();
     let state: Vec<(String, Rc<dyn PState>)> = vec![("who".to_string(), held), ("ui".to_string(), desk.shelf.clone())];
-    let source = Rc::new(PListed::new(data::LISTING, Rc::new(move |name: &str| rows.rows(name)), desk.text.clone(), state));
-    PForm::new("profile", data::FORM, source, desk.text.clone(), desk.shade.clone())
+    let (form, list) = tables();
+    let source = Rc::new(PListed::new(&format!("{}{list}", data::LISTING), Rc::new(move |name: &str| rows.rows(name)), desk.text.clone(), state));
+    PForm::new("profile", &format!("{}{form}", data::FORM), source, desk.text.clone(), desk.shade.clone())
 }
 
 #[cfg(test)]
@@ -366,5 +402,26 @@ mod tests {
         assert!(count("drop", "u_noor") > 0);
         // Nobody's records are a stranger's.
         assert_eq!((count("item", "nobody"), count("trail", "nobody")), (0, 0));
+        // Every tab the web's profile has: her shots, the hosts she owns or
+        // is in, the club she founded.
+        assert!(count("feed", "u_ines") >= 5 && count("host", "u_ines") > 0 && count("founded", "u_ines") > 0, "{} {} {}", count("feed", "u_ines"), count("host", "u_ines"), count("founded", "u_ines"));
+    }
+
+    #[test]
+    fn records_wear_their_pictures_as_phiegg_draws_them() {
+        let kinds = Book::kinds();
+        let book = Book::read(&Kept::none(), &kinds.iter().map(String::as_str).collect::<Vec<_>>());
+        // A PFT is a cell of its portrait sheet; a shot wears its look's.
+        let pft = book.of("profilePft").iter().find(|found| found.row.get("holderId").and_then(|id| id.as_str()) == Some("u_ines")).expect("her PFT");
+        assert_eq!(pft.face, "phiegg:portraits/sheet-05.webp 8 60");
+        let shot = book.of("shot").iter().find(|found| found.row.get("authorId").and_then(|id| id.as_str()) == Some("u_ines")).expect("her shot");
+        assert!(shot.picture.ends_with("FRONT.webp") || shot.picture.starts_with("phiegg:look/"), "{}", shot.picture);
+    }
+
+    #[test]
+    fn the_profile_s_form_is_made_from_its_tabs_one_row_each() {
+        let (form, list) = super::tables();
+        assert!(tabs().iter().all(|tab| form.contains(&format!("	who.{}	person.{}	", tab.key, tab.key)) && list.contains(&format!("who.{}	who.{}	", tab.key, tab.key))));
+        assert!(form.contains("drop=filter:who.feed.facet:who/kind") && !form.contains("drop=filter:who.linked.facet"));
     }
 }

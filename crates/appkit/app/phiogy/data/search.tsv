@@ -32,11 +32,21 @@ popular	../../../../../puikit/app/phiegg/src/data/site.json	searchPopular
 # its front). A record with none wears its world's: the world named by
 # the first of these fields it has (an id, or a list of them), from the
 # kind of this name.
-picture	image logo cover
+picture	image logo cover views.FRONT
 key	phiegg:
 strip	assets/
 borrow	worldId worldIds
 world	world
+# A record with no picture of its own wears the one of the record a path
+# of it names: a shot its look's, a post its first slide's look's.
+wear	media.lookId	look
+wear	slides.0.lookId	look
+# A record that is a cell of a sheet, as Phiegg draws it: its kind, the
+# field of its sheet's number and of its cell, the sheet (its number put
+# in, two figures), and how many columns the sheet has.
+cell	profilePft	sheet	index	portraits/sheet-{nn}.webp	8
+cell	ride	sheet	index	rides/sheet-{nn}.webp	8
+cell	jewel	-	index	jewels/sheet-00.webp	8
 # How many cards each kind shows under All; a kind's own tab shows as
 # many as the theme's people.most.
 all	8

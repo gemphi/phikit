@@ -14,10 +14,20 @@ use super::{BANNER, FACE, Person};
 use crate::part::{DIM, GAP, INK, LINE, RADIUS};
 use crate::site::Member;
 
+/// Where something that wide begins, in the middle of a width.
+fn left_of(from: f32, wide: f32, size: f32) -> f32 {
+    from + (wide - size).max(0.0) / 2.0
+}
+
 impl Person {
     /// The card, from `at` down; how far it goes.
     pub(super) fn card(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, one: &Member) -> f32 {
-        let (gap, line, radius, face) = (paint.size(GAP), paint.size(LINE), paint.size(RADIUS), paint.size(FACE));
+        // Their face as large as the theme says, never wider than the card:
+        // the picture is what a profile is about (the user, 25 November
+        // 2026: "make that picture bigger").
+        let (gap, line, radius) = (paint.size(GAP), paint.size(LINE), paint.size(RADIUS));
+        let face = paint.size(FACE).min(wide);
+        let middle = left_of(at.x, wide, face);
         let (ink, dim, text) = (paint.color(INK), paint.color(DIM), &self.desk.text);
         let (left, mut top) = (at.x, at.y);
         let cell = self.desk.site.face(&one.id).map(|cell| (cell.sheet.as_str(), cell.column, cell.index));
@@ -25,14 +35,14 @@ impl Person {
         // foot; with none, the face at the top.
         match one.banner.is_empty() {
             true => {
-                (cell, one.name.as_str()).face(paint, PRect::new(left, top, face, face));
+                (cell, one.name.as_str()).face(paint, PRect::new(middle, top, face, face));
                 top += face + gap / 2.0;
             }
             false => {
                 let high = wide / paint.size(BANNER).max(1.0);
                 paint.picture(&one.banner, PRect::new(left, top, wide, high), radius, PFit::Cover);
-                (cell, one.name.as_str()).face(paint, PRect::new(left + gap / 2.0, top + high - face / 2.0, face, face));
-                top += high + face / 2.0 + gap / 2.0;
+                (cell, one.name.as_str()).face(paint, PRect::new(middle, top + high / 2.0, face, face));
+                top += high / 2.0 + face + gap / 2.0;
             }
         }
         // Their name; under it their handle, role and how they stand.
@@ -58,7 +68,7 @@ impl Person {
             let x = left + index as f32 * step;
             label(paint, PRect::new(x, top - gap / 4.0, step - gap / 4.0, line * 2.0 + gap * 0.5), radius, PLight::Soft, false, "");
             let x = x + gap / 2.0;
-            paint.head(PPoint::new(x, top), &crate::part::tool::grouped(*n), ink);
+            paint.head(PPoint::new(x, top), &crate::part::tool::compact(*n, text).fit(step - gap, paint), ink);
             paint.text(PPoint::new(x, top + line + gap / 8.0), &text.get(&format!("person.count.{word}")).fit(step - gap, paint), dim);
         }
         top += line * 2.0 + gap;

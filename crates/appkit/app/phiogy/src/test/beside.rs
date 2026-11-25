@@ -47,6 +47,11 @@ fn step_24_a_press_on_a_face_puts_that_person_beside_the_room() {
     // the pictures they posted.
     let pane = |name: &str, count: usize| format!("{} {count}", words(name));
     assert!([pane("person.linked", 1), pane("person.space", 1), pane("person.shot", 1)].iter().all(|pane| text.contains(pane)), "{text:?}");
+    // Their picture is large at the top: the wheel lifts it away over
+    // the tabs first.
+    let side = rect(&stage, "room");
+    assert!(stage.send(&PEvent::Scroll(PPoint::new(side.origin.x + side.size.width - 40.0, side.center().y), PPoint::new(0.0, -400.0))));
+    laid(&mut stage, &look, DESK);
     assert!(press(&mut stage, &look, &pane("person.space", 1)) && shown(&stage, &look).contains(&"Phiace".to_string()));
     // Their pictures open in the viewer, among their own alone.
     assert!(press(&mut stage, &look, &pane("person.shot", 1)));
@@ -72,6 +77,13 @@ fn step_24_a_press_on_a_face_puts_that_person_beside_the_room() {
     assert_eq!(desk.now.who.borrow().as_deref(), Some("lora"));
     let text = shown(&stage, &look);
     assert!(text.contains(&"I run Lora Land and the Spark show.".to_string()) && text.contains(&"Host".to_string()) && text.contains(&pane("person.linked", 2)), "{text:?}");
+    // Widened over the room, to see all of them while talking: what was
+    // said gives it its place, and comes back when it is put beside.
+    assert!(press(&mut stage, &look, &words("person.wide")) && desk.now.wide.get());
+    let text = laid(&mut stage, &look, DESK);
+    assert!(!text.contains(&"I will bring both versions.".to_string()) && text.contains(&words("person.narrow")), "{text:?}");
+    assert!(press(&mut stage, &look, &words("person.narrow")) && !desk.now.wide.get());
+    laid(&mut stage, &look, DESK);
     // Follow them, and the control says so; it is kept.
     assert!(press(&mut stage, &look, &words("person.follow")));
     assert!(desk.follows("lora") && shown(&stage, &look).contains(&words("person.following")));

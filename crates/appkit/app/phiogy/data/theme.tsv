@@ -233,9 +233,10 @@ size	shop.most	32
 size	shop.card	168
 size	shop.hero	4
 size	shop.more	8
-# A person beside the room: how large their face is, and how many times
-# as wide as high the picture over their profile is (the web's 3/1).
-size	person.face	64
+# A person beside the room: how large their face is (as large as the
+# column lets it, up to this: the picture comes first), and how many
+# times as wide as high the picture over their profile is (the web's 3/1).
+size	person.face	240
 size	person.banner	3
 size	view.thumb	44
 size	view.control	44

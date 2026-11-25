@@ -284,16 +284,20 @@ account.phione	Managed by Phione
 # A person beside the room, as the web's room names its parts.
 person.title	Profile
 person.back	Back to who is here
+person.wide	Expand
+person.narrow	Beside the room
 person.message	Message
 person.follow	Follow
 person.following	Following
 person.mute	Mute
 person.unmute	Unmute
 person.since	Member since
+number.thousand	{n}k
+number.million	{n}M
 person.linked	Linked
 person.space	Spaces
 person.media	Pictures
-person.shot	Shots
+person.shot	Pictures
 person.club	Clubs
 person.holder	{n} holders
 person.inside	{n} inside
@@ -307,6 +311,18 @@ person.count.media	Pictures
 person.none	Nothing here yet
 person.info	Info
 person.pft	PFTs
+person.feed	Shots
+person.post	Posts
+person.ride	Rides
+person.jewel	Jewellery
+person.piece	Pieces
+person.host	Hosts
+person.founded	Founded
+person.world	Worlds
+person.show	Shows
+person.cast	Casts
+person.voice	Voice rooms
+person.credit	Credits
 person.item	Items
 person.drop	Drops
 person.trail	Trail

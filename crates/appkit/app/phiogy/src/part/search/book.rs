@@ -21,7 +21,19 @@ pub struct Found {
     pub name: String,
     pub line: String,
     pub picture: String,
+    /// Its face where it is a cell of a sheet (a PFT, a ride, a jewel):
+    /// the sheet, its columns and the cell, between spaces.
+    pub face: String,
     pub row: Value,
+}
+
+/// What a record holds at a path: its fields by name, a list's by number,
+/// between dots (`views.FRONT`, `slides.0.lookId`).
+pub fn at<'a>(row: &'a Value, path: &str) -> Option<&'a Value> {
+    path.split('.').try_fold(row, |value, part| match part.parse::<usize>() {
+        Ok(index) => value.get(index),
+        Err(_) => value.get(part),
+    })
 }
 
 /// Every record of each kind search asks for, what is sought most, and
@@ -55,7 +67,7 @@ impl Book {
         let given: Vec<String> = kinds.iter().filter(|kind| phiora(kind).is_some()).map(|kind| kind.to_string()).collect();
         let words = |row: &str| cells(row).iter().flat_map(|cell| cell.split_whitespace()).collect::<Vec<_>>();
         let (name, line, picture, borrow) = (words("name"), words("line"), words("picture"), words("borrow"));
-        let word = |row: &Value, fields: &[&str]| fields.iter().find_map(|field| row.get(*field).and_then(Value::as_str).filter(|text| !text.is_empty())).unwrap_or_default().to_string();
+        let word = |row: &Value, fields: &[&str]| fields.iter().find_map(|field| at(row, field).and_then(Value::as_str).filter(|text| !text.is_empty())).unwrap_or_default().to_string();
         // A picture's key: the table's start, then its path less what the
         // table says to leave off it.
         let (key, strip) = (cells("key").first().copied().unwrap_or_default(), cells("strip").first().copied().unwrap_or_default());
@@ -72,10 +84,25 @@ impl Book {
         }).and_then(|id| world.iter().find(|(known, _)| *known == id).map(|(_, picture)| picture.clone())).unwrap_or_default();
         let found = |kind: &str, row: &Value| {
             let own = keyed(word(row, &picture));
-            Found { kind: kind.to_string(), id: word(row, &["id"]), name: word(row, &name), line: word(row, &line), picture: if own.is_empty() { worn(row) } else { own }, row: row.clone() }
+            // A cell of a sheet: the table's sheet, its number put in.
+            let face = data::row(data::SEARCH).into_iter().filter(|cell| cell.first() == Some(&"cell") && cell.get(1) == Some(&kind) && cell.len() >= 6).find_map(|cell| {
+                let number = |field: &str| at(row, field).and_then(Value::as_u64);
+                let sheet = cell[4].replace("{nn}", &format!("{:02}", number(cell[2]).unwrap_or_default()));
+                Some(format!("{key}{sheet} {} {}", cell[5], number(cell[3])?))
+            }).unwrap_or_default();
+            Found { kind: kind.to_string(), id: word(row, &["id"]), name: word(row, &name), line: word(row, &line), picture: own, face, row: row.clone() }
         };
         // A record with no name (a sale) is kept for the profile's trail; search never finds it.
-        let kind = kinds.iter().map(|kind| (kind.to_string(), rows(kind).iter().map(|row| found(kind, row)).filter(|found| !found.id.is_empty()).collect())).collect();
+        let mut kind: Vec<(String, Vec<Found>)> = kinds.iter().map(|kind| (kind.to_string(), rows(kind).iter().map(|row| found(kind, row)).filter(|found| !found.id.is_empty()).collect())).collect();
+        // A record with no picture of its own wears the one of the record a
+        // path of it names (a shot, its look's): the table's `wear` rows.
+        let wear: Vec<(String, String)> = data::row(data::SEARCH).into_iter().filter(|cell| cell.first() == Some(&"wear") && cell.len() >= 3).map(|cell| (cell[1].to_string(), cell[2].to_string())).collect();
+        let pictured: std::collections::HashMap<(String, String), String> = kind.iter().filter(|(name, _)| wear.iter().any(|(_, of)| of == name)).flat_map(|(name, found)| found.iter().filter(|one| !one.picture.is_empty()).map(move |one| ((name.clone(), one.id.clone()), one.picture.clone()))).collect();
+        // Else its world's.
+        for one in kind.iter_mut().flat_map(|(_, found)| found.iter_mut()).filter(|one| one.picture.is_empty()) {
+            let looked = wear.iter().find_map(|(path, of)| at(&one.row, path).and_then(Value::as_str).and_then(|id| pictured.get(&(of.clone(), id.to_string())).cloned()));
+            one.picture = looked.unwrap_or_else(|| worn(&one.row));
+        }
         let popular = cells("popular");
         let popular = popular.first().and_then(|path| file(path)).and_then(|site| site.get(*popular.get(1)?)?.as_array().cloned()).unwrap_or_default();
         Book { kind, popular: popular.iter().filter_map(Value::as_str).map(str::to_string).collect(), keyed: given }
@@ -141,18 +168,31 @@ impl Book {
     }
 
     /// A kind's rows from Phiegg's own files, by the manifest: every list
-    /// it names for that kind (people are its users and its agents), each
-    /// record once, by its id.
+    /// it names for that kind (people are its users and its agents; looks
+    /// are its own and every shop's), each record once, by its id.
     fn files(kind: &str) -> Vec<Value> {
         let tree = cells("tree").first().and_then(|path| file(path)).unwrap_or_default();
         let folder = cells("tree").first().map(|path| Path::new(path).parent().unwrap_or(Path::new("")).to_path_buf()).unwrap_or_default();
         let sources = tree.get("sources").and_then(Value::as_array).cloned().unwrap_or_default();
-        let own = sources.iter().filter(|s| s.get("kind").and_then(Value::as_str) == Some(kind) && s.get("each").is_none());
+        let own = sources.iter().filter(|s| s.get("kind").and_then(Value::as_str) == Some(kind));
         let mut seen = std::collections::HashSet::new();
         own.flat_map(|source| {
-            let name = source.get("file").and_then(Value::as_str).unwrap_or_default();
-            let list = source.get("list").and_then(Value::as_str).unwrap_or_default();
-            file(&folder.join(format!("{name}.json")).to_string_lossy()).and_then(|whole| whole.get(list)?.as_array().cloned()).unwrap_or_default()
+            let field = |name: &str| source.get(name).and_then(Value::as_str).unwrap_or_default();
+            let rows = file(&folder.join(format!("{}.json", field("file"))).to_string_lossy()).and_then(|whole| whole.get(field("list"))?.as_array().cloned()).unwrap_or_default();
+            // A list held in each row of another (a shop's looks): each one,
+            // with the row it is in named by the manifest's `parent` field.
+            match source.get("each").and_then(Value::as_str) {
+                None => rows,
+                Some(each) => rows.iter().flat_map(|parent| {
+                    let id = parent.get("id").cloned().unwrap_or_default();
+                    parent.get(each).and_then(Value::as_array).cloned().unwrap_or_default().into_iter().map(move |mut child| {
+                        if let Some(row) = child.as_object_mut() {
+                            row.entry(field("parent").to_string()).or_insert(id.clone());
+                        }
+                        child
+                    })
+                }).collect(),
+            }
         }).filter(|row| {
             let id = row.get("id").and_then(Value::as_str).unwrap_or_default().to_string();
             id.is_empty() || seen.insert(id)

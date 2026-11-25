@@ -33,6 +33,7 @@ pub const FACE: &str = "person.face";
 pub const BANNER: &str = "person.banner";
 /// The rows of `data/act.tsv` it draws.
 pub const BACK: &str = "back";
+pub const WIDE: &str = "wide";
 pub const MESSAGE: &str = "message";
 pub const FOLLOW: &str = "follow";
 pub const QUIET: &str = "quiet";
@@ -41,6 +42,7 @@ pub const QUIET: &str = "quiet";
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Act {
     Back,
+    Wide,
     Message(String),
     Follow,
     Mute,
@@ -58,12 +60,15 @@ pub struct Person {
     form: RefCell<PForm>,
     under: Cell<f32>,
     lift: Cell<f32>,
+    /// How far down its head row ends: the way back and Expand stay in
+    /// sight there while who they are scrolls away under it.
+    fixed: Cell<f32>,
 }
 
 impl Person {
     pub fn new(desk: Desk) -> Person {
         let form = RefCell::new(held::form(&desk));
-        Person { frame: PRect::default(), desk, tool: Tool::read(data::ACT), origin: Cell::default(), spot: RefCell::default(), form, under: Cell::default(), lift: Cell::default() }
+        Person { frame: PRect::default(), desk, tool: Tool::read(data::ACT), origin: Cell::default(), spot: RefCell::default(), form, under: Cell::default(), lift: Cell::default(), fixed: Cell::default() }
     }
 
     /// Who it is about.
@@ -84,11 +89,20 @@ impl PDraw for Person {
         let mut spot = Vec::new();
         self.origin.set(origin);
         paint.clip(PRect { origin, size: self.frame.size });
-        let begin = origin.y + gap / 2.0 - self.lift.get();
-        // The way back, and what this is.
+        let begin = origin.y + gap / 2.0;
+        // The way back, and what this is; at the end, widen it over the
+        // room to see everything while talking, or put it back beside.
         let back: Vec<(&str, &str, bool)> = self.tool.of(BACK, false, text).map(|(icon, _)| (icon, text.get("person.title"), false)).into_iter().collect();
         spot.extend(back.draw(paint, PPoint::new(left, begin)).into_iter().map(|rect| (rect, Act::Back)));
-        let from = begin + back.high(paint) + gap * 0.75;
+        let widened = self.desk.now.wide.get();
+        let widen: Vec<(&str, &str, bool)> = self.tool.of(WIDE, widened, text).map(|(icon, word)| (icon, word, widened)).into_iter().collect();
+        spot.extend(widen.draw_end(paint, PPoint::new(left + wide, begin)).into_iter().map(|rect| (rect, Act::Wide)));
+        // Under the head row, who they are scrolls away first.
+        let fixed = begin + back.high(paint) + gap * 0.75;
+        self.fixed.set(fixed - origin.y);
+        paint.unclip();
+        paint.clip(PRect::new(origin.x, fixed, self.frame.size.width, (self.frame.size.height - (fixed - origin.y)).max(0.0)));
+        let from = fixed - self.lift.get();
         // Who they are, as Phiegg's card has it (person/card.rs).
         let mut top = section(paint, PPoint::new(left, from), wide, &mut |paint| self.card(paint, PPoint::new(left, from), wide, &one)) + gap * 0.75;
         // What can be done: write to them, follow them, mute them.
@@ -107,9 +121,9 @@ impl PDraw for Person {
         paint.unclip();
         // Their tabs, the kit's form, in the room under all that; who they
         // are scrolls away over them first.
-        let under = top - origin.y;
+        let under = (top - origin.y).max(self.fixed.get());
         self.under.set(under);
-        self.lift.set(self.lift.get().clamp(0.0, (under + self.lift.get()).max(0.0)));
+        self.lift.set(self.lift.get().clamp(0.0, (under + self.lift.get() - self.fixed.get()).max(0.0)));
         let mut form = self.form.borrow_mut();
         form.set_frame(PRect::new(self.frame.origin.x, self.frame.origin.y + under, self.frame.size.width, (self.frame.size.height - under).max(0.0)));
         form.draw(paint, PPoint::new(origin.x, origin.y + under));
@@ -145,7 +159,7 @@ impl PView for Person {
         // A scroll down lifts who they are away first, then scrolls the
         // tabs; up, the tabs first, then who they are comes back.
         if let PEvent::Scroll(at, by) = *event {
-            let (lift, most) = (self.lift.get(), (under + self.lift.get()).max(0.0));
+            let (lift, most) = (self.lift.get(), (under + self.lift.get() - self.fixed.get()).max(0.0));
             let form = self.form.get_mut();
             let place = at.minus(PPoint::new(0.0, under));
             return match by.y < 0.0 {
@@ -175,7 +189,11 @@ impl PView for Person {
                 let Some(act) = self.spot.borrow().iter().find(|(rect, _)| rect.contains(place)).map(|(_, act)| act.clone()) else { return false };
                 let who = self.desk.now.who.borrow().clone().unwrap_or_default();
                 match act {
-                    Act::Back => *self.desk.now.who.borrow_mut() = None,
+                    Act::Back => {
+                        *self.desk.now.who.borrow_mut() = None;
+                        self.desk.now.wide.set(false);
+                    }
+                    Act::Wide => self.desk.now.wide.set(!self.desk.now.wide.get()),
                     Act::Message(room) => _ = self.desk.show(&room),
                     Act::Follow => self.desk.follow(&who),
                     Act::Mute => self.desk.mute(&who),

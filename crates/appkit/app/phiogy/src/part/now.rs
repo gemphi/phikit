@@ -25,8 +25,10 @@ pub struct Now {
     /// messages are listed.
     pub finding: Cell<bool>,
     pub pins: Cell<bool>,
-    /// The person whose profile stands beside the room, by their id.
+    /// The person whose profile stands beside the room, by their id; and
+    /// whether it is widened over the room (under a call's tiles).
     pub who: RefCell<Option<String>>,
+    pub wide: Cell<bool>,
     /// A message the stream is to bring into sight, by its id.
     pub seek: RefCell<Option<String>>,
     /// The pictures the viewer steps through.
