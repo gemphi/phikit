@@ -33,6 +33,21 @@ def table(paths):
             icon.setdefault(cell[0], []).append((cell[1], [[float(n) for n in group] for group in number]))
         else:
             measure[cell[0]] = float(cell[2])
+    # Every corner at the family's radius nearest the one written: a
+    # small corner, a corner or the frame's; from `round` up, an arc kept
+    # as it is. A pill's numbers are its size, not corners.
+    family = [measure[name] for name in ('small', 'corner', 'frame') if name in measure]
+    whole = measure.get('round', float('inf'))
+    def snap(r):
+        if r <= 0 or r >= whole or not family:
+            return r
+        return min(family, key=lambda one: abs(one - r))
+    for parts in icon.values():
+        for kind, points in parts:
+            if kind in ('run', 'ring', 'fill', 'cut'):
+                for point in points:
+                    if len(point) == 3:
+                        point[2] = snap(point[2])
     return measure, icon
 
 
