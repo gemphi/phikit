@@ -83,7 +83,7 @@ fn a_host_opened_shows_every_channel_and_itself_beside_its_room_as_phiegg_keeps_
     // Beside its room the host: its name, under it what it is; its
     // picture, its world's; its tabs, Info first: what its club says of
     // it and its facts, from Phiegg's records of it.
-    assert!(["Opal Atelier".to_string(), word("aside.info"), word("aside.rooms"), word("aside.members"), word("aside.rules"), word("aside.fact.gated"), "Hold 1 OPAL".to_string(), word("aside.fact.ownerId")].iter().all(|line| text.contains(line)), "{text:?}");
+    assert!(["Opal Atelier".to_string(), word("aside.info"), word("aside.rooms"), word("aside.members"), word("aside.rules"), word("aside.fact.gated"), "Hold 1 OPAL".to_string(), word("aside.fact.ownerId")].iter().all(|line| super::said(&text, line)), "{text:?}");
     assert!(text.iter().any(|line| line.contains("4,102 members")) && text.iter().any(|line| line.starts_with("Iridescent couture")), "{text:?}");
     let banner = super::drawn(&stage, &look).iter().any(|mark| matches!(mark, appkit::pui::core::PMark::Picture { fit: appkit::pui::core::PFit::Cover, name, .. } if name.contains("opalia")));
     assert!(banner);

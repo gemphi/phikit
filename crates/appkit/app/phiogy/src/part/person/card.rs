@@ -11,7 +11,7 @@ use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect};
 use appkit::pui::layout::wrap;
 
 use super::{BANNER, FACE, Person};
-use crate::part::{DIM, GAP, INK, LINE, RADIUS};
+use crate::part::{DIM, GAP, ICON, INK, LINE, RADIUS};
 use crate::site::Member;
 
 /// Where something that wide begins, in the middle of a width.
@@ -26,7 +26,11 @@ impl Person {
         // the picture is what a profile is about (the user, 25 November
         // 2026: "make that picture bigger").
         let (gap, line, radius) = (paint.size(GAP), paint.size(LINE), paint.size(RADIUS));
-        let face = paint.size(FACE).min(wide);
+        // The arrow at its left widens it to the whole column, and back.
+        let face = match self.big.get() {
+            true => wide,
+            false => paint.size(FACE).min(wide),
+        };
         let middle = left_of(at.x, wide, face);
         let (ink, dim, text) = (paint.color(INK), paint.color(DIM), &self.desk.text);
         let (left, mut top) = (at.x, at.y);
@@ -45,6 +49,21 @@ impl Person {
                 top += high / 2.0 + face + gap / 2.0;
             }
         }
+        // The arrow, round, at the face's left in the middle of its height.
+        let arrow = paint.size(ICON) + gap * 0.75;
+        let face_top = match one.banner.is_empty() {
+            true => at.y,
+            false => at.y + wide / paint.size(BANNER).max(1.0) / 2.0,
+        };
+        let place = PRect::new(middle + gap / 2.0, face_top + face / 2.0 - arrow / 2.0, arrow, arrow);
+        label(paint, place, arrow / 2.0, PLight::Rest, false, "");
+        let icon = match self.big.get() {
+            true => "arrow-right",
+            false => "arrow-left",
+        };
+        let size = paint.size(ICON);
+        paint.icon(icon, PRect::new(place.center().x - size / 2.0, place.center().y - size / 2.0, size, size), ink);
+        self.grow.set(place);
         // Their name; under it their handle, role and how they stand.
         let under = [one.handle.clone(), one.role.clone(), one.state.clone()];
         let said = under.iter().filter(|said| !said.is_empty()).cloned().collect::<Vec<_>>().join(&format!(" {} ", text.get("between")));

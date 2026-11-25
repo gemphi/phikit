@@ -43,15 +43,19 @@ size	text.advance	7.5
 size	region.header	56
 size	gap	16
 # The room between a form's groups (the hosts, the library).
-size	section.space	16
+size	section.space	20
 size	line.width	1
 size	row.height	40
 size	row.radius	10
-# Every section's ground, the same in every part: half a gap beside
-# what stands on it, a quarter over it, as round as a row.
-size	section.side	8
-size	section.top	4
-size	section.radius	10
+# Every section's ground, the same in every part: a gap beside what
+# stands on it and three quarters over and under it (the user, 25
+# November 2026: room enough inside every ground, section, card and tab),
+# a little rounder than a row.
+size	section.side	16
+size	section.top	12
+size	section.radius	14
+# The room inside a row of a list, at its start and its end.
+size	row.pad	12
 # How high a pill is at least: no higher than a line and half a gap.
 size	pill.high	0
 # Text stands off its ground only in a look that says so (`text.lift`,
@@ -138,6 +142,9 @@ size	profile.split	0.5
 # width it takes, and the width under which it stands at the top.
 size	form.side	0.42
 size	form.split	640
+# How many tabs stand in their row at most (more are reached by the
+# arrows at its ends), centred.
+size	tabs.most	4
 # How many times as wide as high a form's banner picture is (a host's
 # beside its room).
 size	form.banner	2
@@ -233,10 +240,10 @@ size	shop.most	32
 size	shop.card	168
 size	shop.hero	4
 size	shop.more	8
-# A person beside the room: how large their face is (as large as the
-# column lets it, up to this: the picture comes first), and how many
+# A person beside the room: how large their face is (the arrow at its
+# left widens it to the whole column, and back), and how many
 # times as wide as high the picture over their profile is (the web's 3/1).
-size	person.face	240
+size	person.face	128
 size	person.banner	3
 size	view.thumb	44
 size	view.control	44

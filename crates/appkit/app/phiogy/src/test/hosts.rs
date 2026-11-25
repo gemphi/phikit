@@ -93,7 +93,15 @@ fn step_26_i_make_a_host_in_its_drawer_with_its_steps_said_and_remove_it() {
     let text = shown(&stage, &look);
     assert!(text.iter().any(|line| word("host.help.1").starts_with(line.as_str()) && line.len() > 10), "{text:?}");
     // Until it has a name, Create makes nothing.
+    // Its starts are under its steps: the drawer is scrolled to them.
+    let drawer = super::written(&stage, &look, &word("host.how")).expect("its steps");
+    stage.send(&PEvent::Scroll(drawer, appkit::pui::core::PPoint::new(0.0, -600.0)));
+    stage.lay(DESK, PMode::of_width(DESK.width));
     assert!(super::press(&mut stage, &look, "A club"));
+    assert_eq!(stage.window.modal(), Some("make"));
+    // Back up at its top, Create makes nothing without a name.
+    stage.send(&PEvent::Scroll(drawer, appkit::pui::core::PPoint::new(0.0, 600.0)));
+    stage.lay(DESK, PMode::of_width(DESK.width));
     assert!(super::press(&mut stage, &look, &word("host.made")));
     assert!(desk.made().is_empty());
     // Named, with a start chosen, it is made.

@@ -130,7 +130,7 @@ fn step_37_signed_in_i_see_my_sessions_sign_the_others_out_and_take_my_data_out(
     foot(&mut stage, &look);
     let text = shown(&stage, &look);
     let wanted = ["Noor Hale".to_string(), "@noor.hale".to_string(), word("account.signOut"), word("account.session"), "Phiogy on Windows".to_string(), word("account.this"), "Chrome on Windows".to_string(), word("account.other"), word("account.alone"), word("account.data")];
-    assert!(wanted.iter().all(|line| text.contains(line)) && !text.contains(&word("account.handle")), "{text:?}");
+    assert!(wanted.iter().all(|line| super::said(&text, line)) && !text.contains(&word("account.handle")), "{text:?}");
     assert!(press(&mut stage, &look, &word("account.alone")));
     // Everything Phiora keeps about me is written to a file, and the
     // system is asked where a copy is to be kept.

@@ -6,7 +6,6 @@ use appkit::pui::core::{PEvent, PFit, PMark, PMode, PPoint, PRect, PSize};
 use appkit::pui::window::PStage;
 use appkit::theme::PLook;
 
-use super::tools::icon;
 use super::{DESK, HAND, drawn, press, rect, shown, staged};
 
 /// Where a face of that cell of a sheet was drawn last.
@@ -46,15 +45,17 @@ fn step_24_a_press_on_a_face_puts_that_person_beside_the_room() {
     // much each holds: who they are linked to, the spaces they are in,
     // the pictures they posted.
     let pane = |name: &str, count: usize| format!("{} {count}", words(name));
-    assert!([pane("person.linked", 1), pane("person.space", 1), pane("person.shot", 1)].iter().all(|pane| text.contains(pane)), "{text:?}");
     // Their picture is large at the top: the wheel lifts it away over
     // the tabs first.
     let side = rect(&stage, "room");
     assert!(stage.send(&PEvent::Scroll(PPoint::new(side.origin.x + side.size.width - 40.0, side.center().y), PPoint::new(0.0, -400.0))));
     laid(&mut stage, &look, DESK);
-    assert!(press(&mut stage, &look, &pane("person.space", 1)) && shown(&stage, &look).contains(&"Phiace".to_string()));
+    // (A row of tabs shows a few at a time: its arrows bring the rest.)
+    assert!(text.contains(&words("person.info")), "{text:?}");
+    assert!([pane("person.linked", 1), pane("person.space", 1), pane("person.shot", 1)].iter().all(|pane| super::tab_to(&mut stage, &look, "room", pane)));
+    assert!(super::tab_to(&mut stage, &look, "room", &pane("person.space", 1)) && press(&mut stage, &look, &pane("person.space", 1)) && shown(&stage, &look).contains(&"Phiace".to_string()));
     // Their pictures open in the viewer, among their own alone.
-    assert!(press(&mut stage, &look, &pane("person.shot", 1)));
+    assert!(super::tab_to(&mut stage, &look, "room", &pane("person.shot", 1)) && press(&mut stage, &look, &pane("person.shot", 1)));
     let side = rect(&stage, "room");
     let shot = drawn(&stage, &look).iter().rev().find_map(|mark| match mark {
         // Its top, which is in sight under the tabs.
@@ -65,7 +66,7 @@ fn step_24_a_press_on_a_face_puts_that_person_beside_the_room() {
     assert_eq!((stage.window.modal(), desk.now.album.borrow().len(), desk.view.get()), (Some("view"), 1, Some(0)));
     assert!(stage.send(&PEvent::KeyDown(PEvent::ESCAPE)));
     // Who they are linked to is read when asked; a press opens them.
-    assert!(press(&mut stage, &look, &pane("person.linked", 1)));
+    assert!(super::tab_to(&mut stage, &look, "room", &pane("person.linked", 1)) && press(&mut stage, &look, &pane("person.linked", 1)));
     // Their card is under the tabs: the profile is scrolled to it.
     let tab = super::written(&stage, &look, &pane("person.linked", 1)).expect("the tab");
     stage.send(&PEvent::Scroll(tab, PPoint::new(0.0, -100000.0)));
@@ -110,8 +111,7 @@ fn the_way_back_from_a_person_is_at_their_head_and_in_a_hand_they_have_the_room(
     let text = laid(&mut stage, &look, HAND);
     assert!(text.contains(&desk.text.get("person.title").to_string()) && !text.contains(&desk.text.get("stream.none").to_string()), "{text:?}");
     // The way back is at their head.
-    let back = icon(&stage, &look, "chevron-left").expect("the way back").center();
-    assert!(stage.send(&PEvent::PointerDown(back.plus(PPoint::new(1.0, 1.0)))));
+    assert!(press(&mut stage, &look, desk.text.get("person.title")));
     assert_eq!(desk.now.who.borrow().clone(), None);
     assert!(laid(&mut stage, &look, HAND).contains(&desk.text.get("stream.none").to_string()));
 }

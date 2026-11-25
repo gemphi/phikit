@@ -177,6 +177,39 @@ pub(crate) fn shown(stage: &PStage, look: &PLook) -> Vec<String> {
     drawn(stage, look).into_iter().filter_map(text).collect()
 }
 
+/// Whether a line of text is drawn as wanted, or cut to the room it has
+/// (an ellipsis at its end) from the start of what was wanted.
+pub(crate) fn said(text: &[String], wanted: &str) -> bool {
+    text.iter().any(|line| line == wanted || line.strip_suffix('…').or_else(|| line.strip_suffix("...")).is_some_and(|cut| cut.chars().count() >= 4 && wanted.starts_with(cut)))
+}
+
+/// Presses on the arrows at the ends of a row of tabs in a part, to its
+/// right end and back, until a tab that reads so is in the row: whether
+/// it came.
+pub(crate) fn tab_to(stage: &mut PStage, look: &PLook, part: &str, wanted: &str) -> bool {
+    let inside = rect(stage, part);
+    // To the right end first, then back to the left: the arrows on the
+    // row of the right one.
+    for turn in 0..32 {
+        if shown(stage, look).iter().any(|line| line == wanted) {
+            return true;
+        }
+        let mark = drawn(stage, look);
+        let icon = |way: &str, row: Option<f32>| mark.iter().find_map(|mark| match mark {
+            PMark::Icon { name, rect, .. } if name == way && inside.contains(rect.center()) && rect.center().x > inside.center().x && row.is_none_or(|row| (rect.center().y - row).abs() < 2.0) => Some(rect.center()),
+            _ => None,
+        });
+        let right = icon("chevron-right", None);
+        let arrow = match turn < 16 {
+            true => right,
+            false => right.and_then(|right| icon("chevron-left", Some(right.y))),
+        };
+        let Some(arrow) = arrow else { return false };
+        stage.send(&PEvent::PointerDown(arrow));
+    }
+    false
+}
+
 /// A place to press a line of text: a little inside where it was drawn
 /// last, which is in the modal when one is open.
 pub(crate) fn written(stage: &PStage, look: &PLook, wanted: &str) -> Option<PPoint> {

@@ -155,7 +155,7 @@ fn step_30b_a_thing_phiegg_sold_has_its_trail_its_figures_and_who_held_it() {
     assert!(press(&mut stage, &look, &word("thing.trail")));
     let text = shown(&stage, &look);
     let between = format!(" {} ", word("between"));
-    assert!([word("thing.went").replace("{from}", "Gemma Laurent").replace("{to}", "Gemma Vane"), [word("thing.event.transfer"), "2026-11-06".to_string()].join(&between), "$23,574".to_string(), [word("thing.event.sale"), "2026-08-15".to_string()].join(&between)].iter().all(|line| text.contains(line)), "{text:?}");
+    assert!([word("thing.went").replace("{from}", "Gemma Laurent").replace("{to}", "Gemma Vane"), [word("thing.event.transfer"), "2026-11-06".to_string()].join(&between), "$23,574".to_string(), [word("thing.event.sale"), "2026-08-15".to_string()].join(&between)].iter().all(|line| super::said(&text, line)), "{text:?}");
     // Its figures, from the ledger.
     assert!(press(&mut stage, &look, &word("thing.stats")));
     let text = shown(&stage, &look);

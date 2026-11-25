@@ -341,30 +341,22 @@ impl PState for Held {
 /// for info and stats, else a grid with its layout, its filter where its
 /// records have one, and its order. One tab, one row of that table.
 pub fn tables() -> (String, String) {
-    let mut form = String::from("profile	tabs	tab	-	who.tab	who/tab	-	-
-");
-    let mut list = String::from("who.tab	who.tab	0	1	2
-who.sort	who.sort	0	text:1	2
-");
+    let mut form = String::from("profile\ttabs\ttab\t-\twho.tab\twho/tab\t-\t-\n");
+    let mut list = String::from("who.tab\twho.tab\t0\t1\t2\nwho.sort\twho.sort\t0\ttext:1\t2\n");
     for tab in tabs() {
         let key = &tab.key;
         match tab.show.as_str() {
             "info" | "stat" => {
-                form += &format!("profile	facts	who.{key}	person.{key}	who.{key}	-	tab	-
-");
-                list += &format!("who.{key}	who.{key}	0	1	-	-	-	-	-	-	-	2
-");
+                form += &format!("profile\tfacts\twho.{key}\tperson.{key}\twho.{key}\t-\ttab\t-\n");
+                list += &format!("who.{key}\twho.{key}\t0\t1\t-\t-\t-\t-\t-\t-\t-\t2\n");
             }
             _ => {
                 let filter = match tab.show == "kind" && !tab.facet.is_empty() {
                     true => format!(" drop=filter:who.{key}.facet:who/kind"),
                     false => String::new(),
                 };
-                form += &format!("profile	grid	who.{key}	person.{key}	who.{key}	who/open	tab	layout{filter} drop=sort:who.sort:who/sort
-");
-                list += &format!("who.{key}	who.{key}	0	1	2	-	-	-	-	3	4	5	-	6
-who.{key}.facet	who.{key}.facet	0	1	2
-");
+                form += &format!("profile\tgrid\twho.{key}\tperson.{key}\twho.{key}\twho/open\ttab\tlayout{filter} drop=sort:who.sort:who/sort\n");
+                list += &format!("who.{key}\twho.{key}\t0\t1\t2\t-\t-\t-\t-\t3\t4\t5\t-\t6\nwho.{key}.facet\twho.{key}.facet\t0\t1\t2\n");
             }
         }
     }
@@ -421,7 +413,7 @@ mod tests {
     #[test]
     fn the_profile_s_form_is_made_from_its_tabs_one_row_each() {
         let (form, list) = super::tables();
-        assert!(tabs().iter().all(|tab| form.contains(&format!("	who.{}	person.{}	", tab.key, tab.key)) && list.contains(&format!("who.{}	who.{}	", tab.key, tab.key))));
+        assert!(tabs().iter().all(|tab| form.contains(&format!("\twho.{}\tperson.{}\t", tab.key, tab.key)) && list.contains(&format!("who.{}\twho.{}\t", tab.key, tab.key))));
         assert!(form.contains("drop=filter:who.feed.facet:who/kind") && !form.contains("drop=filter:who.linked.facet"));
     }
 }

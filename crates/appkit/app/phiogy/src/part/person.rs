@@ -43,6 +43,7 @@ pub const QUIET: &str = "quiet";
 enum Act {
     Back,
     Wide,
+    Big,
     Message(String),
     Follow,
     Mute,
@@ -63,12 +64,16 @@ pub struct Person {
     /// How far down its head row ends: the way back and Expand stay in
     /// sight there while who they are scrolls away under it.
     fixed: Cell<f32>,
+    /// Whether their face fills the column's width, and where the arrow
+    /// that says so was drawn.
+    big: Cell<bool>,
+    grow: Cell<PRect>,
 }
 
 impl Person {
     pub fn new(desk: Desk) -> Person {
         let form = RefCell::new(held::form(&desk));
-        Person { frame: PRect::default(), desk, tool: Tool::read(data::ACT), origin: Cell::default(), spot: RefCell::default(), form, under: Cell::default(), lift: Cell::default(), fixed: Cell::default() }
+        Person { frame: PRect::default(), desk, tool: Tool::read(data::ACT), origin: Cell::default(), spot: RefCell::default(), form, under: Cell::default(), lift: Cell::default(), fixed: Cell::default(), big: Cell::default(), grow: Cell::default() }
     }
 
     /// Who it is about.
@@ -105,6 +110,7 @@ impl PDraw for Person {
         let from = fixed - self.lift.get();
         // Who they are, as Phiegg's card has it (person/card.rs).
         let mut top = section(paint, PPoint::new(left, from), wide, &mut |paint| self.card(paint, PPoint::new(left, from), wide, &one)) + gap * 0.75;
+        spot.push((self.grow.get(), Act::Big));
         // What can be done: write to them, follow them, mute them.
         let direct = Some(self.desk.direct_room(&one.id)).filter(|_| one.id != self.desk.site.me);
         let other = one.id != self.desk.site.me;
@@ -194,6 +200,7 @@ impl PView for Person {
                         self.desk.now.wide.set(false);
                     }
                     Act::Wide => self.desk.now.wide.set(!self.desk.now.wide.get()),
+                    Act::Big => self.big.set(!self.big.get()),
                     Act::Message(room) => _ = self.desk.show(&room),
                     Act::Follow => self.desk.follow(&who),
                     Act::Mute => self.desk.mute(&who),

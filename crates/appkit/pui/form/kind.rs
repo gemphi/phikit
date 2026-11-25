@@ -136,6 +136,8 @@ pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &m
         }
         "grid" => grid(choice, paint, at, wide, 1.0, over),
         "large" => grid(choice, paint, at, wide, LARGE, over),
+        "small" => grid(choice, paint, at, wide, SMALL, over),
+        "slides" => slides(choice, now.parse().unwrap_or_default(), paint, at, wide, over),
         "tree" => super::tree::tree(choice, now, paint, at, wide, over),
         "facts" => super::tree::facts(choice, paint, at, wide),
         "picture" => super::tree::picture(choice, paint, at, wide, variant.split_whitespace().any(|word| word == "banner")),
@@ -197,8 +199,26 @@ fn rows(variant: &str, choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at
     (end.max(at.y), rect)
 }
 
-/// How many times a card's width a large tile is.
+/// How many times a card's width a large tile is, and a small one.
 const LARGE: f32 = 1.75;
+const SMALL: f32 = 0.6;
+
+/// Slides: one row of large tiles, from the one it begins at, as many
+/// as the width holds; the arrows at its heading step them. Every
+/// choice has a place, those out of the row none to press.
+fn slides(choice: &[PChoice], from: usize, paint: &mut dyn PPaint, at: PPoint, wide: f32, over: Option<PPoint>) -> (f32, Vec<PRect>) {
+    let gap = paint.size(GAP);
+    let least = (paint.size(CARD) * LARGE).min(wide).max(1.0);
+    let across = (((wide + gap / 2.0) / (least + gap / 2.0)).floor() as usize).max(1);
+    let from = from.min(choice.len().saturating_sub(1));
+    let upto = (from + across).min(choice.len());
+    let (end, row) = grid(&choice[from..upto], paint, at, wide, LARGE, over);
+    let place = (0..choice.len()).map(|index| match index.checked_sub(from) {
+        Some(at) if at < row.len() => row[at],
+        _ => PRect::default(),
+    }).collect();
+    (end, place)
+}
 
 /// Tiles in as many columns as a card's width, so many times, allows;
 /// the one under the pointer lit the more.

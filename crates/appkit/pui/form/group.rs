@@ -39,9 +39,16 @@ impl PForm {
             let kind = match (b.kind.as_str(), head.layout.as_str()) {
                 ("grid", head::LIST) => "rows".to_string(),
                 ("grid", head::LARGE) => "large".to_string(),
+                ("grid", head::SMALL) => "small".to_string(),
+                ("grid", head::SLIDES) => "slides".to_string(),
                 (kind, _) => kind.to_string(),
             };
-            let (light, choice, now, head) = (head::light(&b.variant), choice.clone(), now.clone(), head.clone());
+            let (light, choice, head) = (head::light(&b.variant), choice.clone(), head.clone());
+            // Slides are told which tile they begin at.
+            let now = match kind.as_str() {
+                "slides" => head.slide.to_string(),
+                _ => now.clone(),
+            };
             let typed = match typing.as_deref() == Some(b.key.as_str()) {
                 true => Some(draft.clone()),
                 false => None,

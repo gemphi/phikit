@@ -366,6 +366,7 @@ thing.event.sale	Sale
 thing.event.transfer	Transfer
 thing.event.mint	Minted
 thing.event.offer	Offer
+thing.event.list	Listed
 thing.stat.price	Price
 thing.stat.sales	Sales
 thing.stat.transfers	Transfers
@@ -417,7 +418,9 @@ view3d.right	Right
 library.back	Back
 library.forward	Forward
 layout.grid	Grid
+layout.small	Small tiles
 layout.large	Large tiles
+layout.slides	Slides
 layout.list	List
 library.stat	This place
 library.up	Up

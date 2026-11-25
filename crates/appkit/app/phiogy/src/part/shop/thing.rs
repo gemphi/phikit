@@ -243,13 +243,19 @@ impl Thing {
             "thing.field" => one.field.iter().map(|(name, value)| vec![name.clone(), name.clone(), value.clone()]).collect(),
             "thing.stat" => self.stats(one),
             "thing.trail" => self.sales(one).into_iter().map(|sale| {
-                let went = text.get("thing.went").replace("{from}", &self.name(&sale.from)).replace("{to}", &self.name(&sale.to));
+                // A mint or a listing has one side only: then just its name.
+                let went = match (sale.from.is_empty(), sale.to.is_empty()) {
+                    (true, _) => self.name(&sale.to),
+                    (_, true) => self.name(&sale.from),
+                    _ => text.get("thing.went").replace("{from}", &self.name(&sale.from)).replace("{to}", &self.name(&sale.to)),
+                };
+                let price = Some(dollar(sale.price)).filter(|_| sale.price > 0.0).unwrap_or_default();
                 let event = match text.get(&format!("thing.event.{}", sale.event)) {
                     "" => sale.event.clone(),
                     word => word.to_string(),
                 };
                 let line = [event, day(&sale.at)].join(&format!(" {} ", text.get("between")));
-                vec![format!("rec:{}:{}", first("sale"), sale.id), went, "workflow".to_string(), line, dollar(sale.price)]
+                vec![format!("rec:{}:{}", first("sale"), sale.id), went, "workflow".to_string(), line, price]
             }).collect(),
             "thing.owner" => self.holders(one).into_iter().map(|sale| {
                 let kind = first("person");

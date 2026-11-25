@@ -26,9 +26,14 @@ pub const DROP: &str = "ui/drop";
 pub const FOLDED: &str = "1";
 pub const LIST: &str = "list";
 pub const LARGE: &str = "large";
+pub const SMALL: &str = "small";
+pub const SLIDES: &str = "slides";
+/// The path the first tile a block of slides shows is kept at, its key
+/// after.
+pub const SLIDE: &str = "ui/slide/";
 /// The three ways a block can lie: what each keeps, its icon, and the
 /// word of the app's text that names it.
-pub const LAYOUTS: [(&str, &str, &str); 3] = [("grid", "grid", "layout.grid"), (LARGE, "square", "layout.large"), (LIST, "list", "layout.list")];
+pub const LAYOUTS: [(&str, &str, &str); 5] = [("grid", "grid", "layout.grid"), (SMALL, "layout-grid", "layout.small"), (LARGE, "square", "layout.large"), (SLIDES, "layout-dashboard", "layout.slides"), (LIST, "list", "layout.list")];
 
 /// The theme's tokens: an icon's size, a line, a gap, the ink.
 const ICON: &str = "icon.size";
@@ -63,6 +68,8 @@ pub struct PHead {
     pub tool: Vec<PTool>,
     pub folded: bool,
     pub layout: String,
+    /// Laid as slides, the first tile shown.
+    pub slide: usize,
 }
 
 /// A drop's switch: a press opens it, and another puts it away.
@@ -94,6 +101,13 @@ impl PHead {
         if word.contains(&"layout") {
             let icon = LAYOUTS.iter().find(|(value, ..)| *value == now).map_or("grid", |(_, icon, _)| icon);
             head.left.push(drop(format!("{key}/layout"), icon, "", layout, &open));
+        }
+        // Laid as slides, arrows step them, a tile at a time.
+        if now == SLIDES {
+            let path = format!("{SLIDE}{key}");
+            head.slide = source.get(&path).parse().unwrap_or_default();
+            head.tool.push(PTool { icon: "chevron-left".to_string(), path: path.clone(), value: head.slide.saturating_sub(1).to_string(), drop: None });
+            head.tool.push(PTool { icon: "chevron-right".to_string(), path, value: (head.slide + 1).to_string(), drop: None });
         }
         for spec in word.iter().filter_map(|word| word.strip_prefix("drop=")) {
             let mut part = spec.splitn(3, ':');

@@ -60,6 +60,8 @@ pub const HEAD: &str = "head.line";
 /// The theme's tokens for the side column: its share of the width, and
 /// the width under which it stands at the top instead.
 pub const SIDE: &str = "form.side";
+/// The theme's token for how many tabs stand in their row at most.
+pub const TABS: &str = "tabs.most";
 pub const SPLIT: &str = "form.split";
 
 /// Where a form's content and values come from: the app's lists by
@@ -130,6 +132,48 @@ impl PForm {
 
     fn of(&self, kind: &str) -> impl Iterator<Item = &Block> {
         self.block.iter().filter(move |b| b.kind == kind)
+    }
+
+    /// A row of tabs: as many around the one on as fit across the width,
+    /// up to the theme's `tabs.most`, an arrow at each end of the row
+    /// where there are more, stepping to the tab before or after. Each
+    /// pill with the value a press keeps.
+    fn row<'a>(&self, paint: &dyn PPaint, choice: &'a [PChoice], now: &str, wide: f32) -> (Vec<(&'a str, &'a str, bool)>, Vec<String>) {
+        let at = choice.iter().position(|c| c.value == now).unwrap_or_default();
+        let most = paint.theme().size(TABS).unwrap_or(4.0).max(1.0) as usize;
+        let value = |index: usize| choice.get(index).map(|c| c.value.clone()).unwrap_or_default();
+        // With their icons where at least three (or all) fit so; else
+        // their words alone, so as many stand as can.
+        let build = |count: usize, icons: bool| {
+            let start = at.saturating_sub(count / 2).min(choice.len().saturating_sub(count));
+            let more = count < choice.len();
+            let mut pill: Vec<(&'a str, &'a str, bool)> = Vec::new();
+            let mut kept: Vec<String> = Vec::new();
+            if more {
+                pill.push(("chevron-left", "", false));
+                kept.push(value(at.saturating_sub(1)));
+            }
+            for c in choice.iter().skip(start).take(count) {
+                let icon = match icons {
+                    true => c.icon.as_str(),
+                    false => "",
+                };
+                pill.push((icon, c.label.as_str(), c.value == now));
+                kept.push(c.value.clone());
+            }
+            if more {
+                pill.push(("chevron-right", "", false));
+                kept.push(value((at + 1).min(choice.len().saturating_sub(1))));
+            }
+            (pill, kept)
+        };
+        let fits = |count: usize, icons: bool| build(count, icons).0.as_slice().span(paint) <= wide;
+        let count = |icons: bool| (1..=most.min(choice.len()).max(1)).rev().find(|count| fits(*count, icons)).unwrap_or(1);
+        let least = choice.len().clamp(1, 3);
+        match count(true) >= least {
+            true => build(count(true), true),
+            false => build(count(false), false),
+        }
     }
 
     /// The block widened to the whole form, where one is.
@@ -216,12 +260,14 @@ impl PForm {
         let mut end = top - space;
         for tabs in self.of("tabs") {
             let (choice, now) = (self.source.list(&tabs.list), self.source.get(&tabs.path));
-            let pill: Vec<(&str, &str, bool)> = choice.iter().map(|c| (c.icon.as_str(), c.label.as_str(), c.value == now)).collect();
-            self.motion.to(choice.iter().position(|c| c.value == now).unwrap_or_default());
+            // One row of tabs, centred, as many as fit up to the theme's
+            // most; arrows at its ends step to the tab before and after.
+            let (pill, value) = self.row(paint, &choice, &now, wide);
+            self.motion.to(value.iter().zip(&pill).position(|(v, p)| *v == now && !p.1.is_empty()).unwrap_or_default());
             let under: Vec<&Block> = self.block.iter().filter(|b| b.under == tabs.key).collect();
             let (mut group, shown) = self.grouped(&under);
             let (rect, pressed, bottom) = tabbed(paint, PPoint::new(left, top), wide, foot - high - space, pill.as_slice(), &self.motion, &mut group);
-            spot.extend(rect.into_iter().zip(&choice).map(|(r, c)| (r, tabs.path.clone(), c.value.clone())));
+            spot.extend(rect.into_iter().zip(value).map(|(r, value)| (r, tabs.path.clone(), value)));
             for (rect, (block, choice, head)) in pressed.into_iter().zip(&shown) {
                 spot.extend(PForm::spots(block, head, choice, rect));
             }

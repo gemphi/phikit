@@ -4,7 +4,7 @@
 //! in it. While somebody else is calling there, the two that begin a
 //! call give way to Join, and who is calling is said after the name.
 
-use appkit::pui::core::{PDraw, PEvent, PFit, PPaint, PPoint, PRect, PSize, PView};
+use appkit::pui::core::{PDraw, PEvent, PFit, PPaint, PPoint, PRect, PView};
 
 use std::cell::{Cell, RefCell};
 
@@ -120,6 +120,9 @@ impl PDraw for Title {
         let Some(plate) = self.desk.plate(&open) else { return };
         // It starts where what is under it does.
         let (start, full) = self.desk.column(size.width);
+        // The line under it is as wide as it is: never into the room
+        // either side of it.
+        let ruler = PRect::new(origin.x + start, origin.y + size.height - rule, full, rule);
         let middle = origin.y + size.height / 2.0;
         // The pills of its call stand at the right; its name has the rest.
         let pill = self.join.draw(paint, PPoint::new(origin.x + start + full, middle));
@@ -161,7 +164,7 @@ impl PDraw for Title {
         if room > gap * 2.0 && !after.is_empty() {
             paint.text(PPoint::new(origin.x + used, middle - line / 2.0), &fit(&after, room, paint), dim);
         }
-        paint.fill(PRect { origin: origin.plus(PPoint::new(0.0, size.height - rule)), size: PSize { width: size.width, height: rule } }, ruled);
+        paint.fill(ruler, ruled);
     }
 }
 

@@ -10,6 +10,8 @@ use super::{DIM, GAP, ICON, INK, LINE, PText, RADIUS};
 /// The theme's token for how large what leads a row is; a theme without
 /// it has it as large as an icon.
 pub const LEAD: &str = "row.lead";
+/// The theme's token for the room inside a row, at its start and its end.
+pub const PAD: &str = "row.pad";
 
 /// What leads a row, or stands over a tile's words.
 #[derive(Debug, Clone, Copy, PartialEq, Default)]
@@ -66,6 +68,9 @@ pub trait PRow {
     /// end, for what can be done with it there.
     fn row(&self, paint: &mut dyn PPaint, rect: PRect, end: f32) {
         let (gap, line, ink, dim) = (paint.size(GAP), paint.size(LINE), paint.color(INK), paint.color(DIM));
+        // Room inside it at its start and its end, as the theme says.
+        let pad = paint.theme().size(PAD).unwrap_or(gap / 2.0);
+        let rect = PRect::new(rect.origin.x + pad, rect.origin.y, (rect.size.width - pad * 2.0).max(0.0), rect.size.height);
         let side = paint.theme().size(LEAD).unwrap_or(paint.size(ICON)).min(rect.size.height);
         let lead = self.lead();
         lead.draw(paint, PRect::new(rect.origin.x, rect.center().y - side / 2.0, side, side));

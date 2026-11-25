@@ -190,20 +190,21 @@ fn crumbs_say_the_way_each_step_dim_with_the_mark_of_what_comes_next() {
 
 #[test]
 fn a_row_lies_with_what_leads_it_and_stands_as_a_tile_with_its_picture_large() {
-    let look = PLook::read(&format!("{LOOK}size\trow.lead\t40\n"));
+    let look = PLook::read(&format!("{LOOK}size\trow.lead\t40\nsize\trow.pad\t12\n"));
     let mut sheet = PSheet::new(&look);
     let (gap, line) = (look.size("gap").unwrap_or_default(), look.size("text.line").unwrap_or_default());
-    // Lying: the face round at the left, in the middle of the row's height; the title over the note.
+    // Lying: the face round at the left, the row's room in from its edge,
+    // in the middle of the row's height; the title over the note.
     let one = (PLead::Face("faces", 4, 2), "Lora Vale", "Here now");
     one.row(&mut sheet, PRect::new(10.0, 20.0, 300.0, 56.0), 60.0);
-    assert!(sheet.mark.contains(&PMark::Picture { name: "faces".to_string(), rect: PRect::new(10.0, 28.0, 40.0, 40.0), radius: 20.0, fit: PFit::Cell { column: 4, index: 2 } }));
+    assert!(sheet.mark.contains(&PMark::Picture { name: "faces".to_string(), rect: PRect::new(22.0, 28.0, 40.0, 40.0), radius: 20.0, fit: PFit::Cell { column: 4, index: 2 } }));
     let ink = look.color("text.ink").unwrap_or_default();
-    assert!(sheet.mark.contains(&PMark::Text { at: PPoint::new(50.0 + gap / 2.0, 48.0 - line), text: "Lora Vale".to_string(), color: ink }));
+    assert!(sheet.mark.contains(&PMark::Text { at: PPoint::new(62.0 + gap / 2.0, 48.0 - line), text: "Lora Vale".to_string(), color: ink }));
     assert!(sheet.text_list().contains(&"Here now"));
-    // With no note the title is in the middle; with nothing to lead it, it begins at the row's left.
+    // With no note the title is in the middle; with nothing to lead it, it begins the row's room in from its left.
     let mut plain = PSheet::new(&look);
     (PLead::None, "lobby", "").row(&mut plain, PRect::new(10.0, 20.0, 300.0, 56.0), 0.0);
-    assert_eq!(plain.mark, [PMark::Text { at: PPoint::new(10.0, 48.0 - line / 2.0), text: "lobby".to_string(), color: ink }]);
+    assert_eq!(plain.mark, [PMark::Text { at: PPoint::new(22.0, 48.0 - line / 2.0), text: "lobby".to_string(), color: ink }]);
     // Standing: a ground, the picture a square across the top, the words under it.
     let mut tile = PSheet::new(&look);
     let (frame, under) = (PLead::Picture("coat"), "Coat", "Wool").tile(&mut tile, PRect::new(0.0, 0.0, 160.0, 240.0), PLight::Soft);

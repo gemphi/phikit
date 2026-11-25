@@ -142,8 +142,7 @@ fn a_side_stands_at_the_left_held_in_view_or_at_the_top_when_narrow() {
 fn a_picture_has_what_can_be_done_with_it_floating_down_its_corner() {
     let look: Rc<dyn PTheme> = Rc::new(PLook::read(LOOK));
     let source = Rc::new(Fixed::default());
-    let mut form = PForm::new("mine", "mine	picture	look	-	look	look/open	-	-
-", source.clone(), Rc::new(PTable::read("")), look.clone());
+    let mut form = PForm::new("mine", "mine\tpicture\tlook\t-\tlook\tlook/open\t-\t-\n", source.clone(), Rc::new(PTable::read("")), look.clone());
     form.set_frame(PRect::new(0.0, 0.0, 300.0, 600.0));
     let mut sheet = PSheet::new(look.as_ref());
     form.draw(&mut sheet, PPoint::new(0.0, 0.0));
@@ -170,12 +169,8 @@ fn a_picture_has_what_can_be_done_with_it_floating_down_its_corner() {
 fn a_grid_widens_to_the_whole_form_and_gives_it_back() {
     let look: Rc<dyn PTheme> = Rc::new(PLook::read(LOOK));
     let source = Rc::new(Fixed::default());
-    let table = "mine	grid	size	size	size	size	-	layout
-mine	band	kind	kind	kind	kind	-	-
-";
-    let mut form = PForm::new("mine", table, source.clone(), Rc::new(PTable::read("size	Size
-kind	Kind
-")), look.clone());
+    let table = "mine\tgrid\tsize\tsize\tsize\tsize\t-\tlayout\nmine\tband\tkind\tkind\tkind\tkind\t-\t-\n";
+    let mut form = PForm::new("mine", table, source.clone(), Rc::new(PTable::read("size\tSize\nkind\tKind\n")), look.clone());
     form.set_frame(PRect::new(0.0, 0.0, 300.0, 600.0));
     let drawn = |form: &PForm| {
         let mut sheet = PSheet::new(look.as_ref());
