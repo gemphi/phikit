@@ -35,6 +35,10 @@ axis.mode	Mode
 axis.surface	Surface
 value.light	Light
 value.dark	Dark
+# Auto follows the system's light and dark: the axis it stands on and its
+# two values; at the end of that axis's row (the user, 25 November 2026).
+auto	mode light dark
+value.auto	Auto
 value.solid	Solid
 value.gradient	Gradient
 value.glass	Glass

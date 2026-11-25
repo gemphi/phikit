@@ -24,12 +24,25 @@ pub struct PShade {
     /// What the person prefers, under what is worn and over the look:
     /// each row its kind, its token and its value; and as a look.
     prefer: RefCell<(Vec<Liked>, Option<PLook>)>,
+    /// On Auto: the look for the system's light, and the one for its dark.
+    auto: RefCell<Option<(String, String)>>,
 }
 
 impl PShade {
     /// A shade of those looks, showing the first.
     pub fn new(look: Vec<(String, PLook)>) -> PShade {
-        PShade { look, at: Cell::new(0), over: RefCell::default(), prefer: RefCell::default() }
+        PShade { look, at: Cell::new(0), over: RefCell::default(), prefer: RefCell::default(), auto: RefCell::default() }
+    }
+
+    /// Follow the system's light and dark (the user, 25 November 2026):
+    /// the look for each, or nothing to stop following it.
+    pub fn auto(&self, pair: Option<(String, String)>) {
+        *self.auto.borrow_mut() = pair;
+    }
+
+    /// The looks it follows the system with, while it does.
+    pub fn following(&self) -> Option<(String, String)> {
+        self.auto.borrow().clone()
     }
 
     /// The names of its looks, in order.
@@ -152,5 +165,14 @@ impl PTheme for PShade {
 
     fn word(&self, token: &str) -> Option<&str> {
         self.shown()?.word(token)
+    }
+
+    fn system(&self, dark: bool) -> bool {
+        let Some((light, night)) = self.following() else { return false };
+        let wanted = match dark {
+            true => night,
+            false => light,
+        };
+        wanted != self.name() && self.turn(&wanted)
     }
 }

@@ -258,7 +258,27 @@ impl PView for PProfile {
             self.wish.iter().for_each(|wish| wish.borrow_mut().push(PDeed::Tell(format!("{} {kept}", prefer::TOLD))));
             return true;
         }
+        // Auto: follow the system with the light and the dark of this
+        // surface, or stop; the app is told and keeps it.
+        if look.as_deref() == Some(axis::AUTO_PRESS) {
+            let Some(shade) = self.shade.as_ref() else { return false };
+            let pair = match shade.following() {
+                Some(_) => None,
+                None => axis::pair(&self.user, shade),
+            };
+            shade.auto(pair.clone());
+            let told = match pair {
+                Some((light, dark)) => format!("{TOLD} {} {light} {dark}", axis::AUTO),
+                None => format!("{TOLD} {}", shade.name()),
+            };
+            self.wish.iter().for_each(|wish| wish.borrow_mut().push(PDeed::Tell(told.clone())));
+            return true;
+        }
+        // A look chosen by hand: Auto stops.
         let turned = look.as_ref().is_some_and(|look| self.shade.as_ref().is_some_and(|shade| shade.turn(look)));
+        if turned {
+            self.shade.iter().for_each(|shade| shade.auto(None));
+        }
         if let (true, Some(look), Some(wish)) = (turned, look, &self.wish) {
             wish.borrow_mut().push(PDeed::Tell(format!("{TOLD} {look}")));
         }

@@ -104,6 +104,11 @@ impl Render for PScreen {
         let view = window.viewport_size();
         let size = PSize { width: view.width.as_f32(), height: view.height.as_f32() };
         let look = Rc::clone(self.stage.theme());
+        // A look on Auto follows the system's light and dark.
+        let dark = matches!(window.appearance(), gpui::WindowAppearance::Dark | gpui::WindowAppearance::VibrantDark);
+        if look.system(dark) {
+            window.request_animation_frame();
+        }
         // A look with a window of glass has the system blur what is
         // behind the window; the window is told when the look changes.
         let glass = PGlass::window(look.as_ref());

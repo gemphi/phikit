@@ -151,6 +151,25 @@ pub struct Desk {
     pub shelf: Rc<appkit::pui::state::PMemory>,
 }
 
+/// Wear a look as it is kept: a look's name, or Auto with the look for
+/// the system's light and the one for its dark (the user, 25 November
+/// 2026). `false` when there is no such look.
+pub fn dressed(shade: &PShade, kept: &str) -> bool {
+    match kept.split_whitespace().collect::<Vec<_>>().as_slice() {
+        ["auto", light, dark] if shade.list().contains(light) && shade.list().contains(dark) => {
+            shade.auto(Some((light.to_string(), dark.to_string())));
+            true
+        }
+        _ => {
+            let turned = shade.turn(kept);
+            if turned {
+                shade.auto(None);
+            }
+            turned
+        }
+    }
+}
+
 impl Desk {
     /// Phiegg's records (search/book.rs), read the first time they are
     /// asked for and kept: search finds in them, a record's page shows one.
@@ -252,10 +271,11 @@ impl Desk {
         true
     }
 
-    /// Show Phiogy in the look of that name from now on, and keep that.
-    /// `false` when there is no such look.
+    /// Show Phiogy in the look of that name from now on, or on Auto
+    /// (`auto <light look> <dark look>`, following the system), and keep
+    /// that. `false` when there is no such look.
     pub fn dress(&self, name: &str) -> bool {
-        let turned = self.shade.turn(name);
+        let turned = dressed(&self.shade, name);
         if turned {
             self.choice.put("look", name);
         }

@@ -96,7 +96,7 @@ impl Phiogy {
         PHost::declare(&mut host, data::REGION);
         let shade = Rc::new(Phiogy::shade(&look));
         let choice = store.map(|store| Choice::kept(store, own.get("setting"))).unwrap_or_default();
-        shade.turn(&choice.get("look"));
+        crate::part::dressed(&shade, &choice.get("look"));
         shade.prefer(&choice.get("prefer"));
         let choice = Rc::new(choice);
         // The library is a desk's: a browser has no disk to read it from.

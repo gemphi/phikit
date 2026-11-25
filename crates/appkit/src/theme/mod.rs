@@ -27,4 +27,11 @@ pub trait PTheme {
     fn word(&self, _token: &str) -> Option<&str> {
         None
     }
+
+    /// The system's own light or dark, as the window sees it now: a theme
+    /// that follows it (a look on Auto) turns to match. `true` when it
+    /// turned. A theme that does not follow it ignores it.
+    fn system(&self, _dark: bool) -> bool {
+        false
+    }
 }

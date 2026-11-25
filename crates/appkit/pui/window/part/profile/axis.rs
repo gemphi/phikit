@@ -26,6 +26,38 @@ const VALUE: &str = "value.";
 const PLACE: &str = "place.";
 /// What a heading's press is told, before the group's name.
 pub const FOLD: &str = "fold ";
+/// The user table's row naming the axis Auto stands on and its two
+/// values (`auto mode light dark`), its word (`value.auto`), and what a
+/// press on Auto keeps.
+pub const AUTO: &str = "auto";
+pub const AUTO_PRESS: &str = "<auto>";
+
+/// The axis Auto stands on, and its light and dark values.
+pub fn auto(user: &PTable) -> Option<(String, String, String)> {
+    let row: Vec<String> = user.get(AUTO).split_whitespace().map(str::to_string).collect();
+    match row.as_slice() {
+        [axis, light, dark] => Some((axis.clone(), light.clone(), dark.clone())),
+        _ => None,
+    }
+}
+
+/// The looks Auto follows the system with: the look with the light value
+/// and the one with the dark, each keeping every other axis as the look
+/// shown has it.
+pub fn pair(user: &PTable, shade: &PShade) -> Option<(String, String)> {
+    let (axis, light, dark) = auto(user)?;
+    let index = axes(user).iter().position(|one| *one == axis)?;
+    let now = place(user, shade.name());
+    let with = |value: &str| {
+        let looks = shade.list();
+        let same = |look: &&str| {
+            let there = place(user, look);
+            there.get(index).map(String::as_str) == Some(value) && there.iter().enumerate().all(|(at, one)| at == index || now.get(at) == Some(one))
+        };
+        looks.iter().copied().find(same).or_else(|| looks.iter().copied().find(|look| place(user, look).get(index).map(String::as_str) == Some(value))).map(str::to_string)
+    };
+    Some((with(&light)?, with(&dark)?))
+}
 
 /// The axes the app names, in order.
 pub fn axes(user: &PTable) -> Vec<String> {
@@ -100,6 +132,25 @@ pub fn values(user: &PTable, shade: &PShade, axis: usize, paint: &mut dyn PPaint
         paint.text(PPoint::new(rect.origin.x + gap, rect.center().y - line / 2.0), said, ink);
         spot.push((rect, target.to_string()));
         x += long + gap / 2.0;
+        end = rect.origin.y + rect.size.height;
+    }
+    // Auto, where this is its axis: at the right end of the row, lit while
+    // the look follows the system (the user: "at the end of that row").
+    let ours = auto(user).is_some_and(|(name, ..)| axes(user).get(axis) == Some(&name));
+    if ours {
+        let said = word(user, &format!("{VALUE}{AUTO}"), AUTO);
+        let long = paint.measure(said) + gap * 2.0;
+        if x + long > at.x + wide && x > at.x {
+            y += line + gap * 1.5;
+        }
+        let rect = PRect::new(at.x + wide - long, y, long, line + gap);
+        let (light, token) = match shade.following().is_some() {
+            true => (PLight::Strong, LIT),
+            false => (PLight::Soft, FILL),
+        };
+        label(paint, rect, round, light, true, token);
+        paint.text(PPoint::new(rect.origin.x + gap, rect.center().y - line / 2.0), said, ink);
+        spot.push((rect, AUTO_PRESS.to_string()));
         end = rect.origin.y + rect.size.height;
     }
     end

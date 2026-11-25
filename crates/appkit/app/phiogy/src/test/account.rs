@@ -148,3 +148,33 @@ fn step_59_the_profile_sets_which_of_four_ways_the_light_runs_how_strong_how_far
     other.prefer(&kept);
     assert_eq!(other.size("surface.turn"), Some(0.0));
 }
+
+#[test]
+fn auto_at_the_end_of_the_mode_row_follows_the_system_s_light_and_dark_until_a_mode_is_chosen() {
+    let (app, mut stage, look) = staged(DESK);
+    let desk = app.desk();
+    let user = appkit::service::PTable::read(crate::data::USER);
+    let word = |name: &str| user.get(name).to_string();
+    assert!(stage.window.apply(&PDeed::Open("profile".to_string())));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    // Auto stands at the right end of the Mode row, after Light and Dark.
+    let at = |stage: &PStage, said: &str| drawn(stage, &look).iter().rev().find_map(|mark| match mark {
+        PMark::Text { at, text, .. } if *text == said => Some(*at),
+        _ => None,
+    });
+    let (light, auto) = (at(&stage, &word("value.light")).expect("Light"), at(&stage, &word("value.auto")).expect("Auto"));
+    assert!(auto.x > light.x + 100.0 && (auto.y - light.y).abs() < 1.0, "{light:?} {auto:?}");
+    // On: the look follows the system, light and dark, with the surface it had.
+    let first = desk.shade.name().to_string();
+    assert!(press(&mut stage, &look, &word("value.auto")));
+    let (day, night) = desk.shade.following().expect("on Auto");
+    assert_eq!(night, first);
+    assert!(desk.shade.system(false) && desk.shade.name() == day);
+    assert!(desk.shade.system(true) && desk.shade.name() == night);
+    stage.send(&PEvent::KeyUp(' '));
+    assert_eq!(desk.choice.get("look"), format!("auto {day} {night}"));
+    // A mode chosen by hand stops it.
+    assert!(press(&mut stage, &look, &word("value.light")));
+    assert_eq!(desk.shade.following(), None);
+    assert!(!desk.shade.system(true));
+}
