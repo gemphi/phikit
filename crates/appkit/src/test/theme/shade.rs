@@ -64,3 +64,18 @@ fn a_look_s_tinted_colours_take_the_light_s_hue_keep_their_lightness_and_follow_
     let fill = shade.color("window.fill").expect("a fill");
     assert!(fill.r > fill.g && near(fill.g, fill.b) && near(lightness(fill), lightness(PColor::new(grey, grey, grey, 1.0))), "{fill:?}");
 }
+
+#[test]
+fn a_look_of_a_table_begins_from_another_and_changes_what_it_says() {
+    let base = PLook::read("color\tink\t#000000\nsize\tblur\t1\n");
+    let table = "# Looks.\nlight\ndark\tcolor\tink\t#ffffff\ndark\tsize\tblur\t8\nnight\tfrom\tdark\nnight\tsize\tblur\t20\n";
+    let shade = PShade::read(&base, table);
+    assert_eq!(shade.list(), ["light", "dark", "night"]);
+    // Night is Dark's ink, with a blur of its own.
+    assert!(shade.turn("night"));
+    assert_eq!((shade.color("ink"), shade.size("blur")), (Some(PColor::new(1.0, 1.0, 1.0, 1.0)), Some(20.0)));
+    // Dark keeps its own; Light is the theme as it is.
+    assert!(shade.turn("dark") && shade.size("blur") == Some(8.0));
+    assert!(shade.turn("light") && shade.color("ink") == Some(PColor::new(0.0, 0.0, 0.0, 1.0)));
+}
+

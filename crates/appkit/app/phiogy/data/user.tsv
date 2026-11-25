@@ -27,12 +27,15 @@ prefer.most	70%
 prefer.half	50%
 prefer.all	All the way
 prefer.light	Light's colour
-# How it appears, as two choices (the user, 25 November 2026): the mode
-# and the surface. Each look stands on both (`place.`); a look with none
-# is not offered. The values are shown in this order.
-axis	mode surface
+# How it appears, as three choices (the user, 25 November 2026): the
+# mode, the surface (Silver among them, brushed steel), and the glass,
+# sixteen of it as Vision Pro and Meta Horizon wear glass. Each look
+# stands on all three (`place.`); a look with none is not offered. The
+# values are shown in this order.
+axis	mode surface lens
 axis.mode	Mode
 axis.surface	Surface
+axis.lens	Glass
 value.light	Light
 value.dark	Dark
 # Auto follows the system's light and dark: the axis it stands on and its
@@ -42,9 +45,47 @@ value.auto	Auto
 value.solid	Solid
 value.gradient	Gradient
 value.glass	Glass
-place.glass	dark glass
-place.frost	light glass
-place.light	light gradient
-place.dark	dark gradient
-place.plain	light solid
-place.plain-dark	dark solid
+value.silver	Silver
+value.plain	Plain
+value.liquid	Liquid
+value.vision	Vision
+value.vision-thin	Vision Thin
+value.vision-thick	Vision Thick
+value.clear	Clear
+value.silver-glass	Silver Glass
+value.smoke	Smoke
+value.horizon	Horizon
+value.horizon-light	Horizon Light
+value.pearl	Pearl
+value.rose	Rose
+value.sun	Sun
+value.ocean	Ocean
+value.forest	Forest
+value.dusk	Dusk
+value.amber	Amber
+value.graphite	Graphite
+place.glass	dark glass plain
+place.frost	light glass plain
+place.liquid	light glass liquid
+place.liquid-dark	dark glass liquid
+place.light	light gradient plain
+place.dark	dark gradient plain
+place.plain	light solid plain
+place.plain-dark	dark solid plain
+place.silver	light silver plain
+place.vision	dark glass vision
+place.vision-thin	dark glass vision-thin
+place.vision-thick	dark glass vision-thick
+place.clear	light glass clear
+place.silver-glass	light glass silver-glass
+place.smoke	dark glass smoke
+place.horizon	dark glass horizon
+place.horizon-light	light glass horizon-light
+place.pearl	light glass pearl
+place.rose	light glass rose
+place.sun	light glass sun
+place.ocean	dark glass ocean
+place.forest	dark glass forest
+place.dusk	dark glass dusk
+place.amber	light glass amber
+place.graphite	dark glass graphite

@@ -288,8 +288,9 @@ fn every_block_a_press_acts_on_says_so_as_it_is_drawn_inside_what_is_in_sight() 
 fn eight_looks_and_the_plain_ones_draw_a_faint_line_down_the_sidebar() {
     let (app, stage, _) = staged(DESK);
     let list = app.desk().shade.list();
-    assert_eq!(list.len(), 8, "{list:?}");
-    assert!(list.contains(&"plain") && list.contains(&"plain-dark"));
+    // Eight looks, Silver, and sixteen of glass (the user, 25 November 2026).
+    assert_eq!(list.len(), 25, "{list:?}");
+    assert!(["plain", "plain-dark", "silver", "vision", "horizon", "graphite"].iter().all(|name| list.contains(name)));
     let shade = app.desk().shade.clone();
     // The sidebar's line: down its edge, where the page begins (a
     // section's own thin level line stands inside the page).

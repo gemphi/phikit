@@ -178,3 +178,25 @@ fn auto_at_the_end_of_the_mode_row_follows_the_system_s_light_and_dark_until_a_m
     assert_eq!(desk.shade.following(), None);
     assert!(!desk.shade.system(true));
 }
+
+#[test]
+fn the_profile_offers_silver_and_sixteen_glass_looks_as_vision_pro_and_horizon_wear_glass() {
+    let (app, mut stage, look) = staged(DESK);
+    let desk = app.desk();
+    let user = appkit::service::PTable::read(crate::data::USER);
+    let word = |name: &str| user.get(name).to_string();
+    assert!(stage.window.apply(&PDeed::Open("profile".to_string())));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    // Its third choice is the glass; Silver is a surface.
+    let text = shown(&stage, &look);
+    assert!([word("axis.lens"), word("value.silver"), word("value.vision"), word("value.horizon"), word("value.graphite")].iter().all(|said| text.contains(said)), "{text:?}");
+    // A glass chosen is that look, as dark or light as it is; Silver is
+    // brushed steel. (The profile is scrolled to its Glass row.)
+    let surface = super::written(&stage, &look, &word("axis.surface")).expect("the surface row");
+    stage.send(&PEvent::Scroll(surface, PPoint::new(0.0, -400.0)));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(press(&mut stage, &look, &word("value.vision")));
+    assert_eq!(desk.shade.name(), "vision");
+    assert!(press(&mut stage, &look, &word("value.silver")));
+    assert_eq!(desk.shade.name(), "silver");
+}

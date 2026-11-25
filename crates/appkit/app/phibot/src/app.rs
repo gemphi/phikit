@@ -31,15 +31,7 @@ impl Phibot {
 
     /// The looks a person can turn to, each the theme with its rows over it.
     pub fn shade(look: &PLook) -> PShade {
-        let mut list: Vec<(String, String)> = Vec::new();
-        for line in data::LOOK.lines().filter(|line| !line.trim().is_empty() && !line.starts_with('#')) {
-            let (name, row) = line.split_once('\t').unwrap_or((line, ""));
-            match list.iter_mut().find(|(known, _)| known == name.trim()) {
-                Some((_, rows)) => *rows += &format!("{row}\n"),
-                None => list.push((name.trim().to_string(), format!("{row}\n"))),
-            }
-        }
-        PShade::new(list.into_iter().map(|(name, rows)| (name, look.with(&rows))).collect())
+        PShade::read(look, data::LOOK)
     }
 
     pub fn new(look: Rc<PLook>) -> Phibot {

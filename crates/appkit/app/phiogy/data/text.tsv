@@ -59,6 +59,23 @@ look.liquid	Liquid Glass
 look.liquid-dark	Liquid Glass Dark
 look.plain	Plain
 look.plain-dark	Plain Dark
+look.silver	Silver
+look.vision	Vision
+look.vision-thin	Vision Thin
+look.vision-thick	Vision Thick
+look.clear	Clear
+look.silver-glass	Silver Glass
+look.smoke	Smoke
+look.horizon	Horizon
+look.horizon-light	Horizon Light
+look.pearl	Pearl
+look.rose	Rose
+look.sun	Sun
+look.ocean	Ocean
+look.forest	Forest
+look.dusk	Dusk
+look.amber	Amber
+look.graphite	Graphite
 # What is true now, in the profile.
 fact.line	Line
 fact.closed	not open

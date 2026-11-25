@@ -20,6 +20,7 @@ menu	center	look	liquid	Liquid Glass	layers	tell	look liquid
 menu	center	look	liquid-dark	Liquid Glass Dark	layers	tell	look liquid-dark
 menu	center	look	plain	Plain	square	tell	look plain
 menu	center	look	plain-dark	Plain Dark	square	tell	look plain-dark
+menu	center	look	silver	Silver	circle	tell	look silver
 menu	bottom	you	account	Account	wallet	modal	account
 menu	bottom	you	profile	Profile	user	modal	profile
 shop	top	go	start	Start	home	tell	start

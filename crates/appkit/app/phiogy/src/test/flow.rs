@@ -79,7 +79,7 @@ fn step_6_a_look_is_chosen_in_the_menu_and_phiogy_opens_the_way_i_left_it() {
     assert!(icon(&mut stage, &look, "chat") && app.desk().visit("phiace") && row(&mut stage, &look, "lobby"));
     assert_eq!(left(&app), ("dark".to_string(), "lobby".to_string()));
     // A look there is not, and a room there is not, change nothing.
-    assert!(!app.desk().dress("dusk") && !app.desk().show("nowhere"));
+    assert!(!app.desk().dress("no-such-look") && !app.desk().show("nowhere"));
     assert_eq!(left(&open(Some(kept))), ("dark".to_string(), "lobby".to_string()));
     // Opened with nowhere to keep things, it is as it ships: in Glass.
     assert_eq!(left(&open(None)), ("glass".to_string(), "lora".to_string()));

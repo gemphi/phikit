@@ -34,6 +34,28 @@ impl PShade {
         PShade { look, at: Cell::new(0), over: RefCell::default(), prefer: RefCell::default(), auto: RefCell::default() }
     }
 
+    /// The looks of an app's table (`data/look.tsv`), over its theme: a
+    /// look's name, and after it a row that changes the theme for that
+    /// look, as a theme writes one. A row `from` and another look's name
+    /// begins it with that look's rows, which the rows after it change
+    /// (the sixteen glass looks are Liquid Glass with their own tint). In
+    /// the table's order, the first shown.
+    pub fn read(base: &PLook, table: &str) -> PShade {
+        let mut list: Vec<(String, String)> = Vec::new();
+        for line in table.lines().filter(|line| !line.trim().is_empty() && !line.starts_with('#')) {
+            let (name, row) = line.split_once('\t').unwrap_or((line, ""));
+            let rows = match row.split_once('\t') {
+                Some(("from", other)) => list.iter().find(|(known, _)| known == other.trim()).map(|(_, rows)| rows.clone()).unwrap_or_default(),
+                _ => format!("{row}\n"),
+            };
+            match list.iter_mut().find(|(known, _)| known == name.trim()) {
+                Some((_, own)) => *own += &rows,
+                None => list.push((name.trim().to_string(), rows)),
+            }
+        }
+        PShade::new(list.into_iter().map(|(name, rows)| (name, base.with(&rows))).collect())
+    }
+
     /// Follow the system's light and dark (the user, 25 November 2026):
     /// the look for each, or nothing to stop following it.
     pub fn auto(&self, pair: Option<(String, String)>) {

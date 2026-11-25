@@ -180,3 +180,180 @@ plain-dark	color	activity.line	#ffffff1f
 plain-dark	size	activity.rim	1
 plain-dark	size	shade.share	0.09
 plain-dark	size	shade.strong	3.5
+
+# Silver (the user, 25 November 2026, from a stainless fridge door and
+# its dispenser): brushed steel grounds with more light on them than
+# the others, as the steel takes it, and a black ink as the recess
+# has. The light falls as on the white lunch box and the yellow tub
+# shown beside it: soft, from above, each ridge of a ground catching it.
+silver	color	window.fill	#b6babe
+silver	color	modal.tint	#c4c8ccd9
+silver	color	line.ink	#1a1b1d2e
+silver	color	text.ink	#141516
+silver	color	text.dim	#43464a
+silver	color	control.ink	#141516
+silver	color	control.accent	#141516
+silver	color	icon.ink	#141516
+silver	color	shade.light	#ffffff
+silver	color	activity.ink	#141516
+silver	color	tab.ink	#43464a
+silver	color	modal.veil	#14151640
+silver	size	shade.share	0.3
+silver	size	shade.strong	2.4
+# Sixteen glass looks, as Apple Vision Pro and Meta Horizon wear glass
+# (the user, the same day): each is Liquid Glass, light or dark, with
+# its own tint, how much it blurs and colours what is behind it, how
+# much of it shows, how far its rim bends light, and how bright its
+# edge is. A light tint lets the desktop show through the window; a
+# dark one keeps its ground whole (dark grounds are never lighter).
+# Vision, Thin and Thick are visionOS window glass; Horizon is Meta's.
+vision	from	liquid-dark
+vision	color	window.fill	#2c2c2e
+vision	color	glass.tint	#2c2c2e
+vision	color	modal.tint	#2c2c2ed9
+vision	size	glass.blur	30
+vision	size	glass.saturation	1.6
+vision	size	glass.share	0.42
+vision	size	glass.lens	18
+vision	size	glass.rim	0.3
+vision	size	part.radius	32
+vision	size	modal.radius	40
+vision-thin	from	liquid-dark
+vision-thin	color	window.fill	#3a3a3c
+vision-thin	color	glass.tint	#3a3a3c
+vision-thin	color	modal.tint	#3a3a3cd9
+vision-thin	size	glass.blur	16
+vision-thin	size	glass.saturation	1.4
+vision-thin	size	glass.share	0.2
+vision-thin	size	glass.lens	12
+vision-thin	size	glass.rim	0.22
+vision-thin	size	part.radius	32
+vision-thin	size	modal.radius	40
+vision-thick	from	liquid-dark
+vision-thick	color	window.fill	#1c1c1e
+vision-thick	color	glass.tint	#1c1c1e
+vision-thick	color	modal.tint	#1c1c1ed9
+vision-thick	size	glass.blur	48
+vision-thick	size	glass.saturation	1.8
+vision-thick	size	glass.share	0.58
+vision-thick	size	glass.lens	24
+vision-thick	size	glass.rim	0.35
+vision-thick	size	part.radius	32
+vision-thick	size	modal.radius	40
+clear	from	liquid
+clear	color	window.fill	#fbfbfbb0
+clear	color	glass.tint	#fbfbfb
+clear	color	modal.tint	#fbfbfbd9
+clear	size	glass.blur	8
+clear	size	glass.saturation	1.2
+clear	size	glass.share	0.1
+clear	size	glass.lens	10
+clear	size	glass.rim	0.18
+silver-glass	from	liquid
+silver-glass	color	window.fill	#c9cdd1b0
+silver-glass	color	glass.tint	#c9cdd1
+silver-glass	color	modal.tint	#c9cdd1d9
+silver-glass	size	glass.blur	24
+silver-glass	size	glass.saturation	1.3
+silver-glass	size	glass.share	0.35
+silver-glass	size	glass.lens	16
+silver-glass	size	glass.rim	0.4
+smoke	from	liquid-dark
+smoke	color	window.fill	#111113
+smoke	color	glass.tint	#111113
+smoke	color	modal.tint	#111113d9
+smoke	size	glass.blur	36
+smoke	size	glass.saturation	1.2
+smoke	size	glass.share	0.5
+smoke	size	glass.lens	20
+smoke	size	glass.rim	0.25
+horizon	from	liquid-dark
+horizon	color	window.fill	#0e1a2f
+horizon	color	glass.tint	#0e1a2f
+horizon	color	modal.tint	#0e1a2fd9
+horizon	size	glass.blur	40
+horizon	size	glass.saturation	1.3
+horizon	size	glass.share	0.45
+horizon	size	glass.lens	20
+horizon	size	glass.rim	0.3
+horizon-light	from	liquid
+horizon-light	color	window.fill	#e6edf8b0
+horizon-light	color	glass.tint	#e6edf8
+horizon-light	color	modal.tint	#e6edf8d9
+horizon-light	size	glass.blur	28
+horizon-light	size	glass.saturation	1.3
+horizon-light	size	glass.share	0.3
+horizon-light	size	glass.lens	16
+horizon-light	size	glass.rim	0.25
+pearl	from	liquid
+pearl	color	window.fill	#f5f0e7b0
+pearl	color	glass.tint	#f5f0e7
+pearl	color	modal.tint	#f5f0e7d9
+pearl	size	glass.blur	20
+pearl	size	glass.saturation	1.2
+pearl	size	glass.share	0.3
+pearl	size	glass.lens	14
+pearl	size	glass.rim	0.25
+rose	from	liquid
+rose	color	window.fill	#ecccd5b0
+rose	color	glass.tint	#ecccd5
+rose	color	modal.tint	#ecccd5d9
+rose	size	glass.blur	22
+rose	size	glass.saturation	1.4
+rose	size	glass.share	0.35
+rose	size	glass.lens	14
+rose	size	glass.rim	0.25
+sun	from	liquid
+sun	color	window.fill	#f1d548b0
+sun	color	glass.tint	#f1d548
+sun	color	modal.tint	#f1d548d9
+sun	size	glass.blur	20
+sun	size	glass.saturation	1.5
+sun	size	glass.share	0.32
+sun	size	glass.lens	14
+sun	size	glass.rim	0.25
+ocean	from	liquid-dark
+ocean	color	window.fill	#163f73
+ocean	color	glass.tint	#163f73
+ocean	color	modal.tint	#163f73d9
+ocean	size	glass.blur	32
+ocean	size	glass.saturation	1.5
+ocean	size	glass.share	0.45
+ocean	size	glass.lens	18
+ocean	size	glass.rim	0.3
+forest	from	liquid-dark
+forest	color	window.fill	#1d3b2a
+forest	color	glass.tint	#1d3b2a
+forest	color	modal.tint	#1d3b2ad9
+forest	size	glass.blur	32
+forest	size	glass.saturation	1.4
+forest	size	glass.share	0.45
+forest	size	glass.lens	18
+forest	size	glass.rim	0.3
+dusk	from	liquid-dark
+dusk	color	window.fill	#3f3280
+dusk	color	glass.tint	#3f3280
+dusk	color	modal.tint	#3f3280d9
+dusk	size	glass.blur	32
+dusk	size	glass.saturation	1.6
+dusk	size	glass.share	0.45
+dusk	size	glass.lens	18
+dusk	size	glass.rim	0.3
+amber	from	liquid
+amber	color	window.fill	#e4a23eb0
+amber	color	glass.tint	#e4a23e
+amber	color	modal.tint	#e4a23ed9
+amber	size	glass.blur	22
+amber	size	glass.saturation	1.4
+amber	size	glass.share	0.35
+amber	size	glass.lens	14
+amber	size	glass.rim	0.25
+graphite	from	liquid-dark
+graphite	color	window.fill	#45484d
+graphite	color	glass.tint	#45484d
+graphite	color	modal.tint	#45484dd9
+graphite	size	glass.blur	28
+graphite	size	glass.saturation	1.2
+graphite	size	glass.share	0.42
+graphite	size	glass.lens	16
+graphite	size	glass.rim	0.3
