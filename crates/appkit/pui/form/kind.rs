@@ -11,6 +11,8 @@
 //!   line, a note at its end, and under the note a bar as long as its
 //!   level.
 //! * `cards`: each choice a card with its face, its words and its line.
+//! * `player`: each choice a card as a speaker's screen stands a song, a
+//!   bar as long as its level and its controls along its foot (`player.rs`).
 //! * `grid`: each choice a tile, its picture or face large over its words;
 //!   `large`, the same in tiles larger. The one under the pointer is lit.
 //! * `wheel`: any colour, on the kit's colour wheel; its choices are the
@@ -75,6 +77,8 @@ pub struct PDo {
 pub fn deeds<'a>(kind: &str, choice: &'a [PChoice]) -> Vec<(&'a PChoice, &'a PDo)> {
     match kind {
         "picture" => choice.iter().take(1).flat_map(|c| c.deed.iter().map(move |d| (c, d))).collect(),
+        // A player card's controls stand along its foot, every card's.
+        "player" => choice.iter().flat_map(|c| c.deed.iter().map(move |d| (c, d))).collect(),
         _ => Vec::new(),
     }
 }
@@ -138,6 +142,7 @@ pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &m
         "large" => grid(choice, paint, at, wide, LARGE, over),
         "small" => grid(choice, paint, at, wide, SMALL, over),
         "slides" => slides(choice, now.parse().unwrap_or_default(), paint, at, wide, over),
+        "player" => super::player::player(choice, paint, at, wide, over),
         "tree" => super::tree::tree(choice, now, paint, at, wide, over),
         "facts" => super::tree::facts(choice, paint, at, wide),
         "picture" => super::tree::picture(choice, paint, at, wide, variant.split_whitespace().any(|word| word == "banner")),
@@ -200,7 +205,7 @@ fn rows(variant: &str, choice: &[PChoice], now: &str, paint: &mut dyn PPaint, at
 }
 
 /// How many times a card's width a large tile is, and a small one.
-const LARGE: f32 = 1.75;
+pub(super) const LARGE: f32 = 1.75;
 const SMALL: f32 = 0.6;
 
 /// Slides: one row of large tiles, from the one it begins at, as many

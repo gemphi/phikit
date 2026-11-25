@@ -28,6 +28,9 @@ doc.direct	room-direct
 doc.seen	room-seen
 doc.star	room-star
 doc.friend	room-friend
+# Every call this window was in: the room, when, who, how long (never
+# its sound or picture).
+doc.call	room-call
 # The shops the person opened or closed; their bag; what they bought.
 doc.shop	shop-in
 doc.bag	shop-bag

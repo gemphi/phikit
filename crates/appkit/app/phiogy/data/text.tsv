@@ -15,6 +15,11 @@ aside.info	Info
 aside.rooms	Rooms
 aside.members	Members
 aside.rules	Rules
+aside.calls	Calls
+call.when	%d %b · %H:%M
+call.with	with {who}
+call.alone	Just you
+call.now	On now
 aside.about	About
 aside.world	Its world
 aside.details	Details

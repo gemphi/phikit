@@ -34,6 +34,7 @@ mod stream;
 mod talk;
 mod title;
 pub mod tool;
+pub mod history;
 pub mod tabbed;
 pub mod venue;
 mod viewer;

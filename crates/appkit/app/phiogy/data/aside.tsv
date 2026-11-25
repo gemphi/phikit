@@ -15,6 +15,7 @@ tab	info	file	aside.world aside.about aside.fact
 tab	rooms	hash	aside.room
 tab	members	users	aside.member
 tab	rules	book	aside.rule
+tab	calls	list	aside.calls
 # Under its name, in order: the field of the host, and the words it
 # stands in ({n} its value), `-` for the value alone. Where Phiegg does
 # not keep the host, its members and who is here are this app's.

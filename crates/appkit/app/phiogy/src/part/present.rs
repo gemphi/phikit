@@ -7,7 +7,9 @@
 //! room open, or nobody and where a page reaches it. Then its tabs:
 //! Info (its world's picture, what its club says of it, its facts from
 //! Phiegg's records),
-//! Rooms, Members (a press puts a person beside the room), Rules.
+//! Rooms, Members (a press puts a person beside the room), Rules, and
+//! Calls: every call kept in the room (history.rs), each a player card
+//! with Join to call again, or Leave while it is on.
 //!
 //! The line runs on other threads, so the board is read each time this
 //! is drawn, and another frame is asked for while the line is open. A
@@ -41,6 +43,10 @@ const TAB: &str = "aside/tab";
 const DO: &str = "aside/do";
 const ROOM: &str = "aside/room";
 const WHO: &str = "aside/who";
+/// A call's card and its controls: its room, Join, Leave.
+const CALL_AT: &str = "aside/call";
+const JOIN: &str = "aside/join";
+const LEAVE: &str = "aside/leave";
 /// What Profile keeps at `aside/do`: the person's whole profile opens.
 const PROFILE: &str = "profile";
 
@@ -160,7 +166,7 @@ impl Aside {
             };
         };
         // A direct room is about the person it is with; its line stays.
-        if let Some(one) = self.person().filter(|_| !matches!(name, "aside.line" | "aside.call" | "aside.watch" | "aside.tab")) {
+        if let Some(one) = self.person().filter(|_| !matches!(name, "aside.line" | "aside.call" | "aside.watch" | "aside.tab" | "aside.calls")) {
             return self.of_person(name, &one);
         }
         let venue = self.venue();
@@ -249,6 +255,13 @@ impl Aside {
                 };
                 vec![seat.id.clone(), seat.name.clone(), icon, String::new(), seat.said.clone(), String::new(), face]
             }).collect(),
+            // Every call kept in this room, the newest first, each a player
+            // card with the room's picture and face.
+            "aside.calls" => {
+                let first = |name: &str| self.list(name).first().map(|row| row[2].clone()).unwrap_or_default();
+                let (picture, face, live) = (first("aside.picture"), first("aside.face"), desk.calling().is_some());
+                desk.history().into_iter().filter(|one| one.room == plate.id).map(|one| one.card(text, picture.clone(), face.clone(), live)).collect()
+            }
             "aside.rule" => table("rule").into_iter().filter(|row| row.len() >= 2).flat_map(|row| {
                 let source = match row[0] {
                     "club" => club.as_ref(),
@@ -280,6 +293,11 @@ impl PState for Aside {
             (DO, PROFILE) => self.person().into_iter().for_each(|one| *desk.now.who.borrow_mut() = Some(one.id)),
             (DO, deed) => self.venue().into_iter().for_each(|venue| desk.enter(&venue.id, deed == "join")),
             (ROOM, room) => _ = desk.show(room),
+            // The Calls tab holds the open room's calls only: a card is of
+            // this room already, its Join calls it again.
+            (CALL_AT, _) => {}
+            (JOIN, _) => desk.join(),
+            (LEAVE, _) => desk.leave(),
             (WHO, id) if desk.site.member(id).is_some() => *desk.now.who.borrow_mut() = Some(id.to_string()),
             (WHO, _) => {}
             _ => desk.shelf.set(path, value),

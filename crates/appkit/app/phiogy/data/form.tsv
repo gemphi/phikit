@@ -109,3 +109,6 @@ aside	facts	fact	aside.details	aside.fact	-	tab	fold
 aside	grid	room	aside.rooms	aside.room	aside/room	tab	fold layout list
 aside	grid	member	present.member	aside.member	aside/who	tab	fold layout
 aside	text	rule	aside.rules	aside.rule	-	tab	fold
+# Every call kept in the room (part/history.rs), each a card as a
+# speaker's screen stands a song: Join to call again, Leave while on.
+aside	player	calls	aside.calls	aside.calls	aside/call	tab	fold

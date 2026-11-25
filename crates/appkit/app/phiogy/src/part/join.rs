@@ -141,14 +141,22 @@ impl Desk {
         let (Ok(at), Some(name)) = (self.line.as_ref(), peer::name()) else { return };
         let key = self.key(&self.room());
         match Call::start(at, &key, &name, (self.engine)()) {
-            Ok(call) => *self.call.borrow_mut() = Some(call),
+            Ok(call) => {
+                *self.call.borrow_mut() = Some(call);
+                // Every call is kept (history.rs).
+                self.began(&self.room());
+            }
             Err(error) => *self.refused.borrow_mut() = error.to_string(),
         }
     }
 
-    /// Leave the call this window is in.
+    /// Leave the call this window is in: kept as it was, who was in it
+    /// and for how long.
     pub fn leave(&self) {
-        self.call.borrow_mut().take();
+        if let Some(call) = self.call.borrow_mut().take() {
+            let people: Vec<String> = call.seen().named.into_iter().map(|(_, name)| name).collect();
+            self.lasted(&people, false, call.since.elapsed().as_secs(), true);
+        }
         self.refused.borrow_mut().clear();
     }
 
@@ -157,9 +165,12 @@ impl Desk {
         self.call.borrow().iter().for_each(|call| call.hush(quiet));
     }
 
-    /// Turn the camera on, or off.
+    /// Turn the camera on, or off; a call a camera was on in is kept so.
     pub fn camera(&self, on: bool) {
         self.call.borrow().iter().for_each(|call| call.camera(on));
+        if on && self.call.borrow().is_some() {
+            self.lasted(&[], true, self.since().unwrap_or_default(), false);
+        }
     }
 
     /// Hear nobody, or hear them again.

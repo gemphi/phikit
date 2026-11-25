@@ -71,6 +71,36 @@ fn step_38_in_a_call_i_see_its_tiles_and_turn_my_camera_and_a_screen_on_and_off(
     assert!(press(&mut stage, &look, "End the call"));
     stage.lay(DESK, PMode::of_width(DESK.width));
     assert!(!has(&stage, "Camera on") && !has(&stage, "Calling Lora Vale"));
+    // The call is kept, never what was said or seen in it: the room, when,
+    // that a camera was on, how long it lasted.
+    let kept = app.desk().history();
+    assert!(kept.len() == 1 && kept[0].room == app.desk().room() && kept[0].video && !kept[0].open, "{kept:?}");
+    // The room's Calls tab has it as a player card: when it was, how long
+    // it lasted, and Join to call the room again.
+    assert!(super::tab_to(&mut stage, &look, "room", "Calls") && press(&mut stage, &look, "Calls"));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    let text = shown(&stage, &look);
+    let lasted = format!("{}:{:02}", kept[0].seconds / 60, kept[0].seconds % 60);
+    assert!(super::said(&text, &kept[0].when) && text.contains(&lasted), "{text:?}");
+    // Its Join is at the card's foot, under the column's fold: the wheel
+    // over the column brings it up.
+    use appkit::pui::core::{PEvent, PMark, PPoint};
+    let room = super::rect(&stage, "room");
+    let column = PPoint::new(room.origin.x + room.size.width * 0.85, room.center().y);
+    let join = |stage: &appkit::pui::window::PStage| super::drawn(stage, &look).into_iter().rev().find_map(|mark| match mark {
+        PMark::Icon { name, rect, .. } if name == "phone" && room.contains(rect.center()) && rect.center().x > room.center().x => Some(rect.center()),
+        _ => None,
+    });
+    for _ in 0..16 {
+        match join(&stage) {
+            Some(_) => break,
+            None => _ = stage.send(&PEvent::Scroll(column, PPoint::new(0.0, -120.0))),
+        }
+    }
+    assert!(stage.send(&PEvent::PointerDown(join(&stage).expect("the card's Join"))));
+    until("the room is called again", || app.desk().calling().is_some());
+    let kept = app.desk().history();
+    assert!(kept.len() == 2 && kept[0].open && !kept[1].open, "{kept:?}");
 }
 
 #[cfg(not(target_family = "wasm"))]

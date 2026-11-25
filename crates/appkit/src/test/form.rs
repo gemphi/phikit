@@ -37,6 +37,10 @@ impl PSource for Fixed {
             "size" => vec![word("Small"), word("Large")],
             "paint" => vec![PChoice { value: "red".to_string(), colour: Some(PColor::new(1.0, 0.0, 0.0, 1.0)), ..PChoice::default() }],
             "look" => vec![PChoice { value: "coat".to_string(), picture: "coat.png".to_string(), deed: vec![PDo { word: "like".to_string(), icon: "heart".to_string(), on: true }, PDo { word: "full".to_string(), icon: "maximize".to_string(), on: false }], ..PChoice::default() }],
+            "song" => [("One", "3:14", 0.5), ("Two", "0:42", 1.0)].into_iter().map(|(label, end, level)| {
+                let join = PDo { word: "join".to_string(), icon: "phone".to_string(), on: false };
+                PChoice { value: label.to_lowercase(), label: label.to_string(), note: "with Ada".to_string(), end: end.to_string(), level: Some(level), deed: vec![join], ..PChoice::default() }
+            }).collect(),
             _ => Vec::new(),
         }
     }
@@ -195,3 +199,39 @@ fn a_grid_widens_to_the_whole_form_and_gives_it_back() {
     assert!(drawn(&form).text_list().contains(&"Kind"));
 }
 
+
+#[test]
+fn a_player_card_has_its_time_a_bar_as_long_as_its_level_and_round_controls_at_its_foot() {
+    let look: Rc<dyn PTheme> = Rc::new(PLook::read(&format!("{LOOK}size\tcard.width\t100\nsize\tform.bar\t4\n")));
+    let source = Rc::new(Fixed::default());
+    let mut form = PForm::new("mine", "mine\tplayer\tsong\t-\tsong\tsong/open\t-\t-\n", source.clone(), Rc::new(PTable::read("")), look.clone());
+    form.set_frame(PRect::new(0.0, 0.0, 300.0, 1200.0));
+    let mut sheet = PSheet::new(look.as_ref());
+    form.draw(&mut sheet, PPoint::new(0.0, 0.0));
+    let said = sheet.text_list();
+    for word in ["One", "Two", "with Ada", "3:14", "0:42"] {
+        assert!(said.contains(&word), "{word}: {said:?}");
+    }
+    // One card across 300: the second under the first.
+    let at = |wanted: &str| sheet.mark.iter().find_map(|mark| match mark {
+        PMark::Text { at, text, .. } if text == wanted => Some(*at),
+        _ => None,
+    }).unwrap_or_else(|| panic!("{wanted}"));
+    assert!(at("Two").y > at("0:42").y.min(at("3:14").y) && at("3:14").y < at("Two").y);
+    // Half played: a bar half as long as its track, 4 high.
+    let bar: Vec<f32> = sheet.mark.iter().filter_map(|mark| match mark {
+        PMark::Blend { rect, .. } if rect.size.height == 4.0 => Some(rect.size.width),
+        _ => None,
+    }).collect();
+    assert!(bar.windows(2).any(|two| (two[0] - two[1] * 2.0).abs() < 1.0), "{bar:?}");
+    // Join, round at its foot: a press keeps the card's value at its word,
+    // under the block's state; on the card, at its path.
+    let join = sheet.mark.iter().find_map(|mark| match mark {
+        PMark::Icon { name, rect, .. } if name == "phone" => Some(rect.center()),
+        _ => None,
+    }).expect("its Join");
+    assert!(join.y > at("3:14").y && form.respond(&PEvent::PointerDown(join)));
+    assert_eq!(source.get("song/join"), "one");
+    assert!(form.respond(&PEvent::PointerDown(at("One").plus(PPoint::new(2.0, 2.0)))));
+    assert_eq!(source.get("song/open"), "one");
+}

@@ -44,7 +44,8 @@
 //! gives, it is laid out as a mobile app. `--room lobby` opens it on
 //! that room, `--show venue` on that space, `--pick menu` with the menu
 //! of that row of the bar shown, `--open profile` with that modal open,
-//! and `--look dark` in that look, which is not kept. `--forget` opens
+//! `--look dark` in that look, which is not kept, and `--press Calls`
+//! pressed where those words are drawn (run/press.rs). `--forget` opens
 //! it without what was chosen before, and keeps nothing.
 //!
 //! Its hosts and rooms are asked of Phiora first, where
@@ -56,6 +57,7 @@
 
 mod caller;
 mod own;
+mod press;
 mod read;
 
 use std::rc::Rc;
@@ -216,9 +218,11 @@ pub fn run(word: &[String]) {
     let size = PSize { width: stage.theme().size(screen::WIDTH).unwrap_or_default(), height: stage.theme().size(screen::HEIGHT).unwrap_or_default() };
     stage.lay(size, PMode::of_width(size.width));
     given(word, "--type").iter().flat_map(|text| text.chars()).for_each(|key| _ = stage.send(&appkit::pui::core::PEvent::KeyDown(key)));
-    // The wheel turned over the modal that is open, or over the middle
-    // of the window: what is far down a drawer is brought into sight.
-    let middle = stage.panel().map_or(appkit::pui::core::PPoint::new(size.width / 2.0, size.height / 2.0), |panel| panel.body.center());
+    let pressed = press::press(&mut stage, word);
+    // The wheel turned over the modal that is open, or where `--press`
+    // pressed last, or over the middle of the window: what is far down a
+    // drawer or a column is brought into sight.
+    let middle = stage.panel().map_or(pressed.unwrap_or(appkit::pui::core::PPoint::new(size.width / 2.0, size.height / 2.0)), |panel| panel.body.center());
     let turn = given(word, "--wheel").into_iter().filter_map(|by| by.parse::<f32>().ok());
     turn.for_each(|by| _ = stage.send(&appkit::pui::core::PEvent::Scroll(middle, appkit::pui::core::PPoint::new(0.0, by))));
     // Phiogy's own assets, on disk, then the ones every app shares, which
