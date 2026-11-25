@@ -9,15 +9,16 @@
 //!   (`shop/grid.rs`), each with its picture, what it is called, its
 //!   price, and how it stands: to add, in the bag, owned. A press on
 //!   that does the next thing; a press on the thing opens its page.
-//! * A thing's page (`shop/item.rs`): its views, what is said of it,
-//!   its facts, and more like it.
+//! * A thing's page, the kit's form `thing` (`shop/thing.rs`): its
+//!   picture held at the left with its views, and its tabs (info,
+//!   stats, trail, owners, related), each of folding sections.
 //! * The bag: its lines, the total, paying from the wallet, and under
 //!   it what was bought.
 
 mod grid;
 mod hover;
-mod item;
 mod swatch;
+mod thing;
 
 pub use swatch::{colour, hex, worn};
 
@@ -25,6 +26,7 @@ use std::cell::{Cell, RefCell};
 
 use appkit::pui::control::{PControl, PField};
 use appkit::pui::core::{PDraw, PEvent, PPaint, PPoint, PRect, PView};
+use appkit::pui::form::PForm;
 use appkit::pui::layout::PScroll;
 
 use super::list::{Deed, Item, Lister, Seat, field, grouped};
@@ -45,11 +47,8 @@ pub enum Act {
     Choose(String, bool),
     /// Go to a page.
     Go(String),
-    /// Open a thing's own page; and show the view of that number there.
+    /// Open a thing's own page.
     Thing(String),
-    View(usize),
-    /// Like a thing, or no more.
-    Like(String),
     /// Put a thing in the bag, or take it out.
     Pick(String),
     Remove(String),
@@ -69,10 +68,11 @@ pub struct Shopping {
     spot: RefCell<Vec<(PRect, Act)>>,
     /// The page it was drawn for last: another begins at its top.
     seen: RefCell<String>,
-    /// The view of a thing that is shown, and whether the wallet was
-    /// too short for the bag the last time paying was tried.
-    view: Cell<usize>,
+    /// Whether the wallet was too short for the bag the last time
+    /// paying was tried.
     short: Cell<bool>,
+    /// A thing's own page, made again for each thing shown.
+    thing: RefCell<PForm>,
     /// Where the pointer is, in the window.
     point: Cell<Option<PPoint>>,
 }
@@ -81,7 +81,8 @@ impl Shopping {
     pub fn new(desk: Desk) -> Shopping {
         let mut find = PField::new(PRect::default());
         find.focused = true;
-        Shopping { frame: PRect::default(), desk, list: Lister::default(), tool: Tool::read(data::ACT), find, scroll: Cell::default(), origin: Cell::default(), spot: RefCell::default(), seen: RefCell::default(), view: Cell::default(), short: Cell::default(), point: Cell::default() }
+        let thing = RefCell::new(thing::form(&desk));
+        Shopping { frame: PRect::default(), desk, list: Lister::default(), tool: Tool::read(data::ACT), find, scroll: Cell::default(), origin: Cell::default(), spot: RefCell::default(), seen: RefCell::default(), short: Cell::default(), thing, point: Cell::default() }
     }
 
     /// The page every shop is picked from.
@@ -143,6 +144,11 @@ impl Shopping {
         item
     }
 
+    /// Whether a thing's own page is open.
+    fn thing_open(&self) -> bool {
+        self.desk.now.product.borrow().is_some()
+    }
+
     /// The page that is open, and whether it is one of the two lists.
     fn listed(&self) -> Option<Vec<Item<Act>>> {
         let open = self.desk.open.borrow().clone();
@@ -165,12 +171,7 @@ impl Shopping {
                 on.then(|| desk.show(&id));
             }
             Act::Go(page) => _ = desk.show(&page),
-            Act::Thing(place) => {
-                self.view.set(0);
-                *desk.now.product.borrow_mut() = Some(place);
-            }
-            Act::View(index) => self.view.set(index),
-            Act::Like(place) => desk.fond(&place, !desk.liked(&place)),
+            Act::Thing(place) => *desk.now.product.borrow_mut() = Some(place),
             Act::Pick(place) => {
                 let (shop, id) = place.split_once('/').unwrap_or_default();
                 let found = desk.shop(shop).and_then(|shop| shop.product.iter().find(|product| product.id == id).cloned());
@@ -192,11 +193,15 @@ impl PDraw for Shopping {
         let now = format!("{} {:?}", self.desk.open.borrow(), self.desk.now.product.borrow());
         if *self.seen.borrow() != now {
             self.scroll.set(PScroll::default());
+            let mut thing = thing::form(&self.desk);
+            thing.set_frame(self.frame);
+            *self.thing.borrow_mut() = thing;
             *self.seen.borrow_mut() = now;
         }
-        match self.listed() {
-            Some(item) => self.list.draw(paint, origin, self.frame, &self.desk, &item, &[&self.find]),
-            None => self.shelf(paint, origin),
+        match (self.listed(), self.thing_open()) {
+            (Some(item), _) => self.list.draw(paint, origin, self.frame, &self.desk, &item, &[&self.find]),
+            (None, true) => self.thing.borrow().draw(paint, origin),
+            (None, false) => self.shelf(paint, origin),
         }
     }
 }
@@ -209,17 +214,27 @@ impl PView for Shopping {
     fn set_frame(&mut self, frame: PRect) {
         self.frame = frame;
         self.find.set_frame(field(&self.desk, frame.size.width));
+        self.thing.get_mut().set_frame(frame);
     }
 
     fn hand(&self) -> Vec<PRect> {
-        match self.listed().is_some() {
-            true => self.list.hands(),
-            false => self.hands(),
+        match (self.listed().is_some(), self.thing_open()) {
+            (true, _) => self.list.hands(),
+            (false, true) => self.thing.borrow().hand(),
+            (false, false) => self.hands(),
         }
+    }
+
+    fn tick(&mut self) -> bool {
+        self.thing_open() && self.thing.get_mut().tick()
     }
 
     fn respond(&mut self, event: &PEvent) -> bool {
         let listed = self.listed().is_some();
+        // A thing's own page is the kit's form, told everything.
+        if !listed && self.thing_open() {
+            return self.thing.get_mut().respond(event);
+        }
         match (*event, listed) {
             (PEvent::KeyDown(_), true) => self.find.respond(event),
             (PEvent::Scroll(_, by), true) => self.list.wheel(by.y),

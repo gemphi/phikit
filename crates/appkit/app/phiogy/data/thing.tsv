@@ -1,0 +1,39 @@
+# One thing of a shop, as Phiegg's item page has it (puikit:
+# app/phiegg/src/components/Phiegg/ItemSheet.tsx), the kit's form
+# `thing` (data/form.tsv, part/shop/thing.rs). Its tabs, in order: each
+# its key, its icon, and the lists of the form it holds; its word
+# `thing.<key>` of data/text.tsv. A tab with nothing in it is not shown.
+#
+# tab	key	icon	lists
+tab	info	file	thing.about thing.field
+tab	stats	bar-chart	thing.stat
+tab	trail	workflow	thing.trail
+tab	owner	users	thing.owner
+tab	related	layers	thing.kin thing.more
+# The figures of the stats tab, in order: each its key (its word
+# `thing.stat.<key>`) and how it is had: the price; from Phiegg's ledger
+# of it (its sales) how many of an event, the last price, the highest,
+# the lowest, the average, how many have held it, when it was first and
+# last sold. A figure with nothing to say is not shown.
+#
+# stat	key	how	event
+stat	price	price
+stat	sales	count	sale
+stat	transfers	count	transfer
+stat	last	last
+stat	high	high
+stat	low	low
+stat	mean	mean
+stat	holders	holders
+stat	first	first
+stat	latest	latest
+# Which of Phiegg's records are a thing's sales: the kind, the field
+# naming the thing, who it went from and to, its price, when, and what
+# happened (a sale, a transfer, an offer; `thing.event.<it>` its word).
+# The kind a shop's thing is among Phiegg's records; the kind of who
+# held it, whose records name them; and the events that hand it to
+# nobody.
+sale	sale	itemId	fromId	toId	priceUsd	at	event
+item	look
+person	person
+none	offer

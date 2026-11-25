@@ -68,3 +68,25 @@ make.tool	make.tool	0	text:1	2
 host.about	host.about	0	1	-	-	-	-	-	-	-	2
 host.room	host.room	0	1	2	-	-	-	-	-	3
 host.tool	host.tool	0	text:1	2
+
+# One thing of a shop (part/shop/thing.rs): its name and what it is,
+# the way back, the bag, its picture (or face), its views, its colours,
+# what can be done, its tabs, what is said of it, its facts and
+# figures (words and value), its trail (what a press opens, who to
+# whom, icon, what and when, price), and its cards (what a press
+# opens, name, icon, picture, line, price, face).
+thing.head	thing.head	0	1	-	-	-	-	-	-	2
+thing.path	thing.path	0	1
+thing.buy	thing.buy	0	text:1	2
+thing.picture	thing.picture	0	1	-	-	-	-	-	2	-	-	-	3
+thing.view	thing.view	0	1
+thing.swatch	thing.swatch	0	1	-	2,3,4/255
+thing.deed	thing.deed	0	text:1	2
+thing.tab	thing.tab	0	1	2
+thing.about	thing.about	0	1
+thing.field	thing.field	0	1	-	-	-	-	-	-	-	2
+thing.stat	thing.stat	0	1	-	-	-	-	-	-	-	2
+thing.trail	thing.trail	0	1	2	-	-	-	-	-	3	4
+thing.owner	thing.owner	0	1	2	-	-	-	-	3	4	5	-	6
+thing.kin	thing.kin	0	1	2	-	-	-	-	3	4	5	-	6
+thing.more	thing.more	0	1	2	-	-	-	-	3	4	5	-	6

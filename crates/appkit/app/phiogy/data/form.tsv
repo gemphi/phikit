@@ -78,3 +78,25 @@ make	rows	template	host.template	make.template	make/template	-	-
 host	band	do	-	host.tool	host/do	-	bar end
 host	facts	about	host.about	host.about	-	-	fold
 host	grid	room	host.rooms	host.room	host/room	-	fold layout
+
+# One thing of a shop (part/shop/thing.rs), as Phiegg's item page: its
+# name and what it is at the head; in the bar the way back to its shop
+# and its page, and the bag at the end; at the left, held in view, its
+# picture (a press shows it large), its views, its colours where it is
+# a theme, and what can be done with it; at the right its tabs, each of
+# folding sections (data/thing.tsv).
+thing	head	-	-	thing.head	-	-	-
+thing	crumb	path	-	thing.path	thing/go	-	bar
+thing	band	buy	-	thing.buy	thing/bag	-	bar end
+thing	picture	picture	-	thing.picture	thing/full	-	side
+thing	band	view	-	thing.view	thing/view	-	side
+thing	swatch	swatch	-	thing.swatch	-	-	side
+thing	band	deed	-	thing.deed	thing/do	-	side
+thing	tabs	tab	-	thing.tab	thing/tab	-	-
+thing	text	about	thing.about	thing.about	-	tab	fold
+thing	facts	field	thing.details	thing.field	-	tab	fold
+thing	facts	stat	thing.figures	thing.stat	-	tab	fold
+thing	rows	trail	thing.trail	thing.trail	thing/open	tab	fold
+thing	grid	owner	thing.owner	thing.owner	thing/open	tab	fold layout
+thing	grid	kin	shop.colours	thing.kin	thing/go	tab	fold layout
+thing	grid	more	shop.more	thing.more	thing/go	tab	fold layout

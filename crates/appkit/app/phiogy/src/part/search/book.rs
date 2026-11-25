@@ -140,16 +140,23 @@ impl Book {
         every.filter(|other| other.id != one.id && (names(&other.row, &one.id) || names(&one.row, &other.id))).collect()
     }
 
-    /// A kind's rows from Phiegg's own files, by the manifest: the list
-    /// it names in the file it names.
+    /// A kind's rows from Phiegg's own files, by the manifest: every list
+    /// it names for that kind (people are its users and its agents), each
+    /// record once, by its id.
     fn files(kind: &str) -> Vec<Value> {
         let tree = cells("tree").first().and_then(|path| file(path)).unwrap_or_default();
         let folder = cells("tree").first().map(|path| Path::new(path).parent().unwrap_or(Path::new("")).to_path_buf()).unwrap_or_default();
-        let source = tree.get("sources").and_then(Value::as_array).and_then(|list| list.iter().find(|s| s.get("kind").and_then(Value::as_str) == Some(kind) && s.get("each").is_none()).cloned());
-        let Some(source) = source else { return Vec::new() };
-        let name = source.get("file").and_then(Value::as_str).unwrap_or_default();
-        let list = source.get("list").and_then(Value::as_str).unwrap_or_default();
-        file(&folder.join(format!("{name}.json")).to_string_lossy()).and_then(|whole| whole.get(list)?.as_array().cloned()).unwrap_or_default()
+        let sources = tree.get("sources").and_then(Value::as_array).cloned().unwrap_or_default();
+        let own = sources.iter().filter(|s| s.get("kind").and_then(Value::as_str) == Some(kind) && s.get("each").is_none());
+        let mut seen = std::collections::HashSet::new();
+        own.flat_map(|source| {
+            let name = source.get("file").and_then(Value::as_str).unwrap_or_default();
+            let list = source.get("list").and_then(Value::as_str).unwrap_or_default();
+            file(&folder.join(format!("{name}.json")).to_string_lossy()).and_then(|whole| whole.get(list)?.as_array().cloned()).unwrap_or_default()
+        }).filter(|row| {
+            let id = row.get("id").and_then(Value::as_str).unwrap_or_default().to_string();
+            id.is_empty() || seen.insert(id)
+        }).collect()
     }
 }
 

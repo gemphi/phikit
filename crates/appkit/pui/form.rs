@@ -18,6 +18,12 @@
 //! * `fill`: the groups share out the room the pane has left. Without it
 //!   they stand one under another, and the form scrolls when they are
 //!   more than the pane holds.
+//! * a block whose variation says `side` stands in a column at the
+//!   form's left, as a record's picture does on the web's pages, held in
+//!   view while the rest scrolls beside it; in a form narrower than the
+//!   theme's `form.split` the side stands at the top, under the bar.
+//! * `head` with a list: its first choice's words are the heading, its
+//!   line under them in the dim ink (a record's name and what it is).
 //!
 //! A block whose list is empty is not shown. Blocks under no tabs stand
 //! after the tabs, each on its own ground under its heading.
@@ -40,6 +46,7 @@ pub use head::{DROP, FOLD, FOLDED, LARGE, LAYOUT, LAYOUTS, LIST, PDrop, PHead, P
 pub use kind::{PChoice, drawn};
 pub use list::{PListed, PRows};
 
+use bar::side;
 use crate::pui::block::{PBand, PTabMove};
 use crate::pui::core::{PDraw, PPaint, PPoint, PRect};
 use crate::pui::layout::{PDry, PScroll, SPACE, stack, tabbed};
@@ -50,6 +57,10 @@ use crate::theme::PTheme;
 /// The theme's tokens for the room round a form, and its heading's line.
 pub const GAP: &str = "gap";
 pub const HEAD: &str = "head.line";
+/// The theme's tokens for the side column: its share of the width, and
+/// the width under which it stands at the top instead.
+pub const SIDE: &str = "form.side";
+pub const SPLIT: &str = "form.split";
 
 /// Where a form's content and values come from: the app's lists by
 /// name, and its state by path.
@@ -121,20 +132,52 @@ impl PForm {
         self.block.iter().filter(move |b| b.kind == kind)
     }
 
-    /// Draw the form from a place: its blocks, down to `foot` where it
-    /// fills. Where it ends, and where each can be pressed.
-    fn lay(&self, paint: &mut dyn PPaint, origin: PPoint, foot: f32) -> (f32, Vec<Spot>) {
+    /// The blocks of the side column.
+    fn sided(&self) -> Vec<&Block> {
+        self.block.iter().filter(|b| side(b)).collect()
+    }
+
+    /// Draw some blocks one under another from a place across a width,
+    /// each on its own ground: where they end, and what a press keeps.
+    fn column(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, block: &[&Block]) -> (f32, Vec<Spot>) {
+        let (mut group, shown) = self.grouped(block);
+        let (end, pressed) = stack(paint, at, wide, 0.0, true, &mut group);
+        let spot = pressed.into_iter().zip(&shown).flat_map(|(rect, (block, choice, head))| PForm::spots(block, head, choice, rect)).collect();
+        (end, spot)
+    }
+
+    /// Draw the form from a place across a width: its blocks, down to
+    /// `foot` where it fills; the side's too unless it stands `apart`.
+    /// Where it ends, and where each can be pressed.
+    fn lay(&self, paint: &mut dyn PPaint, origin: PPoint, width: f32, foot: f32, apart: bool) -> (f32, Vec<Spot>) {
         let gap = paint.size(GAP);
-        let (left, wide) = (origin.x + gap, self.frame.size.width - gap * 2.0);
+        let (left, wide) = (origin.x + gap, width - gap * 2.0);
         let mut spot = Vec::new();
         let mut top = origin.y + gap;
         for block in self.of("head") {
-            paint.head(PPoint::new(left, top), self.text.get(&block.head), paint.color(kind::INK));
+            // A heading of a list: its first choice's words, its line under.
+            let first = Some(&block.list).filter(|list| !list.is_empty()).and_then(|list| self.source.list(list).into_iter().next());
+            let (said, line) = match &first {
+                Some(first) => (first.label.as_str(), first.note.as_str()),
+                None => (self.text.get(&block.head), ""),
+            };
+            paint.head(PPoint::new(left, top), said, paint.color(kind::INK));
             top += paint.size(HEAD) + gap / 2.0;
+            if !line.is_empty() {
+                paint.text(PPoint::new(left, top - gap / 4.0), line, paint.color(kind::DIM));
+                top += paint.size(kind::LINE) + gap / 4.0;
+            }
         }
         let (below, barred) = self.bar(paint, left, top, wide);
         spot.extend(barred);
         top = below;
+        // The side, where it stands at the top.
+        let sided = self.sided();
+        if !apart && !sided.is_empty() {
+            let (end, pressed) = self.column(paint, PPoint::new(left, top), wide, &sided);
+            spot.extend(pressed);
+            top = end + paint.theme().size(SPACE).unwrap_or(gap / 2.0);
+        }
         for block in self.of("tools").filter(|b| !bar::barred(b)) {
             let choice = self.source.list(&block.list);
             let icon: Vec<(&str, &str, bool)> = choice.iter().map(|c| (c.icon.as_str(), "", false)).collect();
@@ -145,7 +188,7 @@ impl PForm {
             spot.extend(rect.into_iter().zip(&choice).map(|(r, c)| (r, block.path.clone(), c.value.clone())));
             top += icon.high(paint) + gap / 2.0;
         }
-        let free: Vec<&Block> = self.block.iter().filter(|b| b.under.is_empty() && !bar::barred(b) && !matches!(b.kind.as_str(), "head" | "tools" | "tabs" | "fill")).collect();
+        let free: Vec<&Block> = self.block.iter().filter(|b| b.under.is_empty() && !bar::barred(b) && !side(b) && !matches!(b.kind.as_str(), "head" | "tools" | "tabs" | "fill")).collect();
         let (mut own, own_shown) = self.grouped(&free);
         let space = paint.theme().size(SPACE).unwrap_or(gap / 2.0);
         let high = match own.is_empty() {
@@ -203,12 +246,30 @@ impl PDraw for PForm {
             true => origin.y + self.frame.size.height - gap,
             false => 0.0,
         };
-        let scroll = self.scroll.get();
+        let (scroll, width, high) = (self.scroll.get(), self.frame.size.width, self.frame.size.height);
+        // Wide, the side stands in a column at the left.
+        let sided = self.sided();
+        let column = match !sided.is_empty() && width >= paint.theme().size(SPLIT).unwrap_or(f32::MAX) {
+            true => (width * paint.theme().size(SIDE).unwrap_or(0.5)).floor(),
+            false => 0.0,
+        };
         paint.clip(PRect { origin, size: self.frame.size });
-        let (end, spot) = self.lay(paint, PPoint::new(origin.x, origin.y - scroll.at()), foot);
+        let (mut spot, mut held) = (Vec::new(), 0.0);
+        if column > 0.0 {
+            // Held in view; one taller than the pane scrolls only until
+            // its end is in sight.
+            let left = origin.x + gap;
+            let tall = self.column(&mut PDry(&*paint), PPoint::new(left, 0.0), column - gap, &sided).0 + gap * 2.0;
+            let lift = scroll.at().min((tall - high).max(0.0));
+            spot = self.column(paint, PPoint::new(left, origin.y + gap - lift), column - gap, &sided).1;
+            held = tall;
+        }
+        let (end, rest) = self.lay(paint, PPoint::new(origin.x + column, origin.y - scroll.at()), width - column, foot, column > 0.0);
+        // What the rest keeps is pressed first: its open drop is over all.
+        spot.splice(0..0, rest);
         paint.unclip();
         let mut scroll = scroll;
-        scroll.fit(end + scroll.at() - origin.y + gap, self.frame.size.height);
+        scroll.fit((end + scroll.at() - origin.y + gap).max(held), high);
         self.scroll.set(scroll);
         *self.spot.borrow_mut() = spot;
     }

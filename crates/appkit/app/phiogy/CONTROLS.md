@@ -71,25 +71,26 @@ handlers named after each). The status words:
 
 ## Why pages are not laid out right
 
-Only the Library (tree, library, inspector) and a person's tabs are the
-kit's form, laid out from `data/form.tsv` with its grids, layouts, filters
-and folds. The rest:
+The Library (tree, library, inspector), a person's tabs, the Hosts (and
+their drawers) and a shop's thing page are the kit's form, laid out from
+`data/form.tsv` with its grids, layouts, filters and folds. The rest:
 
-- **Phiogy's own list** (`src/part/list.rs`, items written in Rust): Hosts,
+- **Phiogy's own list** (`src/part/list.rs`, items written in Rust):
   Account, Friends and People, Shops and the bag, Search, Record. These
   have no layout switch, no folds, no drawers.
 - **Drawn by hand**: the title, status, room, stream, people beside the
-  room, the person's card, calls, voice, the guide, the shop's shelf and
-  thing page, the viewer, the model space.
+  room, the person's card, calls, voice, the guide, the shop's shelf, the
+  viewer, the model space.
 
 So they cannot pick up what the kit gives every form, and each looks the
 way its own code draws it.
 
 ## Order of work
 
-1. Pages onto the kit's form, one at a time: Hosts (create a host as a
-   drawer with help), Shops' thing page (tabs and folding sections, as the
-   web's), Friends and People, Record, Account, Search.
+1. Pages onto the kit's form, one at a time: Hosts (done, a host made
+   and opened in drawers), Shops' thing page (done: picture held at the
+   left, tabs of folding sections), Friends and People, Record, Account,
+   Search.
 2. Creating and editing through Phiora (`POST` and `PATCH /tree/item`):
    hosts that others can join, quests, pools, clubs, the profile.
 3. Upload (`POST /file`, SHARED-LIBRARY.md), then posted pictures and the

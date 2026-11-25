@@ -27,6 +27,20 @@ enum Act {
     Open(String, String),
 }
 
+impl Desk {
+    /// Open the page of Phiegg's record of a kind and id, where the book
+    /// has it: whether it does.
+    pub fn open_record(&self, kind: &str, id: &str) -> bool {
+        let found = self.book().record(kind, id).cloned();
+        let known = found.is_some();
+        if known {
+            *self.now.record.borrow_mut() = found;
+            self.wish.borrow_mut().push(PDeed::Open(RECORD.to_string()));
+        }
+        known
+    }
+}
+
 /// A record's page.
 pub struct Record {
     frame: PRect,

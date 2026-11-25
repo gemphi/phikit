@@ -312,6 +312,31 @@ room.undrawn	This page has a block this window does not draw yet: {kind}
 shop.colours	In other colours
 shop.like	Like
 shop.liked	Liked
+shop.full	View large
+thing.info	Info
+thing.stats	Stats
+thing.trail	Trail
+thing.owner	Owners
+thing.related	Related
+thing.about	About
+thing.details	Details
+thing.figures	Figures
+thing.went	{from} to {to}
+thing.since	Since {d}
+thing.event.sale	Sale
+thing.event.transfer	Transfer
+thing.event.mint	Minted
+thing.event.offer	Offer
+thing.stat.price	Price
+thing.stat.sales	Sales
+thing.stat.transfers	Transfers
+thing.stat.last	Last sold for
+thing.stat.high	Highest
+thing.stat.low	Lowest
+thing.stat.mean	Average
+thing.stat.holders	Have held it
+thing.stat.first	First sold
+thing.stat.latest	Last sold
 # The guide's tabs, what each says with nothing to show, and the star
 # of a room's title.
 guide.tab.recent	Recent

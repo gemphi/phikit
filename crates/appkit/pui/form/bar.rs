@@ -39,6 +39,11 @@ pub fn barred(block: &Block) -> bool {
     says(block, "bar")
 }
 
+/// Whether a block stands in the side column (`form.rs`).
+pub fn side(block: &Block) -> bool {
+    says(block, "side")
+}
+
 /// The two ways a layout switch keeps: a grid (nothing) and a list.
 fn layout() -> Vec<PChoice> {
     [("grid", ""), ("list", LIST)].map(|(icon, value)| PChoice { icon: icon.to_string(), value: value.to_string(), ..PChoice::default() }).to_vec()

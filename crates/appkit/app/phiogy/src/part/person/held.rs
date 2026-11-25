@@ -12,12 +12,10 @@ use std::rc::Rc;
 
 use appkit::pui::form::{PForm, PListed};
 use appkit::pui::state::PState;
-use appkit::pui::window::PDeed;
 use serde_json::Value;
 
 use crate::data;
 use crate::part::Desk;
-use crate::part::record::RECORD;
 use crate::part::tool::grouped;
 
 /// A row of words, as data/listing.tsv reads it.
@@ -321,11 +319,7 @@ impl Held {
             Some(("shot", n)) => desk.look(desk.shot_of(&self.who()), n.parse().unwrap_or_default()),
             Some(("rec", rest)) => {
                 let (kind, id) = rest.split_once(':').unwrap_or_default();
-                let found = desk.book().record(kind, id).cloned();
-                if found.is_some() {
-                    *desk.now.record.borrow_mut() = found;
-                    desk.wish.borrow_mut().push(PDeed::Open(RECORD.to_string()));
-                }
+                desk.open_record(kind, id);
             }
             Some(("room", id)) => _ = desk.show(id),
             Some(("who", id)) => *desk.now.who.borrow_mut() = Some(id.to_string()),

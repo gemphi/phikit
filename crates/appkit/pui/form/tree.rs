@@ -82,11 +82,15 @@ pub fn facts(choice: &[PChoice], paint: &mut dyn PPaint, at: PPoint, wide: f32) 
 }
 
 /// The first choice's picture, as wide as the block and as high, at the
-/// top of its frame; a press on it keeps its value.
+/// top of its frame, or its face, the cell of a sheet; a press on it
+/// keeps its value.
 pub fn picture(choice: &[PChoice], paint: &mut dyn PPaint, at: PPoint, wide: f32) -> (f32, Vec<PRect>) {
     let Some(first) = choice.first() else { return (at.y, Vec::new()) };
-    let r = PRect::new(at.x, at.y, wide, wide);
-    paint.picture(&first.picture, r, paint.size(RADIUS), PFit::Top);
+    let (r, radius) = (PRect::new(at.x, at.y, wide, wide), paint.size(RADIUS));
+    match &first.face {
+        Some((sheet, column, index)) => paint.picture(sheet, r, radius, PFit::Cell { column: *column, index: *index }),
+        None => paint.picture(&first.picture, r, radius, PFit::Top),
+    }
     (at.y + wide, vec![r])
 }
 

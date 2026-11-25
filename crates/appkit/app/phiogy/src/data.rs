@@ -45,6 +45,8 @@ pub const VIEWPORT: &str = include_str!("../data/viewport.tsv");
 pub const SEARCH: &str = include_str!("../data/search.tsv");
 /// A person's profile: its tabs.
 pub const PROFILE: &str = include_str!("../data/profile.tsv");
+/// One thing of a shop: its tabs and figures.
+pub const THING: &str = include_str!("../data/thing.tsv");
 /// A record's page: the facts of each kind.
 pub const RECORD: &str = include_str!("../data/record.tsv");
 /// Where the pictures the site names are on disk.

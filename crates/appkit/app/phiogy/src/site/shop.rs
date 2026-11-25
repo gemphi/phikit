@@ -29,9 +29,10 @@ pub struct Product {
     /// The few colours a theme is made of, as the web writes colours.
     pub swatch: Vec<String>,
     /// On its own page: its views, each with what it is called; what
-    /// is said of it; and its facts, a name and a value.
+    /// is said of it, and its points; and its facts, a name and a value.
     pub view: Vec<(String, String)>,
     pub body: String,
+    pub point: Vec<String>,
     pub field: Vec<(String, String)>,
 }
 
@@ -90,6 +91,7 @@ impl Shop {
                 swatch: list(one, "shop.swatch").iter().filter_map(Value::as_str).map(str::to_string).collect(),
                 view: list(&page, "shop.view").iter().map(|view| (word(view, "label"), word(view, "image"))).collect(),
                 body: word(&page, "shop.body"),
+                point: list(&page, "shop.point").iter().filter_map(Value::as_str).map(str::to_string).collect(),
                 field: list(&page, "shop.field").iter().filter_map(pair).collect(),
             }
         };

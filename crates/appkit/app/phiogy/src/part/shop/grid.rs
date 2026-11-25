@@ -8,7 +8,7 @@ use appkit::pui::block::{PLead, PPill, PRow};
 use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect};
 
 use super::{Act, Shopping, swatch};
-use crate::part::{DIM, GAP, ICON, INK, LINE, RADIUS, fit};
+use crate::part::{DIM, GAP, INK, LINE, RADIUS, fit};
 use crate::site::Product;
 
 /// The theme's tokens: how wide a card is, and how many times as wide
@@ -17,19 +17,6 @@ pub const CARD: &str = "shop.card";
 pub const HERO: &str = "shop.hero";
 
 impl Shopping {
-    /// The picture of a thing in a place: its own, whole; a cell of a
-    /// sheet; or, where it has neither, the icon of its shop.
-    pub(super) fn portrait(&self, paint: &mut dyn PPaint, rect: PRect, product: &Product, icon: &str) {
-        let (radius, size, ink) = (paint.size(RADIUS), paint.size(ICON), paint.color(INK));
-        match (&product.sprite, product.image.is_empty(), product.swatch.is_empty()) {
-            (Some(cell), ..) => paint.picture(&cell.sheet, rect, radius, PFit::Cell { column: cell.column, index: cell.index }),
-            (None, false, _) => paint.picture(&product.image, rect, radius, PFit::Whole),
-            // A theme is shown by its own colours.
-            (None, true, false) => swatch::draw(paint, rect, &product.swatch, radius),
-            (None, true, true) => paint.icon(self.desk.icon(icon), PRect::new(rect.center().x - size / 2.0, rect.center().y - size / 2.0, size, size), ink),
-        }
-    }
-
     /// How a thing stands, as a pill at a place: lit when it is in the
     /// bag or owned. A press on it does the next thing.
     pub(super) fn stand(&self, paint: &mut dyn PPaint, at: PPoint, shop: &str, product: &Product, spot: &mut Vec<(PRect, Act)>) -> PRect {
@@ -86,12 +73,11 @@ impl Shopping {
         at.origin.y + list.len().div_ceil(across) as f32 * (high + gap / 2.0)
     }
 
-    /// A shop's page: its landing, a page of its menu, or one thing's.
+    /// A shop's page: its landing, or a page of its menu.
     pub(super) fn shelf(&self, paint: &mut dyn PPaint, origin: PPoint) {
         let (gap, line, ink, dim) = (paint.size(GAP), paint.size(LINE), paint.color(INK), paint.color(DIM));
         let open = self.desk.open.borrow().clone();
-        let thing = self.desk.now.product.borrow().clone();
-        let id = thing.as_deref().and_then(|place| place.split_once('/')).map(|(shop, _)| shop.to_string()).or_else(|| self.desk.shop_of(&open));
+        let id = self.desk.shop_of(&open);
         let sight = PRect { origin, size: self.frame.size };
         let (left, wide) = (origin.x + gap, (self.frame.size.width - gap * 2.0).max(0.0));
         let begin = origin.y + gap - self.scroll.get().at();
@@ -101,34 +87,29 @@ impl Shopping {
             return paint.text(PPoint::new(left, begin), self.desk.text.get("shop.none"), dim);
         };
         paint.clip(sight);
-        let end = match thing.as_deref().and_then(|place| place.split_once('/')).and_then(|(_, id)| shop.product.iter().position(|product| product.id == id)) {
-            Some(at) => self.thing(paint, PRect::new(left, begin, wide, 0.0), &shop, at, sight, &mut spot),
-            None => {
-                // What the page is called, and under it whose it is.
-                let shelf = shop.shelf.iter().find(|shelf| shelf.id == open);
-                let (title, under) = match shelf {
-                    Some(shelf) => (shelf.label.as_str(), shop.label.as_str()),
-                    None => (shop.label.as_str(), shop.sub.as_str()),
-                };
-                paint.head(PPoint::new(left, begin), title, ink);
-                let mut top = begin + paint.size("head.line") + gap / 4.0;
-                paint.text(PPoint::new(left, top), &fit(under, wide, paint), dim);
-                top += line + gap;
-                // A landing has the shop's picture, and names its grid.
-                if shelf.is_none() && !shop.image.is_empty() {
-                    let high = wide / paint.size(HERO).max(1.0);
-                    let radius = paint.size(RADIUS);
-                    paint.picture(&shop.image, PRect::new(left, top, wide, high), radius, PFit::Cover);
-                    top += high + gap;
-                }
-                if shelf.is_none() && !shop.lead.is_empty() {
-                    paint.text(PPoint::new(left, top), &shop.lead, dim);
-                    top += line + gap / 2.0;
-                }
-                let list = shelf.map_or(shop.first.as_slice(), |shelf| shelf.at.as_slice());
-                self.grid(paint, PRect::new(left, top, wide, 0.0), &shop, list, sight, &mut spot)
-            }
+        // What the page is called, and under it whose it is.
+        let shelf = shop.shelf.iter().find(|shelf| shelf.id == open);
+        let (title, under) = match shelf {
+            Some(shelf) => (shelf.label.as_str(), shop.label.as_str()),
+            None => (shop.label.as_str(), shop.sub.as_str()),
         };
+        paint.head(PPoint::new(left, begin), title, ink);
+        let mut top = begin + paint.size("head.line") + gap / 4.0;
+        paint.text(PPoint::new(left, top), &fit(under, wide, paint), dim);
+        top += line + gap;
+        // A landing has the shop's picture, and names its grid.
+        if shelf.is_none() && !shop.image.is_empty() {
+            let high = wide / paint.size(HERO).max(1.0);
+            let radius = paint.size(RADIUS);
+            paint.picture(&shop.image, PRect::new(left, top, wide, high), radius, PFit::Cover);
+            top += high + gap;
+        }
+        if shelf.is_none() && !shop.lead.is_empty() {
+            paint.text(PPoint::new(left, top), &shop.lead, dim);
+            top += line + gap / 2.0;
+        }
+        let list = shelf.map_or(shop.first.as_slice(), |shelf| shelf.at.as_slice());
+        let end = self.grid(paint, PRect::new(left, top, wide, 0.0), &shop, list, sight, &mut spot);
         paint.unclip();
         let mut scroll = self.scroll.get();
         scroll.fit(end - begin + gap * 2.0, self.frame.size.height);

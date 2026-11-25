@@ -134,6 +134,10 @@ size	profile.radius	14
 # A fact's name and its value take half the width each (the user,
 # 25 November 2026), as every table of the kit.
 size	profile.split	0.5
+# A kit form with a side column (a thing's picture): the share of the
+# width it takes, and the width under which it stands at the top.
+size	form.side	0.42
+size	form.split	640
 size	head.size	26
 size	head.line	34
 # What appkit's field and button ask for, in a part that has one.
@@ -221,17 +225,12 @@ size	row.lead	40
 size	host.most	24
 size	people.most	30
 # The shops: how many a search lists at most; how wide a card of a
-# grid is; how many times as wide as high a landing's picture is; the
-# widest a thing's picture is on its own page; and how many more like
-# it are shown there, as on the web.
+# grid is; how many times as wide as high a landing's picture is; and
+# how many more like a thing are shown on its own page, as on the web.
 size	shop.most	32
 size	shop.card	168
 size	shop.hero	4
-size	shop.picture	360
 size	shop.more	8
-# How wide the bar of a thing's variants is on its page, left of its
-# picture: each variant its picture and its colour's name.
-size	shop.variant	88
 # A person beside the room: how large their face is, and how many times
 # as wide as high the picture over their profile is (the web's 3/1).
 size	person.face	64

@@ -141,6 +141,39 @@
           ]
         ]
       }
+    },
+    {
+      "id": "g_c_010_lk11",
+      "title": "Ivory Glass",
+      "sub": "$34,150",
+      "cost": 34150,
+      "tag": "Rare",
+      "look": true,
+      "image": "phiegg:worlds/w_brocade.png",
+      "kind": "Outerwear",
+      "meta": "Ivory",
+      "page": {
+        "viewList": [
+          {
+            "label": "Front",
+            "image": "phiegg:worlds/w_brocade.png"
+          }
+        ],
+        "fieldList": [
+          [
+            "Colour",
+            "Ivory"
+          ],
+          [
+            "Occasion",
+            "Day, Travel, Arrivals"
+          ]
+        ],
+        "body": "Ivory Glass, cut for midsummer.",
+        "pointList": [
+          "Swap into any pool"
+        ]
+      }
     }
   ],
   "landing": [

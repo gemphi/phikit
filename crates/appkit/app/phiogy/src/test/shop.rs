@@ -78,57 +78,85 @@ fn step_30_a_page_of_a_shop_is_its_things_and_a_thing_has_a_page_of_its_own() {
     assert!(shown(&stage, &look).contains(&word("shop.inbag")));
     assert_eq!(desk.rail().into_iter().flat_map(|(_, rung)| rung).find(|rung| rung.id == "_bag").map(|rung| rung.count), Some(1));
     assert!(press(&mut stage, &look, &word("shop.inbag")) && desk.bag().is_empty());
-    // A press on a thing opens its own page.
+    // A press on a thing opens its own page, the kit's form: its name and
+    // what it is at the head, the way back and the bag in its bar, its
+    // picture held at the left, its tabs at the right.
     assert!(press(&mut stage, &look, "Teal Signal"));
     assert_eq!(desk.now.product.borrow().as_deref(), Some("s_one/lk1"));
     let text = shown(&stage, &look);
-    assert!(["Outerwear", "Teal Signal", "$7,000", "Teal · Common", "Cut for after the show.", "Colour", "Fabric", "silk"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
-    // Its picture and its sections are two columns, and each fact is a
-    // row: what it is at the left, its value ending at the right.
-    let column = |wanted: &str| super::written(&stage, &look, wanted).map(|at| at.x).expect("drawn");
-    let room = super::rect(&stage, "shop");
-    assert!(column("Fabric") > room.center().x && column("silk") > column("Fabric"), "{} {}", column("Fabric"), column("silk"));
-    // I like it, and that is kept; and no more.
-    assert!(press(&mut stage, &look, &word("shop.like")) && desk.liked("s_one/lk1"));
-    assert!(press(&mut stage, &look, &word("shop.liked")) && !desk.liked("s_one/lk1"));
-    // More like it: the others of its page of the menu.
-    assert!(text.contains(&word("shop.more")) && text.contains(&"Plum Line".to_string()));
-    // Its picture stands at the top of its frame; its views are tabs
-    // under it: a press on one shows it.
+    let between = format!(" {} ", word("between"));
+    assert!([["Outerwear", "$7,000", "Shop One", "Common"].join(&between), "Teal Signal".to_string(), word("thing.info"), word("thing.stats"), word("thing.related"), "Cut for after the show.".to_string(), "Colour".to_string(), "Fabric".to_string(), "silk".to_string()].iter().all(|line| text.contains(line)), "{text:?}");
+    // A thing with no ledger has no trail and nobody who held it.
+    assert!(!text.contains(&word("thing.trail")) && !text.contains(&word("thing.owner")), "{text:?}");
+    // Its picture stands at the top of the side column; its facts at the
+    // right of it, each a row: its name, then its value in the right half.
     let whole = |stage: &PStage| drawn(stage, &look).iter().find_map(|mark| match mark {
         PMark::Picture { name, fit: PFit::Top, rect, .. } if rect.size.width > 200.0 => Some((name.clone(), *rect)),
         _ => None,
     });
-    let (shown_first, frame) = whole(&stage).expect("its picture");
-    assert_eq!(shown_first, "phiegg:worlds/w_brocade.png");
+    let (first, frame) = whole(&stage).expect("its picture");
+    assert_eq!(first, "phiegg:worlds/w_brocade.png");
+    let column = |wanted: &str| super::written(&stage, &look, wanted).map(|at| at.x).expect("drawn");
+    let edge = frame.origin.x + frame.size.width;
+    assert!(column("Fabric") > edge && column("silk") > column("Fabric") && column(&word("thing.info")) > edge, "{} {} {edge}", column("Fabric"), column("silk"));
+    // Its views are a band under it: a press on one shows it.
     assert!(press(&mut stage, &look, "Back"));
     assert_eq!(whole(&stage).map(|(name, _)| name).as_deref(), Some("phiegg:worlds/w_carousel.png"));
-    // Its variants stand in a bar at the left of its picture, itself
-    // first: each its colour's name; a press on another goes to it.
-    // The colours' names in the bar: the first of each left of the picture.
-    let left_of = |wanted: &str| drawn(&stage, &look).iter().find_map(|mark| match mark {
-        PMark::Text { at, text, .. } if text == wanted && at.x < frame.origin.x => Some(*at),
-        _ => None,
-    });
-    let plum = left_of("Plum").expect("the other colour");
-    let teal = left_of("Teal").expect("its own colour");
-    assert!(plum.x < frame.origin.x && teal.x < frame.origin.x && teal.y < plum.y, "{teal:?} {plum:?} {frame:?}");
-    // Every section stands at the right of the picture.
-    let right = |wanted: &str| super::written(&stage, &look, wanted).map(|at| at.x).expect("drawn");
-    assert!(right("Outerwear") > frame.origin.x + frame.size.width && right(&word("shop.more")) > frame.origin.x + frame.size.width);
-    assert!(stage.send(&PEvent::PointerDown(plum.plus(PPoint::new(2.0, 2.0)))));
+    // I like it, and that is kept; and no more.
+    assert!(press(&mut stage, &look, &word("shop.like")) && desk.liked("s_one/lk1"));
+    assert!(press(&mut stage, &look, &word("shop.liked")) && !desk.liked("s_one/lk1"));
+    // Seen large, its views are the viewer's album, the one shown first.
+    assert!(press(&mut stage, &look, &word("shop.full")));
+    assert_eq!((stage.window.modal(), desk.view.get(), desk.now.album.borrow().len()), (Some("view"), Some(1), 2));
+    assert!(stage.send(&PEvent::KeyDown(PEvent::ESCAPE)));
     stage.lay(DESK, PMode::of_width(DESK.width));
+    // The bag is at the end of its bar.
+    assert!(press(&mut stage, &look, &word("shop.put")) && desk.bag().len() == 1);
+    assert!(press(&mut stage, &look, &word("shop.inbag")) && desk.bag().is_empty());
+    // Its figures are a tab of their own.
+    assert!(press(&mut stage, &look, &word("thing.stats")));
+    let text = shown(&stage, &look);
+    assert!(text.contains(&word("thing.stat.price")) && !text.contains(&"Fabric".to_string()), "{text:?}");
+    // Related: the same thing in its other colours, and more like it from
+    // its page of the menu; a press goes to one, and back.
+    assert!(press(&mut stage, &look, &word("thing.related")));
+    let text = shown(&stage, &look);
+    assert!([word("shop.colours"), "Plum Signal".to_string(), word("shop.more"), "Plum Line".to_string()].iter().all(|line| text.contains(line)), "{text:?}");
+    assert!(press(&mut stage, &look, "Plum Signal"));
     assert_eq!(desk.now.product.borrow().as_deref(), Some("s_one/lk3"));
-    let teal = drawn(&stage, &look).iter().find_map(|mark| match mark {
-        PMark::Text { at, text, .. } if text == "Teal" => Some(*at),
-        _ => None,
-    });
-    assert!(stage.send(&PEvent::PointerDown(teal.expect("Teal in the bar").plus(PPoint::new(2.0, 2.0)))));
-    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(press(&mut stage, &look, "Teal Signal"));
     assert_eq!(desk.now.product.borrow().as_deref(), Some("s_one/lk1"));
-    // The way back is at its head: its page of the menu, and its shop.
+    // The way back is in its bar: its page of the menu, and its shop.
     assert!(press(&mut stage, &look, "Coats"));
     assert_eq!((desk.open.borrow().as_str(), desk.now.product.borrow().clone()), ("s_one.women.coats", None));
+}
+
+#[test]
+fn step_30b_a_thing_phiegg_sold_has_its_trail_its_figures_and_who_held_it() {
+    let (app, mut stage, look) = on("s_one.women.coats");
+    let desk = app.desk();
+    let word = |name: &str| desk.text.get(name).to_string();
+    *desk.now.product.borrow_mut() = Some("s_one/g_c_010_lk11".to_string());
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    // What is said of it, its points, and its facts, a list as pills.
+    let text = shown(&stage, &look);
+    assert!(["Ivory Glass, cut for midsummer.", "Swap into any pool", "Occasion", word("thing.trail").as_str(), word("thing.owner").as_str()].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
+    // Its trail: each sale or transfer in Phiegg's ledger, the newest
+    // first, who it went from and to by name, what and when, the price.
+    assert!(press(&mut stage, &look, &word("thing.trail")));
+    let text = shown(&stage, &look);
+    let between = format!(" {} ", word("between"));
+    assert!([word("thing.went").replace("{from}", "Gemma Laurent").replace("{to}", "Gemma Vane"), [word("thing.event.transfer"), "2026-11-06".to_string()].join(&between), "$23,574".to_string(), [word("thing.event.sale"), "2026-08-15".to_string()].join(&between)].iter().all(|line| text.contains(line)), "{text:?}");
+    // Its figures, from the ledger.
+    assert!(press(&mut stage, &look, &word("thing.stats")));
+    let text = shown(&stage, &look);
+    assert!([word("thing.stat.sales"), word("thing.stat.transfers"), word("thing.stat.high"), word("thing.stat.holders"), "2026-11-06".to_string()].iter().all(|line| text.contains(line)), "{text:?}");
+    // Who held it, each once, the newest first, named (a person or an
+    // agent); a press opens their record.
+    assert!(press(&mut stage, &look, &word("thing.owner")));
+    let text = shown(&stage, &look);
+    assert!(!text.iter().any(|line| line.starts_with("ag_") || line.starts_with("u_")), "{text:?}");
+    assert!(text.contains(&"Anouk Valois".to_string()), "{text:?}");
 }
 
 #[test]
