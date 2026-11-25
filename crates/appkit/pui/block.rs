@@ -50,6 +50,7 @@ pub use tip::PTip;
 
 use super::core::light::label;
 use super::core::{PLight, PPaint, PPoint, PRect, PSize};
+use super::layout::PDry;
 
 /// The theme's tokens every block is drawn with.
 pub const GAP: &str = "gap";
@@ -186,27 +187,76 @@ pub trait PFacts {
     /// Its rows: what each is, and its value.
     fn row(&self) -> Vec<(&str, &str)>;
 
-    /// Draw it from a place: a row each, what it is at the left on a
-    /// ground of its own lit from the left (one column as wide as the
-    /// widest name), its value ending at the right; no line between rows,
-    /// so names and values read apart by their grounds. How far down it
-    /// ends.
+    /// Draw it from a place: a row each, what it is in the left half and
+    /// its value in the right half on a ground that fills it (the user,
+    /// 25 November 2026: the ground is the value's, and the two halves take
+    /// the whole width).
+    /// A value that is a list (`a, b, c`) is its choices, a pill each; names
+    /// that share a first part (`traits.hair`, `traits.hat`) stand under
+    /// it as a heading, a line down their level. How far down it ends.
     fn table(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32) -> f32 {
         let (gap, line, radius) = (paint.size(GAP), paint.size(LINE), paint.size(RADIUS));
         let (ink, dim) = (paint.color(INK), paint.color(DIM));
         let row = self.row();
-        let column = (row.iter().map(|(name, _)| paint.measure(name)).fold(0.0, f32::max) + gap * 1.5).min(wide / 2.0);
-        let mut top = at.y;
+        let indent = |name: &str| match part(name).0.is_empty() {
+            true => 0.0,
+            false => gap,
+        };
+        let column = wide / 2.0;
+        let (mut top, mut group, mut from) = (at.y, "", at.y);
+        let end = |paint: &mut dyn PPaint, group: &str, from: f32, top: f32| {
+            if !group.is_empty() {
+                super::layout::level(paint, at.x + gap / 2.0, from, top - gap / 8.0);
+            }
+        };
         for (name, value) in row {
-            let high = line + gap / 2.0;
-            super::core::light::label(paint, PRect::new(at.x, top, column, high - gap / 8.0), radius, super::core::PLight::Soft, false, "");
-            paint.text(PPoint::new(at.x + gap / 2.0, top + gap / 4.0), &name.fit(column - gap, paint), dim);
-            let value = value.fit((wide - column - gap / 2.0).max(0.0), paint);
-            paint.text(PPoint::new(at.x + wide - paint.measure(&value), top + gap / 4.0), &value, ink);
+            let (first, rest) = part(name);
+            // Another group: the last one's level ends, this one's heading.
+            if first != group {
+                end(paint, group, from, top);
+                group = first;
+                if !first.is_empty() {
+                    paint.text(PPoint::new(at.x, top + gap / 4.0), &first.fit(wide, paint), ink);
+                    top += line + gap / 2.0;
+                }
+                from = top;
+            }
+            let room = (wide - column).max(0.0);
+            // A list is short words apart by commas; a sentence with a comma is not.
+            let choice: Vec<&str> = value.split(", ").filter(|one| !one.is_empty()).collect();
+            let choice = match choice.iter().all(|one| one.split_whitespace().count() <= 3) {
+                true => choice,
+                false => vec![value],
+            };
+            let pill: Vec<(&str, &str, bool)> = choice.iter().map(|one| ("", *one, false)).collect();
+            // A list as its choices, ending at the right where they fit on a line.
+            let (ground, high) = match choice.len() > 1 {
+                true => {
+                    let (_, high) = pill.as_slice().draw_lines(&mut PDry(&*paint), PPoint::new(0.0, 0.0), room - gap / 2.0);
+                    (PRect::new(at.x + column, top, room, high + gap / 4.0), high + gap / 2.0)
+                }
+                false => (PRect::new(at.x + column, top, room, line + gap / 2.0 - gap / 8.0), line + gap / 2.0),
+            };
+            label(paint, ground, radius, PLight::Soft, false, "");
+            paint.text(PPoint::new(at.x + indent(name), top + gap / 4.0), &rest.fit(column - indent(name) - gap / 2.0, paint), dim);
+            match choice.len() > 1 {
+                true => _ = pill.as_slice().draw_lines(paint, PPoint::new(at.x + column + gap / 4.0, top + gap / 8.0), room - gap / 2.0),
+                false => {
+                    let value = value.fit((room - gap).max(0.0), paint);
+                    paint.text(PPoint::new(at.x + column + gap / 2.0, top + gap / 4.0), &value, ink);
+                }
+            }
             top += high;
         }
+        end(paint, group, from, top);
         top
     }
+}
+
+/// A fact's name as its group and its own: `traits.hair` is `hair` in
+/// `traits`; a name with no dot is in none.
+fn part(name: &str) -> (&str, &str) {
+    name.split_once('.').unwrap_or(("", name))
 }
 
 impl PFacts for [(String, String)] {

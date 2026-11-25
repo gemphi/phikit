@@ -187,14 +187,19 @@ pub(crate) fn written(stage: &PStage, look: &PLook, wanted: &str) -> Option<PPoi
     drawn(stage, look).into_iter().filter_map(at).next_back()
 }
 
-/// Whether a line of text stands on a ground of its own as a figure
-/// does (appkit's `figure`): somewhere it is drawn, a light as high as
-/// the theme makes a figure was laid just before it, around it.
+/// Whether a line of text stands on a ground of its own, as a figure or
+/// a value of the kit's table does: somewhere it is drawn, a light laid
+/// before it, about a figure high (not a row's or a section's), holds
+/// where it begins.
 pub(crate) fn grounded(stage: &PStage, look: &PLook, wanted: &str) -> bool {
     use appkit::theme::PTheme;
     let mark = drawn(stage, look);
-    let high = look.size(appkit::pui::core::figure::HIGH).unwrap_or_default();
-    mark.windows(2).any(|pair| matches!((&pair[0], &pair[1]), (PMark::Blend { rect, .. }, PMark::Text { at, text, .. }) if text == wanted && rect.size.height == high && at.y >= rect.origin.y && at.y <= rect.origin.y + rect.size.height))
+    let (high, gap) = (look.size(appkit::pui::core::figure::HIGH).unwrap_or_default(), look.size("gap").unwrap_or_default());
+    let own = |rect: &PRect, at: PPoint| rect.size.height <= high + gap / 2.0 && rect.contains(at.plus(PPoint::new(1.0, 1.0)));
+    mark.iter().enumerate().any(|(index, one)| match one {
+        PMark::Text { at, text, .. } if text == wanted => mark[..index].iter().any(|before| matches!(before, PMark::Blend { rect, .. } if own(rect, *at))),
+        _ => false,
+    })
 }
 
 /// The middle of the bar's icon of that name: the first one drawn, since

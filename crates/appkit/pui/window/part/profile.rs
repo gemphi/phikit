@@ -138,7 +138,7 @@ impl PDraw for PProfile {
         paint.text(beside.plus(PPoint::new(0.0, line)), self.user.get("mail"), dim);
         // What is known of them, how the app appears and what the person
         // prefers: each a group that folds, on a ground of its own.
-        let split = wide * paint.theme().size(SPLIT).unwrap_or(0.4);
+        let split = wide * paint.theme().size(SPLIT).unwrap_or(0.5);
         let row = self.row();
         let set: Vec<Vec<String>> = row.iter().map(|(_, value)| fold(value, wide - split - gap * 2.0, &|text| paint.measure(text))).collect();
         let high = |set: &Vec<String>| (set.len().max(1) as f32 + 0.5) * line;
@@ -148,8 +148,8 @@ impl PDraw for PProfile {
             let said = self.user.get("about").to_string();
             down = self.group("about", &said, PPoint::new(left, down), wide, paint, &mut spot, &mut |paint, mut top, _| {
                 for ((name, _), set) in row.iter().zip(&set) {
-                    // Its name on a ground lit from the left, so it reads apart from its value.
-                    label(paint, PRect::new(left + gap / 2.0, top - gap / 4.0, split, high(set)), round, PLight::Soft, false, FILL);
+                    // Its value on a ground of its own, so it reads apart from its name.
+                    label(paint, PRect::new(left + split + gap / 2.0, top - gap / 4.0, wide - split - gap, high(set)), round, PLight::Soft, false, FILL);
                     paint.text(PPoint::new(left + gap, top), name, dim);
                     for (index, text) in set.iter().enumerate() {
                         paint.text(PPoint::new(left + gap + split, top + index as f32 * line), text, ink);

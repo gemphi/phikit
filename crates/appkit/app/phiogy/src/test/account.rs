@@ -45,7 +45,7 @@ fn step_32_the_account_is_who_i_am_my_wallet_and_the_look() {
     // The wallet a person starts with: each coin, and all of it in
     // dollars at what each coin is worth; what each is, and its sum.
     assert!(["Total", "USD", "$EGG", "$UM", "ETH"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
-    // Every sum stands on a ground of its own, at the line's end.
+    // Every sum stands on a ground of its own, in the table's right half.
     let sum = ["$7,684", "2,500", "12,000", "140", "0.42"];
     assert!(sum.iter().all(|sum| super::grounded(&stage, &look, sum)), "{text:?}");
     assert!(!super::grounded(&stage, &look, "Total"));
@@ -96,24 +96,27 @@ fn step_59_the_profile_sets_which_of_four_ways_the_light_runs_how_strong_how_far
     stage.lay(DESK, PMode::of_width(DESK.width));
     // Across at first; from the foot up once chosen, and kept.
     assert_eq!(desk.shade.size("surface.turn"), Some(90.0));
-    // Any of four ways: from the right, from the top, from the foot.
-    assert!(press(&mut stage, &look, &word("prefer.back")));
-    assert_eq!(desk.shade.size("surface.turn"), Some(270.0));
-    assert!(press(&mut stage, &look, &word("prefer.down")));
-    assert_eq!(desk.shade.size("label.turn"), Some(180.0));
-    // The last of them, scrolled into sight where the panel is short.
+    // Any of four ways: from the right, from the top, from the foot;
+    // each scrolled into sight where the panel is short.
     let body = stage.panel().expect("the profile").body;
-    let up = |stage: &PStage| drawn(stage, &look).iter().rev().find_map(|mark| match mark {
-        PMark::Text { at, text, .. } if *text == word("prefer.up") => Some(at.y),
-        _ => None,
-    });
-    for _ in 0..20 {
-        if up(&stage).is_some_and(|y| y + 40.0 < body.origin.y + body.size.height) {
-            break;
+    let sight = |stage: &mut PStage, said: &str| {
+        let at = |stage: &PStage| drawn(stage, &look).iter().rev().find_map(|mark| match mark {
+            PMark::Text { at, text, .. } if text == said => Some(at.y),
+            _ => None,
+        });
+        for _ in 0..20 {
+            if at(stage).is_some_and(|y| y + 40.0 < body.origin.y + body.size.height) {
+                break;
+            }
+            stage.send(&PEvent::Scroll(body.center(), PPoint::new(0.0, -60.0)));
         }
-        stage.send(&PEvent::Scroll(body.center(), PPoint::new(0.0, -60.0)));
-    }
-    assert!(press(&mut stage, &look, &word("prefer.up")));
+        press(stage, &look, said)
+    };
+    assert!(sight(&mut stage, &word("prefer.back")));
+    assert_eq!(desk.shade.size("surface.turn"), Some(270.0));
+    assert!(sight(&mut stage, &word("prefer.down")));
+    assert_eq!(desk.shade.size("label.turn"), Some(180.0));
+    assert!(sight(&mut stage, &word("prefer.up")));
     assert_eq!((desk.shade.size("surface.turn"), desk.shade.size("label.turn")), (Some(0.0), Some(0.0)));
     stage.send(&PEvent::KeyUp(' '));
     assert!(desk.choice.get("prefer").contains("surface.turn 0"), "{}", desk.choice.get("prefer"));

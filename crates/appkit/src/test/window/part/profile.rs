@@ -115,10 +115,10 @@ fn in_a_theme_with_light_its_rows_are_one_surface_and_the_look_shown_is_lit_the_
         _ => None,
     }).collect();
     // The group of rows, a surface as wide as the profile less its
-    // gaps, its row's name on a ground of its own; the group of looks, as wide; then the pills on it, lit
+    // gaps, its row's value on a ground of its own; the group of looks, as wide; then the pills on it, lit
     // against it, the look shown the most and the other the least. The
     // mark is Phi-Soft's shape in the light's colour, no light of its own.
-    assert_eq!(lit, [(280.0, 0.5, 90.0), (112.0, 0.25, 90.0), (280.0, 0.5, 90.0), (60.0, 0.5, 90.0), (52.0, 0.25, 90.0)]);
+    assert_eq!(lit, [(280.0, 0.5, 90.0), (158.0, 0.25, 90.0), (280.0, 0.5, 90.0), (60.0, 0.5, 90.0), (52.0, 0.25, 90.0)]);
 }
 
 #[test]

@@ -6,7 +6,8 @@
 //! themself; their tags; since when they are here.
 
 use appkit::pui::block::{PFace, PPill, PText};
-use appkit::pui::core::{PFit, PPaint, PPoint, PRect};
+use appkit::pui::core::light::label;
+use appkit::pui::core::{PFit, PLight, PPaint, PPoint, PRect};
 use appkit::pui::layout::wrap;
 
 use super::{BANNER, FACE, Person};
@@ -43,7 +44,8 @@ impl Person {
             paint.text(PPoint::new(left, top), &said.fit(wide, paint), dim);
             top += line + gap / 2.0;
         }
-        // How many, each a figure over its word, side by side: Phiegg's
+        // How many, each a figure over its word on a ground of its own (the
+        // user, 25 November 2026), side by side: Phiegg's
         // own counts of them (shots, followers, following, puts); for
         // somebody Phiegg does not count, their links, spaces, pictures.
         let own = [("linked".to_string(), one.link), ("space".to_string(), one.space.len() as u64), ("media".to_string(), self.desk.shot_of(&one.id).len() as u64)];
@@ -54,10 +56,12 @@ impl Person {
         let step = wide / count.len().max(1) as f32;
         for (index, (word, n)) in count.iter().enumerate() {
             let x = left + index as f32 * step;
+            label(paint, PRect::new(x, top - gap / 4.0, step - gap / 4.0, line * 2.0 + gap * 0.5), radius, PLight::Soft, false, "");
+            let x = x + gap / 2.0;
             paint.head(PPoint::new(x, top), &crate::part::tool::grouped(*n), ink);
-            paint.text(PPoint::new(x, top + line + gap / 8.0), &text.get(&format!("person.count.{word}")).fit(step - gap / 4.0, paint), dim);
+            paint.text(PPoint::new(x, top + line + gap / 8.0), &text.get(&format!("person.count.{word}")).fit(step - gap, paint), dim);
         }
-        top += line * 2.0 + gap * 0.75;
+        top += line * 2.0 + gap;
         // What they say of themself.
         for words in wrap(&one.bio, wide, &|text| paint.measure(text)).into_iter().filter(|words| !words.is_empty()) {
             paint.text(PPoint::new(left, top), &words, ink);

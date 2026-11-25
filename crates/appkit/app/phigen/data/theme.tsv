@@ -114,7 +114,9 @@ size	sheet.width	776
 size	modal.head	56
 size	profile.avatar	72
 size	profile.radius	14
-size	profile.split	0.34
+# A fact's name and its value take half the width each (the user,
+# 25 November 2026), as every table of the kit.
+size	profile.split	0.5
 size	card.height	96
 size	card.radius	14
 size	card.narrow	620

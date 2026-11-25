@@ -66,7 +66,7 @@ fn pills_that_belong_together_stand_on_one_ground_each_on_its_own_and_the_one_th
 }
 
 #[test]
-fn a_table_names_each_thing_at_the_left_on_a_ground_and_ends_its_value_at_the_right() {
+fn a_table_names_each_thing_in_its_left_half_and_its_value_stands_on_a_ground_filling_the_right_half() {
     let look = PLook::read(LOOK);
     let mut sheet = PSheet::new(&look);
     let row = [("Fabric".to_string(), "silk".to_string()), ("Care".to_string(), "Dry clean only, store flat in tissue".to_string())];
@@ -78,16 +78,40 @@ fn a_table_names_each_thing_at_the_left_on_a_ground_and_ends_its_value_at_the_ri
         _ => None,
     }).collect();
     let silk = sheet.measure("silk");
-    // A name half a gap into its ground.
-    assert_eq!(text[0], (8.0, "Fabric".to_string()));
-    assert_eq!(text[1], (200.0 - silk, "silk".to_string()));
-    // A value too long for its row is cut, and still ends at the right.
+    // The name at the left; the value half a gap into the right half, on
+    // a ground that fills that half.
+    assert_eq!(text[0], (0.0, "Fabric".to_string()));
+    assert_eq!(text[1], (108.0, "silk".to_string()));
+    let ground: Vec<PRect> = blend(&sheet).into_iter().map(|(rect, ..)| rect).collect();
+    assert!(ground.iter().all(|rect| rect.origin.x == 100.0 && rect.size.width == 100.0), "{ground:?}");
+    // A sentence with a comma is one value; too long for its half, it is
+    // cut. No line between rows.
     assert!(text[3].1.ends_with("...") && text[3].1.len() < row[1].1.len());
-    assert_eq!(text[3].0 + sheet.measure(&text[3].1), 200.0);
-    // No line between rows: the names read apart on their grounds.
+    assert!(text[3].0 + sheet.measure(&text[3].1) <= 200.0 - 8.0 + 0.01 && silk > 0.0);
     assert_eq!(sheet.mark.iter().filter(|mark| matches!(mark, PMark::Fill { rect, .. } if rect.size == PSize { width: 200.0, height: 1.0 })).count(), 0);
     // A text that fits is as it is.
     assert_eq!("silk".fit(200.0, &sheet), "silk");
+}
+
+#[test]
+fn a_list_value_is_its_choices_and_names_with_a_first_part_stand_under_it() {
+    let look = PLook::read(LOOK);
+    let mut sheet = PSheet::new(&look);
+    let row = [("Sizes".to_string(), "S, M, L".to_string()), ("traits.hair".to_string(), "Blonde".to_string()), ("traits.hat".to_string(), "None".to_string())];
+    row.table(&mut sheet, PPoint::new(0.0, 0.0), 400.0);
+    let text: Vec<(f32, String)> = sheet.mark.iter().filter_map(|mark| match mark {
+        PMark::Text { at, text, .. } => Some((at.x, text.clone())),
+        _ => None,
+    }).collect();
+    let said: Vec<&str> = text.iter().map(|(_, text)| text.as_str()).collect();
+    // Each choice of the list is a pill of its own.
+    assert!(["S", "M", "L"].iter().all(|one| said.contains(one)), "{said:?}");
+    // `traits` is said once, as a heading; its names under it, set in.
+    assert_eq!(said.iter().filter(|one| **one == "traits").count(), 1);
+    let hair = text.iter().find(|(_, text)| text == "hair").expect("hair");
+    assert!(hair.0 > 0.0 && said.contains(&"hat") && !said.contains(&"traits.hair"));
+    // A line down the group's level.
+    assert!(sheet.mark.iter().any(|mark| matches!(mark, PMark::Fill { rect, .. } if rect.size.width == 1.0 && rect.size.height > 20.0)));
 }
 
 #[test]

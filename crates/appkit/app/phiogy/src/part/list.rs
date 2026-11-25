@@ -7,13 +7,20 @@
 //!
 //! A page says what it holds as a list of items and what a press on each
 //! means; `Lister` lays them out, scrolls them, and says what was pressed.
+//!
+//! A page that begins with its picture (`Item::Hero`) stands as a video
+//! player does (the user, 25 November 2026): the picture fills the page
+//! and stays; what can be done stands along its foot; a scroll brings the
+//! rest up from the foot, what can be done riding on it, no higher than
+//! the middle, and the rest scrolls on in the lower half.
 
 use std::cell::{Cell, RefCell};
 
-use appkit::pui::block::{PBand, PRow};
+use appkit::pui::block::{PBand, PFacts, PRow};
 use appkit::pui::core::PLight;
 use appkit::pui::control::{PControl, PField, inside};
-use appkit::pui::core::{PPaint, PPoint, PRect, PView, figure, show};
+use appkit::pui::core::light::pane;
+use appkit::pui::core::{PFit, PPaint, PPoint, PRect, PView, show};
 use appkit::pui::layout::{PDry, PScroll, ground, wrap};
 
 mod item;
@@ -49,7 +56,23 @@ impl<A> Default for Lister<A> {
     }
 }
 
+/// A page that begins with its picture, as it stands now: the picture,
+/// where the rest's ground begins (no higher than the middle), and how
+/// far the rest is scrolled inside the lower half.
+struct Stage {
+    key: String,
+    rise: f32,
+    inner: f32,
+}
+
 impl<A: Clone> Lister<A> {
+    /// How a page that begins with its picture stands at the scroll.
+    fn stage(&self, origin: PPoint, frame: PRect, item: &[Item<A>]) -> Option<Stage> {
+        let Some(Item::Hero(key)) = item.first() else { return None };
+        let (at, half) = (self.scroll.get().at(), frame.size.height / 2.0);
+        Some(Stage { key: key.clone(), rise: origin.y + frame.size.height - at.min(half), inner: (at - half).max(0.0) })
+    }
+
     /// What can be done, the kit's group of pills, drawn so that it
     /// ends at `end`, its middle at that height; where it begins.
     fn deeds(&self, paint: &mut dyn PPaint, end: PPoint, deed: &[Deed<A>], spot: &mut Vec<(PRect, A)>) -> f32 {
@@ -69,7 +92,21 @@ impl<A: Clone> Lister<A> {
     pub fn draw(&self, paint: &mut dyn PPaint, origin: PPoint, frame: PRect, desk: &Desk, item: &[Item<A>], field: &[&PField]) {
         let stand = self.pass(&mut PDry(&*paint), origin, frame, desk, item, field);
         let ((start, wide), gap) = (desk.column(frame.size.width), paint.size(GAP));
-        paint.clip(PRect { origin, size: frame.size });
+        let whole = PRect { origin, size: frame.size };
+        // The picture fills the page; the rest stands on the window's
+        // ground over its lower part.
+        let room = match self.stage(origin, frame, item) {
+            Some(stage) => {
+                paint.clip(whole);
+                paint.picture(&stage.key, whole, 0.0, PFit::Cover);
+                let rest = PRect::new(origin.x, stage.rise, frame.size.width, (origin.y + frame.size.height - stage.rise).max(0.0));
+                pane(paint, rest, 0.0, "");
+                paint.unclip();
+                rest
+            }
+            None => whole,
+        };
+        paint.clip(room);
         let mut from = None;
         for index in 0..=item.len() {
             let head = item.get(index).is_none_or(|one| matches!(one, Item::Head(_) | Item::Top(..)));
@@ -92,10 +129,17 @@ impl<A: Clone> Lister<A> {
         let (ink, dim) = (paint.color(INK), paint.color(DIM));
         let (start, wide) = desk.column(frame.size.width);
         let left = origin.x + start;
-        let begin = origin.y + paint.size(TOP) - self.scroll.get().at();
+        let stage = self.stage(origin, frame, item);
+        let whole = PRect { origin, size: frame.size };
+        let (begin, room) = match &stage {
+            Some(stage) => (stage.rise + gap - stage.inner, PRect::new(origin.x, stage.rise, frame.size.width, (origin.y + frame.size.height - stage.rise).max(0.0))),
+            None => (origin.y + paint.size(TOP) - self.scroll.get().at(), whole),
+        };
         let (mut top, mut spot, mut stand) = (begin, Vec::new(), Vec::new());
-        paint.clip(PRect { origin, size: frame.size });
-        for one in item {
+        // What can be done on a page with its picture rides over the rest.
+        let mut ride: &[Deed<A>] = &[];
+        paint.clip(room);
+        for (index, one) in item.iter().enumerate() {
             stand.push(top);
             match one {
                 Item::Head(said) => {
@@ -105,7 +149,10 @@ impl<A: Clone> Lister<A> {
                 Item::Top(said, deed) => {
                     let high = paint.size("head.line");
                     paint.head(PPoint::new(left, top + gap / 2.0), said, ink);
-                    self.deeds(paint, PPoint::new(left + wide, top + gap / 2.0 + high / 2.0), deed, &mut spot);
+                    match (stage.is_some() && ride.is_empty(), deed.is_empty()) {
+                        (true, false) => ride = deed,
+                        _ => _ = self.deeds(paint, PPoint::new(left + wide, top + gap / 2.0 + high / 2.0), deed, &mut spot),
+                    }
                     top += high + gap;
                 }
                 Item::Note(said) => {
@@ -115,14 +162,16 @@ impl<A: Clone> Lister<A> {
                     }
                     top += gap / 2.0;
                 }
-                Item::Sum(name, sum) => {
-                    // What it is a sum of at the left; the sum at the
-                    // right, on its ground.
-                    let size = figure::size(paint, sum);
-                    let middle = top + size.height / 2.0;
-                    paint.text(PPoint::new(left, middle - line / 2.0), &fit(name, wide - size.width - gap, paint), dim);
-                    figure::end(paint, PPoint::new(left + wide, middle), sum, false);
-                    top += size.height + gap / 4.0;
+                // Sums one after another are one table of the kit's: what
+                // each is a sum of in the left half, the sum in the right
+                // half on its ground. The first of them draws them all.
+                Item::Sum(..) if index > 0 && matches!(item[index - 1], Item::Sum(..)) => {}
+                Item::Sum(..) => {
+                    let run: Vec<(String, String)> = item[index..].iter().map_while(|one| match one {
+                        Item::Sum(name, sum) => Some((name.clone(), sum.clone())),
+                        _ => None,
+                    }).collect();
+                    top = run.table(paint, PPoint::new(left, top), wide) + gap / 2.0;
                 }
                 Item::Field(index, hint, act) => {
                     let rect = PRect::new(left, top, wide, row);
@@ -143,10 +192,12 @@ impl<A: Clone> Lister<A> {
                     spot.extend(rect.into_iter().zip(tab.iter().map(|one| one.act.clone())));
                     top += high + gap / 2.0;
                 }
+                // The first, the page's own picture, fills the page (`draw`).
+                Item::Hero(_) if index == 0 => {}
                 Item::Hero(key) => {
-                    // As wide as the page, sixteen to nine, filled.
+                    // Further down: as wide as the page, sixteen to nine, filled.
                     let rect = PRect::new(left, top, wide, wide * 9.0 / 16.0);
-                    paint.picture(key, rect, paint.size(super::RADIUS), appkit::pui::core::PFit::Cover);
+                    paint.picture(key, rect, paint.size(super::RADIUS), PFit::Cover);
                     top += rect.size.height + gap;
                 }
                 Item::Grid(card) => {
@@ -173,12 +224,24 @@ impl<A: Clone> Lister<A> {
             }
         }
         paint.unclip();
+        // What is out of sight is no place to press.
+        spot.retain(|(rect, _)| room.contains(rect.center()));
         let mut scroll = self.scroll.get();
-        scroll.fit(top - begin + paint.size(TOP) + gap, frame.size.height);
+        match &stage {
+            // The rest rises to the middle, then scrolls on inside the lower half.
+            Some(stage) => {
+                let half = frame.size.height / 2.0;
+                let long = top - (stage.rise + gap - stage.inner) + gap;
+                scroll.fit(half + (long - half).max(0.0) + frame.size.height, frame.size.height);
+                if !ride.is_empty() {
+                    let high = ride.iter().map(Deed::pill).collect::<Vec<_>>().high(paint);
+                    self.deeds(paint, PPoint::new(left + wide, stage.rise - gap / 2.0 - high / 2.0), ride, &mut spot);
+                }
+            }
+            None => scroll.fit(top - begin + paint.size(TOP) + gap, frame.size.height),
+        }
         self.scroll.set(scroll);
         self.origin.set(origin);
-        // What is out of sight is no place to press.
-        spot.retain(|(rect, _)| PRect { origin, size: frame.size }.contains(rect.center()));
         *self.spot.borrow_mut() = spot;
         stand.push(top);
         stand

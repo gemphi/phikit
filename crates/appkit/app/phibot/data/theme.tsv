@@ -111,7 +111,9 @@ size	screen.memo	4096
 size	guide.recent	72
 size	profile.avatar	72
 size	profile.radius	14
-size	profile.split	0.34
+# A fact's name and its value take half the width each (the user,
+# 25 November 2026), as every table of the kit.
+size	profile.split	0.5
 size	head.size	26
 size	head.line	34
 # What appkit's field and button ask for, in a part that has one.
