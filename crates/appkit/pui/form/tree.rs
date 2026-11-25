@@ -117,7 +117,7 @@ pub fn picture(choice: &[PChoice], paint: &mut dyn PPaint, at: PPoint, wide: f32
 }
 
 /// Words cut to a width, the cut shown by an ellipsis.
-fn fitted(said: &str, room: f32, paint: &dyn PPaint) -> String {
+pub(super) fn fitted(said: &str, room: f32, paint: &dyn PPaint) -> String {
     match paint.measure(said) <= room {
         true => said.to_string(),
         false => {

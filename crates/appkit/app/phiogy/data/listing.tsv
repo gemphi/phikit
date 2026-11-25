@@ -98,7 +98,8 @@ thing.more	thing.more	0	1	2	-	-	-	-	3	4	5	-	6
 # its rules.
 aside.head	aside.head	0	1	-	-	-	-	-	-	2
 aside.do	aside.do	0	text:1	2
-aside.picture	aside.picture	0	1	-	-	-	-	-	2	-	-	-	3
+aside.face	aside.face	0	1	-	-	-	-	-	-	-	-	-	2
+aside.picture	aside.picture	0	1	-	-	-	-	-	2
 aside.line	aside.line	0	1
 aside.call	aside.call	0	1	2	-	-	-	-	-	3	4	-	-	-	5
 aside.watch	aside.watch	0	1	2	-	-	-	-	-	3	4	-	-	-	5

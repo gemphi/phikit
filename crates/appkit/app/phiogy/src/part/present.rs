@@ -1,11 +1,12 @@
 //! The column beside a room, the kit's form `aside` (data/form.tsv,
 //! data/aside.tsv): the host the room is of, as Phiegg's host page has
 //! it, and who is present. At its head the host's name, and under it
-//! what it is (its genre, how many members, how many here now); Join or
-//! Leave at its bar's end for a host of the catalogue; then its picture
-//! (its world's), and who is on the room's line: in its call, with the
+//! what it is (its role, genre, how many members, how many here now);
+//! Join or Leave at its bar's end for a host of the catalogue; then its
+//! face (its mark), and who is on the room's line: in its call, with the
 //! room open, or nobody and where a page reaches it. Then its tabs:
-//! Info (what its club says of it, its facts from Phiegg's records),
+//! Info (its world's picture, what its club says of it, its facts from
+//! Phiegg's records),
 //! Rooms, Members (a press puts a person beside the room), Rules.
 //!
 //! The line runs on other threads, so the board is read each time this
@@ -163,17 +164,15 @@ impl Aside {
                     false => vec![deed.iter().map(|cell| cell.to_string()).collect()],
                 }
             }
-            // Its picture: its world's, its club's, or its mark.
+            // Its face, its mark, as Phiegg's host page puts it by its name.
+            "aside.face" => {
+                let mark = face(venue.as_ref().and_then(|venue| venue.mark.as_ref()));
+                Some(vec![plate.id.clone(), String::new(), mark]).filter(|row| !row[2].is_empty()).into_iter().collect()
+            }
+            // Its world's picture, or its club's.
             "aside.picture" => {
                 let picture = [&host, &club].into_iter().flatten().map(|found| found.picture.clone()).find(|picture| !picture.is_empty()).unwrap_or_default();
-                let mark = match picture.is_empty() {
-                    true => face(venue.as_ref().and_then(|venue| venue.mark.as_ref())),
-                    false => String::new(),
-                };
-                match picture.is_empty() && mark.is_empty() {
-                    true => Vec::new(),
-                    false => vec![vec![plate.id.clone(), String::new(), picture, mark]],
-                }
+                Some(vec![plate.id.clone(), String::new(), picture]).filter(|row| !row[2].is_empty()).into_iter().collect()
             }
             // Nobody on the line: say so, and where a page reaches it; and
             // why this window is not in the call, and what carries it.

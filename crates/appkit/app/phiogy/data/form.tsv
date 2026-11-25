@@ -103,16 +103,17 @@ thing	grid	more	shop.more	thing.more	thing/go	tab	fold layout
 
 # The column beside a room (part/present.rs, data/aside.tsv), as
 # Phiegg's host page: the host's name and what it is at the head, Join
-# or Leave at its bar's end; at its top its picture and who is on the
-# room's line; then its tabs (Info, Rooms, Members, Rules), each of
-# folding sections.
+# or Leave at its bar's end; at its top its face and who is on the
+# room's line; then its tabs (Info: its world's picture, what is said of
+# it, its facts; Rooms, Members, Rules), each of folding sections.
 aside	head	-	-	aside.head	-	-	-
 aside	band	do	-	aside.do	aside/do	-	bar end
-aside	picture	picture	-	aside.picture	-	-	side banner
+aside	picture	face	-	aside.face	-	-	side banner
 aside	text	line	present.head	aside.line	-	-	side fold
 aside	rows	call	present.call	aside.call	-	-	side fold strong
 aside	rows	watch	present.watch	aside.watch	-	-	side fold soft
 aside	tabs	tab	-	aside.tab	aside/tab	-	-
+aside	picture	world	aside.world	aside.picture	-	tab	banner fold
 aside	text	about	aside.about	aside.about	-	tab	fold
 aside	facts	fact	aside.details	aside.fact	-	tab	fold
 aside	grid	room	aside.rooms	aside.room	aside/room	tab	fold layout list

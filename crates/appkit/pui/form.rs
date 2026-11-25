@@ -164,7 +164,8 @@ impl PForm {
             paint.head(PPoint::new(left, top), said, paint.color(kind::INK));
             top += paint.size(HEAD) + gap / 2.0;
             if !line.is_empty() {
-                paint.text(PPoint::new(left, top - gap / 4.0), line, paint.color(kind::DIM));
+                let line = tree::fitted(line, wide, paint);
+                paint.text(PPoint::new(left, top - gap / 4.0), &line, paint.color(kind::DIM));
                 top += paint.size(kind::LINE) + gap / 4.0;
             }
         }

@@ -37,7 +37,7 @@ tab	linked	linked	users
 # about (a sale of a club's piece), and the hosts and their clubs a
 # room's column shows (data/place.tsv).
 own	person
-name	piece sum look host club
+name	piece sum look host club role
 # The facts of the info tab: a field of their Phiegg record, else of
 # their Phiogy membership (handle, role, state, since), and its word. A
 # field that holds ids shows the names of what they name.

@@ -1,7 +1,8 @@
 # The column beside a room (part/present.rs, the kit's form `aside`):
 # the host the room is of, as Phiegg's host page has it, and who is on
 # the room's line. At its head the host's name and what it is (its
-# genre, its members); Follow at its bar's end; then its picture, who
+# role, genre, members); Join or Leave at its bar's end; then its face
+# (its mark), as Phiegg's host page puts it by its name, who
 # is on the line (in the call, with the room open, or nobody and where a
 # page reaches it); then its tabs, each of folding sections.
 #
@@ -10,13 +11,14 @@
 # in it is not shown.
 #
 # tab	key	icon	lists
-tab	info	file	aside.about aside.fact
+tab	info	file	aside.world aside.about aside.fact
 tab	rooms	hash	aside.room
 tab	members	users	aside.member
 tab	rules	book	aside.rule
 # Under its name, in order: the field of the host, and the words it
 # stands in ({n} its value), `-` for the value alone. Where Phiegg does
 # not keep the host, its members and who is here are this app's.
+line	host	roleTypeId	-
 line	host	genre	-
 line	host	members	aside.line.members
 line	host	online	aside.line.online
