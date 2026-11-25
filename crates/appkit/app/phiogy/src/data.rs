@@ -47,6 +47,8 @@ pub const SEARCH: &str = include_str!("../data/search.tsv");
 pub const PROFILE: &str = include_str!("../data/profile.tsv");
 /// One thing of a shop: its tabs and figures.
 pub const THING: &str = include_str!("../data/thing.tsv");
+/// The column beside a room: the host's tabs, facts and rules.
+pub const ASIDE: &str = include_str!("../data/aside.tsv");
 /// A record's page: the facts of each kind.
 pub const RECORD: &str = include_str!("../data/record.tsv");
 /// Where the pictures the site names are on disk.

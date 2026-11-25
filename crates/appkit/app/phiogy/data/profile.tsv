@@ -33,10 +33,11 @@ tab	club	club	star
 tab	space	space	hash
 tab	linked	linked	users
 # The kind of their own record in Phiegg, whose fields `where` and the
-# facts read; and the kinds read only to name what a record is about (a
-# sale of a club's piece).
+# facts read; and the kinds read beside them: to name what a record is
+# about (a sale of a club's piece), and the hosts and their clubs a
+# room's column shows (data/place.tsv).
 own	person
-name	piece sum look
+name	piece sum look host club
 # The facts of the info tab: a field of their Phiegg record, else of
 # their Phiogy membership (handle, role, state, since), and its word. A
 # field that holds ids shows the names of what they name.

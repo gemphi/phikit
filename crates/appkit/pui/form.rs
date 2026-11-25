@@ -43,7 +43,7 @@ use std::rc::Rc;
 
 pub use field::PTyped;
 pub use head::{DROP, FOLD, FOLDED, LARGE, LAYOUT, LAYOUTS, LIST, PDrop, PHead, PTool};
-pub use kind::{PChoice, drawn};
+pub use kind::{PChoice, PDo, drawn};
 pub use list::{PListed, PRows};
 
 use bar::side;

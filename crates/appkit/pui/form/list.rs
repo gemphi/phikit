@@ -13,14 +13,16 @@
 //! what the path keeps), whether it keeps each value once (`once`), when
 //! it is shown (`path=value`), and, where a list has them, the columns
 //! of its picture (a grid's tile), its line, the note at its end, its
-//! depth in a tree, its face (`sheet columns cell`), and whether a
-//! tree's line is open (`1`) or can open (`0`).
+//! depth in a tree, its face (`sheet columns cell`), whether a tree's
+//! line is open (`1`) or can open (`0`), its level (0 to 1, a bar at a
+//! row's end: how loud a caller is), and what can be done with it where
+//! it stands (`word:icon`, `:1` after one that is on, between spaces).
 //! `-` for none, and a row may stop before the last three. A path may
 //! hold `{path}`: what that path keeps, put in its place.
 
 use std::rc::Rc;
 
-use super::{PChoice, PSource};
+use super::{PChoice, PDo, PSource};
 use crate::pui::core::PColor;
 use crate::pui::state::{PState, step};
 use crate::service::PTable;
@@ -104,7 +106,7 @@ impl PSource for PListed {
         };
         let mut out: Vec<PChoice> = Vec::new();
         for row in self.rows.rows(at(1)).iter().filter(|row| kept.as_ref().is_none_or(|(c, v)| row.get(*c) == Some(v))).filter(|_| shown) {
-            let choice = PChoice { value: column(row, at(2)), label: words(row), icon: column(row, at(4)), colour: paint(row), picture: column(row, at(9)), note: column(row, at(10)), end: column(row, at(11)), depth: column(row, at(12)).parse().unwrap_or_default(), face: face(&column(row, at(13))), fold: fold(&column(row, at(14))), ..PChoice::default() };
+            let choice = PChoice { value: column(row, at(2)), label: words(row), icon: column(row, at(4)), colour: paint(row), picture: column(row, at(9)), note: column(row, at(10)), end: column(row, at(11)), depth: column(row, at(12)).parse().unwrap_or_default(), face: face(&column(row, at(13))), fold: fold(&column(row, at(14))), level: column(row, at(15)).parse().ok(), deed: deed(&column(row, at(16))) };
             match at(7) == "once" && out.iter().any(|c| c.value == choice.value) {
                 true => {}
                 false => out.push(choice),
@@ -112,6 +114,16 @@ impl PSource for PListed {
         }
         out
     }
+}
+
+/// What can be done with a choice, as a column writes it: between
+/// spaces, each `word:icon`, `:1` after one that is on.
+fn deed(cell: &str) -> Vec<PDo> {
+    cell.split_whitespace().filter_map(|one| {
+        let mut part = one.split(':');
+        let (word, icon) = (part.next()?, part.next()?);
+        Some(PDo { word: word.to_string(), icon: icon.to_string(), on: part.next() == Some("1") })
+    }).collect()
 }
 
 /// Whether a tree's line is open (`1`), can open (`0`), or neither.

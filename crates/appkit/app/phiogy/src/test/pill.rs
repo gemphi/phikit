@@ -39,7 +39,9 @@ fn step_11_i_begin_a_call_from_a_room_s_title_mute_and_end_it() {
     // call, and the call's buttons, mute and end among them. The tools
     // that begin a call are gone from the title.
     let text = shown(&stage, &look);
-    assert!(["In the call", "this window", "Mute", "End the call", "Carried by stand-in."].iter().all(|line| text.contains(&line.to_string())) && text.contains(&me), "{text:?}");
+    // (Its name on the line is cut to the column's width.)
+    let named = text.iter().any(|line| line == &me || line.strip_suffix('…').or(line.strip_suffix("...")).is_some_and(|cut| !cut.is_empty() && me.starts_with(cut)));
+    assert!(["In the call", "this window", "Mute", "End the call", "Carried by stand-in."].iter().all(|line| text.contains(&line.to_string())) && named, "{text:?}");
     assert!(icon(&stage, &look, "phone").is_none() && !has(&stage, "Join"));
     // Mute, and the pill offers the way back.
     assert!(press(&mut stage, &look, "Mute"));

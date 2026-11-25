@@ -1,0 +1,48 @@
+# The column beside a room (part/present.rs, the kit's form `aside`):
+# the host the room is of, as Phiegg's host page has it, and who is on
+# the room's line. At its head the host's name and what it is (its
+# genre, its members); Follow at its bar's end; then its picture, who
+# is on the line (in the call, with the room open, or nobody and where a
+# page reaches it); then its tabs, each of folding sections.
+#
+# The tabs, in order: each its key, its icon, and the lists of the form
+# it holds; its word `aside.<key>` of data/text.tsv. A tab with nothing
+# in it is not shown.
+#
+# tab	key	icon	lists
+tab	info	file	aside.about aside.fact
+tab	rooms	hash	aside.room
+tab	members	users	aside.member
+tab	rules	book	aside.rule
+# Under its name, in order: the field of the host, and the words it
+# stands in ({n} its value), `-` for the value alone. Where Phiegg does
+# not keep the host, its members and who is here are this app's.
+line	host	genre	-
+line	host	members	aside.line.members
+line	host	online	aside.line.online
+# Phiegg's records of a host: the kind of the host, and the field that
+# names its club, of the kind after it.
+host	host	clubId	club
+# What is said of it, in order: the fields of the host or its club that
+# say it, the first of each that has something.
+about	club	tagline
+about	club	description
+about	host	welcome
+# Its facts, in order: of the host or its club, the field, and its word
+# `aside.fact.<field>`. An id is named by what it names; a list stands
+# as pills.
+fact	host	members
+fact	host	online
+fact	host	gated
+fact	host	genre
+fact	host	ownerId
+fact	host	worldId
+fact	host	roles
+fact	club	name
+fact	club	ticker
+fact	club	holders
+fact	club	floor
+fact	club	chain
+fact	club	tags
+# Its rules: the field of the host that lists them.
+rule	host	rules

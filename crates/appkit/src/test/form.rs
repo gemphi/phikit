@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::pui::core::*;
-use crate::pui::form::{PChoice, PForm, PSource};
+use crate::pui::form::{PChoice, PDo, PForm, PSource};
 use crate::pui::state::PState;
 use crate::service::PTable;
 use crate::theme::{PLook, PTheme};
@@ -36,6 +36,7 @@ impl PSource for Fixed {
             "kind" => vec![word("Cat"), word("Dog")],
             "size" => vec![word("Small"), word("Large")],
             "paint" => vec![PChoice { value: "red".to_string(), colour: Some(PColor::new(1.0, 0.0, 0.0, 1.0)), ..PChoice::default() }],
+            "look" => vec![PChoice { value: "coat".to_string(), picture: "coat.png".to_string(), deed: vec![PDo { word: "like".to_string(), icon: "heart".to_string(), on: true }, PDo { word: "full".to_string(), icon: "maximize".to_string(), on: false }], ..PChoice::default() }],
             _ => Vec::new(),
         }
     }
@@ -135,4 +136,32 @@ fn a_side_stands_at_the_left_held_in_view_or_at_the_top_when_narrow() {
     // Narrow: the side at the top, under the heading, over the rest.
     let (head, side, rest) = at(400.0);
     assert!(head.y < side.y && side.y < rest.y && side.x < 100.0, "{head:?} {side:?} {rest:?}");
+}
+
+#[test]
+fn a_picture_has_what_can_be_done_with_it_floating_down_its_corner() {
+    let look: Rc<dyn PTheme> = Rc::new(PLook::read(LOOK));
+    let source = Rc::new(Fixed::default());
+    let mut form = PForm::new("mine", "mine	picture	look	-	look	look/open	-	-
+", source.clone(), Rc::new(PTable::read("")), look.clone());
+    form.set_frame(PRect::new(0.0, 0.0, 300.0, 600.0));
+    let mut sheet = PSheet::new(look.as_ref());
+    form.draw(&mut sheet, PPoint::new(0.0, 0.0));
+    let picture = sheet.mark.iter().find_map(|mark| match mark {
+        PMark::Picture { name, rect, .. } if name == "coat.png" => Some(*rect),
+        _ => None,
+    }).expect("the picture");
+    let icon = |wanted: &str| sheet.mark.iter().find_map(|mark| match mark {
+        PMark::Icon { name, rect, .. } if name == wanted => Some(*rect),
+        _ => None,
+    }).unwrap_or_else(|| panic!("{wanted}"));
+    // Round icons down its top left corner, in their order.
+    let (like, full) = (icon("heart"), icon("maximize"));
+    assert!(picture.contains(like.center()) && like.center().x < picture.center().x && like.center().y < full.center().y, "{like:?} {full:?} {picture:?}");
+    // A press on one keeps the choice's value at its word, under the
+    // block's state; on the picture, at the block's path.
+    assert!(form.respond(&PEvent::PointerDown(full.center())));
+    assert_eq!(source.get("look/full"), "coat");
+    assert!(form.respond(&PEvent::PointerDown(picture.center())));
+    assert_eq!(source.get("look/open"), "coat");
 }

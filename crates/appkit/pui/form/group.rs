@@ -70,12 +70,19 @@ impl PForm {
     pub(super) fn spots(block: &Block, head: &PHead, choice: &[PChoice], rect: Vec<PRect>) -> Vec<Spot> {
         let count = head.all().count();
         let tool = rect.iter().take(count).zip(head.all()).map(|(r, tool)| (*r, tool.path.clone(), tool.value.clone()));
-        let rest = rect.iter().skip(count);
+        let rest: Vec<&PRect> = rect.iter().skip(count).collect();
+        // A choice's deeds are drawn last: each keeps the choice's value
+        // at its word, under the block's state, and is pressed before
+        // the choice it stands on.
+        let deed = super::kind::deeds(&block.kind, choice);
+        let split = rest.len().saturating_sub(deed.len());
+        let state = block.path.split('/').next().unwrap_or_default();
+        let did = rest[split..].iter().zip(&deed).filter(|_| !state.is_empty()).map(|(r, (c, d))| (**r, format!("{state}/{}", d.word), c.value.clone()));
         let content: Vec<Spot> = match block.kind.as_str() {
-            "field" => rest.take(1).map(|r| (*r, FOCUS.to_string(), block.key.clone())).collect(),
-            _ => rest.zip(choice).map(|(r, c)| (*r, block.path.clone(), c.value.clone())).collect(),
+            "field" => rest[..split].iter().take(1).map(|r| (**r, FOCUS.to_string(), block.key.clone())).collect(),
+            _ => rest[..split].iter().zip(choice).map(|(r, c)| (**r, block.path.clone(), c.value.clone())).collect(),
         };
-        tool.chain(content).collect()
+        tool.chain(did).chain(content).collect()
     }
 
     /// A key, given to the line that has the keys: what Enter keeps is

@@ -11,6 +11,29 @@ present.shut	The line is not open, so nobody can be here.
 present.member	Members
 present.voice	Voice room
 present.nowhere	No room is open. Choose one in the bar.
+aside.info	Info
+aside.rooms	Rooms
+aside.members	Members
+aside.rules	Rules
+aside.about	About
+aside.details	Details
+aside.unread	{n} new
+aside.line.members	{n} members
+aside.line.online	{n} here now
+aside.fact.members	Members
+aside.fact.online	Here now
+aside.fact.rooms	Rooms
+aside.fact.gated	Who may enter
+aside.fact.genre	Genre
+aside.fact.ownerId	Owner
+aside.fact.worldId	World
+aside.fact.roles	Roles
+aside.fact.name	Club
+aside.fact.ticker	Ticker
+aside.fact.holders	Holders
+aside.fact.floor	Floor
+aside.fact.chain	Chain
+aside.fact.tags	Tags
 # The line, at the foot of a room.
 status.open	The line is open at {at}
 status.shut	The line is not open: {why}
@@ -312,7 +335,6 @@ room.undrawn	This page has a block this window does not draw yet: {kind}
 shop.colours	In other colours
 shop.like	Like
 shop.liked	Liked
-shop.full	View large
 thing.info	Info
 thing.stats	Stats
 thing.trail	Trail

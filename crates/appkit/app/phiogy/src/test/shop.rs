@@ -102,11 +102,20 @@ fn step_30_a_page_of_a_shop_is_its_things_and_a_thing_has_a_page_of_its_own() {
     // Its views are a band under it: a press on one shows it.
     assert!(press(&mut stage, &look, "Back"));
     assert_eq!(whole(&stage).map(|(name, _)| name).as_deref(), Some("phiegg:worlds/w_carousel.png"));
-    // I like it, and that is kept; and no more.
-    assert!(press(&mut stage, &look, &word("shop.like")) && desk.liked("s_one/lk1"));
-    assert!(press(&mut stage, &look, &word("shop.liked")) && !desk.liked("s_one/lk1"));
-    // Seen large, its views are the viewer's album, the one shown first.
-    assert!(press(&mut stage, &look, &word("shop.full")));
+    // What can be done with it floats down its picture's corner, as on
+    // Phiegg's item page, round icons over it: I like it, and that is
+    // kept, and no more.
+    let tap = |stage: &mut PStage, name: &str| {
+        let pressed = super::tools::tool(stage, &look, name);
+        stage.lay(DESK, PMode::of_width(DESK.width));
+        pressed
+    };
+    let corner = super::tools::icon(&stage, &look, "heart").expect("its like");
+    assert!(frame.contains(corner.center()) && corner.center().x < frame.center().x && corner.center().y < frame.center().y, "{corner:?} {frame:?}");
+    assert!(tap(&mut stage, "heart") && desk.liked("s_one/lk1"));
+    assert!(tap(&mut stage, "heart") && !desk.liked("s_one/lk1"));
+    // Full screen: its views are the viewer's album, the one shown first.
+    assert!(tap(&mut stage, "maximize"));
     assert_eq!((stage.window.modal(), desk.view.get(), desk.now.album.borrow().len()), (Some("view"), Some(1), 2));
     assert!(stage.send(&PEvent::KeyDown(PEvent::ESCAPE)));
     stage.lay(DESK, PMode::of_width(DESK.width));

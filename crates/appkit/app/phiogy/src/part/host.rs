@@ -81,6 +81,12 @@ impl Desk {
     pub fn visit(&self, id: &str) -> bool {
         let made = self.made();
         let venue = self.site.venue.iter().chain(&made).find(|venue| venue.id == id);
+        // A host opened shows every one of its channels: a tab chosen
+        // before (Favorites) would leave it empty.
+        let tab = self.tabs().1;
+        (!tab.is_empty()).then(|| self.sift(&tab));
+        // Who was pressed in another host is not this one's.
+        *self.now.who.borrow_mut() = None;
         venue.and_then(|venue| venue.plate.first()).is_some_and(|plate| self.show(&plate.id))
     }
 

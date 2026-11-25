@@ -16,6 +16,7 @@ use serde_json::Value;
 
 use crate::data;
 use crate::part::Desk;
+use crate::part::search::{said, values};
 use crate::part::tool::grouped;
 
 /// A row of words, as data/listing.tsv reads it.
@@ -54,25 +55,6 @@ fn tabs() -> Vec<Tab> {
         let at = |i: usize| row.get(i).map(|cell| cell.to_string()).unwrap_or_default();
         Tab { key: at(0), show: at(1), icon: at(2), kind: at(3), place: at(4).split_whitespace().map(str::to_string).collect(), sort: at(5), facet: at(6), name: at(7) }
     }).collect()
-}
-
-/// A field as words: text, a number, a list joined.
-fn said(value: Option<&Value>) -> String {
-    match value {
-        Some(Value::String(text)) => text.clone(),
-        Some(Value::Number(n)) => n.as_u64().map_or_else(|| n.to_string(), grouped),
-        Some(Value::Array(list)) => list.iter().map(|one| said(Some(one))).filter(|one| !one.is_empty()).collect::<Vec<_>>().join(", "),
-        _ => String::new(),
-    }
-}
-
-/// The values a field holds: one, or each of a list.
-fn values(value: Option<&Value>) -> Vec<String> {
-    match value {
-        Some(Value::Array(list)) => list.iter().filter_map(|one| one.as_str().map(str::to_string)).collect(),
-        Some(Value::String(text)) => vec![text.clone()],
-        _ => Vec::new(),
-    }
 }
 
 /// Whether a record is somebody's by a tab's `where`: every `field=value`

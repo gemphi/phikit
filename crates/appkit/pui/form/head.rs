@@ -1,7 +1,8 @@
 //! What a block's heading holds, as the web kit's sections have it
 //! (`puikit/src/components/layout/Sections`) and Finder's and Reality
 //! Composer Pro's browsers do: beside its words, how its content lies
-//! (`layout`: a drop of three, a grid, large tiles, a list); at its
+//! (`layout`: a drop of three, a grid, large tiles, a list, `list` too
+//! where it begins as one); at its
 //! right, drops that choose from a list (`drop=icon:list:path`, a filter,
 //! an order), and a fold (`fold`: open, or only its heading). A block
 //! asks for them by words of its variation; what a layout and a fold
@@ -23,7 +24,7 @@ pub const LIST: &str = "list";
 pub const LARGE: &str = "large";
 /// The three ways a block can lie: what each keeps, its icon, and the
 /// word of the app's text that names it.
-pub const LAYOUTS: [(&str, &str, &str); 3] = [("", "grid", "layout.grid"), (LARGE, "square", "layout.large"), (LIST, "list", "layout.list")];
+pub const LAYOUTS: [(&str, &str, &str); 3] = [("grid", "grid", "layout.grid"), (LARGE, "square", "layout.large"), (LIST, "list", "layout.list")];
 
 /// The theme's tokens: an icon's size, a line, a gap, the ink.
 const ICON: &str = "icon.size";
@@ -75,9 +76,15 @@ impl PHead {
         let word: Vec<&str> = variant.split_whitespace().collect();
         let (fold, layout, open) = (format!("{FOLD}{key}"), format!("{LAYOUT}{key}"), source.get(DROP));
         let folded = word.contains(&"fold") && source.get(&fold) == FOLDED;
-        let now = match word.contains(&"layout") {
-            true => source.get(&layout),
-            false => String::new(),
+        // How it lies: as the person chose; until they do, a list where
+        // the variation says `list` (rooms in a narrow column), else a grid.
+        let now = match (word.contains(&"layout"), word.contains(&LIST)) {
+            (true, said) => match (source.get(&layout), said) {
+                (kept, _) if !kept.is_empty() => kept,
+                (_, true) => LIST.to_string(),
+                (_, false) => String::new(),
+            },
+            (false, _) => String::new(),
         };
         let mut head = PHead { folded, layout: now.clone(), ..PHead::default() };
         if word.contains(&"layout") {
@@ -151,5 +158,5 @@ impl PHead {
 /// A variation without the words of the heading's switches: the light a
 /// block's rows take (`soft`, `strong`).
 pub fn light(variant: &str) -> String {
-    variant.split_whitespace().filter(|word| !matches!(*word, "fold" | "layout") && !word.starts_with("drop=")).collect::<Vec<_>>().join(" ")
+    variant.split_whitespace().filter(|word| !matches!(*word, "fold" | "layout" | LIST) && !word.starts_with("drop=")).collect::<Vec<_>>().join(" ")
 }

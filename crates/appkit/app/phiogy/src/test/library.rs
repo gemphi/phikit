@@ -291,10 +291,13 @@ fn eight_looks_and_the_plain_ones_draw_a_faint_line_down_the_sidebar() {
     assert_eq!(list.len(), 8, "{list:?}");
     assert!(list.contains(&"plain") && list.contains(&"plain-dark"));
     let shade = app.desk().shade.clone();
+    // The sidebar's line: down its edge, where the page begins (a
+    // section's own thin level line stands inside the page).
     let line = |stage: &appkit::pui::window::PStage| {
         let mut sheet = PSheet::new(shade.as_ref());
         stage.draw(&mut sheet);
-        sheet.mark.iter().any(|mark| matches!(mark, PMark::Fill { rect, .. } if rect.size.width <= 1.0 && rect.size.height > 100.0))
+        let edge = stage.frame().body.origin.x + 2.0;
+        sheet.mark.iter().any(|mark| matches!(mark, PMark::Fill { rect, .. } if rect.size.width <= 1.0 && rect.size.height > 100.0 && rect.center().x <= edge))
     };
     assert!(!line(&stage));
     app.desk().shade.turn("plain");

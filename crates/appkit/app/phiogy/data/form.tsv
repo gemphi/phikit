@@ -83,15 +83,15 @@ host	grid	room	host.rooms	host.room	host/room	-	fold layout
 # name and what it is at the head; in the bar the way back to its shop
 # and its page, and the bag at the end; at the left, held in view, its
 # picture (a press shows it large), its views, its colours where it is
-# a theme, and what can be done with it; at the right its tabs, each of
-# folding sections (data/thing.tsv).
+# a theme, and what can be done with it floating down its corner (like,
+# the bag, full screen); at the right its tabs, each of folding sections
+# (data/thing.tsv).
 thing	head	-	-	thing.head	-	-	-
 thing	crumb	path	-	thing.path	thing/go	-	bar
 thing	band	buy	-	thing.buy	thing/bag	-	bar end
 thing	picture	picture	-	thing.picture	thing/full	-	side
 thing	band	view	-	thing.view	thing/view	-	side
 thing	swatch	swatch	-	thing.swatch	-	-	side
-thing	band	deed	-	thing.deed	thing/do	-	side
 thing	tabs	tab	-	thing.tab	thing/tab	-	-
 thing	text	about	thing.about	thing.about	-	tab	fold
 thing	facts	field	thing.details	thing.field	-	tab	fold
@@ -100,3 +100,21 @@ thing	rows	trail	thing.trail	thing.trail	thing/open	tab	fold
 thing	grid	owner	thing.owner	thing.owner	thing/open	tab	fold layout
 thing	grid	kin	shop.colours	thing.kin	thing/go	tab	fold layout
 thing	grid	more	shop.more	thing.more	thing/go	tab	fold layout
+
+# The column beside a room (part/present.rs, data/aside.tsv), as
+# Phiegg's host page: the host's name and what it is at the head, Join
+# or Leave at its bar's end; at its top its picture and who is on the
+# room's line; then its tabs (Info, Rooms, Members, Rules), each of
+# folding sections.
+aside	head	-	-	aside.head	-	-	-
+aside	band	do	-	aside.do	aside/do	-	bar end
+aside	picture	picture	-	aside.picture	-	-	side banner
+aside	text	line	present.head	aside.line	-	-	side fold
+aside	rows	call	present.call	aside.call	-	-	side fold strong
+aside	rows	watch	present.watch	aside.watch	-	-	side fold soft
+aside	tabs	tab	-	aside.tab	aside/tab	-	-
+aside	text	about	aside.about	aside.about	-	tab	fold
+aside	facts	fact	aside.details	aside.fact	-	tab	fold
+aside	grid	room	aside.rooms	aside.room	aside/room	tab	fold layout list
+aside	grid	member	present.member	aside.member	aside/who	tab	fold layout
+aside	text	rule	aside.rules	aside.rule	-	tab	fold

@@ -16,7 +16,9 @@
 //! * `wheel`: any colour, on the kit's colour wheel; its choices are the
 //!   wheel's own (`block::wheel`), and a press keeps one as `#rrggbb`.
 //! * `tree`, `facts`, `picture`: a navigator, an item's attributes, and an
-//!   item seen large (`tree.rs`); `field`, a line to type (`field.rs`).
+//!   item seen large (`tree.rs`), `banner` a picture as wide as the
+//!   theme's `form.banner` times its height; `field`, a line to type
+//!   (`field.rs`).
 
 use crate::pui::block::{CARD, PBand, PCard, PDeck, PFace, PLead, PRow, PSwatch};
 use crate::pui::core::light::label;
@@ -53,6 +55,28 @@ pub struct PChoice {
     /// is open, its own under it, or can be opened.
     pub depth: u32,
     pub fold: Option<bool>,
+    /// What can be done with it where it stands (`PDo`).
+    pub deed: Vec<PDo>,
+}
+
+/// What can be done with a choice where it stands, as Phiegg's pages
+/// float round icons over a picture (like, the bag, full screen): what a
+/// press keeps it at (the last word of its path, the block's state's
+/// first), its icon, and whether it is on, which lights it.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct PDo {
+    pub word: String,
+    pub icon: String,
+    pub on: bool,
+}
+
+/// The deeds a kind draws, in the order it draws them, each with its
+/// choice: a picture's are its first choice's, floating over it.
+pub fn deeds<'a>(kind: &str, choice: &'a [PChoice]) -> Vec<(&'a PChoice, &'a PDo)> {
+    match kind {
+        "picture" => choice.iter().take(1).flat_map(|c| c.deed.iter().map(move |d| (c, d))).collect(),
+        _ => Vec::new(),
+    }
 }
 
 impl PChoice {
@@ -85,10 +109,11 @@ impl PCard for PChoice {
 
 /// How strong a variation's light is.
 fn strength(variant: &str) -> PLight {
-    match variant {
-        "strong" => PLight::Strong,
-        "soft" => PLight::Soft,
-        _ => PLight::Rest,
+    let says = |word: &str| variant.split_whitespace().any(|one| one == word);
+    match (says("strong"), says("soft")) {
+        (true, _) => PLight::Strong,
+        (false, true) => PLight::Soft,
+        (false, false) => PLight::Rest,
     }
 }
 
@@ -113,7 +138,7 @@ pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &m
         "large" => grid(choice, paint, at, wide, LARGE, over),
         "tree" => super::tree::tree(choice, now, paint, at, wide, over),
         "facts" => super::tree::facts(choice, paint, at, wide),
-        "picture" => super::tree::picture(choice, paint, at, wide),
+        "picture" => super::tree::picture(choice, paint, at, wide, variant.split_whitespace().any(|word| word == "banner")),
         // Any colour: the wheel, as wide as the block or a card, whichever
         // is less.
         "wheel" => {

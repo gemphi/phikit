@@ -138,6 +138,9 @@ size	profile.split	0.5
 # width it takes, and the width under which it stands at the top.
 size	form.side	0.42
 size	form.split	640
+# How many times as wide as high a form's banner picture is (a host's
+# beside its room).
+size	form.banner	2
 size	head.size	26
 size	head.line	34
 # What appkit's field and button ask for, in a part that has one.
@@ -152,17 +155,16 @@ size	control.radius	14
 size	button.width	84
 # The foot of a room, where the line says where it is.
 size	region.footer	56
-# A room: how high a row of who is on its line is, how round its
-# light, and how wide the mark before a name.
-size	present.row	56
-size	present.radius	14
-size	present.mark	36
 # The hosts: how far down their heading is, and how high a host's row.
 size	venue.top	72
 size	venue.row	72
 # A caller this window is connected to: how wide the bar that shows
-# how loud they are is at its loudest, and how high.
-size	present.meter	96
+# how loud they are is at its loudest (a form's row's level), and how
+# high, in a row and on a call's tiles.
+size	form.meter	96
+# How high a row of a form's list is (who is on a room's line).
+size	form.row	56
+size	form.bar	6
 size	present.bar	6
 # A call over a room's stream, as the web's stands there: how wide a
 # camera's tile is at most (15rem) and a screen's (24rem), how high

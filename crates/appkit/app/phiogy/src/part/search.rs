@@ -13,7 +13,7 @@
 mod book;
 pub mod rank;
 
-pub use book::{Book, Found};
+pub use book::{Book, Found, said, values};
 
 use std::cell::Cell;
 

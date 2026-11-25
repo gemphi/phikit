@@ -69,8 +69,13 @@ impl Guide {
     /// channels and, a step in, the channels' sub-channels.
     fn row(&self) -> Vec<Row> {
         let mut list = Vec::new();
+        let (chosen, unsifted) = (self.desk.tabs().1, self.desk.unsifted());
         for (label, rung) in self.desk.sifted() {
             list.push(Row::Head(label));
+            // The tab keeps none of them: it says so over them all.
+            if unsifted {
+                list.push(Row::Under(self.desk.text.get(&format!("guide.none.{chosen}")).to_string()));
+            }
             let mut under = String::new();
             for rung in rung {
                 if rung.head != under {

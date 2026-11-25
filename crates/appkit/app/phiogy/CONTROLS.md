@@ -72,14 +72,14 @@ handlers named after each). The status words:
 ## Why pages are not laid out right
 
 The Library (tree, library, inspector), a person's tabs, the Hosts (and
-their drawers) and a shop's thing page are the kit's form, laid out from
+their drawers), a shop's thing page and the column beside a room (the
+host, its line and its tabs) are the kit's form, laid out from
 `data/form.tsv` with its grids, layouts, filters and folds. The rest:
 
 - **Phiogy's own list** (`src/part/list.rs`, items written in Rust):
   Account, Friends and People, Shops and the bag, Search, Record. These
   have no layout switch, no folds, no drawers.
-- **Drawn by hand**: the title, status, room, stream, people beside the
-  room, the person's card, calls, voice, the guide, the shop's shelf, the
+- **Drawn by hand**: the title, status, room, stream, the person's card, calls, voice, the guide, the shop's shelf, the
   viewer, the model space.
 
 So they cannot pick up what the kit gives every form, and each looks the

@@ -55,15 +55,62 @@ fn who_is_on_the_line_is_shown_as_the_board_has_them_now() {
 
 #[test]
 fn a_room_s_own_people_are_named_under_who_is_on_its_line() {
-    let (app, stage, look) = staged(DESK);
+    let (app, mut stage, look) = staged(DESK);
     assert!(app.desk().show("lobby"));
+    // Its people are a tab of the column beside it: each a tile with
+    // their face and their name, not a line of names.
+    assert!(press(&mut stage, &look, app.desk().text.get("aside.members")));
     let text = shown(&stage, &look);
     assert!(text.contains(&app.desk().text.get("present.member").to_string()));
-    // Each is a card with their face and their name, not a line of names.
     assert!(["You", "Lora Vale", "Tavi Reyes"].iter().all(|name| text.contains(&name.to_string())), "{text:?}");
     assert!(!text.iter().any(|line| line.contains("Lora Vale") && line.contains("Tavi Reyes")), "{text:?}");
-    let faces = super::drawn(&stage, &look).iter().filter(|mark| matches!(mark, appkit::pui::core::PMark::Picture { rect, .. } if rect.size.width == app.desk().size(appkit::pui::block::FACE))).count();
+    let faces = super::drawn(&stage, &look).iter().filter(|mark| matches!(mark, appkit::pui::core::PMark::Picture { fit: appkit::pui::core::PFit::Cell { .. }, rect, .. } if rect.size.width > 40.0)).count();
     assert!(faces >= 2, "{faces}");
+}
+
+#[test]
+fn a_host_opened_shows_every_channel_and_itself_beside_its_room_as_phiegg_keeps_it() {
+    let (app, mut stage, look) = staged(DESK);
+    let desk = app.desk();
+    let word = |name: &str| desk.text.get(name).to_string();
+    // Favorites chosen before leaves no host empty: a host opened from
+    // the bar shows every one of its channels.
+    desk.sift("favorite");
+    assert!(desk.visit("h_opal"));
+    assert_eq!(desk.tabs().1, "");
+    let text = shown(&stage, &look);
+    assert!(text.contains(&"front-row".to_string()), "{text:?}");
+    // Beside its room the host: its name, under it what it is; its
+    // picture, its world's; its tabs, Info first: what its club says of
+    // it and its facts, from Phiegg's records of it.
+    assert!(["Opal Atelier".to_string(), word("aside.info"), word("aside.rooms"), word("aside.members"), word("aside.rules"), word("aside.fact.gated"), "Hold 1 OPAL".to_string(), word("aside.fact.ownerId")].iter().all(|line| text.contains(line)), "{text:?}");
+    assert!(text.iter().any(|line| line.contains("4,102 members")) && text.iter().any(|line| line.starts_with("Iridescent couture")), "{text:?}");
+    let banner = super::drawn(&stage, &look).iter().any(|mark| matches!(mark, appkit::pui::core::PMark::Picture { fit: appkit::pui::core::PFit::Cover, name, .. } if name.contains("opalia")));
+    assert!(banner);
+    // Its rules, a tab of their own.
+    assert!(press(&mut stage, &look, &word("aside.rules")));
+    let text = shown(&stage, &look);
+    assert!(text.iter().any(|line| line.starts_with("Be kind")), "{text:?}");
+    // Its rooms: a press on one goes there. Phiace, which Phiegg does
+    // not keep, has what this app knows of it: its lobby and its Lounge.
+    assert!(desk.show("lobby"));
+    // (The tab: the first of its words drawn; its facts say Rooms too.)
+    let tab = super::drawn(&stage, &look).iter().find_map(|mark| match mark {
+        appkit::pui::core::PMark::Text { at, text, .. } if *text == word("aside.rooms") => Some(*at),
+        _ => None,
+    }).expect("the Rooms tab");
+    assert!(stage.send(&appkit::pui::core::PEvent::PointerDown(tab.plus(appkit::pui::core::PPoint::new(2.0, 2.0)))));
+    let text = shown(&stage, &look);
+    assert!(text.contains(&"Phiace".to_string()) && text.contains(&"Lounge".to_string()), "{text:?}");
+    // (Its card in the column, at the room's right; the guide names it too.)
+    let part = super::rect(&stage, "room");
+    let right = part.origin.x + part.size.width * 0.6;
+    let at = super::drawn(&stage, &look).iter().find_map(|mark| match mark {
+        appkit::pui::core::PMark::Text { at, text, .. } if text == "Lounge" && at.x > right => Some(*at),
+        _ => None,
+    }).expect("the room's card");
+    assert!(stage.send(&appkit::pui::core::PEvent::PointerDown(at.plus(appkit::pui::core::PPoint::new(2.0, 2.0)))));
+    assert_eq!(desk.room(), "lounge");
 }
 
 #[test]

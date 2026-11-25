@@ -81,17 +81,39 @@ pub fn facts(choice: &[PChoice], paint: &mut dyn PPaint, at: PPoint, wide: f32) 
     (row.table(paint, at, wide), Vec::new())
 }
 
+/// The theme's token for how many times as wide as high a banner is.
+pub const BANNER: &str = "form.banner";
+
 /// The first choice's picture, as wide as the block and as high, at the
-/// top of its frame, or its face, the cell of a sheet; a press on it
-/// keeps its value.
-pub fn picture(choice: &[PChoice], paint: &mut dyn PPaint, at: PPoint, wide: f32) -> (f32, Vec<PRect>) {
+/// top of its frame; as a banner, as wide as the theme says times its
+/// height, covering it. Or its face, the cell of a sheet, square in the
+/// middle. A press on it keeps its value.
+pub fn picture(choice: &[PChoice], paint: &mut dyn PPaint, at: PPoint, wide: f32, banner: bool) -> (f32, Vec<PRect>) {
     let Some(first) = choice.first() else { return (at.y, Vec::new()) };
-    let (r, radius) = (PRect::new(at.x, at.y, wide, wide), paint.size(RADIUS));
+    let (high, fit) = match banner {
+        true => (wide / paint.theme().size(BANNER).unwrap_or(2.0).max(1.0), PFit::Cover),
+        false => (wide, PFit::Top),
+    };
+    let (r, radius) = (PRect::new(at.x, at.y, wide, high), paint.size(RADIUS));
     match &first.face {
-        Some((sheet, column, index)) => paint.picture(sheet, r, radius, PFit::Cell { column: *column, index: *index }),
-        None => paint.picture(&first.picture, r, radius, PFit::Top),
+        Some((sheet, column, index)) => paint.picture(sheet, PRect::new(at.x + (wide - high) / 2.0, at.y, high, high), radius, PFit::Cell { column: *column, index: *index }),
+        None => paint.picture(&first.picture, r, radius, fit),
     }
-    (at.y + wide, vec![r])
+    // What can be done with it: round icons down its top left corner,
+    // those that are on lit.
+    let (gap, icon) = (paint.size(GAP), paint.size(ICON));
+    let side = icon + gap * 0.75;
+    let deed = first.deed.iter().enumerate().map(|(index, deed)| {
+        let place = PRect::new(at.x + gap / 2.0, at.y + gap / 2.0 + index as f32 * (side + gap / 4.0), side, side);
+        let light = match deed.on {
+            true => PLight::Strong,
+            false => PLight::Rest,
+        };
+        label(paint, place, side / 2.0, light, false, "");
+        paint.icon(&deed.icon, PRect::new(place.center().x - icon / 2.0, place.center().y - icon / 2.0, icon, icon), paint.color(INK));
+        place
+    });
+    (at.y + high, std::iter::once(r).chain(deed).collect())
 }
 
 /// Words cut to a width, the cut shown by an ellipsis.

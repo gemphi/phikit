@@ -231,7 +231,8 @@ fn put_away_and_opened_again_a_picture_is_whole_and_was_not_shared() {
 fn step_57_a_picture_is_marked_a_line_sketched_and_words_set_taken_back_put_back_and_kept() {
     let (app, mut stage, look) = opened(DESK, 1);
     let (room, _) = looked(&stage, &look);
-    let ink = |stage: &PStage| sized(stage, &look).iter().filter(|mark| matches!(mark, PMark::Fill { rect, .. } if room.contains(rect.center()) && rect.size.width <= 8.0)).count();
+    // The ink: small dots (a section's thin level line behind is long).
+    let ink = |stage: &PStage| sized(stage, &look).iter().filter(|mark| matches!(mark, PMark::Fill { rect, .. } if room.contains(rect.center()) && rect.size.width <= 8.0 && rect.size.height <= 8.0)).count();
     // The red ink, and Sketch: a press on the picture begins a line that
     // follows the pointer while it is held.
     let dot: Vec<PRect> = sized(&stage, &look).iter().filter_map(|mark| match mark {

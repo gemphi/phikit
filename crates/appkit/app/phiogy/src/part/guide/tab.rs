@@ -75,9 +75,25 @@ impl Desk {
         self.set(&format!("{STAR}/{}", self.key(room)), flag(on));
     }
 
-    /// The rail as the chosen tab keeps it: every place with the rooms
-    /// the tab is for, and no place it leaves nothing of.
+    /// The rail as the chosen tab keeps it: the place open with the
+    /// rooms the tab is for. A tab that keeps none of them leaves them
+    /// all: a host opened is never an empty list (`unsifted` says so).
     pub fn sifted(&self) -> Vec<(String, Vec<Rung>)> {
+        self.opened().into_iter().map(|(label, all, kept)| match kept.is_empty() {
+            true => (label, all),
+            false => (label, kept),
+        }).filter(|(_, rung)| !rung.is_empty()).collect()
+    }
+
+    /// Whether the chosen tab keeps none of the open place's rooms, which
+    /// stand all the same.
+    pub fn unsifted(&self) -> bool {
+        !self.tabs().1.is_empty() && self.opened().is_some_and(|(_, all, kept)| kept.is_empty() && !all.is_empty())
+    }
+
+    /// The place open: its name, every room of it, and those the chosen
+    /// tab keeps.
+    fn opened(&self) -> Option<(String, Vec<Rung>, Vec<Rung>)> {
         let chosen = self.tabs().1;
         let keeps = |rung: &Rung| match chosen.as_str() {
             "" => true,
@@ -102,13 +118,18 @@ impl Desk {
             out
         };
         // One place at a time: the place whose room is open, which the
-        // rail's row chose; where the open room is in no place, the first
-        // (the direct list). A tab sifts that place's rooms.
+        // rail's row chose; a host not in the rail (opened from the hosts
+        // or a search) is shown all the same; where the open room is in no
+        // place, the first (the direct list). A tab sifts that place's
+        // rooms.
         let all = self.rail();
         let open = self.open.borrow().clone();
-        let at = all.iter().position(|(_, rung)| rung.iter().any(|rung| rung.id == open)).unwrap_or(0);
-        let place = all.into_iter().skip(at).take(1).map(|(label, rung)| (label, kept(rung)));
-        place.filter(|(_, rung)| !rung.is_empty()).collect()
+        let host = || self.host_of(&open).and_then(|(id, label)| self.site.venue.iter().find(|venue| venue.id == id).map(|venue| (label, venue.plate.iter().map(Rung::of).collect::<Vec<_>>())));
+        let place = match all.iter().position(|(_, rung)| rung.iter().any(|rung| rung.id == open)) {
+            Some(at) => all.into_iter().nth(at),
+            None => host().or_else(|| all.into_iter().next()),
+        };
+        place.map(|(label, rung)| (label, rung.clone(), kept(rung)))
     }
 }
 

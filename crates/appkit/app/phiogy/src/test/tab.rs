@@ -15,10 +15,11 @@ fn step_46_the_guide_s_tabs_keep_the_recent_the_starred_and_the_older_rooms() {
     assert!(["Recent", "Favorites", "Older", "Lora Vale"].iter().all(|text| has(&stage, text)) && !has(&stage, "front-row"));
     assert!(desk.visit("h_opal") && has(&stage, "front-row"));
     assert_eq!(desk.tabs(), (vec!["recent".to_string(), "favorite".to_string(), "older".to_string()], String::new()));
-    // Nothing is starred yet, and the tab says how to.
+    // Nothing is starred yet: the tab says so, over every room of the
+    // place all the same, so a host is never an empty list.
     assert!(press(&mut stage, &look, "Favorites"));
-    // (The open room's title still names front-row.)
-    assert!(has(&stage, "No favorites yet"));
+    assert!(has(&stage, "No favorites yet") && desk.unsifted());
+    assert!(desk.sifted().into_iter().flat_map(|(_, rung)| rung).any(|rung| rung.label == "front-row"));
     // A room starred is among the favorites, and so is the room of a
     // person I follow.
     let front = desk.rail().into_iter().flat_map(|(_, rung)| rung).find(|rung| rung.label == "front-row").map(|rung| rung.id).expect("the room");

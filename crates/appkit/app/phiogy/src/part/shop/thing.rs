@@ -2,8 +2,9 @@
 //! Phiegg's item page stands (`puikit/app/phiegg/src/components/Phiegg/
 //! ItemSheet.tsx`): its name and what it is at the head; in its bar the
 //! way back to its shop and its page of the menu, and the bag at the
-//! end; at the left its picture, held in view, its views under it and
-//! what can be done with it (like it, see it large); at the right its
+//! end; at the left its picture, held in view, with what can be done
+//! with it floating down its corner as on Phiegg's (like it, the bag,
+//! full screen), and its views under it; at the right its
 //! tabs (data/thing.tsv), each of folding sections: what it is and its
 //! facts; its figures from Phiegg's ledger of it; its trail of sales;
 //! who has held it; its other colours and more like it. This file only
@@ -22,6 +23,7 @@ use crate::data;
 use crate::part::Desk;
 use crate::part::now::Shot;
 use crate::part::store::dollar;
+use crate::part::tabbed::Tabbed;
 use crate::part::tool::grouped;
 use crate::site::{Product, Shop};
 
@@ -32,12 +34,15 @@ pub const MORE: &str = "shop.more";
 const TAB: &str = "thing/tab";
 const VIEW: &str = "thing/view";
 const BAG: &str = "thing/bag";
-const DO: &str = "thing/do";
+const LIKE: &str = "thing/like";
 const GO: &str = "thing/go";
 const OPEN: &str = "thing/open";
 const FULL: &str = "thing/full";
 
 type Row = Vec<String>;
+
+/// Its tabs, as data/thing.tsv has them.
+const TABS: Tabbed = Tabbed { table: data::THING, path: TAB, prefix: "thing" };
 
 /// The rows of data/thing.tsv that begin with a word, without it.
 fn table(word: &str) -> Vec<Vec<&'static str>> {
@@ -211,9 +216,17 @@ impl Thing {
             "thing.picture" => {
                 let face = one.sprite.as_ref().map(|cell| format!("{} {} {}", cell.sheet, cell.column, cell.index)).unwrap_or_default();
                 let picture = one.view.get(self.view()).map(|(_, image)| image.clone()).unwrap_or_else(|| one.image.clone());
+                // What can be done with it, as Phiegg's item page floats it
+                // over the picture: like it, the bag, full screen.
+                let on = |yes: bool| match yes {
+                    true => ":1",
+                    false => "",
+                };
+                let held = !matches!(self.desk.stands(&shop.id, one), "shop.put" | "shop.wear");
+                let deed = format!("like:heart{} bag:bag{} full:maximize", on(self.desk.liked(&self.place())), on(held));
                 match picture.is_empty() && face.is_empty() {
                     true => Vec::new(),
-                    false => vec![vec!["full".to_string(), one.title.clone(), picture, face]],
+                    false => vec![vec!["full".to_string(), one.title.clone(), picture, face, deed]],
                 }
             }
             "thing.view" if one.view.len() > 1 => one.view.iter().enumerate().map(|(index, (label, _))| vec![index.to_string(), label.clone()]).collect(),
@@ -222,15 +235,7 @@ impl Thing {
                 let byte = |part: f32| ((part * 255.0).round() as u8).to_string();
                 vec![index.to_string(), String::new(), byte(colour.r), byte(colour.g), byte(colour.b)]
             }).collect(),
-            "thing.deed" => {
-                let like = match self.desk.liked(&self.place()) {
-                    true => "shop.liked",
-                    false => "shop.like",
-                };
-                let full = Some(vec!["full".to_string(), "shop.full".to_string(), "maximize".to_string()]).filter(|_| !one.view.is_empty() || !one.image.is_empty());
-                std::iter::once(vec!["like".to_string(), like.to_string(), "heart".to_string()]).chain(full).collect()
-            }
-            "thing.tab" => self.tabs().into_iter().map(|(key, icon, _)| vec![key.clone(), text.get(&format!("thing.{key}")).to_string(), icon]).collect(),
+            "thing.tab" => TABS.list(&self.desk, &|name| self.list(name)),
             "thing.about" => {
                 let body = Some(vec!["body".to_string(), one.body.clone(), String::new()]).filter(|row| !row[1].is_empty());
                 body.into_iter().chain(one.point.iter().enumerate().map(|(index, point)| vec![index.to_string(), point.clone(), String::new()])).collect()
@@ -271,26 +276,9 @@ impl Thing {
         }
     }
 
-    /// The tabs that hold something: each its key, its icon, its lists.
-    fn tabs(&self) -> Vec<(String, String, Vec<String>)> {
-        table("tab").into_iter().filter(|row| row.len() >= 3).map(|row| (row[0].to_string(), row[1].to_string(), row[2].split_whitespace().map(str::to_string).collect::<Vec<_>>()))
-            .filter(|(_, _, lists)| lists.iter().any(|list| !self.list(list).is_empty())).collect()
-    }
-
-    /// The tab on: the one chosen, where it holds something; else the
-    /// first that does.
-    fn on(&self) -> String {
-        let (tabs, kept) = (self.tabs(), self.desk.shelf.get(TAB));
-        tabs.iter().find(|(key, ..)| *key == kept).or(tabs.first()).map(|(key, ..)| key.clone()).unwrap_or_default()
-    }
-
     /// What a list holds now: a tab's lists only while it is on.
     fn rows(&self, name: &str) -> Vec<Row> {
-        let tab = table("tab").into_iter().find(|row| row.get(2).is_some_and(|lists| lists.split_whitespace().any(|list| list == name)));
-        match tab {
-            Some(tab) if tab[0] != self.on() => Vec::new(),
-            _ => self.list(name),
-        }
+        TABS.rows(&self.desk, name, &|name| self.list(name))
     }
 
     /// The viewer, on its views, the one shown first.
@@ -310,11 +298,10 @@ impl PState for Thing {
     fn get(&self, path: &str) -> String {
         let one = self.shown();
         match path {
-            TAB => self.on(),
+            TAB => TABS.on(&self.desk, &|name| self.list(name)),
             VIEW => self.view().to_string(),
             // Lit while it is in the bag or theirs.
             BAG => one.filter(|(shop, at)| !matches!(self.desk.stands(&shop.id, &shop.product[*at]), "shop.put" | "shop.wear")).map(|_| "pick".to_string()).unwrap_or_default(),
-            DO => Some("like".to_string()).filter(|_| self.desk.liked(&self.place())).unwrap_or_default(),
             _ => self.desk.shelf.get(path),
         }
     }
@@ -324,8 +311,8 @@ impl PState for Thing {
         match (path, value) {
             (VIEW, view) => *self.view.borrow_mut() = (self.place(), view.parse().unwrap_or_default()),
             (BAG, _) => self.shown().into_iter().for_each(|(shop, at)| desk.pick(&shop.id, &shop.product[at])),
-            (DO, "like") => desk.fond(&self.place(), !desk.liked(&self.place())),
-            (DO | FULL, "full") => self.full(),
+            (LIKE, _) => desk.fond(&self.place(), !desk.liked(&self.place())),
+            (FULL, _) => self.full(),
             // Another thing of the shop, or a page of it; itself is no way.
             (GO, "") => {}
             (GO, place) if place.contains('/') => *desk.now.product.borrow_mut() = Some(place.to_string()),

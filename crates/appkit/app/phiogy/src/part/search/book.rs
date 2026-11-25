@@ -160,6 +160,25 @@ impl Book {
     }
 }
 
+/// A field as words: text, a number, a list joined.
+pub fn said(value: Option<&Value>) -> String {
+    match value {
+        Some(Value::String(text)) => text.clone(),
+        Some(Value::Number(n)) => n.as_u64().map_or_else(|| n.to_string(), crate::part::tool::grouped),
+        Some(Value::Array(list)) => list.iter().map(|one| said(Some(one))).filter(|one| !one.is_empty()).collect::<Vec<_>>().join(", "),
+        _ => String::new(),
+    }
+}
+
+/// The values a field holds: one, or each of a list.
+pub fn values(value: Option<&Value>) -> Vec<String> {
+    match value {
+        Some(Value::Array(list)) => list.iter().filter_map(|one| one.as_str().map(str::to_string)).collect(),
+        Some(Value::String(text)) => vec![text.clone()],
+        _ => Vec::new(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Book;

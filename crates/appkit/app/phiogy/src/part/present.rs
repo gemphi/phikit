@@ -1,201 +1,307 @@
-//! Who is present: everyone on the open room's line, as the board has
-//! them now. First who is in the room's call, then who has the room
-//! open and is not in it; and under them the room's own people, as the
-//! site names them. With nobody on the line it says so, and where a
-//! page reaches it.
+//! The column beside a room, the kit's form `aside` (data/form.tsv,
+//! data/aside.tsv): the host the room is of, as Phiegg's host page has
+//! it, and who is present. At its head the host's name, and under it
+//! what it is (its genre, how many members, how many here now); Join or
+//! Leave at its bar's end for a host of the catalogue; then its picture
+//! (its world's), and who is on the room's line: in its call, with the
+//! room open, or nobody and where a page reaches it. Then its tabs:
+//! Info (what its club says of it, its facts from Phiegg's records),
+//! Rooms, Members (a press puts a person beside the room), Rules.
 //!
 //! The line runs on other threads, so the board is read each time this
-//! is drawn, and another frame is asked for while the line is open.
+//! is drawn, and another frame is asked for while the line is open. A
+//! room of another host begins at the column's top, on its Info.
 
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
+use std::rc::Rc;
 
-use appkit::pui::block::PDeck;
-use appkit::pui::core::{PDraw, PEvent, PLight, PPaint, PPoint, PRect, PView, light};
-use appkit::pui::layout::{PScroll, fold, section};
+use appkit::pui::core::{PDraw, PEvent, PPaint, PPoint, PRect, PView};
+use appkit::pui::form::{PForm, PListed};
+use appkit::pui::state::PState;
 
-use super::{DIM, Desk, GAP, ICON, INK, LINE, crowd, fit};
+use super::search::{Found, said, values};
+use super::tabbed::Tabbed;
+use super::{Desk, crowd};
 use crate::comp::Roster;
+use crate::data;
 use crate::peer::Stage;
+use crate::site::Venue;
 
-/// The theme's tokens for one who is on the line: how high their row
-/// is, how round its light, and how wide the mark before their name.
-pub const ROW: &str = "present.row";
-pub const RADIUS: &str = "present.radius";
-pub const MARK: &str = "present.mark";
-/// How wide the bar that shows how loud a caller is at its loudest, and
-/// how high.
-pub const METER: &str = "present.meter";
-pub const BAR: &str = "present.bar";
 /// The icons of one who is in the call, and of one who only has the
 /// room open.
 pub const CALL: &str = "mic";
 pub const WATCH: &str = "eye";
+/// The theme's token for how high the bar is that shows how loud a
+/// caller is (a call's tiles and a voice room have it too).
+pub const BAR: &str = "present.bar";
 
-/// Everyone on the open room's line.
+/// The paths the form keeps and is told.
+const TAB: &str = "aside/tab";
+const DO: &str = "aside/do";
+const ROOM: &str = "aside/room";
+const WHO: &str = "aside/who";
+
+/// Its tabs, as data/aside.tsv has them.
+const TABS: Tabbed = Tabbed { table: data::ASIDE, path: TAB, prefix: "aside" };
+
+type Row = Vec<String>;
+
+/// The rows of data/aside.tsv that begin with a word, without it.
+fn table(word: &str) -> Vec<Vec<&'static str>> {
+    data::row(data::ASIDE).into_iter().filter(|row| row.first() == Some(&word)).map(|row| row[1..].to_vec()).collect()
+}
+
+/// What the column holds, and what a press on it does.
+struct Aside {
+    desk: Desk,
+}
+
+impl Aside {
+    /// The host of the open room: the site's, or one the person made.
+    fn venue(&self) -> Option<Venue> {
+        let room = self.desk.room();
+        let made = self.desk.made();
+        self.desk.site.venue.iter().chain(&made).find(|venue| venue.plate.iter().any(|plate| plate.id == room)).cloned()
+    }
+
+    /// Phiegg's records of the host and of its club, where the book has
+    /// them.
+    fn record(&self, venue: &Venue) -> (Option<Found>, Option<Found>) {
+        let book = self.desk.book();
+        let Some(row) = table("host").into_iter().next().filter(|row| row.len() >= 3) else { return (None, None) };
+        let host = book.record(row[0], &book.key(row[0], &venue.id)).cloned();
+        let club = host.as_ref().and_then(|host| values(host.row.get(row[1])).into_iter().next()).and_then(|id| book.record(row[2], &id).or_else(|| book.named(&id)).cloned());
+        (host, club)
+    }
+
+    /// A field of the host's record or its club's, as words: an id named
+    /// by what it names.
+    fn field(&self, host: &Option<Found>, club: &Option<Found>, of: &str, field: &str) -> String {
+        let row = match of {
+            "club" => club.as_ref(),
+            _ => host.as_ref(),
+        };
+        let value = row.and_then(|found| found.row.get(field));
+        let book = self.desk.book();
+        let named: Vec<String> = values(value).iter().filter_map(|id| book.named(id).map(|found| found.name.clone())).filter(|name| !name.is_empty()).collect();
+        match named.is_empty() {
+            true => said(value),
+            false => named.join(", "),
+        }
+    }
+
+    /// Who is on a line: their name (and handle), their place on the
+    /// line, what this window's call knows of them, how loud they are.
+    fn line(&self, roster: &Roster, icon: &str) -> Vec<Row> {
+        let text = &self.desk.text;
+        let between = format!(" {} ", text.get("between"));
+        let seen = self.desk.calling();
+        roster.list.iter().map(|(peer, caller)| {
+            let name = caller.handle.as_deref().map_or(caller.name.clone(), |handle| format!("{}{between}{handle}", caller.name));
+            let far = seen.as_ref().and_then(|seen| seen.far.iter().find(|far| far.peer == *peer));
+            let known = match (far, seen.is_some() && self.desk.me().as_deref() == Some(peer)) {
+                (_, true) => text.get("call.here").to_string(),
+                (Some(far), _) => {
+                    let stage = match far.stage {
+                        Stage::New => "call.new",
+                        Stage::Connecting => "call.connecting",
+                        Stage::Connected => "call.connected",
+                        Stage::Failed => "call.failed",
+                    };
+                    let muted = Some(text.get("call.muted").to_string()).filter(|_| far.quiet);
+                    let pictures = Some(text.fill("call.seen", "count", &far.seen.to_string())).filter(|_| far.seen > 0);
+                    std::iter::once(text.get(stage).to_string()).chain(muted).chain(pictures).collect::<Vec<_>>().join(&between)
+                }
+                (None, false) => String::new(),
+            };
+            let level = far.map(|far| far.level.clamp(0.0, 1.0).to_string()).unwrap_or_default();
+            vec![peer.clone(), name, icon.to_string(), peer.clone(), known, level]
+        }).collect()
+    }
+
+    /// What a list holds, whichever tab is on.
+    fn list(&self, name: &str) -> Vec<Row> {
+        let (desk, text) = (&self.desk, &self.desk.text);
+        let room = desk.room();
+        let Some(plate) = desk.plate(&room) else {
+            return match name {
+                "aside.head" => vec![vec![String::new(), text.get("present.nowhere").to_string(), String::new()]],
+                _ => Vec::new(),
+            };
+        };
+        let venue = self.venue();
+        let (host, club) = venue.as_ref().map(|venue| self.record(venue)).unwrap_or_default();
+        let face = |cell: Option<&crate::site::Face>| cell.map(|cell| format!("{} {} {}", cell.sheet, cell.column, cell.index)).unwrap_or_default();
+        match name {
+            // Its name, and what it is under it.
+            "aside.head" => {
+                let label = venue.as_ref().map_or(plate.label.clone(), |venue| venue.label.clone());
+                let line: Vec<String> = table("line").into_iter().filter(|row| row.len() >= 3).filter_map(|row| {
+                    let value = self.field(&host, &club, row[0], row[1]);
+                    let value = match (value.is_empty(), row[1], venue.as_ref()) {
+                        (true, "members", Some(venue)) if venue.count > 0 => super::tool::grouped(venue.count),
+                        (true, "online", Some(venue)) if venue.online > 0 => super::tool::grouped(venue.online),
+                        _ => value,
+                    };
+                    Some(match row[2] {
+                        "-" => value.clone(),
+                        word => text.get(word).replace("{n}", &value),
+                    }).filter(|_| !value.is_empty())
+                }).collect();
+                vec![vec![plate.id.clone(), label, line.join(&format!(" {} ", text.get("between")))]]
+            }
+            // Join or leave a host of the catalogue.
+            "aside.do" => {
+                let Some(venue) = venue.as_ref() else { return Vec::new() };
+                let own = desk.site.venue.iter().position(|one| one.id == venue.id).is_none_or(|at| at < desk.site.extra.nav);
+                let deed = match desk.joined(venue) {
+                    true => ["leave", "host.leave", "log-out"],
+                    false => ["join", "host.enter", "log-in"],
+                };
+                match own {
+                    true => Vec::new(),
+                    false => vec![deed.iter().map(|cell| cell.to_string()).collect()],
+                }
+            }
+            // Its picture: its world's, its club's, or its mark.
+            "aside.picture" => {
+                let picture = [&host, &club].into_iter().flatten().map(|found| found.picture.clone()).find(|picture| !picture.is_empty()).unwrap_or_default();
+                let mark = match picture.is_empty() {
+                    true => face(venue.as_ref().and_then(|venue| venue.mark.as_ref())),
+                    false => String::new(),
+                };
+                match picture.is_empty() && mark.is_empty() {
+                    true => Vec::new(),
+                    false => vec![vec![plate.id.clone(), String::new(), picture, mark]],
+                }
+            }
+            // Nobody on the line: say so, and where a page reaches it; and
+            // why this window is not in the call, and what carries it.
+            "aside.line" => {
+                let (call, watch) = desk.on(&plate.id);
+                let how = match desk.line.as_ref() {
+                    Ok(at) => text.fill("present.how", "at", &format!("http://{at}")).replace("{key}", &desk.key(&plate.id)),
+                    Err(_) => text.get("present.shut").to_string(),
+                };
+                let nobody = Some([text.get("present.none").to_string(), how]).filter(|_| call.is_empty() && watch.is_empty()).into_iter().flatten();
+                let carried = desk.calling().map(|seen| text.fill("call.carry", "engine", &seen.engine));
+                let said = nobody.chain(Some(desk.why()).filter(|why| !why.is_empty())).chain(carried);
+                said.enumerate().map(|(index, said)| vec![index.to_string(), said]).collect()
+            }
+            "aside.call" => self.line(&desk.on(&plate.id).0, CALL),
+            "aside.watch" => self.line(&desk.on(&plate.id).1, WATCH),
+            "aside.tab" => TABS.list(desk, &|name| self.list(name)),
+            "aside.about" => table("about").into_iter().filter(|row| row.len() >= 2).map(|row| self.field(&host, &club, row[0], row[1])).filter(|said| !said.is_empty()).enumerate().map(|(index, said)| vec![index.to_string(), said]).collect(),
+            "aside.fact" => {
+                let fact: Vec<Row> = table("fact").into_iter().filter(|row| row.len() >= 2).map(|row| (row[1], self.field(&host, &club, row[0], row[1]))).filter(|(_, value)| !value.is_empty())
+                    .map(|(field, value)| vec![field.to_string(), text.get(&format!("aside.fact.{field}")).to_string(), value]).collect();
+                // A host Phiegg does not keep: what this app knows of it.
+                let own = venue.as_ref().map(|venue| [("members", venue.count), ("online", venue.online), ("rooms", venue.plate.len() as u64)]).into_iter().flatten().filter(|(_, n)| *n > 0)
+                    .map(|(field, n)| vec![field.to_string(), text.get(&format!("aside.fact.{field}")).to_string(), super::tool::grouped(n)]).collect();
+                match fact.is_empty() {
+                    true => own,
+                    false => fact,
+                }
+            }
+            // Its rooms: a press goes to one.
+            "aside.room" => venue.as_ref().map(|venue| venue.plate.iter().map(|one| {
+                let unread = Some(text.get("aside.unread").replace("{n}", &one.unread.to_string())).filter(|_| one.unread > 0).unwrap_or_default();
+                vec![one.id.clone(), one.label.clone(), desk.icon(&one.icon).to_string(), String::new(), one.topic.clone(), unread, String::new()]
+            }).collect()).unwrap_or_default(),
+            // The room's people: a press puts one beside the room.
+            "aside.member" => crowd::named(desk, &plate.member).into_iter().map(|seat| {
+                let face = seat.cell.as_ref().map(|(sheet, column, index)| format!("{sheet} {column} {index}")).unwrap_or_default();
+                let icon = match face.is_empty() {
+                    true => "user".to_string(),
+                    false => String::new(),
+                };
+                vec![seat.id.clone(), seat.name.clone(), icon, String::new(), seat.said.clone(), String::new(), face]
+            }).collect(),
+            "aside.rule" => table("rule").into_iter().filter(|row| row.len() >= 2).flat_map(|row| {
+                let source = match row[0] {
+                    "club" => club.as_ref(),
+                    _ => host.as_ref(),
+                };
+                values(source.and_then(|found| found.row.get(row[1])))
+            }).enumerate().map(|(index, rule)| vec![index.to_string(), rule]).collect(),
+            _ => Vec::new(),
+        }
+    }
+
+    /// What a list holds now: a tab's lists only while it is on.
+    fn rows(&self, name: &str) -> Vec<Row> {
+        TABS.rows(&self.desk, name, &|name| self.list(name))
+    }
+}
+
+impl PState for Aside {
+    fn get(&self, path: &str) -> String {
+        match path {
+            TAB => TABS.on(&self.desk, &|name| self.list(name)),
+            _ => self.desk.shelf.get(path),
+        }
+    }
+
+    fn set(&self, path: &str, value: &str) {
+        let desk = &self.desk;
+        match (path, value) {
+            (DO, deed) => self.venue().into_iter().for_each(|venue| desk.enter(&venue.id, deed == "join")),
+            (ROOM, room) => _ = desk.show(room),
+            (WHO, id) if desk.site.member(id).is_some() => *desk.now.who.borrow_mut() = Some(id.to_string()),
+            (WHO, _) => {}
+            _ => desk.shelf.set(path, value),
+        }
+    }
+}
+
+/// The column's form, its lists from the open room's host and line.
+fn form(desk: &Desk) -> PForm {
+    let aside = Rc::new(Aside { desk: desk.clone() });
+    let rows = aside.clone();
+    let state: Vec<(String, Rc<dyn PState>)> = vec![("aside".to_string(), aside), ("ui".to_string(), desk.shelf.clone())];
+    let source = Rc::new(PListed::new(data::LISTING, Rc::new(move |name: &str| rows.rows(name)), desk.text.clone(), state));
+    PForm::new("aside", data::FORM, source, desk.text.clone(), desk.shade.clone())
+}
+
+/// The column beside a room.
 pub struct Present {
     frame: PRect,
     desk: Desk,
-    scroll: Cell<PScroll>,
-    /// Where each member's card was drawn last, in the window, and
-    /// where the column was.
-    spot: RefCell<Vec<(PRect, String)>>,
-    origin: Cell<PPoint>,
+    form: RefCell<PForm>,
+    /// The host it was drawn for last: another begins at its top, on
+    /// its first tab.
+    seen: RefCell<Option<String>>,
 }
 
 impl Present {
     pub fn new(desk: Desk) -> Present {
-        Present { frame: PRect::default(), desk, scroll: Cell::default(), spot: RefCell::default(), origin: Cell::default() }
+        Present { frame: PRect::default(), form: RefCell::new(form(&desk)), desk, seen: RefCell::default() }
     }
 
-    /// A heading over some rows; how far down what follows begins.
-    fn head(&self, paint: &mut dyn PPaint, at: PPoint, name: &str) -> f32 {
-        let (gap, line, dim) = (paint.size(GAP), paint.size(LINE), paint.color(DIM));
-        paint.text(at, self.desk.text.get(name), dim);
-        at.y + line + gap / 2.0
-    }
-
-    /// The rows of some who are on the line, each a label lit from the
-    /// left; how far down what follows begins.
-    fn rows(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, roster: &Roster, icon: &str, strength: PLight) -> f32 {
-        let (gap, line, row, radius, mark, glyph) = (paint.size(GAP), paint.size(LINE), paint.size(ROW), paint.size(RADIUS), paint.size(MARK), paint.size(ICON));
-        let (ink, dim) = (paint.color(INK), paint.color(DIM));
-        for (index, (peer, caller)) in roster.list.iter().enumerate() {
-            let rect = PRect::new(at.x, at.y + index as f32 * (row + gap / 2.0), wide, row);
-            light::label(paint, rect, radius, strength, false, "");
-            let seat = PRect::new(rect.origin.x + gap / 2.0, rect.center().y - mark / 2.0, mark, mark);
-            paint.icon(icon, PRect::new(seat.center().x - glyph / 2.0, seat.center().y - glyph / 2.0, glyph, glyph), ink);
-            let left = seat.origin.x + mark + gap / 2.0;
-            let name = caller.handle.as_deref().map_or(caller.name.clone(), |handle| format!("{} {} {handle}", caller.name, self.desk.text.get("between")));
-            // What this window's own call knows of them, at the right.
-            let (said, bar) = self.known(paint, rect, peer);
-            let room = rect.origin.x + wide - left - gap;
-            paint.text(PPoint::new(left, rect.center().y - line), &fit(&name, room - said, paint), ink);
-            paint.text(PPoint::new(left, rect.center().y), &fit(peer, room - bar, paint), dim);
-        }
-        at.y + roster.len() as f32 * (row + gap / 2.0) + gap / 2.0
-    }
-
-    /// What this window's call knows of a caller, set at the right of
-    /// their row: that it is this window; or how far the connection to
-    /// them has come, whether they are muted, how many pictures they
-    /// sent, and under that a bar as long as they are loud. How much of
-    /// the row's first line it takes, and how much of its second.
-    fn known(&self, paint: &mut dyn PPaint, rect: PRect, peer: &str) -> (f32, f32) {
-        let (gap, line, dim) = (paint.size(GAP), paint.size(LINE), paint.color(DIM));
-        let (text, between) = (&self.desk.text, format!(" {} ", self.desk.text.get("between")));
-        let Some(seen) = self.desk.calling() else { return (0.0, 0.0) };
-        let far = seen.far.iter().find(|far| far.peer == peer);
-        let said = match (far, self.desk.me().as_deref() == Some(peer)) {
-            (_, true) => text.get("call.here").to_string(),
-            (Some(far), _) => {
-                let stage = match far.stage {
-                    Stage::New => "call.new",
-                    Stage::Connecting => "call.connecting",
-                    Stage::Connected => "call.connected",
-                    Stage::Failed => "call.failed",
-                };
-                let muted = Some(text.get("call.muted").to_string()).filter(|_| far.quiet);
-                let pictures = Some(text.fill("call.seen", "count", &far.seen.to_string())).filter(|_| far.seen > 0);
-                std::iter::once(text.get(stage).to_string()).chain(muted).chain(pictures).collect::<Vec<_>>().join(&between)
-            }
-            (None, false) => return (0.0, 0.0),
-        };
-        let wide = paint.measure(&said);
-        let right = rect.origin.x + rect.size.width - gap;
-        paint.text(PPoint::new(right - wide, rect.center().y - line), &said, dim);
-        // The bar: under what is said, as long as they are loud.
-        let (most, high) = (paint.size(METER), paint.size(BAR));
-        let loud = far.map_or(0.0, |far| far.level.clamp(0.0, 1.0)) * most;
-        if loud >= 1.0 {
-            light::label(paint, PRect::new(right - most, rect.center().y + (line - high) / 2.0, loud, high), high / 2.0, PLight::Strong, false, "");
-        }
-        (wide + gap, far.map_or(0.0, |_| most + gap))
-    }
-
-    /// Lines of text broken to fit; how far down what follows begins.
-    fn lines(&self, paint: &mut dyn PPaint, at: PPoint, wide: f32, text: &str, ink: &str) -> f32 {
-        let (line, color) = (paint.size(LINE), paint.color(ink));
-        // A word too long for a line, as an address is, is cut to fit.
-        let set = fold(text, wide, &|text| paint.measure(text));
-        for (index, text) in set.iter().enumerate() {
-            paint.text(PPoint::new(at.x, at.y + index as f32 * line), text, color);
-        }
-        at.y + set.len() as f32 * line
+    /// The host of the open room, or the room where it is of none.
+    fn host(&self) -> String {
+        let room = self.desk.room();
+        self.desk.host_of(&room).map_or(room, |(id, _)| id)
     }
 }
 
 impl PDraw for Present {
     fn draw(&self, paint: &mut dyn PPaint, origin: PPoint) {
-        let (gap, line, ink) = (paint.size(GAP), paint.size("head.line"), paint.color(INK));
-        let (start, wide) = self.desk.column(self.frame.size.width);
-        let open = self.desk.room();
-        let text = &self.desk.text;
-        let scroll = self.scroll.get();
-        self.origin.set(origin);
-        paint.clip(PRect { origin, size: self.frame.size });
-        let left = origin.x + start;
-        let top = origin.y + gap - scroll.at();
-        let Some(plate) = self.desk.plate(&open) else {
-            let end = self.lines(paint, PPoint::new(left, top), wide, text.get("present.nowhere"), DIM);
-            paint.unclip();
-            return self.fitted(end - top + gap);
-        };
-        paint.head(PPoint::new(left, top), text.get("present.head"), ink);
-        let mut next = top + line + gap;
-        let (call, watch) = self.desk.on(&plate.id);
-        // Every section of the column stands on a ground of its own;
-        // its heading is over it.
-        // Nobody: say so, and where a page reaches the line. And why
-        // this window is not in the call though it asked to be, and
-        // what carries the call it is in.
-        let nobody = call.is_empty() && watch.is_empty();
-        let how = match self.desk.line.as_ref() {
-            Ok(at) => text.fill("present.how", "at", &format!("http://{at}")).replace("{key}", &self.desk.key(&plate.id)),
-            Err(_) => text.get("present.shut").to_string(),
-        };
-        let carried = self.desk.calling().map(|seen| text.fill("call.carry", "engine", &seen.engine));
-        let said: Vec<String> = [Some(self.desk.why()).filter(|why| !why.is_empty()), carried].into_iter().flatten().collect();
-        let from = next;
-        next = section(paint, PPoint::new(left, from), wide, &mut |paint| {
-            let mut next = from;
-            if nobody {
-                next = self.lines(paint, PPoint::new(left, next), wide, text.get("present.none"), INK);
-                next = self.lines(paint, PPoint::new(left, next), wide, &how, DIM);
-            }
-            said.iter().fold(next, |next, said| self.lines(paint, PPoint::new(left, next), wide, said, DIM))
-        }) + gap;
-        let group = [(&call, "present.call", CALL, PLight::Strong), (&watch, "present.watch", WATCH, PLight::Soft)];
-        for (roster, name, icon, strength) in group.into_iter().filter(|(roster, ..)| !roster.is_empty()) {
-            let from = self.head(paint, PPoint::new(left, next), name);
-            next = section(paint, PPoint::new(left, from), wide, &mut |paint| self.rows(paint, PPoint::new(left, from), wide, roster, icon, strength)) + gap;
+        let host = Some(self.host());
+        if *self.seen.borrow() != host {
+            self.desk.shelf.set(TAB, "");
+            let mut fresh = form(&self.desk);
+            fresh.set_frame(self.frame);
+            *self.form.borrow_mut() = fresh;
+            *self.seen.borrow_mut() = host;
         }
-        // The room's own people, as the site names them.
-        // Each a card with their face, as people in a voice room are.
-        self.spot.borrow_mut().clear();
-        if !plate.member.is_empty() {
-            let from = self.head(paint, PPoint::new(left, next), "present.member");
-            let seat = crowd::named(&self.desk, &plate.member);
-            let (card, end) = seat.draw(paint, PPoint::new(left, from), wide);
-            (*self.spot.borrow_mut(), next) = (crowd::whose(card, &seat), end);
-        }
-        paint.unclip();
-        self.fitted(next - top + gap);
-    }
-}
-
-impl Present {
-    /// Keep how long what was drawn is, for the wheel.
-    fn fitted(&self, content: f32) {
-        let mut scroll = self.scroll.get();
-        scroll.fit(content, self.frame.size.height);
-        self.scroll.set(scroll);
+        self.form.borrow().draw(paint, origin);
     }
 }
 
 impl PView for Present {
-    /// Its members' cards.
     fn hand(&self) -> Vec<PRect> {
-        self.spot.borrow().iter().map(|(rect, _)| *rect).collect()
+        self.form.borrow().hand()
     }
 
     fn frame(&self) -> PRect {
@@ -204,12 +310,14 @@ impl PView for Present {
 
     fn set_frame(&mut self, frame: PRect) {
         self.frame = frame;
+        self.form.get_mut().set_frame(frame);
     }
 
     /// In a call what is heard and seen changes by itself, and every
-    /// frame is drawn.
+    /// frame is drawn; the tabs' light moves.
     fn tick(&mut self) -> bool {
-        self.desk.call.borrow().is_some()
+        let moving = self.form.get_mut().tick();
+        moving | self.desk.call.borrow().is_some()
     }
 
     /// While the line is open, somebody may come or go at any time:
@@ -222,22 +330,6 @@ impl PView for Present {
     }
 
     fn respond(&mut self, event: &PEvent) -> bool {
-        let mut scroll = self.scroll.get();
-        match *event {
-            // The wheel turned away from the hand goes up.
-            PEvent::Scroll(_, by) => {
-                let any = scroll.turn(-by.y);
-                self.scroll.set(scroll);
-                any
-            }
-            // A press on a member's card opens them beside the room.
-            PEvent::PointerDown(at) => {
-                let who = self.spot.borrow().iter().find(|(rect, _)| rect.contains(at.plus(self.origin.get()))).map(|(_, id)| id.clone());
-                let known = who.is_some();
-                who.into_iter().for_each(|id| *self.desk.now.who.borrow_mut() = Some(id));
-                known
-            }
-            _ => false,
-        }
+        self.form.get_mut().respond(event)
     }
 }
