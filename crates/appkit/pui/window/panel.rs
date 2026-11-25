@@ -101,9 +101,14 @@ impl PPanel {
             }
         };
         let head = theme.size(HEAD).unwrap_or_default();
-        let button = |nth: f32| PRect::new(rect.origin.x + rect.size.width - nth * head, rect.origin.y, head, head);
+        // Its head is a row of three: the title at the start, the buttons
+        // at the end (expand, then close), the middle free.
+        let bar = PRect::new(rect.origin.x, rect.origin.y, rect.size.width, head);
+        let [_, _, tools] = crate::pui::layout::places(bar, crate::pui::layout::PRun::Across, [None, None, Some(PSize { width: head * 2.0, height: head })], 0.0);
+        let tools = tools.unwrap_or_default();
+        let button = |nth: f32| PRect::new(tools.origin.x + nth * head, tools.origin.y, head, head);
         let body = PRect::new(rect.origin.x, rect.origin.y + head, rect.size.width, rect.size.height - head);
-        PPanel { whole, rect, body, expand: button(2.0), close: button(1.0), wide, bare: false }
+        PPanel { whole, rect, body, expand: button(0.0), close: button(1.0), wide, bare: false }
     }
 
     /// What a press at `at` does. `None` for a press on the panel that is
