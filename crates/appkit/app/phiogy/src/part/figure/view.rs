@@ -53,6 +53,7 @@ impl Figure {
             None => around(&piece, 0.6, fov, roomy, aspect),
         };
         let camera = self.orbit.camera(&first);
+        self.seen.set(Some(camera));
         let fit = match four {
             true => PFit::Whole,
             false => PFit::Top,

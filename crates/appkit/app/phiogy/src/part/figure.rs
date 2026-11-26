@@ -14,8 +14,10 @@ mod view;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 
-use appkit::pui::core::{PDraw, PEvent, PFit, POrbit, PPaint, PPoint, PRect, PView};
+use appkit::pui::core::{PCamera, PDraw, PEvent, PFit, POrbit, PPaint, PPoint, PRect, PView};
 use appkit::pui::state::PState;
+use appkit::pui::window::PDeed;
+use appkit::service::usdz;
 
 use super::{DIM, Desk, GAP};
 use crate::library::Item;
@@ -40,11 +42,13 @@ pub struct Figure {
     origin: Cell<PPoint>,
     ball: RefCell<Vec<(PRect, [f32; 3])>>,
     tool: RefCell<Vec<(PRect, String)>>,
+    /// The camera the main view was last drawn from.
+    seen: Cell<Option<PCamera>>,
 }
 
 impl Figure {
     pub fn new(desk: Desk) -> Figure {
-        Figure { frame: PRect::default(), desk, orbit: POrbit::default(), way: Cell::default(), drawn: RefCell::default(), origin: Cell::default(), ball: RefCell::default(), tool: RefCell::default() }
+        Figure { frame: PRect::default(), desk, orbit: POrbit::default(), way: Cell::default(), drawn: RefCell::default(), origin: Cell::default(), ball: RefCell::default(), tool: RefCell::default(), seen: Cell::default() }
     }
 
     /// Do what a tool does.
@@ -60,7 +64,25 @@ impl Figure {
             }
             "four" => flip(FOUR),
             "wire" => flip(WIRE),
+            "save" => self.save(),
             _ => {}
+        }
+    }
+}
+
+impl Figure {
+    /// The model as one package, turned so what the eye saw faces a
+    /// viewer of it, written beside the system's own temporary files; then
+    /// the person is asked where a copy is to be kept.
+    fn save(&self) {
+        let Some(item) = self.desk.library.get(&self.desk.shelf.get("ui/item")).filter(|item| item.kind == "model") else { return };
+        let yaw = self.seen.get().map_or(0.0, |camera| (camera.eye[0] - camera.at[0]).atan2(camera.eye[2] - camera.at[2]));
+        let stem = item.path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+        let file = std::env::temp_dir().join(stem).with_extension(usdz::ENDING);
+        let kept = usdz::package(&item.path, yaw).and_then(|bytes| std::fs::write(&file, bytes));
+        match kept {
+            Ok(()) => self.desk.wish.borrow_mut().push(PDeed::Save(file.to_string_lossy().to_string())),
+            Err(error) => eprintln!("phiogy: {} could not be packed: {error}", item.path.display()),
         }
     }
 }

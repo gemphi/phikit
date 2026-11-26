@@ -439,6 +439,7 @@ item.scene	Scene
 viewport.reset	Reset the view
 viewport.four	Four views
 viewport.wire	Wireframe
+viewport.save	Save as USDZ
 view3d.main	Perspective
 view3d.top	Top
 view3d.front	Front

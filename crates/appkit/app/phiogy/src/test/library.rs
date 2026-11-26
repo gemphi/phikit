@@ -306,7 +306,7 @@ fn eight_looks_and_the_plain_ones_draw_a_faint_line_down_the_sidebar() {
 }
 
 /// The dice opened in the 3D view of a window of that size.
-fn dice(size: appkit::pui::core::PSize) -> (Phiogy, appkit::pui::window::PStage, Rc<appkit::theme::PLook>) {
+pub(super) fn dice(size: appkit::pui::core::PSize) -> (Phiogy, appkit::pui::window::PStage, Rc<appkit::theme::PLook>) {
     let (app, mut stage, look) = staged(size);
     let desk = app.desk();
     let shape = desk.library.place.iter().find(|place| place.key == "shape").and_then(|place| place.folder.clone()).expect("the shapes");

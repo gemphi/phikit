@@ -2,7 +2,10 @@
 # has them, from the left: what each does, its icon, and the row of
 # data/text.tsv that names it. `reset` puts the view back as it began,
 # `four` shows the top, the front and the right beside it, `wire` shows
-# the model as wire. A row taken out is a tool not drawn.
+# the model as wire, `save` keeps the model as it is turned now as one
+# package (.usdz) that Apple's Quick Look opens, where the person says.
+# A row taken out is a tool not drawn.
 reset	rotate	viewport.reset
 four	layout-grid	viewport.four
 wire	box	viewport.wire
+save	download	viewport.save

@@ -23,6 +23,7 @@ mod pace;
 mod pill;
 mod ring;
 mod room;
+mod save;
 mod search;
 mod shop;
 mod part;
