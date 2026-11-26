@@ -25,11 +25,17 @@ fn step_62_once_city_is_a_place_of_the_library_with_its_things() {
     for name in ["once-city.usda", "letter-gate.usda", "lotus-dome.usda", "petal-dome.usda", "cake-tower.usda", "pad-bubble.usda", "wave-ring.usda", "lioness-amber.usda", "lioness-onyx.usda", "couch-bird.usda", "zebra-rose.usda", "tree-bird.usda"] {
         assert!(file.iter().any(|f| f == name), "no {name} in {file:?}");
     }
-    let couch = file.iter().filter(|f| f.starts_with("couch-") || f.starts_with("ottoman-") || f.starts_with("pouf-") || f.starts_with("stool-")).count();
+    // Thirty-two couches: sixteen of letters, sixteen of the user's scroll
+    // drawing (their posts and legs are parts, not couches); eight steel
+    // lounge chairs of the photo, and their table.
+    let part = ["couch-post.usda", "couch-leg.usda"];
+    let couch = file.iter().filter(|f| (f.starts_with("couch-") || f.starts_with("ottoman-") || f.starts_with("pouf-") || f.starts_with("stool-")) && !part.contains(&f.as_str())).count();
     let tree = file.iter().filter(|f| f.starts_with("tree-")).count();
-    assert_eq!((couch, tree), (16, 16));
+    let lounge = file.iter().filter(|f| f.strip_prefix("lounge-").is_some_and(|rest| rest.starts_with(|c: char| c.is_ascii_alphabetic()))).count();
+    assert_eq!((couch, craft_of(&file, "couch-scroll-"), lounge, tree), (32, 16, 8, 16), "{file:?}");
+    assert!(file.iter().any(|f| f == "table-tulip.usda"));
     // The craft: eight jetskis, four Phijets small to large, four rockets.
-    let craft = |lead: &str| file.iter().filter(|f| f.starts_with(lead) && f[lead.len()..].starts_with(|c: char| c.is_ascii_alphanumeric())).count();
+    let craft = |lead: &str| craft_of(&file, lead);
     assert_eq!((craft("jetski-"), craft("phijet-long-"), craft("phijet-short-"), craft("rocket-"), craft("flycar-")), (10, 4, 4, 4, 4), "{file:?}");
     // The electric jets of the user's cyan sketch, their cabin and its seats.
     for name in ["jet-long.usda", "jet-short.usda", "jet-inside.usda", "club-seat.usda", "fly-car.usda"] {
@@ -74,4 +80,10 @@ fn onyx_wears_black_and_amber_her_own_gold() {
     // Shown as the look says it is seen (#de9f3c), not as USD keeps it.
     let seen = [0xde, 0x9f, 0x3c].map(|c| c as f32 / 255.0);
     assert!(amber.iter().zip(seen).all(|(a, b)| (a - b).abs() < 0.01), "{amber:?}");
+}
+
+/// How many of the files are a set's: their name the set's lead and then
+/// a letter or a number.
+fn craft_of(file: &[String], lead: &str) -> usize {
+    file.iter().filter(|f| f.starts_with(lead) && f[lead.len()..].starts_with(|c: char| c.is_ascii_alphanumeric())).count()
 }

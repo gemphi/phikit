@@ -89,3 +89,9 @@ grad-rose	#f6f1ec #ee8fb5	0.3 0.1
 grad-sky	#f6f1ec #90c8ef	0.3 0.1
 grad-night	#1f1d22 #5a2fa8	0.25 0.2
 grad-gold	#f3eee6 #d8b35c	0.3 0.4
+# The steel-band lounge chairs and their table, after the photo the user
+# sent on 27 November 2026: bars of polished steel, white leather, water
+# in a glass.
+chrome	#dfe3e8	0.08 1
+leather	#f4f2ee	0.45 0
+water	#cfe9f5	0.05 0

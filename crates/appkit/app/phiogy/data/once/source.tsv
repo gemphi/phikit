@@ -33,3 +33,18 @@ jet-short-window-1	jet-short-window-1.svg
 jet-short-window-2	jet-short-window-2.svg
 jet-short-window-3	jet-short-window-3.svg
 jet-short-window-4	jet-short-window-4.svg
+# The couches' backs, arms and bands, from data/once/couch.tsv by script/couch.py.
+couch-arm-tall	couch-arm-tall.svg
+couch-arm-low	couch-arm-low.svg
+couch-band-o	couch-band-o.svg
+couch-band-d	couch-band-d.svg
+couch-band-n	couch-band-n.svg
+couch-band-u	couch-band-u.svg
+scroll-back-1-pill	scroll-back-1-pill.svg
+scroll-back-2-pill	scroll-back-2-pill.svg
+scroll-back-3-pill	scroll-back-3-pill.svg
+scroll-back-4-pill	scroll-back-4-pill.svg
+scroll-back-1-bead	scroll-back-1-bead.svg
+scroll-back-2-bead	scroll-back-2-bead.svg
+scroll-back-3-bead	scroll-back-3-bead.svg
+scroll-back-4-bead	scroll-back-4-bead.svg

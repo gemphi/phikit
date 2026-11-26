@@ -20,7 +20,13 @@ zebras, 8 phijets, 4 rockets, 4 flycars, 3 seats, 3 pads, 3 lotus, 3
 lioness, 3 jets, and one each of the rest (lion, gate, lamp, dome
 pieces, ship, glider).
 
-## The couches: 16, not 32
+## The couches: 16 then, 32 now
+
+Since this was taken: sixteen scroll couches from the drawing below
+(`couch-scroll-1` to `-16`, `script/couch.py` from `data/once/couch.tsv`),
+eight steel-band lounge chairs and settees after the photo of the same
+day (`lounge-*`), and their table with two glasses (`table-tulip`).
+What stood then:
 
 | Have | Made from |
 |---|---|
@@ -78,7 +84,7 @@ relay: the AWS security group must let in UDP+TCP 3478 and UDP
 
 ## Order
 
-1. Sixteen more couches, from tables, as the first sixteen are.
+1. ~~Sixteen more couches, from tables, as the first sixteen are.~~ Done.
 2. Save: the turned item as `.usdz`, a kit writer.
 3. Folder sync: `POST /file`, the `asset` record, `after=`, the Team place.
 4. The web shows an asset's `.usdz` in 3D and opens it in Quick Look.

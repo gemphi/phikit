@@ -52,6 +52,19 @@ the tables. Nothing in a file is drawn by hand.
   c, z, J, w), the I lying as an ottoman, the o as a pouf, the m as a
   stool, and the bird (the p above) as the rose chaise's panels. The
   seats are 0.46 high.
+- Sixteen scroll couches (`couch-scroll-1` to `-16`), from the user's
+  red drawing of a couch's frame (27 November 2026), drawn as lines and
+  circles by `script/couch.py` from `data/once/couch.tsv`: a back of
+  lobes, one a seat, joined at narrow necks, each a lattice of openings
+  (pills or beads) largest at the couch's end; at each end a turned post
+  on a ball foot with a spike, and an arm rising as a horn that ends in
+  a ring (the o). One to four seats, a tall or a low arm, two lattices,
+  each its own colours. 32 couches in all.
+- Eight lounge chairs and settees of steel bands (`lounge-o-1` ...
+  `lounge-u-2`), after the photo of 27 November 2026: each side a bar of
+  polished steel bent as O, D, n or u is (`couch-band-*`), white leather
+  between; and their small round table with two glasses of water
+  (`table-tulip`).
 - Sixteen trees of pills, balls, cones and rings, four with letters
   as their trunks (Y, T, S, f) and one a hedge cut as the bird.
 - The lionesses Amber and Onyx, Jade the green lion, and six zebras of

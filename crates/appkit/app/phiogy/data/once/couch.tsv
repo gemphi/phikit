@@ -1,0 +1,146 @@
+# The scroll couches, from the user's red drawing of a couch's frame
+# (IMG_20260930_couCHES.jpg, 27 November 2026): seen from the front, a
+# back of lobes joined at narrow necks, each lobe a lattice of openings,
+# the largest at the couch's end and smaller towards a neck; at each end
+# a turned post on a ball foot with a spike, and an arm rising out of it
+# as a horn that ends in a ring. Built as the jets are: straight lines
+# and circles (script/chain.py), nothing drawn by hand. Read by
+# script/couch.py, which writes the outlines (scroll-*.svg), their names
+# into source.tsv and the couches' rows at the foot of thing.tsv.
+#
+# Lengths in metres; in the outlines y runs down from the floor, so a
+# height is less than nothing.
+#
+# The back: one lobe a seat; a seat as wide as a seat of seat-1, -2,
+# -3 is (0.635); how far the back runs past the last seat at each end
+# (over the post); its foot and its top above the floor; its depth, and
+# where it stands (z, behind the seat's base); how round its corners.
+measure	seat	0.635
+measure	end	0.08
+measure	foot	0.46
+measure	top	0.8
+measure	depth	0.07
+measure	back	-0.43
+measure	corner	0.05
+# A neck: how high it is (half), how far from it the lobe's edge begins
+# to dip, and the circle it dips round.
+measure	neck	0.045
+measure	dip	0.1
+measure	sag	0.06
+# The openings: how far inside the back's edge they keep (top and
+# foot), how far from an end and from a neck, the room between two,
+# and by how much a row of them may be too long before one is left out.
+measure	inset	0.05
+measure	clear	0.11 0.12
+measure	gap	0.025
+measure	spare	1.15
+# How much narrower the seat's base is than its seats.
+measure	base	0.015
+# The front legs: where they stand (z).
+measure	front	0.3
+# How round the back's and the arms' edges are (a share of their own
+# depth), and the ring's.
+measure	edge	0.3
+#
+# A lattice: its openings from the largest in, each its width and its
+# height as shares of the openings' full height, and how round (1 a
+# pill, less a share of its shorter side). `pill` is the drawing's: a
+# rounded square, a tall pill, a short one, a tall one; `bead`, circles
+# growing smaller.
+open	pill	0.85 1 0.35
+open	pill	0.48 1 1
+open	pill	0.36 0.82 1
+open	pill	0.52 1 1
+open	bead	0.85 0.85 1
+open	bead	0.62 0.62 1
+open	bead	0.44 0.44 1
+open	bead	0.62 0.62 1
+#
+# An arm, the left one, as a chain of circles taken with the clock (as
+# jet.tsv's): x out from the back's end, y up from its top (less than
+# nothing up). The first circle is the horn's tip, where its ring is;
+# the ring as wide as so many times the tip, and as deep as so many
+# times the back.
+line	arm-tall	round	-0.3 -0.42 0.065
+line	arm-tall	round	-0.04 -0.2 0.13
+line	arm-tall	round	0.15 0.02 0.03
+line	arm-tall	round	-0.07 0.05 0.03
+line	arm-tall	hollow	-0.25 -0.12 0.15
+line	arm-low	round	-0.32 -0.26 0.06
+line	arm-low	round	-0.05 -0.12 0.11
+line	arm-low	round	0.15 0.02 0.03
+line	arm-low	round	-0.07 0.05 0.03
+line	arm-low	hollow	-0.26 -0.05 0.12
+measure	ring	3.4 1.6
+#
+# The bands of the lounge chairs (thing.tsv `lounge-*`), after the photo
+# of 27 November 2026: a bar of steel bent as a letter is, seen from the
+# side, its back at the left; a chain of circles as an arm's is, and the
+# counter a chain inside it (`hole`). One stroke for every band, as a
+# weight of the font has one: the bar is 0.045 wide, its bends 0.14 round
+# outside; the frame 0.8 long and 0.62 high, the floor at 0. O a closed
+# loop; D flat at the back, round in front; n an arch on two legs; u open
+# at the top, its ends round.
+line	band-o	round	0.14 -0.48 0.14
+line	band-o	round	0.66 -0.48 0.14
+line	band-o	round	0.66 -0.14 0.14
+line	band-o	round	0.14 -0.14 0.14
+hole	band-o	round	0.14 -0.48 0.095
+hole	band-o	round	0.66 -0.48 0.095
+hole	band-o	round	0.66 -0.14 0.095
+hole	band-o	round	0.14 -0.14 0.095
+line	band-d	round	0.055 -0.565 0.055
+line	band-d	round	0.52 -0.34 0.28
+line	band-d	round	0.52 -0.28 0.28
+line	band-d	round	0.055 -0.055 0.055
+hole	band-d	round	0.055 -0.565 0.01
+hole	band-d	round	0.52 -0.34 0.235
+hole	band-d	round	0.52 -0.28 0.235
+hole	band-d	round	0.055 -0.055 0.01
+line	band-n	round	0.14 -0.48 0.14
+line	band-n	round	0.66 -0.48 0.14
+line	band-n	round	0.7775 -0.0225 0.0225
+line	band-n	hollow	0.66 -0.48 0.095
+line	band-n	hollow	0.14 -0.48 0.095
+line	band-n	round	0.0225 -0.0225 0.0225
+line	band-u	round	0.0225 -0.5975 0.0225
+line	band-u	hollow	0.14 -0.14 0.095
+line	band-u	hollow	0.66 -0.14 0.095
+line	band-u	round	0.7775 -0.5975 0.0225
+line	band-u	round	0.66 -0.14 0.14
+line	band-u	round	0.14 -0.14 0.14
+#
+# The post at each end behind, and the leg in front, a thing each:
+# their parts as thing.tsv writes them (x 0 its middle, y up from the
+# floor), wearing `frame` and `trim`, which a couch says.
+part	couch-post	foot	sphere	0.18 0.18 0.18	0 0.09 0	-	-	trim	-	-
+part	couch-post	waist	cylinder	0.06 0.1 0.06	0 0.21 0	-	-	frame	-	-
+part	couch-post	bead	sphere	0.14 0.12 0.14	0 0.31 0	-	-	trim	-	-
+part	couch-post	column	capsule	0.08 0.4 0.08	0 0.54 0	-	-	frame	-	-
+part	couch-post	head	sphere	0.13 0.15 0.13	0 0.78 0	-	-	trim	-	-
+part	couch-post	spike	capsule	0.04 0.34 0.04	0 0.66 0	0 0 90	-	frame	-	-
+part	couch-leg	foot	sphere	0.16 0.16 0.16	0 0.08 0	-	-	trim	-	-
+part	couch-leg	waist	cylinder	0.06 0.08 0.06	0 0.18 0	-	-	frame	-	-
+# The seat between the ends: its base, and a cushion a seat (seat-1's).
+part	bench	base	box	{wide} 0.2 0.76	0 0.2 0	-	0.1	frame	-	-
+part	bench	seat	box	0.62 0.16 0.7	{first} 0.38 0.02	-	0.35	cushion	-	{repeat}
+#
+# The sixteen: how many seats, which arm, which lattice, and what it
+# wears: its frame, its cushions, its trim (feet, beads, rings).
+couch	name	seats	arm	lattice	frame	cushion	trim
+couch	couch-scroll-1	1	tall	pill	scarlet	blush	gold
+couch	couch-scroll-2	2	tall	pill	ruby	pearl	brass
+couch	couch-scroll-3	3	tall	pill	jade	mint	gold
+couch	couch-scroll-4	4	tall	pill	navy	sky	pearl
+couch	couch-scroll-5	1	low	pill	amber	cream	coal
+couch	couch-scroll-6	2	low	pill	onyx	coal	gold
+couch	couch-scroll-7	3	low	pill	lilac	lavender	pearl
+couch	couch-scroll-8	4	low	pill	rose	blush	gold
+couch	couch-scroll-9	1	tall	bead	teal	ice	brass
+couch	couch-scroll-10	2	tall	bead	plum	orchid	gold
+couch	couch-scroll-11	3	tall	bead	cobalt	sky	chalk
+couch	couch-scroll-12	4	tall	bead	moss	leaf	cream
+couch	couch-scroll-13	1	low	bead	cream	stone	amber
+couch	couch-scroll-14	2	low	bead	coal	sand	brass
+couch	couch-scroll-15	3	low	bead	blossom	rose	pearl
+couch	couch-scroll-16	4	low	bead	violet	haze	gold

@@ -11,16 +11,10 @@ is a true arc and every join is smooth. Writes the outlines into
 `data/once/` (`jet-long.svg`, `jet-long-window-1.svg`, ...), their names
 into `source.tsv`, and the jets' body and window rows into `thing.tsv`,
 in the place the old ones stood; no other row is touched."""
-import io
 import math
-import os
 from fractions import Fraction
 
-HERE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'once')
-
-
-def lines(name):
-    return io.open(os.path.join(HERE, name), encoding='utf-8').read().split('\n')
+from chain import box, g, keep, lines, outline, write
 
 
 def read():
@@ -55,63 +49,6 @@ def read():
                 else:
                     one['ring'].append((piece, [circle]))
     return jet
-
-
-def touch(a, b):
-    """The line that touches circle `a` and then `b`, the outline outside
-    on its left as it is taken with the clock: the angle of its normal,
-    pointing out."""
-    (ca, ra), (cb, rb) = a, b
-    dx, dy = cb[0] - ca[0], cb[1] - ca[1]
-    far = math.hypot(dx, dy)
-    return math.atan2(dy, dx) - math.acos(max(-1.0, min(1.0, (ra - rb) / far)))
-
-
-def spot(circle, angle):
-    (x, y), r = circle
-    return (x + r * math.cos(angle), y + r * math.sin(angle))
-
-
-def outline(ring):
-    """The circles as one closed path, and its points for its box."""
-    count = len(ring)
-    normal = [touch(ring[k], ring[(k + 1) % count]) for k in range(count)]
-    path, point = '', []
-    for k, circle in enumerate(ring):
-        come, go = normal[k - 1], normal[k]
-        start, end = spot(circle, come), spot(circle, go)
-        lead = 'M' if not path else 'L'
-        path += '%s%s %s' % (lead, number(start[0]), number(start[1]))
-        point.append(start)
-        r = circle[1]
-        if abs(r) > 1e-9:
-            # Outward it turns with the clock, inward against it.
-            span = (go - come) % (2 * math.pi)
-            span = span if r > 0 else span - 2 * math.pi
-            big = 1 if abs(span) > math.pi else 0
-            path += 'A%s %s 0 %d %d %s %s' % (number(abs(r)), number(abs(r)), big, 1 if r > 0 else 0, number(end[0]), number(end[1]))
-            point += [spot(circle, come + span * step / 16) for step in range(1, 17)]
-    return path + 'Z', point
-
-
-def number(value):
-    return ('%.5f' % value).rstrip('0').rstrip('.')
-
-
-def g(value):
-    return ('%.3f' % value).rstrip('0').rstrip('.')
-
-
-def box(point):
-    xs, ys = [p[0] for p in point], [p[1] for p in point]
-    return min(xs), min(ys), max(xs), max(ys)
-
-
-def write(name, path, point, note):
-    x0, y0, x1, y1 = box(point)
-    text = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="%s %s %s %s">\n  <!-- %s -->\n  <path d="%s"/>\n</svg>\n' % (
-        number(x0), number(y0), number(x1 - x0), number(y1 - y0), note, path)
-    io.open(os.path.join(HERE, name + '.svg'), 'w', encoding='utf-8', newline='\n').write(text)
 
 
 def main():
@@ -150,7 +87,7 @@ def main():
                 done.add(cell[0])
             continue
         text.append(line)
-    io.open(os.path.join(HERE, 'thing.tsv'), 'w', encoding='utf-8', newline='\n').write('\n'.join(text))
+    keep('thing.tsv', '\n'.join(text))
     named = dict(sources)
     head = '# The jets, from data/once/jet.tsv by script/jet.py.'
     # The jets' rows and the line over them go; they are written again
@@ -160,7 +97,7 @@ def main():
     while kept and not kept[-1].strip():
         kept.pop()
     kept += [head] +['%s\t%s.svg' % pair for pair in sources]
-    io.open(os.path.join(HERE, 'source.tsv'), 'w', encoding='utf-8', newline='\n').write('\n'.join(kept) + '\n')
+    keep('source.tsv', '\n'.join(kept) + '\n')
     print(' '.join('%s %d rows' % (thing, len(out)) for thing, out in rows.items()))
 
 
