@@ -3,13 +3,15 @@
 //! conversation with.
 
 use appkit::pui::core::{PEvent, PMark, PMode, PPoint};
+use appkit::pui::state::PState;
 use appkit::pui::window::{PDeed, PStage};
+use appkit::service::PTable;
 use appkit::theme::PLook;
 use serde_json::json;
 
 use super::tools::{icon, typed};
 use super::{DESK, drawn, part, rect, shown, staged};
-use crate::Phiogy;
+use crate::{Phiogy, data};
 use crate::part::bond::{ASKED, NONE, SENT, WITH};
 
 /// The window on one of its pages, laid out.
@@ -192,4 +194,48 @@ fn step_28_finding_somebody_begins_a_conversation_that_stays_in_my_rail() {
     assert_eq!((desk.said().len(), desk.kept.get("sent")["phiogy/dm-u_milo"][0]["text"].clone()), (1, json!("Hello Milo")));
     // Somebody the site has a room with is written to there.
     assert_eq!(desk.direct_room("lora"), "lora");
+}
+
+/// Whether the words are on the window, whole or in the lines they wrap into.
+fn said(stage: &PStage, look: &PLook, words: &str) -> bool {
+    shown(stage, look).iter().any(|line| line.len() > 8 && words.starts_with(line.as_str()))
+}
+#[test]
+fn step_26b_i_publish_a_club_and_a_pft_from_their_drawers_and_a_guest_is_told_why_not() {
+    let (app, mut stage, look) = staged(DESK);
+    let desk = app.desk();
+    let word = |name: &str| desk.text.get(name).to_string();
+    assert!(stage.window.apply(&PDeed::Show("venue".to_string())));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    // The hosts' bar offers both; the club's drawer says its steps.
+    assert!(press(&mut stage, &look, "venue", &word("host.makeclub")));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert_eq!(stage.window.modal(), Some("newclub"));
+    let text = shown(&stage, &look);
+    assert!(text.iter().any(|line| word("newclub.help.1").starts_with(line.as_str()) && line.len() > 10), "{text:?}");
+    // With no name, Publish says so; and with a name but no Phiora to
+    // publish on (this window has none), it says that.
+    assert!(super::press(&mut stage, &look, &word("newclub.publish")));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(said(&stage, &look, &word("publish.name")), "{:?}", shown(&stage, &look));
+    desk.shelf.set("newclub/name", "Test Club");
+    desk.shelf.set("newclub/supply", "many");
+    assert!(super::press(&mut stage, &look, &word("newclub.publish")));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(said(&stage, &look, &word("publish.number")), "{:?}", shown(&stage, &look));
+    desk.shelf.set("newclub/supply", "50");
+    assert!(super::press(&mut stage, &look, &word("newclub.publish")));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(said(&stage, &look, PTable::read(data::MAKE).get("say.nowhere")), "{:?}", shown(&stage, &look));
+    // The PFT's drawer wants a number and a club of the person's own.
+    assert!(stage.send(&PEvent::KeyDown(PEvent::ESCAPE)));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(press(&mut stage, &look, "venue", &word("host.makepft")));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert_eq!(stage.window.modal(), Some("newpft"));
+    desk.shelf.set("newpft/name", "Test #1");
+    desk.shelf.set("newpft/number", "1");
+    assert!(super::press(&mut stage, &look, &word("newclub.publish")));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    assert!(said(&stage, &look, &word("publish.club")), "{:?}", shown(&stage, &look));
 }

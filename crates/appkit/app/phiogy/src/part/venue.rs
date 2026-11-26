@@ -34,6 +34,7 @@ const NAME: &str = "make/name";
 const TEMPLATE: &str = "make/template";
 const MADE: &str = "make/do";
 const DEED: &str = "host/do";
+const SAID: &str = "hosts/said";
 const ROOM: &str = "host/room";
 
 type Row = Vec<String>;
@@ -63,7 +64,7 @@ impl Hosts {
     /// The host a drawer is about.
     fn open(&self) -> Option<Place> {
         let id = self.get(OPEN);
-        self.desk.made().into_iter().chain(self.desk.site.venue.iter().cloned()).find(|place| place.id == id)
+        self.desk.made().into_iter().chain(self.desk.site.venue.iter().cloned()).chain(self.desk.published()).find(|place| place.id == id)
     }
 
     /// Whether a host is one the search leaves.
@@ -102,6 +103,9 @@ impl Hosts {
                 made.iter().chain(joined).filter(|place| self.sought(place)).map(|place| self.card(place)).collect()
             }
             "hosts.every" => self.every().iter().map(|place| self.card(place)).collect(),
+            // Hosts people published on Phiora, that they are not in yet.
+            "hosts.made" => self.desk.published().iter().filter(|place| self.sought(place)).map(|place| self.card(place)).collect(),
+            "hosts.say" => Some(self.get(SAID)).filter(|said| !said.is_empty()).map(|said| vec![vec!["say".to_string(), said]]).unwrap_or_default(),
             "make.template" => self.desk.site.extra.template.iter().enumerate().map(|(index, template)| {
                 let room = template.room.iter().map(|(label, ..)| label.as_str()).collect::<Vec<_>>().join(&format!(" {} ", text.get("between")));
                 vec![index.to_string(), template.label.clone(), self.desk.icon(&template.icon).to_string(), room]
@@ -133,7 +137,12 @@ impl Hosts {
         let name = self.get(NAME);
         let template = self.get(TEMPLATE).parse::<usize>().ok().and_then(|index| self.desk.site.extra.template.get(index).cloned());
         let (Some(template), false) = (template, name.trim().is_empty()) else { return };
-        if let Some(room) = self.desk.create(name.trim(), &template) {
+        if let Some((id, room)) = self.desk.create_with(name.trim(), &template) {
+            // Published on Phiora, so others can see it and join it; if that cannot be, it is the person's own.
+            let said = self.desk.publish_host(&id, name.trim(), &template);
+            let text = &self.desk.text;
+            let published = said.starts_with("made ") || said.starts_with("changed ") || said.starts_with("same ");
+            self.desk.shelf.set(SAID, &if published { text.get("host.published").to_string() } else { format!("{}: {said}", text.get("host.local")) });
             self.desk.shelf.set(NAME, "");
             _ = self.desk.show(&room);
             self.desk.wish.borrow_mut().push(PDeed::Close);
@@ -150,6 +159,7 @@ impl PState for Hosts {
         let (desk, wish) = (&self.desk, |deed: PDeed| self.desk.wish.borrow_mut().push(deed));
         match (path, value) {
             (DO, MAKE) => wish(PDeed::Open(MAKE.to_string())),
+            (DO, crate::part::publish::CLUB | crate::part::publish::PFT) => wish(PDeed::Open(value.to_string())),
             (OPEN, id) => {
                 desk.shelf.set(OPEN, id);
                 wish(PDeed::Open(HOST.to_string()));
@@ -164,6 +174,13 @@ impl PState for Hosts {
                 match deed {
                     "open" => {
                         place.plate.first().into_iter().for_each(|plate| _ = desk.show(&plate.id));
+                        wish(PDeed::Close);
+                    }
+                    "join" if place.id.starts_with(crate::part::host::PUB) => {
+                        // A host another published: it becomes theirs, rooms and all, and they go to it.
+                        if let Some(room) = desk.adopt(&place) {
+                            _ = desk.show(&room);
+                        }
                         wish(PDeed::Close);
                     }
                     "join" => desk.enter(&place.id, true),
@@ -187,6 +204,10 @@ pub struct Venue {
 
 impl Venue {
     pub fn new(name: &str, desk: Desk) -> Venue {
+        // The hosts page asks Phiora for the hosts others published when it is made.
+        if name == "hosts" {
+            desk.refresh_published();
+        }
         let hosts = Rc::new(Hosts { desk: desk.clone() });
         let rows = hosts.clone();
         let state: Vec<(String, Rc<dyn PState>)> = vec![("hosts".to_string(), hosts.clone()), ("make".to_string(), hosts.clone()), ("host".to_string(), hosts), ("ui".to_string(), desk.shelf.clone())];

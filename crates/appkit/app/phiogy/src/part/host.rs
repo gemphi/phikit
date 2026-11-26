@@ -9,6 +9,7 @@
 
 use serde_json::{Map, Value, json};
 
+use appkit::pui::state::PState;
 use appkit::pui::window::{PDeed, PEntry, PItem};
 use appkit::service::PTable;
 
@@ -20,6 +21,9 @@ use crate::site::{Plate, Template, Venue};
 /// The person's own documents hosts are kept in.
 pub const IN: &str = "host";
 pub const MADE: &str = "made";
+/// Where the hosts others published are kept for the page to list, and what a published host's id begins with.
+pub const PUBLISHED: &str = "hosts/published";
+pub const PUB: &str = "pub:";
 /// The word a row of the bar tells to go to a host: its id follows.
 pub const GO: &str = "host ";
 /// The row of `data/site.tsv` that lists the web's icons for a kind of
@@ -118,17 +122,34 @@ impl Desk {
     /// Make a host of that name from a template. The id of its first
     /// room, to go to; nothing for a name of nothing but spaces.
     pub fn create(&self, name: &str, template: &Template) -> Option<String> {
+        self.create_with(name, template).map(|(_, room)| room)
+    }
+
+    /// Make a host as `create` does, and say its id as well as its first
+    /// room: the id is what it is published under.
+    pub fn create_with(&self, name: &str, template: &Template) -> Option<(String, String)> {
         let (key, name) = (PTable::read(data::SITE), name.trim());
         if name.is_empty() {
             return None;
         }
         let id = format!("{}{}", key.get("sent.id"), short(hour::moment()));
+        self.build(&id, name, &template.icon, &template.room).map(|room| (id, room))
+    }
+
+    /// A host of that id, name and icon with those rooms (each its label,
+    /// its heading and whether it is a voice room), kept as the person's
+    /// own. Nothing where they already have it. The id of its first room.
+    pub fn build(&self, id: &str, name: &str, mark: &str, rooms: &[(String, String, bool)]) -> Option<String> {
+        let key = PTable::read(data::SITE);
+        if self.made().iter().any(|venue| venue.id == id) {
+            return None;
+        }
         let word = |name: &str| key.get(name).to_string();
         let icon = |voice: bool| match voice {
             true => word("made.voice"),
             false => word("made.text"),
         };
-        let room: Vec<(String, &(String, String, bool))> = template.room.iter().enumerate().map(|(index, room)| (format!("{id}-{index}"), room)).collect();
+        let room: Vec<(String, &(String, String, bool))> = rooms.iter().enumerate().map(|(index, room)| (format!("{id}-{index}"), room)).collect();
         let mut head: Vec<&str> = Vec::new();
         room.iter().for_each(|(_, (_, under, _))| if !head.contains(&under.as_str()) { head.push(under) });
         let item = |under: &str| {
@@ -136,7 +157,7 @@ impl Desk {
             own.map(|(id, (label, _, voice))| json!({ word("id"): id, word("label"): label, word("icon"): icon(*voice) })).collect::<Vec<_>>()
         };
         let heads: Vec<Value> = head.iter().enumerate().map(|(index, under)| json!({ word("id"): format!("{id}-h{index}"), word("label"): under, word("icon"): word("made.text"), word("head"): true, word("item"): item(under) })).collect();
-        let group = json!({ word("id"): id, word("label"): name, word("icon"): template.icon, word("item"): heads });
+        let group = json!({ word("id"): id, word("label"): name, word("icon"): mark, word("item"): heads });
         let kind = |voice: bool| Some(word("voice")).filter(|_| voice);
         let rooms: Map<String, Value> = room.iter().map(|(id, (label, _, voice))| {
             let mut one = json!({ word("label"): label, word("space"): name, word("member"): [], word("message"): [] });
@@ -155,5 +176,55 @@ impl Desk {
         let all = self.kept.get(MADE).get(&self.site.app).and_then(Value::as_array).cloned().unwrap_or_default();
         let kept: Vec<Value> = all.into_iter().filter(|one| one[key.get("group")][key.get("id")] != json!(id)).collect();
         self.kept.put(MADE, &self.site.app, Value::Array(kept));
+    }
+
+    /// Publish a host just made on Phiora, as Phiegg's own hosts are, so
+    /// others can see it and join it. What Phiora said, or why it could
+    /// not (a guest cannot publish).
+    pub fn publish_host(&self, id: &str, name: &str, template: &Template) -> String {
+        let rooms: Vec<Value> = template.room.iter().map(|(label, under, voice)| json!({ "label": label, "under": under, "voice": voice })).collect();
+        let payload = json!({ "name": name.trim(), "genre": template.label, "icon": template.icon, "members": 1, "online": 1, "rooms": rooms });
+        match self.kept.records().and_then(|records| records.set("host", id, payload)) {
+            Ok(set) => set.said("host", id),
+            Err(why) => why,
+        }
+    }
+
+    /// Ask Phiora for the hosts other people published, and keep them
+    /// for the hosts' page to list.
+    pub fn refresh_published(&self) {
+        let word = PTable::read(data::MAKE);
+        let me = self.kept.me();
+        let mine = me[self.kept.word("me.id")].as_str().unwrap_or_default().to_string();
+        let tree = self.kept.read(&word.fill("list", "kind", "host")).and_then(|text| serde_json::from_str::<Value>(&text).ok());
+        let rows = tree.iter().filter_map(|tree| tree[word.get("answer.sources")].as_array()).flatten().filter(|source| source[word.get("answer.kind")] == "host").filter_map(|source| source[word.get("answer.rows")].as_array()).flatten();
+        let list: Vec<Value> = rows.filter(|row| row["ref"].is_string() && row["rooms"].is_array() && row["ownerId"].as_str().is_some_and(|owner| owner != mine)).map(|row| json!({ "ref": row["ref"], "name": row["name"], "icon": row["icon"], "members": row["members"], "online": row["online"], "rooms": row["rooms"] })).collect();
+        self.shelf.set(PUBLISHED, &Value::Array(list).to_string());
+    }
+
+    /// The hosts others published that the person is not yet in, as
+    /// hosts they could join: their rooms are the ones it was made with.
+    pub fn published(&self) -> Vec<Venue> {
+        let key = PTable::read(data::SITE);
+        let have: Vec<String> = self.made().into_iter().map(|venue| venue.id).collect();
+        let list: Vec<Value> = serde_json::from_str(&self.shelf.get(PUBLISHED)).unwrap_or_default();
+        let text = |value: &Value| value.as_str().unwrap_or_default().to_string();
+        list.iter().filter_map(|one| {
+            let id = one["ref"].as_str().filter(|id| !have.iter().any(|have| have == id))?;
+            let plate = one["rooms"].as_array()?.iter().enumerate().map(|(index, room)| {
+                let voice = room["voice"].as_bool().unwrap_or(false);
+                Plate { id: format!("{id}-{index}"), label: text(&room["label"]), icon: key.get(if voice { "made.voice" } else { "made.text" }).to_string(), head: text(&room["under"]), voice, ..Plate::default() }
+            }).collect();
+            let icon = Some(text(&one["icon"])).filter(|icon| !icon.is_empty()).unwrap_or_else(|| key.get("made.text").to_string());
+            Some(Venue { id: format!("{PUB}{id}"), label: text(&one["name"]), icon, count: one["members"].as_u64().unwrap_or(1), online: one["online"].as_u64().unwrap_or(1), joined: false, mark: None, plate })
+        }).collect()
+    }
+
+    /// Join a host another published: it becomes one of the person's own,
+    /// with the rooms it was made with. The id of its first room.
+    pub fn adopt(&self, place: &Venue) -> Option<String> {
+        let id = place.id.strip_prefix(PUB)?;
+        let rooms: Vec<(String, String, bool)> = place.plate.iter().map(|plate| (plate.label.clone(), plate.head.clone(), plate.voice)).collect();
+        self.build(id, &place.label, &place.icon, &rooms)
     }
 }

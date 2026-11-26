@@ -41,8 +41,22 @@ impl Desk {
         let site = self.plate(&room).map(|plate| plate.message).unwrap_or_default();
         let own = self.kept.get(SENT).get(self.store()).and_then(Value::as_array).cloned().unwrap_or_default();
         let name = |id: &str| self.site.member(id).map_or_else(|| id.to_string(), |member| member.name.clone());
-        let own = own.iter().map(|one| spoken(one, &key)).map(|one| Message { by: name(&one.who), ..one });
-        site.into_iter().chain(own).collect()
+        let own = own.iter().map(|one| spoken(one, &key)).map(|one| Message { by: name(&one.who), ..one }).collect::<Vec<_>>();
+        // What other people wrote in it, as Phiora has it (not what this person wrote: that is theirs, above).
+        let me = self.kept.me();
+        let mine = me[self.kept.word("me.id")].as_str().unwrap_or_default().to_string();
+        let text = |row: &Value, name: &str| row[name].as_str().unwrap_or_default().to_string();
+        let today = hour::now("%Y-%m-%d");
+        let others = self.kept.heard(&self.store()).into_iter().filter(|row| text(row, "ownerId") != mine && !own.iter().any(|one| one.id == text(row, "ref"))).map(|row| {
+            let at = moment_of(&text(&row, "ref"));
+            let day = Some(hour::of(at, "%Y-%m-%d")).map(|day| if day == today { self.text.get("stream.today").to_string() } else { day }).unwrap_or_default();
+            let who = text(&row, "ownerId");
+            let by = Some(text(&row, "authorName")).filter(|by| !by.is_empty()).unwrap_or_else(|| name(&who));
+            Message { id: text(&row, "ref"), by, who, day, at: hour::of(at, self.text.get("stream.hour")), text: text(&row, "text"), reply: text(&row, "reply"), ..Message::default() }
+        }).collect::<Vec<_>>();
+        let mut said: Vec<Message> = own.into_iter().chain(others).collect();
+        said.sort_by_key(|one| moment_of(&one.id));
+        site.into_iter().chain(said).collect()
     }
 
     /// Write something in the open room, answering the message the
@@ -78,6 +92,14 @@ impl Desk {
             one[key.get("reply")] = json!(answer);
         }
         picture.into_iter().for_each(|picture| one[key.get("image")] = json!([picture]));
+        // What was said in words is also made a record on Phiora, so the others in the room read it; a guest's is
+        // refused there and stays with them.
+        if !words.is_empty() {
+            let me = self.kept.me();
+            let by = me[self.kept.word("me.name")].as_str().unwrap_or_default().to_string();
+            let id = one[key.get("id")].as_str().unwrap_or_default().to_string();
+            self.kept.send("message", &id, json!({ "room": self.store(), "text": words, "reply": one[key.get("reply")], "authorName": by }));
+        }
         let mut all = self.kept.get(SENT).get(self.store()).and_then(Value::as_array).cloned().unwrap_or_default();
         all.push(one);
         self.kept.put(SENT, &self.store(), Value::Array(all));
@@ -102,7 +124,13 @@ impl Desk {
 
     /// Give a message a mark, or take it back.
     pub fn give(&self, id: &str, icon: &str) {
-        self.kept.put(MARK, &format!("{}/{id}/{icon}", self.store()), json!(!self.gave(id, icon)));
+        let on = !self.gave(id, icon);
+        self.kept.put(MARK, &format!("{}/{id}/{icon}", self.store()), json!(on));
+        // And on Phiora, so the others in the room count it.
+        if let Some(me) = self.my_key() {
+            let room = self.store();
+            self.kept.send("mark", &format!("mk:{me}:{room}:{id}:{icon}"), json!({ "room": room, "messageId": id, "icon": icon, "state": if on { "on" } else { "off" } }));
+        }
     }
 
     /// The mark a like is.
@@ -118,6 +146,17 @@ impl Desk {
         let mut list: Vec<Given> = one.mark.iter().map(|(icon, count)| (icon.clone(), *count, self.gave(&one.id, icon))).collect();
         if !list.iter().any(|(icon, ..)| *icon == like) && self.gave(&one.id, &like) {
             list.push((like, 0, true));
+        }
+        // What others gave it on Phiora counts with the rest.
+        let others = self.kept.marked(&one.id, &self.my_key().unwrap_or_default());
+        for (icon, n) in others {
+            match list.iter_mut().find(|(known, ..)| *known == icon) {
+                Some((_, count, _)) => *count += n,
+                None => {
+                    let on = self.gave(&one.id, &icon);
+                    list.push((icon, n, on));
+                }
+            }
         }
         list.into_iter().map(|(icon, count, on)| (icon, count + on as u64, on)).collect()
     }
@@ -156,6 +195,17 @@ impl Desk {
     }
 
     pub fn follow(&self, id: &str) {
-        self.kept.put(FOLLOW, id, json!(!self.follows(id)));
+        let on = !self.follows(id);
+        self.kept.put(FOLLOW, id, json!(on));
+        // Told to Phiora too (the person followed, by their key there if they are one of its persons).
+        if let Some(me) = self.my_key() {
+            let them = Self::person_key(id).unwrap_or_else(|| id.to_string());
+            self.kept.send("follow", &format!("fl:{me}>{them}"), json!({ "from": me, "to": them, "state": if on { "on" } else { "off" } }));
+        }
     }
+}
+
+/// When a message of this window was said: the moment its id ends with.
+fn moment_of(id: &str) -> u128 {
+    id.trim_start_matches(|one: char| !one.is_ascii_digit()).parse().unwrap_or_default()
 }

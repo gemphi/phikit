@@ -1,0 +1,73 @@
+# Making clubs and PFTs, and publishing them on Phiora, which is what
+# Phiegg's web reads (puikit: app/phiora-server, records.mjs). A sheet
+# of rows is read, one record to a row, and each is made on Phiora or,
+# where Phiora already has a record of that `ref`, changed to match it.
+# Run it again with the same sheet and nothing is made twice.
+#
+# A sheet is a TSV: a header row, then a row for each record. The
+# columns `kind` and `ref` are required. `ref` is the record's own name
+# for you (`pft_bpsc_0001`), which Phiora's md5 ids do not give. Every
+# other column is a field of the record. What its name ends in says
+# what its cells are:
+#   name        words (the default)
+#   supply:n    a number
+#   live:b      true or false
+#   colors[]    a list, its items divided by |
+#   traits.hair a field inside another field (here, `traits`)
+# An empty cell is no field: it leaves what Phiora has alone. Lines that
+# begin with # are not rows.
+#
+# The words of the columns that make a row, and the kinds a sheet may
+# make: Phiegg's `club`, its `host` and its `profilePft` (a PFT, one token of a
+# collection, whose `clubId` is the id of its club). A cell that begins
+# with `@` names another row by its ref (`@bpsc`): it becomes that
+# record's id on Phiora, so a PFT's `clubId` cell is `@bpsc`.
+column.kind	kind
+column.ref	ref
+kinds	club profilePft host
+link	@
+# What the ends of a column's name mean.
+suffix.number	:n
+suffix.bool	:b
+suffix.words	:s
+suffix.list	[]
+split.list	|
+nest	.
+# Where Phiora keeps records, and what it answers them with: a record's
+# name for its id, the lists a kind is asked of (`{kind}`), and the one
+# record (`{kind}`, `{id}`); its answer to a list, and to making one.
+id	id
+tree	/tree/item
+list	/tree?kind={kind}
+item	/tree/item/{kind}/{id}
+answer.sources	sources
+answer.rows	rows
+answer.kind	kind
+answer.item	item
+answer.message	message
+# The most records changed in one run before it waits out Phiora's
+# limit of 30 a minute, and how long it waits, in milliseconds.
+wave	28
+pause	61000
+# What is said, a line for each row and one at the end.
+say.made	made {kind} {ref} ({id})
+say.changed	changed {kind} {ref}: {fields}
+say.same	same {kind} {ref}
+say.would	would make {kind} {ref}
+say.would.change	would change {kind} {ref}: {fields}
+say.refused	refused {kind} {ref}: {why}
+say.bad	line {line}: {why}
+say.wait	waiting for Phiora to take more
+say.done	{made} made, {changed} changed, {same} the same, {refused} refused
+say.nobody	Sign in first (--signin HANDLE with PHIOGY_SECRET, or --demo ID): a guest cannot publish.
+say.nowhere	Phiora did not answer.
+say.nothing	Nothing to publish: no sheet, or no rows.
+why.kind	{kind} is not a kind a sheet may make
+why.ref	no ref
+why.column	there is no column called {name}
+why.number	{value} is not a number
+why.bool	{value} is not true or false
+why.cells	the row has more cells than the header has columns
+why.link	{name} is no record of this sheet or of Phiora's
+why.twice	ref {ref} is on two rows
+why.header	the header has no kind and ref columns

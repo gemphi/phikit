@@ -14,6 +14,18 @@ pub fn now(_: &str) -> String {
     String::new()
 }
 
+/// A moment (thousandths of a second since 1970) on the person's own
+/// clock, written as `format` says; and whether it is today.
+#[cfg(not(target_family = "wasm"))]
+pub fn of(moment: u128, format: &str) -> String {
+    use chrono::TimeZone;
+    chrono::Local.timestamp_millis_opt(i64::try_from(moment).unwrap_or_default()).single().map(|time| time.format(format).to_string()).unwrap_or_default()
+}
+#[cfg(target_family = "wasm")]
+pub fn of(_: u128, _: &str) -> String {
+    String::new()
+}
+
 /// The moment now: thousandths of a second since 1970.
 #[cfg(not(target_family = "wasm"))]
 pub fn moment() -> u128 {

@@ -28,6 +28,8 @@ who.sort	name	sort.name	sort
 # The hosts' bar, the search's hint, their order; making a host: the
 # steps said in words, the name's hint, Create.
 hosts.tool	make	host.make	plus
+hosts.tool	newclub	host.makeclub	plus
+hosts.tool	newpft	host.makepft	plus
 hosts.find	find	host.find	search
 hosts.sort	members	sort.members	sort
 hosts.sort	name	sort.name	sort
@@ -37,3 +39,19 @@ make.help	3	host.help.3	-
 make.help	4	host.help.4	-
 make.name	name	host.name	-
 make.tool	create	host.made	check
+# Publishing a club and a PFT on Phiora (part/publish.rs): the steps in
+# words, each field's hint, and the button that publishes.
+newclub.help	1	newclub.help.1	-
+newclub.help	2	newclub.help.2	-
+newclub.help	3	newclub.help.3	-
+newclub.name	name	newclub.name	-
+newclub.ticker	ticker	newclub.ticker	-
+newclub.supply	supply	newclub.supply	-
+newclub.tagline	tagline	newclub.tagline	-
+newclub.tool	publish	newclub.publish	check
+newpft.help	1	newpft.help.1	-
+newpft.help	2	newpft.help.2	-
+newpft.help	3	newpft.help.3	-
+newpft.name	name	newpft.name	-
+newpft.number	number	newpft.number	-
+newpft.tool	publish	newclub.publish	check

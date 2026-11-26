@@ -59,7 +59,9 @@ item	field	say	-	say	note/{ui/item}	-	-
 hosts	head	-	host.title	-	-	-	-
 hosts	band	do	-	hosts.tool	hosts/do	-	bar end
 hosts	field	find	-	hosts.find	hosts/find	-	live
+hosts	text	say	-	hosts.say	-	-	-
 hosts	grid	mine	host.mine	hosts.mine	hosts/open	-	fold layout
+hosts	grid	made	host.byothers	hosts.made	hosts/open	-	fold layout
 hosts	grid	every	host.join	hosts.every	hosts/open	-	fold layout drop=sort:hosts.sort:hosts/sort
 make	band	do	-	make.tool	make/do	-	bar end
 make	text	help	host.how	make.help	-	-	fold
@@ -112,3 +114,19 @@ aside	text	rule	aside.rules	aside.rule	-	tab	fold
 # Every call kept in the room (part/history.rs), each a card as a
 # speaker's screen stands a song: Join to call again, Leave while on.
 aside	player	calls	aside.calls	aside.calls	aside/call	tab	fold
+# Publishing a club, and a PFT of one of the person's clubs, on Phiora
+# (part/publish.rs): the steps, the fields, the club to put the PFT in,
+# and what Phiora said.
+newclub	band	do	-	newclub.tool	newclub/do	-	bar end
+newclub	text	help	host.how	newclub.help	-	-	fold
+newclub	field	name	newclub.name	newclub.name	newclub/name	-	live
+newclub	field	ticker	newclub.ticker	newclub.ticker	newclub/ticker	-	live
+newclub	field	supply	newclub.supply	newclub.supply	newclub/supply	-	live
+newclub	field	tagline	newclub.tagline	newclub.tagline	newclub/tagline	-	live
+newclub	text	say	-	newclub.say	-	-	-
+newpft	band	do	-	newpft.tool	newpft/do	-	bar end
+newpft	text	help	host.how	newpft.help	-	-	fold
+newpft	field	name	newpft.name	newpft.name	newpft/name	-	live
+newpft	field	number	newpft.number	newpft.number	newpft/number	-	live
+newpft	rows	club	newpft.clubs	newpft.club	newpft/club	-	-
+newpft	text	say	-	newpft.say	-	-	-

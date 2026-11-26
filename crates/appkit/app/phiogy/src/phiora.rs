@@ -19,10 +19,32 @@ use appkit::service::PTable;
 use crate::data;
 use crate::net::{self, Place, head, reach};
 
-/// The kinds of ask `data/phiora.tsv` has.
-const GET: &str = "get";
-const PUT: &str = "put";
-const POST: &str = "post";
+/// The kinds of ask `data/phiora.tsv` has a head for: it reads (`Get`), keeps
+/// a document (`Put`), asks for something to be done or a record made
+/// (`Post`), changes a record (`Patch`) or takes one away (`Delete`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Verb {
+    Get,
+    Put,
+    Post,
+    Patch,
+    Delete,
+}
+
+impl Verb {
+    pub const ALL: [Verb; 5] = [Verb::Get, Verb::Put, Verb::Post, Verb::Patch, Verb::Delete];
+
+    /// The name of its rows in `data/phiora.tsv`.
+    fn row(self) -> &'static str {
+        match self {
+            Verb::Get => "get",
+            Verb::Put => "put",
+            Verb::Post => "post",
+            Verb::Patch => "patch",
+            Verb::Delete => "delete",
+        }
+    }
+}
 
 /// Phiora at a place.
 #[derive(Debug, Clone)]
@@ -55,7 +77,7 @@ impl Phiora {
 
     /// Phiora at that place, asked by nobody it knows yet.
     pub fn at(at: &str) -> Phiora {
-        let line = data::row(data::PHIORA).into_iter().filter(|cell| [GET, PUT, POST].contains(&cell[0])).filter_map(|cell| Some((cell[0].to_string(), cell.get(1)?.to_string())));
+        let line = data::row(data::PHIORA).into_iter().filter(|cell| Verb::ALL.iter().any(|verb| verb.row() == cell[0])).filter_map(|cell| Some((cell[0].to_string(), cell.get(1)?.to_string())));
         Phiora { at: at.trim_end_matches('/').to_string(), place: Place::read(at), cookie: String::new(), word: PTable::read(data::PHIORA), line: line.collect(), speak: PTable::read(data::LINE).get("speak").to_string() }
     }
 
@@ -66,7 +88,8 @@ impl Phiora {
 
     /// Ask one thing, and read all of the answer. Nothing when Phiora is
     /// not there, or takes longer than it is waited for.
-    fn ask(&self, kind: &str, path: &str, body: &str) -> Option<Answer> {
+    fn ask(&self, verb: Verb, path: &str, body: &str) -> Option<Answer> {
+        let kind = verb.row();
         let path = format!("{}{path}", self.place.base);
         let fill = |line: &str| line.replace("{path}", &path).replace("{speak}", &self.speak).replace("{host}", &self.place.authority()).replace("{agent}", self.word.get("agent")).replace("{cookie}", &self.cookie).replace("{length}", &body.len().to_string());
         let lines = self.line.iter().filter(|(known, _)| known == kind).map(|(_, line)| fill(line) + "\r\n");
@@ -83,7 +106,7 @@ impl Phiora {
     /// What Phiora answers a path with. Nothing when it is not there,
     /// when it refuses, and when it takes longer than it is waited for.
     pub fn get(&self, path: &str) -> Option<String> {
-        self.ask(GET, path, "").filter(|(status, ..)| status == self.word.get("fine")).map(|(.., body)| body)
+        self.ask(Verb::Get, path, "").filter(|(status, ..)| status == self.word.get("fine")).map(|(.., body)| body)
     }
 
     /// An app's own document, as Phiora composes it from its records.
@@ -95,7 +118,7 @@ impl Phiora {
     /// one, which it gives whoever asks who they are. `false` when it
     /// does not answer.
     pub fn enter(&mut self) -> bool {
-        let Some((status, said, _)) = self.ask(GET, self.word.get("me"), "") else { return false };
+        let Some((status, said, _)) = self.ask(Verb::Get, self.word.get("me"), "") else { return false };
         // A session it no longer knows is answered with another.
         let given = said.iter().filter_map(|line| line.split_once(':')).find(|(name, _)| name.trim().eq_ignore_ascii_case(self.word.get("session")));
         given.and_then(|(_, value)| value.split(';').next()).into_iter().for_each(|cookie| self.cookie = cookie.trim().to_string());
@@ -115,19 +138,27 @@ impl Phiora {
     /// Keep one of the person's own documents. `false` when Phiora did
     /// not take it.
     pub fn keep(&self, name: &str, document: &str) -> bool {
-        let taken = self.ask(PUT, &self.word.get("state").replace("{name}", name), document);
+        let taken = self.ask(Verb::Put, &self.word.get("state").replace("{name}", name), document);
         taken.is_some_and(|(status, ..)| [self.word.get("fine"), self.word.get("kept")].contains(&status.as_str()))
     }
 
     /// Ask for something to be done, and hear the answer: whether
     /// Phiora did it, and what it said. Nothing when it is not there.
     pub fn said(&self, path: &str, body: &str) -> Option<(bool, String)> {
-        self.ask(POST, path, body).map(|(status, _, said)| (status == self.word.get("fine"), said))
+        self.ask(Verb::Post, path, body).map(|(status, _, said)| (status == self.word.get("fine"), said))
     }
 
     /// Ask for something to be done: a body sent to a path. `false`
     /// when Phiora did not do it.
     pub fn post(&self, path: &str, body: &str) -> bool {
-        self.ask(POST, path, body).is_some_and(|(status, ..)| status == self.word.get("fine"))
+        self.ask(Verb::Post, path, body).is_some_and(|(status, ..)| status == self.word.get("fine"))
+    }
+
+    /// Make, change or take away a record (`/tree/item`): the kind of
+    /// ask (`post`, `patch` or `delete`), its path and its body. Whether
+    /// Phiora did it, and what it said; nothing when it is not there.
+    pub fn record(&self, verb: Verb, path: &str, body: &str) -> Option<(bool, String)> {
+        let done = [self.word.get("fine"), self.word.get("made")];
+        self.ask(verb, path, body).map(|(status, _, said)| (done.contains(&status.as_str()), said))
     }
 }

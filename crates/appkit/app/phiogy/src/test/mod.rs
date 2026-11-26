@@ -15,6 +15,7 @@ mod hosts;
 mod left;
 #[cfg(not(target_family = "wasm"))]
 mod library;
+mod make;
 #[cfg(not(target_family = "wasm"))]
 mod once;
 mod net;

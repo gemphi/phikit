@@ -20,6 +20,7 @@ tab	related	layers	thing.kin thing.more
 stat	price	price
 stat	sales	count	sale
 stat	transfers	count	transfer
+stat	swaps	count	swap
 stat	last	last
 stat	high	high
 stat	low	low

@@ -22,8 +22,14 @@
 //! `--bag s_phiogy/ID` puts that thing of that shop in the bag, and
 //! `--pay` pays for the bag.
 //! `--post` and a path posts that picture; `--mute tavi` mutes that person;
-//! `--wear s_phiogy/theme_sphere` puts that theme on; `--host NAME` makes a host.
-//! `--write` and some words writes them in the room it opens on;
+//! `--wear s_phiogy/theme_sphere` puts that theme on; `--host NAME` makes a host and
+//! publishes it on Phiora; `--adopt NAME` joins one somebody published.
+//! `--fill newclub/name=Moon --publish newclub` publishes what that drawer
+//! would hold, as its Publish does, and says what Phiora said.
+//! `--make clubs.tsv` publishes the clubs and PFTs of that sheet on Phiora
+//! for Phiegg's web, as the person signed in (`data/make.tsv`), and
+//! `--dry` only says what it would do.
+//! --write and some words writes them in the room it opens on;
 //! `--find` opens that room searched and `--type` types into the field
 //! that has the keys; `--pins` lists what is pinned in it; `--who lora`
 //! opens it with that person beside it.
@@ -61,6 +67,7 @@
 //! was said in the room it is on, and opens no window.
 
 mod caller;
+mod make;
 mod own;
 mod press;
 mod read;
@@ -70,6 +77,7 @@ use std::sync::{Arc, Mutex};
 
 use appkit::pui::PApp;
 use appkit::pui::core::{PMode, PSize};
+use appkit::pui::state::PState;
 use appkit::pui::window::PDeed;
 use appkit::screen;
 use appkit::service::{PBundle, PFolder, PStore, PTable};
@@ -188,6 +196,22 @@ pub fn run(word: &[String]) {
     refused.iter().for_each(|why| println!("{}", text.fill("read.refused", "why", why)));
     // Everything Phiora keeps about the person, written to a file.
     given(word, "--export").iter().for_each(|file| _ = app.desk().kept.export().map(|all| std::fs::write(file, all)));
+    // A sheet of clubs and PFTs, published on Phiora; the window is not opened.
+    if let Some(sheet) = given(word, "--make").pop() {
+        let ok = make::make(app.desk(), &sheet, has("--dry"));
+        app.desk().kept.settle();
+        if !ok {
+            std::process::exit(1);
+        }
+        return;
+    }
+    // What a drawer holds is filled in (`--fill newclub/name=Moon`), and published as its Publish does.
+    let drawers = given(word, "--publish");
+    if !drawers.is_empty() {
+        given(word, "--fill").iter().filter_map(|one| one.split_once('=')).for_each(|(path, value)| app.desk().shelf.set(path, value));
+        drawers.iter().for_each(|kind| println!("{}", crate::part::publish::publish_from(app.desk(), kind)));
+        return app.desk().kept.settle();
+    }
     given(word, "--write").iter().for_each(|said| _ = app.desk().write(said));
     given(word, "--post").iter().for_each(|path| _ = app.desk().post(path));
     given(word, "--mute").iter().filter(|id| !app.desk().muted(id)).for_each(|id| app.desk().mute(id));

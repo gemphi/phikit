@@ -275,7 +275,11 @@ impl Thing {
             // More like it: the others of its page of the menu.
             "thing.more" => {
                 let on = shop.shelf.iter().find(|shelf| shelf.at.contains(&at));
-                let near = on.map(|shelf| shelf.at.clone()).unwrap_or_default().into_iter().filter(|other| *other != at).take(self.desk.size(MORE) as usize);
+                // The others of its page first; a page of a few (Shoes) is filled out with the shop's
+                // other things, so there are always as many as the theme says.
+                let page = on.map(|shelf| shelf.at.clone()).unwrap_or_default();
+                let rest = (0..shop.product.len()).filter(|other| !page.contains(other));
+                let near = page.iter().copied().chain(rest).filter(|other| *other != at).take(self.desk.size(MORE) as usize);
                 near.filter_map(|other| shop.product.get(other)).map(|other| self.card(&shop, other, &other.kind)).collect()
             }
             _ => Vec::new(),

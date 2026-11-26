@@ -150,16 +150,16 @@ fn step_30b_a_thing_phiegg_sold_has_its_trail_its_figures_and_who_held_it() {
     // What is said of it, its points, and its facts, a list as pills.
     let text = shown(&stage, &look);
     assert!(["Ivory Glass, cut for midsummer.", "Swap into any pool", "Occasion", word("thing.trail").as_str(), word("thing.owner").as_str()].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
-    // Its trail: each sale or transfer in Phiegg's ledger, the newest
+    // Its trail: each sale, swap, transfer, bid or listing in Phiegg's ledger, the newest
     // first, who it went from and to by name, what and when, the price.
     assert!(press(&mut stage, &look, &word("thing.trail")));
     let text = shown(&stage, &look);
     let between = format!(" {} ", word("between"));
-    assert!([word("thing.went").replace("{from}", "Gemma Laurent").replace("{to}", "Gemma Vane"), [word("thing.event.transfer"), "2026-11-06".to_string()].join(&between), "$23,574".to_string(), [word("thing.event.sale"), "2026-08-15".to_string()].join(&between)].iter().all(|line| super::said(&text, line)), "{text:?}");
+    assert!([word("thing.went").replace("{from}", "Gemma Laurent").replace("{to}", "Gemma Vane"), [word("thing.event.swap"), "2026-11-06".to_string()].join(&between), "$23,574".to_string(), [word("thing.event.transfer"), "2026-10-19".to_string()].join(&between), [word("thing.event.sale"), "2026-10-01".to_string()].join(&between)].iter().all(|line| super::said(&text, line)), "{text:?}");
     // Its figures, from the ledger.
     assert!(press(&mut stage, &look, &word("thing.stats")));
     let text = shown(&stage, &look);
-    assert!([word("thing.stat.sales"), word("thing.stat.transfers"), word("thing.stat.high"), word("thing.stat.holders"), "2026-11-06".to_string()].iter().all(|line| text.contains(line)), "{text:?}");
+    assert!([word("thing.stat.sales"), word("thing.stat.transfers"), word("thing.stat.high"), word("thing.stat.swaps"), word("thing.stat.holders"), "2026-11-10".to_string()].iter().all(|line| text.contains(line)), "{text:?}");
     // Who held it, each once, the newest first, named (a person or an
     // agent); a press opens their record.
     assert!(press(&mut stage, &look, &word("thing.owner")));
@@ -208,4 +208,20 @@ fn step_31_the_bag_is_paid_from_the_wallet_and_what_was_bought_stays_mine() {
     // A line is taken out of the bag at its end.
     let out = icon(&stage, &look, "x").expect("the way to take it out").center();
     assert!(stage.send(&PEvent::PointerDown(out)) && desk.bag().is_empty());
+}
+
+#[test]
+fn every_shop_has_enough_things_that_more_like_this_is_always_full_and_a_shoe_page_is_filled_out() {
+    // The shops Phiegg's stores are written as: each sells at least the number of things "More like this" shows,
+    // and one more (the thing itself), so no thing is left with fewer than that many like it.
+    let (app, ..) = staged(DESK);
+    let most = app.desk().size("shop.more") as usize;
+    let dir = std::path::Path::new(&Phiogy::source()).parent().expect("its data folder").join("shop");
+    let shops: Vec<_> = std::fs::read_dir(&dir).expect("the shops' folder").filter_map(Result::ok).filter(|file| file.path().extension().is_some_and(|ext| ext == "json")).collect();
+    assert!(shops.len() >= 100, "{}", shops.len());
+    for shop in &shops {
+        let doc: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(shop.path()).expect("a shop")).expect("JSON");
+        let things = doc["product"].as_array().map_or(0, Vec::len);
+        assert!(things > most, "{:?} sells {things}", shop.file_name());
+    }
 }

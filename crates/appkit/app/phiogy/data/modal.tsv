@@ -17,3 +17,7 @@ record	About	globe
 # edge (part/venue.rs).
 make	Create a host	plus	drawer
 host	Host	users	drawer
+# Publishing a club, and a PFT, on Phiora: drawers at the right edge
+# (part/publish.rs).
+newclub	Publish a club	plus	drawer
+newpft	Publish a PFT	plus	drawer

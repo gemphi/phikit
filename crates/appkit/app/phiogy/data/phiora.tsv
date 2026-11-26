@@ -28,6 +28,7 @@ state	/state/{name}
 # it comes in pieces, and its word for that; and the head that gives
 # the one asking a session, which is sent back with every ask after.
 fine	200
+made	201
 kept	204
 session	set-cookie
 # What the window calls itself to Phiora, which names a session by it.
@@ -57,3 +58,16 @@ post	Cookie: {cookie}
 post	Content-Type: application/json
 post	Content-Length: {length}
 post	Connection: close
+# patch changes a record and delete takes one away (Phiora's /tree/item).
+patch	PATCH {path} {speak}
+patch	Host: {host}
+patch	User-Agent: {agent}
+patch	Cookie: {cookie}
+patch	Content-Type: application/json
+patch	Content-Length: {length}
+patch	Connection: close
+delete	DELETE {path} {speak}
+delete	Host: {host}
+delete	User-Agent: {agent}
+delete	Cookie: {cookie}
+delete	Connection: close

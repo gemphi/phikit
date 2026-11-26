@@ -46,6 +46,8 @@ with another caller, [`doc/call-rtc.png`](doc/call-rtc.png).
 | `src/peer/` | this window as a caller: `line` (a room's line as a page holds it), `mesh` (a connection to each other caller, and who gives way), `engine` and `stand` (what a connection is asked, and one that carries nothing), `call` (a call on a thread of its own), `rtc/` (the real WebRTC, with the `rtc` feature) |
 | `src/site.rs`, `src/site/read.rs` | the web Phiogy's own hosts, rooms, people's faces and pages, and how they are read from its files |
 | `src/phiora.rs` | Phiora asked as a page asks it, over plain HTTP: an app's document, who the one asking is, and their own documents, read and kept |
+| `src/records.rs` | every record the window keeps on Phiora, as `has`, `get` and `set` by kind and name key with a payload: one `match` over an `Ask` enum answers with a `Reply`; `phiora.rs`'s `Verb` enum is the wire |
+| `src/make.rs`, `src/part/publish.rs` | a sheet of clubs and PFTs read and published (`--make`), and the two drawers that publish one at a time |
 | `src/kept.rs`, `src/hour.rs` | a person's own documents, in their folder and on Phiora; the hour on their clock, for what they write |
 | `src/hosted.rs` | where a picture's key is on disk: the public folder of the app it names |
 | `src/app.rs` | `Phiogy`, which is `PApp`: the four sets read from `data/`, and the view of each part |
@@ -54,6 +56,24 @@ with another caller, [`doc/call-rtc.png`](doc/call-rtc.png).
 | `src/run.rs`, `main.rs`, `web.rs` | opening it: the one way, and its two starts |
 | `src/test/` | the tests, in the same folders |
 | `web/` | the page a browser loads it into; `pkg/` is built, not kept |
+
+## Clubs and PFTs, published to Phiegg's web
+A sheet of rows (a TSV, one club or PFT to a row) is published on
+Phiora, which Phiegg's web reads at boot, so what is made here is on the
+web the next time it loads. A row is made, or changed to match when
+Phiora already has a record of its `ref`, so the same sheet can be run
+again. A PFT's `clubId` cell is `@` and its club's `ref`, which becomes
+the id Phiora gave the club. The columns are in `data/make.tsv`; an
+example is [`doc/club-sheet.tsv`](doc/club-sheet.tsv).
+```bash
+phiogy --phiora localhost:4300 --demo u_noor --make doc/club-sheet.tsv --dry
+phiogy --phiora https://phiegg.com/api --signin HANDLE --make clubs.tsv
+```
+`--dry` says what would be done and writes nothing. A guest cannot
+publish: sign in first (`--signin` with the password in `PHIOGY_SECRET`,
+or `--demo` where Phiora allows it). Phiora lets a person change 30
+records a minute, so a big sheet waits between runs of 28. `node
+script/make.mjs` checks the whole of it against the real Phiora.
 
 The diagrams are in [`ARCHITECTURE.md`](ARCHITECTURE.md), the folders
 and the order of work in [`PLAN.md`](PLAN.md), each piece and its test

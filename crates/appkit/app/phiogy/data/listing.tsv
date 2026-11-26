@@ -95,3 +95,18 @@ aside.room	aside.room	0	1	2	-	-	-	-	3	4	5	-	6
 aside.member	aside.member	0	1	2	-	-	-	-	3	4	5	-	6
 aside.rule	aside.rule	0	1
 aside.calls	aside.calls	0	1	2	-	-	-	-	3	4	5	-	6	-	7	8
+newclub.help	newclub.help	0	text:1	-
+newclub.name	newclub.name	0	text:1	-
+newclub.ticker	newclub.ticker	0	text:1	-
+newclub.supply	newclub.supply	0	text:1	-
+newclub.tagline	newclub.tagline	0	text:1	-
+newclub.tool	newclub.tool	0	text:1	2
+newclub.say	newclub.say	0	1	-
+newpft.help	newpft.help	0	text:1	-
+newpft.name	newpft.name	0	text:1	-
+newpft.number	newpft.number	0	text:1	-
+newpft.club	newpft.club	0	1	2	-	-	-	-	-	3
+newpft.tool	newpft.tool	0	text:1	2
+newpft.say	newpft.say	0	1	-
+hosts.made	hosts.made	0	1	2	-	-	-	-	3	4	5	-	6
+hosts.say	hosts.say	0	1	-

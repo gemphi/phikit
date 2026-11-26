@@ -212,6 +212,7 @@ impl PApp for Phiogy {
             "status" => Some(Box::new(Status::new(desk))),
             "venue" => Some(Box::new(Venue::new("hosts", desk))),
             crate::part::venue::MAKE | crate::part::venue::HOST => Some(Box::new(Venue::new(part, desk))),
+            crate::part::publish::CLUB | crate::part::publish::PFT => Some(Box::new(crate::part::Publishing::new(part, desk))),
             "guide" => Some(Box::new(Guide::new(desk))),
             "shop" => Some(Box::new(Shopping::new(desk))),
             "account" => Some(Box::new(Account::new(desk))),

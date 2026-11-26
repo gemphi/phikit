@@ -23,19 +23,21 @@ handlers named after each). The status words:
 | Title over a room | Search, Search this room, Pinned | NAV / memory |
 | | Add to favorites | OWN DOC |
 | | Call, Call with camera, Join | see Calls |
-| Room stream | Message + Send | OWN DOC: nobody else receives it |
+| Room stream | Message + Send | WORKS through Phiora for a signed-in person (a `message` record, read by the room every 4 s); OWN DOC for a guest |
 | | Post a picture | OWN DOC: keeps a `file:///` path, never uploads |
-| | Reply, Like and marks, Pin | memory / OWN DOC |
-| Person beside the room | Back, Message, Follow, Mute | OWN DOC (follow and mute reach nobody) |
+| | Reply, Pin | memory / OWN DOC |
+| | Like and marks | WORKS through Phiora (a `mark` record per person and message); OWN DOC for a guest |
+| Person beside the room | Back, Message, Follow, Mute | Follow is told to Phiora (a `follow` record) and nothing shows it yet; Mute is OWN DOC |
 | | Profile tabs with layout, filter, order | NAV / memory |
 | Call | Mute, Camera, Share a screen, End | default build: stand-in engine, sends nothing (STUB); real media needs the `rtc` build |
 | Voice room, guide foot | Join, Leave, Mute, Sound off | as Calls |
 | Guide (Rooms) | Recent / Favorites / Older | LOCAL ONLY |
 | | A room's row | NAV, marks seen/read (OWN DOC) |
-| Hosts | Name your host; Create my own, Collection, Studio, Friends, Club | OWN DOC: the host exists only for its maker |
+| Hosts | Name your host; Create my own, Collection, Studio, Friends, Club | WORKS through Phiora (a `host` record others can Join); OWN DOC for a guest |
+| | Publish a club, Publish a PFT | WORKS through Phiora (the kit's form; records Phiegg's web reads) |
 | | Remove (made host); Join / Leave (catalogue host) | OWN DOC |
 | | Search hosts | LOCAL ONLY |
-| Friends, People | Add friend, Accept, Decline, Cancel, Remove | OWN DOC: the other person never gets it |
+| Friends, People | Add friend, Accept, Decline, Cancel, Remove | WORKS through Phiora with the seeded people who are Phiora's persons (a `bond` record the other answers); OWN DOC with the rest and for a guest |
 | | Message, a person's line | NAV + OWN DOC |
 | Search | Field, tabs (All, Rooms, People, Hosts, Worlds, Clubs, Shows), Popular, See all | reads Phiora's `/tree` or Phiegg's files |
 | | A card | NAV |
@@ -58,14 +60,14 @@ handlers named after each). The status words:
 
 | Asked for | Where it stops | Why |
 |---|---|---|
-| Creating hosts | the maker's own `host-made` document | the app never calls Phiora's `POST /tree/item`; nobody else can see or join |
+| Creating hosts | done (26 November): `host` records | joining copies the rooms; what is said in them is the room's `message` records |
 | Quests | not built | no control, no code |
 | Pools | not built | no control, no code (the web makes them through `POST /tree/item`) |
 | Any Phiegg record (create) | not built | no create sheet |
 | Editing a club | not built | the record page is read-only; no `PATCH /tree/item` |
 | Editing the profile | not built | the profile's head is the data file's Guest |
 | Uploading files | local copy only | Phiora has no upload route; posted pictures are local paths |
-| Messages, friends, follow reaching others | the sender's own document | there is no shared room or request on the server yet |
+| Follow shown to the followed, pins, mutes, uploads | the sender's own document or a record nothing reads | the follower count is the site's number; no upload route |
 | Calls between people | this window's own line | the line is Phiogy's, not the server's; the default build carries no sound or picture |
 | Anything kept, without Phiora | this machine only | kept documents go to Phiora only when it answered at launch |
 

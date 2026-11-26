@@ -31,10 +31,12 @@ pub mod hour;
 pub mod kept;
 #[cfg(not(target_family = "wasm"))]
 pub mod library;
+pub mod make;
 pub mod net;
 pub mod part;
 pub mod peer;
 pub mod phiora;
+pub mod records;
 pub mod run;
 pub mod site;
 pub mod system;

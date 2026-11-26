@@ -34,6 +34,8 @@ pub const WALLET: &str = include_str!("../data/wallet.tsv");
 pub const WEAR: &str = include_str!("../data/wear.tsv");
 /// The pages that are no room, and the space each is shown in.
 pub const PAGE: &str = include_str!("../data/page.tsv");
+/// Making clubs and PFTs from a sheet, and publishing them on Phiora.
+pub const MAKE: &str = include_str!("../data/make.tsv");
 /// What a person keeps: their own documents, and where.
 pub const KEEP: &str = include_str!("../data/keep.tsv");
 /// A room's controls, and the viewer's: what each does, its icon, its

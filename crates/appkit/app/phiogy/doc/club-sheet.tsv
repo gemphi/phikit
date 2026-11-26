@@ -1,0 +1,6 @@
+# A club and two of its PFTs, as `phiogy --make doc/club-sheet.tsv` publishes them on Phiora
+# (see data/make.tsv for what the columns may be). Run it again: nothing is made twice.
+kind	ref	name	ticker	supply:n	chain	tagline	tags[]	colors[]	status	clubId	n:n	tokenId	set	traits.background	traits.outfit	traits.collection
+club	sheet_club	Sheet Club	SHCL	2	Base	A club made from a sheet.	pfp|sheet	#2c2ca0|#d4943f	live							
+profilePft	sheet_pft_1	Sheet Pup #1								@sheet_club	1	sheet-1	Sheet Club	#140d38	#565656	Sheet Club
+profilePft	sheet_pft_2	Sheet Pup #2								@sheet_club	2	sheet-2	Sheet Club	#2d113a	#587162	Sheet Club

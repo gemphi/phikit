@@ -390,9 +390,14 @@ thing.event.transfer	Transfer
 thing.event.mint	Minted
 thing.event.offer	Offer
 thing.event.list	Listed
+thing.event.swap	Swapped
+thing.event.bid	Bid
+thing.event.cancel	Listing cancelled
+thing.event.price	Price changed
 thing.stat.price	Price
 thing.stat.sales	Sales
 thing.stat.transfers	Transfers
+thing.stat.swaps	Swaps
 thing.stat.last	Last sold for
 thing.stat.high	Highest
 thing.stat.low	Lowest
@@ -545,3 +550,26 @@ record.chain	Chain
 record.status	Status
 record.season	Season
 record.date	Date
+host.makeclub	Publish a club
+host.makepft	Publish a PFT
+newclub.help.1	1. Name your club and say what it is. Its ticker is the short name, its supply how many PFTs it holds.
+newclub.help.2	2. Press Publish. The club is made on Phiora, which Phiegg's web reads, so it is there for everybody the next time Phiegg loads.
+newclub.help.3	3. You must be signed in (the account drawer): a guest cannot publish. Publishing the same name again changes the club.
+newclub.name	Name of the club
+newclub.ticker	Ticker (BPSC)
+newclub.supply	Supply (a number)
+newclub.tagline	One line about it
+newclub.publish	Publish
+newpft.help.1	1. Give the PFT a name and its number in the club.
+newpft.help.2	2. Choose the club it belongs to: one of the clubs you published.
+newpft.help.3	3. Press Publish. It is made on Phiora in that club; the same number again changes it.
+newpft.name	Name of the PFT
+newpft.number	Number in the club
+newpft.clubs	In which club
+publish.name	Give it a name first.
+publish.number	The number must be a whole number, 0 or more.
+publish.club	Choose the club first.
+host.byothers	Published by people
+host.published	Published on Phiora, so others can see it and join it.
+host.local	Kept for you only
+host.adopted	joined {name}, with {rooms} rooms

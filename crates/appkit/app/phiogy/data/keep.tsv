@@ -84,3 +84,13 @@ ask.revoke	/auth/session/revoke
 revoke.other	others
 ask.export	/me/export
 export.file	phiogy-export.json
+# What a person says in a room is also made a record on Phiora (what is asked
+# it by, and the record's kind), and what everybody said is asked of Phiora
+# every watch milliseconds (0: never), so a room shows what others wrote.
+list.message	/tree?kind=message
+watch	4000
+list.bond	/tree?kind=bond
+# The most messages asked of a room at once (the latest).
+most	200
+list.mark	/tree?kind=mark
+list.follow	/tree?kind=follow
