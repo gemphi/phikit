@@ -32,3 +32,5 @@ read.me	You are {name}
 read.refused	Phiora said: {why}
 read.session	Sessions signed in as you: {count}
 read.mark	  {icon} {count}: {text}
+read.wallet	wallet {usd}
+read.owned	owned {n}

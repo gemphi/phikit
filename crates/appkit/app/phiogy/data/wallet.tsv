@@ -9,6 +9,7 @@ coin.usd	2500
 coin.egg	12000
 coin.sum	140
 coin.eth	0.42
+coin.ogy	500
 # The names in a line of the bag and of what was bought, as the web's
 # documents spell them.
 line.id	id
@@ -36,7 +37,9 @@ label.usd	USD
 label.egg	$EGG
 label.sum	$UM
 label.eth	ETH
+label.ogy	OGY
 rate.usd	1
 rate.egg	0.25
 rate.sum	6
 rate.eth	3200
+rate.ogy	0.05

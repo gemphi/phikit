@@ -27,6 +27,8 @@ pub(super) fn read(desk: &Desk, text: &PTable) -> Vec<String> {
     let kept = &desk.kept;
     let me = Some(kept.me()).filter(|me| !me.is_null()).map(|me| text.fill("read.me", "name", &crate::part::who(&me, &|name| kept.word(name), text)));
     let session = Some(kept.session().len()).filter(|count| *count > 0 && !kept.guest()).map(|count| text.fill("read.session", "count", &count.to_string()));
-    let me = me.into_iter().chain(session);
+    // What the person holds: the dollars in the wallet and how many things they own, as Phiora has them.
+    let held = Some(kept.guest()).filter(|guest| !guest).map(|_| [text.fill("read.wallet", "usd", &format!("{}", desk.wallet())), text.fill("read.owned", "n", &desk.bought().len().to_string())]);
+    let me = me.into_iter().chain(session).chain(held.into_iter().flatten());
     std::iter::once(from).chain(me).chain(venue).chain(said).collect()
 }

@@ -44,9 +44,9 @@ fn step_32_the_account_is_who_i_am_my_wallet_and_the_look() {
     assert!([word("account.title"), word("account.guest"), word("account.nobody"), word("account.offline"), word("account.phione")].iter().all(|line| text.contains(line)), "{text:?}");
     // The wallet a person starts with: each coin, and all of it in
     // dollars at what each coin is worth; what each is, and its sum.
-    assert!(["Total", "USD", "$EGG", "$UM", "ETH"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
+    assert!(["Total", "USD", "$EGG", "$UM", "ETH", "OGY"].iter().all(|line| text.contains(&line.to_string())), "{text:?}");
     // Every sum stands on a ground of its own, in the table's right half.
-    let sum = ["$7,684", "2,500", "12,000", "140", "0.42"];
+    let sum = ["$7,709", "2,500", "12,000", "140", "0.42", "500"];
     assert!(sum.iter().all(|sum| super::grounded(&stage, &look, sum)), "{text:?}");
     assert!(!super::grounded(&stage, &look, "Total"));
     // What was paid in a shop is gone from it.
