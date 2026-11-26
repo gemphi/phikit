@@ -57,8 +57,9 @@ the tables. Nothing in a file is drawn by hand.
   circles by `script/couch.py` from `data/once/couch.tsv`: a back of
   lobes, one a seat, joined at narrow necks, each a lattice of openings
   (pills or beads) largest at the couch's end; at each end a turned post
-  on a ball foot with a spike, and an arm rising as a horn that ends in
-  a ring (the o). One to four seats, a tall or a low arm, two lattices,
+  on a ball foot with a spike, and an arm along each side from it to a
+  leg in front, flat where a hand rests, rising at the front as a horn
+  that ends in a ring (the o). One to four seats, a tall or a low arm, two lattices,
   each its own colours. 32 couches in all.
 - Eight lounge chairs and settees of steel bands (`lounge-o-1` ...
   `lounge-u-2`), after the photo of 27 November 2026: each side a bar of

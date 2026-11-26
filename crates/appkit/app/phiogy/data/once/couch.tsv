@@ -2,9 +2,10 @@
 # (IMG_20260930_couCHES.jpg, 27 November 2026): seen from the front, a
 # back of lobes joined at narrow necks, each lobe a lattice of openings,
 # the largest at the couch's end and smaller towards a neck; at each end
-# a turned post on a ball foot with a spike, and an arm rising out of it
-# as a horn that ends in a ring. Built as the jets are: straight lines
-# and circles (script/chain.py), nothing drawn by hand. Read by
+# a turned post on a ball foot with a spike, and an arm along the side
+# from it to the front, where it rises as a horn that ends in a ring.
+# Built as the jets are: straight lines and circles (script/chain.py),
+# nothing drawn by hand. Read by
 # script/couch.py, which writes the outlines (scroll-*.svg), their names
 # into source.tsv and the couches' rows at the foot of thing.tsv.
 #
@@ -56,21 +57,24 @@ open	bead	0.62 0.62 1
 open	bead	0.44 0.44 1
 open	bead	0.62 0.62 1
 #
-# An arm, the left one, as a chain of circles taken with the clock (as
-# jet.tsv's): x out from the back's end, y up from its top (less than
-# nothing up). The first circle is the horn's tip, where its ring is;
-# the ring as wide as so many times the tip, and as deep as so many
-# times the back.
-line	arm-tall	round	-0.3 -0.42 0.065
-line	arm-tall	round	-0.04 -0.2 0.13
-line	arm-tall	round	0.15 0.02 0.03
-line	arm-tall	round	-0.07 0.05 0.03
-line	arm-tall	hollow	-0.25 -0.12 0.15
-line	arm-low	round	-0.32 -0.26 0.06
-line	arm-low	round	-0.05 -0.12 0.11
-line	arm-low	round	0.15 0.02 0.03
-line	arm-low	round	-0.07 0.05 0.03
-line	arm-low	hollow	-0.26 -0.05 0.12
+# An arm, seen from the side, as a chain of circles taken with the clock
+# (as jet.tsv's): x forward from the back, y up from the floor (less than
+# nothing up). It rests on the post behind and the leg in front, flat
+# where a hand lies, and turns up at the front into the horn of the
+# drawing; the first circle is the horn's tip, where its ring is. The
+# ring as wide as so many times the tip, and as deep as so many times
+# the arm; the arm this wide.
+line	arm-tall	round	0.76 -0.84 0.065
+line	arm-tall	round	0.72 -0.63 0.03
+line	arm-tall	round	0.03 -0.63 0.03
+line	arm-tall	round	0.03 -0.65 0.03
+line	arm-tall	hollow	0.54 -0.82 0.14
+line	arm-low	round	0.75 -0.76 0.06
+line	arm-low	round	0.72 -0.6 0.03
+line	arm-low	round	0.03 -0.6 0.03
+line	arm-low	round	0.03 -0.61 0.03
+line	arm-low	hollow	0.55 -0.75 0.11
+measure	arm	0.1
 measure	ring	3.4 1.6
 #
 # The bands of the lounge chairs (thing.tsv `lounge-*`), after the photo
@@ -110,7 +114,8 @@ line	band-u	round	0.7775 -0.5975 0.0225
 line	band-u	round	0.66 -0.14 0.14
 line	band-u	round	0.14 -0.14 0.14
 #
-# The post at each end behind, and the leg in front, a thing each:
+# The post at each end behind, and the leg in front under the arm, a
+# thing each:
 # their parts as thing.tsv writes them (x 0 its middle, y up from the
 # floor), wearing `frame` and `trim`, which a couch says.
 part	couch-post	foot	sphere	0.18 0.18 0.18	0 0.09 0	-	-	trim	-	-
@@ -118,9 +123,11 @@ part	couch-post	waist	cylinder	0.06 0.1 0.06	0 0.21 0	-	-	frame	-	-
 part	couch-post	bead	sphere	0.14 0.12 0.14	0 0.31 0	-	-	trim	-	-
 part	couch-post	column	capsule	0.08 0.4 0.08	0 0.54 0	-	-	frame	-	-
 part	couch-post	head	sphere	0.13 0.15 0.13	0 0.78 0	-	-	trim	-	-
-part	couch-post	spike	capsule	0.04 0.34 0.04	0 0.66 0	0 0 90	-	frame	-	-
+part	couch-post	spike	capsule	0.04 0.34 0.04	0 0.5 0	0 0 90	-	frame	-	-
 part	couch-leg	foot	sphere	0.16 0.16 0.16	0 0.08 0	-	-	trim	-	-
 part	couch-leg	waist	cylinder	0.06 0.08 0.06	0 0.18 0	-	-	frame	-	-
+part	couch-leg	bead	sphere	0.12 0.1 0.12	0 0.27 0	-	-	trim	-	-
+part	couch-leg	column	capsule	0.07 0.36 0.07	0 0.43 0	-	-	frame	-	-
 # The seat between the ends: its base, and a cushion a seat (seat-1's).
 part	bench	base	box	{wide} 0.2 0.76	0 0.2 0	-	0.1	frame	-	-
 part	bench	seat	box	0.62 0.16 0.7	{first} 0.38 0.02	-	0.35	cushion	-	{repeat}

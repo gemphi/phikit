@@ -808,9 +808,11 @@ couch-post	waist	cylinder	0.06 0.1 0.06	0 0.21 0	-	-	frame	-	-
 couch-post	bead	sphere	0.14 0.12 0.14	0 0.31 0	-	-	trim	-	-
 couch-post	column	capsule	0.08 0.4 0.08	0 0.54 0	-	-	frame	-	-
 couch-post	head	sphere	0.13 0.15 0.13	0 0.78 0	-	-	trim	-	-
-couch-post	spike	capsule	0.04 0.34 0.04	0 0.66 0	0 0 90	-	frame	-	-
+couch-post	spike	capsule	0.04 0.34 0.04	0 0.5 0	0 0 90	-	frame	-	-
 couch-leg	foot	sphere	0.16 0.16 0.16	0 0.08 0	-	-	trim	-	-
 couch-leg	waist	cylinder	0.06 0.08 0.06	0 0.18 0	-	-	frame	-	-
+couch-leg	bead	sphere	0.12 0.1 0.12	0 0.27 0	-	-	trim	-	-
+couch-leg	column	capsule	0.07 0.36 0.07	0 0.43 0	-	-	frame	-	-
 bench-1	base	box	0.62 0.2 0.76	0 0.2 0	-	0.1	frame	-	-
 bench-2	base	box	1.255 0.2 0.76	0 0.2 0	-	0.1	frame	-	-
 bench-3	base	box	1.89 0.2 0.76	0 0.2 0	-	0.1	frame	-	-
@@ -820,130 +822,130 @@ bench-2	seat	box	0.62 0.16 0.7	-0.318 0.38 0.02	-	0.35	cushion	-	2 0.635 0 0
 bench-3	seat	box	0.62 0.16 0.7	-0.635 0.38 0.02	-	0.35	cushion	-	3 0.635 0 0
 bench-4	seat	box	0.62 0.16 0.7	-0.953 0.38 0.02	-	0.35	cushion	-	4 0.635 0 0
 couch-scroll-1	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	scarlet	scroll-back-1-pill	-
-couch-scroll-1	arm	outline	0 0.565 0.07	-0.49 1.002 -0.43	-	0.037	scarlet	couch-arm-tall	-
-couch-scroll-1	arm	outline	0 0.565 0.07	0.49 1.002 -0.43	0 180 0	0.037	scarlet	couch-arm-tall	-
-couch-scroll-1	ring	letter	0 0.221 0.112	-0.698 1.22 -0.43	-	0.03	gold	pill-bold:o	-
-couch-scroll-1	ring	letter	0 0.221 0.112	0.698 1.22 -0.43	-	0.03	gold	pill-bold:o	-
+couch-scroll-1	arm	outline	0 0.305 0.1	-0.398 0.752 -0.018	0 -90 0	0.098	scarlet	couch-arm-tall	-
+couch-scroll-1	ring	letter	0 0.221 0.16	-0.398 0.84 0.33	0 -90 0	0.03	gold	pill-bold:o	-
+couch-scroll-1	arm	outline	0 0.305 0.1	0.398 0.752 -0.018	0 -90 0	0.098	scarlet	couch-arm-tall	-
+couch-scroll-1	ring	letter	0 0.221 0.16	0.398 0.84 0.33	0 -90 0	0.03	gold	pill-bold:o	-
 couch-scroll-1	post	thing	1	-0.398 0 -0.43	-	-	frame=scarlet trim=gold	couch-post	2 0.795 0 0
 couch-scroll-1	leg	thing	1	-0.398 0 0.3	-	-	frame=scarlet trim=gold	couch-leg	2 0.795 0 0
 couch-scroll-1	body	thing	1	0 0 0	-	-	frame=scarlet cushion=blush	bench-1	-
 couch-scroll-2	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	ruby	scroll-back-2-pill	-
-couch-scroll-2	arm	outline	0 0.565 0.07	-0.808 1.002 -0.43	-	0.037	ruby	couch-arm-tall	-
-couch-scroll-2	arm	outline	0 0.565 0.07	0.808 1.002 -0.43	0 180 0	0.037	ruby	couch-arm-tall	-
-couch-scroll-2	ring	letter	0 0.221 0.112	-1.015 1.22 -0.43	-	0.03	brass	pill-bold:o	-
-couch-scroll-2	ring	letter	0 0.221 0.112	1.015 1.22 -0.43	-	0.03	brass	pill-bold:o	-
+couch-scroll-2	arm	outline	0 0.305 0.1	-0.715 0.752 -0.018	0 -90 0	0.098	ruby	couch-arm-tall	-
+couch-scroll-2	ring	letter	0 0.221 0.16	-0.715 0.84 0.33	0 -90 0	0.03	brass	pill-bold:o	-
+couch-scroll-2	arm	outline	0 0.305 0.1	0.715 0.752 -0.018	0 -90 0	0.098	ruby	couch-arm-tall	-
+couch-scroll-2	ring	letter	0 0.221 0.16	0.715 0.84 0.33	0 -90 0	0.03	brass	pill-bold:o	-
 couch-scroll-2	post	thing	1	-0.715 0 -0.43	-	-	frame=ruby trim=brass	couch-post	2 1.43 0 0
 couch-scroll-2	leg	thing	1	-0.715 0 0.3	-	-	frame=ruby trim=brass	couch-leg	2 1.43 0 0
 couch-scroll-2	body	thing	1	0 0 0	-	-	frame=ruby cushion=pearl	bench-2	-
 couch-scroll-3	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	jade	scroll-back-3-pill	-
-couch-scroll-3	arm	outline	0 0.565 0.07	-1.125 1.002 -0.43	-	0.037	jade	couch-arm-tall	-
-couch-scroll-3	arm	outline	0 0.565 0.07	1.125 1.002 -0.43	0 180 0	0.037	jade	couch-arm-tall	-
-couch-scroll-3	ring	letter	0 0.221 0.112	-1.333 1.22 -0.43	-	0.03	gold	pill-bold:o	-
-couch-scroll-3	ring	letter	0 0.221 0.112	1.333 1.22 -0.43	-	0.03	gold	pill-bold:o	-
+couch-scroll-3	arm	outline	0 0.305 0.1	-1.032 0.752 -0.018	0 -90 0	0.098	jade	couch-arm-tall	-
+couch-scroll-3	ring	letter	0 0.221 0.16	-1.032 0.84 0.33	0 -90 0	0.03	gold	pill-bold:o	-
+couch-scroll-3	arm	outline	0 0.305 0.1	1.032 0.752 -0.018	0 -90 0	0.098	jade	couch-arm-tall	-
+couch-scroll-3	ring	letter	0 0.221 0.16	1.032 0.84 0.33	0 -90 0	0.03	gold	pill-bold:o	-
 couch-scroll-3	post	thing	1	-1.032 0 -0.43	-	-	frame=jade trim=gold	couch-post	2 2.065 0 0
 couch-scroll-3	leg	thing	1	-1.032 0 0.3	-	-	frame=jade trim=gold	couch-leg	2 2.065 0 0
 couch-scroll-3	body	thing	1	0 0 0	-	-	frame=jade cushion=mint	bench-3	-
 couch-scroll-4	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	navy	scroll-back-4-pill	-
-couch-scroll-4	arm	outline	0 0.565 0.07	-1.443 1.002 -0.43	-	0.037	navy	couch-arm-tall	-
-couch-scroll-4	arm	outline	0 0.565 0.07	1.443 1.002 -0.43	0 180 0	0.037	navy	couch-arm-tall	-
-couch-scroll-4	ring	letter	0 0.221 0.112	-1.65 1.22 -0.43	-	0.03	pearl	pill-bold:o	-
-couch-scroll-4	ring	letter	0 0.221 0.112	1.65 1.22 -0.43	-	0.03	pearl	pill-bold:o	-
+couch-scroll-4	arm	outline	0 0.305 0.1	-1.35 0.752 -0.018	0 -90 0	0.098	navy	couch-arm-tall	-
+couch-scroll-4	ring	letter	0 0.221 0.16	-1.35 0.84 0.33	0 -90 0	0.03	pearl	pill-bold:o	-
+couch-scroll-4	arm	outline	0 0.305 0.1	1.35 0.752 -0.018	0 -90 0	0.098	navy	couch-arm-tall	-
+couch-scroll-4	ring	letter	0 0.221 0.16	1.35 0.84 0.33	0 -90 0	0.03	pearl	pill-bold:o	-
 couch-scroll-4	post	thing	1	-1.35 0 -0.43	-	-	frame=navy trim=pearl	couch-post	2 2.7 0 0
 couch-scroll-4	leg	thing	1	-1.35 0 0.3	-	-	frame=navy trim=pearl	couch-leg	2 2.7 0 0
 couch-scroll-4	body	thing	1	0 0 0	-	-	frame=navy cushion=sky	bench-4	-
 couch-scroll-5	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	amber	scroll-back-1-pill	-
-couch-scroll-5	arm	outline	0 0.4 0.07	-0.497 0.92 -0.43	-	0.053	amber	couch-arm-low	-
-couch-scroll-5	arm	outline	0 0.4 0.07	0.497 0.92 -0.43	0 180 0	0.053	amber	couch-arm-low	-
-couch-scroll-5	ring	letter	0 0.204 0.112	-0.718 1.06 -0.43	-	0.03	coal	pill-bold:o	-
-couch-scroll-5	ring	letter	0 0.204 0.112	0.718 1.06 -0.43	-	0.03	coal	pill-bold:o	-
+couch-scroll-5	arm	outline	0 0.25 0.1	-0.398 0.695 -0.025	0 -90 0	0.12	amber	couch-arm-low	-
+couch-scroll-5	ring	letter	0 0.204 0.16	-0.398 0.76 0.32	0 -90 0	0.03	coal	pill-bold:o	-
+couch-scroll-5	arm	outline	0 0.25 0.1	0.398 0.695 -0.025	0 -90 0	0.12	amber	couch-arm-low	-
+couch-scroll-5	ring	letter	0 0.204 0.16	0.398 0.76 0.32	0 -90 0	0.03	coal	pill-bold:o	-
 couch-scroll-5	post	thing	1	-0.398 0 -0.43	-	-	frame=amber trim=coal	couch-post	2 0.795 0 0
 couch-scroll-5	leg	thing	1	-0.398 0 0.3	-	-	frame=amber trim=coal	couch-leg	2 0.795 0 0
 couch-scroll-5	body	thing	1	0 0 0	-	-	frame=amber cushion=cream	bench-1	-
 couch-scroll-6	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	onyx	scroll-back-2-pill	-
-couch-scroll-6	arm	outline	0 0.4 0.07	-0.815 0.92 -0.43	-	0.053	onyx	couch-arm-low	-
-couch-scroll-6	arm	outline	0 0.4 0.07	0.815 0.92 -0.43	0 180 0	0.053	onyx	couch-arm-low	-
-couch-scroll-6	ring	letter	0 0.204 0.112	-1.035 1.06 -0.43	-	0.03	gold	pill-bold:o	-
-couch-scroll-6	ring	letter	0 0.204 0.112	1.035 1.06 -0.43	-	0.03	gold	pill-bold:o	-
+couch-scroll-6	arm	outline	0 0.25 0.1	-0.715 0.695 -0.025	0 -90 0	0.12	onyx	couch-arm-low	-
+couch-scroll-6	ring	letter	0 0.204 0.16	-0.715 0.76 0.32	0 -90 0	0.03	gold	pill-bold:o	-
+couch-scroll-6	arm	outline	0 0.25 0.1	0.715 0.695 -0.025	0 -90 0	0.12	onyx	couch-arm-low	-
+couch-scroll-6	ring	letter	0 0.204 0.16	0.715 0.76 0.32	0 -90 0	0.03	gold	pill-bold:o	-
 couch-scroll-6	post	thing	1	-0.715 0 -0.43	-	-	frame=onyx trim=gold	couch-post	2 1.43 0 0
 couch-scroll-6	leg	thing	1	-0.715 0 0.3	-	-	frame=onyx trim=gold	couch-leg	2 1.43 0 0
 couch-scroll-6	body	thing	1	0 0 0	-	-	frame=onyx cushion=coal	bench-2	-
 couch-scroll-7	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	lilac	scroll-back-3-pill	-
-couch-scroll-7	arm	outline	0 0.4 0.07	-1.132 0.92 -0.43	-	0.053	lilac	couch-arm-low	-
-couch-scroll-7	arm	outline	0 0.4 0.07	1.132 0.92 -0.43	0 180 0	0.053	lilac	couch-arm-low	-
-couch-scroll-7	ring	letter	0 0.204 0.112	-1.353 1.06 -0.43	-	0.03	pearl	pill-bold:o	-
-couch-scroll-7	ring	letter	0 0.204 0.112	1.353 1.06 -0.43	-	0.03	pearl	pill-bold:o	-
+couch-scroll-7	arm	outline	0 0.25 0.1	-1.032 0.695 -0.025	0 -90 0	0.12	lilac	couch-arm-low	-
+couch-scroll-7	ring	letter	0 0.204 0.16	-1.032 0.76 0.32	0 -90 0	0.03	pearl	pill-bold:o	-
+couch-scroll-7	arm	outline	0 0.25 0.1	1.032 0.695 -0.025	0 -90 0	0.12	lilac	couch-arm-low	-
+couch-scroll-7	ring	letter	0 0.204 0.16	1.032 0.76 0.32	0 -90 0	0.03	pearl	pill-bold:o	-
 couch-scroll-7	post	thing	1	-1.032 0 -0.43	-	-	frame=lilac trim=pearl	couch-post	2 2.065 0 0
 couch-scroll-7	leg	thing	1	-1.032 0 0.3	-	-	frame=lilac trim=pearl	couch-leg	2 2.065 0 0
 couch-scroll-7	body	thing	1	0 0 0	-	-	frame=lilac cushion=lavender	bench-3	-
 couch-scroll-8	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	rose	scroll-back-4-pill	-
-couch-scroll-8	arm	outline	0 0.4 0.07	-1.45 0.92 -0.43	-	0.053	rose	couch-arm-low	-
-couch-scroll-8	arm	outline	0 0.4 0.07	1.45 0.92 -0.43	0 180 0	0.053	rose	couch-arm-low	-
-couch-scroll-8	ring	letter	0 0.204 0.112	-1.67 1.06 -0.43	-	0.03	gold	pill-bold:o	-
-couch-scroll-8	ring	letter	0 0.204 0.112	1.67 1.06 -0.43	-	0.03	gold	pill-bold:o	-
+couch-scroll-8	arm	outline	0 0.25 0.1	-1.35 0.695 -0.025	0 -90 0	0.12	rose	couch-arm-low	-
+couch-scroll-8	ring	letter	0 0.204 0.16	-1.35 0.76 0.32	0 -90 0	0.03	gold	pill-bold:o	-
+couch-scroll-8	arm	outline	0 0.25 0.1	1.35 0.695 -0.025	0 -90 0	0.12	rose	couch-arm-low	-
+couch-scroll-8	ring	letter	0 0.204 0.16	1.35 0.76 0.32	0 -90 0	0.03	gold	pill-bold:o	-
 couch-scroll-8	post	thing	1	-1.35 0 -0.43	-	-	frame=rose trim=gold	couch-post	2 2.7 0 0
 couch-scroll-8	leg	thing	1	-1.35 0 0.3	-	-	frame=rose trim=gold	couch-leg	2 2.7 0 0
 couch-scroll-8	body	thing	1	0 0 0	-	-	frame=rose cushion=blush	bench-4	-
 couch-scroll-9	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	teal	scroll-back-1-bead	-
-couch-scroll-9	arm	outline	0 0.565 0.07	-0.49 1.002 -0.43	-	0.037	teal	couch-arm-tall	-
-couch-scroll-9	arm	outline	0 0.565 0.07	0.49 1.002 -0.43	0 180 0	0.037	teal	couch-arm-tall	-
-couch-scroll-9	ring	letter	0 0.221 0.112	-0.698 1.22 -0.43	-	0.03	brass	pill-bold:o	-
-couch-scroll-9	ring	letter	0 0.221 0.112	0.698 1.22 -0.43	-	0.03	brass	pill-bold:o	-
+couch-scroll-9	arm	outline	0 0.305 0.1	-0.398 0.752 -0.018	0 -90 0	0.098	teal	couch-arm-tall	-
+couch-scroll-9	ring	letter	0 0.221 0.16	-0.398 0.84 0.33	0 -90 0	0.03	brass	pill-bold:o	-
+couch-scroll-9	arm	outline	0 0.305 0.1	0.398 0.752 -0.018	0 -90 0	0.098	teal	couch-arm-tall	-
+couch-scroll-9	ring	letter	0 0.221 0.16	0.398 0.84 0.33	0 -90 0	0.03	brass	pill-bold:o	-
 couch-scroll-9	post	thing	1	-0.398 0 -0.43	-	-	frame=teal trim=brass	couch-post	2 0.795 0 0
 couch-scroll-9	leg	thing	1	-0.398 0 0.3	-	-	frame=teal trim=brass	couch-leg	2 0.795 0 0
 couch-scroll-9	body	thing	1	0 0 0	-	-	frame=teal cushion=ice	bench-1	-
 couch-scroll-10	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	plum	scroll-back-2-bead	-
-couch-scroll-10	arm	outline	0 0.565 0.07	-0.808 1.002 -0.43	-	0.037	plum	couch-arm-tall	-
-couch-scroll-10	arm	outline	0 0.565 0.07	0.808 1.002 -0.43	0 180 0	0.037	plum	couch-arm-tall	-
-couch-scroll-10	ring	letter	0 0.221 0.112	-1.015 1.22 -0.43	-	0.03	gold	pill-bold:o	-
-couch-scroll-10	ring	letter	0 0.221 0.112	1.015 1.22 -0.43	-	0.03	gold	pill-bold:o	-
+couch-scroll-10	arm	outline	0 0.305 0.1	-0.715 0.752 -0.018	0 -90 0	0.098	plum	couch-arm-tall	-
+couch-scroll-10	ring	letter	0 0.221 0.16	-0.715 0.84 0.33	0 -90 0	0.03	gold	pill-bold:o	-
+couch-scroll-10	arm	outline	0 0.305 0.1	0.715 0.752 -0.018	0 -90 0	0.098	plum	couch-arm-tall	-
+couch-scroll-10	ring	letter	0 0.221 0.16	0.715 0.84 0.33	0 -90 0	0.03	gold	pill-bold:o	-
 couch-scroll-10	post	thing	1	-0.715 0 -0.43	-	-	frame=plum trim=gold	couch-post	2 1.43 0 0
 couch-scroll-10	leg	thing	1	-0.715 0 0.3	-	-	frame=plum trim=gold	couch-leg	2 1.43 0 0
 couch-scroll-10	body	thing	1	0 0 0	-	-	frame=plum cushion=orchid	bench-2	-
 couch-scroll-11	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	cobalt	scroll-back-3-bead	-
-couch-scroll-11	arm	outline	0 0.565 0.07	-1.125 1.002 -0.43	-	0.037	cobalt	couch-arm-tall	-
-couch-scroll-11	arm	outline	0 0.565 0.07	1.125 1.002 -0.43	0 180 0	0.037	cobalt	couch-arm-tall	-
-couch-scroll-11	ring	letter	0 0.221 0.112	-1.333 1.22 -0.43	-	0.03	chalk	pill-bold:o	-
-couch-scroll-11	ring	letter	0 0.221 0.112	1.333 1.22 -0.43	-	0.03	chalk	pill-bold:o	-
+couch-scroll-11	arm	outline	0 0.305 0.1	-1.032 0.752 -0.018	0 -90 0	0.098	cobalt	couch-arm-tall	-
+couch-scroll-11	ring	letter	0 0.221 0.16	-1.032 0.84 0.33	0 -90 0	0.03	chalk	pill-bold:o	-
+couch-scroll-11	arm	outline	0 0.305 0.1	1.032 0.752 -0.018	0 -90 0	0.098	cobalt	couch-arm-tall	-
+couch-scroll-11	ring	letter	0 0.221 0.16	1.032 0.84 0.33	0 -90 0	0.03	chalk	pill-bold:o	-
 couch-scroll-11	post	thing	1	-1.032 0 -0.43	-	-	frame=cobalt trim=chalk	couch-post	2 2.065 0 0
 couch-scroll-11	leg	thing	1	-1.032 0 0.3	-	-	frame=cobalt trim=chalk	couch-leg	2 2.065 0 0
 couch-scroll-11	body	thing	1	0 0 0	-	-	frame=cobalt cushion=sky	bench-3	-
 couch-scroll-12	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	moss	scroll-back-4-bead	-
-couch-scroll-12	arm	outline	0 0.565 0.07	-1.443 1.002 -0.43	-	0.037	moss	couch-arm-tall	-
-couch-scroll-12	arm	outline	0 0.565 0.07	1.443 1.002 -0.43	0 180 0	0.037	moss	couch-arm-tall	-
-couch-scroll-12	ring	letter	0 0.221 0.112	-1.65 1.22 -0.43	-	0.03	cream	pill-bold:o	-
-couch-scroll-12	ring	letter	0 0.221 0.112	1.65 1.22 -0.43	-	0.03	cream	pill-bold:o	-
+couch-scroll-12	arm	outline	0 0.305 0.1	-1.35 0.752 -0.018	0 -90 0	0.098	moss	couch-arm-tall	-
+couch-scroll-12	ring	letter	0 0.221 0.16	-1.35 0.84 0.33	0 -90 0	0.03	cream	pill-bold:o	-
+couch-scroll-12	arm	outline	0 0.305 0.1	1.35 0.752 -0.018	0 -90 0	0.098	moss	couch-arm-tall	-
+couch-scroll-12	ring	letter	0 0.221 0.16	1.35 0.84 0.33	0 -90 0	0.03	cream	pill-bold:o	-
 couch-scroll-12	post	thing	1	-1.35 0 -0.43	-	-	frame=moss trim=cream	couch-post	2 2.7 0 0
 couch-scroll-12	leg	thing	1	-1.35 0 0.3	-	-	frame=moss trim=cream	couch-leg	2 2.7 0 0
 couch-scroll-12	body	thing	1	0 0 0	-	-	frame=moss cushion=leaf	bench-4	-
 couch-scroll-13	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	cream	scroll-back-1-bead	-
-couch-scroll-13	arm	outline	0 0.4 0.07	-0.497 0.92 -0.43	-	0.053	cream	couch-arm-low	-
-couch-scroll-13	arm	outline	0 0.4 0.07	0.497 0.92 -0.43	0 180 0	0.053	cream	couch-arm-low	-
-couch-scroll-13	ring	letter	0 0.204 0.112	-0.718 1.06 -0.43	-	0.03	amber	pill-bold:o	-
-couch-scroll-13	ring	letter	0 0.204 0.112	0.718 1.06 -0.43	-	0.03	amber	pill-bold:o	-
+couch-scroll-13	arm	outline	0 0.25 0.1	-0.398 0.695 -0.025	0 -90 0	0.12	cream	couch-arm-low	-
+couch-scroll-13	ring	letter	0 0.204 0.16	-0.398 0.76 0.32	0 -90 0	0.03	amber	pill-bold:o	-
+couch-scroll-13	arm	outline	0 0.25 0.1	0.398 0.695 -0.025	0 -90 0	0.12	cream	couch-arm-low	-
+couch-scroll-13	ring	letter	0 0.204 0.16	0.398 0.76 0.32	0 -90 0	0.03	amber	pill-bold:o	-
 couch-scroll-13	post	thing	1	-0.398 0 -0.43	-	-	frame=cream trim=amber	couch-post	2 0.795 0 0
 couch-scroll-13	leg	thing	1	-0.398 0 0.3	-	-	frame=cream trim=amber	couch-leg	2 0.795 0 0
 couch-scroll-13	body	thing	1	0 0 0	-	-	frame=cream cushion=stone	bench-1	-
 couch-scroll-14	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	coal	scroll-back-2-bead	-
-couch-scroll-14	arm	outline	0 0.4 0.07	-0.815 0.92 -0.43	-	0.053	coal	couch-arm-low	-
-couch-scroll-14	arm	outline	0 0.4 0.07	0.815 0.92 -0.43	0 180 0	0.053	coal	couch-arm-low	-
-couch-scroll-14	ring	letter	0 0.204 0.112	-1.035 1.06 -0.43	-	0.03	brass	pill-bold:o	-
-couch-scroll-14	ring	letter	0 0.204 0.112	1.035 1.06 -0.43	-	0.03	brass	pill-bold:o	-
+couch-scroll-14	arm	outline	0 0.25 0.1	-0.715 0.695 -0.025	0 -90 0	0.12	coal	couch-arm-low	-
+couch-scroll-14	ring	letter	0 0.204 0.16	-0.715 0.76 0.32	0 -90 0	0.03	brass	pill-bold:o	-
+couch-scroll-14	arm	outline	0 0.25 0.1	0.715 0.695 -0.025	0 -90 0	0.12	coal	couch-arm-low	-
+couch-scroll-14	ring	letter	0 0.204 0.16	0.715 0.76 0.32	0 -90 0	0.03	brass	pill-bold:o	-
 couch-scroll-14	post	thing	1	-0.715 0 -0.43	-	-	frame=coal trim=brass	couch-post	2 1.43 0 0
 couch-scroll-14	leg	thing	1	-0.715 0 0.3	-	-	frame=coal trim=brass	couch-leg	2 1.43 0 0
 couch-scroll-14	body	thing	1	0 0 0	-	-	frame=coal cushion=sand	bench-2	-
 couch-scroll-15	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	blossom	scroll-back-3-bead	-
-couch-scroll-15	arm	outline	0 0.4 0.07	-1.132 0.92 -0.43	-	0.053	blossom	couch-arm-low	-
-couch-scroll-15	arm	outline	0 0.4 0.07	1.132 0.92 -0.43	0 180 0	0.053	blossom	couch-arm-low	-
-couch-scroll-15	ring	letter	0 0.204 0.112	-1.353 1.06 -0.43	-	0.03	pearl	pill-bold:o	-
-couch-scroll-15	ring	letter	0 0.204 0.112	1.353 1.06 -0.43	-	0.03	pearl	pill-bold:o	-
+couch-scroll-15	arm	outline	0 0.25 0.1	-1.032 0.695 -0.025	0 -90 0	0.12	blossom	couch-arm-low	-
+couch-scroll-15	ring	letter	0 0.204 0.16	-1.032 0.76 0.32	0 -90 0	0.03	pearl	pill-bold:o	-
+couch-scroll-15	arm	outline	0 0.25 0.1	1.032 0.695 -0.025	0 -90 0	0.12	blossom	couch-arm-low	-
+couch-scroll-15	ring	letter	0 0.204 0.16	1.032 0.76 0.32	0 -90 0	0.03	pearl	pill-bold:o	-
 couch-scroll-15	post	thing	1	-1.032 0 -0.43	-	-	frame=blossom trim=pearl	couch-post	2 2.065 0 0
 couch-scroll-15	leg	thing	1	-1.032 0 0.3	-	-	frame=blossom trim=pearl	couch-leg	2 2.065 0 0
 couch-scroll-15	body	thing	1	0 0 0	-	-	frame=blossom cushion=rose	bench-3	-
 couch-scroll-16	back	outline	0 0.34 0.07	0 0.63 -0.43	-	0.062	violet	scroll-back-4-bead	-
-couch-scroll-16	arm	outline	0 0.4 0.07	-1.45 0.92 -0.43	-	0.053	violet	couch-arm-low	-
-couch-scroll-16	arm	outline	0 0.4 0.07	1.45 0.92 -0.43	0 180 0	0.053	violet	couch-arm-low	-
-couch-scroll-16	ring	letter	0 0.204 0.112	-1.67 1.06 -0.43	-	0.03	gold	pill-bold:o	-
-couch-scroll-16	ring	letter	0 0.204 0.112	1.67 1.06 -0.43	-	0.03	gold	pill-bold:o	-
+couch-scroll-16	arm	outline	0 0.25 0.1	-1.35 0.695 -0.025	0 -90 0	0.12	violet	couch-arm-low	-
+couch-scroll-16	ring	letter	0 0.204 0.16	-1.35 0.76 0.32	0 -90 0	0.03	gold	pill-bold:o	-
+couch-scroll-16	arm	outline	0 0.25 0.1	1.35 0.695 -0.025	0 -90 0	0.12	violet	couch-arm-low	-
+couch-scroll-16	ring	letter	0 0.204 0.16	1.35 0.76 0.32	0 -90 0	0.03	gold	pill-bold:o	-
 couch-scroll-16	post	thing	1	-1.35 0 -0.43	-	-	frame=violet trim=gold	couch-post	2 2.7 0 0
 couch-scroll-16	leg	thing	1	-1.35 0 0.3	-	-	frame=violet trim=gold	couch-leg	2 2.7 0 0
 couch-scroll-16	body	thing	1	0 0 0	-	-	frame=violet cushion=haze	bench-4	-

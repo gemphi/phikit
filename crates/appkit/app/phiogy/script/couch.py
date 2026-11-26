@@ -146,12 +146,14 @@ def main():
             made.add(back_name)
         high = top - foot
         rows.append('\t'.join([name, 'back', 'outline', '0 %s %s' % (g(high), g(depth)), '0 %s %s' % (g((top + foot) / 2), g(back)), '-', g(edge * depth / high), frame, back_name, '-']))
+        # Each arm along its side, from the post behind to the leg in front,
+        # seen from the side (turned as a letter side panel is); its ring
+        # at the horn's tip, turned with it.
         ((tx, ty), tr), (x0, y0, x1, y1) = arm['arm-' + kind]
-        tall, across = y1 - y0, (x0 + x1) / 2
-        for side, turn in ((-1, '-'), (1, '0 180 0')):
-            rows.append('\t'.join([name, 'arm', 'outline', '0 %s %s' % (g(tall), g(depth)), '%s %s %s' % (g(side * (a - across)), g(top - (y0 + y1) / 2), g(back)), turn, g(edge * depth / tall), frame, 'couch-arm-' + kind, '-']))
+        wide = m['arm'][0]
         for side in (-1, 1):
-            rows.append('\t'.join([name, 'ring', 'letter', '0 %s %s' % (g(m['ring'][0] * tr), g(m['ring'][1] * depth)), '%s %s %s' % (g(side * (a - tx)), g(top - ty), g(back)), '-', '0.03', trim, 'pill-bold:o', '-']))
+            rows.append('	'.join([name, 'arm', 'outline', '0 %s %s' % (g(y1 - y0), g(wide)), '%s %s %s' % (g(side * a), g(-(y0 + y1) / 2), g(back + (x0 + x1) / 2)), '0 -90 0', g(edge * wide / (y1 - y0)), frame, 'couch-arm-' + kind, '-']))
+            rows.append('	'.join([name, 'ring', 'letter', '0 %s %s' % (g(m['ring'][0] * tr), g(m['ring'][1] * wide)), '%s %s %s' % (g(side * a), g(-ty), g(back + tx)), '0 -90 0', '0.03', trim, 'pill-bold:o', '-']))
         swap = 'frame=%s trim=%s' % (frame, trim)
         for part, z in (('couch-post', back), ('couch-leg', front)):
             rows.append('\t'.join([name, part[6:], 'thing', '1', '%s 0 %s' % (g(-a), g(z)), '-', '-', swap, part, '2 %s 0 0' % g(2 * a)]))
