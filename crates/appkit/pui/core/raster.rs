@@ -10,15 +10,18 @@
 //! on it each frame, with the shadow it casts.
 
 use super::lens::{Lens, cross, dot, sub, unit};
+use super::material::PMaterial;
 use super::scan::{Band, Flat, Ink, fill};
 use super::{PCamera, PSun};
 
-/// Triangles in one colour (red, green, blue, 0 to 1), and the way the
-/// surface faces at each corner of each (none: each faces its own way).
+/// Triangles in one colour (red, green, blue, 0 to 1), the way the
+/// surface faces at each corner of each (none: each faces its own way),
+/// and what they are made of, where that is more than a colour.
 pub struct PSolid<'a> {
     pub triangle: &'a [[[f32; 3]; 3]],
     pub normal: &'a [[[f32; 3]; 3]],
     pub colour: [f32; 3],
+    pub material: Option<&'a PMaterial>,
 }
 
 /// A picture and the depth of each of its points. It may be a piece cut
@@ -46,14 +49,14 @@ fn share(work: usize, least: usize) -> usize {
 
 /// The triangles put on a picture of a size, a share a thread: cut at
 /// the near plane, and those wholly off the picture left out.
-fn flats(lens: Lens, raster: &PRaster, near: f32, shape: &[PSolid]) -> Vec<Flat> {
+fn flats<'a>(lens: Lens, raster: &PRaster, near: f32, shape: &[PSolid<'a>]) -> Vec<Flat<'a>> {
     let (w, h) = (raster.width as f32, raster.height as f32);
     let (whole, at) = (raster.whole.map(|v| v as f32), raster.at.map(|v| v as f32));
-    let all: Vec<(&Tri, Option<&Tri>, [f32; 3])> = shape.iter().flat_map(|s| s.triangle.iter().enumerate().map(move |(i, t)| (t, s.normal.get(i), s.colour))).collect();
+    let all: Vec<(&Tri, Option<&Tri>, [f32; 3], Option<&'a PMaterial>)> = shape.iter().flat_map(|s| s.triangle.iter().enumerate().map(move |(i, t)| (t, s.normal.get(i), s.colour, s.material))).collect();
     std::thread::scope(|scope| {
         let made: Vec<_> = all.chunks(all.len().div_ceil(share(all.len(), 8192)).max(1)).map(|part| scope.spawn(move || {
             let mut out = Vec::new();
-            for (t, normal, colour) in part {
+            for (t, normal, colour, material) in part {
                 let face = || [unit(cross(sub(t[1], t[0]), sub(t[2], t[0]))); 3];
                 let normal = normal.copied().unwrap_or_else(face);
                 for (t, normal) in near_side(&lens, **t, normal, near) {
@@ -61,7 +64,7 @@ fn flats(lens: Lens, raster: &PRaster, near: f32, shape: &[PSolid]) -> Vec<Flat>
                     let off = |i: usize, most: f32| corner.iter().all(|c| c[i] < 0.0) || corner.iter().all(|c| c[i] > most);
                     match off(0, w) || off(1, h) {
                         true => {}
-                        false => out.push(Flat { corner, normal, colour: *colour }),
+                        false => out.push(Flat { corner, normal, world: t, colour: *colour, material: *material }),
                     }
                 }
             }
@@ -142,7 +145,7 @@ impl PRaster {
     /// what is drawn already: a shadow laid on a floor.
     pub fn shadow(&mut self, camera: &PCamera, triangle: &[[[f32; 3]; 3]], share: f32) {
         let lens = camera.lens();
-        let shape = [PSolid { triangle, normal: &[], colour: [0.0; 3] }];
+        let shape = [PSolid { triangle, normal: &[], colour: [0.0; 3], material: None }];
         let flat = flats(lens, self, camera.near, &shape);
         self.bands(&flat, &PSun::default(), lens.forward, Ink::Shadow(share));
     }
@@ -186,7 +189,7 @@ mod tests {
         let near = [[[-0.2, -0.2, 0.5], [0.2, -0.2, 0.5], [0.0, 0.2, 0.5]]];
         let mut raster = PRaster::new(64, 48, [0, 0, 0, 0]);
         let sun = PSun::default();
-        raster.draw(&camera(), &[PSolid { triangle: &far, normal: &[], colour: [1.0, 0.0, 0.0] }, PSolid { triangle: &near, normal: &[], colour: [0.0, 0.0, 1.0] }], &sun);
+        raster.draw(&camera(), &[PSolid { triangle: &far, normal: &[], colour: [1.0, 0.0, 0.0], material: None }, PSolid { triangle: &near, normal: &[], colour: [0.0, 0.0, 1.0], material: None }], &sun);
         let middle = camera().project([0.0, 0.0, 0.5], 64.0, 48.0);
         let at = (middle[1] as usize * 64 + middle[0] as usize) * 4;
         assert_eq!(&raster.pixel[at..at + 4], &[255, 0, 0, 255], "the near blue one, in blue, green, red, solid");
@@ -201,7 +204,7 @@ mod tests {
     #[test]
     fn a_piece_cut_out_and_drawn_into_is_as_the_whole_drawn_into() {
         let tri = [[[-0.3, -0.3, 0.0], [0.3, -0.3, 0.0], [0.0, 0.3, 0.0]]];
-        let shape = [PSolid { triangle: &tri, normal: &[], colour: [1.0, 1.0, 0.0] }];
+        let shape = [PSolid { triangle: &tri, normal: &[], colour: [1.0, 1.0, 0.0], material: None }];
         let mut whole = PRaster::new(64, 48, [0, 0, 0, 0]);
         whole.draw(&camera(), &shape, &PSun::default());
         let mut piece = PRaster::new(64, 48, [0, 0, 0, 0]).cut(20, 10, 24, 28);
@@ -215,7 +218,7 @@ mod tests {
         // A floor under the eye, running far ahead and far behind it.
         let floor = [[[-50.0, 0.0, 50.0], [50.0, 0.0, 50.0], [0.0, 0.0, -50.0]]];
         let mut raster = PRaster::new(64, 48, [0, 0, 0, 0]);
-        raster.draw(&camera(), &[PSolid { triangle: &floor, normal: &[], colour: [1.0; 3] }], &PSun::default());
+        raster.draw(&camera(), &[PSolid { triangle: &floor, normal: &[], colour: [1.0; 3], material: None }], &PSun::default());
         let foot = &raster.pixel[(47 * 64 + 32) * 4..(47 * 64 + 33) * 4];
         assert_eq!(foot, &[255, 255, 255, 255], "the floor right under the eye is drawn");
     }
@@ -224,7 +227,7 @@ mod tests {
     fn a_shadow_darkens_only_what_it_lies_on() {
         let floor = [[[-2.0, 0.0, -2.0], [2.0, 0.0, -2.0], [0.0, 0.0, 2.0]]];
         let mut raster = PRaster::new(64, 48, [0, 0, 0, 0]);
-        raster.draw(&camera(), &[PSolid { triangle: &floor, normal: &[], colour: [1.0; 3] }], &PSun::default());
+        raster.draw(&camera(), &[PSolid { triangle: &floor, normal: &[], colour: [1.0; 3], material: None }], &PSun::default());
         let lying = [[[-0.3, 0.0, -0.3], [0.3, 0.0, -0.3], [0.0, 0.0, 0.3]]];
         let above = [[[-0.3, 0.5, -0.3], [0.3, 0.5, -0.3], [0.0, 0.5, 0.3]]];
         let mut shaded = raster.clone();

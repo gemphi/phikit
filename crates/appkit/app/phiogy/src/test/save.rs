@@ -9,7 +9,7 @@ use super::{DESK, drawn};
 use crate::part::figure::FILM;
 
 #[test]
-fn step_63_save_keeps_the_model_as_a_usdz_turned_as_it_is_seen() {
+fn step_65_save_keeps_the_model_as_a_usdz_turned_as_it_is_seen() {
     let (_app, mut stage, look) = dice(DESK);
     let tool = |stage: &appkit::pui::window::PStage, name: &str| drawn(stage, &look).iter().rev().find_map(|mark| match mark {
         PMark::Icon { name: known, rect, .. } if known == name => Some(rect.center()),

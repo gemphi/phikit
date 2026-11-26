@@ -1,0 +1,24 @@
+# The materials every app's 3D things can wear (pui/core/material.rs),
+# after the watch bands the user sent on 27 November 2026 and the
+# finishes Reality Composer Pro's material balls show. A row each: its
+# name, its pattern, its colour and its second (#rrggbb, as seen), how
+# rough (0 a mirror, 1 chalk), how much metal (0 to 1), how many repeats
+# of its pattern go to a metre, and how deep its relief looks.
+#
+# name	pattern	colour	second	rough	metal	scale	depth
+sport-loop	weave	#5b1e36	#1b1421	0.85	0	26	1
+ocean-band	ribs	#6d726b	#6d726b	0.55	0	9	1.4
+sport-band	holes	#8f8456	#8f8456	0.5	0	5	1.6
+braided-loop	braid	#9a1fc4	#c24de3	0.8	0	14	1.2
+milanese	mesh	#6c5a44	#6c5a44	0.35	1	38	1
+link-bracelet	link	#cfae6a	#cfae6a	0.22	1	7	1.4
+magnetic-link	pills	#a17f52	#a17f52	0.8	0	8	1.6
+knit-stripe	knit	#1d2a46	#6f8fc4	0.9	0	18	1
+solo-loop	plain	#13893c	#13893c	0.45	0	1	0
+titanium	brushed	#b9b3a8	#b9b3a8	0.3	1	1	0.4
+leather	grain	#6c3a1f	#6c3a1f	0.6	0	7	0.8
+chrome	plain	#e3e6ea	#e3e6ea	0.06	1	1	0
+quilted	quilt	#f2efe9	#c9c3b8	0.5	0	4	1.6
+channel	channel	#2f4f6f	#2f4f6f	0.8	0	6	1.2
+walnut	wood	#6c4628	#3f2817	0.55	0	1.5	0.1
+terrazzo	speckle	#e8e2d6	#c46a4a	0.4	0	9	0

@@ -97,6 +97,8 @@ impl List {
             "kind" | "sort" | "tool" | "way" | "back" => group(name),
             "paint" => every(data::PAINT),
             "finish" => every(data::FINISH),
+            // The kit's materials, each with its ball.
+            "material" => self.library.material.iter().map(|m| vec![m.name.clone(), format!("material.{}", m.name), self.library.ball(m, self.shade.as_ref())]).collect(),
             "item" => self.items(&at),
             "stat" => self.stat(&at),
             "about" => self.open().map(|one| self.about(&one)).unwrap_or_default(),

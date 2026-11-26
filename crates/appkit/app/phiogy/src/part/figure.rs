@@ -14,13 +14,14 @@ mod view;
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 
+use appkit::pui::core::orbit::pick;
 use appkit::pui::core::{PCamera, PDraw, PEvent, PFit, POrbit, PPaint, PPoint, PRect, PView};
 use appkit::pui::state::PState;
 use appkit::pui::window::PDeed;
 use appkit::service::usdz;
 
 use super::{DIM, Desk, GAP};
-use crate::library::Item;
+use crate::library::{Attribute, Item};
 
 /// The picture the model is drawn into, and each side's.
 pub const FILM: &str = "library/figure";
@@ -42,13 +43,14 @@ pub struct Figure {
     origin: Cell<PPoint>,
     ball: RefCell<Vec<(PRect, [f32; 3])>>,
     tool: RefCell<Vec<(PRect, String)>>,
-    /// The camera the main view was last drawn from.
+    /// The camera the main view was last drawn from, and where it was.
     seen: Cell<Option<PCamera>>,
+    main: Cell<PRect>,
 }
 
 impl Figure {
     pub fn new(desk: Desk) -> Figure {
-        Figure { frame: PRect::default(), desk, orbit: POrbit::default(), way: Cell::default(), drawn: RefCell::default(), origin: Cell::default(), ball: RefCell::default(), tool: RefCell::default(), seen: Cell::default() }
+        Figure { frame: PRect::default(), desk, orbit: POrbit::default(), way: Cell::default(), drawn: RefCell::default(), origin: Cell::default(), ball: RefCell::default(), tool: RefCell::default(), seen: Cell::default(), main: Cell::default() }
     }
 
     /// Do what a tool does.
@@ -84,6 +86,19 @@ impl Figure {
             Ok(()) => self.desk.wish.borrow_mut().push(PDeed::Save(file.to_string_lossy().to_string())),
             Err(error) => eprintln!("phiogy: {} could not be packed: {error}", item.path.display()),
         }
+    }
+}
+
+impl Figure {
+    /// The part of the model under a point of the window picked, its
+    /// place in the inspector's tree: whether one was.
+    fn pick(&self, at: PPoint) -> bool {
+        let (main, Some(camera)) = (self.main.get(), self.seen.get()) else { return false };
+        let item = self.desk.library.get(&self.desk.shelf.get("ui/item")).filter(|item| item.kind == "model");
+        let Some(item) = item.filter(|_| main.contains(at)) else { return false };
+        let piece = self.desk.library.dressed(&item, &Attribute::new(self.desk.choice.clone()));
+        let hit = pick(&piece, &camera, at.x - main.origin.x, at.y - main.origin.y, (main.size.width, main.size.height));
+        hit.map(|part| self.desk.shelf.set("ui/part", &part.to_string())).is_some()
     }
 }
 
@@ -147,6 +162,9 @@ impl PView for Figure {
                         self.orbit.reset();
                         true
                     }
+                    // A press on the model that did not drag picks the
+                    // part under it, as a viewport's selection does.
+                    (true, None) => self.pick(place(at)),
                     _ => false,
                 }
             }

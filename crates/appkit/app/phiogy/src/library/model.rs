@@ -5,7 +5,9 @@
 
 use std::path::Path;
 
-use appkit::pui::core::PPiece;
+use std::rc::Rc;
+
+use appkit::pui::core::{PMaterial, PPiece};
 
 /// A part of a model: its name (the last step of its mesh's path), the
 /// path itself (where it stands in the scene, inside what), and its
@@ -64,9 +66,14 @@ impl Model {
         out.into_iter().map(|(_, node)| node).collect()
     }
 
-    /// Its pieces, each part in the colour given for it where one is.
-    pub fn dressed(&self, colour: impl Fn(usize) -> Option<[f32; 3]>) -> Vec<PPiece> {
-        let one = |(index, part): (usize, &Part)| PPiece { colour: colour(index).unwrap_or(part.piece.colour), ..part.piece.clone() };
+    /// Its pieces, each part in the colour and of the material given for
+    /// it where they are: a material without a colour wears its own.
+    pub fn dressed(&self, look: impl Fn(usize) -> (Option<[f32; 3]>, Option<Rc<PMaterial>>)) -> Vec<PPiece> {
+        let one = |(index, part): (usize, &Part)| {
+            let (colour, material) = look(index);
+            let own = material.as_ref().map_or(part.piece.colour, |m| m.colour);
+            PPiece { colour: colour.unwrap_or(own), material, ..part.piece.clone() }
+        };
         self.part.iter().enumerate().map(one).collect()
     }
 }

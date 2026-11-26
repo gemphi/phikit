@@ -1,5 +1,5 @@
-//! An item's attributes as a person sets them: a colour for each part of
-//! its model and a finish, kept with what they chose (`look/<item>/<part>`
+//! An item's attributes as a person sets them: a colour and a material
+//! (`look/<item>/<part>/material`) for each part of its model and a finish, kept with what they chose (`look/<item>/<part>`
 //! and `look/<item>/finish`), so it is so again when Phiogy opens; and
 //! the comments they wrote on it (`note/<item>`). The colours are
 //! `data/paint.tsv`, the finishes `data/finish.tsv`.
@@ -28,6 +28,12 @@ impl Attribute {
         paint(&self.get(&format!("look/{item}/{part}")))
     }
 
+    /// The material chosen for a part of a model, by its name; empty
+    /// where none was.
+    pub fn material(&self, item: &str, part: usize) -> String {
+        self.get(&format!("look/{item}/{part}/material"))
+    }
+
     /// The light a model is shown in: the table's, shining back as its
     /// finish does (the one chosen, or the table's own).
     pub fn sun(&self, item: &str, set: &PTable) -> PSun {
@@ -49,7 +55,7 @@ impl Attribute {
 
     /// What sets it, as one word: it changes when its attributes do.
     pub fn mark(&self, item: &str, parts: usize) -> String {
-        let colour: Vec<String> = (0..parts).map(|part| self.get(&format!("look/{item}/{part}"))).collect();
+        let colour: Vec<String> = (0..parts).map(|part| format!("{}:{}", self.get(&format!("look/{item}/{part}")), self.material(item, part))).collect();
         format!("{}|{}", colour.join(","), self.get(&format!("look/{item}/finish")))
     }
 }

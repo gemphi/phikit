@@ -47,12 +47,17 @@ impl PCamera {
         self.lens().project(p, width, height)
     }
 
+    /// The way from the eye through a point of a picture of a size.
+    pub fn ray(&self, across: f32, down: f32, width: f32, height: f32) -> [f32; 3] {
+        let Lens { forward, right, up, focal, .. } = self.lens();
+        let (x, y) = ((across - width / 2.0) / (height / 2.0) / focal, (height / 2.0 - down) / (height / 2.0) / focal);
+        [0, 1, 2].map(|i| forward[i] + right[i] * x + up[i] * y)
+    }
+
     /// Where the ray through a point of the picture meets the level
     /// plane at a height, if it does, ahead of the eye.
     pub fn floor(&self, across: f32, down: f32, width: f32, height: f32, level: f32) -> Option<[f32; 3]> {
-        let Lens { forward, right, up, focal, .. } = self.lens();
-        let (x, y) = ((across - width / 2.0) / (height / 2.0) / focal, (height / 2.0 - down) / (height / 2.0) / focal);
-        let way = [0, 1, 2].map(|i| forward[i] + right[i] * x + up[i] * y);
+        let way = self.ray(across, down, width, height);
         let t = (level - self.eye[1]) / way[1];
         (t.is_finite() && t > 0.0).then(|| [0, 1, 2].map(|i| self.eye[i] + way[i] * t))
     }

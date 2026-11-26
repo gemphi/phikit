@@ -92,7 +92,7 @@ pub fn way(data: &Data) -> [f32; 3] {
 
 /// Draw pieces into a picture.
 pub fn draw(raster: &mut PRaster, camera: &PCamera, piece: &[Piece], sun: &PSun) {
-    let shape: Vec<PSolid> = piece.iter().map(|p| PSolid { triangle: &p.triangle, normal: &p.normal, colour: p.colour }).collect();
+    let shape: Vec<PSolid> = piece.iter().map(|p| PSolid { triangle: &p.triangle, normal: &p.normal, colour: p.colour, material: None }).collect();
     raster.draw(camera, &shape, sun);
 }
 

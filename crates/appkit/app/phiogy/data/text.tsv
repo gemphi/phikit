@@ -505,6 +505,23 @@ item.back	Back to the library
 item.set	Make a set of it
 item.about	About
 item.part	Part
+item.material	Material
+material.sport-loop	Sport loop
+material.ocean-band	Ocean band
+material.sport-band	Sport band
+material.braided-loop	Braided loop
+material.milanese	Milanese
+material.link-bracelet	Link bracelet
+material.magnetic-link	Magnetic link
+material.knit-stripe	Knit stripe
+material.solo-loop	Solo loop
+material.titanium	Titanium
+material.leather	Leather
+material.chrome	Chrome
+material.quilted	Quilted
+material.channel	Channel
+material.walnut	Walnut
+material.terrazzo	Terrazzo
 item.paint	Colour
 item.finish	Finish
 item.attribute	Attributes

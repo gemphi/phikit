@@ -39,13 +39,18 @@ impl Figure {
         };
         let library = &self.desk.library;
         let dress = Attribute::new(self.desk.choice.clone());
-        let piece = library.dressed(item, &dress);
+        let mut piece = library.dressed(item, &dress);
+        // The part picked, lighter by the table's share.
+        let lift: f32 = library.set.get("pick").parse().unwrap_or(0.0);
+        let picked = self.desk.shelf.get("ui/part").parse::<usize>().ok();
+        picked.and_then(|part| piece.get_mut(part)).into_iter().for_each(|p| p.colour = p.colour.map(|c| c + (1.0 - c) * lift));
+        self.main.set(main);
         let sun = library.sun(item, &dress);
         let fov = library.set.get("camera.fov").parse().unwrap_or(30.0);
         let theme = self.desk.shade.as_ref();
         let roomy = theme.size(ROOM).unwrap_or(1.0);
         let parts = library.model(&item.path).part.len();
-        let mark = format!("{}|{}", item.key, dress.mark(&item.key, parts));
+        let mark = format!("{}|{}|{:?}", item.key, dress.mark(&item.key, parts), picked);
         // The main view: as the hand turned it, from the way a ball chose.
         let aspect = main.size.width / main.size.height.max(1.0);
         let first = match self.way.get() {

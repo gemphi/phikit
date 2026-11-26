@@ -39,4 +39,33 @@ impl PSun {
         let shine = dot(n, half).max(0.0).powf(self.gloss.max(1.0)) * self.shine * self.key;
         [0, 1, 2].map(|i| (colour[i] * (self.ground[i] + (self.sky[i] - self.ground[i]) * up + diffuse) + shine).clamp(0.0, 1.0))
     }
+
+    /// A surface of a material lit (`material.rs`): the smoother, the
+    /// tighter and brighter the key light's shine; metal takes its colour
+    /// from what it mirrors (the sky above, the ground below) and tints
+    /// its shine, as gold and steel do.
+    pub fn lit_surface(&self, surface: &super::material::PSurface, view: [f32; 3]) -> [f32; 3] {
+        let facing = -dot(surface.normal, view).signum();
+        let n = unit(surface.normal.map(|v| v * facing));
+        let way = unit(self.way);
+        let (rough, metal) = (surface.rough.clamp(0.02, 1.0), surface.metal.clamp(0.0, 1.0));
+        let up = n[1] * 0.5 + 0.5;
+        let diffuse = dot(n, way).max(0.0) * self.key;
+        let half = unit([way[0] - view[0], way[1] - view[1], way[2] - view[2]]);
+        let gloss = (2.0 / (rough * rough * rough * rough) - 2.0).clamp(2.0, 2048.0);
+        let shine = dot(n, half).max(0.0).powf(gloss) * self.key * (1.0 - rough).powi(2) * (gloss + 8.0) / 64.0;
+        // What a mirror of it sees along the view, bounced: the sky over,
+        // the ground under, blurred as it is rough.
+        let bounce = 2.0 * dot(n, view);
+        let r = [0, 1, 2].map(|i| view[i] - bounce * n[i]);
+        let sky_share = (r[1] * (1.0 - rough * 0.8) * 0.5 + 0.5).clamp(0.0, 1.0);
+        let mirror = [0, 1, 2].map(|i| self.ground[i] + (self.sky[i] - self.ground[i]) * sky_share);
+        let fresnel = 0.04 + 0.96 * (1.0 + dot(view, n)).clamp(0.0, 1.0).powi(5);
+        [0, 1, 2].map(|i| {
+            let c = surface.colour[i];
+            let plain = c * (self.ground[i] + (self.sky[i] - self.ground[i]) * up + diffuse) + shine + mirror[i] * fresnel * (1.0 - rough) * 0.25;
+            let metallic = c * (mirror[i] * 1.15 + diffuse * 0.35) + shine * c * 2.0;
+            (plain * (1.0 - metal) + metallic * metal).clamp(0.0, 1.0)
+        })
+    }
 }

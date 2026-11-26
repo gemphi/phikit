@@ -16,6 +16,7 @@ mod left;
 #[cfg(not(target_family = "wasm"))]
 mod library;
 mod make;
+mod material;
 #[cfg(not(target_family = "wasm"))]
 mod once;
 mod net;

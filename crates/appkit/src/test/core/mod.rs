@@ -7,6 +7,7 @@ mod figure;
 mod film;
 mod icon;
 mod light;
+mod material;
 mod mode;
 mod paint;
 mod sheet;

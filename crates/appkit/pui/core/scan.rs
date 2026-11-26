@@ -5,14 +5,18 @@
 //! but only darkens what it falls on, once however many triangles of it
 //! fall there.
 
+use super::material::PMaterial;
 use super::sun::PSun;
 
 /// A triangle on the picture: its corners (across, down, depth), the
-/// way the surface faces at each corner, and its colour.
-pub(super) struct Flat {
+/// way the surface faces at each corner, where each stands in space, its
+/// colour, and what it is made of, where that is more than a colour.
+pub(super) struct Flat<'a> {
     pub corner: [[f32; 3]; 3],
     pub normal: [[f32; 3]; 3],
+    pub world: [[f32; 3]; 3],
     pub colour: [f32; 3],
+    pub material: Option<&'a PMaterial>,
 }
 
 /// What a fill does: lights each point, or darkens what is there by a
@@ -35,7 +39,7 @@ pub(super) struct Band<'a> {
 /// of the depth.
 const ON: f32 = 0.003;
 
-pub(super) fn fill(flat: &[Flat], band: Band, sun: &PSun, view: [f32; 3], ink: Ink) {
+pub(super) fn fill(flat: &[Flat<'_>], band: Band, sun: &PSun, view: [f32; 3], ink: Ink) {
     let Band { pixel, depth, width, top } = band;
     let height = depth.len() / width.max(1);
     let (low, high) = (top as f32, (top + height) as f32);
@@ -65,7 +69,16 @@ pub(super) fn fill(flat: &[Flat], band: Band, sun: &PSun, view: [f32; 3], ink: I
                     (true, Ink::Lit) if z < depth[at] => {
                         depth[at] = z;
                         let n = [0, 1, 2].map(|i| w0 * t.normal[0][i] + w1 * t.normal[1][i] + w2 * t.normal[2][i]);
-                        let lit = sun.lit(t.colour, n, view).map(|v| (v * 255.0) as u8);
+                        let lit = match t.material {
+                            // Where it stands in space, true across the
+                            // picture as its depth is, for the pattern.
+                            Some(material) => {
+                                let k = [w0 * z / a[2], w1 * z / b[2], w2 * z / c[2]];
+                                let p = [0, 1, 2].map(|i| k[0] * t.world[0][i] + k[1] * t.world[1][i] + k[2] * t.world[2][i]);
+                                sun.lit_surface(&material.surface(t.colour, p, n), view)
+                            }
+                            None => sun.lit(t.colour, n, view),
+                        }.map(|v| (v * 255.0) as u8);
                         pixel[at * 4..at * 4 + 4].copy_from_slice(&[lit[2], lit[1], lit[0], 255]);
                     }
                     (true, Ink::Shadow(_)) => dark[at] |= depth[at] < f32::MAX && (z - depth[at]).abs() <= depth[at] * ON,

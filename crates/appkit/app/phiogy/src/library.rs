@@ -9,6 +9,7 @@
 
 mod attribute;
 pub mod item;
+mod material;
 mod model;
 mod place;
 mod set;
@@ -20,7 +21,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use appkit::pui::core::orbit::{ROOM, around, shot};
-use appkit::pui::core::{PFilm, PPiece, PSun};
+use appkit::pui::core::{PFilm, PMaterial, PPiece, PSun};
 use appkit::service::PTable;
 use appkit::theme::PTheme;
 
@@ -53,6 +54,8 @@ pub struct Library {
     model: RefCell<HashMap<PathBuf, Rc<Model>>>,
     listed: RefCell<HashMap<Asked, Rc<Vec<Item>>>>,
     shot: RefCell<HashSet<String>>,
+    /// The kit's materials, a part of a model may wear one.
+    pub material: Vec<Rc<PMaterial>>,
 }
 
 impl Library {
@@ -68,7 +71,7 @@ impl Library {
     pub fn at(place: Vec<Place>, choice: Rc<Choice>) -> Library {
         let kind = data::row(data::KIND).into_iter().map(|cell| cell.into_iter().map(str::to_string).collect()).collect();
         let (set, own) = (PTable::read(data::MODEL), PTable::read(data::SHELF));
-        Library { place, shelf: Shelf::default(), kind, set, own, film: PFilm::default(), choice, model: RefCell::default(), listed: RefCell::default(), shot: RefCell::default() }
+        Library { place, shelf: Shelf::default(), kind, set, own, film: PFilm::default(), choice, model: RefCell::default(), listed: RefCell::default(), shot: RefCell::default(), material: material::read() }
     }
 
     /// Where the library opens: Phiogy's own shapes.
@@ -166,9 +169,13 @@ impl Library {
     }
 
     /// A model's pieces, each part in the colour the person chose for it,
-    /// or the one its variant drew, or its own.
+    /// or the one its variant drew, or its own; and of the material they
+    /// chose for it, where they chose one.
     pub fn dressed(&self, item: &Item, attribute: &Attribute) -> Vec<PPiece> {
-        self.model(&item.path).dressed(|part| attribute.colour(&item.key, part).or_else(|| item.variant.get(part).and_then(|key| paint(key))))
+        self.model(&item.path).dressed(|part| {
+            let colour = attribute.colour(&item.key, part).or_else(|| item.variant.get(part).and_then(|key| paint(key)));
+            (colour, self.material(&attribute.material(&item.key, part)))
+        })
     }
 
     /// The light a model is shown in, as its finish has it.

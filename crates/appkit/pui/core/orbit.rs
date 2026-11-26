@@ -5,8 +5,10 @@
 //! (Phiogy's library; phibot's robot frames its own the same way).
 
 use std::cell::Cell;
+use std::rc::Rc;
 
-use super::{PCamera, PPoint, PRaster, PSolid, PSun};
+use super::lens::{cross, dot, sub};
+use super::{PCamera, PMaterial, PPoint, PRaster, PSolid, PSun};
 use crate::theme::PTheme;
 
 /// The theme's tokens: the colour a 3D picture's ground is, how far round
@@ -25,19 +27,21 @@ pub const FARTHEST: &str = "scene.farthest";
 type Tri = [[f32; 3]; 3];
 
 /// A piece of a thing: its triangles where they stand, the way the
-/// surface faces at each corner, and its colour (0 to 1).
+/// surface faces at each corner, its colour (0 to 1), and what it is
+/// made of, where that is more than a colour (`material.rs`).
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct PPiece {
     pub triangle: Vec<Tri>,
     pub normal: Vec<Tri>,
     pub colour: [f32; 3],
+    pub material: Option<Rc<PMaterial>>,
 }
 
 impl PPiece {
     /// Triangles in a colour, each corner facing as its triangle does.
     pub fn flat(triangle: Vec<Tri>, colour: [f32; 3]) -> PPiece {
         let normal = triangle.iter().map(|t| [face(t); 3]).collect();
-        PPiece { triangle, normal, colour }
+        PPiece { triangle, normal, colour, material: None }
     }
 }
 
@@ -94,12 +98,31 @@ pub fn around(piece: &[PPiece], turn: f32, fov: f32, room: f32, wide: f32) -> PC
     framed(piece, [-turn.sin(), -0.25, -turn.cos()], fov, room, wide)
 }
 
+/// The piece a point of a picture of a size shows: the nearest a ray
+/// from the eye through it meets, if any.
+pub fn pick(piece: &[PPiece], camera: &PCamera, across: f32, down: f32, size: (f32, f32)) -> Option<usize> {
+    let way = camera.ray(across, down, size.0, size.1);
+    let eye = camera.eye;
+    let hit = |t: &Tri| {
+        // Where the ray crosses the triangle's plane, if inside it.
+        let (e1, e2) = (sub(t[1], t[0]), sub(t[2], t[0]));
+        let p = cross(way, e2);
+        let det = dot(e1, p);
+        let s = sub(eye, t[0]);
+        let (u, q) = (dot(s, p) / det, cross(s, e1));
+        let (v, far) = (dot(way, q) / det, dot(e2, q) / det);
+        (det.abs() > 1e-12 && u >= 0.0 && v >= 0.0 && u + v <= 1.0 && far > 0.0).then_some(far)
+    };
+    let near = piece.iter().enumerate().filter_map(|(index, p)| p.triangle.iter().filter_map(hit).reduce(f32::min).map(|far| (index, far)));
+    near.min_by(|a, b| a.1.total_cmp(&b.1)).map(|(index, _)| index)
+}
+
 /// Pieces drawn into a picture of that size, made larger and averaged
 /// down as the theme says: its width, height and points.
 pub fn shot(piece: &[PPiece], camera: &PCamera, sun: &PSun, size: (u32, u32), theme: &dyn PTheme) -> (u32, u32, Vec<u8>) {
     let by = smooth(theme);
     let mut raster = PRaster::new(size.0.max(1) * by, size.1.max(1) * by, ground(theme));
-    let shape: Vec<PSolid> = piece.iter().map(|p| PSolid { triangle: &p.triangle, normal: &p.normal, colour: p.colour }).collect();
+    let shape: Vec<PSolid> = piece.iter().map(|p| PSolid { triangle: &p.triangle, normal: &p.normal, colour: p.colour, material: p.material.as_deref() }).collect();
     raster.draw(camera, &shape, sun);
     raster.smooth(by)
 }
