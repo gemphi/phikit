@@ -36,6 +36,7 @@ mod head;
 mod kind;
 mod list;
 mod player;
+mod slider;
 mod tree;
 mod view;
 

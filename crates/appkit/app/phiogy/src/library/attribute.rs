@@ -55,7 +55,8 @@ impl Attribute {
 
     /// What sets it, as one word: it changes when its attributes do.
     pub fn mark(&self, item: &str, parts: usize) -> String {
-        let colour: Vec<String> = (0..parts).map(|part| format!("{}:{}", self.get(&format!("look/{item}/{part}")), self.material(item, part))).collect();
+        let tuned = |part: usize| super::tune::control_names().iter().chain(["second".to_string()].iter()).map(|name| self.get(&format!("look/{item}/{part}/{name}"))).collect::<Vec<_>>().join(";");
+        let colour: Vec<String> = (0..parts).map(|part| format!("{}:{}:{}", self.get(&format!("look/{item}/{part}")), self.material(item, part), tuned(part))).collect();
         format!("{}|{}", colour.join(","), self.get(&format!("look/{item}/finish")))
     }
 }

@@ -63,15 +63,17 @@ impl PPattern {
             PPattern::Plain => (0.0, 0.5),
             // Threads over and under: along one way in a cell, across in
             // the next; the second colour in threads here and there.
+            // Rows of little loops, as a sport loop is woven: each row a
+            // half loop on from the last, mostly of one colour, flecked
+            // with the other.
             PPattern::Weave => {
-                let along = (cell.0 + cell.1) as i32 % 2 == 0;
-                let (across, run) = match along {
-                    true => (fv, fu),
-                    false => (fu, fv),
-                };
-                let thread = (std::f32::consts::PI * across).sin();
-                let fleck = (hash(cell.0 * 0.5, (v * 2.0).floor()) > 0.55) as u8 as f32;
-                (fleck, thread * (0.75 + 0.25 * (std::f32::consts::PI * run).sin()))
+                let shift = (cell.1 as i32 % 2) as f32 * 0.5;
+                let (x, y) = ((u + shift).rem_euclid(1.0) - 0.5, fv - 0.5);
+                let loop_at = (u + shift).floor();
+                let d = (x * x / 0.22 + y * y / 0.2).sqrt();
+                let row = hash(0.0, cell.1 * 0.37) > 0.5;
+                let fleck = hash(loop_at, cell.1) > 0.78;
+                ((row != fleck) as u8 as f32, (1.0 - d * d).max(0.0).sqrt())
             }
             // Rounded ribs across, a narrow groove between.
             PPattern::Ribs => (0.0, smooth(0.0, 0.25, (fv - 0.5).abs().mul_add(-2.0, 1.0)).sqrt()),
@@ -82,7 +84,9 @@ impl PPattern {
                     false => -1.0,
                 };
                 let strand = (v * 2.0 + way * fu * 2.0).rem_euclid(1.0);
-                let h = (std::f32::consts::PI * strand).sin().powf(0.6);
+                // Each strand a plait of fine yarns along it.
+                let twill = 0.88 + 0.12 * (std::f32::consts::TAU * (fu * 7.0 - way * v * 3.0)).sin();
+                let h = (std::f32::consts::PI * strand).sin().powf(0.6) * twill;
                 (hash(cell.0, (v * 2.0 + way * fu * 2.0).floor()) * 0.35, h)
             }
             // Little rings, each row a half ring on from the last.
@@ -101,7 +105,9 @@ impl PPattern {
             }
             // Soft pills lying across, one a row, as the magnetic link's.
             PPattern::Pills => {
-                let x = ((fu - 0.5).abs() - 0.36).max(0.0) / 0.14;
+                // A pill as long as three repeats across.
+                let fu = (u / 3.0).rem_euclid(1.0);
+                let x = ((fu - 0.5).abs() - 0.42).max(0.0) / 0.08;
                 let y = (fv - 0.5).abs() / 0.42;
                 let d = (x * x + y * y).sqrt();
                 (0.0, (1.0 - d * d).max(0.0).sqrt())
@@ -109,10 +115,13 @@ impl PPattern {
             // Knit: a column of stitches leaning in a V, wide stripes of
             // the second colour along.
             PPattern::Knit => {
-                let lean = (fu - 0.5).abs() * 1.2;
-                let stitch = (fv * 2.0 + lean).rem_euclid(1.0);
+                // A stitch: two loops leaning into a V, side by side (the
+                // one mirrors the other about the stitch's middle).
+                let (x, y) = ((fu - 0.5).abs() - 0.25, fv - 0.5);
+                let (a, b) = (x * 0.82 - y * 0.57, x * 0.57 + y * 0.82);
+                let d = (a * a / 0.045 + b * b / 0.16).sqrt();
                 let stripe = ((u / 6.0).rem_euclid(1.0) < 0.5) as u8 as f32;
-                (stripe, (std::f32::consts::PI * stitch).sin() * (1.0 - (fu - 0.5).abs()))
+                (stripe, (1.0 - d * d).max(0.0).sqrt())
             }
             // Smooth, a hole now and then pressed in along the middle.
             PPattern::Holes => {
@@ -202,6 +211,12 @@ impl PMaterial {
                 depth: number(7)?,
             })
         }).collect()
+    }
+
+    /// A material of one colour and no pattern, in between rough and
+    /// smooth: what a part wears that was given only its finish.
+    pub fn plain(colour: [f32; 3]) -> PMaterial {
+        PMaterial { name: String::new(), colour, second: colour, rough: 0.5, metal: 0.0, pattern: PPattern::Plain, scale: 1.0, depth: 0.0 }
     }
 
     /// How the surface looks at a point in space, facing `normal`, in

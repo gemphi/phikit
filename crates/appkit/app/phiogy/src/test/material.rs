@@ -29,6 +29,18 @@ fn step_66_a_part_wears_a_material_chosen_from_its_balls_and_is_picked_in_the_vi
     let milanese = desk.library.material("milanese").expect("milanese");
     assert_eq!(piece[0].material.as_deref(), Some(milanese.as_ref()));
     assert_eq!(piece[0].colour, milanese.colour);
+    // Its controls, as Reality Composer Pro's: they stand at its own
+    // roughness and metal, and what is set is worn.
+    let at = |name: &str| format!("look/{}/0/{name}", item.key);
+    assert_eq!((source.get(&at("rough")), source.get(&at("metal")), source.get(&at("tiling"))), ("0.35".to_string(), "1.00".to_string(), "1".to_string()));
+    source.set(&at("rough"), "0.80");
+    source.set(&at("tiling"), "2.00");
+    let tuned = desk.library.dressed(&item, &Attribute::new(desk.choice.clone()));
+    let worn = tuned[0].material.as_deref().expect("worn");
+    assert_eq!((worn.rough, worn.scale), (0.8, milanese.scale * 2.0));
+    stage.lay(DESK, PMode::of_width(DESK.width));
+    let slider = drawn(&stage, &look).iter().filter(|mark| matches!(mark, PMark::Text { text, .. } if text == "0.80")).count();
+    assert!(slider >= 1, "the roughness slider says its value");
     // A press on the middle of the view picks the part there.
     stage.lay(DESK, PMode::of_width(DESK.width));
     let view = drawn(&stage, &look).iter().find_map(|mark| match mark {

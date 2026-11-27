@@ -15,6 +15,8 @@
 //!   bar as long as its level and its controls along its foot (`player.rs`).
 //! * `grid`: each choice a tile, its picture or face large over its words;
 //!   `large`, the same in tiles larger. The one under the pointer is lit.
+//! * `slider`: its choices the steps of a bar, the knob where the value
+//!   kept is (`slider.rs`).
 //! * `wheel`: any colour, on the kit's colour wheel; its choices are the
 //!   wheel's own (`block::wheel`), and a press keeps one as `#rrggbb`.
 //! * `tree`, `facts`, `picture`: a navigator, an item's attributes, and an
@@ -141,6 +143,7 @@ pub fn drawn(kind: &str, variant: &str, choice: &[PChoice], now: &str, paint: &m
         "grid" => grid(choice, paint, at, wide, 1.0, over),
         "large" => grid(choice, paint, at, wide, LARGE, over),
         "small" => grid(choice, paint, at, wide, SMALL, over),
+        "slider" => super::slider::slider(choice, now, paint, at, wide),
         "slides" => slides(choice, now.parse().unwrap_or_default(), paint, at, wide, over),
         "player" => super::player::player(choice, paint, at, wide, over),
         "tree" => super::tree::tree(choice, now, paint, at, wide, over),

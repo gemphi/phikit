@@ -95,6 +95,8 @@ pub const FILTER: &str = include_str!("../data/filter.tsv");
 pub const CONVERT: &str = include_str!("../data/convert.tsv");
 pub const PAINT: &str = include_str!("../data/paint.tsv");
 pub const FINISH: &str = include_str!("../data/finish.tsv");
+/// The inspector's material controls: each its slider's least, most and steps.
+pub const CONTROL: &str = include_str!("../data/control.tsv");
 pub const MODEL: &str = include_str!("../data/model.tsv");
 pub const FORM: &str = include_str!("../data/form.tsv");
 pub const LISTING: &str = include_str!("../data/listing.tsv");

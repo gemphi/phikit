@@ -14,6 +14,7 @@ mod model;
 mod place;
 mod set;
 mod shelf;
+mod tune;
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -31,6 +32,7 @@ pub use model::{Model, Part};
 pub use place::{Place, folders};
 pub use set::Set;
 pub use shelf::{Club, Collection, Shelf};
+pub use tune::Tune;
 
 use crate::choice::Choice;
 use crate::data;
@@ -174,7 +176,7 @@ impl Library {
     pub fn dressed(&self, item: &Item, attribute: &Attribute) -> Vec<PPiece> {
         self.model(&item.path).dressed(|part| {
             let colour = attribute.colour(&item.key, part).or_else(|| item.variant.get(part).and_then(|key| paint(key)));
-            (colour, self.material(&attribute.material(&item.key, part)))
+            (colour, self.worn(item, part, attribute))
         })
     }
 

@@ -58,7 +58,10 @@ impl PSun {
         // the ground under, blurred as it is rough.
         let bounce = 2.0 * dot(n, view);
         let r = [0, 1, 2].map(|i| view[i] - bounce * n[i]);
-        let sky_share = (r[1] * (1.0 - rough * 0.8) * 0.5 + 0.5).clamp(0.0, 1.0);
+        // A horizon between them, sharp on a mirror, soft as it is rough.
+        let soft = 0.04 + rough * 0.9;
+        let t = ((r[1] + soft) / (2.0 * soft)).clamp(0.0, 1.0);
+        let sky_share = t * t * (3.0 - 2.0 * t);
         let mirror = [0, 1, 2].map(|i| self.ground[i] + (self.sky[i] - self.ground[i]) * sky_share);
         let fresnel = 0.04 + 0.96 * (1.0 + dot(view, n)).clamp(0.0, 1.0).powi(5);
         [0, 1, 2].map(|i| {

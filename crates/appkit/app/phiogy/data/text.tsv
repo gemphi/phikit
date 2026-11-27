@@ -506,6 +506,11 @@ item.set	Make a set of it
 item.about	About
 item.part	Part
 item.material	Material
+item.rough	Roughness
+item.metal	Metallic
+item.tiling	Tiling
+item.relief	Relief
+item.second	Second colour
 material.sport-loop	Sport loop
 material.ocean-band	Ocean band
 material.sport-band	Sport band

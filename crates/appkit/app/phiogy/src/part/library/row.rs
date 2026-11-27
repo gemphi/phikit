@@ -35,6 +35,15 @@ fn every(table: &str) -> Vec<Row> {
     data::row(table).into_iter().map(|cell| cell.into_iter().map(str::to_string).collect()).collect()
 }
 
+/// The steps of a material control of `data/control.tsv`, each its value
+/// as its words; nothing for a name that is none.
+fn control(name: &str) -> Option<Vec<Row>> {
+    let row = data::row(data::CONTROL).into_iter().find(|cell| cell.first() == Some(&name))?;
+    let number = |at: usize| row.get(at).and_then(|v| v.parse::<f32>().ok());
+    let (least, most, steps) = (number(1)?, number(2)?, number(3)?.max(2.0));
+    Some((0..steps as usize).map(|i| format!("{:.2}", least + (most - least) * i as f32 / (steps - 1.0))).map(|v| vec![v.clone(), v]).collect())
+}
+
 /// A line of the tree: where it goes, its words, its icon, its depth,
 /// and whether it is open (`1`), can open (`0`) or neither (empty).
 fn line(at: String, words: &str, icon: &str, depth: usize, fold: &str) -> Row {
@@ -113,7 +122,8 @@ impl List {
             "part" => self.open().filter(|one| one.kind == "model").map(|one| self.library.model(&one.path).part.iter().enumerate().map(|(index, part)| vec![index.to_string(), part.name.clone()]).collect()).unwrap_or_default(),
             "comment" => self.open().map(|one| self.attribute.note(&one.key).into_iter().enumerate().map(|(index, said)| vec![index.to_string(), said]).collect()).unwrap_or_default(),
             "say" => self.open().map(|_| vec![vec!["say".to_string(), "item.say".to_string()]]).unwrap_or_default(),
-            _ => Vec::new(),
+            // A material control's steps, its least to its most; else none.
+            _ => control(name).unwrap_or_default(),
         }
     }
 

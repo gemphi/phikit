@@ -20,7 +20,7 @@ use appkit::pui::window::{PDeed, PWish};
 
 use super::{Desk, Shot};
 use crate::data;
-use crate::library::{Attribute, Library, item};
+use crate::library::{Attribute, Library, Tune, item};
 
 /// The word the window is told, with the chosen file's path, when the
 /// person chose a file to import.
@@ -158,7 +158,8 @@ pub fn source(desk: &Desk) -> Rc<PListed> {
     let ui = Rc::new(Ui { memory: desk.shelf.clone(), wish: desk.wish.clone(), library: desk.library.clone(), set: desk.text.get("set.word").to_string(), desk: desk.clone() });
     let list = row::List { library: desk.library.clone(), text: desk.text.clone(), shade: desk.shade.clone(), attribute: attribute.clone(), ui: desk.shelf.clone() };
     let rows = move |name: &str| list.rows(name);
-    let state: Vec<(String, Rc<dyn PState>)> = vec![("ui".to_string(), ui), ("look".to_string(), attribute.clone()), ("note".to_string(), attribute)];
+    let tune = Rc::new(Tune { attribute: attribute.clone(), library: desk.library.clone() });
+    let state: Vec<(String, Rc<dyn PState>)> = vec![("ui".to_string(), ui), ("look".to_string(), tune), ("note".to_string(), attribute)];
     Rc::new(PListed::new(data::LISTING, Rc::new(rows), desk.text.clone(), state))
 }
 

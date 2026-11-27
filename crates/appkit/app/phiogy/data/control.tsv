@@ -1,0 +1,11 @@
+# The material controls of the inspector, as Reality Composer Pro's
+# physically based material has them (appkit pui/form/slider.rs): each
+# kept for a part at look/<item>/<part>/<name>, its slider running from
+# its least to its most in so many steps, and what a part without it
+# has (`own`: the material's own; a number: that).
+#
+# name	least	most	steps	without
+rough	0	1	21	own
+metal	0	1	21	own
+tiling	0.25	4	16	1
+relief	0	2	21	1
