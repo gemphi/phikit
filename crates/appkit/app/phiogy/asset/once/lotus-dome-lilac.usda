@@ -485,6 +485,62 @@ def Xform "lotus_dome_lilac"
             uniform token[] xformOpOrder = ["xformOp:transform"]
         }
 
+        def Xform "sofa" (
+            prepend references = @./salon-sofa-red.usda@
+        )
+        {
+            matrix4d xformOp:transform = ( (1, 0, 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0.3, -5.2, 1) )
+            uniform token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        def Xform "armchair" (
+            prepend references = @./salon-chair-red.usda@
+        )
+        {
+            matrix4d xformOp:transform = ( (0.9659258, 0, -0.25881904, 0), (0, 1, 0, 0), (0.25881904, 0, 0.9659258, 0), (-2.4, 0.3, -4.9, 1) )
+            uniform token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        def Xform "armchair_1" (
+            prepend references = @./salon-chair-red.usda@
+        )
+        {
+            matrix4d xformOp:transform = ( (0.9659258, 0, 0.25881904, 0), (0, 1, 0, 0), (-0.25881904, 0, 0.9659258, 0), (2.4, 0.3, -4.9, 1) )
+            uniform token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        def Xform "armchair_2" (
+            prepend references = @./salon-chair-rose.usda@
+        )
+        {
+            matrix4d xformOp:transform = ( (0.76604444, 0, -0.6427876, 0), (0, 1, 0, 0), (0.6427876, 0, 0.76604444, 0), (-4, 0.3, -3.9, 1) )
+            uniform token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        def Xform "armchair_3" (
+            prepend references = @./salon-chair-rose.usda@
+        )
+        {
+            matrix4d xformOp:transform = ( (0.76604444, 0, 0.6427876, 0), (0, 1, 0, 0), (-0.6427876, 0, 0.76604444, 0), (4, 0.3, -3.9, 1) )
+            uniform token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        def Xform "chaise_1" (
+            prepend references = @./salon-chaise-red.usda@
+        )
+        {
+            matrix4d xformOp:transform = ( (0.25881907, 0, -0.9659258, 0), (0, 1, 0, 0), (0.9659258, 0, 0.25881907, 0), (-5.3, 0.3, -1, 1) )
+            uniform token[] xformOpOrder = ["xformOp:transform"]
+        }
+
+        def Xform "meridienne" (
+            prepend references = @./salon-meridienne-rose.usda@
+        )
+        {
+            matrix4d xformOp:transform = ( (0.25881907, 0, 0.9659258, 0), (0, 1, 0, 0), (-0.9659258, 0, 0.25881907, 0), (5.3, 0.3, -1, 1) )
+            uniform token[] xformOpOrder = ["xformOp:transform"]
+        }
+
     }
 
     def Scope "Materials"

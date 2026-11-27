@@ -53,14 +53,15 @@ fn the_city_is_read_through_each_thing_s_own_file() {
     // parts stand three things deep in the city.
     let deep = model.part.iter().find(|part| part.path.contains("/gate/amber/lioness/")).expect("Amber in the gate");
     assert!(deep.path.ends_with("/head") || model.part.iter().any(|part| part.path.ends_with("/gate/amber/lioness/head")), "{}", deep.path);
-    // Every part once, and only the city's: its things make 428,608
-    // triangles, and no file it refers to stands at the root beside it.
+    // Every part once, and only the city's: its things make 1,049,248
+    // triangles (the salon 155,160 of them in each of its four lotus
+    // domes), and no file it refers to stands at the root beside it.
     let mut path: Vec<&str> = model.part.iter().map(|part| part.path.as_str()).collect();
     path.sort();
     let twice: Vec<&&str> = path.windows(2).filter(|w| w[0] == w[1]).map(|w| &w[0]).take(8).collect();
     assert!(twice.is_empty(), "read twice: {twice:?}");
     assert!(model.part.iter().all(|part| part.path.starts_with("/once_city/")), "a root of another file");
-    assert_eq!(model.count, 428_608, "{} parts", model.part.len());
+    assert_eq!(model.count, 1_049_248, "{} parts", model.part.len());
     // The tree shows it: the city, the gate, Amber, the lioness, her parts.
     let tree = model.tree();
     assert!(tree.iter().any(|node| node.name == "amber" && node.depth == 2 && node.holds), "{:?}", tree.iter().take(12).collect::<Vec<_>>());

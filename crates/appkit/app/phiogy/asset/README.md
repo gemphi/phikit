@@ -61,6 +61,14 @@ the tables. Nothing in a file is drawn by hand.
   leg in front, flat where a hand rests, rising at the front as a horn
   that ends in a ring (the o). One to four seats, a tall or a low arm, two lattices,
   each its own colours. 32 couches in all.
+- The salon (`salon-*`), after the user's pictures of 28 November 2026
+  (the stage under the glass dome, the old film's red chaise, the gilt
+  chair): an armchair and a three-seat camel-back sofa with gilt
+  cartouche backs, crest rosettes, cabriole legs and velvet arms over
+  the seat's sides; a chaise on bun feet and a meridienne on cabriole
+  legs, each with a back sweeping up into a raised, rolled end; all
+  buttoned in diamonds. Lines and circles by `script/salon.py` from
+  `data/once/salon.tsv`; in deep red and in rose.
 - Eight lounge chairs and settees of steel bands (`lounge-o-1` ...
   `lounge-u-2`), after the photo of 27 November 2026: each side a bar of
   polished steel bent as O, D, n or u is (`couch-band-*`), white leather

@@ -95,3 +95,10 @@ grad-gold	#f3eee6 #d8b35c	0.3 0.4
 chrome	#dfe3e8	0.08 1
 leather	#f4f2ee	0.45 0
 water	#cfe9f5	0.05 0
+# The salon's velvets, from data/once/salon.tsv by script/salon.py.
+velvet-red	#5c0816	0.95 0
+velvet-wine	#360410	0.9 0
+velvet-rose	#d0608f	0.9 0
+velvet-blush	#b9467c	0.9 0
+velvet	#5c0816	0.95 0
+button	#360410	0.9 0

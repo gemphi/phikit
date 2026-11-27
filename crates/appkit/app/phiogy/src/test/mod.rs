@@ -19,6 +19,7 @@ mod make;
 mod material;
 #[cfg(not(target_family = "wasm"))]
 mod once;
+mod salon;
 mod net;
 mod pace;
 mod pill;

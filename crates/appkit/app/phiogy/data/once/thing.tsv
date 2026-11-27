@@ -168,7 +168,10 @@ letter-gate	amber	thing	2.2	-3.9 1.0 3.3	-	-	-	lioness-amber	-
 letter-gate	onyx	thing	2.2	3.9 1.0 3.3	-	-	-	lioness-onyx	-
 # The lotus dome: a bowl under its floor, two rings of petals, gold ribs
 # meeting in a crown; the lounge inside it (the bird chaise, the red
-# chairs, the pouf, the stool, and Jade).
+# chairs, the pouf, the stool, and Jade), and behind them the salon as
+# the stage of 28 November 2026 sets it: the red sofa at the back, red
+# and rose armchairs either side, the red chaise and the rose meridienne
+# at the ends.
 lotus-dome	bowl	dome	16 6.5 16	0 -3.25 0	180 0 0	-	pearl	-	-
 lotus-dome	floor	cylinder	16.2 0.3 16.2	0 0.15 0	-	-	pearl	-	-
 lotus-dome	petal	capsule	2.6 4.6 0.35	0 0.9 8.4	38 0 0	-	blush	-	12 0 0 0 0 30 0
@@ -183,6 +186,13 @@ lotus-dome	chair	thing	1	2.4 0.3 0.4	0 -60 0	-	-	couch-u	-
 lotus-dome	pouf	thing	1	0 0.3 0.6	-	-	-	pouf-o	-
 lotus-dome	stool	thing	1	-3.2 0.3 -2.0	0 30 0	-	-	stool-m	-
 lotus-dome	jade	thing	0.75	3.2 0.3 -2.2	0 -30 0	-	-	lion-jade	-
+lotus-dome	sofa	thing	1	0 0.3 -5.2	-	-	-	salon-sofa-red	-
+lotus-dome	armchair	thing	1	-2.4 0.3 -4.9	0 15 0	-	-	salon-chair-red	-
+lotus-dome	armchair	thing	1	2.4 0.3 -4.9	0 -15 0	-	-	salon-chair-red	-
+lotus-dome	armchair	thing	1	-4 0.3 -3.9	0 40 0	-	-	salon-chair-rose	-
+lotus-dome	armchair	thing	1	4 0.3 -3.9	0 -40 0	-	-	salon-chair-rose	-
+lotus-dome	chaise	thing	1	-5.3 0.3 -1	0 75 0	-	-	salon-chaise-red	-
+lotus-dome	meridienne	thing	1	5.3 0.3 -1	0 -75 0	-	-	salon-meridienne-rose	-
 # A lamp of the way in: the i of Phi-Pill, its dot the light.
 lamp-i	post	letter	0 3.2 0.25	0 1.6 0	-	0.02	gold	pill-bold:i	-
 # The floating city's own pieces, as the Floating City drawings of
@@ -949,3 +959,344 @@ couch-scroll-16	ring	letter	0 0.204 0.16	1.35 0.76 0.32	0 -90 0	0.03	gold	pill-b
 couch-scroll-16	post	thing	1	-1.35 0 -0.43	-	-	frame=violet trim=gold	couch-post	2 2.7 0 0
 couch-scroll-16	leg	thing	1	-1.35 0 0.3	-	-	frame=violet trim=gold	couch-leg	2 2.7 0 0
 couch-scroll-16	body	thing	1	0 0 0	-	-	frame=violet cushion=haze	bench-4	-
+# The salon, from data/once/salon.tsv by script/salon.py.
+salon-back-chair	gilt	outline	0 0.67 0.05	0 0 0	-	0.03	trim	salon-back-chair-gilt	-
+salon-back-chair	velvet	outline	0 0.59 0.09	0 0 -0.005	-	0.059	velvet	salon-back-chair-velvet	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0 0.165 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	-0.195 0.11 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	-0.065 0.11 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0.065 0.11 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0.195 0.11 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	-0.13 0.055 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0 0.055 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0.13 0.055 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	-0.195 0 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	-0.065 0 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0.065 0 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0.195 0 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	-0.13 -0.055 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0 -0.055 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0.13 -0.055 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	-0.065 -0.11 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0.065 -0.11 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	-0.13 -0.165 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0 -0.165 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0.13 -0.165 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	-0.195 -0.22 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	-0.065 -0.22 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0.065 -0.22 0.04	-	-	button	-	-
+salon-back-chair	button	sphere	0.035 0.035 0.021	0.195 -0.22 0.04	-	-	button	-	-
+salon-back-chair	rosette	bloom	0.11 0.08 0.025	0 0.305 0.03	-	0.3	trim	6 0.22	-
+salon-back-chair	scroll	torus	0.07 0.022 0.07	-0.25 0.125 0.03	90 0 0	-	trim	-	-
+salon-back-chair	scroll	torus	0.07 0.022 0.07	0.25 0.125 0.03	90 0 0	-	trim	-	-
+salon-chair	leg	outline	0 0.3 0.05	-0.32 0.15 -0.29	0 135 0	0.15	trim	salon-leg	-
+salon-chair	leg	outline	0 0.3 0.05	-0.32 0.15 0.29	0 -135 0	0.15	trim	salon-leg	-
+salon-chair	leg	outline	0 0.3 0.05	0.32 0.15 -0.29	0 45 0	0.15	trim	salon-leg	-
+salon-chair	leg	outline	0 0.3 0.05	0.32 0.15 0.29	0 -45 0	0.15	trim	salon-leg	-
+salon-chair	apron	box	0.78 0.1 0.72	0 0.33 0	-	0.25	trim	-	-
+salon-chair	seat	box	0.65 0.13 0.64	0 0.395 0.02	-	0.5	velvet	-	-
+salon-chair	shell	bloom	0.15 0.09 0.03	0 0.315 0.368	-	0.3	trim	7 0.2	-
+salon-chair	back	thing	1	0 0.735 -0.29	-8 0 0	-	-	salon-back-chair	-
+salon-chair	pad	capsule	0.09 0.44 0.1	-0.345 0.64 -0.04	90 0 0	-	velvet	-	-
+salon-chair	side	box	0.07 0.22 0.4	-0.345 0.53 -0.04	-	0.4	velvet	-	-
+salon-chair	rail	capsule	0.03 0.48 0.03	-0.345 0.595 -0.04	90 0 0	-	trim	-	-
+salon-chair	post	capsule	0.045 0.26 0.045	-0.345 0.5 0.14	-10 0 0	-	trim	-	-
+salon-chair	scroll	torus	0.1 0.032 0.1	-0.35 0.64 0.18	90 90 0	-	trim	-	-
+salon-chair	pad	capsule	0.09 0.44 0.1	0.345 0.64 -0.04	90 0 0	-	velvet	-	-
+salon-chair	side	box	0.07 0.22 0.4	0.345 0.53 -0.04	-	0.4	velvet	-	-
+salon-chair	rail	capsule	0.03 0.48 0.03	0.345 0.595 -0.04	90 0 0	-	trim	-	-
+salon-chair	post	capsule	0.045 0.26 0.045	0.345 0.5 0.14	-10 0 0	-	trim	-	-
+salon-chair	scroll	torus	0.1 0.032 0.1	0.35 0.64 0.18	90 90 0	-	trim	-	-
+salon-back-sofa	gilt	outline	0 0.64 0.05	0 0 0	-	0.031	trim	salon-back-sofa-gilt	-
+salon-back-sofa	velvet	outline	0 0.56 0.09	0 0 -0.005	-	0.063	velvet	salon-back-sofa-velvet	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.065 0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.065 0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.39 0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.26 0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.13 0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0 0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.13 0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.26 0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.39 0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.455 0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.325 0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.195 0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.065 0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.065 0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.195 0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.325 0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.455 0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.78 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.65 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.52 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.39 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.26 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.13 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.13 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.26 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.39 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.52 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.65 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.78 -0 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.715 -0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.585 -0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.455 -0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.325 -0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.195 -0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.065 -0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.065 -0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.195 -0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.325 -0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.455 -0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.585 -0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.715 -0.055 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.78 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.65 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.52 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.39 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.26 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.13 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.13 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.26 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.39 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.52 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.65 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.78 -0.11 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.715 -0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.585 -0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.455 -0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.325 -0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.195 -0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	-0.065 -0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.065 -0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.195 -0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.325 -0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.455 -0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.585 -0.165 0.04	-	-	button	-	-
+salon-back-sofa	button	sphere	0.035 0.035 0.021	0.715 -0.165 0.04	-	-	button	-	-
+salon-back-sofa	rosette	bloom	0.11 0.08 0.025	0 0.29 0.03	-	0.3	trim	6 0.22	-
+salon-back-sofa	scroll	torus	0.07 0.022 0.07	-0.85 0.04 0.03	90 0 0	-	trim	-	-
+salon-back-sofa	scroll	torus	0.07 0.022 0.07	-0.42 0.11 0.03	90 0 0	-	trim	-	-
+salon-back-sofa	scroll	torus	0.07 0.022 0.07	0.42 0.11 0.03	90 0 0	-	trim	-	-
+salon-back-sofa	scroll	torus	0.07 0.022 0.07	0.85 0.04 0.03	90 0 0	-	trim	-	-
+salon-sofa	leg	outline	0 0.3 0.05	-0.88 0.15 -0.33	0 135 0	0.15	trim	salon-leg	-
+salon-sofa	leg	outline	0 0.3 0.05	-0.88 0.15 0.33	0 -135 0	0.15	trim	salon-leg	-
+salon-sofa	leg	outline	0 0.3 0.05	0 0.15 -0.33	0 90 0	0.15	trim	salon-leg	-
+salon-sofa	leg	outline	0 0.3 0.05	0 0.15 0.33	0 -90 0	0.15	trim	salon-leg	-
+salon-sofa	leg	outline	0 0.3 0.05	0.88 0.15 -0.33	0 45 0	0.15	trim	salon-leg	-
+salon-sofa	leg	outline	0 0.3 0.05	0.88 0.15 0.33	0 -45 0	0.15	trim	salon-leg	-
+salon-sofa	apron	box	1.9 0.1 0.8	0 0.33 0	-	0.25	trim	-	-
+salon-sofa	seat	box	0.583 0.13 0.72	-0.593 0.395 0.02	-	0.5	velvet	-	-
+salon-sofa	seat	box	0.583 0.13 0.72	0 0.395 0.02	-	0.5	velvet	-	-
+salon-sofa	seat	box	0.583 0.13 0.72	0.593 0.395 0.02	-	0.5	velvet	-	-
+salon-sofa	shell	bloom	0.15 0.09 0.03	-0.559 0.315 0.408	-	0.3	trim	7 0.2	-
+salon-sofa	shell	bloom	0.15 0.09 0.03	0 0.315 0.408	-	0.3	trim	7 0.2	-
+salon-sofa	shell	bloom	0.15 0.09 0.03	0.559 0.315 0.408	-	0.3	trim	7 0.2	-
+salon-sofa	back	thing	1	0 0.72 -0.33	-8 0 0	-	-	salon-back-sofa	-
+salon-sofa	pad	capsule	0.09 0.52 0.1	-0.905 0.64 -0.04	90 0 0	-	velvet	-	-
+salon-sofa	side	box	0.07 0.22 0.48	-0.905 0.53 -0.04	-	0.4	velvet	-	-
+salon-sofa	rail	capsule	0.03 0.56 0.03	-0.905 0.595 -0.04	90 0 0	-	trim	-	-
+salon-sofa	post	capsule	0.045 0.26 0.045	-0.905 0.5 0.18	-10 0 0	-	trim	-	-
+salon-sofa	scroll	torus	0.1 0.032 0.1	-0.91 0.64 0.22	90 90 0	-	trim	-	-
+salon-sofa	pad	capsule	0.09 0.52 0.1	0.905 0.64 -0.04	90 0 0	-	velvet	-	-
+salon-sofa	side	box	0.07 0.22 0.48	0.905 0.53 -0.04	-	0.4	velvet	-	-
+salon-sofa	rail	capsule	0.03 0.56 0.03	0.905 0.595 -0.04	90 0 0	-	trim	-	-
+salon-sofa	post	capsule	0.045 0.26 0.045	0.905 0.5 0.18	-10 0 0	-	trim	-	-
+salon-sofa	scroll	torus	0.1 0.032 0.1	0.91 0.64 0.22	90 90 0	-	trim	-	-
+salon-chaise	foot	sphere	0.11 0.09 0.11	-0.85 0.045 -0.26	-	-	trim	8 0.1	-
+salon-chaise	foot	sphere	0.11 0.09 0.11	-0.85 0.045 0.26	-	-	trim	8 0.1	-
+salon-chaise	foot	sphere	0.11 0.09 0.11	0.85 0.045 -0.26	-	-	trim	8 0.1	-
+salon-chaise	foot	sphere	0.11 0.09 0.11	0.85 0.045 0.26	-	-	trim	8 0.1	-
+salon-chaise	base	box	1.9 0.2 0.72	0 0.19 0	-	0.2	velvet	-	-
+salon-chaise	seat	box	1.84 0.13 0.68	0 0.355 0	-	0.5	velvet	-	-
+salon-chaise	end	outline	0 0.65 0.7	0.735 0.615 0	-	0.092	velvet	salon-chaise-end	-
+salon-chaise	back	outline	0 0.56 0.16	-0.035 0.57 -0.28	-	0.089	velvet	salon-chaise-back	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.795 0.42 -0.105	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.665 0.42 -0.105	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.535 0.42 -0.105	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.405 0.42 -0.105	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.275 0.42 -0.105	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.145 0.42 -0.105	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.015 0.42 -0.105	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.115 0.42 -0.105	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.245 0.42 -0.105	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.375 0.42 -0.105	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.73 0.42 -0.05	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.6 0.42 -0.05	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.47 0.42 -0.05	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.34 0.42 -0.05	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.21 0.42 -0.05	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.08 0.42 -0.05	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.05 0.42 -0.05	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.18 0.42 -0.05	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.31 0.42 -0.05	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.795 0.42 0.005	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.665 0.42 0.005	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.535 0.42 0.005	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.405 0.42 0.005	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.275 0.42 0.005	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.145 0.42 0.005	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.015 0.42 0.005	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.115 0.42 0.005	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.245 0.42 0.005	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.375 0.42 0.005	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.73 0.42 0.06	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.6 0.42 0.06	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.47 0.42 0.06	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.34 0.42 0.06	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.21 0.42 0.06	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.08 0.42 0.06	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.05 0.42 0.06	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.18 0.42 0.06	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.31 0.42 0.06	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.795 0.42 0.115	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.665 0.42 0.115	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.535 0.42 0.115	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.405 0.42 0.115	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.275 0.42 0.115	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.145 0.42 0.115	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.015 0.42 0.115	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.115 0.42 0.115	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.245 0.42 0.115	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.375 0.42 0.115	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.73 0.42 0.17	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.6 0.42 0.17	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.47 0.42 0.17	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.34 0.42 0.17	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.21 0.42 0.17	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.08 0.42 0.17	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.05 0.42 0.17	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.18 0.42 0.17	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.31 0.42 0.17	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.795 0.42 0.225	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.665 0.42 0.225	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.535 0.42 0.225	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.405 0.42 0.225	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.275 0.42 0.225	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.145 0.42 0.225	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	-0.015 0.42 0.225	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.115 0.42 0.225	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.245 0.42 0.225	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.021 0.035	0.375 0.42 0.225	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.485 0.68 -0.2	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.29 0.625 -0.2	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.42 0.625 -0.2	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.095 0.57 -0.2	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.225 0.57 -0.2	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.355 0.57 -0.2	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.485 0.57 -0.2	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	-0.1 0.515 -0.2	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.03 0.515 -0.2	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.16 0.515 -0.2	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.29 0.515 -0.2	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.42 0.515 -0.2	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.865 0.862 0.35	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.865 0.752 0.35	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.865 0.642 0.35	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.8 0.587 0.35	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.865 0.532 0.35	-	-	button	-	-
+salon-chaise	button	sphere	0.035 0.035 0.021	0.8 0.477 0.35	-	-	button	-	-
+salon-chaise	rosette	bloom	0.135 0.135 0.03	0.89 0.85 0.36	-	0.3	trim	8 0.15	-
+salon-meridienne	leg	outline	0 0.3 0.05	-0.88 0.15 -0.29	0 135 0	0.15	trim	salon-leg	-
+salon-meridienne	leg	outline	0 0.3 0.05	-0.88 0.15 0.29	0 -135 0	0.15	trim	salon-leg	-
+salon-meridienne	leg	outline	0 0.3 0.05	0.88 0.15 -0.29	0 45 0	0.15	trim	salon-leg	-
+salon-meridienne	leg	outline	0 0.3 0.05	0.88 0.15 0.29	0 -45 0	0.15	trim	salon-leg	-
+salon-meridienne	rail	box	1.9 0.08 0.72	0 0.3 0	-	0.3	trim	-	-
+salon-meridienne	shell	bloom	0.15 0.09 0.03	0 0.3 0.368	-	0.3	trim	7 0.2	-
+salon-meridienne	seat	box	1.84 0.13 0.68	0 0.405 0	-	0.5	velvet	-	-
+salon-meridienne	end	outline	0 0.65 0.7	0.735 0.665 0	-	0.092	velvet	salon-chaise-end	-
+salon-meridienne	back	outline	0 0.56 0.16	-0.035 0.62 -0.28	-	0.089	velvet	salon-chaise-back	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.795 0.47 -0.105	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.665 0.47 -0.105	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.535 0.47 -0.105	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.405 0.47 -0.105	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.275 0.47 -0.105	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.145 0.47 -0.105	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.015 0.47 -0.105	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.115 0.47 -0.105	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.245 0.47 -0.105	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.375 0.47 -0.105	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.73 0.47 -0.05	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.6 0.47 -0.05	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.47 0.47 -0.05	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.34 0.47 -0.05	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.21 0.47 -0.05	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.08 0.47 -0.05	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.05 0.47 -0.05	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.18 0.47 -0.05	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.31 0.47 -0.05	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.795 0.47 0.005	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.665 0.47 0.005	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.535 0.47 0.005	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.405 0.47 0.005	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.275 0.47 0.005	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.145 0.47 0.005	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.015 0.47 0.005	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.115 0.47 0.005	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.245 0.47 0.005	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.375 0.47 0.005	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.73 0.47 0.06	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.6 0.47 0.06	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.47 0.47 0.06	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.34 0.47 0.06	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.21 0.47 0.06	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.08 0.47 0.06	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.05 0.47 0.06	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.18 0.47 0.06	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.31 0.47 0.06	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.795 0.47 0.115	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.665 0.47 0.115	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.535 0.47 0.115	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.405 0.47 0.115	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.275 0.47 0.115	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.145 0.47 0.115	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.015 0.47 0.115	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.115 0.47 0.115	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.245 0.47 0.115	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.375 0.47 0.115	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.73 0.47 0.17	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.6 0.47 0.17	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.47 0.47 0.17	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.34 0.47 0.17	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.21 0.47 0.17	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.08 0.47 0.17	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.05 0.47 0.17	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.18 0.47 0.17	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.31 0.47 0.17	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.795 0.47 0.225	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.665 0.47 0.225	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.535 0.47 0.225	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.405 0.47 0.225	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.275 0.47 0.225	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.145 0.47 0.225	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	-0.015 0.47 0.225	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.115 0.47 0.225	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.245 0.47 0.225	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.021 0.035	0.375 0.47 0.225	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.485 0.73 -0.2	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.29 0.675 -0.2	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.42 0.675 -0.2	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.095 0.62 -0.2	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.225 0.62 -0.2	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.355 0.62 -0.2	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.485 0.62 -0.2	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	-0.1 0.565 -0.2	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.03 0.565 -0.2	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.16 0.565 -0.2	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.29 0.565 -0.2	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.42 0.565 -0.2	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.865 0.912 0.35	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.865 0.802 0.35	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.865 0.692 0.35	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.8 0.637 0.35	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.865 0.582 0.35	-	-	button	-	-
+salon-meridienne	button	sphere	0.035 0.035 0.021	0.8 0.527 0.35	-	-	button	-	-
+salon-meridienne	rosette	bloom	0.135 0.135 0.03	0.89 0.9 0.36	-	0.3	trim	8 0.15	-
+salon-chair-red	body	thing	1	0 0 0	-	-	velvet=velvet-red button=velvet-wine trim=gold	salon-chair	-
+salon-sofa-red	body	thing	1	0 0 0	-	-	velvet=velvet-red button=velvet-wine trim=gold	salon-sofa	-
+salon-chaise-red	body	thing	1	0 0 0	-	-	velvet=velvet-red button=velvet-wine trim=gold	salon-chaise	-
+salon-meridienne-rose	body	thing	1	0 0 0	-	-	velvet=velvet-rose button=velvet-blush trim=gold	salon-meridienne	-
+salon-chair-rose	body	thing	1	0 0 0	-	-	velvet=velvet-rose button=velvet-blush trim=gold	salon-chair	-
+salon-sofa-rose	body	thing	1	0 0 0	-	-	velvet=velvet-rose button=velvet-blush trim=gold	salon-sofa	-

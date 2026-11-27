@@ -48,3 +48,11 @@ scroll-back-1-bead	scroll-back-1-bead.svg
 scroll-back-2-bead	scroll-back-2-bead.svg
 scroll-back-3-bead	scroll-back-3-bead.svg
 scroll-back-4-bead	scroll-back-4-bead.svg
+# The salon's outlines, from data/once/salon.tsv by script/salon.py.
+salon-leg	salon-leg.svg
+salon-back-chair-gilt	salon-back-chair-gilt.svg
+salon-back-chair-velvet	salon-back-chair-velvet.svg
+salon-back-sofa-gilt	salon-back-sofa-gilt.svg
+salon-back-sofa-velvet	salon-back-sofa-velvet.svg
+salon-chaise-end	salon-chaise-end.svg
+salon-chaise-back	salon-chaise-back.svg
